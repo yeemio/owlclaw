@@ -27,7 +27,7 @@
 - [ ] `owlclaw.governance.ledger` — 执行记录 → spec: governance
 - [ ] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
 - [ ] `owlclaw.triggers.cron` — Cron 触发器 → spec: triggers-cron
-- [ ] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet
+- [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet
 - [ ] `owlclaw.integrations.llm` — litellm 集成 → spec: integrations-llm
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
@@ -81,10 +81,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-10 |
-| 当前批次 | Phase 1 MVP spec 文档创建 |
-| 批次状态 | 已完成 4 个 spec 文档（capabilities-skills、integrations-hatchet、integrations-llm、agent-tools） |
-| 已完成项 | 3（Phase 0）+ 4 个 spec 文档 |
-| 下一待执行 | 继续创建 Phase 1 剩余 spec 文档（agent-runtime、governance、triggers-cron） |
+| 当前批次 | integrations-hatchet 实现收口 |
+| 批次状态 | integrations-hatchet 实现+测试+部署+示例+文档已完成；功能清单已勾选 |
+| 已完成项 | Phase 0 全勾；capabilities-skills、integrations-hatchet 实现完成 |
+| 下一待执行 | Phase 1 剩余：agent-runtime、governance、triggers-cron 等 spec/实现 |
 | 阻塞项 | 无 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
