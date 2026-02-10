@@ -1,0 +1,162 @@
+---
+description: Testing rules — apply when writing tests, validating features, or debugging.
+globs:
+  - tests/**/*.py
+  - owlclaw/**/test_*.py
+alwaysApply: false
+---
+# OwlClaw 测试规范
+
+> **版本**: v1.0.0 (2026-02-10)
+> **状态**: 核心规范，必须遵守
+
+---
+
+## 一、测试框架
+
+| 工具 | 用途 | 安装 |
+|------|------|------|
+| **pytest** | 测试框架 | `poetry add --group dev pytest` |
+| **pytest-asyncio** | 异步测试 | `poetry add --group dev pytest-asyncio` |
+| **pytest-cov** | 覆盖率 | `poetry add --group dev pytest-cov` |
+
+---
+
+## 二、测试结构
+
+```
+tests/
+├── unit/                          # 单元测试（不依赖外部服务）
+│   ├── agent/
+│   │   ├── test_runtime.py
+│   │   ├── test_heartbeat.py
+│   │   └── test_memory.py
+│   ├── governance/
+│   │   ├── test_visibility.py
+│   │   └── test_ledger.py
+│   ├── capabilities/
+│   │   ├── test_registry.py
+│   │   └── test_skills.py
+│   └── triggers/
+│       └── test_cron.py
+├── integration/                   # 集成测试（需要外部服务）
+│   ├── test_hatchet_integration.py
+│   ├── test_llm_integration.py
+│   └── test_end_to_end.py
+└── conftest.py                    # 共享 fixtures
+```
+
+---
+
+## 三、测试规范
+
+### 3.1 异步测试
+
+```python
+import pytest
+
+@pytest.mark.asyncio
+async def test_agent_run_with_heartbeat():
+    """Heartbeat 无事件时不调用 LLM"""
+    agent = create_test_agent()
+    result = await agent.heartbeat.tick()
+    assert result.status == "skipped"
+    assert result.llm_calls == 0
+```
+
+### 3.2 Hatchet Mock 测试
+
+Hatchet SDK v1 支持 `mock_run()`，不需要 Hatchet Server：
+
+```python
+@pytest.mark.asyncio
+async def test_agent_task_execution():
+    """测试 Agent 任务执行（不需要 Hatchet Server）"""
+    result = await agent_run.mock_run(AgentRunInput(trigger="heartbeat"))
+    assert result["status"] == "completed"
+```
+
+### 3.3 治理层测试
+
+```python
+def test_visibility_filter_trading_hours():
+    """非交易时间过滤 trading_hours_only 能力"""
+    filter = CapabilityVisibilityFilter()
+    context = RunContext(current_time=datetime(2026, 2, 10, 20, 0))  # 20:00 非交易时间
+    
+    capabilities = [
+        Capability(name="entry-monitor", constraints={"trading_hours_only": True}),
+        Capability(name="recall", constraints={}),
+    ]
+    
+    visible = filter.filter(capabilities, context)
+    assert len(visible) == 1
+    assert visible[0].name == "recall"
+```
+
+### 3.4 Skills 加载测试
+
+```python
+def test_skill_loading_from_directory(tmp_path):
+    """从目录加载 SKILL.md"""
+    skill_dir = tmp_path / "entry-monitor"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text("""---
+name: entry-monitor
+description: 检查入场机会
+owlclaw:
+  task_type: trading_decision
+  constraints:
+    trading_hours_only: true
+---
+# 使用指南
+""")
+    
+    loader = SkillLoader()
+    skills = loader.load_directory(tmp_path)
+    assert len(skills) == 1
+    assert skills[0].name == "entry-monitor"
+    assert skills[0].owlclaw.constraints["trading_hours_only"] is True
+```
+
+---
+
+## 四、覆盖率要求
+
+| 模块 | 最低覆盖率 | 说明 |
+|------|-----------|------|
+| `owlclaw/agent/` | 80% | Agent 运行时核心 |
+| `owlclaw/governance/` | 90% | 治理层必须高覆盖 |
+| `owlclaw/capabilities/` | 80% | 能力注册和 Skills |
+| `owlclaw/integrations/` | 60% | 集成层（依赖外部服务） |
+| **整体** | **75%** | |
+
+```bash
+# 运行测试并生成覆盖率报告
+poetry run pytest --cov=owlclaw --cov-report=term-missing
+```
+
+---
+
+## 五、测试命令
+
+```bash
+# 运行所有测试
+poetry run pytest
+
+# 运行单元测试
+poetry run pytest tests/unit/
+
+# 运行特定测试
+poetry run pytest tests/unit/agent/test_heartbeat.py -v
+
+# 运行并显示覆盖率
+poetry run pytest --cov=owlclaw --cov-report=html
+
+# 运行标记的测试
+poetry run pytest -m "not integration"
+```
+
+---
+
+**执行承诺**：异步测试用 pytest-asyncio · Hatchet 用 mock_run · 治理层 90% 覆盖

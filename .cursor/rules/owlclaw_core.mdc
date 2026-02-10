@@ -1,0 +1,160 @@
+---
+description: Global workspace rules — OwlClaw project core process, principles, and pointers to domain rules.
+globs:
+  - "*"
+alwaysApply: true
+---
+# OwlClaw 工作指导总纲
+
+> **版本**: v1.0.0 (2026-02-10)
+> **项目**: OwlClaw — Agent base for business applications
+> **许可证**: MIT
+
+---
+
+## 〇、项目定位
+
+OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理念：
+
+> **不要控制 Agent，赋能 Agent。**
+> **不要重造轮子，组合轮子。**
+
+- **自建**：Agent 运行时（身份/记忆/知识/决策）、能力注册与 Skills 挂载、治理层（可见性过滤/Ledger/预算）、事件触发器统一层
+- **集成**：Hatchet MIT（持久执行）、litellm（LLM）、Langfuse（可观测）、Agent Skills 规范（知识文档）
+- **架构文档**：`docs/ARCHITECTURE_ANALYSIS.md`（v3.2，唯一架构真源）
+
+---
+
+## 一、文档结构
+
+| 文档 | 内容 | 状态 |
+|------|------|------|
+| **主文档** (本文档) | 核心索引、工作流程 | ✅ |
+| **核心原则** | `.cursor/rules/owlclaw_principles.mdc` | ✅ |
+| **开发规范** | `.cursor/rules/owlclaw_development.mdc` | ✅ |
+| **架构规范** | `.cursor/rules/owlclaw_architecture.mdc` | ✅ |
+| **测试规范** | `.cursor/rules/owlclaw_testing.mdc` | ✅ |
+| **Spec 标准** | `.cursor/rules/owlclaw_spec_standards.mdc` | ✅ |
+
+---
+
+## 二、AI 必读文档
+
+### 按阅读场景
+
+| 阅读场景 | 文档 | 内容 |
+|----------|------|------|
+| 每次 | 本文档 | 核心原则与项目定位 |
+| 每次 | `docs/ARCHITECTURE_ANALYSIS.md` | 架构设计（唯一真源） |
+| 开发 | `.cursor/rules/owlclaw_principles.mdc` | 核心原则（代码质量、AI 决策、禁止行为） |
+| 开发 | `.cursor/rules/owlclaw_development.mdc` | 开发规范（流程、Git、Poetry） |
+| 架构 | `.cursor/rules/owlclaw_architecture.mdc` | 架构规范（包结构、集成边界） |
+| 测试 | `.cursor/rules/owlclaw_testing.mdc` | 测试规范（pytest、覆盖率） |
+| 写/改 spec | `.cursor/rules/owlclaw_spec_standards.mdc` | Spec 文档标准 |
+| 写/改 spec | `.kiro/SPEC_DOCUMENTATION_STANDARD.md` | Spec 三层文档结构详细规范 |
+
+### AI 工作流程
+
+```
+1. 接收任务
+ ↓
+2. 阅读本文档（项目定位与核心原则）
+ ↓
+3. 根据任务类型阅读相关子文档
+ ↓
+4. 阅读 docs/ARCHITECTURE_ANALYSIS.md（理解架构决策）
+ ↓
+5. 检查影响范围（grep 搜索）
+ ↓
+6. 新功能/重大重构：确认已有 spec（三层齐全）再编码；无 spec 则先补齐
+ ↓
+7. 阅读相关代码
+ ↓
+8. 开始编码
+```
+
+---
+
+## 三、关键规则速查
+
+| 规则 | 说明 | 详细文档 |
+|------|------|---------|
+| **禁止 TODO 预留** | 代码中不留 TODO/FIXME，未完成功能记录在 tasks.md | `owlclaw_development.mdc` |
+| **包管理用 Poetry** | `poetry add`、`poetry install`、`poetry run` | `owlclaw_development.mdc` |
+| **Python >= 3.10** | 类型注解用现代语法 | `owlclaw_development.mdc` |
+| **绝对导入** | `from owlclaw.agent.runtime import ...` | `owlclaw_architecture.mdc` |
+| **AI 决策优先** | Agent 的决策由 LLM function calling 做出，禁止硬编码规则 | `owlclaw_principles.mdc` |
+| **禁止假数据** | 数据获取失败返回空结果，不返回硬编码备用数据 | `owlclaw_principles.mdc` |
+| **先规划后执行** | 重构/修改前必须制定完整方案 | `owlclaw_development.mdc` |
+| **Spec 文档规范** | 新功能和重大重构必须使用三层文档结构 | `owlclaw_spec_standards.mdc` |
+| **Spec 循环** | 触发词「继续」驱动多轮，SPEC_TASKS_SCAN 为单一真源 | 本文档第四节 |
+| **代码英文/文档中文** | 代码注释 English，文档中文 | `owlclaw_principles.mdc` |
+| **Hatchet 集成隔离** | Hatchet 调用集中在 `owlclaw/integrations/hatchet.py` | `owlclaw_architecture.mdc` |
+| **Agent Skills 规范** | 知识文档遵循 Anthropic Agent Skills 规范（SKILL.md） | `owlclaw_architecture.mdc` |
+| **治理 = 可见性过滤** | Agent 看到的工具列表是经过治理过滤的子集 | `owlclaw_architecture.mdc` |
+
+---
+
+## 四、Spec 循环（触发词：spec循环 / 继续 / 挨个完成 / 全部完成 / 持续推进 / 自主推进）
+
+**Goal**：将 SPEC_TASKS_SCAN 功能清单与各 spec 的 tasks.md 中 `[ ]` 通过实现+验收变为 `[x]`，直至无未勾项或用户叫停。
+
+**持续/自主推进**：用户可通过**反复发送「继续」**实现多轮推进，无需每次重述「spec 循环」。每轮结束时若**未达 Exit**，AI **必须**在回复末尾给出明确提示，例如：「**回复「继续」以执行下一轮 spec 循环。**」触发词包括：`spec循环`、`继续`、`挨个完成`、`全部完成`、`持续推进`、`自主推进`。
+
+**Authority**：`.kiro/specs/SPEC_TASKS_SCAN.md` 功能清单；各 spec 的 `tasks.md`。收口 = task 内全部 `[x]` 且实现+验收通过 → 功能清单对应行打勾。
+
+### Rules
+
+- **验收标准**：仅当实现+验收通过可打勾；不得以 deferred/按需代替；未实现保留 `[ ]` 记 design/backlog。写入 spec 的 task = 必须完成（不做的放 backlog/单独 spec）；功能清单须 ⊇ 各 spec tasks，缺则补。
+- **批次控制**：单次循环最多完成 3 个 task（或 1 个复杂 spec）；建议每轮 1～3 项，不必凑满。完成后必须更新文档、检查点，然后评估是否继续。避免单次循环过长导致上下文溢出。
+- **失败处理**：验收失败时必须分析原因 → 若设计问题回退到 design.md 修正；若实现问题回滚代码重新实现；若依赖问题标记 blocked 并记录依赖。同一 task 连续失败 3 次自动标记 blocked。
+- **持续推进**：SPEC_TASKS_SCAN 或 tasks.md 有 `[ ]` → 必须执行下一可执行项或产出可执行项（拆解/新增 spec）；不得以无可执行、内部依赖未就绪为由停；仅**外部不可控依赖**可写明后收口。
+- **占位处理**：剩余均为占位/可选时须产出可执行下一步（拆解子动作 / 新增 spec / 纳入当前批次），不得只写阻塞即停。
+- **连续执行**：文档/契约/Task 0 完成后须检查该 spec 下一未勾 task 是否可立即实现，若可则接着做并打勾，直至无可实现或写明依赖。
+- **禁止中途汇报**：未达 Exit 前不得输出「本轮收口」「无可执行」并等待用户；若已写「下一执行批次」须取至少一项实现+验收+打勾。
+
+### Loop
+
+（**轮** = 用户每发一次「继续」触发的一轮循环；跨轮计数依赖 SPEC_TASKS_SCAN 的 Checkpoint）
+
+1. **Check** — 功能清单 ⊇ 各 spec tasks；缺则补。取未打勾项与 tasks.md 中 `[ ]`。**Health Check**：读取 Checkpoint 中无进展轮数/连续失败次数；同一 task 连续失败 ≥3 次 → 标记 blocked；单个 spec 连续 >10 轮无进展 → 提示用户介入。
+2. **Plan** — 从未勾项中选择下一批次（建议本批 1～3 个 task 或 1 个复杂 spec），评估依赖关系与优先级。
+3. **Do** — 对当前批次的每个 task：
+   - **Act（实现）**：编写代码/文档
+   - **Observe（观察）**：执行测试、检查输出、验证行为
+   - **Reflect（反思）**：结果符合预期？需要调整？
+   - **Verify（验收）**：通过 → task `[x]` → 功能清单打勾；**失败 → 分析原因 → 回滚/标记 blocked**
+   - **若本 spec 仍有未勾且可实现的下一 task，继续执行该 task（回本步）**，不先汇报。
+4. **Doc** — 更新 SPEC_TASKS_SCAN。**Checkpoint**：必须在 SPEC_TASKS_SCAN 的检查点表中更新：最后更新时间、当前批次、批次状态、已完成项数、下一待执行项、阻塞项、健康状态。
+5. **Evaluate** — 本批次是否全部完成？是否遇到阻塞？健康检查是否通过？功能清单 vs tasks.md 一致性检查；仍有 `[ ]` → 回 1。
+6. **Schedule** — 仅当本轮可实现项已全勾：定下一执行批次，写 SPEC_TASKS_SCAN。**若当前仅剩占位/可选**：须在本步**产出至少一项可执行工作**（拆解子动作、或新增/补齐 spec），写入「下一执行批次」，然后回 1 或 7。
+7. **Run batch** — 若当前排期为可实现：**直接实现+验收+打勾**，回 3/4。若 SPEC_TASKS_SCAN 中已写出「下一执行批次」，**须从该批次取至少一项执行**，不得仅写排期即停。
+
+### Exit（以下情况可停）
+
+1. **用户叫停**：用户明确要求停止
+2. **完全完成**：功能清单与所有 tasks.md 均已全部打勾
+3. **阶段性完成**：当前批次全部完成，且下一批次在 SPEC_TASKS_SCAN 中**已显式标注**「需用户决策」或「需外部输入」
+4. **阻塞状态**：所有剩余未勾项均已明确为外部不可控依赖（且已写明，且无可拆解子动作）
+5. **健康检查触发**：检测到循环异常（如同一 task 连续失败 3 次、单个 spec 循环 >10 轮无进展），需要人工介入
+
+**注意**：「无可执行」或「剩余为可选」不是 Exit；若下一执行批次有项，须先执行至少一项再评估。
+
+---
+
+## 五、执行承诺
+
+- 代码英文，文档中文（语言规范见 `owlclaw_principles.mdc`）
+- AI 决策优先，禁止硬编码业务规则
+- 先规划后执行，一次到位
+- 包管理统一用 Poetry
+- 绝对导入，禁止相对导入
+- 测试覆盖关键路径
+- Spec 文档规范，新功能必须使用三层文档结构
+- 集成组件保持隔离，方便替换
+- Spec 循环驱动开发，SPEC_TASKS_SCAN 为单一真源
+
+---
+
+**维护者**: yeemio
+**下次审核**: 2026-03-01

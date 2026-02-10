@@ -1,0 +1,75 @@
+---
+description: Spec documentation standards — apply when creating, editing, or reviewing spec documents.
+globs:
+  - .kiro/**/*.md
+  - .kiro/specs/**/*.md
+alwaysApply: false
+---
+# OwlClaw Spec 文档标准总纲
+
+> **版本**: v1.0.0 (2026-02-10)
+> **详细规范**: `.kiro/SPEC_DOCUMENTATION_STANDARD.md`
+
+---
+
+## 一、三层文档结构
+
+所有新功能和重大重构必须使用三层文档结构：
+
+```
+.kiro/specs/{feature-name}/
+├── requirements.md    # 需求文档（WHAT — User Story + Acceptance Criteria）
+├── design.md          # 设计文档（HOW — 架构、数据模型、API 接口）
+└── tasks.md           # 任务文档（WHO/WHEN — 任务清单、验收标准）
+```
+
+---
+
+## 二、适用范围
+
+| 场景 | 是否需要 Spec |
+|------|-------------|
+| 新功能（如新触发器类型） | ✅ 必须（三层） |
+| 重大重构（如治理层重写） | ✅ 必须（三层） |
+| 小功能增强 | 建议（至少 requirements + tasks） |
+| Bug 修复 | 可选 |
+
+---
+
+## 三、创建流程
+
+```
+1. 阅读 .kiro/SPEC_DOCUMENTATION_STANDARD.md 第二、三、四章
+   ↓
+2. 创建目录：mkdir -p .kiro/specs/{feature-name}
+   ↓
+3. 按模板创建 requirements.md（WHAT）
+   ↓
+4. 按模板创建 design.md（HOW）
+   ↓
+5. 按模板创建 tasks.md（WHO/WHEN）
+   ↓
+6. 评审确认后开始实施
+```
+
+---
+
+## 四、关键原则
+
+1. **凡设计即交付**：写入 tasks.md 的任务视为承诺交付
+2. **验收可执行**：验收标准应可被自动化执行（pytest、CLI 命令）
+3. **集成点显式写出**：涉及组件调用的任务必须写明"何时、何处调用"
+4. **收口以自动化验收为准**：收口 = 可执行验收通过
+
+---
+
+## 五、文档引用
+
+| 查什么 | 去哪里 |
+|--------|--------|
+| 完整 Spec 规范 | `.kiro/SPEC_DOCUMENTATION_STANDARD.md` |
+| 架构决策 | `docs/ARCHITECTURE_ANALYSIS.md` |
+
+---
+
+**说明**：后续新增文档标准时，只在本总纲中增补条目与路径，不在其它 mdc 或零散 md 中重复定义。

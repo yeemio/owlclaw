@@ -1,0 +1,201 @@
+---
+description: Development workflow — apply when implementing/refactoring to enforce plan-first, complete implementations, safe git practices, and Poetry conventions.
+globs:
+  - "**/*.py"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.md"
+  - "**/*.yaml"
+  - "**/*.yml"
+  - "**/*.toml"
+  - "**/*.json"
+  - "**/*.sh"
+alwaysApply: false
+---
+# OwlClaw 开发规范
+
+> **版本**: v1.0.0 (2026-02-10)
+> **状态**: 核心规范，必须遵守
+
+---
+
+## 一、包管理：Poetry
+
+**OwlClaw 统一使用 Poetry 进行包管理。**
+
+### 1.1 常用命令
+
+```bash
+# 安装依赖
+poetry install
+
+# 添加依赖
+poetry add hatchet-sdk litellm
+
+# 添加开发依赖
+poetry add --group dev pytest pytest-asyncio ruff mypy
+
+# 运行命令
+poetry run python -m owlclaw
+poetry run pytest
+poetry run ruff check .
+poetry run mypy owlclaw/
+
+# 更新锁文件
+poetry lock
+```
+
+### 1.2 pyproject.toml 规范
+
+- `[tool.poetry]` 中定义项目元数据
+- `[tool.poetry.dependencies]` 中定义运行时依赖
+- `[tool.poetry.group.dev.dependencies]` 中定义开发依赖
+- Python 版本要求：`python = ">=3.10,<4.0"`
+- 许可证：MIT
+
+---
+
+## 二、重构/修改前的强制流程
+
+**禁止"想一出是一出"的行为！必须遵循以下流程：**
+
+```
+1. 完整阅读相关代码和文档
+   - 理解现有架构和设计意图
+   - 确认问题的真正范围
+   ↓
+2. 制定完整方案（写下来）
+   - 列出所有需要修改的文件
+   - 预估影响范围
+   - 确认是否符合架构设计（docs/ARCHITECTURE_ANALYSIS.md）
+   ↓
+3. 用户确认方案
+   ↓
+4. 批量执行，一次到位
+   ↓
+5. 验证结果（pytest + ruff + mypy）
+```
+
+---
+
+## 三、完整实现原则
+
+**禁止跳过功能实现或简化功能！**
+
+- ❌ 因为数据为空而跳过显示功能
+- ❌ 为了简化而跳过某些功能实现
+- ❌ 自以为是地判断某些功能"不需要"
+- ✅ 数据为空时返回明确的空结果或提示
+- ✅ 完整实现所有设计的功能
+- ✅ 遵守原设计，不擅自修改需求
+
+---
+
+## 四、Git 规范
+
+### 4.1 提交规范
+
+```bash
+# ✅ 正确：分开执行
+git add -A
+git commit -m "feat(agent): implement heartbeat mechanism"
+
+# ❌ 错误：不要在一个命令中组合
+git add -A && git commit -m "message"
+```
+
+### 4.2 提交消息格式
+
+```
+<type>(<scope>): <description>
+
+type: feat | fix | refactor | test | docs | chore
+scope: agent | governance | triggers | integrations | cli | mcp | skills
+```
+
+### 4.3 提交最小化原则
+
+- 只提交当前任务修改/新增的文件
+- 提交前必须检查 `git status` 和 `git diff`
+- 不要"顺手修"不在任务范围内的文件
+
+---
+
+## 五、代码风格
+
+### 5.0 语言规范
+
+代码（docstring、行内注释、变量名）全部使用 **English**。详见 `owlclaw_principles.mdc` 第一节。
+
+### 5.1 工具链
+
+| 工具 | 用途 | 命令 |
+|------|------|------|
+| **Ruff** | Linting + Formatting | `poetry run ruff check .` / `poetry run ruff format .` |
+| **mypy** | 类型检查 | `poetry run mypy owlclaw/` |
+| **pytest** | 测试 | `poetry run pytest` |
+
+### 5.2 Ruff 配置
+
+```toml
+# pyproject.toml
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+```
+
+### 5.3 命名规范
+
+| 类型 | 规范 | 示例 |
+|------|------|------|
+| 模块 | snake_case | `heartbeat_runner.py` |
+| 类 | PascalCase | `CapabilityVisibilityFilter` |
+| 函数/方法 | snake_case | `async def run_heartbeat()` |
+| 常量 | UPPER_SNAKE_CASE | `DEFAULT_HEARTBEAT_INTERVAL` |
+| 私有 | 前缀 `_` | `async def _collect_pending()` |
+
+---
+
+## 六、禁止 TODO 预留
+
+**代码中禁止留 TODO/FIXME/HACK/XXX 占位注释。**
+
+要么完整实现，要么在 `.kiro/specs/` 的 tasks.md 中标注为未完成任务。代码里不允许出现"以后再做"的占位。
+
+```python
+# ❌ 严禁：代码中留 TODO
+async def advanced_memory_search(self, query: str) -> list[str]:
+    # TODO: 实现向量搜索
+    raise NotImplementedError("向量搜索尚未实现")
+
+# ❌ 严禁：NotImplementedError 占位
+def some_feature(self):
+    raise NotImplementedError("Feature not yet implemented")
+
+# ✅ 正确：Phase 0 的接口声明用 ... (Ellipsis)，表示"接口已定义，实现在后续 Phase"
+def run(self) -> None:
+    """Start the application. Implementation in Phase 1."""
+    ...
+
+# ✅ 正确：完整实现
+async def advanced_memory_search(self, query: str) -> list[str]:
+    """高级记忆搜索 — 使用向量搜索"""
+    results = await self.vector_store.search(query, limit=5)
+    return [r.content for r in results]
+```
+
+**原则**：
+- ❌ 代码中留 TODO/FIXME/HACK/XXX
+- ❌ NotImplementedError 占位（除非是抽象基类的 @abstractmethod）
+- ❌ 静默失败
+- ❌ 返回假数据
+- ✅ 完整实现，或用 `...` 声明接口（仅限 Phase 0 骨架）
+- ✅ 未完成的功能记录在 tasks.md 中，不在代码里
+
+---
+
+**执行承诺**：Poetry 管理依赖 · 先规划后执行 · 完整实现所有功能 · 禁止 TODO 预留 · Git 提交最小化

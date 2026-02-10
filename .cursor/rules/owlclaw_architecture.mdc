@@ -1,0 +1,209 @@
+---
+description: Architecture rules — apply when touching package structure, integration boundaries, Agent runtime, governance, or triggers.
+globs:
+  - owlclaw/**/*.py
+  - owlclaw-mcp/**/*.ts
+  - owlclaw-mcp/**/*.js
+  - docs/**/*.md
+  - .kiro/specs/**/*.md
+alwaysApply: false
+---
+# OwlClaw 架构规范
+
+> **版本**: v1.0.0 (2026-02-10)
+> **架构真源**: `docs/ARCHITECTURE_ANALYSIS.md`（v3.2）
+
+---
+
+## 一、包结构
+
+```
+owlclaw/
+├── owlclaw/                # 核心 Python SDK（pip install owlclaw）
+│   ├── agent/              # Agent 运行时
+│   │   ├── runtime.py      # Agent 主循环（身份加载、function calling）
+│   │   ├── heartbeat.py    # Heartbeat 机制（无事不调 LLM）
+│   │   ├── identity.py     # SOUL.md + IDENTITY.md 加载
+│   │   ├── memory.py       # 短期记忆 + 长期记忆（MEMORY.md + 向量搜索）
+│   │   └── knowledge.py    # Skills 知识注入（渐进式加载）
+│   ├── capabilities/       # 能力注册 + Skills 挂载
+│   │   ├── registry.py     # @handler + @state 装饰器
+│   │   └── skills.py       # Agent Skills 规范加载（SKILL.md）
+│   ├── governance/         # 治理层
+│   │   ├── visibility.py   # 能力可见性过滤（约束/预算/熔断/限流）
+│   │   ├── ledger.py       # 执行记录
+│   │   └── router.py       # task_type → 模型路由
+│   ├── triggers/           # 事件触发器
+│   │   ├── cron.py         # Cron 触发器
+│   │   ├── webhook.py      # Webhook 触发器
+│   │   └── queue.py        # 消息队列触发器
+│   ├── tools/              # Agent 内建工具
+│   │   ├── schedule.py     # schedule_once / schedule_cron / cancel_schedule
+│   │   ├── memory.py       # remember / recall
+│   │   └── state.py        # query_state / log_decision
+│   ├── integrations/       # 外部集成（隔离层）
+│   │   ├── hatchet.py      # Hatchet（持久执行，MIT）
+│   │   ├── llm.py          # litellm（统一 LLM 调用）
+│   │   └── langfuse.py     # Langfuse（可观测）
+│   ├── cli/                # CLI 工具
+│   │   ├── scan.py         # owlclaw scan（AST 扫描）
+│   │   └── migrate.py      # owlclaw migrate（AI 辅助迁移）
+│   ├── app.py              # OwlClaw 主入口类
+│   └── __init__.py
+├── owlclaw-mcp/            # MCP Server（OpenClaw 通道）
+├── examples/               # 示例应用
+│   ├── mionyee-trading/    # 交易场景示例
+│   └── simple-cron/        # 简单 cron 替代示例
+├── tests/                  # 测试
+│   ├── unit/
+│   ├── integration/
+│   └── conftest.py
+├── docs/
+├── pyproject.toml          # Poetry 项目配置
+├── LICENSE                 # MIT
+└── README.md
+```
+
+---
+
+## 二、导入规范
+
+```python
+# ✅ 正确：绝对导入
+from owlclaw.agent.runtime import AgentRuntime
+from owlclaw.governance.visibility import CapabilityVisibilityFilter
+from owlclaw.integrations.hatchet import HatchetIntegration
+from owlclaw.capabilities.skills import SkillLoader
+
+# ❌ 错误：相对导入
+from .runtime import AgentRuntime
+from ..governance.visibility import CapabilityVisibilityFilter
+```
+
+---
+
+## 三、集成边界（关键架构约束）
+
+| 能力 | 自建 | 集成 | 隔离文件 |
+|------|------|------|---------|
+| Agent 运行时 | ✅ | | |
+| 能力注册 + Skills 挂载 | ✅ | | |
+| 治理层（可见性过滤） | ✅ | | |
+| 事件触发器 | ✅ | | |
+| Agent 内建工具 | ✅ | | |
+| 持久执行 | | ✅ Hatchet | `integrations/hatchet.py` |
+| LLM 调用 | | ✅ litellm | `integrations/llm.py` |
+| 可观测 | | ✅ Langfuse | `integrations/langfuse.py` |
+| Skills 格式 | | ✅ Agent Skills 规范 | |
+
+**关键约束**：
+- 所有 Hatchet 调用必须经过 `integrations/hatchet.py`，不得在其他文件直接 `import hatchet_sdk`
+- 所有 LLM 调用必须经过 `integrations/llm.py`，不得直接调用 OpenAI/Anthropic SDK
+- 所有 tracing 必须经过 `integrations/langfuse.py`
+
+---
+
+## 四、Agent Skills 规范
+
+OwlClaw 采用 Anthropic 发起的 Agent Skills 开放规范（agentskills.io）。
+
+### 4.1 目录结构
+
+```
+business-app/capabilities/
+├── entry-monitor/
+│   ├── SKILL.md              # 遵循 Agent Skills 规范
+│   ├── references/
+│   │   └── trading-rules.md
+│   └── scripts/
+│       └── check_signals.py
+└── morning-decision/
+    └── SKILL.md
+```
+
+### 4.2 SKILL.md 格式
+
+```yaml
+---
+name: entry-monitor
+description: 检查持仓股票的入场机会
+metadata:
+  author: team-name
+  version: "1.0"
+owlclaw:
+  spec_version: "1.0"          # OwlClaw 扩展版本
+  task_type: trading_decision
+  constraints:
+    trading_hours_only: true
+    cooldown_seconds: 300
+    max_daily_calls: 50
+  trigger: cron("*/60 * * * * *")
+---
+
+# 入场机会检查 — 使用指南
+...（Markdown 指令）
+```
+
+### 4.3 渐进式加载
+
+1. 启动时只加载 frontmatter（~100 tokens/skill）
+2. 触发时按上下文选择性加载完整指令
+3. references/ 按需加载
+
+---
+
+## 五、Heartbeat 边界定义
+
+基于 OpenClaw 的实现经验，`_collect_pending()` 的边界：
+
+**允许检查（内部状态，零外部 I/O）**：
+- ✅ 事件队列（内存中的待处理事件）
+- ✅ 调度表（是否有到期的 schedule）
+- ✅ 状态变更标志（内存中的 dirty flag）
+- ✅ 配置（活跃时段、间隔）
+
+**不允许（留给 Agent Run）**：
+- ❌ 调用外部 API（行情、数据库重查询）
+- ❌ 读取大文件
+- ❌ 网络请求
+
+---
+
+## 六、Hatchet 集成要点
+
+基于 Hatchet SDK v1.23.0（2026-02-05）：
+
+```python
+# 核心 API
+from hatchet_sdk import Hatchet, Context, DurableContext
+from pydantic import BaseModel
+
+hatchet = Hatchet()  # 从环境变量读取配置
+
+# 任务定义
+@hatchet.task(name="agent-run")
+async def agent_run(input: AgentRunInput, ctx: Context) -> dict:
+    ...
+
+# 持久任务（支持 durable sleep）
+@hatchet.durable_task(name="scheduled-run")
+async def scheduled_run(input: ScheduleInput, ctx: DurableContext) -> dict:
+    await ctx.aio_sleep_for(timedelta(minutes=30))
+    ...
+
+# Cron
+workflow.create_cron("heartbeat", "*/30 * * * *", input_data)
+
+# Worker
+worker = hatchet.worker("owlclaw-worker", workflows=[agent_run])
+worker.start()
+```
+
+**注意**：
+- Hatchet V1 SDK 使用 Pydantic model 作为输入（第一参数）
+- Context 是第二参数
+- 支持 `mock_run()` 用于单元测试（不需要 Hatchet Server）
+
+---
+
+**执行承诺**：绝对导入 · 集成隔离 · Agent Skills 规范 · Heartbeat 零外部 I/O

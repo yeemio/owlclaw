@@ -1,0 +1,80 @@
+[tool.poetry]
+name = "owlclaw"
+version = "0.1.0"
+description = "Agent base for business applications — let mature systems gain AI autonomy without rewriting."
+authors = ["yeemio"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/yeemio/owlclaw"
+repository = "https://github.com/yeemio/owlclaw"
+keywords = ["agent", "ai", "durable-execution", "business-automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+packages = [{include = "owlclaw"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+hatchet-sdk = "^1.23.0"
+litellm = "^1.0"
+pydantic = "^2.0"
+pyyaml = "^6.0"
+sqlalchemy = {version = "^2.0", extras = ["asyncio"]}
+asyncpg = "^0.30"
+python-frontmatter = "^1.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+pytest-asyncio = "^0.24"
+pytest-cov = "^6.0"
+ruff = "^0.9"
+mypy = "^1.0"
+
+[tool.poetry.group.observability]
+optional = true
+
+[tool.poetry.group.observability.dependencies]
+langfuse = "^2.0"
+opentelemetry-api = "^1.0"
+opentelemetry-sdk = "^1.0"
+
+[tool.poetry.scripts]
+owlclaw = "owlclaw.cli:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# ── Ruff ──
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["owlclaw"]
+
+# ── Mypy ──
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+# ── Pytest ──
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integration: marks tests requiring external services (Hatchet, PostgreSQL)",
+]
