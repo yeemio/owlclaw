@@ -1,0 +1,125 @@
+"""Unit tests for Skills Loader (SKILL.md discovery and parsing)."""
+
+import pytest
+
+from owlclaw.capabilities.skills import Skill, SkillsLoader
+
+
+def test_skills_loader_scan_discovers_skill_md(tmp_path):
+    """scan() discovers SKILL.md files and parses valid frontmatter."""
+    skill_dir = tmp_path / "entry-monitor"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: entry-monitor
+description: Check entry opportunities for held positions
+metadata:
+  author: team
+owlclaw:
+  task_type: trading_decision
+  constraints:
+    trading_hours_only: true
+---
+# Usage guide
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert skills[0].name == "entry-monitor"
+    assert skills[0].description == "Check entry opportunities for held positions"
+    assert skills[0].task_type == "trading_decision"
+    assert skills[0].constraints.get("trading_hours_only") is True
+
+
+def test_skills_loader_get_skill(tmp_path):
+    """get_skill() returns Skill by name after scan()."""
+    skill_dir = tmp_path / "morning-decision"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: morning-decision\ndescription: Morning decision\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("morning-decision")
+    assert skill is not None
+    assert skill.name == "morning-decision"
+    assert loader.get_skill("nonexistent") is None
+
+
+def test_skills_loader_list_skills(tmp_path):
+    """list_skills() returns all loaded Skills."""
+    for name in ("a", "b"):
+        (tmp_path / name).mkdir()
+        (tmp_path / name / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: Skill {name}\n---\n",
+            encoding="utf-8",
+        )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skills = loader.list_skills()
+    assert len(skills) == 2
+    names = {s.name for s in skills}
+    assert names == {"a", "b"}
+
+
+def test_skill_load_full_content_lazy(tmp_path):
+    """Skill.load_full_content() loads content after frontmatter (lazy)."""
+    skill_dir = tmp_path / "lazy"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: lazy\ndescription: Lazy\n---\n\n# Body content here",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("lazy")
+    assert skill is not None
+    content = skill.load_full_content()
+    assert "Body content here" in content
+    assert "name: lazy" not in content
+
+
+def test_skill_to_dict(tmp_path):
+    """Skill.to_dict() serializes metadata without full content."""
+    skill_dir = tmp_path / "dict"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: dict\ndescription: For to_dict\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("dict")
+    assert skill is not None
+    d = skill.to_dict()
+    assert d["name"] == "dict"
+    assert d["description"] == "For to_dict"
+    assert "file_path" in d
+    assert "metadata" in d
+    assert "full_content" not in d
+
+
+def test_parse_invalid_yaml_skipped(tmp_path):
+    """Invalid YAML in frontmatter is logged and skill is skipped."""
+    skill_dir = tmp_path / "bad"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: [unclosed\ndescription: bad\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 0
+
+
+def test_parse_missing_required_fields_skipped(tmp_path):
+    """Missing name or description is logged and skill is skipped."""
+    skill_dir = tmp_path / "nofields"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text("---\nmetadata: {}\n---\n", encoding="utf-8")
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 0
