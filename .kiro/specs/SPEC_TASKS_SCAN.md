@@ -17,11 +17,11 @@
 
 ### Phase 1：Agent 核心（MVP）
 
-- [ ] `owlclaw.capabilities.skills` — Skills 挂载（Agent Skills 规范，从应用目录加载 SKILL.md） → spec: capabilities-skills
-- [ ] `owlclaw.capabilities.registry` — 能力注册（@handler + @state 装饰器） → spec: capabilities-skills
+- [x] `owlclaw.capabilities.skills` — Skills 挂载（Agent Skills 规范，从应用目录加载 SKILL.md） → spec: capabilities-skills
+- [x] `owlclaw.capabilities.registry` — 能力注册（@handler + @state 装饰器） → spec: capabilities-skills
 - [ ] `owlclaw.agent.runtime` — Agent 运行时（SOUL.md 身份加载、记忆系统、Skills 知识注入） → spec: agent-runtime
 - [ ] `owlclaw.agent.runtime` — function calling 决策循环（基于 litellm） → spec: agent-runtime
-- [ ] `owlclaw.agent.tools` — 内建工具（schedule_once、remember、recall、query_state） → spec: agent-tools
+- [x] `owlclaw.agent.tools` — 内建工具（schedule_once、remember、recall、query_state） → spec: agent-tools
 - [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [ ] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
 - [ ] `owlclaw.governance.ledger` — 执行记录 → spec: governance
@@ -56,13 +56,13 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | 待创建 | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 文档齐全 | skills + registry |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 待创建 | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | 待创建 | 内建工具 |
+| agent-tools | `.kiro/specs/agent-tools/` | ✅ 文档齐全 | 内建工具 |
 | governance | `.kiro/specs/governance/` | 待创建 | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 待创建 | cron 触发器 |
-| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 待创建 | Hatchet 集成 |
-| integrations-llm | `.kiro/specs/integrations-llm/` | 待创建 | litellm 集成 |
+| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 文档齐全 | Hatchet 集成 |
+| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 文档齐全 | litellm 集成 |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 待创建 | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 待创建 | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 待创建 | 消息队列触发器 |
@@ -81,10 +81,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-10 |
-| 当前批次 | — |
-| 批次状态 | 未开始 |
-| 已完成项 | 3（Phase 0 仓库初始化） |
-| 下一待执行 | Phase 1 首批（建议：capabilities-skills + integrations-hatchet） |
+| 当前批次 | Phase 1 MVP spec 文档创建 |
+| 批次状态 | 已完成 4 个 spec 文档（capabilities-skills、integrations-hatchet、integrations-llm、agent-tools） |
+| 已完成项 | 3（Phase 0）+ 4 个 spec 文档 |
+| 下一待执行 | 继续创建 Phase 1 剩余 spec 文档（agent-runtime、governance、triggers-cron） |
 | 阻塞项 | 无 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
