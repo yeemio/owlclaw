@@ -1,6 +1,6 @@
 # SPEC_TASKS_SCAN — OwlClaw 功能清单总览
 
-> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` §6.2 MVP 模块清单 + §9 下一步行动
+> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` §6.2 MVP 模块清单 + §9 下一步行动 + `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
 > **最后更新**: 2026-02-10
 
@@ -19,16 +19,20 @@
 
 - [x] `owlclaw.capabilities.skills` — Skills 挂载（Agent Skills 规范，从应用目录加载 SKILL.md） → spec: capabilities-skills
 - [x] `owlclaw.capabilities.registry` — 能力注册（@handler + @state 装饰器） → spec: capabilities-skills
-- [ ] `owlclaw.agent.runtime` — Agent 运行时（SOUL.md 身份加载、记忆系统、Skills 知识注入） → spec: agent-runtime
-- [ ] `owlclaw.agent.runtime` — function calling 决策循环（基于 litellm） → spec: agent-runtime
+- [x] `docs/DATABASE_ARCHITECTURE.md` — 数据库架构设计（部署模式、数据模型、迁移策略、运维 CLI 设计、灾备） → 架构文档（已完成）
+- [x] `.cursor/rules/owlclaw_database.mdc` — 数据库编码规范（tenant_id、SQLAlchemy、Alembic、pgvector） → 编码规则（已完成）
+- [x] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status/backup/check`） → spec: cli-db
+- [x] `owlclaw.db` — SQLAlchemy 基础设施（Base model、engine、session、连接池） → spec: database-core
+- [x] `owlclaw.agent.runtime` — Agent 运行时（SOUL.md 身份加载、记忆系统、Skills 知识注入） → spec: agent-runtime
+- [x] `owlclaw.agent.runtime` — function calling 决策循环（基于 litellm） → spec: agent-runtime
 - [x] `owlclaw.agent.tools` — 内建工具（schedule_once、remember、recall、query_state） → spec: agent-tools
-- [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
+- [x] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [ ] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
 - [ ] `owlclaw.governance.ledger` — 执行记录 → spec: governance
 - [ ] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
 - [ ] `owlclaw.triggers.cron` — Cron 触发器 → spec: triggers-cron
 - [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet
-- [ ] `owlclaw.integrations.llm` — litellm 集成 → spec: integrations-llm
+- [x] `owlclaw.integrations.llm` — litellm 集成 → spec: integrations-llm
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
 
@@ -57,7 +61,9 @@
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 文档齐全 | skills + registry |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 待创建 | runtime + heartbeat + function calling |
+| database-core | `.kiro/specs/database-core/` | ✅ 文档齐全 | SQLAlchemy Base、engine、session、连接池 |
+| cli-db | `.kiro/specs/cli-db/` | ✅ 文档齐全 | `owlclaw db` CLI 子命令 |
+| agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 文档齐全 | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | ✅ 文档齐全 | 内建工具 |
 | governance | `.kiro/specs/governance/` | 待创建 | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 待创建 | cron 触发器 |
@@ -80,11 +86,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-10 |
-| 当前批次 | integrations-hatchet 实现收口 |
-| 批次状态 | integrations-hatchet 实现+测试+部署+示例+文档已完成；功能清单已勾选 |
-| 已完成项 | Phase 0 全勾；capabilities-skills、integrations-hatchet 实现完成 |
-| 下一待执行 | Phase 1 剩余：agent-runtime、governance、triggers-cron 等 spec/实现 |
+| 最后更新 | 2026-02-11 |
+| 当前批次 | Phase 1 MVP Spec 文档创建 |
+| 批次状态 | database-core、cli-db、agent-runtime spec 文档完成 |
+| 已完成项 | Phase 0 全勾；capabilities-skills、agent-tools、integrations-hatchet、integrations-llm、database-core、cli-db、agent-runtime spec 文档齐全 |
+| 下一待执行 | governance（治理层：visibility + ledger + router）→ triggers-cron（Cron 触发器）→ e2e-validation（端到端验证） |
 | 阻塞项 | 无 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
