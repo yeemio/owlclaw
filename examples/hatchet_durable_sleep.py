@@ -2,22 +2,43 @@
 Durable sleep — a task that sleeps across process restarts (Hatchet durable execution).
 
 Uses ctx.aio_sleep_for() so that if the worker crashes, the sleep completes after restart.
-Requires Hatchet server and a durable task (SDK durable_task). This example shows the pattern;
-full durable_task support is in the Hatchet SDK (DurableContext).
+Requires Hatchet server and a worker process. Run with:
+  HATCHET_API_TOKEN=... poetry run python examples/hatchet_durable_sleep.py
 """
 
-# This example documents the pattern; OwlClaw's HatchetClient wraps the SDK task() decorator.
-# For durable sleep you would use the SDK's durable_task and DurableContext.aio_sleep_for()
-# inside the task. Example (pseudo):
-#
-#   from hatchet_sdk import Hatchet, DurableContext
-#   hatchet = Hatchet(config=...)
-#
-#   @hatchet.durable_task(name="heartbeat")
-#   async def heartbeat(ctx: DurableContext):
-#       await ctx.aio_sleep_for(timedelta(minutes=30))
-#       return await do_work()
-#
-# See design doc: .kiro/specs/integrations-hatchet/design.md
+import asyncio
+from datetime import timedelta
 
-print("See design doc and Hatchet SDK docs for durable_task + DurableContext.aio_sleep_for().")
+from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
+
+
+def main() -> None:
+    import os
+    token = os.environ.get("HATCHET_API_TOKEN", "").strip()
+    if not token:
+        print("Set HATCHET_API_TOKEN and start Hatchet (see deploy/).")
+        return
+
+    config = HatchetConfig(server_url="http://localhost:7077", api_token=token)
+    client = HatchetClient(config)
+    client.connect()
+
+    @client.durable_task(name="durable-sleep-demo", timeout=60)
+    async def durable_sleep_demo(ctx):
+        """Sleep durably for 2 seconds then return."""
+        await ctx.aio_sleep_for(timedelta(seconds=2))
+        return {"slept": True}
+
+    async def run_with_worker() -> None:
+        # In a real app you would start the worker in a separate process.
+        # Here we use aio_mock_run to exercise the task locally (no durable sleep across restart).
+        standalone = client._workflows["durable-sleep-demo"]
+        result = await standalone.aio_mock_run({})
+        print("Result:", result)
+
+    asyncio.run(run_with_worker())
+    client.disconnect()
+
+
+if __name__ == "__main__":
+    main()
