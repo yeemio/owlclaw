@@ -1,0 +1,92 @@
+# 设计文档：Skills CLI（owlclaw skill）
+
+## 概述
+
+Skills CLI 提供 `owlclaw skill` 子命令组，用于在本地创建、校验和列举 Agent Skills（SKILL.md）。MVP 包含三个子命令：**init**、**validate**、**list**，均不依赖 OwlHub 或网络。
+
+设计原则：
+
+1. **复用 SkillsLoader 解析逻辑**：validate 与 list 使用与 `owlclaw.capabilities.skills` 相同的 frontmatter 解析与必填字段规则，避免重复与不一致。
+2. **与现有 CLI 一致**：若项目已采用 Typer（如 cli-db），则 skill 子命令挂载到同一 Typer 应用下；入口为 `owlclaw.cli:main`。
+3. **纯本地**：不读取远程配置、不调用网络 API。
+
+---
+
+## 架构
+
+### 模块结构
+
+```
+owlclaw/
+└── cli/
+    ├── __init__.py          # 主入口，注册 app + db + skill
+    ├── skill.py             # skill 子命令组
+    ├── skill_init.py        # init 命令
+    ├── skill_validate.py    # validate 命令
+    └── skill_list.py        # list 命令
+```
+
+- 若尚未引入 Typer，则在本 spec 实现中引入 Typer 与 Rich（与 cli-db 对齐），并在 `owlclaw/cli/__init__.py` 中创建根 App、挂载 `db` 与 `skill` 子命令组。
+- `skill` 子命令组：`typer.Typer()` 实例，在 `__init__.py` 中通过 `app.add_typer(skill_app, name="skill")` 注册。
+
+### 命令接口
+
+| 命令 | 签名 | 说明 |
+|------|------|------|
+| init | `owlclaw skill init <name> [--path PATH] [--template TEMPLATE] [--force]` | 创建 name 目录及 SKILL.md |
+| validate | `owlclaw skill validate <path>... [--verbose]` | 校验 SKILL.md 合规性 |
+| list | `owlclaw skill list [--path PATH]` | 扫描并列出 Skills |
+
+### 与 SkillsLoader 的复用
+
+- **list**：在给定根目录下 `Path(path).rglob("SKILL.md")`，对每个文件调用与 `SkillsLoader._parse_skill_file` 相同的解析逻辑（或直接实例化 `SkillsLoader(path)` 后 `scan()`），收集 `Skill` 的 name、description、file_path 并输出。
+- **validate**：对每个 path（若为目录则递归其下 SKILL.md）执行相同解析；若解析失败或缺少 name/description，则视为校验失败，输出错误并设非零退出码。不在内存中保留完整 Skill 列表，仅做校验。
+
+可选：将 frontmatter 解析与必填校验抽成 `owlclaw.capabilities.skills` 中的可复用函数（如 `parse_skill_frontmatter(path) -> Skill | None` 或 `validate_skill_file(path) -> list[str]` 错误列表），供 CLI 与 SkillsLoader 共用。
+
+---
+
+## init 命令详细设计
+
+- **行为**：在 `path`（默认 `Path.cwd()`）下创建目录 `name`，并在其下写入 `SKILL.md`。
+- **内容**：
+  - Frontmatter：`name`、`description`（占位如 `Description for <name>`）、可选 `metadata: {}`、可选 `owlclaw: {}`。
+  - Body：简短占位说明（如 `# Instructions\n\nDescribe when and how to use this skill.`）。
+- **模板**：`--template` 在 MVP 中支持 `default` 或省略（等价）。后续 skill-templates spec 可扩展为 monitoring/analysis 等，由模板库提供内容。
+- **覆盖**：若 `path/name/SKILL.md` 已存在且未传 `--force`，提示用户并退出；传 `--force` 则覆盖。
+
+---
+
+## validate 命令详细设计
+
+- **输入**：一个或多个 path（文件或目录）。目录则递归查找所有 SKILL.md。
+- **校验项**：
+  1. 文件存在且可读。
+  2. 内容以 `---` 开头（frontmatter 存在）。
+  3. Frontmatter 为合法 YAML。
+  4. 必填字段：`name`、`description` 存在且非空。
+- **输出**：成功时打印每个 path 的 OK 信息；失败时打印 path + 具体错误（如 "missing field: description"），并设退出码为 1（或 2 区分用法错误）。`--verbose` 可输出错误所在行/字段。
+
+---
+
+## list 命令详细设计
+
+- **输入**：`--path` 默认当前工作目录；递归扫描该目录下所有 SKILL.md。
+- **解析**：使用与 SkillsLoader 相同的逻辑解析每个 SKILL.md，跳过解析失败的文件（可选：在 verbose 模式下报告跳过原因）。
+- **输出**：表格或列表，列至少包含 name、description（可截断至固定长度）；可选列 file_path。无 Skill 时打印 "No skills found."，退出码 0。
+
+---
+
+## 依赖
+
+- **Typer**：CLI 框架（与 cli-db 一致）。
+- **Rich**：表格/列表输出（可选，可与 cli-db 共用）。
+- **owlclaw.capabilities.skills**：Skill、SkillsLoader 或抽出的解析/校验函数；仅导入解析与校验逻辑，不依赖 CapabilityRegistry 或 App。
+
+---
+
+## 错误处理与退出码
+
+- `0`：成功。
+- `1`：校验失败（validate 发现错误）。
+- `2`：用法错误（如缺少必填参数、path 不存在）。
