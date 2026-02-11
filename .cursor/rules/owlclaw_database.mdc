@@ -6,7 +6,8 @@ globs:
   - owlclaw/governance/ledger.py
   - owlclaw/agent/memory.py
   - owlclaw/agent/identity.py
-  - owlclaw/cli/db.py
+  - owlclaw/cli/db*.py
+  - owlclaw/db/**/*.py
   - migrations/**/*.py
   - alembic.ini
   - deploy/init-db.sql
@@ -14,8 +15,9 @@ alwaysApply: false
 ---
 # OwlClaw 数据库编码规范
 
-> **版本**: v1.0.0 (2026-02-10)
+> **版本**: v1.1.0 (2026-02-10)
 > **架构真源**: `docs/DATABASE_ARCHITECTURE.md`（数据库架构唯一真源）
+> **已实现模块**: `owlclaw.db`（Base/engine/session/exceptions）、`owlclaw.cli.db`（init/migrate/status）
 
 ---
 
@@ -85,27 +87,34 @@ created_at = Column(DateTime(timezone=True), nullable=False, server_default=func
 
 ## 二、SQLAlchemy 使用规范
 
-### 2.1 必须用 SQLAlchemy model 定义表
+### 2.1 必须继承 owlclaw.db.Base
+
+**已实现**：`owlclaw/db/base.py` 提供了带 `tenant_id` 的 Base 类。所有 OwlClaw model 必须继承它。
 
 ```python
-# ✅ correct: declarative model
-from sqlalchemy.orm import DeclarativeBase
-
-class Base(DeclarativeBase):
-    pass
+# ✅ correct: inherit from owlclaw.db.Base (tenant_id is automatic)
+from owlclaw.db import Base
 
 class AgentMemory(Base):
     __tablename__ = "agent_memory"
+    # tenant_id is inherited from Base — no need to declare it again
     # ...
+
+# ❌ wrong: custom DeclarativeBase without tenant_id
+from sqlalchemy.orm import DeclarativeBase
+class MyBase(DeclarativeBase):
+    pass
 
 # ❌ wrong: raw SQL CREATE TABLE
 engine.execute("CREATE TABLE agent_memory (...)")
 ```
 
-### 2.2 禁止裸连接
+### 2.2 必须用 owlclaw.db.get_session
+
+**已实现**：`owlclaw/db/session.py` 提供异步上下文管理器，自动 commit/rollback/close。
 
 ```python
-# ✅ correct: use session from connection pool
+# ✅ correct: use session from owlclaw.db
 from owlclaw.db import get_session
 
 async with get_session() as session:
@@ -114,9 +123,32 @@ async with get_session() as session:
 # ❌ wrong: raw psycopg2 connection
 import psycopg2
 conn = psycopg2.connect("postgresql://...")
+
+# ❌ wrong: manually creating session factory
+from sqlalchemy.ext.asyncio import async_sessionmaker
+factory = async_sessionmaker(engine)  # use get_session() instead
 ```
 
-### 2.3 查询必须过滤 tenant_id
+### 2.3 必须用 owlclaw.db.get_engine 或 create_engine
+
+**已实现**：`owlclaw/db/engine.py` 提供引擎创建和缓存。URL 自动规范化为 `postgresql+asyncpg://`。
+
+```python
+# ✅ correct: use owlclaw.db engine functions
+from owlclaw.db import get_engine, create_engine
+
+# get_engine() reads OWLCLAW_DATABASE_URL, caches by URL
+engine = get_engine()
+
+# create_engine() for custom pool config
+engine = create_engine("postgresql://...", pool_size=30)
+
+# ❌ wrong: direct sqlalchemy create_engine
+from sqlalchemy.ext.asyncio import create_async_engine
+engine = create_async_engine("postgresql+asyncpg://...")
+```
+
+### 2.4 查询必须过滤 tenant_id
 
 ```python
 # ✅ correct: always filter by tenant_id
@@ -129,6 +161,21 @@ stmt = select(LedgerRecord).where(
 stmt = select(LedgerRecord).where(
     LedgerRecord.agent_id == agent_id,
 )
+```
+
+### 2.5 异常处理用 owlclaw.db 异常类
+
+**已实现**：`owlclaw/db/exceptions.py` 提供 5 级异常层次，不泄露密码。
+
+```python
+from owlclaw.db import ConfigurationError, DatabaseConnectionError, AuthenticationError
+
+# 异常层次：
+# DatabaseError (base)
+#   ├── ConfigurationError      — URL 缺失或无效
+#   ├── DatabaseConnectionError — 连接失败（含 host:port）
+#   ├── AuthenticationError     — 认证失败（不含密码）
+#   └── PoolTimeoutError        — 连接池超时
 ```
 
 ---
@@ -166,18 +213,44 @@ Index(
 
 ## 四、Alembic 迁移规范
 
-### 4.1 所有 schema 变更必须通过 Alembic
+### 4.1 所有 schema 变更必须通过 owlclaw db CLI
+
+**已实现**：`owlclaw db init/migrate/status` 三个 P0 命令。
 
 ```bash
-# ✅ correct: generate migration from model changes
-owlclaw db revision -m "add governance_rules table"
-owlclaw db migrate
+# ── 初始化数据库（首次部署）──
+owlclaw db init --admin-url postgresql://postgres:pass@localhost/postgres
+# 创建 owlclaw database + role + pgvector extension
+# 可选 --skip-hatchet 跳过 hatchet database 创建
+# 可选 --dry-run 只显示不执行
+
+# ── 运行迁移 ──
+export OWLCLAW_DATABASE_URL=postgresql://owlclaw:pass@localhost/owlclaw
+owlclaw db migrate                    # 升级到最新版本
+owlclaw db migrate --target 001      # 升级到指定版本
+owlclaw db migrate --dry-run          # 只显示待执行迁移
+
+# ── 查看状态 ──
+owlclaw db status                     # 显示连接、引擎状态
 
 # ❌ wrong: manual ALTER TABLE in production
 psql -c "ALTER TABLE ledger_records ADD COLUMN ..."
+
+# ❌ wrong: direct alembic command (bypass CLI)
+alembic upgrade head  # use owlclaw db migrate instead
 ```
 
-### 4.2 迁移脚本必须可回滚
+### 4.2 环境变量配置
+
+| 变量 | 用途 | 示例 |
+|------|------|------|
+| `OWLCLAW_DATABASE_URL` | OwlClaw 数据库连接 | `postgresql://owlclaw:pass@localhost/owlclaw` |
+| `OWLCLAW_ADMIN_URL` | 超级用户连接（仅 init 用） | `postgresql://postgres:pass@localhost/postgres` |
+
+- URL 格式支持 `postgresql://` 和 `postgresql+asyncpg://`，引擎自动规范化
+- CLI 参数 `--database-url` / `--admin-url` 优先于环境变量
+
+### 4.3 迁移脚本必须可回滚
 
 ```python
 # ✅ correct: both upgrade and downgrade
@@ -195,9 +268,23 @@ def downgrade():
     pass  # not implemented
 ```
 
-### 4.3 新表的迁移必须包含 tenant_id
+### 4.4 新表的迁移必须包含 tenant_id
 
-审查迁移脚本时，检查所有 `create_table` 是否包含 `tenant_id` 列。
+审查迁移脚本时，检查所有 `create_table` 是否包含 `tenant_id` 列。继承 `owlclaw.db.Base` 的 model 自动包含 `tenant_id`。
+
+### 4.5 迁移文件位置
+
+```
+migrations/
+├── env.py                    # Alembic 环境（已实现，自动转换 URL）
+├── script.py.mako            # 迁移脚本模板
+└── versions/
+    ├── 001_initial.py        # 初始占位迁移
+    └── ...                   # 后续迁移按序号递增
+```
+
+- `env.py` 自动将 `postgresql+asyncpg://` 转换为 `postgresql+psycopg2://`（Alembic 需要同步驱动）
+- 迁移脚本命名格式：`NNN_description.py`
 
 ---
 
@@ -206,12 +293,30 @@ def downgrade():
 | 禁止 | 理由 |
 |------|------|
 | 跨 database 访问 | owlclaw / hatchet / langfuse 各自独立，禁止 `dblink` 或多库连接 |
-| 在库代码中配置连接池 | 连接池由使用方（业务应用）配置，SDK 只接受已配置的 engine/session |
-| 硬编码连接字符串 | 必须从配置文件或环境变量读取 |
+| 绕过 `owlclaw.db` 创建引擎/会话 | 必须用 `get_engine()` / `get_session()`，不得直接 `create_async_engine()` |
+| 绕过 CLI 执行迁移 | 必须用 `owlclaw db migrate`，不得直接 `alembic upgrade` |
+| 硬编码连接字符串 | 必须从 `OWLCLAW_DATABASE_URL` 环境变量或 CLI `--database-url` 参数读取 |
 | 直接操作 Hatchet 的表 | Hatchet 的 database 由 Hatchet Server 管理，OwlClaw 不介入 |
 | 不带 tenant_id 的写入 | 所有 INSERT 必须包含 tenant_id |
 | 不带 tenant_id 的查询 | 所有 SELECT/UPDATE/DELETE 必须过滤 tenant_id |
+| 不继承 `owlclaw.db.Base` 的 model | 所有 OwlClaw ORM model 必须继承 Base（自动获得 tenant_id） |
+| 手动 ALTER TABLE | 所有 schema 变更必须通过 Alembic 迁移脚本 |
 
 ---
 
-**执行承诺**：tenant_id 必存 · 索引 tenant_id 前缀 · SQLAlchemy model · Alembic 迁移 · 禁止裸连接 · 禁止跨库
+## 六、已实现模块速查
+
+| 模块 | 路径 | 功能 |
+|------|------|------|
+| **Base** | `owlclaw/db/base.py` | 带 tenant_id 的 DeclarativeBase |
+| **Engine** | `owlclaw/db/engine.py` | 异步引擎创建、URL 规范化、缓存、dispose |
+| **Session** | `owlclaw/db/session.py` | 异步上下文管理器（auto commit/rollback） |
+| **Exceptions** | `owlclaw/db/exceptions.py` | 5 级异常（不泄露密码） |
+| **CLI init** | `owlclaw/cli/db_init.py` | 创建 database/role/extension（asyncpg） |
+| **CLI migrate** | `owlclaw/cli/db_migrate.py` | Alembic upgrade（支持 target/dry-run） |
+| **CLI status** | `owlclaw/cli/db_status.py` | 连接检查、密码隐藏 |
+| **Alembic env** | `migrations/env.py` | offline/online 模式、URL 自动转换 |
+
+---
+
+**执行承诺**：tenant_id 必存 · 继承 owlclaw.db.Base · 用 get_engine/get_session · owlclaw db CLI · Alembic 迁移 · 禁止裸连接 · 禁止跨库
