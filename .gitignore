@@ -43,6 +43,9 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Windows reserved name (accidental create)
+nul
+
 # Logs
 logs/
 *.log
