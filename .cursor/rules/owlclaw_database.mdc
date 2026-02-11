@@ -1,0 +1,217 @@
+---
+description: Database rules — apply when writing code that touches PostgreSQL, SQLAlchemy models, Alembic migrations, or database queries.
+globs:
+  - owlclaw/**/models.py
+  - owlclaw/**/models/**/*.py
+  - owlclaw/governance/ledger.py
+  - owlclaw/agent/memory.py
+  - owlclaw/agent/identity.py
+  - owlclaw/cli/db.py
+  - migrations/**/*.py
+  - alembic.ini
+  - deploy/init-db.sql
+alwaysApply: false
+---
+# OwlClaw 数据库编码规范
+
+> **版本**: v1.0.0 (2026-02-10)
+> **架构真源**: `docs/DATABASE_ARCHITECTURE.md`（数据库架构唯一真源）
+
+---
+
+## 一、表设计铁律
+
+### 1.1 tenant_id 必须存在
+
+**所有 OwlClaw 表必须包含 `tenant_id` 字段**，无例外。
+
+```python
+# ✅ correct
+class LedgerRecord(Base):
+    __tablename__ = "ledger_records"
+
+    id = Column(UUID, primary_key=True, default=uuid4)
+    tenant_id = Column(String(64), nullable=False, default="default", index=True)
+    # ...
+
+# ❌ wrong: missing tenant_id
+class LedgerRecord(Base):
+    __tablename__ = "ledger_records"
+
+    id = Column(UUID, primary_key=True, default=uuid4)
+    agent_id = Column(String(128), nullable=False)
+    # ...
+```
+
+- Self-hosted 默认值 `'default'`
+- Cloud 阶段通过 RLS 强制隔离
+- **不允许**创建不含 `tenant_id` 的业务表（`alembic_version` 除外）
+
+### 1.2 索引必须以 tenant_id 为前缀
+
+```python
+# ✅ correct: composite index with tenant_id prefix
+Index("idx_ledger_tenant_agent", "tenant_id", "agent_id")
+Index("idx_ledger_tenant_created", "tenant_id", "created_at")
+
+# ❌ wrong: index without tenant_id — RLS 下效率低
+Index("idx_ledger_agent", "agent_id")
+```
+
+### 1.3 主键用 UUID
+
+```python
+from uuid import uuid4
+from sqlalchemy import Column, UUID
+
+id = Column(UUID, primary_key=True, default=uuid4)
+```
+
+- 不用自增 ID（多租户/分布式场景下冲突）
+- 不用字符串 ID（存储和索引效率低）
+
+### 1.4 时间戳用 TIMESTAMPTZ
+
+```python
+from sqlalchemy import Column, DateTime, func
+
+created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+```
+
+- 始终带时区（`TIMESTAMPTZ`），不用 `TIMESTAMP`
+- 服务端默认值用 `server_default=func.now()`
+
+---
+
+## 二、SQLAlchemy 使用规范
+
+### 2.1 必须用 SQLAlchemy model 定义表
+
+```python
+# ✅ correct: declarative model
+from sqlalchemy.orm import DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
+
+class AgentMemory(Base):
+    __tablename__ = "agent_memory"
+    # ...
+
+# ❌ wrong: raw SQL CREATE TABLE
+engine.execute("CREATE TABLE agent_memory (...)")
+```
+
+### 2.2 禁止裸连接
+
+```python
+# ✅ correct: use session from connection pool
+from owlclaw.db import get_session
+
+async with get_session() as session:
+    result = await session.execute(select(LedgerRecord).where(...))
+
+# ❌ wrong: raw psycopg2 connection
+import psycopg2
+conn = psycopg2.connect("postgresql://...")
+```
+
+### 2.3 查询必须过滤 tenant_id
+
+```python
+# ✅ correct: always filter by tenant_id
+stmt = select(LedgerRecord).where(
+    LedgerRecord.tenant_id == tenant_id,
+    LedgerRecord.agent_id == agent_id,
+)
+
+# ❌ wrong: query without tenant_id filter
+stmt = select(LedgerRecord).where(
+    LedgerRecord.agent_id == agent_id,
+)
+```
+
+---
+
+## 三、pgvector 规范
+
+### 3.1 向量列定义
+
+```python
+from pgvector.sqlalchemy import Vector
+
+class AgentMemory(Base):
+    __tablename__ = "agent_memory"
+
+    embedding = Column(Vector(1536))  # OpenAI text-embedding-3-small
+```
+
+### 3.2 向量索引
+
+默认使用 HNSW（中小规模更优）：
+
+```python
+from sqlalchemy import Index
+
+Index(
+    "idx_memory_embedding",
+    AgentMemory.embedding,
+    postgresql_using="hnsw",
+    postgresql_with={"m": 16, "ef_construction": 64},
+    postgresql_ops={"embedding": "vector_cosine_ops"},
+)
+```
+
+---
+
+## 四、Alembic 迁移规范
+
+### 4.1 所有 schema 变更必须通过 Alembic
+
+```bash
+# ✅ correct: generate migration from model changes
+owlclaw db revision -m "add governance_rules table"
+owlclaw db migrate
+
+# ❌ wrong: manual ALTER TABLE in production
+psql -c "ALTER TABLE ledger_records ADD COLUMN ..."
+```
+
+### 4.2 迁移脚本必须可回滚
+
+```python
+# ✅ correct: both upgrade and downgrade
+def upgrade():
+    op.create_table("governance_rules", ...)
+
+def downgrade():
+    op.drop_table("governance_rules")
+
+# ❌ wrong: no downgrade
+def upgrade():
+    op.create_table("governance_rules", ...)
+
+def downgrade():
+    pass  # not implemented
+```
+
+### 4.3 新表的迁移必须包含 tenant_id
+
+审查迁移脚本时，检查所有 `create_table` 是否包含 `tenant_id` 列。
+
+---
+
+## 五、禁止事项
+
+| 禁止 | 理由 |
+|------|------|
+| 跨 database 访问 | owlclaw / hatchet / langfuse 各自独立，禁止 `dblink` 或多库连接 |
+| 在库代码中配置连接池 | 连接池由使用方（业务应用）配置，SDK 只接受已配置的 engine/session |
+| 硬编码连接字符串 | 必须从配置文件或环境变量读取 |
+| 直接操作 Hatchet 的表 | Hatchet 的 database 由 Hatchet Server 管理，OwlClaw 不介入 |
+| 不带 tenant_id 的写入 | 所有 INSERT 必须包含 tenant_id |
+| 不带 tenant_id 的查询 | 所有 SELECT/UPDATE/DELETE 必须过滤 tenant_id |
+
+---
+
+**执行承诺**：tenant_id 必存 · 索引 tenant_id 前缀 · SQLAlchemy model · Alembic 迁移 · 禁止裸连接 · 禁止跨库
