@@ -1,0 +1,13 @@
+# 仅 Hatchet Lite — 本机已建好 hatchet/owlclaw 两库时使用。
+# 适用于：本机已有 Postgres，或 Docker 拉取 postgres 镜像失败时的权宜方案。
+# 需本机 localhost:5432 存在 database hatchet、用户 hatchet、密码 hatchet。
+# Usage: docker compose -f deploy/docker-compose.lite.hatchet-only.yml up -d
+
+services:
+  hatchet-lite:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:latest
+    environment:
+      DATABASE_URL: postgresql://hatchet:hatchet@host.docker.internal:5432/hatchet
+      SERVER_PORT: 7077
+    ports:
+      - "7077:7077"

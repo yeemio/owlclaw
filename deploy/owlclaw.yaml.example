@@ -1,0 +1,27 @@
+# OwlClaw configuration example
+# Copy to project root as owlclaw.yaml and set env vars (e.g. HATCHET_API_TOKEN).
+# 数据库架构详见 docs/DATABASE_ARCHITECTURE.md
+# OwlClaw 业务用 database.url 连 owlclaw 库；Hatchet Server 连 hatchet 库。
+
+app:
+  name: my-app
+
+# database:
+#   url: postgresql://owlclaw:${OWLCLAW_DB_PASSWORD}@localhost:5432/owlclaw
+
+# Hatchet integration (durable execution, cron, scheduling)
+# 以下 postgres_* 为 Hatchet Server 连接 hatchet 库用（与 OwlClaw 业务库 owlclaw 分离）
+hatchet:
+  server_url: http://localhost:7077
+  api_token: ${HATCHET_API_TOKEN}
+  namespace: owlclaw
+  mode: production  # or "lite" for development
+
+  postgres_host: localhost
+  postgres_port: 5432
+  postgres_db: hatchet
+  postgres_user: hatchet
+  postgres_password: ${HATCHET_DB_PASSWORD}
+
+  max_concurrent_tasks: 10
+  worker_name: owlclaw-worker-1
