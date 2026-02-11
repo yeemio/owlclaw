@@ -89,7 +89,665 @@
    - BSL 4年后转为 Apache 2.0（每个版本独立计算）
 2. **Temporal Server 是 MIT** —— 完全自由，无任何商用限制
 3. **Hatchet 是 MIT** —— 完全自由，6500+ GitHub stars，定位为"现代 Celery 替代"，支持 durable execution + cron + 调度
-4. **最终决策**：MVP 选择 **Hatchet（MIT）**。理由：MIT 零风险 + Cron 一等公民 + 生产验证（1亿+任务/天）+ 共用 PostgreSQL。详见决策5
+4. **最终决策**：MVP 选择 **Hatchet（MIT）**。理由：MIT 零风险 + Cron 一等公民 + 生产验证（1亿+任务/天）+ 复用宿主 PG、database 级隔离。详见决策5
+
+### 2.4 市场生态关系分析
+
+#### 2.4.1 两个维度看 AI Agent 生态
+
+AI Agent 生态不是简单的上下分层，而是由两个正交的能力维度构成：
+
+```
+                        编排能力（怎么做）
+                        LangChain · LangGraph · CrewAI · AutoGen
+                        ↓ 调用 LLM · 编排工具链 · 管理对话流 · RAG 检索
+                        ↓
+    ┌───────────────────┼───────────────────────────────────────┐
+    │                   │                                       │
+    │   只有编排         │   编排 + 自驱 = 完整的自主 Agent        │
+    │   (等人来问)       │   (自己决定什么时候做什么)               │
+    │                   │                                       │
+    │   LangChain 单独   │   LangChain + OwlClaw                │
+    │                   │                                       │
+    ├───────────────────┼───────────────────────────────────────┤
+    │                   │                                       │
+    │   什么都没有       │   只有自驱                              │
+    │                   │   (有心跳但没手脚)                      │
+    │                   │                                       │
+    │                   │   OwlClaw 单独（用 litellm 做基础调用） │
+    │                   │                                       │
+    └───────────────────┼───────────────────────────────────────┘
+                        ↑
+                        ↑ 自主触发 · 治理边界 · 持久执行 · 业务接入 · 知识体系
+                        自驱能力（什么时候做、该不该做、做了之后怎么办）
+                        OwlClaw
+```
+
+**编排能力**（LangChain 系列解决的问题）：
+- 怎么调用 LLM
+- 怎么检索文档（RAG）
+- 怎么编排工具链
+- 怎么管理多步骤流程（LangGraph 状态机）
+
+**自驱能力**（OwlClaw 解决的问题）：
+- Agent 什么时候该运行（Cron/Webhook/Heartbeat 自主触发）
+- Agent 的边界是什么（治理层：可见性过滤、预算、限流）
+- Agent 崩溃了怎么办（Hatchet 持久执行）
+- Agent 怎么理解业务上下文（Skills 知识体系）
+- Agent 的决策怎么追溯（Ledger 执行记录）
+
+**这两个维度不是竞争关系，是同一个 Agent 的两半。**
+
+#### 2.4.2 生态位互补：LangChain 给手脚，OwlClaw 给大脑和心跳
+
+| 维度 | LangChain / LangGraph | OwlClaw | 组合效果 |
+|------|----------------------|---------|---------|
+| 触发方式 | 用户请求触发 | 自主触发（Cron/Webhook/Heartbeat） | Agent 既能响应请求，也能自主行动 |
+| 运行模式 | 请求-响应 | 持续运行、自主决策 | Agent 是一个长期存活的自主实体 |
+| 生命周期 | 一次调用 | 长期存活（有身份、有记忆） | Agent 能积累经验、持续优化 |
+| 编排能力 | 强（Chain/Graph/RAG/Tool） | 不重造（集成 litellm 或 LangChain） | 复用已有编排投资 |
+| 治理 | 弱（LangSmith 闭源） | 强（可见性过滤/Ledger/预算/限流） | 生产级安全边界 |
+| 持久执行 | 弱（LangGraph 检查点） | 强（Hatchet，1亿+任务/天） | 崩溃自动恢复 |
+| 业务接入 | 无（假设从零开始） | 核心（@handler/@state 注册已有函数） | 已有系统零改造接入 |
+| 知识体系 | RAG（检索增强生成） | Skills（Agent Skills 规范 + 渐进式加载） | 结构化业务知识 + 非结构化文档检索 |
+
+**典型场景**：
+
+用户用 LangChain 做了一个 RAG chain，能回答业务问题。但它只能等人来问。
+
+接上 OwlClaw 后：
+- Agent **自己决定**什么时候该主动去查（Heartbeat + Cron 触发）
+- Agent **自己判断**查出的结果是否需要通知相关人（function calling 决策）
+- Agent **被约束**一天最多查 50 次、每次成本不超过 ¥0.5（治理层）
+- Agent **崩溃后自动恢复**，不丢失执行进度（Hatchet 持久执行）
+- Agent **记住**上次查过什么、结论是什么（记忆系统）
+- 所有决策**可追溯**（Ledger 记录）
+
+**LangChain 的 chain 成为 OwlClaw 的 capability handler，OwlClaw 的 Agent 通过 function calling 决定什么时候调用它。**
+
+#### 2.4.3 标准接入：OwlClaw 对编排框架的集成策略
+
+OwlClaw 不与编排框架对立，而是提供**标准接入**，让用户已有的编排投资直接升级为自主 Agent：
+
+| 编排框架 | 接入方式 | 示例 |
+|---------|---------|------|
+| **LangChain chain** | 注册为 capability handler | `@app.handler` 包装 `chain.ainvoke()` |
+| **LangGraph 工作流** | 注册为 capability handler | `@app.handler` 包装 `graph.ainvoke()` |
+| **CrewAI crew** | 注册为 capability handler | `@app.handler` 包装 `crew.kickoff()` |
+| **OpenAI Agent SDK** | 作为 LLM 调用后端 | OwlClaw Agent 运行时可选用 OpenAI Agent SDK |
+| **任意 Python 函数** | 直接注册 | `@app.handler` 注册已有业务函数 |
+
+```python
+# 示例：LangChain chain 作为 OwlClaw capability
+from langchain_openai import ChatOpenAI
+from langchain.chains import RetrievalQA
+
+# 用户已有的 LangChain RAG chain
+rag_chain = RetrievalQA.from_chain_type(
+    llm=ChatOpenAI(), retriever=vectorstore.as_retriever()
+)
+
+# 一行代码注册为 OwlClaw capability
+@app.handler(name="query_knowledge_base", knowledge="skills/knowledge-query/SKILL.md")
+async def query_kb(question: str) -> str:
+    return await rag_chain.ainvoke(question)
+
+# 现在 OwlClaw 的 Agent 可以自主决定什么时候调用这个 RAG chain
+# 不再需要等人来问
+```
+
+#### 2.4.4 真正的竞品：谁也在做"自驱能力"
+
+OwlClaw 的竞品不是编排框架（LangChain），而是那些也在解决"自驱能力"的产品：
+
+| 竞品 | 定位 | 自驱能力 | 治理 | 业务接入 | 许可证 | 与 OwlClaw 的差异 |
+|------|------|---------|------|---------|--------|-----------------|
+| **Restate AI Loops** | 持久执行 + AI Agent | 持久执行强，无自主调度 | 无 | 无 | **BSL** | OwlClaw 有治理 + Skills + 自主调度 + MIT |
+| **MuleSoft Agent Fabric** | 企业 Agent 治理 | Agent 发现/注册 | 强 | 强（Salesforce 生态） | **闭源** | OwlClaw 是 MIT 开源、轻量 SDK |
+| **Microsoft Foundry** | 云托管 Agent 基础设施 | 托管部署 | 强 | Azure 生态 | **闭源** | OwlClaw 云无关、可自托管 |
+| **Solace Agent Mesh** | 事件驱动 Agent 编排 | 事件触发 | 中 | 企业集成 | **商业** | OwlClaw 是 SDK 而非中间件 |
+| **Letta (MemGPT)** | 有状态 Agent（记忆核心） | 有状态，无自主调度 | 无 | 无 | MIT | OwlClaw 有治理 + 业务接入 + 持久执行 |
+
+**结论**：
+
+1. **没有一个开源产品同时提供**：自主调度 + 治理 + 业务接入 + Skills 知识体系 + 持久执行 + 编排框架标准接入。这是 OwlClaw 的差异化空间
+2. **最接近的是 Restate**：持久执行做得最好，但缺治理、缺业务知识注入、缺自主调度，且 BSL 许可证限制 Cloud 商业化
+3. **企业级竞品（MuleSoft、Microsoft、Solace）都是闭源商业产品**：OwlClaw 作为 MIT 开源方案，填补了开源社区的空白
+4. **Letta 在记忆层面最强**：OwlClaw 的记忆系统可参考其分层架构，但 OwlClaw 的核心价值在自驱 + 治理 + 业务接入
+
+#### 2.4.5 OwlClaw 的定位总结
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    一个完整的自主 Agent                           │
+│                                                                  │
+│  ┌──────────────────────┐    ┌──────────────────────────────┐   │
+│  │  编排能力（手和脚）    │    │  自驱能力（大脑和心跳）        │   │
+│  │                      │    │                              │   │
+│  │  LangChain / LangGraph│    │  ★ OwlClaw                  │   │
+│  │  CrewAI / AutoGen     │    │                              │   │
+│  │  OpenAI Agent SDK     │    │  • 自主触发（Cron/Webhook/   │   │
+│  │                      │    │    Heartbeat）               │   │
+│  │  • LLM 调用          │◄──►│  • 治理（可见性/Ledger/预算） │   │
+│  │  • RAG 检索          │    │  • 持久执行（Hatchet）        │   │
+│  │  • 工具编排          │    │  • 业务接入（@handler/@state）│   │
+│  │  • 多步骤流程        │    │  • Skills 知识体系           │   │
+│  │                      │    │  • 身份 + 记忆               │   │
+│  └──────────────────────┘    └──────────────────────────────┘   │
+│         ↑ 标准接入                                               │
+│         ↑ OwlClaw 提供编排框架的标准集成接口                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**一句话定位**：
+
+> **LangChain 给了 Agent 手和脚（编排能力），OwlClaw 给了 Agent 大脑和心跳（自驱能力）。两者组合，才是一个完整的生产级自主 Agent。OwlClaw 提供编排框架的标准接入，让用户已有的编排投资直接升级。**
+
+### 2.5 关键市场洞察
+
+1. **编排 vs 自驱是两个正交维度**：当前 AI Agent 生态几乎全部聚焦在编排能力（怎么做），自驱能力（什么时候做、该不该做）是被忽视的维度。OwlClaw 填补的是这个空白
+
+2. **Brownfield 是真实需求**：企业不会为了用 AI 重写系统。它们需要的是在已有系统上"接入"AI 自主能力。OwlClaw 的 @handler/@state 注册模式和编排框架标准接入，让已有投资（业务代码 + LangChain 编排）直接升级
+
+3. **治理是企业采用的门槛**：Gartner 预测 40% 的 AI Agent 项目会因成本失控和风险管控不足而失败。OwlClaw 的治理层（可见性过滤、Ledger、预算、限流）直接解决这个问题
+
+4. **MIT 开源的战略价值**：在自驱能力这个维度，Restate 是 BSL，MuleSoft/Microsoft/Solace 是闭源商业产品。OwlClaw 作为 MIT 开源方案，是社区唯一的选择
+
+5. **生态位互补创造网络效应**：OwlClaw 不与 LangChain 竞争，而是让 LangChain 用户的已有投资增值。LangChain 生态越大，OwlClaw 的潜在用户越多
+
+### 2.6 红军审视（Red Team Analysis）
+
+> 以下是对 OwlClaw 定位和架构策略的**对抗性审视**。目的不是否定方向，而是提前暴露盲区、假设风险和潜在致命伤，以便在早期做出防御性设计。
+
+#### 攻击面 1：LangGraph 正在侵蚀"自驱能力"维度
+
+**威胁等级**：🔴 高
+
+**事实**：
+- LangGraph 已具备 PostgreSQL 持久化检查点（`PostgresSaver`），支持崩溃恢复
+- LangGraph Platform 提供 1-click 部署、水平扩展、有状态 Agent 记忆
+- LangGraph 的 Cron 调度能力正在发展（通过 LangGraph Cloud）
+- LangSmith 提供可观测性（虽然闭源，但用户可能不在乎）
+
+**我们说"LangGraph 持久执行弱"——这个判断正在过时。** LangGraph 的检查点机制虽然不如 Hatchet 的 1 亿+任务/天级别，但对 80% 的用户场景已经够用。如果 LangGraph 继续补齐调度和治理能力，OwlClaw 的"自驱能力"差异化空间会被压缩。
+
+**防御措施**：
+1. OwlClaw 的核心壁垒不应仅仅是"持久执行"（这是 Hatchet 的能力，不是我们的），而应是**业务接入层 + 治理层 + Skills 知识体系**的组合——这是 LangGraph 的架构基因里没有的
+2. 持续跟踪 LangGraph Platform 的路线图，尤其是治理和调度方面的进展
+3. 在文档和定位中，降低对"持久执行"的强调，提升对"业务接入"和"治理"的强调
+
+#### 攻击面 2：Restate 正在快速补齐 AI Agent 能力
+
+**威胁等级**：🟡 中高
+
+**事实**：
+- Restate 2025 年底推出了 Restate Cloud（托管服务）
+- Restate 与 Vercel AI SDK、OpenAI Agents SDK 的官方集成已发布
+- Restate 的 Serverless 原生设计（推送模式，无需 worker 池）在部署简洁性上优于 Hatchet
+- Restate 的 BSL 许可证虽然限制 Cloud 商业化，但不影响自托管用户
+
+**我们说"Restate 缺治理、缺业务知识注入"——但 Restate 可能不需要自己做这些。** 如果 Restate 与 LangChain 生态深度集成（它已经在做），用户可以用 LangChain 做编排 + Restate 做持久执行 + 自己写治理逻辑。这个组合可能比"学习一个新的 OwlClaw 框架"更有吸引力。
+
+**防御措施**：
+1. OwlClaw 的治理层必须做到**开箱即用**，而不是"理论上可以做"——用户不会为了治理能力学一个新框架，除非它真的零配置就能用
+2. Skills 知识体系是 Restate 没有也不会做的差异化——必须做到极致
+3. 关注 Restate 的许可证变化（BSL → MIT 的可能性）
+
+#### 攻击面 3："Brownfield"定位可能是一个陷阱
+
+**威胁等级**：🟡 中
+
+**事实**：
+- 86% 的企业需要升级技术栈才能部署 AI Agent（Arion Research 2025）
+- 42% 的企业需要接入 8+ 数据源
+- 遗留系统的 API 通常为人类工作流设计，不适合 Agent 自动访问
+- 遗留系统有大量未文档化的定制和最小测试覆盖
+
+**"让已有系统获得 AI 自主能力"听起来很美，但实际接入的摩擦力可能远超预期。** `@handler` 注册一个函数很简单，但让 Agent 真正理解一个复杂业务系统的上下文、边界条件、异常处理——这不是一个装饰器能解决的。Skills 知识文档（SKILL.md）是正确的方向，但编写高质量的 SKILL.md 本身就是一个巨大的工程。
+
+**防御措施**：
+1. MVP 阶段不要试图解决所有 Brownfield 问题——先聚焦在"已有 Python 业务函数 + 已有 LangChain 编排"这个最小切入点
+2. `owlclaw.cli.scan`（AST 扫描器自动生成 SKILL.md 骨架）的优先级应该提高——降低 SKILL.md 的编写门槛是关键
+3. 提供 Brownfield 接入的最佳实践文档和渐进式接入指南
+
+#### 攻击面 4：OpenAI/Anthropic 可能直接做 Agent 基础设施
+
+**威胁等级**：🔴 高（长期）
+
+**事实**：
+- OpenAI 已发布 Agents SDK，包含 Handoffs、Guardrails、Tracing
+- OpenAI 的 Responses API 正在替代 Assistants API，内置工具调用、代码执行
+- Anthropic 发起了 Agent Skills 规范和 MCP 协议
+- 模型厂商有最强的 function calling 能力和最大的开发者基数
+
+**如果 OpenAI 在 Agents SDK 中加入持久执行、调度和治理，OwlClaw 的整个定位都会被颠覆。** 模型厂商做基础设施的优势是：它们控制着 function calling 的实现层，可以做到最深度的优化。
+
+**防御措施**：
+1. **模型无关是生命线**——OwlClaw 通过 litellm 支持 100+ 模型，这是对抗模型厂商锁定的核心武器
+2. **业务接入层是模型厂商不会做的**——OpenAI 不会帮你把已有的 Java 业务系统接入 Agent，这是 OwlClaw 的安全区
+3. **治理层的企业级需求（合规、审计、预算）是模型厂商不擅长的**——它们的商业模式是卖 token，不是帮企业省 token
+
+#### 攻击面 5：95% 的 AI Agent 项目失败——OwlClaw 的用户可能根本不存在
+
+**威胁等级**：🟡 中
+
+**事实**：
+- MIT 研究：近 95% 的企业 Agentic AI 试点从未进入生产
+- 主要原因：脆弱性、缺乏治理、扩展性差、供应商锁定
+- 开源 AI 基础设施创业公司（如 Wing Cloud）已有关闭案例——社区热爱不等于可持续收入
+
+**OwlClaw 声称解决的问题（治理、持久执行、业务接入）确实是 AI Agent 失败的核心原因。但问题是：企业可能还没走到需要这些能力的阶段。** 大多数企业还在"AI Agent 是什么"的阶段，还没到"我的 Agent 需要治理"的阶段。市场可能还没准备好。
+
+**防御措施**：
+1. **不要等市场成熟再出发**——先用 mionyee 自己的场景验证，积累真实的生产经验
+2. **MVP 必须能在 30 分钟内跑起来**——如果用户不能快速看到价值，他们不会等
+3. **先做"能用"，再做"好用"**——治理层可以从简单的预算限制开始，不需要一步到位做完整的 RBAC
+
+#### 攻击面 6："生态位互补"可能是一厢情愿
+
+**威胁等级**：🟡 中
+
+**事实**：
+- LangChain 的 Python 下载量已超过 OpenAI SDK，生态在快速扩张
+- LangChain 正在构建自己的 Platform（LangGraph Platform + LangSmith），向全栈演进
+- LangChain 有企业连接器（SAP、Salesforce、ServiceNow），正在进入 Brownfield 领域
+
+**我们假设 LangChain 会停留在"编排"层，但 LangChain 的战略是成为全栈 Agent 平台。** 如果 LangChain 认为 OwlClaw 解决的问题有价值，它可能直接做——而不是等着和 OwlClaw "互补"。LangChain 有更大的开发者基数、更多的融资、更强的品牌。
+
+**防御措施**：
+1. **速度是唯一的壁垒**——在 LangChain 补齐这些能力之前，OwlClaw 必须在"自驱 + 治理 + 业务接入"这个组合上建立先发优势和用户口碑
+2. **不要把 LangChain 当作唯一的生态伙伴**——同时支持 CrewAI、OpenAI Agents SDK、甚至裸 function calling，降低对单一生态的依赖
+3. **考虑成为 LangChain 的插件/扩展**——如果 LangChain 生态足够大，作为其插件可能比独立框架更容易获得用户
+
+#### 攻击面 7：Hatchet 依赖是单点风险
+
+**威胁等级**：🟡 中
+
+**事实**：
+- OwlClaw 的持久执行完全依赖 Hatchet（MIT）
+- Hatchet 是一个相对小众的项目，社区规模远小于 Temporal
+- 如果 Hatchet 停止维护或改变许可证，OwlClaw 的持久执行能力将受到严重影响
+- Restate 的 Serverless 原生设计在某些场景下比 Hatchet 的 worker 模式更优
+
+**防御措施**：
+1. `owlclaw/integrations/hatchet.py` 的隔离设计是正确的——确保持久执行的抽象层足够干净，未来可以替换为 Temporal 或 Restate
+2. 关注 Hatchet 的社区健康度和维护频率
+3. 在架构文档中明确标注 Hatchet 是"当前选择"而非"唯一选择"
+
+#### 红军审视总结
+
+| 攻击面 | 威胁 | 核心风险 | 关键防御 |
+|--------|------|---------|---------|
+| LangGraph 补齐自驱 | 🔴 高 | 差异化空间被压缩 | 聚焦业务接入 + 治理 + Skills，而非持久执行 |
+| Restate 快速进化 | 🟡 中高 | 更轻量的替代方案 | 治理开箱即用 + Skills 做到极致 |
+| Brownfield 摩擦力 | 🟡 中 | 接入比想象的难 | 最小切入点 + AST 扫描器 + 渐进式指南 |
+| 模型厂商下场 | 🔴 高（长期） | 整个定位被颠覆 | 模型无关 + 业务接入 + 企业治理 |
+| 市场未成熟 | 🟡 中 | 用户还没准备好 | 自己先用 + 30 分钟上手 + 先能用再好用 |
+| 互补是一厢情愿 | 🟡 中 | LangChain 自己做 | 速度先发 + 多生态支持 + 考虑插件模式 |
+| Hatchet 单点风险 | 🟡 中 | 依赖方出问题 | 隔离层 + 可替换设计 |
+
+#### 红军审视结论
+
+**OwlClaw 的定位方向是正确的，但有三个需要立即行动的调整**：
+
+1. **重新排序核心价值**：从"持久执行 + 治理 + 业务接入"调整为**"业务接入 + 治理 + Skills 知识体系"**。持久执行是集成来的（Hatchet），不是我们的核心壁垒；业务接入层和治理层才是别人不做也做不好的
+2. **加速 MVP 交付**：窗口期有限。LangGraph Platform 和 Restate Cloud 都在快速演进。OwlClaw 必须在 2026 年内有可用的生产级 MVP，否则差异化空间会被蚕食
+3. **准备 Plan B**：如果"独立框架"的路走不通（用户不愿学新框架），要准备好转型为"LangChain/LangGraph 的治理和业务接入插件"——这个定位虽然小，但更容易存活
+
+### 2.7 产品愿景：Markdown 即 AI 能力
+
+#### 2.7.1 核心洞察：AI 能力的消费方式正在转变
+
+当前 AI Agent 生态有一个巨大的隐含假设——**"你得有 AI 开发团队"**。LangChain 要你写 Python，LangGraph 要你设计状态机，CrewAI 要你编排多 Agent 协作。这些框架再好，面向的都是 AI 开发者。
+
+但现实是：
+
+```
+AI 开发者          ■                           （万级，会写 LangChain）
+业务开发者         ■■■■■■■■■■■■■■              （百万级，会写业务代码）
+业务人员           ■■■■■■■■■■■■■■■■■■■■■■■■■■  （千万级，懂业务但不写代码）
+```
+
+**绝大多数企业不可能为了用 AI 去组建 AI 开发团队。** 它们有业务开发团队，有运维团队，有业务人员——这些人最了解自己的业务，但不会写 LangChain。
+
+OwlClaw 的愿景是：**让这些人也能让业务系统获得 AI 自主能力。**
+
+#### 2.7.2 "Markdown 即 AI 能力"范式
+
+这个范式的核心思想来自 OpenClaw 的成功验证：
+
+- OpenClaw 用 **SOUL.md** 让非技术用户定义 Agent 人格 → 182K GitHub stars
+- Agent Skills 规范用 **SKILL.md** 让开发者定义 Agent 技能 → 已成为开源标准（agentskills.io）
+- GitHub 提出 **Spec-Driven Development**——用 Markdown 写规格，AI 编译成代码
+- AgentUse 框架用 **.agentuse Markdown 文件** 定义自主 Agent，无需 SDK
+
+**OwlClaw 把这个范式推到业务领域**：业务开发者用 SKILL.md 描述业务接口，OwlClaw 的 Agent 自动理解并使用。
+
+```
+传统路径（需要 AI 团队）：
+  业务需求 → 招 AI 团队 → 学 LangChain → 写 RAG → 写 Agent → 调试 → 部署
+  时间：3-6 个月 | 成本：50-200 万/年
+
+OwlClaw 路径（只需业务开发者）：
+  业务需求 → 写 SKILL.md（描述已有接口）→ 装 OwlClaw → Agent 自动工作
+  时间：1-3 天 | 成本：接近零（MIT 开源 + 自有 LLM 成本）
+```
+
+#### 2.7.3 具体场景：SKILL.md 如何让业务系统"活"起来
+
+**场景 1：ERP 库存预警**
+
+业务开发者只需写一个 SKILL.md：
+
+```markdown
+---
+name: inventory-monitor
+description: >
+  监控库存水平，发现异常时预警。当库存低于安全库存、
+  或消耗速度异常加快时使用此技能。
+---
+
+## 可用工具
+- get_inventory_levels(warehouse_id): 获取指定仓库的库存水平
+- get_consumption_rate(product_id, days): 获取产品近 N 天的日均消耗
+- get_safety_stock(product_id): 获取产品的安全库存线
+- send_alert(recipient, message): 发送预警通知
+
+## 业务规则
+- 库存 < 安全库存的 120% 时，提前预警（留出补货时间）
+- 日均消耗突然增加 50% 以上，可能是促销或异常，需要确认
+- 周末和节假日不发预警（非工作时间）
+- 同一产品 24 小时内最多预警一次（避免轰炸）
+
+## 决策指引
+- 优先关注高价值产品（单价 > ¥1000）
+- 季节性产品（如空调、暖气）在换季前 1 个月加强监控
+- 不要对样品和赠品库存做预警
+```
+
+业务开发者写这个文档**不需要任何 AI 知识**。他只需要描述：有哪些接口、什么时候该用、业务规则是什么。OwlClaw 的 Agent 拿到这个 SKILL.md 后，通过 function calling 自主决定什么时候查库存、查哪个仓库、是否需要预警。
+
+**场景 2：CRM 客户流失分析**
+
+```markdown
+---
+name: churn-detection
+description: >
+  分析客户行为数据，识别可能流失的客户。当需要评估客户健康度、
+  或发现客户活跃度下降时使用此技能。
+---
+
+## 可用工具
+- get_customer_activity(customer_id, days): 获取客户近 N 天的活跃数据
+- get_customer_segment(customer_id): 获取客户分层（VIP/普通/试用）
+- get_renewal_date(customer_id): 获取客户续约日期
+- create_task(owner, description, due_date): 创建跟进任务
+
+## 流失信号
+- 登录频率下降 > 60%（对比前 30 天）
+- 核心功能使用率下降 > 40%
+- 续约日期在 30 天内且未有续约意向
+- 最近 7 天有多次客服投诉
+
+## 决策指引
+- VIP 客户出现任何一个流失信号就创建跟进任务
+- 普通客户出现 2 个以上流失信号才创建任务
+- 试用客户不做流失分析（由市场团队负责）
+- 跟进任务分配给客户的专属客户经理
+```
+
+**场景 3：财务异常检测**
+
+```markdown
+---
+name: financial-anomaly
+description: >
+  监控财务数据，发现异常交易和趋势偏差。当需要检查
+  收支异常、预算超支、或可疑交易时使用此技能。
+---
+
+## 可用工具
+- get_daily_transactions(date, category): 获取指定日期和类别的交易
+- get_budget_status(department, month): 获取部门月度预算使用情况
+- get_historical_average(category, months): 获取类别的历史月均值
+- flag_transaction(transaction_id, reason): 标记可疑交易
+
+## 异常规则
+- 单笔交易 > 月均值的 5 倍 → 标记为可疑
+- 部门月度支出 > 预算的 80% 且月份未过半 → 预警
+- 同一供应商单日多笔交易（可能拆单规避审批）→ 标记
+- 非工作时间的大额交易 → 标记
+
+## 合规要求
+- 所有标记操作必须记录原因
+- 不要自动拒绝或撤销任何交易，只标记和通知
+- 涉及高管的交易标记后通知审计部门而非直属上级
+```
+
+**关键观察**：这三个场景中，业务开发者写的都是**他们已经知道的东西**——业务规则、接口说明、决策逻辑。他们不需要学 AI，不需要学 prompt engineering，不需要理解 function calling。**SKILL.md 就是他们的母语。**
+
+#### 2.7.4 增长飞轮
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│    ┌──────────┐     ┌──────────────┐     ┌───────────────┐         │
+│    │ 业务开发者 │────►│ 写 SKILL.md   │────►│ Agent 自动工作 │         │
+│    │ 描述业务   │     │ 描述已有接口   │     │ 产生业务价值   │         │
+│    └──────────┘     └──────────────┘     └───────┬───────┘         │
+│         ▲                                         │                 │
+│         │                                         ▼                 │
+│    ┌────┴─────────┐                      ┌───────────────┐         │
+│    │ 更多企业加入   │◄─────────────────────│ 口碑传播       │         │
+│    │ 更多行业覆盖   │                      │ "零代码接 AI"  │         │
+│    └────┬─────────┘                      └───────────────┘         │
+│         │                                                           │
+│         ▼                                                           │
+│    ┌──────────────────────────────────────────────────────┐        │
+│    │                    OwlHub                             │        │
+│    │                                                      │        │
+│    │  行业 Skills 模板积累 → 同行业企业直接复用             │        │
+│    │  电商 Skills · 金融 Skills · 制造 Skills · SaaS Skills │        │
+│    │                                                      │        │
+│    │  ┌─────────┐  ┌─────────┐  ┌─────────┐             │        │
+│    │  │ 发布     │  │ 发现     │  │ 安装     │             │        │
+│    │  │ SKILL.md │→│ 搜索/推荐 │→│ 一键使用  │             │        │
+│    │  └─────────┘  └─────────┘  └─────────┘             │        │
+│    │                                                      │        │
+│    │  网络效应：每多一个 Skill，所有同行业用户受益           │        │
+│    └──────────────────────────────────────────────────────┘        │
+│         │                                                           │
+│         ▼                                                           │
+│    ┌──────────────────────────────────────────────────────┐        │
+│    │  数据飞轮                                             │        │
+│    │                                                      │        │
+│    │  Agent 运行数据 → Skills 质量评分 → 推荐优质 Skills    │        │
+│    │  Agent 决策记录 → 优化业务规则 → 更新 SKILL.md         │        │
+│    └──────────────────────────────────────────────────────┘        │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**三层飞轮**：
+
+1. **产品飞轮**：写 SKILL.md → Agent 工作 → 产生价值 → 口碑传播 → 更多用户
+2. **生态飞轮**：用户发布 Skills → OwlHub 积累 → 同行业复用 → 接入门槛持续降低
+3. **数据飞轮**：Agent 运行数据 → Skills 质量评分 → 推荐优化 → Agent 决策更准
+
+**天花板对比**：
+
+| 维度 | OpenClaw ClawHub | OwlClaw OwlHub |
+|------|-----------------|----------------|
+| Skills 类型 | 通用技能（Git、代码审查、写作） | 业务技能（库存、财务、CRM、HR...） |
+| Skills 数量天花板 | 有限（通用操作就那么多） | **无限**（每个行业、每个业务流程） |
+| 用户群体 | 开发者 | 业务开发者 + 业务人员 |
+| 商业价值 | 低（通用技能难以差异化收费） | **高**（行业 Skills 有明确商业价值） |
+| 网络效应 | 中（通用 Skills 复用率有限） | **强**（同行业 Skills 高度可复用） |
+
+#### 2.7.5 OwlHub：业务 Skills 生态平台
+
+OwlHub 是 OwlClaw 的业务 Skills 注册中心，类似 OpenClaw 的 ClawHub，但面向业务领域。
+
+**注册中心架构模型选择**：
+
+经过对 npm（数据库 Web 服务）、Homebrew（Git 仓库索引）、Terraform Registry（GitHub + 协议）、ClawHub（Convex + 向量搜索）的研究，OwlHub 采用**渐进式架构**：
+
+| 阶段 | 架构 | 说明 |
+|------|------|------|
+| **Phase 1（MVP）** | **GitHub 仓库索引** | 类似 Homebrew-tap 模式。一个 `owlclaw/owlhub` 仓库，Skills 以目录形式存放，通过 PR 提交和审核。CLI `owlclaw skill install <name>` 直接从 GitHub 拉取。零基础设施成本 |
+| **Phase 2（社区）** | **静态站点 + GitHub API** | 在 GitHub 仓库基础上，加一个静态站点（GitHub Pages / Cloudflare Pages）提供浏览、搜索、分类。向量搜索用 OpenAI embeddings + 本地索引。仍然零服务器成本 |
+| **Phase 3（规模）** | **数据库 Web 服务** | 当 Skills 数量超过 1000 或需要高级功能（评分、推荐、私有 Skills）时，迁移到数据库后端（PostgreSQL + pgvector）。支持 OwlClaw Cloud 的企业私有 Skills 仓库 |
+
+**Phase 1 MVP 详细设计**：
+
+```
+owlclaw/owlhub (GitHub 仓库)
+├── registry/
+│   ├── index.json                    # Skills 索引（名称、描述、版本、分类）
+│   ├── ecommerce/                    # 电商行业
+│   │   ├── inventory-monitor/
+│   │   │   ├── SKILL.md
+│   │   │   └── metadata.json         # 版本、作者、标签、兼容性
+│   │   ├── order-anomaly/
+│   │   │   ├── SKILL.md
+│   │   │   └── metadata.json
+│   │   └── ...
+│   ├── finance/                      # 金融行业
+│   │   ├── financial-anomaly/
+│   │   ├── budget-monitor/
+│   │   └── ...
+│   ├── saas/                         # SaaS 行业
+│   │   ├── churn-detection/
+│   │   ├── usage-analytics/
+│   │   └── ...
+│   └── general/                      # 通用（跨行业）
+│       ├── data-quality-check/
+│       ├── report-generator/
+│       └── ...
+├── templates/                        # SKILL.md 模板
+│   ├── basic.md                      # 基础模板
+│   ├── monitoring.md                 # 监控类模板
+│   ├── analysis.md                   # 分析类模板
+│   └── workflow.md                   # 工作流类模板
+├── CONTRIBUTING.md                   # 贡献指南
+└── README.md
+```
+
+**CLI 集成**：
+
+```bash
+# 浏览可用 Skills
+owlclaw skill search "inventory"
+owlclaw skill search --category ecommerce
+
+# 安装 Skill（从 OwlHub 拉取到项目的 skills/ 目录）
+owlclaw skill install ecommerce/inventory-monitor
+
+# 从模板创建新 Skill
+owlclaw skill init --template monitoring my-custom-monitor
+
+# 发布 Skill 到 OwlHub（通过 GitHub PR）
+owlclaw skill publish my-custom-monitor
+
+# 验证 SKILL.md 格式合规性
+owlclaw skill validate skills/my-skill/SKILL.md
+```
+
+**metadata.json 格式**：
+
+```json
+{
+  "name": "inventory-monitor",
+  "version": "1.0.0",
+  "author": "company-name",
+  "category": "ecommerce",
+  "tags": ["inventory", "monitoring", "alert", "warehouse"],
+  "owlclaw_version": ">=0.1.0",
+  "tools_required": [
+    "get_inventory_levels",
+    "get_consumption_rate",
+    "get_safety_stock",
+    "send_alert"
+  ],
+  "tools_schema": {
+    "get_inventory_levels": {
+      "description": "获取指定仓库的库存水平",
+      "parameters": {
+        "warehouse_id": {"type": "string", "description": "仓库 ID"}
+      },
+      "returns": {"type": "object", "description": "库存水平数据"}
+    }
+  },
+  "triggers_recommended": ["cron:0 9 * * 1-5", "heartbeat:30m"],
+  "governance_hints": {
+    "max_daily_runs": 50,
+    "max_cost_per_run": 0.5
+  }
+}
+```
+
+**关键设计决策**：
+
+1. **SKILL.md 遵循 Agent Skills 规范（agentskills.io）**——不发明新格式，复用已有的开源标准。OwlHub 的 metadata.json 是对标准的扩展，不是替代
+2. **tools_schema 是可选的**——如果业务开发者只写了 SKILL.md 中的文字描述，Agent 仍然可以工作（通过 function calling 的参数推断）。tools_schema 提供更精确的类型信息，提升 Agent 决策质量
+3. **triggers_recommended 和 governance_hints 是建议**——安装 Skill 后，用户可以根据自己的需求调整触发频率和治理参数
+4. **GitHub PR 审核流程**——所有公开 Skills 必须经过社区审核（格式合规、无恶意内容、描述清晰），保证生态质量
+
+#### 2.7.6 SKILL.md 模板体系
+
+降低 SKILL.md 编写门槛是引爆的关键。OwlClaw 提供分类模板：
+
+| 模板类型 | 适用场景 | 核心结构 |
+|---------|---------|---------|
+| **monitoring** | 监控预警类（库存、性能、安全） | 可用工具 + 预警规则 + 阈值 + 通知策略 |
+| **analysis** | 数据分析类（销售、客户、财务） | 可用工具 + 分析维度 + 异常定义 + 报告格式 |
+| **workflow** | 流程自动化类（审批、通知、同步） | 可用工具 + 流程步骤 + 条件分支 + 异常处理 |
+| **integration** | 系统集成类（数据同步、格式转换） | 源系统工具 + 目标系统工具 + 映射规则 |
+| **report** | 报告生成类（日报、周报、月报） | 数据源工具 + 报告结构 + 生成频率 + 分发列表 |
+
+**模板示例（monitoring 类）**：
+
+```markdown
+---
+name: [your-skill-name]
+description: >
+  [一句话描述：监控什么、什么时候触发、触发后做什么]
+---
+
+## 可用工具
+- [tool_name](param1, param2): [工具描述]
+- [tool_name](param1): [工具描述]
+
+## 监控规则
+- [条件 1] → [动作 1]
+- [条件 2] → [动作 2]
+
+## 阈值配置
+- [指标名]: [正常范围] / [预警阈值] / [严重阈值]
+
+## 通知策略
+- 预警级别 → 通知 [角色]，方式 [邮件/消息/...]
+- 严重级别 → 通知 [角色]，方式 [电话/紧急消息/...]
+- 同一问题 [N] 小时内不重复通知
+
+## 排除条件
+- [什么情况下不触发]（如节假日、维护窗口）
+```
+
+#### 2.7.7 商业模式演进
+
+| 阶段 | 模式 | 收入来源 |
+|------|------|---------|
+| **Phase 1：开源增长** | MIT 开源，OwlHub 免费 | 无（积累用户和 Skills 生态） |
+| **Phase 2：Cloud 服务** | OwlClaw Cloud（托管部署 + 私有 OwlHub） | 订阅费：按 Agent 数量 / 按 Skill 运行次数 |
+| **Phase 3：企业版** | 私有 Skills 仓库 + 高级治理 + SLA | 企业订阅：按租户 / 按部署规模 |
+| **Phase 4：生态变现** | 行业 Skills 认证 + 付费 Skills + 咨询 | 平台抽成 + 认证费 + 咨询服务 |
+
+**MIT 许可证的战略价值**：业务系统集成 OwlClaw 后，OwlClaw 的代码成为业务系统的一部分。MIT 许可证意味着：
+- 不影响业务系统的许可证（GPL 会"传染"）
+- 不需要开源业务系统的代码
+- 不需要向 OwlClaw 付费（除非选择 Cloud/Enterprise）
+- **这是业务软件公司最能接受的许可证**
 
 ---
 
@@ -272,7 +930,7 @@ owlclaw/
 1. **MIT 许可证** —— 基础层零许可证风险，OwlClaw Cloud 未来商业化无障碍
 2. **Cron 一等公民** —— OwlClaw 的第一个触发器就是 cron，Hatchet 内建支持，不需要自己实现
 3. **生产验证** —— 每天 1 亿+ 任务，Aevy/Greptile/Moonhub 等生产案例
-4. **共用 PostgreSQL** —— OwlClaw 本身需要 PostgreSQL（Ledger + Memory），Hatchet 共用同一实例，实际增加的部署复杂度只是一个 Hatchet Server 容器
+4. **数据层归属 OwlClaw** —— 复用宿主 PostgreSQL，组件间 database 级隔离。详见 `docs/DATABASE_ARCHITECTURE.md`
 5. **AI 中间件自己做** —— OwlClaw 的 Agent 运行时（身份、记忆、知识注入、function calling、治理过滤）本身就是 AI 中间件。我们需要的是底层的持久执行 + 调度 + cron，不多不少。Hatchet 提供的恰好是这个
 
 **不选 Restate 的理由**：
@@ -297,12 +955,167 @@ owlclaw/
 | 事件触发器统一层 | ✅ | | 核心价值 |
 | Agent 内建工具（schedule/memory） | ✅ | | 核心价值 |
 | Skills 格式 | | ✅ Agent Skills 规范 | Anthropic 开源标准 |
-| 持久执行 | | ✅ Hatchet（MIT） | 直接集成，共用 PostgreSQL |
+| 持久执行 | | ✅ Hatchet（MIT） | 直接集成，独立 database（详见 `DATABASE_ARCHITECTURE.md`） |
 | LLM 客户端 | | ✅ litellm | 统一 100+ 模型 |
 | LLM 调用 tracing | | ✅ Langfuse | 不重复造轮子 |
 | 分布式追踪 | | ✅ OpenTelemetry | 标准协议 |
 | 对话通道 | | ✅ MCP（OpenClaw） | 标准协议 |
 | 向量存储 | | ✅ 业务应用自己选 | OwlClaw 只定义接口 |
+| 编排框架接入 | | ✅ LangChain/LangGraph/CrewAI | 标准 capability handler 接入，详见决策8 |
+| Skills 生态（OwlHub） | ✅ | | Skills 注册/发现/分发平台，详见决策10 |
+| Skills CLI 工具 | ✅ | | `owlclaw skill` 子命令（init/validate/search/install/publish） |
+| SKILL.md 模板库 | ✅ | | 分类模板（monitoring/analysis/workflow/integration/report） |
+
+### 4.7 决策7：接入协议语言无关
+
+**OwlClaw 的目标用户是"成熟业务系统"，而成熟业务系统的技术栈不限于 Python —— Java、.NET、Go、TypeScript 都有可能。因此，接入协议必须语言无关。**
+
+**核心原则**：Python SDK 是接入协议的第一个便利封装，不是唯一的接入方式。
+
+| 层 | 语言绑定 | 说明 |
+|----|----------|------|
+| **Agent Runtime** | Python（实现语言） | 引擎内部实现，用什么语言写不影响用户 |
+| **接入协议** | 语言无关（HTTP/gRPC/MCP） | 业务应用通过协议注册能力、推送状态、接收调用 |
+| **Python SDK** | Python | 协议的 Python 封装（`@app.handler()`、`@app.state()` 是语法糖） |
+| **未来 SDK** | Java / .NET / Go / TS | 协议的其他语言封装（P3） |
+
+**跨语言接入的两条现有路径**：
+
+1. **MCP 协议** —— MCP 是语言无关的（JSON-RPC over stdio/HTTP）。任何语言的应用只要能发 HTTP 请求，就能通过 OwlClaw MCP Server 与 Agent 交互
+2. **Hatchet 多语言 SDK** —— Hatchet 有 Go、TypeScript、Python SDK。业务应用可以用自己的语言注册 Hatchet worker，OwlClaw Agent 通过 Hatchet 调度这些 worker
+
+**对开发的约束**：
+
+- Capability 的注册和调用在内部必须基于协议层（数据结构 + 序列化），Python SDK 的装饰器只是协议的语法糖
+- 禁止在协议层泄漏 Python 特有的概念（如 `Callable`、`inspect`、装饰器元数据）—— 协议层只传递 JSON Schema + handler endpoint
+- Skills 的 SKILL.md 格式本身就是语言无关的（YAML + Markdown），这是正确的
+- 未来设计 HTTP API 时，接口定义应先于 SDK 封装（API-first）
+
+**MVP 阶段不需要实现多语言 SDK**，但架构设计必须保证不把 Python 特有的东西烧进协议层。具体来说：
+- `CapabilityRegistry` 内部可以用 Python 的 `Callable`、`inspect`
+- 但对外暴露的能力描述（传给 Agent Runtime 的工具列表）必须是纯数据结构（dict/JSON Schema），不依赖 Python 对象
+
+### 4.8 决策8：编排框架生态标准接入
+
+**OwlClaw 与 LangChain 等编排框架是生态位互补关系，不是竞争关系。OwlClaw 必须提供编排框架的标准接入接口。**
+
+**核心原则**：编排框架给 Agent 手和脚（怎么做），OwlClaw 给 Agent 大脑和心跳（什么时候做、该不该做）。两者组合才是完整的自主 Agent。
+
+#### 接入层次
+
+| 层次 | 接入方式 | 说明 | 优先级 |
+|------|---------|------|--------|
+| **Capability 接入** | 编排框架的 chain/agent/workflow 注册为 OwlClaw 的 capability handler | 最核心的接入方式。用户已有的 LangChain chain、LangGraph 工作流、CrewAI crew 通过 `@app.handler` 注册后，OwlClaw Agent 可自主决定何时调用 | P0（MVP） |
+| **LLM 后端接入** | OwlClaw Agent 运行时支持 LangChain 作为 LLM 调用层（除 litellm 外的可选后端） | 让已深度使用 LangChain 的用户复用已有的 model 配置、callback、tracing | P2 |
+| **工具生态接入** | 通过 Composio 或 LangChain Tools 扩展 OwlClaw Agent 的工具库 | 让 Agent 能调用 850+ 外部工具（Gmail、Slack、Jira 等） | P2 |
+
+#### Capability 接入示例
+
+```python
+# ── LangChain chain 作为 capability ──
+from langchain.chains import RetrievalQA
+
+rag_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+
+@app.handler(name="query_knowledge_base", knowledge="skills/kb-query/SKILL.md")
+async def query_kb(question: str) -> str:
+    return await rag_chain.ainvoke(question)
+
+# ── LangGraph 工作流作为 capability ──
+from langgraph.graph import StateGraph
+
+approval_graph = StateGraph(ApprovalState)
+# ... build graph ...
+approval_app = approval_graph.compile()
+
+@app.handler(name="run_approval_workflow", knowledge="skills/approval/SKILL.md")
+async def approval(request: dict) -> dict:
+    return await approval_app.ainvoke(request)
+
+# ── CrewAI crew 作为 capability ──
+from crewai import Crew
+
+research_crew = Crew(agents=[...], tasks=[...])
+
+@app.handler(name="research_topic", knowledge="skills/research/SKILL.md")
+async def research(topic: str) -> str:
+    return research_crew.kickoff(inputs={"topic": topic})
+```
+
+**关键设计约束**：
+
+1. **OwlClaw 不依赖任何编排框架** —— litellm 是默认 LLM 后端，LangChain 是可选的。`pip install owlclaw` 不会拉入 LangChain 依赖
+2. **编排框架接入通过 capability handler 实现** —— 这是已有的 @handler 机制，不需要新的抽象层。任何可调用的 Python 函数都能注册为 capability
+3. **LangChain LLM 后端是可选扩展** —— 通过 `pip install owlclaw[langchain]` 安装，提供 `LangChainLLMBackend` 适配器
+4. **文档和 examples 必须包含编排框架集成示例** —— 至少覆盖 LangChain chain、LangGraph workflow 两个场景
+
+### 4.9 数据库架构
+
+数据库是 OwlClaw 的基石，其完整架构设计见独立文档：**`docs/DATABASE_ARCHITECTURE.md`**（数据库架构唯一真源）。
+
+**核心设计要点**：
+
+- **复用宿主 PostgreSQL** —— OwlClaw 不自行部署 PostgreSQL 实例，在宿主已有的 PostgreSQL 上创建 database，降低接入门槛
+- **组件间 database 级隔离** —— owlclaw / hatchet / langfuse 各自独立 database，权限、migration、备份均独立
+- **tenant_id 从 Day 1 存在** —— 所有 OwlClaw 表从第一天起包含 `tenant_id`（Self-hosted 默认 `'default'`），为 Cloud 多租户预留
+- **各组件独立管理 migration** —— OwlClaw 用 Alembic，Hatchet / Langfuse 用各自内建 migration
+- **运维通过 CLI 统一入口** —— `owlclaw db init / migrate / status / backup / check` 等子命令
+
+**部署模式演进**：Self-hosted（单租户）→ OwlClaw Cloud（RLS 多租户）→ Enterprise（Database-per-tenant）
+
+详细内容包括：数据模型与表结构、Schema 迁移策略、`owlclaw db` CLI 设计、连接管理、性能指南、灾备与高可用、Self-hosted 到 Cloud 的迁移路径。请参阅 `docs/DATABASE_ARCHITECTURE.md`。
+
+### 4.10 决策10：Skills 生态与 OwlHub
+
+**OwlClaw 的核心增长引擎不是代码，是 Skills 生态。SKILL.md 是业务开发者接入 AI 能力的零代码入口，OwlHub 是 Skills 的发现和分发平台。**
+
+#### 核心原则
+
+1. **SKILL.md 遵循 Agent Skills 规范（agentskills.io）**——不发明新格式，复用开源标准。OwlHub 的 metadata.json 是扩展，不是替代
+2. **渐进式架构**——Phase 1 用 GitHub 仓库（零成本），Phase 2 加静态站点，Phase 3 迁移到数据库后端
+3. **CLI 优先**——`owlclaw skill` 子命令是 Skills 生态的主要交互方式，Web 界面是补充
+4. **质量优于数量**——通过 PR 审核、格式验证、社区评分保证 Skills 质量
+
+#### CLI 子命令设计
+
+| 命令 | 功能 | 优先级 |
+|------|------|--------|
+| `owlclaw skill init --template <type> <name>` | 从模板创建新 Skill | P0（MVP） |
+| `owlclaw skill validate <path>` | 验证 SKILL.md 格式合规性 | P0（MVP） |
+| `owlclaw skill search <query>` | 搜索 OwlHub 中的 Skills | P1 |
+| `owlclaw skill install <name>` | 从 OwlHub 安装 Skill 到项目 | P1 |
+| `owlclaw skill publish <path>` | 发布 Skill 到 OwlHub（GitHub PR） | P1 |
+| `owlclaw skill list` | 列出项目中已安装的 Skills | P0（MVP） |
+| `owlclaw skill info <name>` | 查看 Skill 详情（描述、版本、评分） | P1 |
+
+#### 与现有架构的关系
+
+```
+owlclaw skill init          owlclaw skill install
+       │                           │
+       ▼                           ▼
+  skills/                    skills/
+  └── my-skill/              └── inventory-monitor/   ← 从 OwlHub 安装
+      └── SKILL.md               └── SKILL.md
+       │                           │
+       ▼                           ▼
+  @app.handler(              @app.handler(
+    knowledge=               knowledge=
+    "skills/my-skill"        "skills/inventory-monitor"
+  )                          )
+       │                           │
+       ▼                           ▼
+  Agent Runtime: Skills 知识注入 → function calling 决策
+```
+
+Skills 生态不改变 OwlClaw 的核心架构——它是在现有的 `@app.handler(knowledge=...)` 机制之上，提供 Skills 的**创建、验证、发现、分发**能力。
+
+#### 关键约束
+
+1. **OwlHub 是可选的**——用户可以完全不用 OwlHub，自己写 SKILL.md 放在项目目录里，OwlClaw 照常工作
+2. **`owlclaw skill` CLI 不依赖 OwlHub 服务**——`init`、`validate`、`list` 是纯本地操作；`search`、`install`、`publish` 需要网络但仅依赖 GitHub API（Phase 1）
+3. **私有 Skills 不经过 OwlHub**——企业的业务 Skills 包含商业机密，永远不应上传到公开仓库。私有 Skills 就是项目目录里的 SKILL.md 文件
+4. **模板是引爆的关键**——`owlclaw skill init --template monitoring my-alert` 必须能在 30 秒内生成一个可用的 SKILL.md 骨架，让业务开发者只需填写业务规则
 
 ---
 
@@ -422,15 +1235,15 @@ owlclaw/
 │  │  ├── cron trigger             → 内建 Cron 一等公民                │   │
 │  │  └── Dashboard                → 内建可视化 + 监控                 │   │
 │  │                                                                    │   │
-│  │  共用 PostgreSQL（OwlClaw Ledger + Memory + Hatchet）             │   │
+│  │  PostgreSQL（owlclaw 库 + hatchet 库，详见 DATABASE_ARCHITECTURE.md）│   │
 │  └──────────────────────────┬───────────────────────────────────────┘   │
 │                             │                                            │
 │  ┌──────────────────────────▼───────────────────────────────────────┐   │
 │  │  集成层 (Integration Layer)                                       │   │
 │  │  - LLM: litellm (统一 100+ 模型)                                  │   │
 │  │  - Tracing: Langfuse / OpenTelemetry                              │   │
-│  │  - 持久执行: Hatchet（MIT，共用 PostgreSQL）                      │   │
-│  │  - 存储: SQLAlchemy + PostgreSQL（ledger、memory、hatchet）       │   │
+│  │  - 持久执行: Hatchet（MIT，独立 database，同一 PostgreSQL 实例）  │   │
+│  │  - 存储: SQLAlchemy + PostgreSQL（owlclaw 库：ledger、memory）   │   │
 │  └──────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -1118,10 +1931,10 @@ Steady: Agent 完全自主，触发器仅作为事件源
 | 层 | 选型 | 理由 |
 |----|------|------|
 | 主语言 | Python ≥ 3.10 | 目标用户生态 |
-| 持久执行 | **Hatchet**（MIT，1亿+任务/天） | 直接集成，共用 PostgreSQL |
+| 持久执行 | **Hatchet**（MIT，1亿+任务/天） | 直接集成，独立 database（详见 `DATABASE_ARCHITECTURE.md`） |
 | Skills 格式 | Agent Skills 规范（SKILL.md） | Anthropic 开源标准 |
 | LLM 客户端 | litellm | 统一 100+ 模型 |
-| 数据库 | SQLAlchemy + PostgreSQL | Ledger + Memory 持久化 |
+| 数据库 | SQLAlchemy + PostgreSQL + Alembic | 复用宿主 PG + database 级隔离 + Alembic。详见 `DATABASE_ARCHITECTURE.md` |
 | 追踪 | Langfuse + OpenTelemetry | 开源标准 |
 | MCP | mcp Python SDK | OpenClaw 通道 |
 | 配置 | YAML + Pydantic | 类型安全 |
@@ -1213,7 +2026,7 @@ Steady: Agent 完全自主，触发器仅作为事件源
 **回应**：
 - 部署确实比 Restate 重，但可接受。
 - **理由**：
-  1. OwlClaw 本身需要 PostgreSQL（Ledger + Memory），Hatchet 共用同一实例，不额外增加 DB
+  1. 复用宿主 PostgreSQL：OwlClaw 和 Hatchet 各自使用独立 database（详见 `DATABASE_ARCHITECTURE.md`），不额外增加 PostgreSQL 服务器
   2. Hatchet 支持 `SERVER_MSGQUEUE_KIND=postgres`，可以不用 RabbitMQ，进一步简化
   3. Hatchet Lite 镜像可用于开发和低量场景
   4. MIT 许可证的长期价值远大于部署的短期不便
@@ -1252,7 +2065,7 @@ Steady: Agent 完全自主，触发器仅作为事件源
 | Agent 决策质量不可控 | MVP 必须包含决策质量对比测试（见 8.4） |
 | Heartbeat "零成本"理想化 | `_collect_pending()` 只做轻量内存检查，状态查询有缓存 |
 | 知识文档维护负担 | 采用 Agent Skills 规范 + `owlclaw scan` 自动生成 SKILL.md 骨架 |
-| Hatchet 部署比 Restate 重 | 共用 PostgreSQL + Hatchet Lite 开发模式 + MIT 长期价值 > 短期不便 |
+| Hatchet 部署比 Restate 重 | 复用宿主 PG + database 级隔离（详见 `DATABASE_ARCHITECTURE.md`）+ Hatchet Lite + MIT 长期价值 > 短期不便 |
 | MCP 通道可能鸡肋 | MCP 定位为"只读查询通道"，业务控制走 CLI/API |
 | mionyee 场景局限 | examples 必须包含 2+ 个非交易场景 |
 
@@ -1340,7 +2153,7 @@ Agent 执行业务操作（如建仓），安全是关键：
 10. 实现能力注册（@handler + @state 装饰器）
 11. 实现治理层（能力可见性过滤 + Ledger）
 12. 实现 Cron 触发器
-13. 直接集成 Hatchet（`owlclaw/integrations/hatchet.py`，MIT，共用 PostgreSQL）
+13. 直接集成 Hatchet（`owlclaw/integrations/hatchet.py`，MIT，独立 database）
 14. 用 mionyee 的 3 个任务做端到端验证
 15. 决策质量对比测试：v3 Agent vs 原始 cron，量化对比
 
@@ -1377,7 +2190,7 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 
 ---
 
-> **文档版本**: v3.2（Hatchet MIT 替代 Restate + 安全/测试/恢复策略补全）
+> **文档版本**: v4.0（v3.9 + §2.7 产品愿景"Markdown 即 AI 能力" + OwlHub 架构 + §4.10 Skills 生态决策）
 > **创建时间**: 2026-02-10
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`
 > **文档维护**: 本文档应随架构决策变化持续更新。
