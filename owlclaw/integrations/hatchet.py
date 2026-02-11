@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,15 @@ class HatchetConfig(BaseModel):
 
     server_url: str = "http://localhost:7077"
     api_token: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def server_url_from_env(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "server_url" not in data:
+            url = os.environ.get("HATCHET_SERVER_URL", "").strip()
+            if url:
+                data = {**data, "server_url": url}
+        return data
     namespace: str = "owlclaw"
     mode: str = "production"
 
@@ -196,6 +205,49 @@ class HatchetClient:
 
         return decorator
 
+    def durable_task(
+        self,
+        name: str | None = None,
+        cron: str | None = None,
+        retries: int = 3,
+        timeout: int | None = None,
+        priority: int = 1,
+    ) -> Callable:
+        """Decorator to register a function as a Hatchet durable task (supports ctx.aio_sleep_for)."""
+
+        def decorator(func: Callable) -> Callable:
+            if self._hatchet is None:
+                raise RuntimeError("Must call connect() before registering tasks")
+            if cron is not None:
+                _validate_cron(cron)
+            task_name = name or getattr(func, "__name__", "anonymous")
+            on_crons = [cron] if cron else None
+            exec_timeout = timedelta(seconds=timeout) if timeout else timedelta(seconds=60)
+            standalone = self._hatchet.durable_task(
+                name=task_name,
+                on_crons=on_crons,
+                retries=retries,
+                execution_timeout=exec_timeout,
+                default_priority=priority,
+            )(func)
+            self._workflows[task_name] = standalone
+            return func
+
+        return decorator
+
+    async def run_task_now(self, task_name: str, **kwargs: Any) -> str:
+        """Trigger an immediate run of the task. Returns workflow run id."""
+        standalone = self._workflows.get(task_name)
+        if standalone is None:
+            raise ValueError(f"Task '{task_name}' not registered")
+        wf = standalone._workflow
+        try:
+            result = await wf.aio_run(input=kwargs)
+            return getattr(result, "workflow_run_id", getattr(result, "id", "")) or ""
+        except Exception as e:
+            logger.exception("Failed to run task %s", task_name)
+            raise
+
     async def schedule_task(
         self,
         task_name: str,
@@ -211,15 +263,11 @@ class HatchetClient:
         run_at = datetime.now(timezone.utc) + timedelta(seconds=delay_seconds)
         input_data = kwargs
         try:
-            # Schedule returns WorkflowVersion; we don't get run id from it.
-            # Run the workflow with aio_run_no_wait and pass delay via options if SDK supports it,
-            # or use workflow's schedule().
             wf = standalone._workflow
             result = await wf.aio_schedule(
                 run_at=run_at,
                 input=input_data,
             )
-            # WorkflowVersion may have workflow_run_id in some SDK versions
             return getattr(result, "workflow_run_id", "") or f"scheduled-{task_name}"
         except Exception as e:
             logger.exception("Failed to schedule task %s", task_name)
