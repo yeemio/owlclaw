@@ -15,8 +15,12 @@ Hatchet Python SDK
     ↓
 Hatchet Server (Go)
     ↓
-PostgreSQL (共用实例)
+PostgreSQL（复用宿主实例，database 级隔离）
+    ├── database: hatchet  ← Hatchet 独占（migration、任务状态）
+    └── database: owlclaw  ← OwlClaw 业务（Ledger、Memory 等，本集成不直接连接）
 ```
+
+**数据库架构**：遵循 `docs/DATABASE_ARCHITECTURE.md`。Hatchet Server 仅连接 **hatchet** database，OwlClaw 应用连接 **owlclaw** database；二者同属一个 PostgreSQL 实例（复用宿主已有实例）。
 
 ### 集成边界
 
@@ -62,11 +66,11 @@ class HatchetConfig:
     namespace: str = "owlclaw"
     mode: str = "production"  # "production" or "lite"
     
-    # PostgreSQL 配置（共用实例）
+    # PostgreSQL 配置（Hatchet 独立 database，同一 PostgreSQL 实例）
     postgres_host: str = "localhost"
     postgres_port: int = 5432
-    postgres_db: str = "owlclaw"
-    postgres_user: str = "owlclaw"
+    postgres_db: str = "hatchet"       # Hatchet 独占 database
+    postgres_user: str = "hatchet"     # Hatchet 专用用户
     postgres_password: str = ""
     
     # Worker 配置
@@ -359,12 +363,12 @@ hatchet:
   namespace: owlclaw
   mode: production  # "production" or "lite"
   
-  # PostgreSQL 配置（共用实例）
+  # PostgreSQL 配置（Hatchet 独立 database，同一 PostgreSQL 实例）
   postgres_host: localhost
   postgres_port: 5432
-  postgres_db: owlclaw
-  postgres_user: owlclaw
-  postgres_password: ${POSTGRES_PASSWORD}
+  postgres_db: hatchet
+  postgres_user: hatchet
+  postgres_password: ${HATCHET_DB_PASSWORD}
   
   # Worker 配置
   max_concurrent_tasks: 10
@@ -390,29 +394,51 @@ hatchet.connect()
 
 ### 开发模式（Hatchet Lite）
 
+PostgreSQL 由 OwlClaw 部署（服务名 `owlclaw-db`），启动时通过 `init-db.sql` 创建 **hatchet** 与 **owlclaw** 两个 database；Hatchet Lite 仅连接 **hatchet** 库。
+
 ```yaml
-# docker-compose.yml
-version: '3.8'
+# docker-compose.lite.yml（见 deploy/）
 
 services:
-  postgres:
-    image: postgres:15
+  owlclaw-db:
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: owlclaw
-      POSTGRES_USER: owlclaw
-      POSTGRES_PASSWORD: owlclaw
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
-  
+    volumes:
+      - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+
   hatchet-lite:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:latest
     environment:
-      DATABASE_URL: postgresql://owlclaw:owlclaw@postgres:5432/owlclaw
+      # Hatchet 仅连接 hatchet database（database 级隔离）
+      DATABASE_URL: postgresql://hatchet:hatchet@owlclaw-db:5432/hatchet
       SERVER_PORT: 7077
     ports:
       - "7077:7077"
     depends_on:
-      - postgres
+      - owlclaw-db
+```
+
+```sql
+-- init-db.sql（PostgreSQL 初始化脚本，创建多库）
+-- 详见 docs/DATABASE_ARCHITECTURE.md
+
+-- Hatchet 独占数据库
+CREATE DATABASE hatchet;
+CREATE ROLE hatchet WITH LOGIN PASSWORD 'hatchet';
+ALTER DATABASE hatchet OWNER TO hatchet;
+
+-- OwlClaw 业务数据库
+CREATE DATABASE owlclaw;
+CREATE ROLE owlclaw WITH LOGIN PASSWORD 'owlclaw';
+ALTER DATABASE owlclaw OWNER TO owlclaw;
+
+-- OwlClaw 数据库启用 pgvector（Agent 记忆向量搜索）
+\c owlclaw
+CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
 **启动：**
@@ -423,40 +449,39 @@ docker-compose up -d
 ### 生产模式
 
 ```yaml
-# docker-compose.yml
-version: '3.8'
+# docker-compose.prod.yml（见 deploy/）
 
 services:
-  postgres:
-    image: postgres:15
+  owlclaw-db:
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: owlclaw
-      POSTGRES_USER: owlclaw
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - owlclaw_db_data:/var/lib/postgresql/data
+      - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     ports:
       - "5432:5432"
-  
+
   hatchet-server:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest
     environment:
-      DATABASE_URL: postgresql://owlclaw:${POSTGRES_PASSWORD}@postgres:5432/owlclaw
+      DATABASE_URL: postgresql://hatchet:${HATCHET_DB_PASSWORD}@owlclaw-db:5432/hatchet
       SERVER_PORT: 7077
-      SERVER_MSGQUEUE_KIND: postgres  # 不使用 RabbitMQ
+      SERVER_MSGQUEUE_KIND: postgres
     ports:
       - "7077:7077"
       - "8080:8080"  # Dashboard
     depends_on:
-      - postgres
+      - owlclaw-db
 
 volumes:
-  postgres_data:
+  owlclaw_db_data:
 ```
 
 **关键配置：**
 - `SERVER_MSGQUEUE_KIND=postgres`：使用 PostgreSQL 作为消息队列，避免额外的 RabbitMQ 依赖
-- Hatchet 在独立的 schema 中创建表，不影响 OwlClaw 的 Ledger 和 Memory 表
+- Hatchet 使用独立的 `hatchet` database（同一 PostgreSQL 实例，不同 database），不影响 OwlClaw 的 `owlclaw` database 中的 Ledger 和 Memory 表。详见 `docs/DATABASE_ARCHITECTURE.md`
 - Dashboard 在 8080 端口提供任务监控界面
 
 

@@ -17,7 +17,7 @@
 - **Schedule_Task**: 延迟执行或自我调度的任务
 - **Context**: Hatchet 任务执行时的上下文对象，提供 sleep、schedule 等能力
 - **OwlClaw_Config**: OwlClaw 的配置系统（owlclaw.yaml）
-- **PostgreSQL**: 共用的数据库实例（OwlClaw Ledger + Memory + Hatchet）
+- **PostgreSQL**: 复用宿主已有实例，database 级隔离；Hatchet 使用独立的 **hatchet** database，OwlClaw 业务使用 **owlclaw** database。详见 `docs/DATABASE_ARCHITECTURE.md`。
 
 ## Requirements
 
@@ -134,17 +134,17 @@
 5. WHEN 查询任务状态时，THE Hatchet_Client SHALL 返回任务的当前状态（pending、running、completed、failed、cancelled）
 6. THE Hatchet_Client SHALL 提供 `list_scheduled_tasks()` 方法列出所有已调度的任务
 
-### Requirement 10: 共用 PostgreSQL 数据库
+### Requirement 10: database 级隔离（Hatchet 独立 database）
 
-**User Story:** 作为 OwlClaw 部署者，我希望 Hatchet 能够与 OwlClaw 共用同一个 PostgreSQL 实例，以便简化部署架构。
+**User Story:** 作为 OwlClaw 部署者，我希望 Hatchet 使用 OwlClaw 拥有的同一 PostgreSQL 实例中的**独立 database**，以便简化部署且满足 Hatchet 对 DDL 权限的隔离要求。
 
 #### Acceptance Criteria
 
-1. THE Hatchet_Server SHALL 支持使用 OwlClaw 的 PostgreSQL 实例
-2. WHEN 配置指定共用数据库时，THE Hatchet_Server SHALL 在独立的 schema 中创建表（避免命名冲突）
-3. THE Hatchet_Client SHALL 在文档中说明如何配置共用 PostgreSQL
-4. THE Hatchet_Client SHALL 支持配置 `SERVER_MSGQUEUE_KIND=postgres` 以避免额外的 RabbitMQ 依赖
-5. WHEN 使用共用数据库时，THE Hatchet_Server SHALL 不影响 OwlClaw 的 Ledger 和 Memory 表
+1. THE 部署 SHALL 复用宿主已有的 PostgreSQL 实例，其中创建独立 database：**hatchet**（Hatchet 独占）、**owlclaw**（OwlClaw 业务：Ledger、Memory 等）。详见 `docs/DATABASE_ARCHITECTURE.md`。
+2. WHEN Hatchet_Server 启动时，THE Hatchet_Server SHALL 连接至 **hatchet** database（DATABASE_URL 指向 `postgresql://hatchet:...@host:5432/hatchet`），不在 owlclaw database 中建表。
+3. THE Hatchet_Client 与部署文档 SHALL 说明如何配置 database 级隔离（init 脚本创建 hatchet/owlclaw 库及对应用户）。
+4. THE Hatchet_Server SHALL 支持 `SERVER_MSGQUEUE_KIND=postgres`，使用 PostgreSQL 作为消息队列，无需 RabbitMQ。
+5. WHEN 使用独立 hatchet database 时，THE Hatchet_Server 的 migration 与表 SHALL 不影响 owlclaw database 中的 Ledger、Memory 等表。
 
 ### Requirement 11: 监控和可观测性
 
