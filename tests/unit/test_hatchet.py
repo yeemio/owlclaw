@@ -96,6 +96,25 @@ def test_hatchet_client_task_before_connect_raises():
             pass
 
 
+def test_hatchet_client_durable_task_before_connect_raises():
+    """Using durable_task() decorator before connect() raises RuntimeError."""
+    config = HatchetConfig(api_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnRfaWQiOiJ0ZXN0In0.x")
+    client = HatchetClient(config)
+
+    with pytest.raises(RuntimeError, match="connect"):
+        @client.durable_task(name="durable-test")
+        async def my_durable(ctx):
+            pass
+
+
+@pytest.mark.asyncio
+async def test_hatchet_client_run_task_now_unregistered_raises():
+    """run_task_now() for unregistered task raises ValueError."""
+    client = HatchetClient(HatchetConfig())
+    with pytest.raises(ValueError, match="not registered"):
+        await client.run_task_now("nonexistent")
+
+
 @pytest.mark.asyncio
 async def test_hatchet_client_schedule_task_unregistered_raises():
     """schedule_task() for unregistered task raises ValueError."""
