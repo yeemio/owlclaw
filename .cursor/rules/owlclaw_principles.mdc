@@ -100,13 +100,70 @@ def run(self, trigger: str, context: str) -> RunResult:
 
 ### 2.3 统一日志
 
+**OwlClaw 使用 Python 标准库 `logging`，不引入第三方日志库。**
+
+可观测性分工：
+- **应用日志** → stdlib `logging`（本节规范）
+- **LLM 调用追踪** → Langfuse（`integrations/langfuse.py`）
+- **分布式追踪** → OpenTelemetry（标准协议）
+- **Agent 决策记录** → Ledger（`governance/ledger.py`）
+
+#### 基本模式
+
+每个模块顶部声明 logger，使用 `__name__` 自动获取模块路径：
+
 ```python
-# ✅ 正确
+# ✅ correct: one logger per module
 import logging
 logger = logging.getLogger(__name__)
+```
 
-# ❌ 错误
-print("debug info")
+#### SDK 库不配置 logging
+
+OwlClaw 是 SDK 库（`pip install owlclaw`），**禁止在库代码中配置 logging**（不调用 `logging.basicConfig()`、不添加 handler/formatter）。日志的输出格式、级别、目标由使用方（业务应用）决定。
+
+```python
+# ❌ forbidden in library code
+logging.basicConfig(level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler())
+
+# ✅ correct: only create logger, let the application configure output
+logger = logging.getLogger(__name__)
+```
+
+#### 日志级别使用规范
+
+| 级别 | 场景 | 示例 |
+|------|------|------|
+| `DEBUG` | Development-time diagnostics, verbose internal state | `logger.debug("Scanning %s for SKILL.md files", path)` |
+| `INFO` | Normal operational milestones, startup/shutdown | `logger.info("Loaded %d Skills from %s", count, path)` |
+| `WARNING` | Recoverable issues, degraded behavior, fallback triggered | `logger.warning("Skill '%s' missing frontmatter, skipped", name)` |
+| `ERROR` | Operation failed but process continues | `logger.error("Handler '%s' execution failed: %s", name, err)` |
+| `EXCEPTION` | Same as ERROR but includes traceback (use in except blocks) | `logger.exception("Unexpected error in capability '%s'", name)` |
+| `CRITICAL` | Process cannot continue, fatal condition | Rarely used in SDK |
+
+#### 禁止 print
+
+`print()` 的输出无法被日志系统控制（级别、格式、路由），**严禁在生产代码中使用 `print()` 输出运行信息**。
+
+```python
+# ❌ forbidden
+print(f"Loaded {count} Skills from {path}")
+
+# ✅ correct
+logger.info("Loaded %d Skills from %s", count, path)
+```
+
+#### 日志消息格式
+
+使用 `%s` 占位符（lazy formatting），不使用 f-string：
+
+```python
+# ✅ correct: lazy formatting, string only built if level is enabled
+logger.warning("Skill file %s missing frontmatter", file_path)
+
+# ❌ avoid: f-string always evaluated regardless of log level
+logger.warning(f"Skill file {file_path} missing frontmatter")
 ```
 
 ---

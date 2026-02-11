@@ -19,9 +19,11 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 > **不要控制 Agent，赋能 Agent。**
 > **不要重造轮子，组合轮子。**
 
-- **自建**：Agent 运行时（身份/记忆/知识/决策）、能力注册与 Skills 挂载、治理层（可见性过滤/Ledger/预算）、事件触发器统一层
+- **产品愿景**：Markdown 即 AI 能力——业务开发者用 SKILL.md 描述业务接口，OwlClaw 的 Agent 自动理解并使用，无需 AI 开发团队
+- **自建**：Agent 运行时（身份/记忆/知识/决策）、能力注册与 Skills 挂载、治理层（可见性过滤/Ledger/预算）、事件触发器统一层、Skills 生态（OwlHub）
 - **集成**：Hatchet MIT（持久执行）、litellm（LLM）、Langfuse（可观测）、Agent Skills 规范（知识文档）
-- **架构文档**：`docs/ARCHITECTURE_ANALYSIS.md`（v3.2，唯一架构真源）
+- **生态定位**：编排框架（LangChain）给 Agent 手和脚，OwlClaw 给 Agent 大脑和心跳——生态位互补，不是竞争
+- **架构文档**：`docs/ARCHITECTURE_ANALYSIS.md`（v4.0，唯一架构真源）
 
 ---
 
@@ -35,6 +37,8 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 | **架构规范** | `.cursor/rules/owlclaw_architecture.mdc` | ✅ |
 | **测试规范** | `.cursor/rules/owlclaw_testing.mdc` | ✅ |
 | **Spec 标准** | `.cursor/rules/owlclaw_spec_standards.mdc` | ✅ |
+| **数据库规范** | `.cursor/rules/owlclaw_database.mdc` | ✅ |
+| **数据库架构** | `docs/DATABASE_ARCHITECTURE.md` | ✅ |
 
 ---
 
@@ -49,6 +53,8 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 | 开发 | `.cursor/rules/owlclaw_principles.mdc` | 核心原则（代码质量、AI 决策、禁止行为） |
 | 开发 | `.cursor/rules/owlclaw_development.mdc` | 开发规范（流程、Git、Poetry） |
 | 架构 | `.cursor/rules/owlclaw_architecture.mdc` | 架构规范（包结构、集成边界） |
+| 数据库 | `.cursor/rules/owlclaw_database.mdc` | 数据库编码规范（tenant_id、SQLAlchemy、Alembic、pgvector） |
+| 数据库 | `docs/DATABASE_ARCHITECTURE.md` | 数据库架构（唯一真源：部署模式、数据模型、迁移、运维 CLI） |
 | 测试 | `.cursor/rules/owlclaw_testing.mdc` | 测试规范（pytest、覆盖率） |
 | 写/改 spec | `.cursor/rules/owlclaw_spec_standards.mdc` | Spec 文档标准 |
 | 写/改 spec | `.kiro/SPEC_DOCUMENTATION_STANDARD.md` | Spec 三层文档结构详细规范 |
@@ -92,6 +98,10 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 | **Hatchet 集成隔离** | Hatchet 调用集中在 `owlclaw/integrations/hatchet.py` | `owlclaw_architecture.mdc` |
 | **Agent Skills 规范** | 知识文档遵循 Anthropic Agent Skills 规范（SKILL.md） | `owlclaw_architecture.mdc` |
 | **治理 = 可见性过滤** | Agent 看到的工具列表是经过治理过滤的子集 | `owlclaw_architecture.mdc` |
+| **接入协议语言无关** | 对外暴露的能力描述必须是纯数据（JSON Schema），Python SDK 是语法糖 | `owlclaw_architecture.mdc` |
+| **数据库 database 级隔离** | 复用宿主 PG，owlclaw / hatchet 各自独立 database，禁止跨库访问 | `owlclaw_architecture.mdc`、`docs/DATABASE_ARCHITECTURE.md` |
+| **编排框架标准接入** | LangChain chain/LangGraph workflow 通过 @handler 注册为 capability，OwlClaw 不依赖任何编排框架 | `ARCHITECTURE_ANALYSIS.md` §4.8 |
+| **Skills 生态（OwlHub）** | SKILL.md 遵循 agentskills.io 规范；OwlHub 渐进式架构（GitHub → 静态站点 → 数据库）；CLI 优先；模板降低门槛 | `ARCHITECTURE_ANALYSIS.md` §2.7 + §4.10 |
 
 ---
 

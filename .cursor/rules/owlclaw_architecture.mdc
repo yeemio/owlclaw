@@ -11,7 +11,7 @@ alwaysApply: false
 # OwlClaw 架构规范
 
 > **版本**: v1.0.0 (2026-02-10)
-> **架构真源**: `docs/ARCHITECTURE_ANALYSIS.md`（v3.2）
+> **架构真源**: `docs/ARCHITECTURE_ANALYSIS.md`（v4.0）；数据库架构: `docs/DATABASE_ARCHITECTURE.md`
 
 ---
 
@@ -46,6 +46,7 @@ owlclaw/
 │   │   ├── llm.py          # litellm（统一 LLM 调用）
 │   │   └── langfuse.py     # Langfuse（可观测）
 │   ├── cli/                # CLI 工具
+│   │   ├── skill.py        # owlclaw skill（init/validate/search/install/publish）
 │   │   ├── scan.py         # owlclaw scan（AST 扫描）
 │   │   └── migrate.py      # owlclaw migrate（AI 辅助迁移）
 │   ├── app.py              # OwlClaw 主入口类
@@ -95,11 +96,15 @@ from ..governance.visibility import CapabilityVisibilityFilter
 | LLM 调用 | | ✅ litellm | `integrations/llm.py` |
 | 可观测 | | ✅ Langfuse | `integrations/langfuse.py` |
 | Skills 格式 | | ✅ Agent Skills 规范 | |
+| 编排框架接入 | | ✅ LangChain/LangGraph/CrewAI | `integrations/langchain.py`（可选） |
 
 **关键约束**：
 - 所有 Hatchet 调用必须经过 `integrations/hatchet.py`，不得在其他文件直接 `import hatchet_sdk`
 - 所有 LLM 调用必须经过 `integrations/llm.py`，不得直接调用 OpenAI/Anthropic SDK
 - 所有 tracing 必须经过 `integrations/langfuse.py`
+- **编排框架标准接入**：LangChain chain / LangGraph workflow / CrewAI crew 通过 `@app.handler` 注册为 capability handler。OwlClaw 核心不依赖任何编排框架（`pip install owlclaw` 不拉入 LangChain），LangChain LLM 后端适配器通过 `pip install owlclaw[langchain]` 可选安装。详见 `docs/ARCHITECTURE_ANALYSIS.md` 决策8
+- **接入协议语言无关**：对外暴露的能力描述（工具列表、状态定义）必须是纯数据结构（dict/JSON Schema），禁止在协议层泄漏 Python 特有概念（`Callable`、`inspect`、装饰器元数据）。Python SDK 的装饰器是协议的语法糖，不是协议本身。详见 `docs/ARCHITECTURE_ANALYSIS.md` 决策7
+- **数据库编码规范**：详见 `.cursor/rules/owlclaw_database.mdc`（编码规则）和 `docs/DATABASE_ARCHITECTURE.md`（架构设计）
 
 ---
 
