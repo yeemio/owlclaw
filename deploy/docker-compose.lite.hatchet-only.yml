@@ -2,12 +2,28 @@
 # 适用于：本机已有 Postgres，或 Docker 拉取 postgres 镜像失败时的权宜方案。
 # 需本机 localhost:5432 存在 database hatchet、用户 hatchet、密码 hatchet。
 # Usage: docker compose -f deploy/docker-compose.lite.hatchet-only.yml up -d
+# UI: http://localhost:8888  默认账号 admin@example.com / Admin123!!
 
 services:
   hatchet-lite:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:latest
     environment:
       DATABASE_URL: postgresql://hatchet:hatchet@host.docker.internal:5432/hatchet
-      SERVER_PORT: 7077
+      # Hatchet requires DB timezone UTC; or set DATABASE_ENFORCE_UTC_TIMEZONE=false to skip check
+      SERVER_PORT: "7077"
+      SERVER_GRPC_PORT: "7078"
+      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
+      SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:17077"
+      SERVER_GRPC_INSECURE: "t"
+      SERVER_URL: "http://host.docker.internal:8888"
+      SERVER_AUTH_COOKIE_DOMAIN: "localhost"
+      SERVER_AUTH_COOKIE_INSECURE: "t"
+      SERVER_AUTH_SET_EMAIL_VERIFIED: "t"
     ports:
-      - "7077:7077"
+      - "17077:7078"   # gRPC: container 7078 to avoid entrypoint conflict on 7077
+      - "8888:8888"
+    volumes:
+      - hatchet_lite_config:/config
+
+volumes:
+  hatchet_lite_config:

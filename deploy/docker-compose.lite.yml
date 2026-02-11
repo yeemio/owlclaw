@@ -2,6 +2,7 @@
 # 数据库架构详见 docs/DATABASE_ARCHITECTURE.md
 # init-db.sql 创建 hatchet / owlclaw 两库；Hatchet 连接 hatchet 库。
 # Usage: docker compose -f deploy/docker-compose.lite.yml up -d
+# UI: http://localhost:8888  默认账号 admin@example.com / Admin123!!
 
 services:
   owlclaw-db:
@@ -12,14 +13,28 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
 
   hatchet-lite:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:latest
     environment:
       DATABASE_URL: postgresql://hatchet:hatchet@owlclaw-db:5432/hatchet
-      SERVER_PORT: 7077
+      SERVER_PORT: "7077"
+      SERVER_GRPC_PORT: "7077"
+      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
+      SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:7077"
+      SERVER_GRPC_INSECURE: "t"
+      SERVER_URL: "http://host.docker.internal:8888"
+      SERVER_AUTH_COOKIE_DOMAIN: "localhost"
+      SERVER_AUTH_COOKIE_INSECURE: "t"
+      SERVER_AUTH_SET_EMAIL_VERIFIED: "t"
     ports:
       - "7077:7077"
+      - "8888:8888"
+    volumes:
+      - hatchet_lite_config:/config
     depends_on:
       - owlclaw-db
+
+volumes:
+  hatchet_lite_config:
