@@ -64,7 +64,10 @@ async def test_agent_run_with_heartbeat():
     assert result.llm_calls == 0
 ```
 
-### 3.2 Hatchet Mock 测试
+### 3.2 Hatchet 集成测试与跳过约定
+
+- **环境**：集成测试从仓库根目录 `.env` 读取 `HATCHET_API_TOKEN`、`HATCHET_SERVER_URL`（见 `tests/conftest.py`）；无 token 或无效 JWT 时相关用例 skip。
+- **跳过测试**：`test_hatchet_durable_task_aio_sleep_for_mock` 在 mock_run 下为 **SKIP**（aio_sleep_for 需 durable event listener，仅真实 Worker 具备）。完成 integrations-hatchet Task 7.2.3/7.2.4 后，须用真实 Hatchet Worker 跑通该用例并更新文档（见 `SPEC_TASKS_SCAN.md` 功能清单验收备注、`integrations-hatchet/tasks.md` 测试备注）。
 
 Hatchet SDK v1 支持 `mock_run()`，不需要 Hatchet Server：
 

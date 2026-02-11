@@ -22,6 +22,11 @@ PostgreSQL（复用宿主实例，database 级隔离）
 
 **数据库架构**：遵循 `docs/DATABASE_ARCHITECTURE.md`。Hatchet Server 仅连接 **hatchet** database，OwlClaw 应用连接 **owlclaw** database；二者同属一个 PostgreSQL 实例（复用宿主已有实例）。
 
+**数据库规范与后续工作**：所有与数据库相关的操作须遵守项目数据库规范（`docs/DATABASE_ARCHITECTURE.md`、`.cursor/rules/owlclaw_database.mdc`）。具体地：
+- **初始化与迁移**：OwlClaw 侧建库、扩展、schema 迁移统一通过 **`owlclaw db` CLI**（`owlclaw db init` / `owlclaw db migrate` / `owlclaw db status` 等）完成，不手写 ad-hoc SQL 或绕过 CLI。
+- **OwlClaw 业务表**：Ledger、Memory、治理等表由 OwlClaw 用 SQLAlchemy + Alembic 管理，迁移脚本纳入 `migrations/versions/`，通过 `owlclaw db migrate` 执行；表设计须满足 tenant_id、索引前缀、UUID 主键、TIMESTAMPTZ 等规范。
+- **Hatchet 侧**：本集成仅通过 Hatchet SDK 与 Hatchet Server 通信；不直接连接或操作 **hatchet** database，其 migration 由 Hatchet Server 自行管理。
+
 ### 集成边界
 
 **OwlClaw 自建部分：**
@@ -394,7 +399,7 @@ hatchet.connect()
 
 ### 开发模式（Hatchet Lite）
 
-PostgreSQL 由 OwlClaw 部署（服务名 `owlclaw-db`），启动时通过 `init-db.sql` 创建 **hatchet** 与 **owlclaw** 两个 database；Hatchet Lite 仅连接 **hatchet** 库。
+PostgreSQL 由 OwlClaw 部署（服务名 `owlclaw-db`）时，启动通过 `deploy/init-db.sql` 创建 **hatchet** 与 **owlclaw** 两个 database；Hatchet Lite 仅连接 **hatchet** 库。若使用宿主已有 PostgreSQL，可使用 `owlclaw db init --admin-url postgresql://postgres:...@host:5432/postgres` 创建库及用户（与 init-db.sql 效果一致，见 `docs/DATABASE_ARCHITECTURE.md` §5.2、cli-db spec）。
 
 ```yaml
 # docker-compose.lite.yml（见 deploy/）

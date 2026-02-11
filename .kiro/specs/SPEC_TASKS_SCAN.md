@@ -42,7 +42,8 @@
 - [ ] `owlclaw.governance.ledger` — 执行记录 → spec: governance
 - [ ] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
 - [ ] `owlclaw.triggers.cron` — Cron 触发器 → spec: triggers-cron
-- [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet
+- [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
+  **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
 - [x] `owlclaw.integrations.llm` — litellm 集成 → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
@@ -86,9 +87,9 @@
 | cli-db | `.kiro/specs/cli-db/` | ✅ 文档齐全，P0 实现已完成 | `owlclaw db` init/migrate/status，已挂载到主入口 |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 文档齐全 | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | ✅ 文档齐全 | 内建工具 |
-| governance | `.kiro/specs/governance/` | 待创建 | visibility + ledger + router |
+| governance | `.kiro/specs/governance/` | ✅ 文档齐全 | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 待创建 | cron 触发器 |
-| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 文档齐全 | Hatchet 集成 |
+| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 文档齐全；集成测试 1 个 SKIP（见清单验收备注） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 文档齐全 | litellm 集成 |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 待创建 | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 待创建 | webhook 触发器 |
@@ -129,4 +130,5 @@
 3. **顺序约束**：database-core、cli-db 必须先于 governance（Ledger）、agent 持久化 Memory 完成并验收（见上文「依赖与顺序」）
 4. 功能清单须 ⊇ 各 spec 的 tasks.md 中的所有 task
 5. 新增 spec 时须同步更新 Spec 索引表
-6. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
+6. **跳过测试的验收**：清单中标注「验收备注」的项，若含当前 SKIP 的测试，在完成备注所指的后续工作后，须跑通该测试并更新文档（见「功能清单」中 integrations-hatchet 备注）
+7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节

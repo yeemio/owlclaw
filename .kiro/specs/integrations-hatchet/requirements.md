@@ -4,6 +4,8 @@
 
 本文档定义 OwlClaw 与 Hatchet（MIT 许可证）的集成需求。Hatchet 为 OwlClaw 提供持久化任务执行、Cron 调度、延迟执行和自我调度能力。集成方式采用隔离设计，所有 Hatchet 调用集中在 `owlclaw/integrations/hatchet.py` 中。
 
+**数据库规范约束**：与数据库相关的迁移、初始化及落库逻辑须遵循项目数据库规范。OwlClaw 侧数据库初始化与 schema 迁移统一通过 **`owlclaw db` CLI**（`init` / `migrate` / `status` 等）进行，规范真源见 `docs/DATABASE_ARCHITECTURE.md` 与 `.cursor/rules/owlclaw_database.mdc`。Hatchet 仅使用 **hatchet** database，不操作 **owlclaw** database；OwlClaw 业务表（Ledger、Memory 等）由 OwlClaw 通过 Alembic 管理。
+
 ## Glossary
 
 - **Hatchet**: MIT 许可证的持久化任务队列和调度系统，支持崩溃恢复、重试、Cron 调度
@@ -142,7 +144,7 @@
 
 1. THE 部署 SHALL 复用宿主已有的 PostgreSQL 实例，其中创建独立 database：**hatchet**（Hatchet 独占）、**owlclaw**（OwlClaw 业务：Ledger、Memory 等）。详见 `docs/DATABASE_ARCHITECTURE.md`。
 2. WHEN Hatchet_Server 启动时，THE Hatchet_Server SHALL 连接至 **hatchet** database（DATABASE_URL 指向 `postgresql://hatchet:...@host:5432/hatchet`），不在 owlclaw database 中建表。
-3. THE Hatchet_Client 与部署文档 SHALL 说明如何配置 database 级隔离（init 脚本创建 hatchet/owlclaw 库及对应用户）。
+3. THE 数据库初始化 SHALL 支持两种方式（二选一）：(1) `owlclaw db init --admin-url ...`（见 DATABASE_ARCHITECTURE §5.2、cli-db）；(2) 执行 `deploy/init-db.sql`（Docker 或 psql）。部署文档 SHALL 说明如何配置 database 级隔离及上述两种初始化方式。
 4. THE Hatchet_Server SHALL 支持 `SERVER_MSGQUEUE_KIND=postgres`，使用 PostgreSQL 作为消息队列，无需 RabbitMQ。
 5. WHEN 使用独立 hatchet database 时，THE Hatchet_Server 的 migration 与表 SHALL 不影响 owlclaw database 中的 Ledger、Memory 等表。
 
