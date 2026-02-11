@@ -293,6 +293,12 @@ owlclaw/
 
 所有数据库运维操作通过 `owlclaw db` 子命令完成。CLI 是底层工具（Alembic、psql、pg_dump）的统一封装，提供一致的用户体验。
 
+**范畴说明**（防止与 Alembic 混淆）：
+- **建库（创建 database、role、extension）**：属于 **`owlclaw db init`**，不是 Alembic。init 在宿主已有 PostgreSQL 上创建 `owlclaw` / `hatchet` 库及对应用户，并在 owlclaw 库启用 pgvector（若已安装）。
+- **Schema 迁移（表结构变更）**：属于 **Alembic**，通过 **`owlclaw db migrate`** 执行。仅针对已存在的 `owlclaw` 库内的表。
+
+不得用独立脚本或 ad-hoc SQL 绕过 CLI 建库；一律使用 `owlclaw db init`（或与架构等价的 `deploy/init-db.sql` 由 DBA 在宿主机执行）。
+
 ### 5.1 命令总览
 
 | 命令 | 用途 | 底层工具 | 优先级 |
@@ -310,7 +316,7 @@ owlclaw/
 
 #### `owlclaw db init`
 
-在宿主已有的 PostgreSQL 实例上创建 OwlClaw 所需的 database、role 和 extension。
+在宿主已有的 PostgreSQL 实例上创建 OwlClaw 所需的 database、role 和 extension。实现上优先使用 async 驱动，若遇连接重置（如 Windows 下 WinError 64）则自动用 psycopg2 同步后备重试，与 `init-db.sql` 行为一致。
 
 ```bash
 # 基本用法（需要 PostgreSQL 超级用户权限）
