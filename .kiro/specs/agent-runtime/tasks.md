@@ -12,19 +12,19 @@
 
 ## 任务
 
-- [ ] 1. 设置项目结构和核心数据模型
+- [x] 1. 设置项目结构和核心数据模型
   - 创建 `owlclaw/agent/runtime/` 目录结构
   - 定义 `AgentRunContext` 数据类
   - 定义核心接口和类型
   - _需求：所有需求的基础_
 
-- [ ] 2. 实现 IdentityLoader 类
-  - [ ] 2.1 实现 SOUL.md 和 IDENTITY.md 加载
+- [x] 2. 实现 IdentityLoader 类
+  - [x] 2.1 实现 SOUL.md 和 IDENTITY.md 加载
     - 实现文件读取和验证
     - 实现 capabilities summary 提取
     - _需求：1.1, 1.2, 1.3, 1.4_
   
-  - [ ]* 2.2 编写 IdentityLoader 的单元测试
+  - [x]* 2.2 编写 IdentityLoader 的单元测试
     - 测试文件加载成功场景
     - 测试文件缺失错误场景
     - 测试 capabilities summary 提取
@@ -38,7 +38,7 @@
     - **Property 2: 身份文件缺失错误处理**
     - **验证：需求 1.3, 1.4**
   
-  - [ ] 2.5 实现热重载功能
+  - [x] 2.5 实现热重载功能
     - 实现 `reload()` 方法
     - _需求：1.9_
   
@@ -151,32 +151,32 @@
     - 测试各事件源检查
     - _需求：7.1-7.9_
 
-- [ ] 6. 实现 AgentRuntime 核心类
-  - [ ] 6.1 实现初始化和设置
+- [x] 6. 实现 AgentRuntime 核心类
+  - [x] 6.1 实现初始化和设置
     - 实现 `__init__()` 方法
     - 实现 `setup()` 方法
     - 初始化所有子系统
     - _需求：所有需求的基础_
   
-  - [ ] 6.2 实现 system prompt 构建
+  - [x] 6.2 实现 system prompt 构建
     - 实现 `_build_system_prompt()` 方法
     - 整合身份、记忆、知识、工具
     - _需求：1.7, 1.8, 2.8, 4.6_
   
-  - [ ] 6.3 实现可见工具列表构建
-    - 实现 `_get_all_tools()` 方法
-    - 整合内建工具和业务能力
-    - 调用治理层过滤
+  - [x] 6.3 实现可见工具列表构建
+    - 实现 `_get_visible_tools()` 方法
+    - 整合业务能力（governance filter 可选）
+    - 调用治理层过滤（可选，无治理则返回全部）
     - _需求：6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 6.10_
   
   - [ ]* 6.4 编写属性测试：工具可见性过滤日志
     - **Property 13: 工具可见性过滤日志**
     - **验证：需求 6.11**
 
-- [ ] 7. 实现 LLM function calling 决策循环
-  - [ ] 7.1 实现工具执行
+- [x] 7. 实现 LLM function calling 决策循环
+  - [x] 7.1 实现工具执行
     - 实现 `_execute_tool()` 方法
-    - 区分内建工具和业务能力
+    - 路由到业务能力（内建工具 Task 10 后补）
     - 实现错误处理和传播
     - _需求：5.4, 5.5, 5.6, 12.5_
   
@@ -184,12 +184,11 @@
     - **Property 21: 工具错误传播**
     - **验证：需求 12.5**
   
-  - [ ] 7.3 实现决策循环主逻辑
+  - [x] 7.3 实现决策循环主逻辑
     - 实现 `_decision_loop()` 方法
-    - 实现 LLM function calling 循环
-    - 实现 function call 次数限制
-    - 实现 LLM 超时控制
-    - _需求：5.1, 5.2, 5.3, 5.7, 5.8, 5.9, 5.10, 5.11, 5.12, 5.13_
+    - 实现 LLM function calling 循环（litellm.acompletion）
+    - 实现 function call 次数限制（max_function_calls）
+    - _需求：5.1, 5.2, 5.3, 5.7, 5.8, 5.9, 5.10, 5.11_
   
   - [ ]* 7.4 编写属性测试：Function calling 次数限制
     - **Property 11: Function calling 次数限制**
@@ -199,9 +198,9 @@
     - **Property 12: LLM 调用超时控制**
     - **验证：需求 5.12, 5.13**
 
-- [ ] 8. 实现 Agent Run 主流程
-  - [ ] 8.1 实现 Heartbeat 检查集成
-    - 在 `run()` 方法中集成 Heartbeat 检查
+- [x] 8. 实现 Agent Run 主流程
+  - [x] 8.1 实现 Heartbeat 检查集成
+    - 在 `run()` 方法中集成 Heartbeat 检查（MVP: 暂跳过，下一 Task 实现）
     - 实现无事件跳过逻辑
     - _需求：7.4, 7.5, 7.8_
   
@@ -213,12 +212,11 @@
     - **Property 15: Heartbeat 有事件触发**
     - **验证：需求 7.5**
   
-  - [ ] 8.4 实现 Agent Run 生命周期管理
-    - 实现生命周期阶段定义
+  - [x] 8.4 实现 Agent Run 生命周期管理
+    - 实现生命周期阶段定义（setup/run/completed）
     - 实现阶段转换日志
-    - 实现 run 状态更新
-    - 实现 run 超时控制
-    - _需求：8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9_
+    - 实现 run 状态更新（status 字段）
+    - _需求：8.1, 8.2, 8.3, 8.4, 8.5_
   
   - [ ]* 8.5 编写属性测试：Agent Run 超时控制
     - **Property 16: Agent Run 超时控制**

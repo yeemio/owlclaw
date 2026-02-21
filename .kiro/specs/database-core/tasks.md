@@ -6,14 +6,14 @@
 
 ## 任务
 
-- [ ] 1. 设置项目结构和依赖
+- [x] 1. 设置项目结构和依赖
   - 创建 `owlclaw/db/` 目录结构
   - 在 `pyproject.toml` 中添加依赖：sqlalchemy[asyncio]>=2.0, asyncpg, pgvector
   - 创建 `owlclaw/db/__init__.py` 文件
   - _需求：10.1_
 
-- [ ] 2. 实现自定义异常类
-  - [ ] 2.1 创建 `owlclaw/db/exceptions.py`
+- [x] 2. 实现自定义异常类
+  - [x] 2.1 创建 `owlclaw/db/exceptions.py`
     - 实现 DatabaseError 基类
     - 实现 ConfigurationError、ConnectionError、AuthenticationError、PoolTimeoutError
     - 每个异常类包含适当的构造函数和错误消息格式
@@ -25,8 +25,8 @@
     - 测试不暴露敏感信息（如密码）
     - _需求：9.3_
 
-- [ ] 3. 实现 Base 声明式基类
-  - [ ] 3.1 创建 `owlclaw/db/base.py`
+- [x] 3. 实现 Base 声明式基类
+  - [x] 3.1 创建 `owlclaw/db/base.py`
     - 定义 Base 类继承自 DeclarativeBase
     - 添加 tenant_id 字段（VARCHAR(64), NOT NULL, default='default', index=True）
     - 使用 SQLAlchemy 2.0 的 Mapped 和 mapped_column
@@ -47,8 +47,8 @@
     - 测试创建示例模型并检查 tenant_id 字段
     - _需求：1.1, 8.3_
 
-- [ ] 4. 实现引擎管理
-  - [ ] 4.1 创建 `owlclaw/db/engine.py`
+- [x] 4. 实现引擎管理
+  - [x] 4.1 创建 `owlclaw/db/engine.py`
     - 实现 create_engine 函数
     - 支持从环境变量 OWLCLAW_DATABASE_URL 读取配置
     - 验证 Database_URL 格式
@@ -57,13 +57,13 @@
     - 支持 echo 参数
     - _需求：2.1, 2.2, 2.4, 2.5, 2.6, 2.7, 6.1, 6.2, 7.1_
   
-  - [ ] 4.2 实现 get_engine 函数
+  - [x] 4.2 实现 get_engine 函数
     - 使用全局字典缓存引擎实例
     - 支持可选的 database_url 参数
     - 参数优先级：显式参数 > 环境变量
     - _需求：4.1, 4.2, 4.3, 6.4_
   
-  - [ ] 4.3 实现 dispose_engine 函数
+  - [x] 4.3 实现 dispose_engine 函数
     - 释放引擎资源
     - 关闭所有连接
     - 清理缓存
@@ -85,7 +85,7 @@
     - **属性 7：连接池参数传递**
     - **验证需求：2.5**
   
-  - [ ]* 4.8 编写引擎管理的单元测试
+  - [x]* 4.8 编写引擎管理的单元测试
     - 测试环境变量读取
     - 测试参数优先级
     - 测试默认引擎使用 asyncpg 驱动
@@ -93,11 +93,11 @@
     - 测试未设置 DATABASE_URL 时抛出 ConfigurationError
     - _需求：2.1, 2.4, 5.1, 5.2, 5.3, 5.4, 6.1, 6.2, 6.4, 7.1_
 
-- [ ] 5. 检查点 - 确保所有测试通过
+- [x] 5. 检查点 - 确保所有测试通过
   - 确保所有测试通过，如有问题请询问用户。
 
-- [ ] 6. 实现会话管理
-  - [ ] 6.1 创建 `owlclaw/db/session.py`
+- [x] 6. 实现会话管理
+  - [x] 6.1 创建 `owlclaw/db/session.py`
     - 实现 create_session_factory 函数
     - 实现 get_session 异步上下文管理器
     - 自动处理事务提交、回滚和会话关闭
@@ -108,7 +108,7 @@
     - **属性 4：会话事务管理**
     - **验证需求：3.3, 3.4, 3.5**
   
-  - [ ]* 6.3 编写会话管理的单元测试
+  - [x]* 6.3 编写会话管理的单元测试
     - 测试 create_session_factory 返回 async_sessionmaker
     - 测试 get_session 支持异步上下文管理器协议
     - 测试不提供 engine 时使用默认引擎
@@ -117,15 +117,15 @@
     - 测试退出时关闭会话
     - _需求：3.1, 3.2, 3.3, 3.4, 3.5, 4.6_
 
-- [ ] 7. 实现公共 API 导出
-  - [ ] 7.1 更新 `owlclaw/db/__init__.py`
+- [x] 7. 实现公共 API 导出
+  - [x] 7.1 更新 `owlclaw/db/__init__.py`
     - 从各模块导入公共接口
     - 定义 __all__ 列表
     - 包含：Base, create_engine, get_engine, dispose_engine, create_session_factory, get_session
     - 包含所有异常类
     - _需求：10.2, 10.3, 10.4, 10.5_
   
-  - [ ]* 7.2 编写公共 API 的单元测试
+  - [x]* 7.2 编写公共 API 的单元测试
     - 测试可以从 owlclaw.db 导入 Base
     - 测试可以从 owlclaw.db 导入 get_engine
     - 测试可以从 owlclaw.db 导入 get_session

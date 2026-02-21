@@ -34,17 +34,18 @@
 - [x] `.cursor/rules/owlclaw_database.mdc` — 数据库编码规范（tenant_id、SQLAlchemy、Alembic、pgvector） → 编码规则（已完成）
 - [x] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status` P0 已实现并集成） → spec: cli-db
 - [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移） → spec: database-core
-- [x] `owlclaw.agent.runtime` — Agent 运行时（SOUL.md 身份加载、记忆系统、Skills 知识注入） → spec: agent-runtime
-- [x] `owlclaw.agent.runtime` — function calling 决策循环（基于 litellm） → spec: agent-runtime
-- [x] `owlclaw.agent.tools` — 内建工具（schedule_once、remember、recall、query_state） → spec: agent-tools
-- [x] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
-- [ ] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
-- [ ] `owlclaw.governance.ledger` — 执行记录 → spec: governance
-- [ ] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
-- [ ] `owlclaw.triggers.cron` — Cron 触发器 → spec: triggers-cron
+- [x] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
+- [x] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
+- [ ] `owlclaw.agent.tools` — 内建工具（schedule_once、remember、recall、query_state） → spec: agent-tools
+- [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
+- [ ] `owlclaw.agent.memory` — 长期记忆（MEMORY.md + pgvector 向量搜索） → spec: agent-runtime
+- [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
+- [x] `owlclaw.governance.ledger` — 执行记录 → spec: governance
+- [x] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
+- [x] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
 - [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
   **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
-- [x] `owlclaw.integrations.llm` — litellm 集成 → spec: integrations-llm
+- [ ] `owlclaw.integrations.llm` — litellm 集成 → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
@@ -88,7 +89,7 @@
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 文档齐全 | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | ✅ 文档齐全 | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 文档齐全 | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 待创建 | cron 触发器 |
+| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 文档齐全，实现进行中（Task 1/2/4 已完成） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 文档齐全；集成测试 1 个 SKIP（见清单验收备注） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 文档齐全 | litellm 集成 |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 待创建 | mionyee 端到端验证 |
@@ -113,11 +114,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-11 |
-| 当前批次 | database-core + cli-db（实现与集成） |
-| 批次状态 | 完成。owlclaw.db 与 owlclaw db init/migrate/status 已实现、已挂载、单元测试通过 |
-| 已完成项 | database-core：Base/engine/session/exceptions、Alembic+占位迁移；cli-db：db_app 注册、init（asyncpg+env OWLCLAW_ADMIN_URL）、migrate（Alembic upgrade）、status（engine 校验）；tests/unit/test_db.py 与 test_cli_db.py 共 11 通过；SPEC_TASKS_SCAN 对应项已打勾 |
-| 下一待执行 | **governance / skill-templates / triggers-cron**（按架构顺序，在 database-core + cli-db 验收通过后进行） |
-| 阻塞项 | 无 |
+| 当前批次 | triggers-cron Task 3（Hatchet workflow 集成 + 执行引擎） |
+| 批次状态 | 完成。_run_cron/_check_governance/_should_use_agent/_execute_agent/_execute_fallback/_handle_failure/_record_to_ledger/start()/pause/resume 全部实现；81 个测试全通过（triggers+agent 无回归）；triggers-cron 功能清单项已打勾 |
+| 已完成项 | triggers-cron Task 1-4（全部核心任务）；agent-runtime MVP Task 1/2/6/7/8 |
+| 下一待执行 | **triggers-cron Task 5 检查点验证** → 然后推进 Task 8（任务管理操作：pause/resume/status/history）或 **agent-tools spec**（内建工具） |
+| 阻塞项 | triggers-cron Task 6（FocusManager）依赖 SkillsManager 扩展；Task 7（CronGovernance 独立类）可选；Tasks 10-14 属于扩展阶段 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

@@ -8,6 +8,9 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from owlclaw.db import Base
 
+# Import models so their tables are attached to Base.metadata for Alembic
+from owlclaw.governance.ledger import LedgerRecord  # noqa: F401
+
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
