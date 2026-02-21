@@ -5,8 +5,9 @@ import pytest
 from owlclaw.integrations.hatchet import HatchetConfig, HatchetClient, _substitute_env_dict
 
 
-def test_hatchet_config_defaults():
+def test_hatchet_config_defaults(monkeypatch):
     """HatchetConfig has expected defaults (single-instance multi-DB: hatchet database)."""
+    monkeypatch.delenv("HATCHET_SERVER_URL", raising=False)
     config = HatchetConfig()
     assert config.server_url == "http://localhost:7077"
     assert config.namespace == "owlclaw"
@@ -77,8 +78,10 @@ def test_substitute_env_dict(monkeypatch):
     assert out["b"]["c"] == "no-var"
 
 
-def test_hatchet_client_connect_without_token_raises():
+def test_hatchet_client_connect_without_token_raises(monkeypatch):
     """HatchetClient.connect() raises when no api_token or env."""
+    monkeypatch.delenv("HATCHET_API_TOKEN", raising=False)
+    monkeypatch.delenv("HATCHET_SERVER_URL", raising=False)
     config = HatchetConfig()
     client = HatchetClient(config)
     with pytest.raises(ValueError, match="API token required"):

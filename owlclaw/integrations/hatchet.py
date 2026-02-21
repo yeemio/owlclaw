@@ -149,12 +149,12 @@ class HatchetClient:
 
     def connect(self) -> None:
         """Connect to Hatchet Server."""
-        Hatchet, ClientConfig = _get_hatchet()
         token = self.config.api_token or os.environ.get("HATCHET_API_TOKEN", "")
         if not token:
             raise ValueError(
                 "Hatchet API token required: set api_token in config or HATCHET_API_TOKEN"
             )
+        Hatchet, ClientConfig = _get_hatchet()
         try:
             client_config = ClientConfig(
                 host_port=_server_url_to_host_port(self.config.server_url),
