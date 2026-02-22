@@ -98,7 +98,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 待创建 | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 待创建 | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 文档齐全，MVP 已实现 | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| skill-templates | `.kiro/specs/skill-templates/` | 🟡 文档齐全，Task 1 已完成（结构+数据模型） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
+| skill-templates | `.kiro/specs/skill-templates/` | 🟡 文档齐全，Task 1-2 已完成（结构+数据模型+TemplateRegistry） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 待创建 | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 待创建 | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | 待创建 | owlclaw-mcp |
@@ -114,10 +114,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-22 |
-| 当前批次 | skill-templates Task 1 |
-| 批次状态 | 完成。项目结构、核心数据模型、自定义异常已实现；13 个单元测试通过 |
-| 已完成项 | Task 1（目录结构、TemplateCategory/TemplateMetadata/TemplateParameter/ValidationError/SearchResult、5 个异常类、hypothesis 依赖） |
-| 下一待执行 | **skill-templates Task 2**（TemplateRegistry 组件）或 **integrations-llm Task 5**（Langfuse，可选）或 **agent-runtime**（memory） |
+| 当前批次 | skill-templates Task 2 |
+| 批次状态 | 完成。TemplateRegistry 实现；health-check 模板；8 个 registry 测试通过 |
+| 已完成项 | Task 2.1、2.5（TemplateRegistry、_load_templates、_parse_template_metadata、get_template、list_templates、search_templates） |
+| 下一待执行 | **skill-templates Task 3**（TemplateRenderer）或 **integrations-llm Task 5**（Langfuse，可选）或 **agent-runtime**（memory） |
 | 阻塞项 | remember/recall 依赖 MemorySystem（agent-runtime memory 未实现） |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

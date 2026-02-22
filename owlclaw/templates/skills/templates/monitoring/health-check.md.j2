@@ -1,0 +1,26 @@
+{#
+name: Health Check Monitor
+description: Monitor system health and alert on issues
+tags: [monitoring, health, alert]
+parameters:
+  - name: skill_name
+    type: str
+    description: Skill display name
+    required: true
+  - name: check_interval
+    type: int
+    description: Check interval in seconds
+    default: 60
+examples:
+  - "Health check for API endpoints every 60 seconds"
+#}
+---
+name: {{ skill_name | lower | replace(' ', '-') }}
+description: {{ skill_name }} - system health monitoring
+owlclaw:
+  spec_version: "1.0"
+  task_type: monitoring
+---
+# {{ skill_name }} — 使用指南
+
+Monitor health every {{ check_interval }} seconds.

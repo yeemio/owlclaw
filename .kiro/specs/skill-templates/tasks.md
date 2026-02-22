@@ -17,8 +17,8 @@
   - [x] 设置测试框架（pytest）和属性测试库（hypothesis）
   - _需求：FR-1, FR-2_
 
-- [ ] 2. 实现 TemplateRegistry 组件
-  - [ ] 2.1 创建 TemplateRegistry 类和模板加载
+- [x] 2. 实现 TemplateRegistry 组件
+  - [x] 2.1 创建 TemplateRegistry 类和模板加载
     - 实现 __init__ 方法初始化注册表
     - 实现 _load_templates 方法递归扫描模板目录
     - 实现 _parse_template_metadata 方法从 Jinja2 注释提取元数据
@@ -42,7 +42,7 @@
     - 对于任意模板，类别应该与所在目录一致
 
 
-  - [ ] 2.5 实现模板检索方法
+  - [x] 2.5 实现模板检索方法
     - 实现 get_template(template_id) 方法获取特定模板
     - 实现 list_templates(category, tags) 方法列出和过滤模板
     - 实现 search_templates(query) 方法搜索模板
