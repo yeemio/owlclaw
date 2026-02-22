@@ -22,6 +22,7 @@ _METADATA_BLOCK = re.compile(r"\{#.*?#\}", re.DOTALL)
 _CRON_PATTERN = re.compile(r'^cron\("([^"]+)"\)$')
 _WEBHOOK_PATTERN = re.compile(r'^webhook\("([^"]+)"\)$')
 _QUEUE_PATTERN = re.compile(r'^queue\("([^"]+)"\)$')
+_QUEUE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
 class TemplateValidator:
@@ -279,7 +280,7 @@ class TemplateValidator:
         queue_match = _QUEUE_PATTERN.match(trigger)
         if queue_match:
             queue_name = queue_match.group(1).strip()
-            return bool(queue_name)
+            return bool(queue_name) and bool(_QUEUE_NAME_PATTERN.match(queue_name))
 
         return False
 
