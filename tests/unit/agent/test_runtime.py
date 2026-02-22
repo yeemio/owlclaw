@@ -173,6 +173,7 @@ class TestAgentRuntimeRun:
         await rt.trigger_event("check", focus="inventory_monitor")
         call_messages = mock_llm.call_args.kwargs["messages"]
         user_msg = next(m for m in call_messages if m["role"] == "user")
+        assert "Trigger: check" in user_msg["content"]
         assert "inventory_monitor" in user_msg["content"]
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
@@ -184,6 +185,7 @@ class TestAgentRuntimeRun:
         await rt.trigger_event("check", focus="   ")
         call_messages = mock_llm.call_args.kwargs["messages"]
         user_msg = next(m for m in call_messages if m["role"] == "user")
+        assert "Trigger: check" in user_msg["content"]
         assert "Focus:" not in user_msg["content"]
 
     def test_skill_focus_match_uses_owlclaw_focus(self, tmp_path) -> None:

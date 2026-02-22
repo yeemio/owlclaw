@@ -577,19 +577,13 @@ class AgentRuntime:
 
     def _build_user_message(self, context: AgentRunContext) -> str:
         """Build the first user message from trigger context."""
-        parts: list[str] = []
+        parts: list[str] = [f"Trigger: {context.trigger}"]
 
         if context.focus:
             parts.append(f"Focus: {context.focus}")
 
         if context.payload:
             parts.append(f"Context: {json.dumps(context.payload, default=str)}")
-
-        if not parts:
-            parts.append(
-                f"Event '{context.trigger}' fired. Assess the situation "
-                "and take appropriate action."
-            )
 
         return "\n".join(parts)
 
