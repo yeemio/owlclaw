@@ -639,7 +639,7 @@ class AgentRuntime:
         ]
         confirmed_raw = context.payload.get("confirmed_capabilities")
         confirmed: set[str] = set()
-        if isinstance(confirmed_raw, list):
+        if isinstance(confirmed_raw, list | tuple | set):
             confirmed = {
                 str(name).strip()
                 for name in confirmed_raw
