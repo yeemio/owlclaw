@@ -212,6 +212,13 @@ class BuiltInTools:
         """
         if tool_name not in _BUILTIN_TOOL_NAMES:
             raise ValueError(f"Unknown built-in tool: {tool_name}")
+        if not isinstance(arguments, dict):
+            return {
+                "error": (
+                    f"Invalid arguments for built-in tool '{tool_name}': "
+                    "arguments must be a JSON object"
+                )
+            }
 
         if tool_name == "query_state":
             return await self._query_state(arguments, context)

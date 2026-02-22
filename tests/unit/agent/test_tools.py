@@ -330,3 +330,11 @@ class TestExecuteUnknownTool:
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
         with pytest.raises(ValueError, match="Unknown built-in tool"):
             await tools.execute("unknown_tool", {}, ctx)
+
+    @pytest.mark.asyncio
+    async def test_execute_non_object_arguments_returns_error(self) -> None:
+        tools = BuiltInTools()
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("query_state", "bad-args", ctx)  # type: ignore[arg-type]
+        assert "error" in result
+        assert "JSON object" in result["error"]
