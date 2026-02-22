@@ -111,6 +111,27 @@ format: {{ format }}
         out = rdr.render("monitoring/health-check", {"format": "json"})
         assert "format: json" in out
 
+    def test_render_validates_choices_case_insensitively_for_strings(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: format
+    type: str
+    description: Format
+    required: true
+    choices: [json, yaml]
+#}
+---
+format: {{ format }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        out = rdr.render("monitoring/health-check", {"format": "JSON"})
+        assert "format: json" in out
+
     def test_kebab_case_filter(self, tmp_path: Path) -> None:
         content = """{#
 name: X

@@ -155,6 +155,12 @@ class TemplateRenderer:
             if p.choices is None or p.name not in params:
                 continue
             val = params[p.name]
+            if isinstance(val, str) and all(isinstance(choice, str) for choice in p.choices):
+                normalized = val.strip().lower()
+                matched = next((choice for choice in p.choices if str(choice).lower() == normalized), None)
+                if matched is not None:
+                    params[p.name] = matched
+                    continue
             if val not in p.choices:
                 raise ParameterValueError(
                     f"Parameter '{p.name}' value {val!r} not in {p.choices}",
