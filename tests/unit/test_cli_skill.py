@@ -272,6 +272,53 @@ def test_skill_init_non_interactive_requires_template(tmp_path):
     assert exc_info.value.exit_code == 2
 
 
+def test_skill_init_fails_when_output_path_is_file(tmp_path):
+    """--path pointing to a file should fail explicitly."""
+    from owlclaw.cli.skill_init import init_command
+
+    out_file = tmp_path / "output.txt"
+    out_file.write_text("x", encoding="utf-8")
+    with pytest.raises(Exit) as exc_info:
+        init_command(
+            name="my-skill",
+            path=str(out_file),
+            template="default",
+            category="",
+            params_file="",
+            param="",
+            force=False,
+        )
+    assert exc_info.value.exit_code == 2
+
+
+def test_skill_init_template_mode_rejects_invalid_normalized_skill_name(tmp_path):
+    """Template mode should reject skill_name that normalizes to empty."""
+    from owlclaw.cli.skill_init import init_command
+
+    params_file = tmp_path / "params.json"
+    params_file.write_text(
+        json.dumps(
+            {
+                "skill_name": "!!!",
+                "skill_description": "desc",
+                "endpoints": "/health",
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(Exit) as exc_info:
+        init_command(
+            name="",
+            path=str(tmp_path),
+            template="monitoring/health-check",
+            category="",
+            params_file=str(params_file),
+            param="",
+            force=False,
+        )
+    assert exc_info.value.exit_code == 2
+
+
 def test_skill_init_exits_when_generated_skill_has_validation_error(tmp_path, monkeypatch):
     """init should return non-zero if generated SKILL.md has validation errors."""
     monkeypatch.chdir(tmp_path)

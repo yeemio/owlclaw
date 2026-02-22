@@ -135,6 +135,9 @@ def init_command(
 ) -> None:
     """Create a new Skill directory and SKILL.md from template or default scaffold."""
     base = Path(path).resolve()
+    if base.exists() and not base.is_dir():
+        typer.echo(f"Error: output path is not a directory: {base}", err=True)
+        raise typer.Exit(2)
     if not base.is_dir():
         base.mkdir(parents=True, exist_ok=True)
 
@@ -264,6 +267,9 @@ def init_command(
 
     # kebab-case for directory name
     kebab = _normalize_skill_name(str(skill_name_val))
+    if not kebab:
+        typer.echo("Error: skill_name must contain at least one alphanumeric character.", err=True)
+        raise typer.Exit(2)
 
     skill_dir = base / kebab
     skill_file = skill_dir / "SKILL.md"
