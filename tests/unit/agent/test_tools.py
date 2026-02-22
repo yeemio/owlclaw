@@ -315,6 +315,20 @@ class TestScheduleCron:
         assert call.kwargs["input_data"]["trigger"] == "schedule_cron"
 
     @pytest.mark.asyncio
+    async def test_schedule_cron_sanitizes_agent_id_in_cron_name(self) -> None:
+        hatchet = AsyncMock()
+        hatchet.schedule_cron = AsyncMock(return_value="cron-abc")
+        tools = BuiltInTools(hatchet_client=hatchet)
+        ctx = BuiltInToolsContext(agent_id="bot prod/v1", run_id="r1")
+        await tools.execute(
+            "schedule_cron",
+            {"cron_expression": "0 9 * * 1-5", "focus": "morning check"},
+            ctx,
+        )
+        cron_name = hatchet.schedule_cron.call_args.kwargs["cron_name"]
+        assert cron_name.startswith("agent_cron_bot_prod_v1_")
+
+    @pytest.mark.asyncio
     async def test_schedule_cron_no_hatchet_returns_error(self) -> None:
         tools = BuiltInTools(hatchet_client=None)
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")

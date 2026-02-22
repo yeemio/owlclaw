@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 import uuid
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ _SCHEDULED_RUN_TASK = "agent_scheduled_run"
 _BUILTIN_TOOL_NAMES = frozenset(
     {"query_state", "log_decision", "schedule_once", "schedule_cron", "cancel_schedule"}
 )
+_SAFE_NAME_PATTERN = re.compile(r"[^a-zA-Z0-9_-]+")
 
 
 @dataclass
@@ -209,6 +211,12 @@ class BuiltInTools:
             return None
         trimmed = value.strip()
         return trimmed if trimmed else None
+
+    @staticmethod
+    def _safe_name(value: str) -> str:
+        normalized = _SAFE_NAME_PATTERN.sub("_", value.strip())
+        normalized = normalized.strip("_")
+        return normalized or "agent"
 
     async def execute(
         self,
@@ -523,7 +531,8 @@ class BuiltInTools:
                 error_message=error,
             )
             return {"error": error}
-        cron_name = f"agent_cron_{context.agent_id}_{uuid.uuid4().hex[:12]}"
+        safe_agent_id = self._safe_name(context.agent_id)
+        cron_name = f"agent_cron_{safe_agent_id}_{uuid.uuid4().hex[:12]}"
         input_data = {
             "agent_id": context.agent_id,
             "trigger": "schedule_cron",
