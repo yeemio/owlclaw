@@ -332,11 +332,14 @@ class AgentRuntime:
         Falls back to a descriptive error dict if the capability is not
         registered or raises, so the LLM can handle it gracefully.
         """
-        tool_name: str = tool_call.function.name
+        function = getattr(tool_call, "function", None)
+        tool_name = getattr(function, "name", None)
+        if not isinstance(tool_name, str) or not tool_name.strip():
+            return {"error": "Invalid tool call: missing function name"}
         invalid_arguments = False
         invalid_reason = ""
         try:
-            raw_args = tool_call.function.arguments
+            raw_args = function.arguments
             arguments: dict[str, Any] = (
                 json.loads(raw_args) if isinstance(raw_args, str) else raw_args
             )
