@@ -647,6 +647,21 @@ class TestAgentRuntimeRun:
         assert "timed out" in result["final_response"]
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_invalid_llm_timeout_config_falls_back_to_default(
+        self, mock_llm, tmp_path
+    ) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"llm_timeout_seconds": "bad-timeout"},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert result["final_response"] == "ok"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_no_registry_no_tools(self, mock_llm, tmp_path) -> None:
         """Without a registry the visible tools list is empty."""
         mock_llm.return_value = _make_llm_response()

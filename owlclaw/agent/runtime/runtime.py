@@ -268,9 +268,16 @@ class AgentRuntime:
                 max_iterations = max(1, int(max_iterations_raw))
             except (TypeError, ValueError):
                 max_iterations = _DEFAULT_MAX_ITERATIONS
-        llm_timeout = float(
-            self.config.get("llm_timeout_seconds", _DEFAULT_LLM_TIMEOUT_SECONDS)
+        llm_timeout_raw = self.config.get(
+            "llm_timeout_seconds", _DEFAULT_LLM_TIMEOUT_SECONDS
         )
+        if isinstance(llm_timeout_raw, bool):
+            llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
+        else:
+            try:
+                llm_timeout = float(llm_timeout_raw)
+            except (TypeError, ValueError):
+                llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
         if llm_timeout <= 0:
             llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
         model_used = self.model
