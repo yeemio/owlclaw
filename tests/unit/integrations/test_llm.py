@@ -129,6 +129,43 @@ class TestLLMClient:
                 await client.complete(messages=[{"role": "user", "content": "Hi"}])
             assert "Too many" in str(exc_info.value)
 
+    @pytest.mark.asyncio
+    async def test_complete_uses_fallback_model_for_response_and_cost(self) -> None:
+        c = LLMConfig(
+            default_model="primary",
+            models={
+                "primary": ModelConfig(
+                    name="primary",
+                    provider="openai",
+                    cost_per_1k_prompt_tokens=1.0,
+                    cost_per_1k_completion_tokens=1.0,
+                ),
+                "fallback": ModelConfig(
+                    name="fallback",
+                    provider="openai",
+                    cost_per_1k_prompt_tokens=0.1,
+                    cost_per_1k_completion_tokens=0.2,
+                ),
+            },
+            task_type_routing=[
+                TaskTypeRouting(task_type="trading", model="primary", fallback_models=["fallback"])
+            ],
+            max_retries=1,
+        )
+        client = LLMClient(c)
+        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
+            mock.side_effect = [
+                Exception("ServiceUnavailableError: upstream down"),
+                _fake_litellm_response("ok", [], 1000, 1000),
+            ]
+            resp = await client.complete(
+                messages=[{"role": "user", "content": "Hi"}],
+                task_type="trading",
+            )
+
+            assert resp.model == "fallback"
+            assert resp.cost == 0.3
+
 
 class TestLLMErrors:
     """Tests for LLM error types (Task 6.1)."""

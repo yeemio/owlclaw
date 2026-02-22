@@ -259,8 +259,12 @@ class LLMClient:
         self,
         params: dict[str, Any],
         fallback_models: list[str],
-    ) -> Any:
-        """Call litellm; on failure try fallback models. Wraps litellm exceptions as OwlClaw errors."""
+    ) -> tuple[Any, str]:
+        """Call litellm; on failure try fallback models.
+
+        Returns:
+            Tuple of (litellm response, model name actually used).
+        """
         models_to_try = [params["model"]] + fallback_models
         last_error: Exception | None = None
         last_model = ""
@@ -268,7 +272,8 @@ class LLMClient:
             last_model = model
             try:
                 call_params = {**params, "model": model}
-                return await acompletion(**call_params)
+                response = await acompletion(**call_params)
+                return response, model
             except Exception as e:
                 last_error = e
                 err_name = type(e).__name__
@@ -366,13 +371,13 @@ class LLMClient:
             except Exception as e:
                 logger.warning("Langfuse trace create failed: %s", e)
         try:
-            response = await self._call_with_fallback(params, fallback)
-            llm_resp = self._parse_response(response, model_name)
+            response, used_model = await self._call_with_fallback(params, fallback)
+            llm_resp = self._parse_response(response, used_model)
             if trace:
                 try:
                     trace.generation(
                         name="completion",
-                        model=model_name,
+                        model=used_model,
                         input=messages,
                         output=llm_resp.content or llm_resp.function_calls,
                         usage={
