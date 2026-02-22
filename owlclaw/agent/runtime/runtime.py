@@ -643,6 +643,12 @@ class AgentRuntime:
                 for name in confirmed_raw
                 if isinstance(name, str) and name.strip()
             }
+        elif isinstance(confirmed_raw, str):
+            confirmed = {
+                part.strip()
+                for part in confirmed_raw.split(",")
+                if part.strip()
+            }
         run_ctx = RunContext(
             tenant_id=context.tenant_id,
             confirmed_capabilities=confirmed or None,
