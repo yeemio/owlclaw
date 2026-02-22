@@ -101,6 +101,31 @@ def test_skill_to_dict(tmp_path):
     assert "full_content" not in d
 
 
+def test_skills_loader_parses_focus_and_risk_extensions(tmp_path):
+    """owlclaw focus/risk fields should be parsed and exposed by Skill."""
+    skill_dir = tmp_path / "risky-skill"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: risky-skill
+description: Risky operation
+owlclaw:
+  focus: [inventory_monitor, trading_decision]
+  risk_level: high
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("risky-skill")
+    assert skill is not None
+    assert skill.focus == ["inventory_monitor", "trading_decision"]
+    assert skill.risk_level == "high"
+    assert skill.requires_confirmation is True
+
+
 def test_parse_invalid_yaml_skipped(tmp_path):
     """Invalid YAML in frontmatter is logged and skill is skipped."""
     skill_dir = tmp_path / "bad"

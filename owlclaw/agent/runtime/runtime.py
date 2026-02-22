@@ -563,16 +563,34 @@ class AgentRuntime:
         return self.knowledge_injector.get_skills_knowledge(skill_names)
 
     def _skill_has_focus(self, skill_name: str, focus: str) -> bool:
-        """Return True if the skill's tags include *focus*."""
+        """Return True if the skill declares *focus* in owlclaw.focus.
+
+        Falls back to metadata.tags for backwards compatibility.
+        """
         if self.registry is None:
             return False
         skill = self.registry.skills_loader.get_skill(skill_name)
         if skill is None:
             return False
+        target = focus.strip().lower()
+        if not target:
+            return False
+
+        declared_focus = skill.owlclaw_config.get("focus", [])
+        if isinstance(declared_focus, str):
+            declared_focus = [declared_focus]
+        if isinstance(declared_focus, list):
+            normalized_focus = {str(item).strip().lower() for item in declared_focus if str(item).strip()}
+            if target in normalized_focus:
+                return True
+
         tags = skill.metadata.get("tags") or []
         if isinstance(tags, str):
             tags = [tags]
-        return focus in tags
+        if isinstance(tags, list):
+            normalized_tags = {str(item).strip().lower() for item in tags if str(item).strip()}
+            return target in normalized_tags
+        return False
 
     # ------------------------------------------------------------------
     # Visible tools

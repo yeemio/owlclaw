@@ -147,6 +147,26 @@ class TestAgentRuntimeRun:
         user_msg = next(m for m in call_messages if m["role"] == "user")
         assert "inventory_monitor" in user_msg["content"]
 
+    def test_skill_focus_match_uses_owlclaw_focus(self, tmp_path) -> None:
+        """Focus matching should prioritize owlclaw.focus extension field."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        skill = MagicMock()
+        skill.owlclaw_config = {"focus": ["Inventory_Monitor", "ops"]}
+        skill.metadata = {"tags": ["legacy-tag"]}
+        rt.registry = MagicMock()
+        rt.registry.skills_loader.get_skill.return_value = skill
+        assert rt._skill_has_focus("x", "inventory_monitor") is True
+
+    def test_skill_focus_match_falls_back_to_metadata_tags(self, tmp_path) -> None:
+        """Legacy skills without owlclaw.focus still match via metadata.tags."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        skill = MagicMock()
+        skill.owlclaw_config = {}
+        skill.metadata = {"tags": ["inventory_monitor"]}
+        rt.registry = MagicMock()
+        rt.registry.skills_loader.get_skill.return_value = skill
+        assert rt._skill_has_focus("x", "inventory_monitor") is True
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_accepts_dict_assistant_message(self, mock_llm, tmp_path) -> None:
         """Runtime should support providers returning dict message objects."""

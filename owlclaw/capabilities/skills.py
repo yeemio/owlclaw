@@ -59,6 +59,45 @@ class Skill:
         """Get the trigger configuration (OwlClaw extension)."""
         return self.owlclaw_config.get("trigger")
 
+    @property
+    def focus(self) -> list[str]:
+        """Get focus tags used for runtime skill selection (OwlClaw extension)."""
+        raw = self.owlclaw_config.get("focus", [])
+        if isinstance(raw, str):
+            return [raw]
+        if isinstance(raw, list):
+            return [str(item) for item in raw if str(item).strip()]
+        return []
+
+    @property
+    def risk_level(self) -> str:
+        """Get declared risk level (low/medium/high/critical), defaulting to low."""
+        raw = self.owlclaw_config.get("risk_level", "low")
+        if isinstance(raw, str):
+            normalized = raw.strip().lower()
+            if normalized in {"low", "medium", "high", "critical"}:
+                return normalized
+        return "low"
+
+    @property
+    def requires_confirmation(self) -> bool:
+        """Whether this skill requires human confirmation before execution.
+
+        For compatibility with architecture v4.1:
+        - explicit owlclaw.requires_confirmation takes precedence;
+        - high/critical risk defaults to True when not explicitly set.
+        """
+        raw = self.owlclaw_config.get("requires_confirmation")
+        if isinstance(raw, bool):
+            return raw
+        if isinstance(raw, str):
+            normalized = raw.strip().lower()
+            if normalized in {"1", "true", "yes", "on"}:
+                return True
+            if normalized in {"0", "false", "no", "off"}:
+                return False
+        return self.risk_level in {"high", "critical"}
+
     def load_full_content(self) -> str:
         """Load full instruction text from SKILL.md (lazy loading).
 
@@ -113,6 +152,9 @@ class Skill:
             "task_type": self.task_type,
             "constraints": self.constraints,
             "trigger": self.trigger,
+            "focus": self.focus,
+            "risk_level": self.risk_level,
+            "requires_confirmation": self.requires_confirmation,
         }
 
 
