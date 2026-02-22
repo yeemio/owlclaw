@@ -48,8 +48,12 @@ class KnowledgeInjector:
             Formatted Markdown string with Skills knowledge
         """
         knowledge_parts = []
+        seen: set[str] = set()
 
         for skill_name in skill_names:
+            if skill_name in seen:
+                continue
+            seen.add(skill_name)
             skill = self.skills_loader.get_skill(skill_name)
             if not skill:
                 continue

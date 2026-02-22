@@ -66,6 +66,12 @@ def test_get_skills_knowledge_unknown_skill_skipped(injector):
     assert "nonexistent" not in result
 
 
+def test_get_skills_knowledge_deduplicates_skill_names(injector):
+    result = injector.get_skills_knowledge(["skill-a", "skill-a", "skill-b"])
+    assert result.count("## Skill: skill-a") == 1
+    assert result.count("## Skill: skill-b") == 1
+
+
 def test_get_all_skills_summary(injector):
     """get_all_skills_summary() returns summary with name and description only."""
     result = injector.get_all_skills_summary()
