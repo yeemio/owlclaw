@@ -86,9 +86,9 @@ class InMemoryStore(MemoryStore):
         hours: int = 24,
         limit: int = 5,
     ) -> list[MemoryEntry]:
-        cutoff = _now_utc()
+        cutoff: datetime | None = None
         if hours > 0:
-            cutoff = cutoff - timedelta(hours=hours)
+            cutoff = _now_utc() - timedelta(hours=hours)
         candidates = []
         for e in self._store.values():
             if e.agent_id != agent_id or e.tenant_id != tenant_id or e.archived:
@@ -96,7 +96,7 @@ class InMemoryStore(MemoryStore):
             created = e.created_at
             if created.tzinfo is None:
                 created = created.replace(tzinfo=timezone.utc)
-            if created >= cutoff:
+            if cutoff is None or created >= cutoff:
                 candidates.append(e)
         candidates.sort(key=lambda e: e.created_at, reverse=True)
         return [self._copy(e) for e in candidates[:limit]]

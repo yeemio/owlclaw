@@ -193,22 +193,15 @@ class PgVectorStore(MemoryStore):
         limit: int = 5,
     ) -> list[MemoryEntry]:
         async with self._session_factory() as session:
-            cutoff = _now_utc()
+            conditions = [
+                MemoryEntryORM.agent_id == agent_id,
+                MemoryEntryORM.tenant_id == tenant_id,
+                MemoryEntryORM.archived.is_(False),
+            ]
             if hours > 0:
-                cutoff = cutoff - timedelta(hours=hours)
-            q = (
-                select(MemoryEntryORM)
-                .where(
-                    and_(
-                        MemoryEntryORM.agent_id == agent_id,
-                        MemoryEntryORM.tenant_id == tenant_id,
-                        MemoryEntryORM.archived.is_(False),
-                        MemoryEntryORM.created_at >= cutoff,
-                    )
-                )
-                .order_by(MemoryEntryORM.created_at.desc())
-                .limit(limit)
-            )
+                cutoff = _now_utc() - timedelta(hours=hours)
+                conditions.append(MemoryEntryORM.created_at >= cutoff)
+            q = select(MemoryEntryORM).where(and_(*conditions)).order_by(MemoryEntryORM.created_at.desc()).limit(limit)
             result = await session.execute(q)
             return [_orm_to_entry(r) for r in result.scalars().all()]
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from owlclaw.agent.memory import InMemoryStore, MemoryEntry, RandomEmbedder
@@ -118,3 +120,24 @@ async def test_inmemory_update_access() -> None:
     entry_after = results2[0][0]
     assert entry_after.access_count == 1
     assert entry_after.accessed_at is not None
+
+
+@pytest.mark.asyncio
+async def test_inmemory_get_recent_with_non_positive_hours_returns_latest_without_time_filter() -> None:
+    store = InMemoryStore()
+    embedder = RandomEmbedder(dimensions=8, seed=42)
+    agent_id, tenant_id = "a", "default"
+
+    emb = await embedder.embed("Old")
+    old = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="Old", embedding=emb)
+    old.created_at = datetime.now(timezone.utc) - timedelta(days=2)
+    await store.save(old)
+
+    emb2 = await embedder.embed("New")
+    new = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="New", embedding=emb2)
+    await store.save(new)
+
+    recent = await store.get_recent(agent_id, tenant_id, hours=0, limit=5)
+    contents = [entry.content for entry in recent]
+    assert "Old" in contents
+    assert "New" in contents
