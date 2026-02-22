@@ -126,12 +126,26 @@ class TestLogDecision:
         )
         assert result["logged"] is True
         assert "decision_id" in result
+        assert result["decision_id"].startswith("decision-")
         ledger.record_execution.assert_awaited_once()
         call = ledger.record_execution.call_args
         assert call.kwargs["capability_name"] == "log_decision"
         assert call.kwargs["task_type"] == "decision_log"
         assert call.kwargs["decision_reasoning"] == "no action needed"
         assert call.kwargs["input_params"]["decision_type"] == "no_action"
+        assert call.kwargs["output_result"]["decision_id"] == result["decision_id"]
+
+    @pytest.mark.asyncio
+    async def test_log_decision_id_is_unique_per_call(self) -> None:
+        ledger = AsyncMock()
+        tools = BuiltInTools(ledger=ledger)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        r1 = await tools.execute("log_decision", {"reasoning": "a"}, ctx)
+        r2 = await tools.execute("log_decision", {"reasoning": "b"}, ctx)
+
+        assert r1["logged"] is True and r2["logged"] is True
+        assert r1["decision_id"] != r2["decision_id"]
 
     @pytest.mark.asyncio
     async def test_log_decision_no_ledger_returns_no_ledger(self) -> None:

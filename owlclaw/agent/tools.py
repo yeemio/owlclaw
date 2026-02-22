@@ -363,6 +363,7 @@ class BuiltInTools:
             return {"decision_id": "no-ledger", "logged": False}
 
         try:
+            decision_id = f"decision-{uuid.uuid4().hex}"
             await self._ledger.record_execution(
                 tenant_id=context.tenant_id,
                 agent_id=context.agent_id,
@@ -370,7 +371,7 @@ class BuiltInTools:
                 capability_name="log_decision",
                 task_type="decision_log",
                 input_params={"reasoning": reasoning, "decision_type": decision_type},
-                output_result={"logged": True},
+                output_result={"logged": True, "decision_id": decision_id},
                 decision_reasoning=reasoning,
                 execution_time_ms=0,
                 llm_model="builtin",
@@ -379,7 +380,7 @@ class BuiltInTools:
                 estimated_cost=Decimal("0"),
                 status="success",
             )
-            return {"decision_id": context.run_id, "logged": True}
+            return {"decision_id": decision_id, "logged": True}
         except Exception as e:
             logger.exception("log_decision failed")
             return {"error": str(e), "logged": False}
