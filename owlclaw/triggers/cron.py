@@ -174,6 +174,15 @@ class CronTriggerRegistry:
         if not self._validate_cron_expression(expression):
             raise ValueError(f"Invalid cron expression: '{expression}'")
 
+        migration_weight = kwargs.get("migration_weight", 1.0)
+        if (
+            isinstance(migration_weight, bool)
+            or not isinstance(migration_weight, (int, float))
+            or migration_weight < 0.0
+            or migration_weight > 1.0
+        ):
+            raise ValueError("migration_weight must be a float between 0.0 and 1.0")
+
         config = CronTriggerConfig(
             event_name=event_name,
             expression=expression,
