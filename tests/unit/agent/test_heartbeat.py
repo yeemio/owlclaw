@@ -47,6 +47,7 @@ class TestHeartbeatCheckerNoEvents:
             agent_id="bot",
             config={"event_sources": []},
         )
+        assert checker._event_sources == []
         result = await checker.check_events()
         assert result is False
 
