@@ -78,6 +78,13 @@ class TestCronRegistration:
         with pytest.raises(ValueError, match="Invalid cron expression"):
             reg.register("bad", "not_a_cron")
 
+    def test_register_trims_expression_whitespace(self) -> None:
+        reg = self._registry()
+        reg.register("daily_trim", " 0 9 * * * ")
+        config = reg.get_trigger("daily_trim")
+        assert config is not None
+        assert config.expression == "0 9 * * *"
+
     def test_list_triggers_empty(self) -> None:
         reg = self._registry()
         assert reg.list_triggers() == []

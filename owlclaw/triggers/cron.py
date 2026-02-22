@@ -172,6 +172,9 @@ class CronTriggerRegistry:
         if not normalized_event_name:
             raise ValueError("event_name must not be empty")
         event_name = normalized_event_name
+        expression = expression.strip()
+        if not expression:
+            raise ValueError("expression must not be empty")
         if isinstance(focus, str):
             focus = focus.strip() or None
 
