@@ -183,6 +183,36 @@ class TestTemplateValidator:
         errs = v.validate_skill_file(skill)
         assert any(e.field == "owlclaw.trigger" and "must be a string" in e.message for e in errs)
 
+    def test_validate_skill_file_risk_level_invalid(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: my-skill\ndescription: ok\nowlclaw:\n  risk_level: extreme\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "owlclaw.risk_level" and "must be one of" in e.message for e in errs)
+
+    def test_validate_skill_file_requires_confirmation_bool(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: my-skill\ndescription: ok\nowlclaw:\n  requires_confirmation: \"yes\"\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "owlclaw.requires_confirmation" and "boolean" in e.message for e in errs)
+
+    def test_validate_skill_file_focus_list_items_non_empty(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: my-skill\ndescription: ok\nowlclaw:\n  focus: [inventory, \"\"]\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "owlclaw.focus" and "non-empty strings" in e.message for e in errs)
+
     def test_validate_and_report(self, tmp_path: Path) -> None:
         skill = tmp_path / "SKILL.md"
         skill.write_text("---\n---\n", encoding="utf-8")

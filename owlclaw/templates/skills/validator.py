@@ -249,6 +249,65 @@ class TemplateValidator:
                                 severity="error",
                             )
                         )
+                if "focus" in owlclaw:
+                    focus = owlclaw["focus"]
+                    if isinstance(focus, str):
+                        if not focus.strip():
+                            errors.append(
+                                ValidationError(
+                                    field="owlclaw.focus",
+                                    message="Focus must not be empty",
+                                    severity="error",
+                                )
+                            )
+                    elif isinstance(focus, list):
+                        if not focus:
+                            errors.append(
+                                ValidationError(
+                                    field="owlclaw.focus",
+                                    message="Focus list must not be empty",
+                                    severity="error",
+                                )
+                            )
+                        elif any(not isinstance(item, str) or not item.strip() for item in focus):
+                            errors.append(
+                                ValidationError(
+                                    field="owlclaw.focus",
+                                    message="Focus list items must be non-empty strings",
+                                    severity="error",
+                                )
+                            )
+                    else:
+                        errors.append(
+                            ValidationError(
+                                field="owlclaw.focus",
+                                message="Focus must be a string or list of strings",
+                                severity="error",
+                            )
+                        )
+                if "risk_level" in owlclaw:
+                    risk_level = owlclaw["risk_level"]
+                    if not isinstance(risk_level, str) or risk_level.strip().lower() not in {
+                        "low",
+                        "medium",
+                        "high",
+                        "critical",
+                    }:
+                        errors.append(
+                            ValidationError(
+                                field="owlclaw.risk_level",
+                                message="Risk level must be one of: low, medium, high, critical",
+                                severity="error",
+                            )
+                        )
+                if "requires_confirmation" in owlclaw and not isinstance(owlclaw["requires_confirmation"], bool):
+                    errors.append(
+                        ValidationError(
+                            field="owlclaw.requires_confirmation",
+                            message="requires_confirmation must be a boolean",
+                            severity="error",
+                        )
+                    )
 
         if self._contains_jinja_placeholder(frontmatter):
             errors.append(
