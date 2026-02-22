@@ -187,6 +187,9 @@ class SkillsLoader:
             logged and skipped.
         """
         self.skills.clear()
+        if not self.base_path.exists() or not self.base_path.is_dir():
+            logger.warning("Skills base path does not exist or is not a directory: %s", self.base_path)
+            return []
         skill_files = sorted(self.base_path.rglob("SKILL.md"))
         for skill_file in skill_files:
             skill = self._parse_skill_file(skill_file)

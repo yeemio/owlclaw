@@ -32,6 +32,12 @@ owlclaw:
     assert skills[0].constraints.get("trading_hours_only") is True
 
 
+def test_skills_loader_scan_on_missing_base_path_returns_empty(tmp_path):
+    missing = tmp_path / "does-not-exist"
+    loader = SkillsLoader(missing)
+    assert loader.scan() == []
+
+
 def test_skills_loader_get_skill(tmp_path):
     """get_skill() returns Skill by name after scan()."""
     skill_dir = tmp_path / "morning-decision"
