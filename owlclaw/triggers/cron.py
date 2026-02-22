@@ -328,10 +328,19 @@ class CronTriggerRegistry:
             )
         from owlclaw.governance.ledger import LedgerQueryFilters
 
+        if isinstance(limit, bool):
+            safe_limit = 10
+        else:
+            try:
+                safe_limit = int(limit)
+            except (TypeError, ValueError):
+                safe_limit = 10
+        safe_limit = max(1, min(safe_limit, 100))
+
         tid = tenant_id if tenant_id is not None else self._tenant_id
         filters = LedgerQueryFilters(
             capability_name=event_name,
-            limit=max(1, min(limit, 100)),
+            limit=safe_limit,
             order_by="created_at DESC",
         )
         records = await self._ledger.query_records(tenant_id=tid, filters=filters)

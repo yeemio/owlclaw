@@ -276,3 +276,15 @@ class TestTaskManagement:
         assert history[0]["execution_time_ms"] == 150
         assert history[0]["agent_run_id"] == "ar-1"
         assert history[0]["error_message"] is None
+
+    @pytest.mark.asyncio
+    async def test_get_execution_history_invalid_limit_falls_back_to_default(self) -> None:
+        reg = self._registry()
+        reg.register("daily", "0 9 * * *")
+        hatchet = MagicMock()
+        ledger = MagicMock()
+        ledger.query_records = AsyncMock(return_value=[])
+        reg.start(hatchet, agent_runtime=None, ledger=ledger)
+        await reg.get_execution_history("daily", limit="bad")  # type: ignore[arg-type]
+        filters = ledger.query_records.call_args.kwargs["filters"]
+        assert filters.limit == 10
