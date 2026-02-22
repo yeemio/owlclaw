@@ -287,3 +287,45 @@ def test_skill_exposes_optional_assets_references_and_scripts_dirs(tmp_path):
     assert skill.references_dir == skill_dir / "references"
     assert skill.scripts_dir == skill_dir / "scripts"
     assert skill.assets_dir == skill_dir / "assets"
+
+
+def test_skills_loader_parses_frontmatter_with_dashes_in_field_values(tmp_path):
+    """Frontmatter parser should not break when YAML values contain '---'."""
+    skill_dir = tmp_path / "dash-desc"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: dash-desc
+description: "strategy --- monitor"
+---
+# Body
+Use this skill.
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert skills[0].description == "strategy --- monitor"
+
+
+def test_skill_load_full_content_handles_dashes_in_frontmatter_values(tmp_path):
+    skill_dir = tmp_path / "dash-body"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: dash-body
+description: "a --- b"
+---
+# Body Heading
+Body text
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("dash-body")
+    assert skill is not None
+    body = skill.load_full_content()
+    assert "# Body Heading" in body
+    assert "description:" not in body

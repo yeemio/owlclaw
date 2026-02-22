@@ -12,6 +12,7 @@ import yaml
 
 logger = logging.getLogger(__name__)
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+_FRONTMATTER_PATTERN = re.compile(r"^---\r?\n(.*?)\r?\n---(?:\r?\n(.*))?$", re.DOTALL)
 
 
 class Skill:
@@ -114,12 +115,10 @@ class Skill:
         """
         if not self._is_loaded:
             content = self.file_path.read_text(encoding="utf-8")
-            # Extract content after frontmatter (between second and third ---)
-            parts = content.split("---", 2)
-            if len(parts) >= 3:
-                self._full_content = parts[2].strip()
-            else:
-                self._full_content = ""
+            content = content.lstrip("\ufeff")
+            match = _FRONTMATTER_PATTERN.match(content)
+            self._full_content = (match.group(2) if match else "") or ""
+            self._full_content = self._full_content.strip()
             self._is_loaded = True
         return self._full_content
 
@@ -220,13 +219,14 @@ class SkillsLoader:
             logger.warning("Skill file %s missing frontmatter", file_path)
             return None
 
-        parts = content.split("---", 2)
-        if len(parts) < 3:
+        match = _FRONTMATTER_PATTERN.match(content)
+        if not match:
             logger.warning("Skill file %s invalid frontmatter format", file_path)
             return None
+        frontmatter_raw, _body = match.groups()
 
         try:
-            frontmatter = yaml.safe_load(parts[1])
+            frontmatter = yaml.safe_load(frontmatter_raw)
         except yaml.YAMLError as e:
             logger.warning("Skill file %s YAML parse error: %s", file_path, e)
             return None
