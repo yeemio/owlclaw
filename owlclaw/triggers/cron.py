@@ -294,6 +294,8 @@ class CronTriggerRegistry:
                 "trigger_now requires Hatchet client with run_task_now() support"
             )
         task_name = f"cron_{event_name}"
+        if "tenant_id" not in kwargs:
+            kwargs["tenant_id"] = self._tenant_id
         return await run_task_now(task_name, **kwargs)
 
     async def get_execution_history(
