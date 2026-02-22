@@ -308,6 +308,14 @@ class TemplateValidator:
                             severity="error",
                         )
                     )
+            else:
+                errors.append(
+                    ValidationError(
+                        field="owlclaw",
+                        message="owlclaw must be a mapping/object",
+                        severity="error",
+                    )
+                )
 
         if self._contains_jinja_placeholder(frontmatter):
             errors.append(
