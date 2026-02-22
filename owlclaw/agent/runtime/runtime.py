@@ -408,7 +408,11 @@ class AgentRuntime:
         if isinstance(pending, list | tuple | set) and len(pending) > 0:
             return True
         count = payload.get("event_count")
-        return bool(isinstance(count, int) and not isinstance(count, bool) and count > 0)
+        return bool(
+            isinstance(count, int | float)
+            and not isinstance(count, bool)
+            and count > 0
+        )
 
     # ------------------------------------------------------------------
     # Tool execution

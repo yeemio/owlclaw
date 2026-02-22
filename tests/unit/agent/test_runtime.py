@@ -836,6 +836,26 @@ class TestAgentRuntimeRun:
         new_callable=AsyncMock,
         return_value=False,
     )
+    async def test_heartbeat_payload_float_event_count_skips_checker(
+        self, mock_check_events, mock_llm, tmp_path
+    ) -> None:
+        mock_llm.return_value = _make_llm_response()
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        await rt.setup()
+        result = await rt.trigger_event(
+            "heartbeat",
+            payload={"event_count": 1.5},
+        )
+        assert result["status"] == "completed"
+        mock_check_events.assert_not_called()
+        mock_llm.assert_called_once()
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    @patch(
+        "owlclaw.agent.runtime.runtime.HeartbeatChecker.check_events",
+        new_callable=AsyncMock,
+        return_value=False,
+    )
     async def test_heartbeat_payload_bool_event_count_does_not_trigger_run(
         self, mock_check_events, mock_llm, tmp_path
     ) -> None:
