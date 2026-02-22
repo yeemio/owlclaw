@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 from owlclaw.integrations.llm import (
     AuthenticationError,
@@ -75,6 +76,21 @@ llm:
         assert c.default_model == "gpt-4o"
         assert c.task_type_routing[0].model == "gpt-4o"
         assert c.task_type_routing[0].fallback_models == ["gpt-4o-mini"]
+
+    def test_from_yaml_invalid_config_raises_validation_error(self, tmp_path: Path) -> None:
+        """Invalid config structure or types raise Pydantic ValidationError (Task 8.1.3)."""
+        yaml_path = tmp_path / "owlclaw.yaml"
+        yaml_path.write_text("""
+llm:
+  default_model: gpt-4o
+  models:
+    gpt-4o:
+      name: gpt-4o
+      provider: openai
+      temperature: "not_a_number"
+""")
+        with pytest.raises(ValidationError):
+            LLMConfig.from_yaml(yaml_path)
 
 
 class TestLLMClient:
