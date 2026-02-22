@@ -23,7 +23,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         return False
 
     if len(argv) < 2:
-        return False
+        _print_help_and_exit(["skill"])
 
     sub = argv[1]
     sub_argv = argv[2:]
@@ -94,7 +94,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         )
         return True
 
-    return False
+    print(f"Error: unknown skill subcommand: {sub}")
+    raise SystemExit(2)
 
 
 def _print_help_and_exit(argv: list[str]) -> None:

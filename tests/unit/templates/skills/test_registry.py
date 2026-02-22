@@ -111,6 +111,18 @@ name: test
         results = reg.list_templates(tags=["  health  "])
         assert len(results) >= 1
 
+    def test_parse_parameter_required_string_false(self, tmp_path: Path) -> None:
+        (tmp_path / "monitoring").mkdir()
+        (tmp_path / "monitoring" / "health-check.md.j2").write_text(
+            "{#\nname: X\ndescription: Y\ntags: []\nparameters:\n  - name: opt\n    type: str\n    required: \"false\"\n#}\n---\n",
+            encoding="utf-8",
+        )
+        reg = TemplateRegistry(tmp_path)
+        tpl = reg.get_template("monitoring/health-check")
+        assert tpl is not None
+        assert len(tpl.parameters) == 1
+        assert tpl.parameters[0].required is False
+
     def test_search_templates(self, tmp_path: Path) -> None:
         (tmp_path / "monitoring").mkdir()
         (tmp_path / "monitoring" / "health-check.md.j2").write_text(

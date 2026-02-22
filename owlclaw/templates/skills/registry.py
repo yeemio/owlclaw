@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import re
 import logging
+import re
 from pathlib import Path
 
 import yaml
@@ -90,12 +90,17 @@ class TemplateRegistry:
         parameters: list[TemplateParameter] = []
         for p in data.get("parameters") or []:
             if isinstance(p, dict):
+                raw_required = p.get("required", True)
+                if isinstance(raw_required, str):
+                    required = raw_required.strip().lower() not in ("0", "false", "no", "off")
+                else:
+                    required = bool(raw_required)
                 parameters.append(
                     TemplateParameter(
                         name=str(p.get("name", "")),
                         type=str(p.get("type", "str")),
                         description=str(p.get("description", "")),
-                        required=bool(p.get("required", True)),
+                        required=required,
                         default=p.get("default"),
                         choices=p.get("choices"),
                     )

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from croniter import croniter
 from jinja2 import Environment
 
 from owlclaw.templates.skills.models import ValidationError
@@ -18,11 +19,9 @@ logger = logging.getLogger(__name__)
 _METADATA_BLOCK = re.compile(r"\{#.*?#\}", re.DOTALL)
 
 # Supported trigger patterns: cron("..."), webhook("..."), queue("...")
-_TRIGGER_PATTERNS = [
-    re.compile(r'^cron\(".*?"\)$'),
-    re.compile(r'^webhook\(".*?"\)$'),
-    re.compile(r'^queue\(".*?"\)$'),
-]
+_CRON_PATTERN = re.compile(r'^cron\("([^"]+)"\)$')
+_WEBHOOK_PATTERN = re.compile(r'^webhook\("([^"]+)"\)$')
+_QUEUE_PATTERN = re.compile(r'^queue\("([^"]+)"\)$')
 
 
 class TemplateValidator:
@@ -59,6 +58,36 @@ class TemplateValidator:
                     severity="error",
                 )
             )
+        else:
+            try:
+                match = _METADATA_BLOCK.search(content)
+                assert match is not None  # guarded above
+                metadata_raw = match.group(0)[2:-2].strip()
+                loaded = yaml.safe_load(metadata_raw)
+                if not isinstance(loaded, dict):
+                    errors.append(
+                        ValidationError(
+                            field="metadata",
+                            message="Template metadata must be a YAML mapping",
+                            severity="error",
+                        )
+                    )
+                elif self._contains_jinja_placeholder(loaded):
+                    errors.append(
+                        ValidationError(
+                            field="metadata",
+                            message="Template metadata contains unrendered Jinja2 placeholders",
+                            severity="error",
+                        )
+                    )
+            except yaml.YAMLError as e:
+                errors.append(
+                    ValidationError(
+                        field="metadata",
+                        message=f"Invalid metadata YAML: {e}",
+                        severity="error",
+                    )
+                )
 
         try:
             env = Environment()
@@ -237,7 +266,22 @@ class TemplateValidator:
 
     def _validate_trigger_syntax(self, trigger: str) -> bool:
         """Check if trigger matches supported syntax (cron/webhook/queue)."""
-        return any(p.match(trigger) for p in _TRIGGER_PATTERNS)
+        cron_match = _CRON_PATTERN.match(trigger)
+        if cron_match:
+            expr = cron_match.group(1).strip()
+            return bool(expr) and croniter.is_valid(expr)
+
+        webhook_match = _WEBHOOK_PATTERN.match(trigger)
+        if webhook_match:
+            path = webhook_match.group(1).strip()
+            return bool(path) and path.startswith("/")
+
+        queue_match = _QUEUE_PATTERN.match(trigger)
+        if queue_match:
+            queue_name = queue_match.group(1).strip()
+            return bool(queue_name)
+
+        return False
 
     def _contains_jinja_placeholder(self, value: Any) -> bool:
         """Recursively detect Jinja2 placeholders in parsed YAML values."""

@@ -87,3 +87,23 @@ def test_main_skill_init_help_uses_plain_help(monkeypatch, capsys) -> None:
     assert exc_info.value.code == 0
     out = capsys.readouterr().out
     assert "Usage: owlclaw skill init [OPTIONS]" in out
+
+
+def test_main_skill_without_subcommand_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill [OPTIONS] COMMAND [ARGS]..." in out
+
+
+def test_main_skill_unknown_subcommand_exits_2(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "unknown-sub"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 2
+    out = capsys.readouterr().out
+    assert "unknown skill subcommand" in out.lower()

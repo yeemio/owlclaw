@@ -25,6 +25,26 @@ class TestTemplateValidator:
         assert len(errs) >= 1
         assert any(e.field == "metadata" for e in errs)
 
+    def test_validate_template_invalid_metadata_yaml(self, tmp_path: Path) -> None:
+        tpl = tmp_path / "x.md.j2"
+        tpl.write_text(
+            "{#\nname: X\ndescription: [invalid\n#}\n---\nname: x\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_template(tpl)
+        assert any(e.field == "metadata" and "Invalid metadata YAML" in e.message for e in errs)
+
+    def test_validate_template_metadata_unrendered_placeholder(self, tmp_path: Path) -> None:
+        tpl = tmp_path / "x.md.j2"
+        tpl.write_text(
+            "{#\nname: \"{{ name }}\"\ndescription: Y\nparameters: []\n#}\n---\nname: x\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_template(tpl)
+        assert any(e.field == "metadata" and "unrendered Jinja2" in e.message for e in errs)
+
     def test_validate_template_invalid_jinja2(self, tmp_path: Path) -> None:
         tpl = tmp_path / "x.md.j2"
         tpl.write_text("{# x #}\n{{ invalid }}\n{% endif %}\n", encoding="utf-8")
@@ -124,8 +144,11 @@ class TestTemplateValidator:
     def test_validate_trigger_syntax(self) -> None:
         v = TemplateValidator()
         assert v._validate_trigger_syntax('cron("*/5 * * * *")') is True
+        assert v._validate_trigger_syntax('cron("invalid")') is False
         assert v._validate_trigger_syntax('webhook("/api/event")') is True
+        assert v._validate_trigger_syntax('webhook("api/event")') is False
         assert v._validate_trigger_syntax('queue("my-queue")') is True
+        assert v._validate_trigger_syntax('queue("")') is False
         assert v._validate_trigger_syntax("invalid") is False
 
     def test_validate_skill_file_trigger_must_be_string(self, tmp_path: Path) -> None:
