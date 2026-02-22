@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SecurityLevel(str, Enum):
@@ -58,16 +58,16 @@ class MemoryConfig(BaseModel):
 
     vector_backend: str = "pgvector"
     embedding_model: str = "text-embedding-3-small"
-    embedding_dimensions: int = 1536
-    stm_max_tokens: int = 2000
-    snapshot_max_tokens: int = 500
-    snapshot_semantic_limit: int = 3
-    snapshot_recent_hours: int = 24
-    snapshot_recent_limit: int = 5
-    time_decay_half_life_hours: float = 168.0
-    max_entries: int = 10000
-    retention_days: int = 365
-    compaction_threshold: int = 50
-    embedding_cache_size: int = 1000
+    embedding_dimensions: int = Field(default=1536, gt=0)
+    stm_max_tokens: int = Field(default=2000, gt=0)
+    snapshot_max_tokens: int = Field(default=500, gt=0)
+    snapshot_semantic_limit: int = Field(default=3, gt=0)
+    snapshot_recent_hours: int = Field(default=24, ge=0)
+    snapshot_recent_limit: int = Field(default=5, gt=0)
+    time_decay_half_life_hours: float = Field(default=168.0, gt=0)
+    max_entries: int = Field(default=10000, gt=0)
+    retention_days: int = Field(default=365, gt=0)
+    compaction_threshold: int = Field(default=50, gt=0)
+    embedding_cache_size: int = Field(default=1000, ge=0)
 
     model_config = ConfigDict(extra="ignore")
