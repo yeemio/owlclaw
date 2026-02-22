@@ -516,6 +516,26 @@ class TestAgentRuntimeRun:
         call_kwargs = mock_llm.call_args.kwargs
         assert "tools" not in call_kwargs
 
+    async def test_visible_tools_passes_confirmed_capabilities_to_run_context(
+        self, tmp_path
+    ) -> None:
+        """Runtime should forward payload.confirmed_capabilities to governance context."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        rt.registry = MagicMock()
+        rt.registry.list_capabilities.return_value = [
+            {"name": "x", "description": "d", "constraints": {}}
+        ]
+        rt.visibility_filter = MagicMock()
+        rt.visibility_filter.filter_capabilities = AsyncMock(return_value=[])
+        ctx = AgentRunContext(
+            agent_id="bot",
+            trigger="cron",
+            payload={"confirmed_capabilities": ["x"]},
+        )
+        await rt._get_visible_tools(ctx)
+        run_ctx = rt.visibility_filter.filter_capabilities.call_args.args[2]
+        assert run_ctx.confirmed_capabilities == {"x"}
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_heartbeat_no_events_skips_llm(self, mock_llm, tmp_path) -> None:
         """When trigger is heartbeat and no events, skip LLM and return skipped."""

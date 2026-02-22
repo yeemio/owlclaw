@@ -635,7 +635,18 @@ class AgentRuntime:
             )
             for s in cap_schemas
         ]
-        run_ctx = RunContext(tenant_id=context.tenant_id)
+        confirmed_raw = context.payload.get("confirmed_capabilities")
+        confirmed: set[str] = set()
+        if isinstance(confirmed_raw, list):
+            confirmed = {
+                str(name).strip()
+                for name in confirmed_raw
+                if isinstance(name, str) and name.strip()
+            }
+        run_ctx = RunContext(
+            tenant_id=context.tenant_id,
+            confirmed_capabilities=confirmed or None,
+        )
         visible_caps = await self.visibility_filter.filter_capabilities(
             cap_views, context.agent_id, run_ctx
         )

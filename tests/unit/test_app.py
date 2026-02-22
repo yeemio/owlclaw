@@ -42,6 +42,9 @@ def test_mount_skills_and_decorators(tmp_path):
             "description": "Check entry",
             "task_type": None,
             "constraints": {},
+            "focus": [],
+            "risk_level": "low",
+            "requires_confirmation": False,
             "handler": "check_entry",
         }
     ]

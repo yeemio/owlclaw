@@ -25,6 +25,9 @@ def _dict_to_capability_view(d: dict[str, Any]) -> CapabilityView:
         description=d.get("description", ""),
         task_type=d.get("task_type"),
         constraints=d.get("constraints") or {},
+        focus=d.get("focus") or [],
+        risk_level=d.get("risk_level") or "low",
+        requires_confirmation=bool(d.get("requires_confirmation")),
     )
 
 
@@ -223,6 +226,7 @@ class OwlClaw:
             CircuitBreakerConstraint,
             Ledger,
             RateLimitConstraint,
+            RiskConfirmationConstraint,
             Router,
             TimeConstraint,
             VisibilityFilter,
@@ -234,6 +238,10 @@ class OwlClaw:
         # Time constraint (no Ledger dependency)
         time_cfg = (cfg.get("visibility") or {}).get("time") or {}
         self._visibility_filter.register_evaluator(TimeConstraint(time_cfg))
+        risk_cfg = (cfg.get("visibility") or {}).get("risk_confirmation") or {}
+        self._visibility_filter.register_evaluator(
+            RiskConfirmationConstraint(risk_cfg)
+        )
 
         session_factory = cfg.get("session_factory")
         ledger = None
@@ -297,6 +305,9 @@ class OwlClaw:
                 "description": c.description,
                 "task_type": c.task_type,
                 "constraints": c.constraints,
+                "focus": c.focus,
+                "risk_level": c.risk_level,
+                "requires_confirmation": c.requires_confirmation,
             }
             for c in filtered
         ]

@@ -6,6 +6,7 @@ from owlclaw.governance.constraints.circuit_breaker import (
     CircuitState,
 )
 from owlclaw.governance.constraints.rate_limit import RateLimitConstraint
+from owlclaw.governance.constraints.risk_confirmation import RiskConfirmationConstraint
 from owlclaw.governance.constraints.time import TimeConstraint
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "CircuitBreakerConstraint",
     "CircuitState",
     "RateLimitConstraint",
+    "RiskConfirmationConstraint",
     "TimeConstraint",
 ]

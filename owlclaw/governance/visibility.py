@@ -26,6 +26,12 @@ class RunContext:
     """Context passed to constraint evaluators (tenant, optional extras)."""
 
     tenant_id: str
+    confirmed_capabilities: set[str] | None = None
+
+    def is_confirmed(self, capability_name: str) -> bool:
+        if not self.confirmed_capabilities:
+            return False
+        return capability_name in self.confirmed_capabilities
 
 
 class CapabilityView:

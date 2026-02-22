@@ -5,6 +5,7 @@ from owlclaw.governance.constraints import (
     CircuitBreakerConstraint,
     CircuitState,
     RateLimitConstraint,
+    RiskConfirmationConstraint,
     TimeConstraint,
 )
 from owlclaw.governance.ledger import (
@@ -33,6 +34,7 @@ __all__ = [
     "LedgerRecord",
     "ModelSelection",
     "RateLimitConstraint",
+    "RiskConfirmationConstraint",
     "Router",
     "RunContext",
     "TimeConstraint",

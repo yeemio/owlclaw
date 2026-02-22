@@ -18,6 +18,12 @@ async def test_filter_result_default_reason():
     assert r.reason == ""
 
 
+def test_run_context_is_confirmed_helper():
+    ctx = RunContext(tenant_id="t1", confirmed_capabilities={"cap-a"})
+    assert ctx.is_confirmed("cap-a") is True
+    assert ctx.is_confirmed("cap-b") is False
+
+
 def test_register_evaluator_invalid_raises_type_error():
     vf = VisibilityFilter()
     with pytest.raises(TypeError, match="evaluator must provide"):
