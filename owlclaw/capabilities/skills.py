@@ -177,10 +177,18 @@ class SkillsLoader:
             logged and skipped.
         """
         self.skills.clear()
-        skill_files = list(self.base_path.rglob("SKILL.md"))
+        skill_files = sorted(self.base_path.rglob("SKILL.md"))
         for skill_file in skill_files:
             skill = self._parse_skill_file(skill_file)
             if skill is not None:
+                if skill.name in self.skills:
+                    logger.warning(
+                        "Duplicate Skill name '%s' in %s (already loaded from %s); skipping",
+                        skill.name,
+                        skill_file,
+                        self.skills[skill.name].file_path,
+                    )
+                    continue
                 self.skills[skill.name] = skill
         return list(self.skills.values())
 

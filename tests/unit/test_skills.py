@@ -173,3 +173,25 @@ def test_parse_name_description_must_be_non_empty_strings(tmp_path):
     loader = SkillsLoader(tmp_path)
     skills = loader.scan()
     assert len(skills) == 0
+
+
+def test_scan_duplicate_skill_names_keeps_first_sorted_path(tmp_path):
+    """Duplicate skill names should not silently overwrite earlier entries."""
+    a_dir = tmp_path / "a-skill"
+    b_dir = tmp_path / "b-skill"
+    a_dir.mkdir()
+    b_dir.mkdir()
+    (a_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: first\n---\n",
+        encoding="utf-8",
+    )
+    (b_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: second\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    skill = loader.get_skill("same")
+    assert skill is not None
+    assert skill.description == "first"
