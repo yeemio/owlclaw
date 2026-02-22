@@ -13,6 +13,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 _DEFAULT_EVENT_SOURCES = ["webhook", "queue", "database", "schedule", "external_api"]
+_SUPPORTED_EVENT_SOURCES = frozenset(_DEFAULT_EVENT_SOURCES)
 
 
 class HeartbeatChecker:
@@ -66,7 +67,7 @@ class HeartbeatChecker:
             if not isinstance(item, str):
                 continue
             source = item.strip().lower()
-            if source and source not in normalized:
+            if source and source in _SUPPORTED_EVENT_SOURCES and source not in normalized:
                 normalized.append(source)
         return normalized if normalized else list(_DEFAULT_EVENT_SOURCES)
 
