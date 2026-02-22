@@ -90,6 +90,15 @@ class TestQueryState:
         assert "state_name" in result["error"].lower()
 
     @pytest.mark.asyncio
+    async def test_query_state_whitespace_state_name_returns_error(self) -> None:
+        reg = AsyncMock()
+        tools = BuiltInTools(capability_registry=reg)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("query_state", {"state_name": "   "}, ctx)
+        assert "error" in result
+        assert "state_name" in result["error"].lower()
+
+    @pytest.mark.asyncio
     async def test_query_state_value_error_returns_error(self) -> None:
         reg = AsyncMock()
         reg.get_state.side_effect = ValueError("unknown state 'foo'")
@@ -202,6 +211,18 @@ class TestScheduleOnce:
         )
         assert "error" in result
         assert "Hatchet" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_schedule_once_whitespace_focus_returns_error(self) -> None:
+        tools = BuiltInTools()
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute(
+            "schedule_once",
+            {"delay_seconds": 60, "focus": "   "},
+            ctx,
+        )
+        assert "error" in result
+        assert "focus" in result["error"].lower()
 
     @pytest.mark.asyncio
     async def test_schedule_once_invalid_delay_returns_error(self) -> None:
@@ -317,6 +338,18 @@ class TestCancelSchedule:
         )
         assert "error" in result
         assert "Hatchet" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_cancel_schedule_whitespace_id_returns_error(self) -> None:
+        tools = BuiltInTools(hatchet_client=AsyncMock())
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute(
+            "cancel_schedule",
+            {"schedule_id": "   "},
+            ctx,
+        )
+        assert "error" in result
+        assert "schedule_id" in result["error"].lower()
 
     @pytest.mark.asyncio
     async def test_cancel_schedule_task_not_found_returns_cancelled_false(self) -> None:

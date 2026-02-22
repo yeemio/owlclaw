@@ -199,6 +199,14 @@ class BuiltInTools:
         """Return True if *tool_name* is a built-in tool."""
         return tool_name in _BUILTIN_TOOL_NAMES
 
+    @staticmethod
+    def _non_empty_str(value: Any) -> str | None:
+        """Return trimmed non-empty string, else None."""
+        if not isinstance(value, str):
+            return None
+        trimmed = value.strip()
+        return trimmed if trimmed else None
+
     async def execute(
         self,
         tool_name: str,
@@ -237,8 +245,8 @@ class BuiltInTools:
         arguments: dict[str, Any],
         context: BuiltInToolsContext,
     ) -> dict[str, Any]:
-        state_name = arguments.get("state_name")
-        if not state_name or not isinstance(state_name, str):
+        state_name = self._non_empty_str(arguments.get("state_name"))
+        if state_name is None:
             return {"error": "state_name is required and must be a non-empty string"}
 
         if self._registry is None:
@@ -263,8 +271,8 @@ class BuiltInTools:
         arguments: dict[str, Any],
         context: BuiltInToolsContext,
     ) -> dict[str, Any]:
-        reasoning = arguments.get("reasoning")
-        if not reasoning or not isinstance(reasoning, str):
+        reasoning = self._non_empty_str(arguments.get("reasoning"))
+        if reasoning is None:
             return {"error": "reasoning is required and must be a non-empty string"}
         if len(reasoning) > 1000:
             return {"error": "reasoning must not exceed 1000 characters"}
@@ -304,12 +312,12 @@ class BuiltInTools:
         context: BuiltInToolsContext,
     ) -> dict[str, Any]:
         delay = arguments.get("delay_seconds")
-        focus = arguments.get("focus")
+        focus = self._non_empty_str(arguments.get("focus"))
         if isinstance(delay, bool) or not isinstance(delay, int) or delay < 1 or delay > 2592000:
             return {
                 "error": "delay_seconds must be an integer between 1 and 2592000",
             }
-        if not focus or not isinstance(focus, str):
+        if focus is None:
             return {"error": "focus is required and must be a non-empty string"}
         if self._hatchet is None:
             return {"error": "Hatchet not configured; schedule_once unavailable"}
@@ -346,11 +354,11 @@ class BuiltInTools:
         arguments: dict[str, Any],
         context: BuiltInToolsContext,
     ) -> dict[str, Any]:
-        cron_expr = arguments.get("cron_expression")
-        focus = arguments.get("focus")
-        if not cron_expr or not isinstance(cron_expr, str):
+        cron_expr = self._non_empty_str(arguments.get("cron_expression"))
+        focus = self._non_empty_str(arguments.get("focus"))
+        if cron_expr is None:
             return {"error": "cron_expression is required and must be a non-empty string"}
-        if not focus or not isinstance(focus, str):
+        if focus is None:
             return {"error": "focus is required and must be a non-empty string"}
         if not self._validate_cron_expression(cron_expr):
             return {"error": f"Invalid cron expression: {cron_expr!r}"}
@@ -390,8 +398,8 @@ class BuiltInTools:
         arguments: dict[str, Any],
         context: BuiltInToolsContext,
     ) -> dict[str, Any]:
-        schedule_id = arguments.get("schedule_id")
-        if not schedule_id or not isinstance(schedule_id, str):
+        schedule_id = self._non_empty_str(arguments.get("schedule_id"))
+        if schedule_id is None:
             return {"error": "schedule_id is required and must be a non-empty string"}
         if self._hatchet is None:
             return {"error": "Hatchet not configured; cancel_schedule unavailable"}
