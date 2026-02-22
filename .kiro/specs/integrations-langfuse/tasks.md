@@ -171,7 +171,7 @@
 
 - [ ] 11. 集成到 Agent Runtime
   - [ ] 11.1 修改 AgentRuntime 以支持 Langfuse 追踪
-    - 在 `owlclaw/agent/runtime.py` 中导入 Langfuse 模块
+    - 在 `owlclaw/agent/runtime/runtime.py` 中导入 Langfuse 模块
     - 在 `__init__` 方法中初始化 `LangfuseClient`
     - 在 `run` 方法开始时创建 trace
     - 设置 `TraceContext` 到当前上下文
@@ -188,7 +188,7 @@
 
 - [ ] 12. 集成到 LLM 客户端
   - [ ] 12.1 修改 LLMClient 以支持 LLM 调用追踪
-    - 在 `owlclaw/integrations/llm/client.py` 中导入 Langfuse 模块
+    - 在 `owlclaw/integrations/llm.py` 中导入 Langfuse 模块
     - 在 `complete` 方法中获取当前 `TraceContext`
     - 记录 LLM 调用开始时间
     - 调用 LLM 并捕获响应
@@ -205,7 +205,7 @@
 
 - [ ] 13. 集成到工具执行系统
   - [ ] 13.1 修改 ToolExecutor 以支持工具调用追踪
-    - 在 `owlclaw/agent/tools/executor.py` 中导入 Langfuse 模块
+    - 在 `owlclaw/agent/tools.py` 中导入 Langfuse 模块
     - 在 `execute` 方法中获取当前 `TraceContext`
     - 记录工具执行开始时间
     - 执行工具并捕获结果
@@ -336,3 +336,4 @@
 - 遵循 PEP 8 代码风格
 - 使用 pytest 作为测试框架
 - 使用 hypothesis 作为属性测试框架
+

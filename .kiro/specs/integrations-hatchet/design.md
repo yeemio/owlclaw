@@ -685,7 +685,7 @@ async def test_concurrent_task_execution():
 **需求：** 企业用户可能需要 Temporal 的高级能力（Signal/Query/子工作流）。
 
 **实现：**
-- 创建 `owlclaw/integrations/temporal.py`
+- 创建 `owlclaw/integrations/hatchet_temporal_adapter.py`
 - 实现相同的接口（task、schedule_task、cancel_task）
 - 通过配置切换持久执行引擎
 
@@ -734,4 +734,5 @@ async def test_concurrent_task_execution():
 - Worker 在业务应用的权限范围内运行（不提供额外隔离）
 - 使用 Docker 容器隔离 Worker 进程
 - 配置资源限制（CPU、内存）
+
 

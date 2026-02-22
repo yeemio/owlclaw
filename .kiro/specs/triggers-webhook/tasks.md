@@ -2,16 +2,16 @@
 
 ## 概述
 
-本实施计划将 Webhook 触发器系统的设计转换为可执行的开发任务。系统采用 TypeScript 实现，使用分层架构，包括 HTTP 接入层、验证层、转换层、执行层和持久化层。实施将按照从核心功能到高级特性的顺序进行，每个阶段都包含相应的测试任务。
+本实施计划将 Webhook 触发器系统的设计转换为可执行的开发任务。系统采用 Python 实现，使用分层架构，包括 HTTP 接入层、验证层、转换层、执行层和持久化层。实施将按照从核心功能到高级特性的顺序进行，每个阶段都包含相应的测试任务。
 
 ## 任务
 
 - [ ] 1. 设置项目结构和核心类型定义
-  - 创建项目目录结构（src/layers, src/models, src/interfaces, src/utils）
-  - 定义核心 TypeScript 接口和类型（WebhookEndpoint, EndpointConfig, ValidationResult, ParsedPayload, AgentInput, ExecutionResult 等）
-  - 配置 TypeScript 编译选项和 ESLint
-  - 设置测试框架（Jest）和属性测试库（fast-check）
-  - 配置数据库连接（PostgreSQL）和 ORM（如 Prisma 或 TypeORM）
+  - 创建项目目录结构（`owlclaw/triggers/webhook/`, `owlclaw/triggers/webhook/http/`, `owlclaw/triggers/webhook/persistence/`）
+  - 定义核心 Python 类型和模型（WebhookEndpoint, EndpointConfig, ValidationResult, ParsedPayload, AgentInput, ExecutionResult 等）
+  - 配置静态检查与格式规范（ruff / mypy）
+  - 设置测试框架（pytest）和属性测试库（hypothesis）
+  - 复用项目数据库基础设施（PostgreSQL + SQLAlchemy + Alembic）
   - _需求：所有需求的基础_
 
 - [ ] 2. 实现数据模型和持久化层
@@ -102,7 +102,7 @@
     - 实现 JSONPath 字段提取
     - 实现字段类型转换（string, number, boolean, date, json）
     - 实现默认值处理
-    - 实现自定义转换逻辑执行（JavaScript 表达式）
+    - 实现自定义转换逻辑执行（受限 Python 表达式或可审计的规则 DSL）
     - 实现目标模式验证
     - _需求：3.4_
 
@@ -264,7 +264,7 @@
 
 - [ ] 12. 实现 HTTP 接入层（API Gateway）
   - [ ] 12.1 实现 HTTP 服务器和路由
-    - 设置 Express 或 Fastify 服务器
+    - 设置 FastAPI 或 Starlette 服务器
     - 实现 Webhook 接收路由（POST /webhooks/:endpointId）
     - 实现端点管理路由（CRUD 操作）
     - 实现健康检查路由（GET /health）
@@ -392,7 +392,7 @@
 
 ## 注意事项
 
-- 标记为 `*` 的任务是可选的，可以跳过以加快 MVP 开发
+- 标记为 `*` 的任务建议优先执行；若暂缓，必须在 spec 循环中明确记录原因与回补计划
 - 每个任务都引用了具体的需求以确保可追溯性
 - 检查点确保增量验证
 - 属性测试验证通用正确性属性

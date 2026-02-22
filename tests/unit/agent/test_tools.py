@@ -61,7 +61,8 @@ class TestQueryState:
     async def test_query_state_success(self) -> None:
         reg = AsyncMock()
         reg.get_state.return_value = {"is_trading": True}
-        tools = BuiltInTools(capability_registry=reg)
+        ledger = AsyncMock()
+        tools = BuiltInTools(capability_registry=reg, ledger=ledger)
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
 
         result = await tools.execute(
@@ -71,6 +72,8 @@ class TestQueryState:
         )
         assert result == {"state": {"is_trading": True}}
         reg.get_state.assert_awaited_once_with("market_state")
+        ledger.record_execution.assert_awaited_once()
+        assert ledger.record_execution.call_args.kwargs["capability_name"] == "query_state"
 
     @pytest.mark.asyncio
     async def test_query_state_no_registry_returns_error(self) -> None:
@@ -126,6 +129,7 @@ class TestLogDecision:
         ledger.record_execution.assert_awaited_once()
         call = ledger.record_execution.call_args
         assert call.kwargs["capability_name"] == "log_decision"
+        assert call.kwargs["task_type"] == "decision_log"
         assert call.kwargs["decision_reasoning"] == "no action needed"
         assert call.kwargs["input_params"]["decision_type"] == "no_action"
 
@@ -181,7 +185,8 @@ class TestScheduleOnce:
     async def test_schedule_once_success(self) -> None:
         hatchet = AsyncMock()
         hatchet.schedule_task.return_value = "run-123"
-        tools = BuiltInTools(hatchet_client=hatchet)
+        ledger = AsyncMock()
+        tools = BuiltInTools(hatchet_client=hatchet, ledger=ledger)
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
         result = await tools.execute(
             "schedule_once",
@@ -199,6 +204,8 @@ class TestScheduleOnce:
             scheduled_by_run_id="r1",
             tenant_id="default",
         )
+        ledger.record_execution.assert_awaited_once()
+        assert ledger.record_execution.call_args.kwargs["capability_name"] == "schedule_once"
 
     @pytest.mark.asyncio
     async def test_schedule_once_no_hatchet_returns_error(self) -> None:
@@ -356,7 +363,8 @@ class TestCancelSchedule:
         hatchet = AsyncMock()
         hatchet.cancel_task.return_value = False
         hatchet.cancel_cron = AsyncMock(return_value=False)
-        tools = BuiltInTools(hatchet_client=hatchet)
+        ledger = AsyncMock()
+        tools = BuiltInTools(hatchet_client=hatchet, ledger=ledger)
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
         result = await tools.execute(
             "cancel_schedule",
@@ -366,6 +374,8 @@ class TestCancelSchedule:
         assert result["cancelled"] is False
         assert result["schedule_id"] == "nonexistent-run"
         hatchet.cancel_task.assert_awaited_once_with("nonexistent-run")
+        ledger.record_execution.assert_awaited_once()
+        assert ledger.record_execution.call_args.kwargs["status"] == "not_found"
 
 
 class TestExecuteUnknownTool:

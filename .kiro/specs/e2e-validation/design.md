@@ -10,6 +10,14 @@
 3. 确保各组件之间的集成可靠性
 4. 提供详细的验证报告和性能分析
 
+## 技术栈统一决策
+
+为与 OwlClaw 主仓保持一致，E2E 验证系统遵循以下约束：
+
+1. 核心实现语言统一为 Python（测试框架为 pytest，属性测试为 hypothesis）。
+2. 文档中的接口代码块用于表达领域契约，视为语言无关伪代码；实际实现以 Python typing/dataclass/Pydantic 为准。
+3. 不引入独立的 Node/TypeScript 测试运行时作为核心依赖。
+
 ## 架构
 
 ### 系统架构图
@@ -67,438 +75,403 @@ graph TB
 
 ## 组件和接口
 
+```python
+from typing import Any, Optional, Literal, Protocol
+from datetime import datetime
+```
+
 ### 1. 测试编排器 (TestOrchestrator)
 
 负责协调整个测试流程的核心组件。
 
-```typescript
-interface TestOrchestrator {
-  // 运行完整的端到端验证套件
-  runFullValidation(config: ValidationConfig): Promise<ValidationResult>
+```python
+class TestOrchestrator(Protocol):
+  # 运行完整的端到端验证套件
+  def runFullValidation(self, config: ValidationConfig) -> ValidationResult: ...
   
-  // 运行特定的 mionyee 任务测试
-  runMionyeeTask(taskId: string, config: TaskConfig): Promise<TaskResult>
+  # 运行特定的 mionyee 任务测试
+  def runMionyeeTask(self, taskId: str, config: TaskConfig) -> TaskResult: ...
   
-  // 运行决策质量对比测试
-  runDecisionComparison(scenarios: TestScenario[]): Promise<ComparisonResult>
+  # 运行决策质量对比测试
+  def runDecisionComparison(self, scenarios: list[TestScenario]) -> ComparisonResult: ...
   
-  // 运行组件集成测试
-  runIntegrationTests(components: ComponentConfig[]): Promise<IntegrationResult>
-}
+  # 运行组件集成测试
+  def runIntegrationTests(self, components: list[ComponentConfig]) -> IntegrationResult: ...
 
-interface ValidationConfig {
-  testSuites: string[]
-  parallelism: number
-  timeout: number
-  errorInjection?: ErrorInjectionConfig
-  performanceBenchmarks?: PerformanceConfig
-}
+class ValidationConfig(Protocol):
+  testSuites: list[str]
+  parallelism: float
+  timeout: float
+  errorInjection: Optional[ErrorInjectionConfig]
+  performanceBenchmarks: Optional[PerformanceConfig]
 
-interface ValidationResult {
-  testId: string
-  startTime: Date
-  endTime: Date
-  totalTests: number
-  passedTests: number
-  failedTests: number
-  skippedTests: number
-  results: TestResult[]
+class ValidationResult(Protocol):
+  testId: str
+  startTime: datetime
+  endTime: datetime
+  totalTests: float
+  passedTests: float
+  failedTests: float
+  skippedTests: float
+  results: list[TestResult]
   performanceMetrics: PerformanceMetrics
-  errors: ErrorReport[]
-}
+  errors: list[ErrorReport]
 ```
 
 ### 2. 测试场景管理器 (TestScenarioManager)
 
 管理测试场景的生命周期。
 
-```typescript
-interface TestScenarioManager {
-  // 创建新的测试场景
-  createScenario(scenario: TestScenario): Promise<string>
+```python
+class TestScenarioManager(Protocol):
+  # 创建新的测试场景
+  def createScenario(self, scenario: TestScenario) -> str: ...
   
-  // 获取测试场景
-  getScenario(scenarioId: string): Promise<TestScenario>
+  # 获取测试场景
+  def getScenario(self, scenarioId: str) -> TestScenario: ...
   
-  // 更新测试场景
-  updateScenario(scenarioId: string, updates: Partial<TestScenario>): Promise<void>
+  # 更新测试场景
+  def updateScenario(self, scenarioId: str, updates: TestScenario) -> None: ...
   
-  // 删除测试场景
-  deleteScenario(scenarioId: string): Promise<void>
+  # 删除测试场景
+  def deleteScenario(self, scenarioId: str) -> None: ...
   
-  // 列出所有场景
-  listScenarios(filter?: ScenarioFilter): Promise<TestScenario[]>
+  # 列出所有场景
+  def listScenarios(self, filter: Optional[ScenarioFilter) -> list[TestScenario]: ...]
   
-  // 验证场景配置
-  validateScenario(scenario: TestScenario): ValidationError[]
+  # 验证场景配置
+  def validateScenario(self, scenario: TestScenario) -> list[ValidationError: ...
   
-  // 导入/导出场景
-  exportScenarios(scenarioIds: string[]): Promise<string>
-  importScenarios(data: string): Promise<string[]>
-}
+  # 导入/导出场景
+  def exportScenarios(self, scenarioIds: list[str]) -> str: ...
+  def importScenarios(self, data: str) -> list[str]: ...
 
-interface TestScenario {
-  id: string
-  name: string
-  description: string
-  type: 'mionyee-task' | 'decision-comparison' | 'integration' | 'performance' | 'error-injection' | 'concurrent'
+class TestScenario(Protocol):
+  id: str
+  name: str
+  description: str
+  type: Literal["mionyee-task", "decision-comparison"] | Literal["integration", "performance"] | Literal["error-injection", "concurrent"]
   config: ScenarioConfig
   expectedOutcome: ExpectedOutcome
-  tags: string[]
-  createdAt: Date
-  updatedAt: Date
-}
+  tags: list[str]
+  createdAt: datetime
+  updatedAt: datetime
 
-interface ScenarioConfig {
-  // Mionyee 任务配置
-  mionyeeTaskId?: string
-  taskParameters?: Record<string, any>
+class ScenarioConfig(Protocol):
+  # Mionyee 任务配置
+  mionyeeTaskId: Optional[str]
+  taskParameters: Optional[dict[str, Any]]
   
-  // 决策对比配置
-  comparisonMode?: 'v3-agent' | 'original-cron' | 'both'
-  decisionCriteria?: DecisionCriteria[]
+  # 决策对比配置
+  comparisonMode: Optional[Literal["v3-agent", "original-cron"] | 'both']
+  decisionCriteria: Optional[list[DecisionCriteria]]
   
-  // 组件配置
-  components?: ComponentConfig[]
+  # 组件配置
+  components: Optional[list[ComponentConfig]]
   
-  // 性能配置
-  performanceThresholds?: PerformanceThresholds
+  # 性能配置
+  performanceThresholds: Optional[PerformanceThresholds]
   
-  // 错误注入配置
-  errorInjection?: ErrorInjectionConfig
+  # 错误注入配置
+  errorInjection: Optional[ErrorInjectionConfig]
   
-  // 并发配置
-  concurrency?: ConcurrencyConfig
-}
+  # 并发配置
+  concurrency: Optional[ConcurrencyConfig]
 ```
 
 ### 3. 执行引擎 (ExecutionEngine)
 
 执行测试场景并与被测系统交互。
 
-```typescript
-interface ExecutionEngine {
-  // 执行单个测试场景
-  executeScenario(scenario: TestScenario): Promise<ExecutionResult>
+```python
+class ExecutionEngine(Protocol):
+  # 执行单个测试场景
+  def executeScenario(self, scenario: TestScenario) -> ExecutionResult: ...
   
-  // 执行 mionyee 任务
-  executeMionyeeTask(taskId: string, params: TaskParameters): Promise<TaskExecutionResult>
+  # 执行 mionyee 任务
+  def executeMionyeeTask(self, taskId: str, params: TaskParameters) -> TaskExecutionResult: ...
   
-  // 执行决策对比
-  executeDecisionComparison(scenario: TestScenario): Promise<DecisionComparisonResult>
+  # 执行决策对比
+  def executeDecisionComparison(self, scenario: TestScenario) -> DecisionComparisonResult: ...
   
-  // 注入错误
-  injectError(component: string, errorType: ErrorType): Promise<void>
+  # 注入错误
+  def injectError(self, component: str, errorType: ErrorType) -> None: ...
   
-  // 清理测试环境
-  cleanup(): Promise<void>
-}
+  # 清理测试环境
+  def cleanup(self) -> None: ...
 
-interface ExecutionResult {
-  scenarioId: string
-  status: 'success' | 'failure' | 'error' | 'timeout'
-  startTime: Date
-  endTime: Date
-  duration: number
-  trace: ExecutionTrace[]
-  outputs: Record<string, any>
-  errors: Error[]
-}
+class ExecutionResult(Protocol):
+  scenarioId: str
+  status: Literal["success", "failure"] | Literal["error", "timeout"]
+  startTime: datetime
+  endTime: datetime
+  duration: float
+  trace: list[ExecutionTrace]
+  outputs: dict[str, Any]
+  errors: list[Error]
 
-interface ExecutionTrace {
-  timestamp: Date
-  component: string
-  action: string
-  input: any
-  output: any
-  duration: number
-  status: string
-}
+class ExecutionTrace(Protocol):
+  timestamp: datetime
+  component: str
+  action: str
+  input: Any
+  output: Any
+  duration: float
+  status: str
 
-interface TaskExecutionResult extends ExecutionResult {
-  taskId: string
-  cronTriggered: boolean
-  agentRuntimeProcessed: boolean
-  skillsInvoked: string[]
-  governanceChecks: GovernanceCheck[]
-  hatchetWorkflowId?: string
-}
+class TaskExecutionResult(ExecutionResult, Protocol):
+  taskId: str
+  cronTriggered: bool
+  agentRuntimeProcessed: bool
+  skillsInvoked: list[str]
+  governanceChecks: list[GovernanceCheck]
+  hatchetWorkflowId: Optional[str]
 ```
 
 ### 4. 数据收集器 (DataCollector)
 
 收集执行过程中的所有数据和指标。
 
-```typescript
-interface DataCollector {
-  // 开始收集数据
-  startCollection(executionId: string): void
+```python
+class DataCollector(Protocol):
+  # 开始收集数据
+  def startCollection(self, executionId: str) -> None: ...
   
-  // 记录组件事件
-  recordEvent(event: ComponentEvent): void
+  # 记录组件事件
+  def recordEvent(self, event: ComponentEvent) -> None: ...
   
-  // 记录性能指标
-  recordMetric(metric: PerformanceMetric): void
+  # 记录性能指标
+  def recordMetric(self, metric: PerformanceMetric) -> None: ...
   
-  // 记录错误
-  recordError(error: ErrorEvent): void
+  # 记录错误
+  def recordError(self, error: ErrorEvent) -> None: ...
   
-  // 停止收集并返回数据
-  stopCollection(): CollectedData
-}
+  # 停止收集并返回数据
+  def stopCollection(self) -> CollectedData: ...
 
-interface CollectedData {
-  executionId: string
-  events: ComponentEvent[]
-  metrics: PerformanceMetric[]
-  errors: ErrorEvent[]
-  traces: ExecutionTrace[]
+class CollectedData(Protocol):
+  executionId: str
+  events: list[ComponentEvent]
+  metrics: list[PerformanceMetric]
+  errors: list[ErrorEvent]
+  traces: list[ExecutionTrace]
   resourceUsage: ResourceUsage
-}
 
-interface ComponentEvent {
-  timestamp: Date
-  component: string
-  eventType: string
-  data: any
-  correlationId: string
-}
+class ComponentEvent(Protocol):
+  timestamp: datetime
+  component: str
+  eventType: str
+  data: Any
+  correlationId: str
 
-interface PerformanceMetric {
-  timestamp: Date
-  component: string
-  metricName: string
-  value: number
-  unit: string
-}
+class PerformanceMetric(Protocol):
+  timestamp: datetime
+  component: str
+  metricName: str
+  value: float
+  unit: str
 
-interface ResourceUsage {
-  cpu: number[]
-  memory: number[]
+class ResourceUsage(Protocol):
+  cpu: list[float]
+  memory: list[float]
   network: NetworkUsage
   disk: DiskUsage
-}
 ```
 
 ### 5. 对比引擎 (ComparisonEngine)
 
 对比分析 V3 Agent 和原始 cron 的决策质量。
 
-```typescript
-interface ComparisonEngine {
-  // 对比两个执行结果
-  compare(v3Result: ExecutionResult, cronResult: ExecutionResult): ComparisonResult
+```python
+class ComparisonEngine(Protocol):
+  # 对比两个执行结果
+  def compare(self, v3Result: ExecutionResult, cronResult: ExecutionResult) -> ComparisonResult: ...
   
-  // 计算决策质量指标
-  calculateDecisionQuality(result: ExecutionResult): DecisionQuality
+  # 计算决策质量指标
+  def calculateDecisionQuality(self, result: ExecutionResult) -> DecisionQuality: ...
   
-  // 对比性能指标
-  comparePerformance(v3Metrics: PerformanceMetrics, cronMetrics: PerformanceMetrics): PerformanceComparison
+  # 对比性能指标
+  def comparePerformance(self, v3Metrics: PerformanceMetrics, cronMetrics: PerformanceMetrics) -> PerformanceComparison: ...
   
-  // 检测异常差异
-  detectAnomalies(comparison: ComparisonResult, threshold: number): Anomaly[]
-}
+  # 检测异常差异
+  def detectAnomalies(self, comparison: ComparisonResult, threshold: float) -> list[Anomaly: ...
 
-interface ComparisonResult {
-  scenarioId: string
+class ComparisonResult(Protocol):
+  scenarioId: str
   v3AgentResult: ExecutionResult
   originalCronResult: ExecutionResult
   decisionQualityDiff: DecisionQualityDiff
   performanceDiff: PerformanceDiff
-  anomalies: Anomaly[]
+  anomalies: list[Anomaly]
   summary: ComparisonSummary
-}
 
-interface DecisionQuality {
-  accuracy: number
-  responseTime: number
-  resourceEfficiency: number
-  errorRate: number
-  completeness: number
-}
+class DecisionQuality(Protocol):
+  accuracy: float
+  responseTime: float
+  resourceEfficiency: float
+  errorRate: float
+  completeness: float
 
-interface DecisionQualityDiff {
-  accuracyDiff: number
-  responseTimeDiff: number
-  resourceEfficiencyDiff: number
-  errorRateDiff: number
-  completenessDiff: number
-  overallImprovement: number
-}
+class DecisionQualityDiff(Protocol):
+  accuracyDiff: float
+  responseTimeDiff: float
+  resourceEfficiencyDiff: float
+  errorRateDiff: float
+  completenessDiff: float
+  overallImprovement: float
 
-interface PerformanceDiff {
-  responseTimeDiff: number
-  throughputDiff: number
-  cpuUsageDiff: number
-  memoryUsageDiff: number
-}
+class PerformanceDiff(Protocol):
+  responseTimeDiff: float
+  throughputDiff: float
+  cpuUsageDiff: float
+  memoryUsageDiff: float
 
-interface Anomaly {
-  type: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  description: string
-  affectedMetrics: string[]
-  recommendation: string
-}
+class Anomaly(Protocol):
+  type: str
+  severity: Literal["low", "medium"] | Literal["high", "critical"]
+  description: str
+  affectedMetrics: list[str]
+  recommendation: str
 ```
 
 ### 6. 报告生成器 (ReportGenerator)
 
 生成验证报告和可视化图表。
 
-```typescript
-interface ReportGenerator {
-  // 生成综合验证报告
-  generateValidationReport(result: ValidationResult): Promise<Report>
+```python
+class ReportGenerator(Protocol):
+  # 生成综合验证报告
+  def generateValidationReport(self, result: ValidationResult) -> Report: ...
   
-  // 生成决策对比报告
-  generateComparisonReport(comparison: ComparisonResult): Promise<Report>
+  # 生成决策对比报告
+  def generateComparisonReport(self, comparison: ComparisonResult) -> Report: ...
   
-  // 生成性能报告
-  generatePerformanceReport(metrics: PerformanceMetrics[]): Promise<Report>
+  # 生成性能报告
+  def generatePerformanceReport(self, metrics: list[PerformanceMetrics]) -> Report: ...
   
-  // 导出报告
-  exportReport(report: Report, format: 'json' | 'html' | 'pdf'): Promise<string>
-}
+  # 导出报告
+  def exportReport(self, report: Report, format: 'json' | 'html' | 'pdf') -> str: ...
 
-interface Report {
-  id: string
-  title: string
-  generatedAt: Date
+class Report(Protocol):
+  id: str
+  title: str
+  generatedAt: datetime
   summary: ReportSummary
-  sections: ReportSection[]
-  charts: Chart[]
-  recommendations: string[]
-}
+  sections: list[ReportSection]
+  charts: list[Chart]
+  recommendations: list[str]
 
-interface ReportSummary {
-  totalTests: number
-  passedTests: number
-  failedTests: number
-  testCoverage: number
-  successRate: number
-  averageResponseTime: number
-  criticalIssues: number
-}
+class ReportSummary(Protocol):
+  totalTests: float
+  passedTests: float
+  failedTests: float
+  testCoverage: float
+  successRate: float
+  averageResponseTime: float
+  criticalIssues: float
 
-interface ReportSection {
-  title: string
-  content: string
-  data: any
-  charts?: Chart[]
-}
+class ReportSection(Protocol):
+  title: str
+  content: str
+  data: Any
+  charts: Optional[list[Chart]]
 
-interface Chart {
-  type: 'line' | 'bar' | 'pie' | 'scatter' | 'heatmap'
-  title: string
+class Chart(Protocol):
+  type: Literal["line", "bar"] | Literal["pie", "scatter"] | 'heatmap'
+  title: str
   data: ChartData
   options: ChartOptions
-}
 ```
 
 ## 数据模型
 
 ### 测试场景数据模型
 
-```typescript
-// Mionyee 任务场景
-interface MionyeeTaskScenario extends TestScenario {
+```python
+# Mionyee 任务场景
+class MionyeeTaskScenario(TestScenario, Protocol):
   type: 'mionyee-task'
   config: {
-    taskId: '1' | '2' | '3'
+    taskId: Literal["1", "2"] | '3'
     taskParameters: {
-      input: any
-      context: Record<string, any>
-    }
+      input: Any
+      context: dict[str, Any]
     expectedFlow: {
-      cronTrigger: boolean
-      agentRuntime: boolean
-      skills: string[]
-      governance: string[]
-      hatchet: boolean
-    }
-  }
-}
+      cronTrigger: bool
+      agentRuntime: bool
+      skills: list[str]
+      governance: list[str]
+      hatchet: bool
 
-// 决策对比场景
-interface DecisionComparisonScenario extends TestScenario {
+# 决策对比场景
+class DecisionComparisonScenario(TestScenario, Protocol):
   type: 'decision-comparison'
   config: {
-    scenarios: Array<{
-      input: any
-      expectedDecision: any
+    scenarios: list[{
+      input: Any
+      expectedDecision: Any
     }>
-    comparisonMetrics: string[]
-    threshold: number
-  }
-}
+    comparisonMetrics: list[str]
+    threshold: float
 
-// 集成测试场景
-interface IntegrationTestScenario extends TestScenario {
+# 集成测试场景
+class IntegrationTestScenario(TestScenario, Protocol):
   type: 'integration'
   config: {
-    components: ComponentConfig[]
-    integrationPoints: IntegrationPoint[]
-    validations: ValidationRule[]
-  }
-}
+    components: list[ComponentConfig]
+    integrationPoints: list[IntegrationPoint]
+    validations: list[ValidationRule]
 
-interface ComponentConfig {
-  name: string
-  enabled: boolean
-  config: Record<string, any>
-  mockMode?: boolean
-}
+class ComponentConfig(Protocol):
+  name: str
+  enabled: bool
+  config: dict[str, Any]
+  mockMode: Optional[bool]
 
-interface IntegrationPoint {
-  from: string
-  to: string
-  protocol: string
-  expectedBehavior: string
-}
+class IntegrationPoint(Protocol):
+  from: str
+  to: str
+  protocol: str
+  expectedBehavior: str
 ```
 
 ### 执行结果数据模型
 
-```typescript
-interface TestResult {
-  testId: string
-  scenarioId: string
-  status: 'passed' | 'failed' | 'error' | 'skipped'
-  startTime: Date
-  endTime: Date
-  duration: number
-  executionTrace: ExecutionTrace[]
-  assertions: AssertionResult[]
+```python
+class TestResult(Protocol):
+  testId: str
+  scenarioId: str
+  status: Literal["passed", "failed"] | Literal["error", "skipped"]
+  startTime: datetime
+  endTime: datetime
+  duration: float
+  executionTrace: list[ExecutionTrace]
+  assertions: list[AssertionResult]
   metrics: PerformanceMetrics
-  errors: ErrorReport[]
-}
+  errors: list[ErrorReport]
 
-interface AssertionResult {
-  name: string
-  passed: boolean
-  expected: any
-  actual: any
-  message?: string
-}
+class AssertionResult(Protocol):
+  name: str
+  passed: bool
+  expected: Any
+  actual: Any
+  message: Optional[str]
 
-interface ErrorReport {
-  timestamp: Date
-  component: string
-  errorType: string
-  message: string
-  stack: string
-  context: Record<string, any>
-}
+class ErrorReport(Protocol):
+  timestamp: datetime
+  component: str
+  errorType: str
+  message: str
+  stack: str
+  context: dict[str, Any]
 
-interface PerformanceMetrics {
-  responseTime: number
-  throughput: number
-  cpuUsage: number
-  memoryUsage: number
-  networkIO: number
-  diskIO: number
-}
+class PerformanceMetrics(Protocol):
+  responseTime: float
+  throughput: float
+  cpuUsage: float
+  memoryUsage: float
+  networkIO: float
+  diskIO: float
 ```
 
 ## 正确性属性
@@ -717,31 +690,29 @@ interface PerformanceMetrics {
 
 ### 错误处理策略
 
-```typescript
-interface ErrorHandler {
-  // 处理配置错误
-  handleConfigError(error: ConfigError): ErrorResponse
+```python
+class ErrorHandler(Protocol):
+  # 处理配置错误
+  def handleConfigError(self, error: ConfigError) -> ErrorResponse: ...
   
-  // 处理执行错误
-  handleExecutionError(error: ExecutionError): ErrorResponse
+  # 处理执行错误
+  def handleExecutionError(self, error: ExecutionError) -> ErrorResponse: ...
   
-  // 处理集成错误
-  handleIntegrationError(error: IntegrationError): ErrorResponse
+  # 处理集成错误
+  def handleIntegrationError(self, error: IntegrationError) -> ErrorResponse: ...
   
-  // 处理超时错误
-  handleTimeoutError(error: TimeoutError): ErrorResponse
+  # 处理超时错误
+  def handleTimeoutError(self, error: TimeoutError) -> ErrorResponse: ...
   
-  // 处理资源错误
-  handleResourceError(error: ResourceError): ErrorResponse
-}
+  # 处理资源错误
+  def handleResourceError(self, error: ResourceError) -> ErrorResponse: ...
 
-interface ErrorResponse {
-  handled: boolean
-  shouldRetry: boolean
-  retryDelay?: number
-  shouldRollback: boolean
+class ErrorResponse(Protocol):
+  handled: bool
+  shouldRetry: bool
+  retryDelay: Optional[float]
+  shouldRollback: bool
   errorReport: ErrorReport
-}
 ```
 
 ### 错误恢复机制
@@ -784,7 +755,7 @@ interface ErrorResponse {
 
 ### 基于属性的测试策略
 
-**测试库选择**: 使用 `fast-check` (TypeScript/JavaScript) 进行基于属性的测试
+**测试库选择**: 使用 `hypothesis`（Python）进行基于属性的测试
 
 **测试配置**:
 - 每个属性测试最少运行 100 次迭代
@@ -792,10 +763,10 @@ interface ErrorResponse {
 - 对于复杂属性，增加到 1000 次迭代
 
 **测试标记格式**:
-```typescript
-// Feature: e2e-validation, Property 1: Mionyee 任务完整执行流程
-// 对于任意 mionyee 任务（任务 1、2 或 3）和任意任务参数，
-// 当触发该任务时，执行轨迹应当包含所有必需组件的调用
+```python
+# Feature: e2e-validation, Property 1: Mionyee 任务完整执行流程
+# 对于任意 mionyee 任务（任务 1、2 或 3）和任意任务参数，
+# 当触发该任务时，执行轨迹应当包含所有必需组件的调用
 ```
 
 **属性测试实现要求**:
@@ -806,27 +777,27 @@ interface ErrorResponse {
 
 ### 测试数据生成
 
-使用 `fast-check` 的生成器创建测试数据：
+使用 `hypothesis` 的策略（strategies）生成测试数据：
 
-```typescript
-// 生成 mionyee 任务 ID
+```python
+# 生成 mionyee 任务 ID
 const taskIdArbitrary = fc.constantFrom('1', '2', '3')
 
-// 生成任务参数
+# 生成任务参数
 const taskParamsArbitrary = fc.record({
   input: fc.anything(),
-  context: fc.dictionary(fc.string(), fc.anything())
+  context: fc.dictionary(fc.str(), fc.anything())
 })
 
-// 生成测试场景
+# 生成测试场景
 const testScenarioArbitrary = fc.record({
   id: fc.uuid(),
-  name: fc.string(),
+  name: fc.str(),
   type: fc.constantFrom('mionyee-task', 'decision-comparison', 'integration'),
   config: fc.anything()
 })
 
-// 生成性能指标
+# 生成性能指标
 const performanceMetricsArbitrary = fc.record({
   responseTime: fc.nat(10000),
   throughput: fc.nat(1000),
@@ -965,7 +936,7 @@ class ReplayEngine:
         self,
         events: EventSequence,
         mode: str = "accelerated",  # accelerated | realtime
-        time_range: tuple[datetime, datetime] | None = None,
+        time_range: tuple[datetime, datetime]  | None = None,
     ) -> ReplayResult: ...
 
 @dataclass
@@ -1075,7 +1046,7 @@ class ShadowDashboardMetrics:
     inconsistent_decisions: list[dict]   # 不一致的详细对比
     quality_trend: list[float]           # 按天的质量趋势
     cumulative_llm_cost: float           # LLM 累计成本
-    recommendation: str | None           # "ready_to_switch" | None
+    recommendation: str  | None           # "ready_to_switch"  | None
 ```
 
 ### 与 migration_weight 的协同
@@ -1132,3 +1103,4 @@ class ABTestRunner:
             recommendation="increase_weight" if agent_mean > fallback_mean and p_value < 0.05 else "hold",
         )
 ```
+

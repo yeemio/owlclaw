@@ -2,7 +2,7 @@
 
 ## 概述
 
-本实现计划将端到端验证系统分解为一系列增量开发任务。系统使用 TypeScript 实现，采用模块化架构，支持 mionyee 任务验证、决策质量对比、组件集成测试、性能基准测试、错误注入测试和并发测试。
+本实现计划将端到端验证系统分解为一系列增量开发任务。系统使用 Python 实现，采用模块化架构，支持 mionyee 任务验证、决策质量对比、组件集成测试、性能基准测试、错误注入测试和并发测试。
 
 实现将按照以下顺序进行：
 1. 核心数据模型和接口定义
@@ -15,9 +15,9 @@
 ## 任务
 
 - [ ] 1. 设置项目结构和核心接口
-  - 创建 TypeScript 项目结构（src/、tests/、config/）
-  - 配置 TypeScript、ESLint、Prettier
-  - 安装依赖：fast-check（属性测试）、jest（单元测试）
+  - 创建 Python 项目结构（`owlclaw/e2e/`、`tests/e2e/`、`config/`）
+  - 配置 Python 质量工具（ruff、mypy）
+  - 安装依赖：hypothesis（属性测试）、pytest（单元/集成测试）
   - 定义核心类型和接口（TestScenario、ExecutionResult、ValidationConfig 等）
   - _需求: 1.1, 2.1, 3.1_
 
@@ -370,4 +370,4 @@
 - 检查点任务确保增量验证
 - 属性测试验证通用正确性属性
 - 单元测试验证特定示例和边缘情况
-- 使用 fast-check 进行属性测试，每个测试至少运行 100 次迭代
+- 使用 hypothesis 进行属性测试，每个测试至少运行 100 次迭代

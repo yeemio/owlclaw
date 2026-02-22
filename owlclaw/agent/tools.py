@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 import uuid
 from dataclasses import dataclass
 from decimal import Decimal
@@ -252,18 +253,57 @@ class BuiltInTools:
         if self._registry is None:
             return {"error": "No capability registry configured; query_state unavailable"}
 
+        start_ns = time.perf_counter_ns()
         try:
             result = await asyncio.wait_for(
                 self._registry.get_state(state_name),
                 timeout=self._timeout,
             )
-            return {"state": result}
+            out = {"state": result}
+            await self._record_tool_execution(
+                tool_name="query_state",
+                context=context,
+                input_params={"state_name": state_name},
+                output_result=out,
+                start_ns=start_ns,
+                status="success",
+                error_message=None,
+            )
+            return out
         except asyncio.TimeoutError:
-            return {"error": f"query_state timed out after {self._timeout}s"}
+            error = f"query_state timed out after {self._timeout}s"
+            await self._record_tool_execution(
+                tool_name="query_state",
+                context=context,
+                input_params={"state_name": state_name},
+                output_result=None,
+                start_ns=start_ns,
+                status="timeout",
+                error_message=error,
+            )
+            return {"error": error}
         except ValueError as e:
+            await self._record_tool_execution(
+                tool_name="query_state",
+                context=context,
+                input_params={"state_name": state_name},
+                output_result=None,
+                start_ns=start_ns,
+                status="error",
+                error_message=str(e),
+            )
             return {"error": str(e)}
         except Exception as e:
             logger.exception("query_state failed for %s", state_name)
+            await self._record_tool_execution(
+                tool_name="query_state",
+                context=context,
+                input_params={"state_name": state_name},
+                output_result=None,
+                start_ns=start_ns,
+                status="error",
+                error_message=str(e),
+            )
             return {"error": str(e)}
 
     async def _log_decision(
@@ -290,7 +330,7 @@ class BuiltInTools:
                 agent_id=context.agent_id,
                 run_id=context.run_id,
                 capability_name="log_decision",
-                task_type="builtin",
+                task_type="decision_log",
                 input_params={"reasoning": reasoning, "decision_type": decision_type},
                 output_result={"logged": True},
                 decision_reasoning=reasoning,
@@ -321,6 +361,7 @@ class BuiltInTools:
             return {"error": "focus is required and must be a non-empty string"}
         if self._hatchet is None:
             return {"error": "Hatchet not configured; schedule_once unavailable"}
+        start_ns = time.perf_counter_ns()
         try:
             schedule_id = await asyncio.wait_for(
                 self._hatchet.schedule_task(
@@ -334,15 +375,44 @@ class BuiltInTools:
                 ),
                 timeout=self._timeout,
             )
-            return {
+            out = {
                 "schedule_id": schedule_id,
                 "scheduled_at": f"in {delay} seconds",
                 "focus": focus,
             }
+            await self._record_tool_execution(
+                tool_name="schedule_once",
+                context=context,
+                input_params={"delay_seconds": delay, "focus": focus},
+                output_result=out,
+                start_ns=start_ns,
+                status="success",
+                error_message=None,
+            )
+            return out
         except asyncio.TimeoutError:
-            return {"error": f"schedule_once timed out after {self._timeout}s"}
+            error = f"schedule_once timed out after {self._timeout}s"
+            await self._record_tool_execution(
+                tool_name="schedule_once",
+                context=context,
+                input_params={"delay_seconds": delay, "focus": focus},
+                output_result=None,
+                start_ns=start_ns,
+                status="timeout",
+                error_message=error,
+            )
+            return {"error": error}
         except Exception as e:
             logger.exception("schedule_once failed")
+            await self._record_tool_execution(
+                tool_name="schedule_once",
+                context=context,
+                input_params={"delay_seconds": delay, "focus": focus},
+                output_result=None,
+                start_ns=start_ns,
+                status="error",
+                error_message=str(e),
+            )
             return {"error": str(e)}
 
     def _validate_cron_expression(self, expr: str) -> bool:
@@ -372,6 +442,7 @@ class BuiltInTools:
             "scheduled_by_run_id": context.run_id,
             "tenant_id": context.tenant_id,
         }
+        start_ns = time.perf_counter_ns()
         try:
             schedule_id = await asyncio.wait_for(
                 self._hatchet.schedule_cron(
@@ -382,15 +453,44 @@ class BuiltInTools:
                 ),
                 timeout=self._timeout,
             )
-            return {
+            out = {
                 "schedule_id": schedule_id,
                 "cron_expression": cron_expr,
                 "focus": focus,
             }
+            await self._record_tool_execution(
+                tool_name="schedule_cron",
+                context=context,
+                input_params={"cron_expression": cron_expr, "focus": focus},
+                output_result=out,
+                start_ns=start_ns,
+                status="success",
+                error_message=None,
+            )
+            return out
         except asyncio.TimeoutError:
-            return {"error": f"schedule_cron timed out after {self._timeout}s"}
+            error = f"schedule_cron timed out after {self._timeout}s"
+            await self._record_tool_execution(
+                tool_name="schedule_cron",
+                context=context,
+                input_params={"cron_expression": cron_expr, "focus": focus},
+                output_result=None,
+                start_ns=start_ns,
+                status="timeout",
+                error_message=error,
+            )
+            return {"error": error}
         except Exception as e:
             logger.exception("schedule_cron failed")
+            await self._record_tool_execution(
+                tool_name="schedule_cron",
+                context=context,
+                input_params={"cron_expression": cron_expr, "focus": focus},
+                output_result=None,
+                start_ns=start_ns,
+                status="error",
+                error_message=str(e),
+            )
             return {"error": str(e)}
 
     async def _cancel_schedule(
@@ -403,6 +503,7 @@ class BuiltInTools:
             return {"error": "schedule_id is required and must be a non-empty string"}
         if self._hatchet is None:
             return {"error": "Hatchet not configured; cancel_schedule unavailable"}
+        start_ns = time.perf_counter_ns()
         try:
             ok = await asyncio.wait_for(
                 self._hatchet.cancel_task(schedule_id),
@@ -410,9 +511,74 @@ class BuiltInTools:
             )
             if not ok and hasattr(self._hatchet, "cancel_cron"):
                 ok = await self._hatchet.cancel_cron(schedule_id)
-            return {"cancelled": ok, "schedule_id": schedule_id}
+            out = {"cancelled": ok, "schedule_id": schedule_id}
+            await self._record_tool_execution(
+                tool_name="cancel_schedule",
+                context=context,
+                input_params={"schedule_id": schedule_id},
+                output_result=out,
+                start_ns=start_ns,
+                status="success" if ok else "not_found",
+                error_message=None if ok else "schedule not found",
+            )
+            return out
         except asyncio.TimeoutError:
-            return {"error": f"cancel_schedule timed out after {self._timeout}s"}
+            error = f"cancel_schedule timed out after {self._timeout}s"
+            await self._record_tool_execution(
+                tool_name="cancel_schedule",
+                context=context,
+                input_params={"schedule_id": schedule_id},
+                output_result=None,
+                start_ns=start_ns,
+                status="timeout",
+                error_message=error,
+            )
+            return {"error": error}
         except Exception as e:
             logger.exception("cancel_schedule failed")
+            await self._record_tool_execution(
+                tool_name="cancel_schedule",
+                context=context,
+                input_params={"schedule_id": schedule_id},
+                output_result=None,
+                start_ns=start_ns,
+                status="error",
+                error_message=str(e),
+            )
             return {"error": str(e)}
+
+    async def _record_tool_execution(
+        self,
+        *,
+        tool_name: str,
+        context: BuiltInToolsContext,
+        input_params: dict[str, Any],
+        output_result: dict[str, Any] | None,
+        start_ns: int,
+        status: str,
+        error_message: str | None,
+    ) -> None:
+        """Best-effort audit record for built-in tool execution."""
+        if self._ledger is None:
+            return
+        try:
+            elapsed_ms = max(0, (time.perf_counter_ns() - start_ns) // 1_000_000)
+            await self._ledger.record_execution(
+                tenant_id=context.tenant_id,
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                capability_name=tool_name,
+                task_type="builtin",
+                input_params=input_params,
+                output_result=output_result,
+                decision_reasoning="builtin_tool_execution",
+                execution_time_ms=elapsed_ms,
+                llm_model="builtin",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status=status,
+                error_message=error_message,
+            )
+        except Exception:
+            logger.exception("Failed to record built-in tool execution: %s", tool_name)

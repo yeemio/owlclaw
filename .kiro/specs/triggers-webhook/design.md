@@ -11,6 +11,14 @@ Webhook 触发器系统是 OwlClaw Agent 平台的关键组件，负责接收外
 - **灵活性**：可配置的转换规则和执行模式
 - **集成性**：与 Agent Runtime 和 Governance Layer 无缝集成
 
+## 技术栈统一决策
+
+为避免核心链路出现双栈维护成本，Webhook 触发器采用以下实现策略：
+
+1. **核心实现语言统一为 Python**（与 `owlclaw` 主栈一致）。
+2. 本文档中的接口代码块用于表达领域模型与契约，属于**语言无关伪代码**；落地实现以 Python `dataclass` / `Protocol` / Pydantic 模型为准。
+3. 多语言（Node/TypeScript）仅作为外部系统适配层存在，通过 HTTP/Queue 调用 OwlClaw 暴露的标准入口，不进入核心触发器模块。
+
 ## 架构
 
 系统采用分层架构，主要包含以下层次：
@@ -78,296 +86,274 @@ Webhook 触发器系统是 OwlClaw Agent 平台的关键组件，负责接收外
 
 ## 组件和接口
 
+```python
+from typing import Any, Optional, Literal, Protocol
+from datetime import datetime
+```
+
 ### 1. WebhookEndpointManager
 
 负责 Webhook 端点的生命周期管理。
 
-```typescript
-interface WebhookEndpointManager {
-  // 创建新端点
-  createEndpoint(config: EndpointConfig): Promise<WebhookEndpoint>
+```python
+class WebhookEndpointManager(Protocol):
+  # 创建新端点
+  def createEndpoint(self, config: EndpointConfig) -> WebhookEndpoint: ...
   
-  // 获取端点配置
-  getEndpoint(endpointId: string): Promise<WebhookEndpoint | null>
+  # 获取端点配置
+  def getEndpoint(self, endpointId: str) -> WebhookEndpoint  | None: ...
   
-  // 更新端点配置
-  updateEndpoint(endpointId: string, config: Partial<EndpointConfig>): Promise<WebhookEndpoint>
+  # 更新端点配置
+  def updateEndpoint(self, endpointId: str, config: EndpointConfig) -> WebhookEndpoint: ...
   
-  // 删除端点
-  deleteEndpoint(endpointId: string): Promise<void>
+  # 删除端点
+  def deleteEndpoint(self, endpointId: str) -> None: ...
   
-  // 列出所有端点
-  listEndpoints(filter?: EndpointFilter): Promise<WebhookEndpoint[]>
+  # 列出所有端点
+  def listEndpoints(self, filter: Optional[EndpointFilter]) -> list[WebhookEndpoint]: ...
   
-  // 验证端点是否存在且活跃
-  validateEndpoint(endpointId: string): Promise<boolean>
-}
+  # 验证端点是否存在且活跃
+  def validateEndpoint(self, endpointId: str) -> bool: ...
 
-interface EndpointConfig {
-  name: string
-  targetAgentId: string
+class EndpointConfig(Protocol):
+  name: str
+  targetAgentId: str
   authMethod: AuthMethod
-  transformationRuleId?: string
-  executionMode: 'sync' | 'async'
-  timeout?: number
-  retryPolicy?: RetryPolicy
-  enabled: boolean
-}
+  transformationRuleId: Optional[str]
+  executionMode: Literal["sync", "async"]
+  timeout: Optional[float]
+  retryPolicy: Optional[RetryPolicy]
+  enabled: bool
 
-interface WebhookEndpoint {
-  id: string
-  url: string
-  authToken: string
+class WebhookEndpoint(Protocol):
+  id: str
+  url: str
+  authToken: str
   config: EndpointConfig
-  createdAt: Date
-  updatedAt: Date
-}
+  createdAt: datetime
+  updatedAt: datetime
 ```
 
 ### 2. RequestValidator
 
 负责验证传入的 HTTP 请求。
 
-```typescript
-interface RequestValidator {
-  // 验证认证令牌
-  validateAuth(request: HttpRequest, endpoint: WebhookEndpoint): Promise<ValidationResult>
+```python
+class RequestValidator(Protocol):
+  # 验证认证令牌
+  def validateAuth(self, request: HttpRequest, endpoint: WebhookEndpoint) -> ValidationResult: ...
   
-  // 验证请求签名
-  validateSignature(request: HttpRequest, secret: string): Promise<ValidationResult>
+  # 验证请求签名
+  def validateSignature(self, request: HttpRequest, secret: str) -> ValidationResult: ...
   
-  // 验证请求格式
-  validateFormat(request: HttpRequest): Promise<ValidationResult>
-}
+  # 验证请求格式
+  def validateFormat(self, request: HttpRequest) -> ValidationResult: ...
 
-interface ValidationResult {
-  valid: boolean
-  error?: ValidationError
-}
+class ValidationResult(Protocol):
+  valid: bool
+  error: Optional[ValidationError]
 
-interface ValidationError {
-  code: string
-  message: string
-  details?: Record<string, any>
-}
+class ValidationError(Protocol):
+  code: str
+  message: str
+  details: Optional[dict[str, Any]]
 
-type AuthMethod = 
-  | { type: 'bearer'; token: string }
-  | { type: 'hmac'; secret: string; algorithm: 'sha256' | 'sha512' }
-  | { type: 'basic'; username: string; password: string }
+AuthMethod = Any  # alias
+  # | { type: 'bearer' token: str }
+  # | { type: 'hmac' secret: str algorithm: 'sha256' | 'sha512' }
+  # | { type: 'basic' username: str password: str }
 ```
 
 ### 3. PayloadTransformer
 
 负责解析和转换 Webhook 负载。
 
-```typescript
-interface PayloadTransformer {
-  // 解析负载
-  parse(request: HttpRequest): Promise<ParsedPayload>
+```python
+class PayloadTransformer(Protocol):
+  # 解析负载
+  def parse(self, request: HttpRequest) -> ParsedPayload: ...
   
-  // 应用转换规则
-  transform(payload: ParsedPayload, rule: TransformationRule): Promise<AgentInput>
+  # 应用转换规则
+  def transform(self, payload: ParsedPayload, rule: TransformationRule) -> AgentInput: ...
   
-  // 验证转换后的数据
-  validate(input: AgentInput, schema: Schema): Promise<ValidationResult>
-}
+  # 验证转换后的数据
+  def validate(self, input: AgentInput, schema: Schema) -> ValidationResult: ...
 
-interface ParsedPayload {
-  contentType: string
-  data: Record<string, any>
-  headers: Record<string, string>
-  rawBody: string
-}
+class ParsedPayload(Protocol):
+  contentType: str
+  data: dict[str, Any]
+  headers: dict[str, str]
+  rawBody: str
 
-interface TransformationRule {
-  id: string
-  name: string
-  sourceSchema?: Schema
+class TransformationRule(Protocol):
+  id: str
+  name: str
+  sourceSchema: Optional[Schema]
   targetSchema: Schema
-  mappings: FieldMapping[]
-  customLogic?: string  // JavaScript 表达式
-}
+  mappings: list[FieldMapping]
+  customLogic: Optional[str]  # 规则 DSL 表达式（受限、可审计）
 
-interface FieldMapping {
-  source: string  // JSONPath 表达式
-  target: string
-  transform?: 'string' | 'number' | 'boolean' | 'date' | 'json'
-  defaultValue?: any
-}
+class FieldMapping(Protocol):
+  source: str  # JSONPath 表达式
+  target: str
+  transform: Optional[Literal["str", "float"] | Literal["bool", "date"] | 'json']
+  defaultValue: Optional[Any]
 
-interface AgentInput {
-  agentId: string
-  parameters: Record<string, any>
+class AgentInput(Protocol):
+  agentId: str
+  parameters: dict[str, Any]
   context: ExecutionContext
-}
 ```
 
 ### 4. ExecutionTrigger
 
 负责触发代理执行。
 
-```typescript
-interface ExecutionTrigger {
-  // 触发代理执行
-  trigger(input: AgentInput, options: ExecutionOptions): Promise<ExecutionResult>
+```python
+class ExecutionTrigger(Protocol):
+  # 触发代理执行
+  def trigger(self, input: AgentInput, options: ExecutionOptions) -> ExecutionResult: ...
   
-  // 检查幂等性
-  checkIdempotency(key: string): Promise<ExecutionResult | null>
+  # 检查幂等性
+  def checkIdempotency(self, key: str) -> ExecutionResult  | None: ...
   
-  // 记录幂等性键
-  recordIdempotency(key: string, result: ExecutionResult, ttl: number): Promise<void>
+  # 记录幂等性键
+  def recordIdempotency(self, key: str, result: ExecutionResult, ttl: float) -> None: ...
   
-  // 查询执行状态
-  getExecutionStatus(executionId: string): Promise<ExecutionStatus>
-}
+  # 查询执行状态
+  def getExecutionStatus(self, executionId: str) -> ExecutionStatus: ...
 
-interface ExecutionOptions {
-  mode: 'sync' | 'async'
-  timeout?: number
-  idempotencyKey?: string
-  retryPolicy?: RetryPolicy
-}
+class ExecutionOptions(Protocol):
+  mode: Literal["sync", "async"]
+  timeout: Optional[float]
+  idempotencyKey: Optional[str]
+  retryPolicy: Optional[RetryPolicy]
 
-interface ExecutionResult {
-  executionId: string
-  status: 'accepted' | 'running' | 'completed' | 'failed'
-  startedAt: Date
-  completedAt?: Date
-  output?: any
-  error?: ExecutionError
-}
+class ExecutionResult(Protocol):
+  executionId: str
+  status: Literal["accepted", "running"] | Literal["completed", "failed"]
+  startedAt: datetime
+  completedAt: Optional[datetime]
+  output: Optional[Any]
+  error: Optional[ExecutionError]
 
-interface RetryPolicy {
-  maxAttempts: number
-  initialDelay: number  // 毫秒
-  maxDelay: number
-  backoffMultiplier: number
-}
+class RetryPolicy(Protocol):
+  maxAttempts: float
+  initialDelay: float  # 毫秒
+  maxDelay: float
+  backoffMultiplier: float
 ```
 
 ### 5. EventLogger
 
 负责记录所有 Webhook 事件。
 
-```typescript
-interface EventLogger {
-  // 记录请求事件
-  logRequest(event: RequestEvent): Promise<void>
+```python
+class EventLogger(Protocol):
+  # 记录请求事件
+  def logRequest(self, event: RequestEvent) -> None: ...
   
-  // 记录验证事件
-  logValidation(event: ValidationEvent): Promise<void>
+  # 记录验证事件
+  def logValidation(self, event: ValidationEvent) -> None: ...
   
-  // 记录转换事件
-  logTransformation(event: TransformationEvent): Promise<void>
+  # 记录转换事件
+  def logTransformation(self, event: TransformationEvent) -> None: ...
   
-  // 记录执行事件
-  logExecution(event: ExecutionEvent): Promise<void>
+  # 记录执行事件
+  def logExecution(self, event: ExecutionEvent) -> None: ...
   
-  // 查询事件日志
-  queryEvents(filter: EventFilter): Promise<WebhookEvent[]>
-}
+  # 查询事件日志
+  def queryEvents(self, filter: EventFilter) -> list[WebhookEvent]: ...
 
-interface WebhookEvent {
-  id: string
-  timestamp: Date
-  endpointId: string
-  type: 'request' | 'validation' | 'transformation' | 'execution'
-  data: Record<string, any>
+class WebhookEvent(Protocol):
+  id: str
+  timestamp: datetime
+  endpointId: str
+  type: Literal["request", "validation"] | Literal["transformation", "execution"]
+  data: dict[str, Any]
   metadata: EventMetadata
-}
 
-interface EventMetadata {
-  sourceIp: string
-  userAgent?: string
-  requestId: string
-  duration?: number
-}
+class EventMetadata(Protocol):
+  sourceIp: str
+  userAgent: Optional[str]
+  requestId: str
+  duration: Optional[float]
 ```
 
 ### 6. MonitoringService
 
 负责监控和告警。
 
-```typescript
-interface MonitoringService {
-  // 记录指标
-  recordMetric(metric: Metric): Promise<void>
+```python
+class MonitoringService(Protocol):
+  # 记录指标
+  def recordMetric(self, metric: Metric) -> None: ...
   
-  // 获取健康状态
-  getHealthStatus(): Promise<HealthStatus>
+  # 获取健康状态
+  def getHealthStatus(self) -> HealthStatus: ...
   
-  // 获取指标统计
-  getMetrics(filter: MetricFilter): Promise<MetricStats>
+  # 获取指标统计
+  def getMetrics(self, filter: MetricFilter) -> MetricStats: ...
   
-  // 触发告警
-  triggerAlert(alert: Alert): Promise<void>
-}
+  # 触发告警
+  def triggerAlert(self, alert: Alert) -> None: ...
 
-interface Metric {
-  name: string
-  value: number
-  timestamp: Date
-  tags: Record<string, string>
-}
+class Metric(Protocol):
+  name: str
+  value: float
+  timestamp: datetime
+  tags: dict[str, str]
 
-interface HealthStatus {
-  status: 'healthy' | 'degraded' | 'unhealthy'
-  checks: HealthCheck[]
-  timestamp: Date
-}
+class HealthStatus(Protocol):
+  status: Literal["healthy", "degraded"] | 'unhealthy'
+  checks: list[HealthCheck]
+  timestamp: datetime
 
-interface HealthCheck {
-  name: string
-  status: 'pass' | 'fail'
-  message?: string
-}
+class HealthCheck(Protocol):
+  name: str
+  status: Literal["pass", "fail"]
+  message: Optional[str]
 
-interface MetricStats {
-  requestCount: number
-  successRate: number
-  failureRate: number
-  avgResponseTime: number
-  p95ResponseTime: number
-  p99ResponseTime: number
-}
+class MetricStats(Protocol):
+  requestCount: float
+  successRate: float
+  failureRate: float
+  avgResponseTime: float
+  p95ResponseTime: float
+  p99ResponseTime: float
 ```
 
 ### 7. GovernanceClient
 
 与治理层集成的客户端。
 
-```typescript
-interface GovernanceClient {
-  // 验证执行权限
-  checkPermission(request: PermissionRequest): Promise<PermissionResult>
+```python
+class GovernanceClient(Protocol):
+  # 验证执行权限
+  def checkPermission(self, request: PermissionRequest) -> PermissionResult: ...
   
-  // 应用速率限制
-  checkRateLimit(resource: string, identifier: string): Promise<RateLimitResult>
+  # 应用速率限制
+  def checkRateLimit(self, resource: str, identifier: str) -> RateLimitResult: ...
   
-  // 记录审计日志
-  auditLog(event: AuditEvent): Promise<void>
-}
+  # 记录审计日志
+  def auditLog(self, event: AuditEvent) -> None: ...
 
-interface PermissionRequest {
-  agentId: string
-  userId?: string
-  source: string
+class PermissionRequest(Protocol):
+  agentId: str
+  userId: Optional[str]
+  source: str
   context: ExecutionContext
-}
 
-interface PermissionResult {
-  allowed: boolean
-  reason?: string
-  policies: string[]
-}
+class PermissionResult(Protocol):
+  allowed: bool
+  reason: Optional[str]
+  policies: list[str]
 
-interface RateLimitResult {
-  allowed: boolean
-  limit: number
-  remaining: number
-  resetAt: Date
-}
+class RateLimitResult(Protocol):
+  allowed: bool
+  limit: float
+  remaining: float
+  resetAt: datetime
 ```
 
 ## 数据模型
@@ -376,46 +362,53 @@ interface RateLimitResult {
 
 ```sql
 CREATE TABLE webhook_endpoints (
-  id VARCHAR(64) PRIMARY KEY,
+  id UUID PRIMARY KEY,
+  tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
   name VARCHAR(255) NOT NULL,
   url TEXT NOT NULL,
   auth_token VARCHAR(255) NOT NULL,
   target_agent_id VARCHAR(64) NOT NULL,
   auth_method JSONB NOT NULL,
-  transformation_rule_id VARCHAR(64),
+  transformation_rule_id UUID,
   execution_mode VARCHAR(10) NOT NULL DEFAULT 'async',
   timeout INTEGER,
   retry_policy JSONB,
   enabled BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  created_by VARCHAR(64),
-  
-  INDEX idx_target_agent (target_agent_id),
-  INDEX idx_enabled (enabled)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by VARCHAR(64)
 );
+
+CREATE INDEX idx_webhook_endpoints_tenant_target_agent
+  ON webhook_endpoints (tenant_id, target_agent_id);
+CREATE INDEX idx_webhook_endpoints_tenant_enabled
+  ON webhook_endpoints (tenant_id, enabled);
 ```
 
 ### 事件日志表 (webhook_events)
 
 ```sql
 CREATE TABLE webhook_events (
-  id VARCHAR(64) PRIMARY KEY,
-  endpoint_id VARCHAR(64) NOT NULL,
+  id UUID PRIMARY KEY,
+  tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
+  endpoint_id UUID NOT NULL,
   event_type VARCHAR(50) NOT NULL,
-  timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   source_ip VARCHAR(45),
   user_agent TEXT,
   request_id VARCHAR(64) NOT NULL,
   duration INTEGER,
   status VARCHAR(20),
   data JSONB,
-  error JSONB,
-  
-  INDEX idx_endpoint_timestamp (endpoint_id, timestamp DESC),
-  INDEX idx_request_id (request_id),
-  INDEX idx_timestamp (timestamp DESC)
+  error JSONB
 );
+
+CREATE INDEX idx_webhook_events_tenant_endpoint_timestamp
+  ON webhook_events (tenant_id, endpoint_id, timestamp DESC);
+CREATE INDEX idx_webhook_events_tenant_request_id
+  ON webhook_events (tenant_id, request_id);
+CREATE INDEX idx_webhook_events_tenant_timestamp
+  ON webhook_events (tenant_id, timestamp DESC);
 ```
 
 ### 幂等性键表 (idempotency_keys)
@@ -423,57 +416,67 @@ CREATE TABLE webhook_events (
 ```sql
 CREATE TABLE idempotency_keys (
   key VARCHAR(255) PRIMARY KEY,
-  endpoint_id VARCHAR(64) NOT NULL,
-  execution_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
+  endpoint_id UUID NOT NULL,
+  execution_id UUID NOT NULL,
   result JSONB NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  expires_at TIMESTAMP NOT NULL,
-  
-  INDEX idx_endpoint (endpoint_id),
-  INDEX idx_expires (expires_at)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE INDEX idx_idempotency_keys_tenant_endpoint
+  ON idempotency_keys (tenant_id, endpoint_id);
+CREATE INDEX idx_idempotency_keys_tenant_expires
+  ON idempotency_keys (tenant_id, expires_at);
 ```
 
 ### 转换规则表 (transformation_rules)
 
 ```sql
 CREATE TABLE transformation_rules (
-  id VARCHAR(64) PRIMARY KEY,
+  id UUID PRIMARY KEY,
+  tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
   name VARCHAR(255) NOT NULL,
   description TEXT,
   source_schema JSONB,
   target_schema JSONB NOT NULL,
   mappings JSONB NOT NULL,
   custom_logic TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  
-  INDEX idx_name (name)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_transformation_rules_tenant_name
+  ON transformation_rules (tenant_id, name);
 ```
 
 ### 执行记录表 (webhook_executions)
 
 ```sql
 CREATE TABLE webhook_executions (
-  id VARCHAR(64) PRIMARY KEY,
-  endpoint_id VARCHAR(64) NOT NULL,
+  id UUID PRIMARY KEY,
+  tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
+  endpoint_id UUID NOT NULL,
   agent_id VARCHAR(64) NOT NULL,
   request_id VARCHAR(64) NOT NULL,
   idempotency_key VARCHAR(255),
   status VARCHAR(20) NOT NULL,
-  started_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  completed_at TIMESTAMP,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
   input JSONB,
   output JSONB,
   error JSONB,
-  retry_count INTEGER DEFAULT 0,
-  
-  INDEX idx_endpoint_started (endpoint_id, started_at DESC),
-  INDEX idx_agent_started (agent_id, started_at DESC),
-  INDEX idx_status (status),
-  INDEX idx_idempotency (idempotency_key)
+  retry_count INTEGER DEFAULT 0
 );
+
+CREATE INDEX idx_webhook_executions_tenant_endpoint_started
+  ON webhook_executions (tenant_id, endpoint_id, started_at DESC);
+CREATE INDEX idx_webhook_executions_tenant_agent_started
+  ON webhook_executions (tenant_id, agent_id, started_at DESC);
+CREATE INDEX idx_webhook_executions_tenant_status
+  ON webhook_executions (tenant_id, status);
+CREATE INDEX idx_webhook_executions_tenant_idempotency
+  ON webhook_executions (tenant_id, idempotency_key);
 ```
 
 ## 正确性属性
@@ -701,16 +704,14 @@ CREATE TABLE webhook_executions (
 
 所有错误响应遵循统一格式：
 
-```typescript
-interface ErrorResponse {
+```python
+class ErrorResponse(Protocol):
   error: {
-    code: string          // 错误代码，如 "INVALID_TOKEN"
-    message: string       // 人类可读的错误消息
-    details?: any         // 可选的详细错误信息
-    requestId: string     // 请求 ID，用于追踪
-    timestamp: string     // ISO 8601 格式的时间戳
-  }
-}
+    code: str          # 错误代码，如 "INVALID_TOKEN"
+    message: str       # 人类可读的错误消息
+    details: Optional[Any         # 可选的详细错误信息]
+    requestId: str     # 请求 ID，用于追踪
+    timestamp: str     # ISO 8601 格式的时间戳
 ```
 
 ### 错误处理策略
@@ -728,16 +729,15 @@ interface ErrorResponse {
 
 ### 重试策略
 
-```typescript
-interface RetryPolicy {
-  maxAttempts: number        // 最大重试次数（默认 3）
-  initialDelay: number       // 初始延迟（默认 1000ms）
-  maxDelay: number          // 最大延迟（默认 30000ms）
-  backoffMultiplier: number // 退避乘数（默认 2）
-  retryableErrors: string[] // 可重试的错误代码
-}
+```python
+class RetryPolicy(Protocol):
+  maxAttempts: float        # 最大重试次数（默认 3）
+  initialDelay: float       # 初始延迟（默认 1000ms）
+  maxDelay: float          # 最大延迟（默认 30000ms）
+  backoffMultiplier: float # 退避乘数（默认 2）
+  retryableErrors: list[str] # 可重试的错误代码
 
-// 重试延迟计算：min(initialDelay * (backoffMultiplier ^ attempt), maxDelay)
+# 重试延迟计算：min(initialDelay * (backoffMultiplier ^ attempt), maxDelay)
 ```
 
 可重试的错误：
@@ -774,7 +774,7 @@ interface RetryPolicy {
 
 ### 基于属性的测试
 
-使用 **fast-check**（TypeScript）或等效的属性测试库。
+使用 `hypothesis`（Python）或等效的属性测试库。
 
 **配置要求**：
 - 每个属性测试最少运行 100 次迭代
@@ -827,22 +827,28 @@ interface RetryPolicy {
 
 使用属性测试库的生成器创建测试数据：
 
-```typescript
-// 示例：生成随机端点配置
-const endpointConfigArbitrary = fc.record({
-  name: fc.string({ minLength: 1, maxLength: 255 }),
-  targetAgentId: fc.uuid(),
-  authMethod: fc.oneof(
-    fc.record({ type: fc.constant('bearer'), token: fc.string() }),
-    fc.record({ 
-      type: fc.constant('hmac'), 
-      secret: fc.string(),
-      algorithm: fc.constantFrom('sha256', 'sha512')
-    })
-  ),
-  executionMode: fc.constantFrom('sync', 'async'),
-  enabled: fc.boolean()
-})
+```python
+from hypothesis import strategies as st
+
+# 示例：生成随机端点配置
+endpoint_config_strategy = st.fixed_dictionaries(
+    {
+        "name": st.text(min_size=1, max_size=255),
+        "target_agent_id": st.uuids().map(str),
+        "auth_method": st.one_of(
+            st.fixed_dictionaries({"type": st.just("bearer"), "token": st.text(min_size=1)}),
+            st.fixed_dictionaries(
+                {
+                    "type": st.just("hmac"),
+                    "secret": st.text(min_size=1),
+                    "algorithm": st.sampled_from(["sha256", "sha512"]),
+                }
+            ),
+        ),
+        "execution_mode": st.sampled_from(["sync", "async"]),
+        "enabled": st.booleans(),
+    }
+)
 ```
 
 ### 测试环境
@@ -857,3 +863,4 @@ const endpointConfigArbitrary = fc.record({
 - 分支覆盖率：>75%
 - 属性测试覆盖：所有 33 个正确性属性
 - 集成测试覆盖：所有外部接口
+

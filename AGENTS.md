@@ -5,6 +5,16 @@
 - Default workflow: verify `spec -> code -> tests -> docs` consistency, then fix gaps and commit focused patches.
 - Review priorities: behavioral regressions, spec mismatch, runtime safety, error handling, and missing tests.
 - Delivery standard: every identified issue should end with concrete remediation (code + test + commit), unless explicitly blocked by external dependencies.
+- Additional standing duty: run **Spec normalization** across `.kiro/specs/` to keep requirements/design/tasks aligned with current architecture, repository paths, and implementation reality.
+
+## Spec Normalization Trigger
+- Trigger keywords (Chinese/English): `spec规范化`, `规范化spec`, `spec统一`, `文档统一`, `架构对齐`, `spec audit`, `spec normalize`, `spec consistency`.
+- On trigger, execute normalization workflow by default (without waiting for extra instruction):
+  - Build a `spec -> architecture -> code` drift matrix.
+  - Fix stack drift (prefer Python-first core unless explicitly approved otherwise).
+  - Fix invalid/outdated file paths in spec docs.
+  - Fix requirement structure drift against `.kiro/SPEC_DOCUMENTATION_STANDARD.md`.
+  - Update `.kiro/specs/SPEC_TASKS_SCAN.md` checkpoint/status to factual state.
 
 ## Must-Read Rules (.mdc)
 - Read `.cursor/rules/owlclaw_core.mdc` first for global process and spec loop rules.

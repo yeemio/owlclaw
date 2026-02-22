@@ -34,7 +34,7 @@
 
 - [ ] **Task 6**: 创建默认 `owlclaw.yaml` 模板
   - 包含所有配置段的注释模板
-  - 放置在 `owlclaw/templates/owlclaw.yaml`
+  - 放置在 `templates/owlclaw.yaml`
   - CLI `owlclaw init` 命令生成到项目目录
 
 ### Phase 2：热更新与 CLI
@@ -77,3 +77,4 @@
   - 环境变量映射表
   - 热更新支持矩阵
   - 配置最佳实践指南
+

@@ -631,7 +631,7 @@ class PrivacyMasker:
 在 Agent Runtime 中自动创建和管理 trace。
 
 ```python
-# owlclaw/agent/runtime.py
+# owlclaw/agent/runtime/runtime.py
 
 from owlclaw.integrations.langfuse import (
     LangfuseClient,
@@ -718,7 +718,7 @@ class AgentRuntime:
 在 LLM 客户端中自动创建 LLM span。
 
 ```python
-# owlclaw/integrations/llm/client.py
+# owlclaw/integrations/llm.py
 
 import time
 from owlclaw.integrations.langfuse import (
@@ -832,7 +832,7 @@ class LLMClient:
 在工具执行系统中自动创建 tool span。
 
 ```python
-# owlclaw/agent/tools/executor.py
+# owlclaw/agent/tools.py
 
 import time
 from owlclaw.integrations.langfuse import (
@@ -2269,4 +2269,5 @@ Langfuse 集成为 OwlClaw Agent 提供了强大的可观测性能力，使得�
 4. **评估质量**：支持人工标注和自动评分
 
 通过隔离设计、异步上报、优雅降级和隐私保护，该集成在提供强大功能的同时，保持了系统的稳定性和安全性。
+
 

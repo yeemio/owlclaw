@@ -1083,7 +1083,7 @@ async def execute(self, tool_name: str, ...):
 BuiltInTools 将被 Agent Runtime 使用，集成方式如下：
 
 `python
-# owlclaw/agent/runtime.py
+# owlclaw/agent/runtime/runtime.py
 class AgentRuntime:
     def __init__(self, ...):
         self.built_in_tools = BuiltInTools(
