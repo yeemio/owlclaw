@@ -67,3 +67,23 @@ def test_main_converts_click_exit_to_system_exit(monkeypatch) -> None:
     with pytest.raises(SystemExit) as exc_info:
         cli_main.main()
     assert exc_info.value.code == 2
+
+
+def test_main_skill_templates_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "templates", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill templates [OPTIONS]" in out
+
+
+def test_main_skill_init_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "init", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill init [OPTIONS]" in out

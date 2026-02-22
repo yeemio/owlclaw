@@ -27,6 +27,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
 
     sub = argv[1]
     sub_argv = argv[2:]
+    if "--help" in sub_argv or "-h" in sub_argv:
+        _print_help_and_exit(["skill", sub])
 
     if sub == "init":
         from owlclaw.cli.skill_init import init_command
