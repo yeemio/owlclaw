@@ -4,13 +4,13 @@
 
 ### Phase 1：MVP（解锁 remember/recall 基本流程）
 
-- [ ] **Task 1**: 创建 `owlclaw/agent/memory/` 模块结构
+- [x] **Task 1**: 创建 `owlclaw/agent/memory/` 模块结构
   - 创建 `__init__.py`, `models.py`, `store.py`, `embedder.py`, `stm.py`, `snapshot.py`, `service.py`
   - 定义 `MemoryEntry` dataclass 和 `SecurityLevel` enum
   - 定义 `MemoryStore` 和 `EmbeddingProvider` 抽象基类
   - 定义 `MemoryConfig` Pydantic 模型
 
-- [ ] **Task 2**: 实现 `PgVectorStore`
+- [x] **Task 2**: 实现 `PgVectorStore`
   - 创建 Alembic migration：`memory_entries` 表 + pgvector 扩展 + HNSW 索引
   - 实现 `save()`: INSERT + embedding 写入
   - 实现 `search()`: 向量余弦距离查询 + 时间衰减 + 标签过滤 + archived 过滤
@@ -18,19 +18,19 @@
   - 实现 `archive()` / `delete()` / `count()`
   - 确保所有查询带 `tenant_id` + `agent_id` 条件
 
-- [ ] **Task 3**: 实现 `LiteLLMEmbedder`
+- [x] **Task 3**: 实现 `LiteLLMEmbedder`
   - 通过 `litellm.aembedding()` 生成单条 embedding
   - 实现 `embed_batch()` 批量生成（分批调用，每批 ≤ 100）
   - 实现 LRU Cache（默认 1000 条）
   - 处理 API 错误（重试 3 次，指数退避）
   - 集成 Langfuse span 记录 embedding 调用
 
-- [ ] **Task 4**: 实现 `InMemoryStore` + `RandomEmbedder`（mock_mode）
+- [x] **Task 4**: 实现 `InMemoryStore` + `RandomEmbedder`（mock_mode）
   - `InMemoryStore`: 字典存储 + 暴力余弦相似度搜索
   - `RandomEmbedder`: 固定种子随机向量（确保测试可复现）
   - 验证完整的 remember → recall 流程在 mock_mode 下工作
 
-- [ ] **Task 5**: 实现 `STMManager`
+- [x] **Task 5**: 实现 `STMManager`
   - 实现固定区（trigger + focus + injected instructions）
   - 实现滑动区（function call 历史，保留最近 3 轮）
   - 实现 token 计数（tiktoken 或近似计算）
@@ -38,14 +38,14 @@
   - 实现 `inject()`: Signal 指令注入
   - 实现 `to_prompt_section()`: 输出结构化 Markdown 片段
 
-- [ ] **Task 6**: 实现 `SnapshotBuilder`
+- [x] **Task 6**: 实现 `SnapshotBuilder`
   - 实现语义搜索 top-K 召回
   - 实现最近时间窗口召回
   - 实现 pinned 标签召回
   - 实现去重 + token 裁剪
   - 输出 `MemorySnapshot` 对象（含 prompt 片段 + 来源记忆 ID 列表）
 
-- [ ] **Task 7**: 实现 `MemoryService`（Façade）
+- [x] **Task 7**: 实现 `MemoryService`（Façade）
   - 组装 store + embedder + config
   - 实现 `remember()`: content → embed → save + Ledger 记录
   - 实现 `recall()`: query → embed → search + 更新 accessed_at/access_count + Ledger 记录

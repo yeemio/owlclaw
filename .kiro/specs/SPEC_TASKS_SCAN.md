@@ -22,7 +22,8 @@
 ### Phase 0：仓库初始化
 
 - [x] 清理 OwlClaw 仓库
-- [x] 建立包结构（owlclaw / owlclaw-mcp）
+- [ ] 建立包结构（owlclaw / owlclaw-mcp）  
+  说明：`owlclaw` 已存在；`owlclaw-mcp` 目录当前未落地，待 mcp-server 实现时一并补齐并回填为 `[x]`。
 - [x] pyproject.toml + MIT LICENSE + README
 - [x] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
 
@@ -125,15 +126,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-22 |
-| 当前批次 | 架构反哺 + Spec 深度补全（v4.1） |
-| 批次状态 | **完成**。本次批次完成以下工作：|
-| | 1. **架构文档 v4.1 更新**：解决 app.trigger() vs @app.cron() API 双模式决策（§5.3.2）；更新 SKILL.md owlclaw 扩展字段增加 focus/risk_level/requires_confirmation（§4.3）；新增 §8.9 Spec 洞察反哺架构 6 项（migration_weight/Focus/mock_mode/instruct/risk_level/event_aggregation）|
-| | 2. **新建 agent-memory 三层 spec**（requirements + design + tasks，18 个实现任务），解锁 remember/recall |
-| | 3. **补全 4 个 spec 的 design.md + tasks.md**：configuration（12 tasks）、triggers-db-change（11 tasks）、triggers-api（10 tasks）、triggers-signal（14 tasks）|
-| | 4. **增强 e2e-validation spec**：新增需求 9（历史回放）、需求 10（Shadow Mode）、需求 11（A/B 测试），对应设计和 tasks |
-| 已完成项 | ARCHITECTURE_ANALYSIS.md v4.1、agent-memory 三层 spec、configuration design+tasks、triggers-db-change design+tasks、triggers-api design+tasks、triggers-signal design+tasks、e2e-validation 增强、SPEC_TASKS_SCAN 索引更新 |
-| 下一待执行 | **agent-memory 实现**（Phase 1 MVP，解锁 remember/recall）→ **security 实现** → **configuration 实现** |
-| 阻塞项 | remember/recall 依赖 agent-memory 实现（spec 已齐全，可立即开始） |
+| 当前批次 | Spec 规范化（文档一致性修复批次） |
+| 批次状态 | **完成**。已完成 AGENTS 触发机制落地、`triggers-webhook`/`e2e-validation` 技术栈统一修正、`integrations-langfuse` 过期路径修正、`SPEC_TASKS_SCAN` 事实状态回填。 |
+| 已完成项 | AGENTS 规范化职责 + 关键词触发；triggers-webhook requirements 模板补齐；e2e-validation requirements 模板补齐；路径漂移修复（langfuse/agent-tools/configuration/integrations-hatchet） |
+| 下一待执行 | **Spec 规范化第二批**：`triggers-webhook` 与 `e2e-validation` 设计文档接口语法 Python 化（从 TS 风格伪代码迁移为 Python typing/dataclass 风格） |
+| 阻塞项 | 无 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
@@ -148,3 +145,4 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：清单中标注「验收备注」的项，若含当前 SKIP 的测试，在完成备注所指的后续工作后，须跑通该测试并更新文档（见「功能清单」中 integrations-hatchet 备注）
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
+
