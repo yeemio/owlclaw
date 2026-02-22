@@ -66,9 +66,10 @@ class Skill:
         """Get focus tags used for runtime skill selection (OwlClaw extension)."""
         raw = self.owlclaw_config.get("focus", [])
         if isinstance(raw, str):
-            return [raw]
+            normalized = raw.strip()
+            return [normalized] if normalized else []
         if isinstance(raw, list):
-            return [str(item) for item in raw if str(item).strip()]
+            return [item.strip() for item in raw if isinstance(item, str) and item.strip()]
         return []
 
     @property

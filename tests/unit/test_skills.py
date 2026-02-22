@@ -128,6 +128,28 @@ owlclaw:
     assert skill.requires_confirmation is True
 
 
+def test_skills_loader_focus_ignores_non_string_items(tmp_path):
+    """focus should only keep non-empty string items."""
+    skill_dir = tmp_path / "focus-mixed"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: focus-mixed
+description: Focus mixed
+owlclaw:
+  focus: [valid_tag, 123, null, "  ", another]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("focus-mixed")
+    assert skill is not None
+    assert skill.focus == ["valid_tag", "another"]
+
+
 def test_parse_invalid_yaml_skipped(tmp_path):
     """Invalid YAML in frontmatter is logged and skill is skipped."""
     skill_dir = tmp_path / "bad"
