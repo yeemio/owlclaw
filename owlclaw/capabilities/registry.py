@@ -159,7 +159,7 @@ class CapabilityRegistry:
         if filtered:
             return filtered
 
-        if len(named_params) == 1:
+        if kwargs and len(named_params) == 1:
             param_name = next(iter(named_params))
             return {param_name: dict(kwargs)}
 

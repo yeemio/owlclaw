@@ -121,6 +121,17 @@ async def test_invoke_handler_filters_unknown_kwargs(registry):
     assert result == {"symbol": "AAPL"}
 
 
+@pytest.mark.asyncio
+async def test_invoke_handler_single_param_without_args_raises(registry):
+    """No args should not be coerced to empty dict for single-param handlers."""
+    def sync_handler(symbol):
+        return {"symbol": symbol}
+
+    registry.register_handler("entry-monitor", sync_handler)
+    with pytest.raises(RuntimeError, match="missing 1 required positional argument"):
+        await registry.invoke_handler("entry-monitor")
+
+
 def test_register_state(registry):
     """register_state() accepts sync and async providers."""
     def sync_state():
