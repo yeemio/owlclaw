@@ -104,6 +104,9 @@ class Ledger:
 
     async def start(self) -> None:
         """Start the background writer task."""
+        if self._writer_task is not None and not self._writer_task.done():
+            logger.warning("Ledger background writer already running")
+            return
         self._writer_task = asyncio.create_task(self._background_writer())
 
     async def stop(self) -> None:

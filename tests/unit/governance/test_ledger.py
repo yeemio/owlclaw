@@ -60,3 +60,31 @@ async def test_ledger_start_stop():
     assert ledger._writer_task is not None
     await ledger.stop()
     assert ledger._writer_task is None
+
+
+@pytest.mark.asyncio
+async def test_ledger_start_is_idempotent_when_running():
+    """Calling start() twice should keep a single running writer task."""
+    session_factory = MagicMock()
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=60.0)
+    await ledger.start()
+    first_task = ledger._writer_task
+    assert first_task is not None
+    await ledger.start()
+    assert ledger._writer_task is first_task
+    await ledger.stop()
+
+
+@pytest.mark.asyncio
+async def test_ledger_can_restart_after_stop():
+    """After stop(), start() should create a new writer task."""
+    session_factory = MagicMock()
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=60.0)
+    await ledger.start()
+    first_task = ledger._writer_task
+    await ledger.stop()
+    await ledger.start()
+    second_task = ledger._writer_task
+    assert second_task is not None
+    assert second_task is not first_task
+    await ledger.stop()
