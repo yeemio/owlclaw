@@ -38,6 +38,13 @@ class CapabilityRegistry:
         self.handlers: dict[str, Callable] = {}
         self.states: dict[str, Callable] = {}
 
+    @staticmethod
+    def _normalize_name(value: str, field: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError(f"{field} must be a non-empty string")
+        return normalized
+
     def register_handler(self, skill_name: str, handler: Callable) -> None:
         """Register a handler function for a Skill.
 
@@ -53,6 +60,7 @@ class CapabilityRegistry:
             raise TypeError(
                 f"Handler for '{skill_name}' must be callable"
             )
+        skill_name = self._normalize_name(skill_name, "skill_name")
 
         # Validate Skill exists (warning only, not blocking)
         skill = self.skills_loader.get_skill(skill_name)
@@ -87,6 +95,7 @@ class CapabilityRegistry:
             raise TypeError(
                 f"State provider '{state_name}' must be callable"
             )
+        state_name = self._normalize_name(state_name, "state_name")
 
         # Check for duplicate registration
         if state_name in self.states:
@@ -110,6 +119,7 @@ class CapabilityRegistry:
             ValueError: If no handler is registered for the Skill
             RuntimeError: If handler execution fails
         """
+        skill_name = self._normalize_name(skill_name, "skill_name")
         handler = self.handlers.get(skill_name)
         if not handler:
             raise ValueError(
@@ -185,6 +195,7 @@ class CapabilityRegistry:
             TypeError: If provider doesn't return a dict
             RuntimeError: If provider execution fails
         """
+        state_name = self._normalize_name(state_name, "state_name")
         provider = self.states.get(state_name)
         if not provider:
             raise ValueError(

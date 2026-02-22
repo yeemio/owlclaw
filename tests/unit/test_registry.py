@@ -60,6 +60,14 @@ def test_register_handler_non_callable_raises_type_error(registry):
         registry.register_handler("entry-monitor", 123)  # type: ignore[arg-type]
 
 
+def test_register_handler_trims_skill_name(registry):
+    def my_handler(session):
+        return {"ok": True}
+
+    registry.register_handler("  entry-monitor  ", my_handler)
+    assert "entry-monitor" in registry.handlers
+
+
 @pytest.mark.asyncio
 async def test_invoke_handler_success_sync(registry):
     """invoke_handler() calls sync handler and returns result."""
@@ -87,6 +95,12 @@ async def test_invoke_handler_not_found_raises(registry):
     """invoke_handler() for unregistered skill raises ValueError."""
     with pytest.raises(ValueError, match="No handler registered"):
         await registry.invoke_handler("entry-monitor")
+
+
+@pytest.mark.asyncio
+async def test_invoke_handler_blank_name_raises(registry):
+    with pytest.raises(ValueError, match="skill_name must be a non-empty string"):
+        await registry.invoke_handler("   ")
 
 
 @pytest.mark.asyncio
@@ -159,6 +173,14 @@ def test_register_state_duplicate_raises(registry):
         registry.register_state("market_state", p2)
 
 
+def test_register_state_rejects_blank_name(registry):
+    def provider():
+        return {}
+
+    with pytest.raises(ValueError, match="state_name must be a non-empty string"):
+        registry.register_state("   ", provider)
+
+
 @pytest.mark.asyncio
 async def test_get_state_success_sync(registry):
     """get_state() returns dict from sync provider."""
@@ -186,6 +208,12 @@ async def test_get_state_not_found_raises(registry):
     """get_state() for unregistered state raises ValueError."""
     with pytest.raises(ValueError, match="No state provider registered"):
         await registry.get_state("nonexistent")
+
+
+@pytest.mark.asyncio
+async def test_get_state_blank_name_raises(registry):
+    with pytest.raises(ValueError, match="state_name must be a non-empty string"):
+        await registry.get_state("   ")
 
 
 @pytest.mark.asyncio
