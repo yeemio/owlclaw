@@ -36,6 +36,20 @@ def test_skill_init_creates_skill_dir_and_file(tmp_path, monkeypatch):
     assert "---" in content
 
 
+def test_skill_init_default_normalizes_name_to_kebab_case(tmp_path, monkeypatch):
+    """default template init should normalize provided --name."""
+    monkeypatch.chdir(tmp_path)
+    from owlclaw.cli.skill_init import init_command
+
+    init_command(name="My Skill", path=".", template="default")
+    skill_dir = tmp_path / "my-skill"
+    skill_file = skill_dir / "SKILL.md"
+    assert skill_dir.is_dir()
+    assert skill_file.is_file()
+    content = skill_file.read_text(encoding="utf-8")
+    assert "name: my-skill" in content
+
+
 def test_skill_validate_passes_for_valid_skill(tmp_path):
     """validate exits 0 for SKILL.md with name and description."""
     (tmp_path / "valid-skill").mkdir()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -100,6 +101,13 @@ def _run_interactive_wizard(
     return meta.id, params
 
 
+def _normalize_skill_name(raw_name: str) -> str:
+    """Normalize user input into kebab-case skill name."""
+    kebab = re.sub(r"[^\w\s-]", "", str(raw_name))
+    kebab = re.sub(r"[\s_]+", "-", kebab).strip("-").lower()
+    return kebab
+
+
 def init_command(
     name: Annotated[str, typer.Option("--name", help="Skill name. Required for default template.", is_flag=False)] = "",
     path: Annotated[str, typer.Option("--output", "--path", "-o", "-p", help="Output directory.", is_flag=False)] = ".",
@@ -144,13 +152,17 @@ def init_command(
     # Legacy default template (no template library)
     use_default = template == "default"
     if use_default and name.strip():
-        skill_dir = base / name.strip()
+        normalized_name = _normalize_skill_name(name.strip())
+        if not normalized_name:
+            typer.echo("Error: --name must contain at least one alphanumeric character.", err=True)
+            raise typer.Exit(2)
+        skill_dir = base / normalized_name
         skill_file = skill_dir / "SKILL.md"
         if skill_file.exists() and not force:
             typer.echo(f"Error: {skill_file} already exists. Use --force to overwrite.", err=True)
             raise typer.Exit(2)
         skill_dir.mkdir(parents=True, exist_ok=True)
-        content = DEFAULT_SKILL_TEMPLATE.format(name=name.strip())
+        content = DEFAULT_SKILL_TEMPLATE.format(name=normalized_name)
         skill_file.write_text(content, encoding="utf-8")
         _validate_generated_skill(skill_file)
         typer.echo(f"Created: {skill_file}")
@@ -251,10 +263,7 @@ def init_command(
         raise typer.Exit(2)
 
     # kebab-case for directory name
-    import re
-
-    kebab = re.sub(r"[^\w\s-]", "", str(skill_name_val))
-    kebab = re.sub(r"[\s_]+", "-", kebab).strip("-").lower()
+    kebab = _normalize_skill_name(str(skill_name_val))
 
     skill_dir = base / kebab
     skill_file = skill_dir / "SKILL.md"
