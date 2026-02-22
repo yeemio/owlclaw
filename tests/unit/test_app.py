@@ -95,6 +95,12 @@ def test_create_agent_runtime_before_mount_skills_raises():
         app.create_agent_runtime(app_dir="/tmp")
 
 
+def test_run_raises_until_implemented():
+    app = OwlClaw("test-app")
+    with pytest.raises(RuntimeError, match="not implemented yet"):
+        app.run()
+
+
 @pytest.mark.asyncio
 async def test_e2e_skill_load_and_invoke(tmp_path):
     """End-to-end: mount_skills, register handler, invoke via registry."""

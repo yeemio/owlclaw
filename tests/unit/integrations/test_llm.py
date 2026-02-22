@@ -8,10 +8,14 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from owlclaw.integrations.llm import (
+    AuthenticationError,
+    ContextWindowExceededError,
     LLMClient,
     LLMConfig,
     LLMResponse,
     ModelConfig,
+    RateLimitError,
+    ServiceUnavailableError,
     TaskTypeRouting,
     acompletion,
 )
@@ -106,11 +110,39 @@ class TestLLMClient:
             assert resp.completion_tokens == 5
 
 
+class TestLLMErrors:
+    """Tests for LLM error types (Task 6.1)."""
+
+    def test_authentication_error(self) -> None:
+        err = AuthenticationError("Invalid API key", model="gpt-4o")
+        assert str(err) == "Invalid API key"
+        assert err.model == "gpt-4o"
+        assert isinstance(err, AuthenticationError)
+
+    def test_rate_limit_error(self) -> None:
+        err = RateLimitError("Rate limit exceeded", model="gpt-4o")
+        assert "Rate limit" in str(err)
+        assert err.model == "gpt-4o"
+
+    def test_context_window_exceeded_error(self) -> None:
+        err = ContextWindowExceededError("Token limit 128k exceeded")
+        assert "128k" in str(err)
+        assert err.model is None
+
+    def test_service_unavailable_error(self) -> None:
+        cause = ConnectionError("Connection refused")
+        err = ServiceUnavailableError("Service down", model="claude", cause=cause)
+        assert err.model == "claude"
+        assert err.cause is cause
+        assert err.cause.args[0] == "Connection refused"
+
+
 def _fake_litellm_response(content: str, tool_calls: list, pt: int, ct: int) -> object:
     """Build a minimal litellm-like response."""
     class Usage:
-        prompt_tokens = pt
-        completion_tokens = ct
+        def __init__(self, prompt_tokens: int, completion_tokens: int) -> None:
+            self.prompt_tokens = prompt_tokens
+            self.completion_tokens = completion_tokens
 
     class Message:
         pass
@@ -119,5 +151,5 @@ def _fake_litellm_response(content: str, tool_calls: list, pt: int, ct: int) -> 
     msg.content = content
     msg.tool_calls = tool_calls
     choice = type("Choice", (), {"message": msg})()
-    resp = type("Response", (), {"choices": [choice], "usage": Usage()})()
+    resp = type("Response", (), {"choices": [choice], "usage": Usage(pt, ct)})()
     return resp

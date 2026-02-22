@@ -158,6 +158,66 @@ class TestAgentRuntimeRun:
         assert result["tool_calls_total"] == 1
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_call_kwargs_wrapper_unwrapped(
+        self, mock_llm, tmp_path
+    ) -> None:
+        """Legacy {"kwargs": {...}} payload should be unwrapped before invoke."""
+        tc = _make_tool_call("market_scan", {"kwargs": {"symbol": "AAPL"}})
+        mock_llm.side_effect = [
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response("Completed."),
+        ]
+
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [
+            {"name": "market_scan", "description": "Scans market data"}
+        ]
+        registry.invoke_handler = AsyncMock(return_value={"price": 180})
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+        )
+        await rt.setup()
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+        await rt.run(ctx)
+        registry.invoke_handler.assert_called_once_with("market_scan", symbol="AAPL")
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_call_without_args_injects_session(
+        self, mock_llm, tmp_path
+    ) -> None:
+        """No-arg calls should pass a default session payload to handlers."""
+        tc = _make_tool_call("market_scan", {})
+        mock_llm.side_effect = [
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response("Completed."),
+        ]
+
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [
+            {"name": "market_scan", "description": "Scans market data"}
+        ]
+        registry.invoke_handler = AsyncMock(return_value={"ok": True})
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+        )
+        await rt.setup()
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+        await rt.run(ctx)
+
+        call = registry.invoke_handler.call_args
+        assert call.args == ("market_scan",)
+        assert "session" in call.kwargs
+        assert call.kwargs["session"]["trigger"] == "cron"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_tool_not_registered_returns_error_dict(
         self, mock_llm, tmp_path
     ) -> None:

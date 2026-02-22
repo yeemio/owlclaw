@@ -303,6 +303,8 @@ class AgentRuntime:
             )
         except (json.JSONDecodeError, AttributeError):
             arguments = {}
+        if not isinstance(arguments, dict):
+            arguments = {}
 
         if self.builtin_tools is not None and self.builtin_tools.is_builtin(tool_name):
             from owlclaw.agent.tools import BuiltInToolsContext
@@ -321,9 +323,10 @@ class AgentRuntime:
         if self.registry is None:
             return {"error": f"No capability registry configured for tool '{tool_name}'"}
 
+        invoke_arguments = self._normalize_capability_arguments(arguments, context)
         start_ns = time.perf_counter_ns()
         try:
-            result = await self.registry.invoke_handler(tool_name, **arguments)
+            result = await self.registry.invoke_handler(tool_name, **invoke_arguments)
             execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
             if self._ledger is not None:
                 meta = self.registry.get_capability_metadata(tool_name)
@@ -334,7 +337,7 @@ class AgentRuntime:
                     run_id=context.run_id,
                     capability_name=tool_name,
                     task_type=task_type,
-                    input_params=arguments,
+                    input_params=invoke_arguments,
                     output_result=result if isinstance(result, dict) else {"result": result},
                     decision_reasoning=None,
                     execution_time_ms=execution_time_ms,
@@ -361,7 +364,7 @@ class AgentRuntime:
                         run_id=context.run_id,
                         capability_name=tool_name,
                         task_type=task_type,
-                        input_params=arguments,
+                        input_params=invoke_arguments,
                         output_result=None,
                         decision_reasoning=None,
                         execution_time_ms=execution_time_ms,
@@ -375,6 +378,36 @@ class AgentRuntime:
                 except Exception as ledger_exc:
                     logger.exception("Ledger record_execution failed: %s", ledger_exc)
             return {"error": str(exc)}
+
+    def _normalize_capability_arguments(
+        self, arguments: dict[str, Any], context: AgentRunContext
+    ) -> dict[str, Any]:
+        """Normalize tool-call arguments before capability invocation.
+
+        Supports both direct argument objects and legacy wrapped payloads:
+        ``{"kwargs": {...}}``.
+
+        When no arguments are provided, inject a default ``session`` object so
+        handlers using the common ``handler(session)`` signature still work.
+        """
+        if "kwargs" in arguments and len(arguments) == 1 and isinstance(arguments["kwargs"], dict):
+            normalized = dict(arguments["kwargs"])
+        else:
+            normalized = dict(arguments)
+
+        if normalized:
+            return normalized
+
+        return {
+            "session": {
+                "agent_id": context.agent_id,
+                "run_id": context.run_id,
+                "trigger": context.trigger,
+                "focus": context.focus,
+                "payload": context.payload,
+                "tenant_id": context.tenant_id,
+            }
+        }
 
     # ------------------------------------------------------------------
     # System prompt construction
@@ -526,12 +559,8 @@ class AgentRuntime:
                     "description": capability.get("description") or "",
                     "parameters": {
                         "type": "object",
-                        "properties": {
-                            "kwargs": {
-                                "type": "object",
-                                "description": "Keyword arguments for this capability",
-                            }
-                        },
+                        "description": "Arguments for this capability.",
+                        "additionalProperties": True,
                         "required": [],
                     },
                 },

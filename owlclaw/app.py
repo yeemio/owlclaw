@@ -420,4 +420,7 @@ class OwlClaw:
         Initializes the Agent runtime, loads Skills, starts Hatchet worker,
         and begins processing triggers and heartbeats.
         """
-        ...
+        raise RuntimeError(
+            "OwlClaw.run() is not implemented yet. "
+            "Use create_agent_runtime() and explicit trigger/worker startup."
+        )
