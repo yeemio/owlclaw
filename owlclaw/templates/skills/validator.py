@@ -99,6 +99,37 @@ class TemplateValidator:
                                 severity="error",
                             )
                         )
+                    elif isinstance(loaded.get("parameters"), list):
+                        allowed_types = {"str", "int", "bool", "list"}
+                        for idx, param in enumerate(loaded["parameters"]):
+                            field_prefix = f"metadata.parameters[{idx}]"
+                            if not isinstance(param, dict):
+                                errors.append(
+                                    ValidationError(
+                                        field=field_prefix,
+                                        message="Parameter definition must be a mapping/object",
+                                        severity="error",
+                                    )
+                                )
+                                continue
+                            name = param.get("name")
+                            if not isinstance(name, str) or not name.strip():
+                                errors.append(
+                                    ValidationError(
+                                        field=f"{field_prefix}.name",
+                                        message="Parameter name must be a non-empty string",
+                                        severity="error",
+                                    )
+                                )
+                            p_type = str(param.get("type", "str")).strip().lower()
+                            if p_type not in allowed_types:
+                                errors.append(
+                                    ValidationError(
+                                        field=f"{field_prefix}.type",
+                                        message="Parameter type must be one of: str, int, bool, list",
+                                        severity="error",
+                                    )
+                                )
                     if self._contains_jinja_placeholder(loaded):
                         errors.append(
                             ValidationError(

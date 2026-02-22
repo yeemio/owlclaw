@@ -65,6 +65,26 @@ class TestTemplateValidator:
         errs = v.validate_template(tpl)
         assert any(e.field == "metadata.parameters" and "must be a list" in e.message for e in errs)
 
+    def test_validate_template_parameter_item_must_be_mapping(self, tmp_path: Path) -> None:
+        tpl = tmp_path / "x.md.j2"
+        tpl.write_text(
+            "{#\nname: X\ndescription: Y\ntags: []\nparameters: [bad]\n#}\n---\nname: x\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_template(tpl)
+        assert any(e.field == "metadata.parameters[0]" and "mapping/object" in e.message for e in errs)
+
+    def test_validate_template_parameter_type_must_be_supported(self, tmp_path: Path) -> None:
+        tpl = tmp_path / "x.md.j2"
+        tpl.write_text(
+            "{#\nname: X\ndescription: Y\ntags: []\nparameters:\n  - name: p\n    type: object\n#}\n---\nname: x\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_template(tpl)
+        assert any(e.field == "metadata.parameters[0].type" and "must be one of" in e.message for e in errs)
+
     def test_validate_template_invalid_jinja2(self, tmp_path: Path) -> None:
         tpl = tmp_path / "x.md.j2"
         tpl.write_text("{# x #}\n{{ invalid }}\n{% endif %}\n", encoding="utf-8")
