@@ -2668,3 +2668,244 @@ class TemplateParameterType(Enum):
 **最后更新**：2026-02-22  
 **维护者**：平台研发团队
               
+{param.description})',
+                type=str,
+                default=param.default if param.default is not None else '',
+            )
+            
+            # 类型转换
+            if param.type == 'int':
+                value = int(value)
+            elif param.type == 'bool':
+                value = value.lower() in ['true', 'yes', '1']
+            elif param.type == 'list':
+                value = [v.strip() for v in value.split(',')]
+            
+            parameters[param.name] = value
+    
+    # 5. 渲染模板
+    try:
+        content = renderer.render(selected_template.id, parameters)
+    except Exception as e:
+        click.echo(f'Error rendering template: {e}', err=True)
+        return
+    
+    # 6. 保存文件
+    skill_name = parameters.get('skill_name', 'new-skill')
+    output_file = output_dir / f'{skill_name}.md'
+    
+    if output_file.exists():
+        if not click.confirm(f'{output_file} already exists. Overwrite?'):
+            return
+    
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(content, encoding='utf-8')
+    click.echo(f'\n✓ Created {output_file}')
+    
+    # 7. 验证文件
+    if not no_validate:
+        errors = validator.validate_skill_file(output_file)
+        if errors:
+            click.echo('\n⚠ Validation warnings:')
+            for error in errors:
+                click.echo(f'  - {error.field}: {error.message}')
+        else:
+            click.echo('✓ Validation passed')
+
+
+@click.command()
+@click.argument('skill_file', type=click.Path(exists=True, path_type=Path))
+def skill_validate(skill_file):
+    """Validate a SKILL.md file"""
+    validator = TemplateValidator()
+    errors = validator.validate_skill_file(skill_file)
+    
+    if not errors:
+        click.echo(f'✓ {skill_file} is valid')
+        return
+    
+    # 分类错误
+    critical_errors = [e for e in errors if e.severity == "error"]
+    warnings = [e for e in errors if e.severity == "warning"]
+    
+    if critical_errors:
+        click.echo(f'✗ {skill_file} has {len(critical_errors)} error(s):')
+        for error in critical_errors:
+            click.echo(f'  - {error.field}: {error.message}')
+    
+    if warnings:
+        click.echo(f'⚠ {skill_file} has {len(warnings)} warning(s):')
+        for warning in warnings:
+            click.echo(f'  - {warning.field}: {warning.message}')
+    
+    # 返回非零退出码如果有错误
+    if critical_errors:
+        raise click.ClickException('Validation failed')
+
+
+@click.command()
+@click.option(
+    '--category',
+    type=click.Choice(['monitoring', 'analysis', 'workflow', 'integration', 'report']),
+    help='Filter templates by category',
+)
+@click.option(
+    '--tags',
+    help='Filter templates by tags (comma-separated)',
+)
+def skill_list(category, tags):
+    """List available skill templates"""
+    templates_dir = Path(__file__).parent / 'templates' / 'skills' / 'templates'
+    registry = TemplateRegistry(templates_dir)
+    
+    # 过滤模板
+    tag_list = [t.strip() for t in tags.split(',')] if tags else None
+    templates = registry.list_templates(
+        category=TemplateCategory(category) if category else None,
+        tags=tag_list,
+    )
+    
+    if not templates:
+        click.echo('No templates found.')
+        return
+    
+    # 按类别分组
+    from collections import defaultdict
+    by_category = defaultdict(list)
+    for template in templates:
+        by_category[template.category.value].append(template)
+    
+    # 展示模板
+    for cat, tmpl_list in sorted(by_category.items()):
+        click.echo(f'\n{cat.upper()}:')
+        for template in tmpl_list:
+            click.echo(f'  - {template.name}')
+            click.echo(f'    {template.description}')
+            click.echo(f'    Tags: {", ".join(template.tags)}')
+            if template.examples:
+                click.echo(f'    Examples: {template.examples[0]}')
+```
+
+### 非交互模式
+
+**使用场景**：
+- CI/CD 自动化
+- 脚本批量生成
+- 测试
+
+**实现**：
+```python
+@click.command()
+@click.option('--template-id', required=True, help='Template ID (e.g., monitoring/health-check)')
+@click.option('--params', required=True, help='Parameters as JSON string')
+@click.option('--output', required=True, type=click.Path(path_type=Path), help='Output file path')
+@click.option('--no-validate', is_flag=True, help='Skip validation')
+def skill_generate(template_id, params, output, no_validate):
+    """Generate SKILL.md from template (non-interactive)"""
+    import json
+    
+    # 解析参数
+    try:
+        parameters = json.loads(params)
+    except json.JSONDecodeError as e:
+        raise click.ClickException(f'Invalid JSON parameters: {e}')
+    
+    # 初始化组件
+    templates_dir = Path(__file__).parent / 'templates' / 'skills' / 'templates'
+    registry = TemplateRegistry(templates_dir)
+    renderer = TemplateRenderer(templates_dir)
+    validator = TemplateValidator()
+    
+    # 渲染模板
+    try:
+        content = renderer.render(template_id, parameters)
+    except Exception as e:
+        raise click.ClickException(f'Error rendering template: {e}')
+    
+    # 保存文件
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(content, encoding='utf-8')
+    click.echo(f'✓ Created {output}')
+    
+    # 验证
+    if not no_validate:
+        errors = validator.validate_skill_file(output)
+        if errors:
+            critical = [e for e in errors if e.severity == "error"]
+            if critical:
+                raise click.ClickException('Validation failed')
+
+# 使用示例：
+# owlclaw skill generate \
+#   --template-id monitoring/health-check \
+#   --params '{"skill_name":"api-health","skill_description":"Monitor API","check_interval":60}' \
+#   --output capabilities/api-health.md
+```
+
+---
+
+## 文档要求
+
+### 用户文档
+
+**模板使用指南**：
+- 如何选择合适的模板
+- 如何填写模板参数
+- 常见问题和解决方案
+
+**CLI 使用文档**：
+- 命令参考
+- 使用示例
+- 最佳实践
+
+**模板参考**：
+- 每个模板的详细说明
+- 参数说明
+- 使用示例
+
+### 开发者文档
+
+**模板开发指南**：
+- 如何创建新模板
+- 模板文件格式
+- 元数据规范
+- 测试要求
+
+**API 文档**：
+- 组件接口说明
+- 使用示例
+- 扩展指南
+
+**架构文档**：
+- 系统架构
+- 组件交互
+- 设计决策
+
+---
+
+## 总结
+
+本设计文档详细描述了 SKILL.md 模板库的完整设计，包括：
+
+1. **核心组件**：TemplateRegistry、TemplateRenderer、TemplateValidator、TemplateSearcher
+2. **数据模型**：模板元数据、参数定义、验证错误
+3. **正确性属性**：25 个形式化属性定义
+4. **错误处理**：8 种错误场景和处理策略
+5. **测试策略**：单元测试、属性测试、集成测试
+6. **性能优化**：加载、渲染、搜索优化
+7. **安全考虑**：注入防护、路径验证、输出验证
+8. **可扩展性**：自定义模板、模板继承、插件系统
+9. **CLI 集成**：交互式和非交互式命令
+
+该设计遵循以下原则：
+- **简单性**：核心功能清晰，易于理解和实现
+- **可靠性**：完善的错误处理和验证机制
+- **可扩展性**：支持自定义和扩展
+- **可测试性**：全面的测试策略和属性定义
+- **安全性**：多层安全防护措施
+
+---
+
+**文档版本**：1.0  
+**最后更新**：2026-02-22  
+**维护者**：平台研发
