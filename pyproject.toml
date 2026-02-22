@@ -33,6 +33,7 @@ rich = "^13.0"
 alembic = "^1.13"
 tzdata = "^2024.1"
 croniter = "^6.0.0"
+tiktoken = "^0.9"
 
 [tool.poetry.group.dev.dependencies]
 psycopg2-binary = "^2.9"
@@ -42,6 +43,7 @@ pytest-asyncio = "^0.24"
 pytest-cov = "^6.0"
 ruff = "^0.9"
 mypy = "^1.0"
+hypothesis = "^6.0"
 
 [tool.poetry.group.observability]
 optional = true

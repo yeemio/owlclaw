@@ -40,19 +40,19 @@
 
 ## Task 3: 辅助组件实现
 
-- [ ] 3.1 实现 PromptBuilder 类
-  - [ ] 3.1.1 实现 build_system_message()
-  - [ ] 3.1.2 实现 build_user_message()
-  - [ ] 3.1.3 实现 build_function_result_message()
+- [x] 3.1 实现 PromptBuilder 类
+  - [x] 3.1.1 实现 build_system_message()
+  - [x] 3.1.2 实现 build_user_message()
+  - [x] 3.1.3 实现 build_function_result_message()
 
-- [ ] 3.2 实现 ToolsConverter 类
-  - [ ] 3.2.1 实现 capabilities_to_tools()
-  - [ ] 3.2.2 处理参数 schema 转换
+- [x] 3.2 实现 ToolsConverter 类
+  - [x] 3.2.1 实现 capabilities_to_tools()
+  - [x] 3.2.2 处理参数 schema 转换
 
-- [ ] 3.3 实现 TokenEstimator 类
-  - [ ] 3.3.1 实现 estimate_tokens()
-  - [ ] 3.3.2 实现 check_context_window()
-  - [ ] 3.3.3 集成 tiktoken 库
+- [x] 3.3 实现 TokenEstimator 类
+  - [x] 3.3.1 实现 estimate_tokens()
+  - [x] 3.3.2 实现 check_context_window()
+  - [x] 3.3.3 集成 tiktoken 库
 
 ## Task 4: 模型路由和降级
 
@@ -114,17 +114,17 @@
 - [x] 8.1 LLMConfig 测试
   - [x] 8.1.1 测试 from_yaml() 加载配置
   - [x] 8.1.2 测试环境变量替换
-  - [ ] 8.1.3 测试配置验证
+  - [x] 8.1.3 测试配置验证（test_from_yaml_invalid_config_raises_validation_error）
 
 - [x] 8.2 LLMClient 测试
   - [x] 8.2.1 测试模型路由
   - [x] 8.2.2 测试 function calling（通过 complete + tools）
   - [x] 8.2.3 测试响应解析
 
-- [ ] 8.3 辅助组件测试
-  - [ ] 8.3.1 测试 PromptBuilder
-  - [ ] 8.3.2 测试 ToolsConverter
-  - [ ] 8.3.3 测试 TokenEstimator
+- [x] 8.3 辅助组件测试
+  - [x] 8.3.1 测试 PromptBuilder
+  - [x] 8.3.2 测试 ToolsConverter
+  - [x] 8.3.3 测试 TokenEstimator
 
 - [x] 8.4 错误处理测试
   - [x] 8.4.1 测试认证错误
@@ -169,10 +169,10 @@
 - [x] 11.2 导出公共 API
   - [x] 11.2.1 在 owlclaw/integrations/__init__.py 中导出 acompletion、LLMClient、LLMConfig、LLMResponse
 
-- [ ] 11.3 添加依赖
-  - [ ] 11.3.1 在 pyproject.toml 中添加 litellm
-  - [ ] 11.3.2 在 pyproject.toml 中添加 tiktoken
-  - [ ] 11.3.3 在 pyproject.toml 中添加 langfuse（可选）
+- [x] 11.3 添加依赖
+  - [x] 11.3.1 在 pyproject.toml 中添加 litellm
+  - [x] 11.3.2 在 pyproject.toml 中添加 tiktoken
+  - [x] 11.3.3 在 pyproject.toml 中添加 langfuse（可选，已在 observability group）
 
 ## Task 12: 验收测试
 

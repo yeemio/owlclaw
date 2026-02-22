@@ -14,9 +14,12 @@ from owlclaw.integrations.llm import (
     LLMClient,
     LLMConfig,
     ModelConfig,
+    PromptBuilder,
     RateLimitError,
     ServiceUnavailableError,
     TaskTypeRouting,
+    TokenEstimator,
+    ToolsConverter,
 )
 
 
@@ -276,6 +279,127 @@ class TestLLMErrors:
         assert err.model == "claude"
         assert err.cause is cause
         assert err.cause.args[0] == "Connection refused"
+
+
+class TestPromptBuilder:
+    """Tests for PromptBuilder (Task 8.3.1)."""
+
+    def test_build_system_message(self) -> None:
+        msg = PromptBuilder.build_system_message("You are an assistant.")
+        assert msg == {"role": "system", "content": "You are an assistant."}
+
+    def test_build_user_message(self) -> None:
+        msg = PromptBuilder.build_user_message("Hello!")
+        assert msg == {"role": "user", "content": "Hello!"}
+
+    def test_build_function_result_message_string(self) -> None:
+        msg = PromptBuilder.build_function_result_message("call_1", "get_price", "42.0")
+        assert msg["role"] == "tool"
+        assert msg["tool_call_id"] == "call_1"
+        assert msg["name"] == "get_price"
+        assert msg["content"] == "42.0"
+
+    def test_build_function_result_message_dict(self) -> None:
+        result = {"price": 42.0, "symbol": "AAPL"}
+        msg = PromptBuilder.build_function_result_message("call_2", "get_price", result)
+        assert msg["role"] == "tool"
+        import json
+        parsed = json.loads(msg["content"])
+        assert parsed["price"] == 42.0
+        assert parsed["symbol"] == "AAPL"
+
+    def test_build_function_result_message_none(self) -> None:
+        msg = PromptBuilder.build_function_result_message("call_3", "do_action", None)
+        assert msg["content"] == "null"
+
+
+class TestToolsConverter:
+    """Tests for ToolsConverter (Task 8.3.2)."""
+
+    def test_capabilities_to_tools_basic(self) -> None:
+        caps = [
+            {
+                "name": "get_price",
+                "description": "Get stock price",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"symbol": {"type": "string"}},
+                    "required": ["symbol"],
+                },
+            }
+        ]
+        tools = ToolsConverter.capabilities_to_tools(caps)
+        assert len(tools) == 1
+        t = tools[0]
+        assert t["type"] == "function"
+        assert t["function"]["name"] == "get_price"
+        assert t["function"]["description"] == "Get stock price"
+        assert t["function"]["parameters"]["properties"]["symbol"]["type"] == "string"
+
+    def test_capabilities_to_tools_no_parameters(self) -> None:
+        caps = [{"name": "ping", "description": "Ping"}]
+        tools = ToolsConverter.capabilities_to_tools(caps)
+        assert tools[0]["function"]["parameters"]["type"] == "object"
+        assert tools[0]["function"]["parameters"]["properties"] == {}
+
+    def test_capabilities_to_tools_empty(self) -> None:
+        assert ToolsConverter.capabilities_to_tools([]) == []
+
+    def test_normalise_schema_adds_defaults(self) -> None:
+        schema = ToolsConverter._normalise_schema({})
+        assert schema["type"] == "object"
+        assert schema["properties"] == {}
+
+    def test_normalise_schema_preserves_existing(self) -> None:
+        schema = ToolsConverter._normalise_schema(
+            {"type": "object", "properties": {"x": {"type": "integer"}}, "required": ["x"]}
+        )
+        assert schema["required"] == ["x"]
+        assert schema["properties"]["x"]["type"] == "integer"
+
+
+class TestTokenEstimator:
+    """Tests for TokenEstimator (Task 8.3.3)."""
+
+    def test_estimate_tokens_empty(self) -> None:
+        est = TokenEstimator()
+        assert est.estimate_tokens("") == 0
+
+    def test_estimate_tokens_nonempty(self) -> None:
+        est = TokenEstimator()
+        count = est.estimate_tokens("Hello, world!")
+        assert count >= 1
+
+    def test_estimate_tokens_fallback_heuristic(self) -> None:
+        """Verify character-based fallback: 4 chars = 1 token."""
+        est = TokenEstimator()
+        est._tiktoken_available = False
+        est._encoding = None
+        assert est.estimate_tokens("abcd") == 1
+        assert est.estimate_tokens("abcdefgh") == 2
+        assert est.estimate_tokens("a") == 1  # max(1, 1//4) = 1
+
+    def test_estimate_messages_tokens(self) -> None:
+        est = TokenEstimator()
+        messages = [
+            {"role": "system", "content": "You are helpful."},
+            {"role": "user", "content": "Hi"},
+        ]
+        total = est.estimate_messages_tokens(messages)
+        assert total >= 2  # at least some tokens
+
+    def test_check_context_window_fits(self) -> None:
+        est = TokenEstimator()
+        messages = [{"role": "user", "content": "Hi"}]
+        assert est.check_context_window(messages, context_window=128000) is True
+
+    def test_check_context_window_exceeds(self) -> None:
+        est = TokenEstimator()
+        est._tiktoken_available = False
+        est._encoding = None
+        long_content = "a" * 400  # 400 chars -> 100 tokens + overhead
+        messages = [{"role": "user", "content": long_content}]
+        assert est.check_context_window(messages, context_window=50) is False
 
 
 def _fake_litellm_response(content: str, tool_calls: list, pt: int, ct: int) -> object:

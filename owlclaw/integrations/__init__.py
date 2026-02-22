@@ -7,8 +7,11 @@ from owlclaw.integrations.llm import (
     LLMClient,
     LLMConfig,
     LLMResponse,
+    PromptBuilder,
     RateLimitError,
     ServiceUnavailableError,
+    TokenEstimator,
+    ToolsConverter,
     acompletion,
 )
 
@@ -21,6 +24,9 @@ __all__ = [
     "LLMClient",
     "LLMConfig",
     "LLMResponse",
+    "PromptBuilder",
     "RateLimitError",
     "ServiceUnavailableError",
+    "TokenEstimator",
+    "ToolsConverter",
 ]

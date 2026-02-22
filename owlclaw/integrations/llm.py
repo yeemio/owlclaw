@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import importlib
 import json
 import logging
 import os
@@ -199,8 +200,9 @@ class LLMClient:
         self._langfuse: Any = None
         if config.langfuse_enabled and config.langfuse_public_key and config.langfuse_secret_key:
             try:
-                from langfuse import Langfuse
-                self._langfuse = Langfuse(
+                mod = importlib.import_module("langfuse")
+                langfuse_cls = mod.Langfuse
+                self._langfuse = langfuse_cls(
                     public_key=config.langfuse_public_key,
                     secret_key=config.langfuse_secret_key,
                     host=config.langfuse_host,
@@ -419,3 +421,197 @@ class LLMClient:
                 with contextlib.suppress(Exception):
                     trace.update(status="error", output=str(e))
             raise
+
+
+# ---------------------------------------------------------------------------
+# PromptBuilder (Task 3.1)
+# ---------------------------------------------------------------------------
+
+
+class PromptBuilder:
+    """Build structured message lists for LLM calls."""
+
+    @staticmethod
+    def build_system_message(content: str) -> dict[str, Any]:
+        """Build a system role message.
+
+        Args:
+            content: System prompt text.
+
+        Returns:
+            Message dict with role="system".
+        """
+        return {"role": "system", "content": content}
+
+    @staticmethod
+    def build_user_message(content: str) -> dict[str, Any]:
+        """Build a user role message.
+
+        Args:
+            content: User message text.
+
+        Returns:
+            Message dict with role="user".
+        """
+        return {"role": "user", "content": content}
+
+    @staticmethod
+    def build_function_result_message(tool_call_id: str, name: str, result: Any) -> dict[str, Any]:
+        """Build a tool result message after a function call.
+
+        Args:
+            tool_call_id: The ID from the original tool_call.
+            name: The function name that was called.
+            result: The function result (will be JSON-serialised).
+
+        Returns:
+            Message dict with role="tool".
+        """
+        content = result if isinstance(result, str) else json.dumps(result, default=str)
+        return {
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "name": name,
+            "content": content,
+        }
+
+
+# ---------------------------------------------------------------------------
+# ToolsConverter (Task 3.2)
+# ---------------------------------------------------------------------------
+
+
+class ToolsConverter:
+    """Convert OwlClaw capability definitions to OpenAI-compatible tool schemas."""
+
+    @staticmethod
+    def capabilities_to_tools(capabilities: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Convert a list of capability dicts to litellm/OpenAI tool format.
+
+        Each capability dict should have:
+          - name (str): tool name
+          - description (str): what the tool does
+          - parameters (dict, optional): JSON Schema for parameters
+
+        Args:
+            capabilities: List of capability descriptor dicts.
+
+        Returns:
+            List of tool dicts in OpenAI function-calling format.
+        """
+        tools: list[dict[str, Any]] = []
+        for cap in capabilities:
+            name = cap.get("name", "")
+            description = cap.get("description", "")
+            parameters = cap.get("parameters") or {"type": "object", "properties": {}}
+            parameters = ToolsConverter._normalise_schema(parameters)
+            tools.append({
+                "type": "function",
+                "function": {
+                    "name": name,
+                    "description": description,
+                    "parameters": parameters,
+                },
+            })
+        return tools
+
+    @staticmethod
+    def _normalise_schema(schema: dict[str, Any]) -> dict[str, Any]:
+        """Ensure the schema has the required top-level fields.
+
+        Adds "type": "object" and "properties": {} if missing so that the
+        resulting schema is always a valid JSON Schema object descriptor.
+        """
+        result = dict(schema)
+        result.setdefault("type", "object")
+        result.setdefault("properties", {})
+        return result
+
+
+# ---------------------------------------------------------------------------
+# TokenEstimator (Task 3.3)
+# ---------------------------------------------------------------------------
+
+
+class TokenEstimator:
+    """Estimate token counts for messages and check context window limits."""
+
+    # Fallback: ~4 characters per token (rough heuristic when tiktoken unavailable)
+    _CHARS_PER_TOKEN = 4
+
+    def __init__(self, model: str = "gpt-4o-mini") -> None:
+        self._model = model
+        self._encoding: Any = None
+        self._tiktoken_available = False
+        self._try_load_tiktoken()
+
+    def _try_load_tiktoken(self) -> None:
+        """Attempt to load tiktoken encoding for the configured model."""
+        try:
+            import tiktoken  # noqa: PLC0415
+
+            try:
+                self._encoding = tiktoken.encoding_for_model(self._model)
+            except KeyError:
+                self._encoding = tiktoken.get_encoding("cl100k_base")
+            self._tiktoken_available = True
+        except ImportError:
+            logger.debug("tiktoken not installed; using character-based token estimate")
+
+    def estimate_tokens(self, text: str) -> int:
+        """Estimate the number of tokens in a text string.
+
+        Uses tiktoken when available, falls back to character heuristic.
+
+        Args:
+            text: Input text to estimate.
+
+        Returns:
+            Estimated token count (>= 1 for non-empty text).
+        """
+        if not text:
+            return 0
+        if self._tiktoken_available and self._encoding is not None:
+            return len(self._encoding.encode(text))
+        return max(1, len(text) // self._CHARS_PER_TOKEN)
+
+    def estimate_messages_tokens(self, messages: list[dict[str, Any]]) -> int:
+        """Estimate total tokens for a list of messages.
+
+        Adds a small per-message overhead (4 tokens) to approximate the
+        OpenAI message-framing overhead.
+
+        Args:
+            messages: List of message dicts with "content" key.
+
+        Returns:
+            Estimated total token count.
+        """
+        total = 0
+        for msg in messages:
+            content = msg.get("content") or ""
+            if not isinstance(content, str):
+                content = json.dumps(content, default=str)
+            total += self.estimate_tokens(content) + 4  # per-message overhead
+        return total
+
+    def check_context_window(self, messages: list[dict[str, Any]], context_window: int) -> bool:
+        """Check whether the messages fit within the given context window.
+
+        Args:
+            messages: List of message dicts.
+            context_window: Maximum token count allowed.
+
+        Returns:
+            True if messages fit; False if they exceed the context window.
+        """
+        estimated = self.estimate_messages_tokens(messages)
+        if estimated > context_window:
+            logger.warning(
+                "Estimated %d tokens exceeds context window of %d for model %s",
+                estimated,
+                context_window,
+                self._model,
+            )
+            return False
+        return True
