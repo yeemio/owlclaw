@@ -88,8 +88,14 @@ class TemplateRegistry:
         if not isinstance(data, dict):
             raise ValueError("Metadata block must be valid YAML mapping")
 
-        name = data.get("name") or template_file.stem.replace("-", " ").title()
-        description = data.get("description") or ""
+        raw_name = data.get("name") or template_file.stem.replace("-", " ").title()
+        if not isinstance(raw_name, str) or not raw_name.strip():
+            raise ValueError("Template metadata 'name' must be a non-empty string")
+        name = raw_name.strip()
+        raw_description = data.get("description", "")
+        if not isinstance(raw_description, str):
+            raise ValueError("Template metadata 'description' must be a string")
+        description = raw_description.strip()
         tags = data.get("tags")
         if not isinstance(tags, list):
             tags = [t for t in tags.split(",")] if isinstance(tags, str) else []

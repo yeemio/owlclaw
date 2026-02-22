@@ -175,6 +175,19 @@ name: test
         assert reg.list_templates() == []
         assert reg.search_templates("x") == []
 
+    def test_invalid_metadata_name_or_description_skips_template(self, tmp_path: Path) -> None:
+        (tmp_path / "monitoring").mkdir()
+        (tmp_path / "monitoring" / "bad1.md.j2").write_text(
+            "{#\nname: 123\ndescription: ok\ntags: []\nparameters: []\n#}\n",
+            encoding="utf-8",
+        )
+        (tmp_path / "monitoring" / "bad2.md.j2").write_text(
+            "{#\nname: Good\ndescription: [bad]\ntags: []\nparameters: []\n#}\n",
+            encoding="utf-8",
+        )
+        reg = TemplateRegistry(tmp_path)
+        assert reg.list_templates() == []
+
     def test_duplicate_template_id_keeps_first_loaded(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         (tmp_path / "monitoring").mkdir()
         (tmp_path / "analysis").mkdir()
