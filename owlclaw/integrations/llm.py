@@ -391,6 +391,16 @@ class LLMClient:
         max_tok = max_tokens if max_tokens is not None else (
             routed_max_tokens if routed_max_tokens is not None else model_config.max_tokens
         )
+        estimator = TokenEstimator(model_name)
+        estimated_prompt_tokens = estimator.estimate_messages_tokens(messages)
+        if estimated_prompt_tokens > model_config.context_window:
+            raise ContextWindowExceededError(
+                (
+                    f"Estimated prompt tokens ({estimated_prompt_tokens}) exceed context window "
+                    f"({model_config.context_window}) for model '{model_name}'."
+                ),
+                model=model_name,
+            )
         params: dict[str, Any] = {
             "model": model_name,
             "messages": messages,
@@ -565,11 +575,24 @@ class TokenEstimator:
 
             try:
                 self._encoding = tiktoken.encoding_for_model(self._model)
-            except KeyError:
-                self._encoding = tiktoken.get_encoding("cl100k_base")
-            self._tiktoken_available = True
+                self._tiktoken_available = True
+                return
+            except Exception:
+                try:
+                    self._encoding = tiktoken.get_encoding("cl100k_base")
+                    self._tiktoken_available = True
+                    return
+                except Exception as e:
+                    logger.debug(
+                        "tiktoken encoding unavailable for model %s; "
+                        "using character-based token estimate: %s",
+                        self._model,
+                        e,
+                    )
         except ImportError:
             logger.debug("tiktoken not installed; using character-based token estimate")
+        self._encoding = None
+        self._tiktoken_available = False
 
     def estimate_tokens(self, text: str) -> int:
         """Estimate the number of tokens in a text string.

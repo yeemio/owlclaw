@@ -232,6 +232,28 @@ class TestLLMClient:
             )
 
     @pytest.mark.asyncio
+    async def test_complete_raises_when_context_window_exceeded(self) -> None:
+        c = LLMConfig(
+            default_model="tiny-window-model",
+            models={
+                "tiny-window-model": ModelConfig(
+                    name="tiny-window-model",
+                    provider="openai",
+                    context_window=50,
+                ),
+            },
+        )
+        client = LLMClient(c)
+        long_content = "a" * 400  # 100 tokens by heuristic + message overhead
+        messages = [{"role": "user", "content": long_content}]
+
+        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
+            with pytest.raises(ContextWindowExceededError, match="exceed context window") as exc_info:
+                await client.complete(messages=messages)
+            assert exc_info.value.model == "tiny-window-model"
+            mock.assert_not_awaited()
+
+    @pytest.mark.asyncio
     async def test_complete_uses_fallback_model_for_response_and_cost(self) -> None:
         c = LLMConfig(
             default_model="primary",
