@@ -9,7 +9,6 @@ Responsibilities:
 
 This MVP implementation omits:
 - Long-term memory (vector search) — returns empty; add later with MemorySystem
-- HeartbeatChecker — heartbeat trigger bypasses LLM and returns immediately
 - Langfuse tracing — optional; add later with integrations-langfuse
 """
 
@@ -18,16 +17,22 @@ from __future__ import annotations
 import inspect
 import json
 import logging
+import time
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-import litellm
+from owlclaw.integrations import llm as llm_integration
 
 from owlclaw.agent.runtime.context import AgentRunContext
+from owlclaw.agent.runtime.heartbeat import HeartbeatChecker
 from owlclaw.agent.runtime.identity import IdentityLoader
 
 if TYPE_CHECKING:
+    from owlclaw.agent.tools import BuiltInTools
     from owlclaw.capabilities.knowledge import KnowledgeInjector
     from owlclaw.capabilities.registry import CapabilityRegistry
+    from owlclaw.governance.ledger import Ledger
+    from owlclaw.governance.router import Router
     from owlclaw.governance.visibility import VisibilityFilter
 
 logger = logging.getLogger(__name__)
@@ -51,8 +56,10 @@ class AgentRuntime:
         knowledge_injector: Formats Skills content for the system prompt.
         visibility_filter: Governance-layer capability filter; if *None* all
             registered capabilities are visible.
-        model: LLM model string accepted by litellm (e.g.
-            ``"gpt-4o"``, ``"anthropic/claude-3-5-sonnet-20241022"``).
+        router: Optional model router (task_type → model); if set, used before
+            each LLM call instead of fixed *model*.
+        ledger: Optional execution ledger; if set, capability runs are recorded.
+        model: LLM model string (default when router is None or returns None).
         config: Optional runtime configuration overrides.
     """
 
@@ -64,6 +71,9 @@ class AgentRuntime:
         registry: CapabilityRegistry | None = None,
         knowledge_injector: KnowledgeInjector | None = None,
         visibility_filter: VisibilityFilter | None = None,
+        builtin_tools: BuiltInTools | None = None,
+        router: "Router | None" = None,
+        ledger: "Ledger | None" = None,
         model: str = _DEFAULT_MODEL,
         config: dict[str, Any] | None = None,
     ) -> None:
@@ -72,10 +82,14 @@ class AgentRuntime:
         self.registry = registry
         self.knowledge_injector = knowledge_injector
         self.visibility_filter = visibility_filter
+        self.builtin_tools = builtin_tools
+        self._router = router
+        self._ledger = ledger
         self.model = model
         self.config: dict[str, Any] = config or {}
 
         self._identity_loader: IdentityLoader | None = None
+        self._heartbeat_checker: HeartbeatChecker | None = None
         self.is_initialized = False
 
     # ------------------------------------------------------------------
@@ -92,6 +106,9 @@ class AgentRuntime:
         """
         self._identity_loader = IdentityLoader(self.app_dir)
         await self._identity_loader.load()
+        hb_config = self.config.get("heartbeat", {})
+        if hb_config.get("enabled", True):
+            self._heartbeat_checker = HeartbeatChecker(self.agent_id, hb_config)
         self.is_initialized = True
         logger.info("AgentRuntime '%s' initialized", self.agent_id)
 
@@ -160,6 +177,20 @@ class AgentRuntime:
             context.focus,
         )
 
+        if context.trigger == "heartbeat" and self._heartbeat_checker is not None:
+            has_events = await self._heartbeat_checker.check_events()
+            if not has_events:
+                logger.info(
+                    "Heartbeat no events, skipping LLM agent_id=%s run_id=%s",
+                    context.agent_id,
+                    context.run_id,
+                )
+                return {
+                    "status": "skipped",
+                    "run_id": context.run_id,
+                    "reason": "heartbeat_no_events",
+                }
+
         result = await self._decision_loop(context)
 
         logger.info(
@@ -199,16 +230,26 @@ class AgentRuntime:
         )
         iteration = 0
 
+        model_used = self.model
         for iteration in range(max_iterations):
+            if self._router is not None:
+                from owlclaw.governance.visibility import RunContext
+
+                task_type = context.payload.get("task_type") or self.config.get("default_task_type") or "default"
+                run_ctx = RunContext(tenant_id=context.tenant_id)
+                selection = await self._router.select_model(task_type, run_ctx)
+                if selection is not None and getattr(selection, "model", None):
+                    model_used = selection.model
+
             call_kwargs: dict[str, Any] = {
-                "model": self.model,
+                "model": model_used,
                 "messages": messages,
             }
             if visible_tools:
                 call_kwargs["tools"] = visible_tools
                 call_kwargs["tool_choice"] = "auto"
 
-            response = await litellm.acompletion(**call_kwargs)
+            response = await llm_integration.acompletion(**call_kwargs)
             message = response.choices[0].message
 
             # Append assistant turn to conversation
@@ -263,16 +304,76 @@ class AgentRuntime:
         except (json.JSONDecodeError, AttributeError):
             arguments = {}
 
+        if self.builtin_tools is not None and self.builtin_tools.is_builtin(tool_name):
+            from owlclaw.agent.tools import BuiltInToolsContext
+
+            ctx = BuiltInToolsContext(
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                tenant_id=context.tenant_id,
+            )
+            try:
+                return await self.builtin_tools.execute(tool_name, arguments, ctx)
+            except Exception as exc:
+                logger.exception("Built-in tool '%s' failed", tool_name)
+                return {"error": str(exc)}
+
         if self.registry is None:
             return {"error": f"No capability registry configured for tool '{tool_name}'"}
 
+        start_ns = time.perf_counter_ns()
         try:
             result = await self.registry.invoke_handler(tool_name, **arguments)
+            execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
+            if self._ledger is not None:
+                meta = self.registry.get_capability_metadata(tool_name)
+                task_type = (meta.get("task_type") or "unknown") if meta else "unknown"
+                await self._ledger.record_execution(
+                    tenant_id=context.tenant_id,
+                    agent_id=context.agent_id,
+                    run_id=context.run_id,
+                    capability_name=tool_name,
+                    task_type=task_type,
+                    input_params=arguments,
+                    output_result=result if isinstance(result, dict) else {"result": result},
+                    decision_reasoning=None,
+                    execution_time_ms=execution_time_ms,
+                    llm_model="",
+                    llm_tokens_input=0,
+                    llm_tokens_output=0,
+                    estimated_cost=Decimal("0"),
+                    status="success",
+                    error_message=None,
+                )
             return result
         except ValueError:
             return {"error": f"Capability '{tool_name}' is not registered"}
         except Exception as exc:
             logger.exception("Tool '%s' failed", tool_name)
+            if self._ledger is not None:
+                execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
+                meta = self.registry.get_capability_metadata(tool_name)
+                task_type = (meta.get("task_type") or "unknown") if meta else "unknown"
+                try:
+                    await self._ledger.record_execution(
+                        tenant_id=context.tenant_id,
+                        agent_id=context.agent_id,
+                        run_id=context.run_id,
+                        capability_name=tool_name,
+                        task_type=task_type,
+                        input_params=arguments,
+                        output_result=None,
+                        decision_reasoning=None,
+                        execution_time_ms=execution_time_ms,
+                        llm_model="",
+                        llm_tokens_input=0,
+                        llm_tokens_output=0,
+                        estimated_cost=Decimal("0"),
+                        status="error",
+                        error_message=str(exc),
+                    )
+                except Exception as ledger_exc:
+                    logger.exception("Ledger record_execution failed: %s", ledger_exc)
             return {"error": str(exc)}
 
     # ------------------------------------------------------------------
@@ -373,32 +474,43 @@ class AgentRuntime:
         self, context: AgentRunContext
     ) -> list[dict[str, Any]]:
         """Build the governance-filtered OpenAI-style function schema list."""
-        if self.registry is None:
-            return []
+        all_schemas: list[dict[str, Any]] = []
 
-        all_schemas = self._capability_schemas()
+        if self.builtin_tools is not None:
+            all_schemas.extend(self.builtin_tools.get_tool_schemas())
+
+        if self.registry is not None:
+            all_schemas.extend(self._capability_schemas())
 
         if self.visibility_filter is None:
             return all_schemas
 
-        # Use governance VisibilityFilter
+        builtin_names = {s["function"]["name"] for s in all_schemas if self.builtin_tools and self.builtin_tools.is_builtin(s["function"]["name"])}
+        cap_schemas = [s for s in all_schemas if s["function"]["name"] not in builtin_names]
+        if not cap_schemas:
+            return all_schemas
+
+        # Use governance VisibilityFilter for capabilities only (with task_type/constraints from registry)
         from owlclaw.governance.visibility import CapabilityView, RunContext
 
+        cap_list = self.registry.list_capabilities()
+        name_to_meta = {c["name"]: c for c in cap_list}
         cap_views = [
             CapabilityView(
                 name=s["function"]["name"],
                 description=s["function"].get("description", ""),
-                task_type=None,
-                constraints={},
+                task_type=name_to_meta.get(s["function"]["name"], {}).get("task_type"),
+                constraints=name_to_meta.get(s["function"]["name"], {}).get("constraints") or {},
             )
-            for s in all_schemas
+            for s in cap_schemas
         ]
         run_ctx = RunContext(tenant_id=context.tenant_id)
         visible_caps = await self.visibility_filter.filter_capabilities(
             cap_views, context.agent_id, run_ctx
         )
         visible_names = {cap.name for cap in visible_caps}
-        return [s for s in all_schemas if s["function"]["name"] in visible_names]
+        filtered_caps = [s for s in cap_schemas if s["function"]["name"] in visible_names]
+        return all_schemas[: len(all_schemas) - len(cap_schemas)] + filtered_caps
 
     def _capability_schemas(self) -> list[dict[str, Any]]:
         """Convert registered capabilities to OpenAI function schemas."""

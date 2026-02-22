@@ -96,7 +96,7 @@ class TestAgentRuntimeLifecycle:
 
 
 class TestAgentRuntimeRun:
-    @patch("owlclaw.agent.runtime.runtime.litellm.acompletion")
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_trigger_event_returns_completed(
         self, mock_llm, tmp_path
     ) -> None:
@@ -107,7 +107,7 @@ class TestAgentRuntimeRun:
         assert result["status"] == "completed"
         assert "run_id" in result
 
-    @patch("owlclaw.agent.runtime.runtime.litellm.acompletion")
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_run_returns_iteration_count(self, mock_llm, tmp_path) -> None:
         mock_llm.return_value = _make_llm_response("Done.")
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
@@ -116,7 +116,7 @@ class TestAgentRuntimeRun:
         result = await rt.run(ctx)
         assert result["iterations"] >= 1
 
-    @patch("owlclaw.agent.runtime.runtime.litellm.acompletion")
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_focus_used_in_user_message(self, mock_llm, tmp_path) -> None:
         """Focus should appear in the user message sent to LLM."""
         mock_llm.return_value = _make_llm_response()
@@ -127,7 +127,7 @@ class TestAgentRuntimeRun:
         user_msg = next(m for m in call_messages if m["role"] == "user")
         assert "inventory_monitor" in user_msg["content"]
 
-    @patch("owlclaw.agent.runtime.runtime.litellm.acompletion")
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_tool_call_dispatched_to_registry(
         self, mock_llm, tmp_path
     ) -> None:
@@ -157,7 +157,7 @@ class TestAgentRuntimeRun:
         registry.invoke_handler.assert_called_once_with("market_scan", symbol="AAPL")
         assert result["tool_calls_total"] == 1
 
-    @patch("owlclaw.agent.runtime.runtime.litellm.acompletion")
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_tool_not_registered_returns_error_dict(
         self, mock_llm, tmp_path
     ) -> None:
@@ -183,7 +183,7 @@ class TestAgentRuntimeRun:
         # The loop should still complete without raising
         assert result["status"] == "completed"
 
-    @patch("owlclaw.agent.runtime.runtime.litellm.acompletion")
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_max_iterations_respected(self, mock_llm, tmp_path) -> None:
         """When every LLM response has a tool call, loop stops at max."""
         tc = _make_tool_call("loop_tool", {})
@@ -208,14 +208,64 @@ class TestAgentRuntimeRun:
         result = await rt.run(ctx)
         assert result["iterations"] == 3
 
-    @patch("owlclaw.agent.runtime.runtime.litellm.acompletion")
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_no_registry_no_tools(self, mock_llm, tmp_path) -> None:
         """Without a registry the visible tools list is empty."""
+        mock_llm.return_value = _make_llm_response()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"heartbeat": {"enabled": False}},
+        )
+        await rt.setup()
+        result = await rt.trigger_event("cron")
+        assert result["status"] == "completed"
+        # tools kwarg should NOT be present when list is empty
+        call_kwargs = mock_llm.call_args.kwargs
+        assert "tools" not in call_kwargs
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_heartbeat_no_events_skips_llm(self, mock_llm, tmp_path) -> None:
+        """When trigger is heartbeat and no events, skip LLM and return skipped."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        await rt.setup()
+        ctx = AgentRunContext(agent_id="bot", trigger="heartbeat")
+        result = await rt.run(ctx)
+        assert result["status"] == "skipped"
+        assert result["reason"] == "heartbeat_no_events"
+        assert "run_id" in result
+        mock_llm.assert_not_called()
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_heartbeat_disabled_runs_full_loop(
+        self, mock_llm, tmp_path
+    ) -> None:
+        """When heartbeat is disabled, heartbeat trigger still runs full loop."""
+        mock_llm.return_value = _make_llm_response()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"heartbeat": {"enabled": False}},
+        )
+        await rt.setup()
+        result = await rt.trigger_event("heartbeat")
+        assert result["status"] == "completed"
+        mock_llm.assert_called_once()
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    @patch(
+        "owlclaw.agent.runtime.runtime.HeartbeatChecker.check_events",
+        new_callable=AsyncMock,
+        return_value=True,
+    )
+    async def test_heartbeat_with_events_runs_full_loop(
+        self, mock_check_events, mock_llm, tmp_path
+    ) -> None:
+        """When heartbeat has events, run full decision loop."""
         mock_llm.return_value = _make_llm_response()
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
         await rt.setup()
         result = await rt.trigger_event("heartbeat")
         assert result["status"] == "completed"
-        # tools kwarg should NOT be present when list is empty
-        call_kwargs = mock_llm.call_args.kwargs
-        assert "tools" not in call_kwargs
+        mock_check_events.assert_called_once()
+        mock_llm.assert_called_once()

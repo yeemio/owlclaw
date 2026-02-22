@@ -273,6 +273,33 @@ class HatchetClient:
             logger.exception("Failed to schedule task %s", task_name)
             raise
 
+    async def schedule_cron(
+        self,
+        workflow_name: str,
+        cron_name: str,
+        expression: str,
+        input_data: dict[str, Any],
+        *,
+        additional_metadata: dict[str, Any] | None = None,
+    ) -> str:
+        """Create a cron trigger for a workflow. Returns cron trigger id."""
+        if self._hatchet is None:
+            raise RuntimeError("Not connected to Hatchet")
+        if workflow_name not in self._workflows:
+            raise ValueError(f"Workflow '{workflow_name}' not registered")
+        try:
+            cron_result = await self._hatchet.cron.aio.create(
+                workflow_name=workflow_name,
+                cron_name=cron_name,
+                expression=expression,
+                input=input_data,  # Hatchet API param is 'input'
+                additional_metadata=additional_metadata or {},
+            )
+            return getattr(cron_result, "id", getattr(cron_result, "cron_id", cron_name)) or cron_name
+        except Exception as e:
+            logger.exception("Failed to create cron trigger for %s: %s", workflow_name, e)
+            raise
+
     async def cancel_task(self, task_id: str) -> bool:
         """Cancel a scheduled or running task by run id."""
         if self._hatchet is None:
@@ -282,6 +309,17 @@ class HatchetClient:
             return True
         except Exception as e:
             logger.warning("Failed to cancel task %s: %s", task_id, e)
+            return False
+
+    async def cancel_cron(self, cron_id: str) -> bool:
+        """Delete a cron trigger by id."""
+        if self._hatchet is None:
+            return False
+        try:
+            await self._hatchet.cron.aio.delete(cron_id=cron_id)
+            return True
+        except Exception as e:
+            logger.warning("Failed to delete cron trigger %s: %s", cron_id, e)
             return False
 
     async def get_task_status(self, task_id: str) -> dict[str, Any]:

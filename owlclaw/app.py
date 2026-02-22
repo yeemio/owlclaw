@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import logging
 from collections.abc import Callable
 from pathlib import Path
@@ -171,7 +172,9 @@ class OwlClaw:
 
             @wraps(fn)
             async def wrapper(*args: Any, **kw: Any) -> Any:
-                return await fn(*args, **kw)
+                if inspect.iscoroutinefunction(fn):
+                    return await fn(*args, **kw)
+                return fn(*args, **kw)
 
             return wrapper
 
@@ -362,6 +365,54 @@ class OwlClaw:
         """Stop governance background tasks. Call on shutdown."""
         if self._ledger is not None:
             await self._ledger.stop()
+
+    def create_agent_runtime(
+        self,
+        app_dir: str | None = None,
+        hatchet_client: Any = None,
+    ) -> "AgentRuntime":
+        """Create an AgentRuntime configured with this app's registry, governance, and built-in tools.
+
+        Must be called after mount_skills(). If *app_dir* is omitted, uses the parent
+        directory of the mounted skills path (where SOUL.md and IDENTITY.md are expected).
+        If *hatchet_client* is provided, built-in schedule_once and cancel_schedule work.
+
+        Returns:
+            AgentRuntime configured with registry, knowledge_injector, visibility_filter,
+            ledger, and BuiltInTools (query_state, log_decision).
+        """
+        if not self.registry or not self.knowledge_injector:
+            raise RuntimeError(
+                "Must call mount_skills() before create_agent_runtime()"
+            )
+        from owlclaw.agent import AgentRuntime, BuiltInTools
+
+        resolved_app_dir: str
+        if app_dir is not None:
+            resolved_app_dir = app_dir
+        elif self._skills_path:
+            resolved_app_dir = str(Path(self._skills_path).resolve().parent)
+        else:
+            raise RuntimeError(
+                "Cannot determine app_dir: provide app_dir explicitly or call mount_skills() first"
+            )
+
+        self._ensure_governance()
+        builtin_tools = BuiltInTools(
+            capability_registry=self.registry,
+            ledger=self._ledger,
+            hatchet_client=hatchet_client,
+        )
+        return AgentRuntime(
+            agent_id=self.name,
+            app_dir=resolved_app_dir,
+            registry=self.registry,
+            knowledge_injector=self.knowledge_injector,
+            visibility_filter=self._visibility_filter,
+            builtin_tools=builtin_tools,
+            router=self._router,
+            ledger=self._ledger,
+        )
 
     def run(self) -> None:
         """Start the OwlClaw application.

@@ -127,6 +127,9 @@ class CronTriggerRegistry:
         self.app = app
         self._triggers: dict[str, CronTriggerConfig] = {}
         self._hatchet_workflows: dict[str, type] = {}
+        self._hatchet_client: HatchetClient | None = None
+        self._ledger: Ledger | None = None
+        self._tenant_id: str = "default"
 
     # ------------------------------------------------------------------
     # Task 2.2 — cron expression validation
@@ -231,6 +234,116 @@ class CronTriggerRegistry:
         config.enabled = True
         logger.info("Resumed cron trigger: %s", event_name)
 
+    async def trigger_now(
+        self,
+        event_name: str,
+        **kwargs: Any,
+    ) -> str:
+        """Trigger an immediate run of the cron workflow (manual trigger).
+
+        Calls Hatchet to run the task now without waiting for the cron schedule.
+        Must be called after start().
+
+        Args:
+            event_name: The registered trigger event name.
+            **kwargs: Optional context passed to the run (e.g. focus override).
+
+        Returns:
+            Workflow run id from Hatchet.
+
+        Raises:
+            KeyError: If *event_name* is not registered.
+            RuntimeError: If start() has not been called (no Hatchet client).
+        """
+        if event_name not in self._triggers:
+            raise KeyError(f"Cron trigger '{event_name}' not found")
+        if self._hatchet_client is None:
+            raise RuntimeError(
+                "trigger_now requires start() to be called with a Hatchet client"
+            )
+        task_name = f"cron_{event_name}"
+        return await self._hatchet_client.run_task_now(task_name, **kwargs)
+
+    async def get_execution_history(
+        self,
+        event_name: str,
+        limit: int = 10,
+        tenant_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Return execution history for a trigger from Ledger.
+
+        Queries Ledger for cron_execution records with capability_name=event_name.
+        Must be called after start() with a Ledger.
+
+        Args:
+            event_name: The registered trigger event name.
+            limit: Max number of records to return (default 10).
+            tenant_id: Override tenant; defaults to tenant from start().
+
+        Returns:
+            List of execution records (run_id, status, created_at, etc.).
+
+        Raises:
+            KeyError: If *event_name* is not registered.
+            RuntimeError: If Ledger was not provided to start().
+        """
+        if event_name not in self._triggers:
+            raise KeyError(f"Cron trigger '{event_name}' not found")
+        if self._ledger is None:
+            raise RuntimeError(
+                "get_execution_history requires start() to be called with a Ledger"
+            )
+        from owlclaw.governance.ledger import LedgerQueryFilters
+
+        tid = tenant_id if tenant_id is not None else self._tenant_id
+        filters = LedgerQueryFilters(
+            capability_name=event_name,
+            limit=max(1, min(limit, 100)),
+            order_by="created_at DESC",
+        )
+        records = await self._ledger.query_records(tenant_id=tid, filters=filters)
+        out: list[dict[str, Any]] = []
+        for r in records:
+            out.append({
+                "run_id": r.run_id,
+                "status": r.status,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "execution_time_ms": r.execution_time_ms,
+                "agent_run_id": (r.output_result or {}).get("agent_run_id"),
+                "error_message": r.error_message,
+            })
+        return out
+
+    def get_trigger_status(self, event_name: str) -> dict[str, Any]:
+        """Return status for a trigger: config, enabled, next run time.
+
+        Args:
+            event_name: The registered trigger event name.
+
+        Returns:
+            Dict with event_name, enabled, expression, focus, next_run (ISO datetime).
+
+        Raises:
+            KeyError: If *event_name* is not registered.
+        """
+        config = self._triggers.get(event_name)
+        if config is None:
+            raise KeyError(f"Cron trigger '{event_name}' not found")
+        next_run: str | None = None
+        try:
+            it = croniter(config.expression, datetime.now(timezone.utc))
+            next_dt = it.get_next(datetime)
+            next_run = next_dt.isoformat() if next_dt else None
+        except Exception:
+            pass
+        return {
+            "event_name": event_name,
+            "enabled": config.enabled,
+            "expression": config.expression,
+            "focus": config.focus,
+            "next_run": next_run,
+        }
+
     # ------------------------------------------------------------------
     # Task 3.1 — Hatchet registration
     # ------------------------------------------------------------------
@@ -257,10 +370,15 @@ class CronTriggerRegistry:
                 governance constraint queries.
             tenant_id: Multi-tenancy identifier forwarded to runs.
         """
+        self._hatchet_client = hatchet_client
+        self._ledger = ledger
+        self._tenant_id = tenant_id
         for config in self._triggers.values():
             self._register_hatchet_task(
                 hatchet_client, config, agent_runtime, ledger, tenant_id
             )
+        if agent_runtime is not None:
+            self._register_agent_scheduled_run(hatchet_client, agent_runtime, tenant_id)
         logger.info(
             "Registered %d cron triggers with Hatchet", len(self._triggers)
         )
@@ -290,6 +408,34 @@ class CronTriggerRegistry:
             priority=config.priority or 1,
         )(cron_handler)
         self._hatchet_workflows[config.event_name] = cron_handler
+
+    def _register_agent_scheduled_run(
+        self,
+        hatchet_client: HatchetClient,
+        agent_runtime: AgentRuntime,
+        tenant_id: str,
+    ) -> None:
+        """Register agent_scheduled_run task for schedule_once built-in tool."""
+        registry = self
+
+        async def agent_scheduled_run_handler(inp: Any, _ctx: Any) -> dict[str, Any]:
+            data = inp if isinstance(inp, dict) else {}
+            focus = data.get("focus", "")
+            payload = {**data, "tenant_id": data.get("tenant_id", tenant_id)}
+            result = await agent_runtime.trigger_event(
+                "scheduled_run",
+                focus=focus or None,
+                payload=payload,
+                tenant_id=payload.get("tenant_id", tenant_id),
+            )
+            return {"status": "success", "run_id": result.get("run_id")}
+
+        agent_scheduled_run_handler.__name__ = "agent_scheduled_run"
+        hatchet_client.task(
+            name="agent_scheduled_run",
+            retries=1,
+        )(agent_scheduled_run_handler)
+        self._hatchet_workflows["agent_scheduled_run"] = agent_scheduled_run_handler
 
     # ------------------------------------------------------------------
     # Task 3.2 — Main execution step
@@ -359,9 +505,15 @@ class CronTriggerRegistry:
                 execution.duration_seconds = (
                     execution.completed_at - execution.started_at
                 ).total_seconds()
+            # Record run-level limit violations for auditing (config fields exist but are not pre-run enforced)
+            if config.max_cost_per_run is not None and (execution.cost_usd or 0) > config.max_cost_per_run:
+                execution.governance_checks["max_cost_per_run_exceeded"] = True
+            if config.max_duration is not None and (execution.duration_seconds or 0) > config.max_duration:
+                execution.governance_checks["max_duration_exceeded"] = True
             if ledger is not None:
+                agent_id = (self.app.name if self.app else None) or config.event_name
                 await self._record_to_ledger(
-                    ledger, config, execution, tenant_id
+                    ledger, config, execution, tenant_id, agent_id=agent_id
                 )
 
         return {
@@ -383,6 +535,9 @@ class CronTriggerRegistry:
     ) -> tuple[bool, str]:
         """Check governance constraints; return (passed, reason).
 
+        Enforces: cooldown_seconds, max_daily_runs, max_daily_cost.
+        max_cost_per_run and max_duration are not enforced here (run-level
+        limits); violations are recorded in governance_checks after the run.
         Without a Ledger, time-based constraints are skipped (fail-open).
         """
         from owlclaw.governance.ledger import LedgerQueryFilters
@@ -550,13 +705,19 @@ class CronTriggerRegistry:
         config: CronTriggerConfig,
         execution: CronExecution,
         tenant_id: str,
+        *,
+        agent_id: str,
     ) -> None:
-        """Enqueue execution record to the Ledger (non-blocking)."""
+        """Enqueue execution record to the Ledger (non-blocking).
+
+        Uses app-level *agent_id* (e.g. OwlClaw app name) for cost and
+        governance queries; run_id remains execution_id for traceability.
+        """
         duration_ms = int((execution.duration_seconds or 0) * 1000)
         try:
             await ledger.record_execution(
                 tenant_id=tenant_id,
-                agent_id=execution.agent_run_id or config.event_name,
+                agent_id=agent_id,
                 run_id=execution.execution_id,
                 capability_name=config.event_name,
                 task_type="cron_execution",

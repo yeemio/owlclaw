@@ -67,6 +67,34 @@ def test_state_before_mount_skills_raises():
             return {}
 
 
+def test_create_agent_runtime_returns_runtime_with_builtin_tools(tmp_path):
+    """create_agent_runtime() returns AgentRuntime with registry, builtin_tools."""
+    (tmp_path / "entry-monitor").mkdir()
+    (tmp_path / "entry-monitor" / "SKILL.md").write_text(
+        "---\nname: entry-monitor\ndescription: Check entry\n---\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "SOUL.md").write_text("# Soul\nYou are a trading agent.", encoding="utf-8")
+    app = OwlClaw("test-app")
+    app.mount_skills(str(tmp_path))
+    rt = app.create_agent_runtime(app_dir=str(tmp_path))
+    assert rt.agent_id == "test-app"
+    assert rt.app_dir == str(tmp_path)
+    assert rt.registry is app.registry
+    assert rt.builtin_tools is not None
+    schemas = rt.builtin_tools.get_tool_schemas()
+    names = [s["function"]["name"] for s in schemas]
+    assert "query_state" in names
+    assert "log_decision" in names
+    assert "schedule_once" in names
+
+
+def test_create_agent_runtime_before_mount_skills_raises():
+    app = OwlClaw("test-app")
+    with pytest.raises(RuntimeError, match="mount_skills"):
+        app.create_agent_runtime(app_dir="/tmp")
+
+
 @pytest.mark.asyncio
 async def test_e2e_skill_load_and_invoke(tmp_path):
     """End-to-end: mount_skills, register handler, invoke via registry."""

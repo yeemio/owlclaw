@@ -1,5 +1,7 @@
 """Unit tests for CronTriggerRegistry cron expression validation (Task 2.3)."""
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 
 from owlclaw.triggers.cron import CronTriggerRegistry
@@ -119,3 +121,107 @@ class TestCronRegistration:
         reg.register("multi_hour", "0 8,12,18 * * *")
         assert reg.get_trigger("every_15m") is not None
         assert reg.get_trigger("multi_hour") is not None
+
+
+class TestTaskManagement:
+    """Tests for pause_trigger, resume_trigger, get_trigger_status, trigger_now (Task 8)."""
+
+    def _registry(self) -> CronTriggerRegistry:
+        return CronTriggerRegistry(app=None)
+
+    def test_pause_resume_toggle_enabled(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        assert reg.get_trigger("job").enabled is True
+        reg.pause_trigger("job")
+        assert reg.get_trigger("job").enabled is False
+        reg.resume_trigger("job")
+        assert reg.get_trigger("job").enabled is True
+
+    def test_pause_missing_raises(self) -> None:
+        reg = self._registry()
+        with pytest.raises(KeyError, match="not found"):
+            reg.pause_trigger("missing")
+
+    def test_resume_missing_raises(self) -> None:
+        reg = self._registry()
+        with pytest.raises(KeyError, match="not found"):
+            reg.resume_trigger("missing")
+
+    def test_get_trigger_status_returns_expected_fields(self) -> None:
+        reg = self._registry()
+        reg.register("daily", "0 9 * * *", focus="morning")
+        status = reg.get_trigger_status("daily")
+        assert status["event_name"] == "daily"
+        assert status["enabled"] is True
+        assert status["expression"] == "0 9 * * *"
+        assert status["focus"] == "morning"
+        assert "next_run" in status
+
+    def test_get_trigger_status_missing_raises(self) -> None:
+        reg = self._registry()
+        with pytest.raises(KeyError, match="not found"):
+            reg.get_trigger_status("missing")
+
+    @pytest.mark.asyncio
+    async def test_trigger_now_calls_hatchet_run_task_now(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.run_task_now = AsyncMock(return_value="run-123")
+        reg.start(hatchet, agent_runtime=None, ledger=None)
+        run_id = await reg.trigger_now("job")
+        assert run_id == "run-123"
+        hatchet.run_task_now.assert_awaited_once_with("cron_job")
+
+    @pytest.mark.asyncio
+    async def test_trigger_now_without_start_raises(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        with pytest.raises(RuntimeError, match="start\\(\\)"):
+            await reg.trigger_now("job")
+
+    @pytest.mark.asyncio
+    async def test_get_execution_history_missing_raises(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        ledger = MagicMock()
+        reg.start(hatchet, agent_runtime=None, ledger=ledger)
+        with pytest.raises(KeyError, match="not found"):
+            await reg.get_execution_history("missing")
+
+    @pytest.mark.asyncio
+    async def test_get_execution_history_without_ledger_raises(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        reg.start(hatchet, agent_runtime=None, ledger=None)
+        with pytest.raises(RuntimeError, match="Ledger"):
+            await reg.get_execution_history("job")
+
+    @pytest.mark.asyncio
+    async def test_get_execution_history_returns_records(self) -> None:
+        from datetime import datetime, timezone
+
+        reg = self._registry()
+        reg.register("daily", "0 9 * * *")
+        hatchet = MagicMock()
+        ledger = MagicMock()
+        mock_rec = type("LedgerRecord", (), {})()
+        mock_rec.run_id = "run-1"
+        mock_rec.status = "success"
+        mock_rec.created_at = datetime(2026, 2, 21, 9, 0, 0, tzinfo=timezone.utc)
+        mock_rec.execution_time_ms = 150
+        mock_rec.output_result = {"agent_run_id": "ar-1"}
+        mock_rec.error_message = None
+        ledger.query_records = AsyncMock(return_value=[mock_rec])
+        reg.start(hatchet, agent_runtime=None, ledger=ledger)
+        history = await reg.get_execution_history("daily", limit=5)
+        assert len(history) == 1
+        assert history[0]["run_id"] == "run-1"
+        assert history[0]["status"] == "success"
+        assert "2026-02-21" in (history[0]["created_at"] or "")
+        assert history[0]["execution_time_ms"] == 150
+        assert history[0]["agent_run_id"] == "ar-1"
+        assert history[0]["error_message"] is None

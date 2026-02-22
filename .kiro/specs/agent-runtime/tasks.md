@@ -131,23 +131,23 @@
     - 测试热重载
     - _需求：4.1-4.11_
 
-- [ ] 5. 实现 HeartbeatChecker 类
-  - [ ] 5.1 实现事件源检查框架
+- [x] 5. 实现 HeartbeatChecker 类
+  - [x] 5.1 实现事件源检查框架
     - 实现 `check_events()` 方法
     - 实现 `_check_source()` 方法
     - 定义事件源接口
     - _需求：7.1, 7.2, 7.3, 7.6_
   
-  - [ ] 5.2 实现各事件源的检查逻辑
-    - 实现 webhook 事件检查
-    - 实现 queue 事件检查
-    - 实现 database 事件检查
-    - 实现 schedule 事件检查
+  - [x] 5.2 实现各事件源的检查逻辑
+    - 实现 webhook 事件检查（MVP: 占位返回 False）
+    - 实现 queue 事件检查（MVP: 占位返回 False）
+    - 实现 database 事件检查（MVP: 占位返回 False）
+    - 实现 schedule 事件检查（MVP: 占位返回 False）
     - _需求：7.6_
   
-  - [ ]* 5.3 编写 HeartbeatChecker 的单元测试
+  - [x]* 5.3 编写 HeartbeatChecker 的单元测试
     - 测试无事件场景
-    - 测试有事件场景
+    - 测试有事件场景（子类覆盖）
     - 测试各事件源检查
     - _需求：7.1-7.9_
 
@@ -200,8 +200,8 @@
 
 - [x] 8. 实现 Agent Run 主流程
   - [x] 8.1 实现 Heartbeat 检查集成
-    - 在 `run()` 方法中集成 Heartbeat 检查（MVP: 暂跳过，下一 Task 实现）
-    - 实现无事件跳过逻辑
+    - 在 `run()` 方法中集成 Heartbeat 检查
+    - 实现无事件跳过逻辑（trigger=heartbeat 且 check_events() 为 False 时返回 skipped）
     - _需求：7.4, 7.5, 7.8_
   
   - [ ]* 8.2 编写属性测试：Heartbeat 无事件优化

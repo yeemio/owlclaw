@@ -36,8 +36,8 @@
 - [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移） → spec: database-core
 - [x] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
 - [x] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
-- [ ] `owlclaw.agent.tools` — 内建工具（schedule_once、remember、recall、query_state） → spec: agent-tools
-- [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
+- [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule 已完成；remember/recall 待 Memory） → spec: agent-tools
+- [x] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [ ] `owlclaw.agent.memory` — 长期记忆（MEMORY.md + pgvector 向量搜索） → spec: agent-runtime
 - [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
 - [x] `owlclaw.governance.ledger` — 执行记录 → spec: governance
@@ -113,12 +113,12 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-11 |
-| 当前批次 | triggers-cron Task 3（Hatchet workflow 集成 + 执行引擎） |
-| 批次状态 | 完成。_run_cron/_check_governance/_should_use_agent/_execute_agent/_execute_fallback/_handle_failure/_record_to_ledger/start()/pause/resume 全部实现；81 个测试全通过（triggers+agent 无回归）；triggers-cron 功能清单项已打勾 |
-| 已完成项 | triggers-cron Task 1-4（全部核心任务）；agent-runtime MVP Task 1/2/6/7/8 |
-| 下一待执行 | **triggers-cron Task 5 检查点验证** → 然后推进 Task 8（任务管理操作：pause/resume/status/history）或 **agent-tools spec**（内建工具） |
-| 阻塞项 | triggers-cron Task 6（FocusManager）依赖 SkillsManager 扩展；Task 7（CronGovernance 独立类）可选；Tasks 10-14 属于扩展阶段 |
+| 最后更新 | 2026-02-21 |
+| 当前批次 | agent-tools Task 6.2（调度工具测试） |
+| 批次状态 | 完成。schedule_once/cron/cancel 测试补齐；258 passed, 3 skipped |
+| 已完成项 | agent-tools Task 6.2（schedule_once 超范围、cancel 任务不存在）；agent-runtime Heartbeat 已完成 |
+| 下一待执行 | **agent-runtime**（memory）、**agent-tools**（remember/recall 依赖 Memory）或 **integrations-llm** |
+| 阻塞项 | remember/recall 依赖 MemorySystem |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

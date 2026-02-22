@@ -8,34 +8,35 @@
 
 ## Task 1: LLMConfig 实现
 
-- [ ] 1.1 实现配置数据类
-  - [ ] 1.1.1 定义 ModelConfig 类
-  - [ ] 1.1.2 定义 TaskTypeRouting 类
-  - [ ] 1.1.3 定义 LLMConfig 类
-  - [ ] 1.1.4 使用 Pydantic 进行类型验证
+- [x] 1.1 实现配置数据类
+  - [x] 1.1.1 定义 ModelConfig 类
+  - [x] 1.1.2 定义 TaskTypeRouting 类
+  - [x] 1.1.3 定义 LLMConfig 类
+  - [x] 1.1.4 使用 Pydantic 进行类型验证
 
-- [ ] 1.2 实现配置加载
-  - [ ] 1.2.1 实现 from_yaml() 类方法
-  - [ ] 1.2.2 实现环境变量替换
-  - [ ] 1.2.3 实现配置验证
+- [x] 1.2 实现配置加载
+  - [x] 1.2.1 实现 from_yaml() 类方法
+  - [x] 1.2.2 实现环境变量替换（_substitute_env_dict）
+  - [x] 1.2.3 实现配置验证
+  - [x] 1.2.4 default_for_owlclaw() 最小默认配置
 
 ## Task 2: LLMClient 核心实现
 
-- [ ] 2.1 实现 LLMResponse 类
-  - [ ] 2.1.1 定义响应数据结构
-  - [ ] 2.1.2 实现 token 和成本计算
+- [x] 2.1 实现 LLMResponse 类
+  - [x] 2.1.1 定义响应数据结构
+  - [x] 2.1.2 实现 token 和成本计算
 
-- [ ] 2.2 实现 LLMClient 类
-  - [ ] 2.2.1 实现 __init__() 方法
-  - [ ] 2.2.2 实现 complete() 方法
-  - [ ] 2.2.3 实现 _route_model() 方法
-  - [ ] 2.2.4 实现 _call_with_fallback() 方法
-  - [ ] 2.2.5 实现 _parse_response() 方法
+- [x] 2.2 实现 LLMClient 类
+  - [x] 2.2.1 实现 __init__() 方法
+  - [x] 2.2.2 实现 complete() 方法
+  - [x] 2.2.3 实现 _route_model() 方法
+  - [x] 2.2.4 实现 _call_with_fallback() 方法
+  - [x] 2.2.5 实现 _parse_response() 方法
 
-- [ ] 2.3 实现 Function Calling 支持
-  - [ ] 2.3.1 支持 tools 参数传递
-  - [ ] 2.3.2 解析 function calls 响应
-  - [ ] 2.3.3 支持多个 function calls
+- [x] 2.3 实现 Function Calling 支持
+  - [x] 2.3.1 支持 tools 参数传递
+  - [x] 2.3.2 解析 function calls 响应
+  - [x] 2.3.3 支持多个 function calls
 
 ## Task 3: 辅助组件实现
 
@@ -162,11 +163,11 @@
 
 ## Task 11: 集成到 OwlClaw 主包
 
-- [ ] 11.1 创建包结构
-  - [ ] 11.1.1 创建 owlclaw/integrations/llm.py
+- [x] 11.1 创建包结构
+  - [x] 11.1.1 创建 owlclaw/integrations/llm.py
 
-- [ ] 11.2 导出公共 API
-  - [ ] 11.2.1 在 owlclaw/integrations/__init__.py 中导出 LLMClient
+- [x] 11.2 导出公共 API
+  - [x] 11.2.1 在 owlclaw/integrations/__init__.py 中导出 acompletion、LLMClient、LLMConfig、LLMResponse
 
 - [ ] 11.3 添加依赖
   - [ ] 11.3.1 在 pyproject.toml 中添加 litellm

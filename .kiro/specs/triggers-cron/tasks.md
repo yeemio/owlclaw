@@ -137,11 +137,11 @@
     - 测试函数元数据保留
     - _需求: FR-2_
 
-- [ ] 5. 检查点 - 确保核心注册和 workflow 创建正常工作
+- [x] 5. 检查点 - 确保核心注册和 workflow 创建正常工作
   - 验证可以通过装饰器注册触发器
   - 验证 Hatchet workflows 正确创建
   - 验证 cron 表达式得到验证
-  - 如有问题请询问用户
+  - _验收_：68 个 triggers + app 测试全通过（2026-02-21）
 
 - [ ] 6. 实现 Focus 和 Skills 集成
   - [ ] 6.1 创建 FocusManager 类
@@ -221,35 +221,34 @@
     - _需求: FR-6, FR-7_
 
 - [ ] 8. 实现任务管理操作
-  - [ ] 8.1 实现暂停/恢复功能
-    - 创建 `pause_trigger(event_name)` 方法
-    - 创建 `resume_trigger(event_name)` 方法
-    - 更新 config.enabled 标志
-    - 与 Hatchet API 集成以暂停/恢复 workflows
-    - 将暂停/恢复操作记录到 Ledger
+  - [x] 8.1 实现暂停/恢复功能
+    - [x] 创建 `pause_trigger(event_name)` 方法
+    - [x] 创建 `resume_trigger(event_name)` 方法
+    - [x] 更新 config.enabled 标志
+    - [ ] 与 Hatchet API 集成以暂停/恢复 workflows（当前通过 config.enabled 在 _run_cron 中跳过）
+    - [ ] 将暂停/恢复操作记录到 Ledger
     - _需求: FR-11_
   
-  - [ ] 8.2 实现手动触发功能
-    - 创建 `trigger_now(event_name, **kwargs)` 方法
-    - 创建 trigger_type="manual" 的执行记录
-    - 直接执行 workflow 而不通过 Hatchet 调度
-    - 支持通过 kwargs 传递额外上下文
-    - 将手动触发记录到 Ledger
+  - [x] 8.2 实现手动触发功能
+    - [x] 创建 `trigger_now(event_name, **kwargs)` 方法
+    - [x] 直接执行 workflow（调用 Hatchet run_task_now）
+    - [x] 支持通过 kwargs 传递额外上下文
+    - [ ] 将手动触发记录到 Ledger（由 _run_cron 统一记录）
     - _需求: FR-12_
   
-  - [ ] 8.3 实现状态查询方法
-    - 创建 `get_task_status(event_name)` 方法
-    - 返回触发器配置、启用状态、下次执行时间
-    - 从最近执行计算成功率
-    - 计算平均执行时长
+  - [x] 8.3 实现状态查询方法
+    - [x] 创建 `get_trigger_status(event_name)` 方法
+    - [x] 返回触发器配置、启用状态、下次执行时间（croniter）
+    - [ ] 从最近执行计算成功率
+    - [ ] 计算平均执行时长
     - _需求: FR-10_
   
-  - [ ] 8.4 实现执行历史查询
-    - 创建 `get_execution_history(event_name, limit)` 方法
-    - 查询 Ledger 中的 cron_execution 事件
-    - 将 Ledger 事件转换为 CronExecution 对象
-    - 使用 limit 参数支持分页
-    - 按时间戳降序排序
+  - [x] 8.4 实现执行历史查询
+    - [x] 创建 `get_execution_history(event_name, limit, tenant_id)` 方法
+    - [x] 查询 Ledger 中的 cron_execution 事件（capability_name=event_name）
+    - [x] 将 LedgerRecord 转为 dict 返回（run_id, status, created_at 等）
+    - [x] 使用 limit 参数支持分页（1-100）
+    - [x] 按 created_at 降序排序
     - _需求: FR-10_
   
   - [ ]* 8.5 编写任务管理的集成测试
