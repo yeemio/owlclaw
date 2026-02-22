@@ -57,8 +57,12 @@ class IdentityLoader:
                 "define capabilities and constraints."
             )
         self._soul = self.soul_path.read_text(encoding="utf-8")
+        if not self._soul.strip():
+            raise ValueError("SOUL.md must not be empty")
         logger.debug("Loaded SOUL.md from %s", self.soul_path)
         self._identity = self.identity_path.read_text(encoding="utf-8")
+        if not self._identity.strip():
+            raise ValueError("IDENTITY.md must not be empty")
         logger.debug("Loaded IDENTITY.md from %s", self.identity_path)
 
     async def reload(self) -> None:

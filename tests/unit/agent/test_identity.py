@@ -55,9 +55,23 @@ class TestIdentityLoader:
         with pytest.raises(FileNotFoundError, match="SOUL.md"):
             await loader.load()
 
+    async def test_empty_soul_raises(self, tmp_path) -> None:
+        (tmp_path / "SOUL.md").write_text("   ", encoding="utf-8")
+        (tmp_path / "IDENTITY.md").write_text("## My Capabilities\n- A\n", encoding="utf-8")
+        loader = IdentityLoader(str(tmp_path))
+        with pytest.raises(ValueError, match="SOUL.md must not be empty"):
+            await loader.load()
+
     async def test_missing_identity_md_raises(self, soul_only_dir) -> None:
         loader = IdentityLoader(str(soul_only_dir))
         with pytest.raises(FileNotFoundError, match="IDENTITY.md"):
+            await loader.load()
+
+    async def test_empty_identity_raises(self, tmp_path) -> None:
+        (tmp_path / "SOUL.md").write_text("assistant", encoding="utf-8")
+        (tmp_path / "IDENTITY.md").write_text(" \n", encoding="utf-8")
+        loader = IdentityLoader(str(tmp_path))
+        with pytest.raises(ValueError, match="IDENTITY.md must not be empty"):
             await loader.load()
 
     async def test_get_identity_before_load_raises(self, app_dir) -> None:
