@@ -273,6 +273,7 @@ class OwlClaw:
         self,
         agent_id: str,
         tenant_id: str = "default",
+        confirmed_capabilities: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         """Return capabilities visible after governance filtering (for use in Agent Run).
 
@@ -289,7 +290,13 @@ class OwlClaw:
 
         raw = self.registry.list_capabilities()
         views = [_dict_to_capability_view(d) for d in raw]
-        ctx = RunContext(tenant_id=tenant_id)
+        confirmed = {
+            c.strip() for c in (confirmed_capabilities or []) if isinstance(c, str) and c.strip()
+        }
+        ctx = RunContext(
+            tenant_id=tenant_id,
+            confirmed_capabilities=confirmed or None,
+        )
         filtered = await self._visibility_filter.filter_capabilities(
             views, agent_id, ctx
         )

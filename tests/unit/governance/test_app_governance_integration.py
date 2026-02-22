@@ -66,6 +66,27 @@ async def test_get_visible_capabilities_with_visibility_filter(app_with_skills):
 
 
 @pytest.mark.asyncio
+async def test_get_visible_capabilities_passes_confirmed_capabilities(app_with_skills):
+    """confirmed_capabilities should be forwarded to visibility RunContext."""
+    app = app_with_skills
+    app.configure(governance={"visibility": {"time": {}}, "router": {}})
+    app._ensure_governance()
+    app._visibility_filter.filter_capabilities = AsyncMock(return_value=[])  # type: ignore[union-attr]
+
+    @app.handler("entry-monitor")
+    async def handler(session):
+        return {}
+
+    await app.get_visible_capabilities(
+        "agent1",
+        "default",
+        confirmed_capabilities=["entry-monitor"],
+    )
+    run_ctx = app._visibility_filter.filter_capabilities.call_args.args[2]  # type: ignore[union-attr]
+    assert run_ctx.confirmed_capabilities == {"entry-monitor"}
+
+
+@pytest.mark.asyncio
 async def test_get_model_selection_with_router(app_with_skills):
     """With router config, get_model_selection returns ModelSelection."""
     app = app_with_skills
