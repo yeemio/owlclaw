@@ -221,11 +221,12 @@ class BuiltInTools:
         Raises:
             ValueError: If tool_name is not a built-in tool.
         """
-        if tool_name not in _BUILTIN_TOOL_NAMES:
+        normalized_tool_name = tool_name.strip() if isinstance(tool_name, str) else ""
+        if normalized_tool_name not in _BUILTIN_TOOL_NAMES:
             raise ValueError(f"Unknown built-in tool: {tool_name}")
         if not isinstance(arguments, dict):
             error = (
-                f"Invalid arguments for built-in tool '{tool_name}': "
+                f"Invalid arguments for built-in tool '{normalized_tool_name}': "
                 "arguments must be a JSON object"
             )
             out = {
@@ -234,24 +235,24 @@ class BuiltInTools:
                 )
             }
             await self._record_validation_failure(
-                tool_name=tool_name,
+                tool_name=normalized_tool_name,
                 context=context,
                 input_params={"arguments_type": type(arguments).__name__},
                 error_message=error,
             )
             return out
 
-        if tool_name == "query_state":
+        if normalized_tool_name == "query_state":
             return await self._query_state(arguments, context)
-        if tool_name == "log_decision":
+        if normalized_tool_name == "log_decision":
             return await self._log_decision(arguments, context)
-        if tool_name == "schedule_once":
+        if normalized_tool_name == "schedule_once":
             return await self._schedule_once(arguments, context)
-        if tool_name == "schedule_cron":
+        if normalized_tool_name == "schedule_cron":
             return await self._schedule_cron(arguments, context)
-        if tool_name == "cancel_schedule":
+        if normalized_tool_name == "cancel_schedule":
             return await self._cancel_schedule(arguments, context)
-        raise ValueError(f"Unknown built-in tool: {tool_name}")
+        raise ValueError(f"Unknown built-in tool: {normalized_tool_name}")
 
     async def _query_state(
         self,

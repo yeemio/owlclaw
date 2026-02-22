@@ -435,3 +435,12 @@ class TestExecuteUnknownTool:
         result = await tools.execute("query_state", "bad-args", ctx)  # type: ignore[arg-type]
         assert "error" in result
         assert "JSON object" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_execute_trims_tool_name_before_dispatch(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.return_value = {"ok": True}
+        tools = BuiltInTools(capability_registry=reg)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute(" query_state ", {"state_name": "x"}, ctx)
+        assert result == {"state": {"ok": True}}
