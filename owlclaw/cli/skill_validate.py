@@ -10,15 +10,20 @@ from owlclaw.templates.skills import TemplateValidator
 def _collect_skill_files(paths: list[Path]) -> list[Path]:
     """Resolve paths to a list of SKILL.md files (recursing into directories)."""
     files: list[Path] = []
+    seen: set[Path] = set()
     for p in paths:
         resolved = p.resolve()
         if not resolved.exists():
             continue
-        if resolved.is_file():
-            if resolved.name == "SKILL.md":
+        if resolved.is_file() and resolved.name == "SKILL.md":
+            if resolved not in seen:
+                seen.add(resolved)
                 files.append(resolved)
         else:
-            files.extend(sorted(resolved.rglob("SKILL.md")))
+            for file_path in sorted(resolved.rglob("SKILL.md")):
+                if file_path not in seen:
+                    seen.add(file_path)
+                    files.append(file_path)
     return files
 
 

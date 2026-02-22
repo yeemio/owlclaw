@@ -67,6 +67,20 @@ def test_skill_validate_nonexistent_path_exits_with_error(tmp_path):
     assert "path not found" in result.output.lower()
 
 
+def test_skill_validate_deduplicates_overlapping_paths(tmp_path):
+    """validate should not process the same SKILL.md twice for overlapping inputs."""
+    skill_dir = tmp_path / "dup-skill"
+    skill_dir.mkdir()
+    skill_file = skill_dir / "SKILL.md"
+    skill_file.write_text(
+        "---\nname: dup-skill\ndescription: Duplicate path test.\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["validate", str(tmp_path), str(skill_file)])
+    assert result.exit_code == 0
+    assert "Validated 1 file(s): 1 passed, 0 failed." in result.output
+
+
 def test_skill_init_from_template_creates_valid_skill_md(tmp_path):
     """Template library produces valid SKILL.md from monitoring/health-check."""
     from owlclaw.templates.skills import (
