@@ -39,6 +39,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_MODEL = "gpt-4o-mini"
 _DEFAULT_MAX_ITERATIONS = 50
 _DEFAULT_LLM_TIMEOUT_SECONDS = 60.0
+_DEFAULT_RUN_TIMEOUT_SECONDS = 300.0
 
 
 class AgentRuntime:
@@ -195,7 +196,28 @@ class AgentRuntime:
                     "reason": "heartbeat_no_events",
                 }
 
-        result = await self._decision_loop(context)
+        run_timeout = float(
+            self.config.get("run_timeout_seconds", _DEFAULT_RUN_TIMEOUT_SECONDS)
+        )
+        if run_timeout <= 0:
+            run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
+        try:
+            result = await asyncio.wait_for(
+                self._decision_loop(context),
+                timeout=run_timeout,
+            )
+        except asyncio.TimeoutError:
+            logger.error(
+                "Agent run timed out agent_id=%s run_id=%s timeout=%ss",
+                context.agent_id,
+                context.run_id,
+                run_timeout,
+            )
+            return {
+                "status": "failed",
+                "run_id": context.run_id,
+                "error": f"run timed out after {run_timeout:.1f}s",
+            }
 
         logger.info(
             "Agent run completed agent_id=%s run_id=%s iterations=%s",

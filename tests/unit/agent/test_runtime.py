@@ -147,6 +147,23 @@ class TestAgentRuntimeRun:
         result = await rt.run(ctx)
         assert result["iterations"] >= 1
 
+    async def test_run_timeout_returns_failed(self, tmp_path) -> None:
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"run_timeout_seconds": 0.01},
+        )
+        await rt.setup()
+
+        async def _slow_decision_loop(_: AgentRunContext) -> dict[str, object]:
+            await asyncio.sleep(0.05)
+            return {"iterations": 1, "final_response": "late", "tool_calls_total": 0}
+
+        rt._decision_loop = _slow_decision_loop  # type: ignore[method-assign]
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "failed"
+        assert "timed out" in result["error"]
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_focus_used_in_user_message(self, mock_llm, tmp_path) -> None:
         """Focus should appear in the user message sent to LLM."""
