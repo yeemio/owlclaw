@@ -212,3 +212,32 @@ def test_filter_by_task_type(tmp_path):
     assert set(t1) == {"a", "b"}
     t2 = reg.filter_by_task_type("t2")
     assert t2 == ["c"]
+
+
+def test_capability_metadata_includes_focus_and_risk(tmp_path):
+    """list/get metadata should expose v4.1 risk and focus extensions."""
+    (tmp_path / "x").mkdir()
+    (tmp_path / "x" / "SKILL.md").write_text(
+        "---\n"
+        "name: x\n"
+        "description: Skill x\n"
+        "owlclaw:\n"
+        "  task_type: t1\n"
+        "  focus: [inventory_monitor]\n"
+        "  risk_level: high\n"
+        "---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    reg = CapabilityRegistry(loader)
+    reg.register_handler("x", lambda: None)
+    caps = reg.list_capabilities()
+    assert caps[0]["focus"] == ["inventory_monitor"]
+    assert caps[0]["risk_level"] == "high"
+    assert caps[0]["requires_confirmation"] is True
+    meta = reg.get_capability_metadata("x")
+    assert meta is not None
+    assert meta["focus"] == ["inventory_monitor"]
+    assert meta["risk_level"] == "high"
+    assert meta["requires_confirmation"] is True

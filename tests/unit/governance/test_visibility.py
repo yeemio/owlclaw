@@ -97,6 +97,16 @@ async def test_filter_propagates_cancellation():
 @pytest.mark.asyncio
 async def test_capability_view_metadata():
     """CapabilityView.metadata exposes owlclaw.constraints."""
-    cap = CapabilityView("x", task_type="t1", constraints={"max_daily": 10})
+    cap = CapabilityView(
+        "x",
+        task_type="t1",
+        constraints={"max_daily": 10},
+        focus=["inventory_monitor"],
+        risk_level="high",
+        requires_confirmation=True,
+    )
     assert cap.metadata["owlclaw"]["constraints"] == {"max_daily": 10}
     assert cap.metadata["owlclaw"]["task_type"] == "t1"
+    assert cap.metadata["owlclaw"]["focus"] == ["inventory_monitor"]
+    assert cap.metadata["owlclaw"]["risk_level"] == "high"
+    assert cap.metadata["owlclaw"]["requires_confirmation"] is True

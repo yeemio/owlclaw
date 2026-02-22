@@ -219,6 +219,9 @@ class CapabilityRegistry:
                     "description": skill.description,
                     "task_type": skill.task_type,
                     "constraints": skill.constraints,
+                    "focus": skill.focus,
+                    "risk_level": skill.risk_level,
+                    "requires_confirmation": skill.requires_confirmation,
                     "handler": handler.__name__,
                 })
 
@@ -244,6 +247,9 @@ class CapabilityRegistry:
             "description": skill.description,
             "task_type": skill.task_type,
             "constraints": skill.constraints,
+            "focus": skill.focus,
+            "risk_level": skill.risk_level,
+            "requires_confirmation": skill.requires_confirmation,
             "handler": handler.__name__ if handler else None,
         }
 

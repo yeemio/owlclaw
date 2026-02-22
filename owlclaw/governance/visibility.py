@@ -41,16 +41,30 @@ class CapabilityView:
         description: str = "",
         task_type: str | None = None,
         constraints: dict[str, Any] | None = None,
+        focus: list[str] | None = None,
+        risk_level: str | None = None,
+        requires_confirmation: bool | None = None,
     ):
         self.name = name
         self.description = description
         self.task_type = task_type or ""
         self.constraints = constraints or {}
+        self.focus = focus or []
+        self.risk_level = risk_level or "low"
+        self.requires_confirmation = bool(requires_confirmation)
 
     @property
     def metadata(self) -> dict[str, Any]:
         """OwlClaw metadata for constraints (design: capability.metadata.get('owlclaw', {}).get('constraints')."""
-        return {"owlclaw": {"constraints": self.constraints, "task_type": self.task_type}}
+        return {
+            "owlclaw": {
+                "constraints": self.constraints,
+                "task_type": self.task_type,
+                "focus": self.focus,
+                "risk_level": self.risk_level,
+                "requires_confirmation": self.requires_confirmation,
+            }
+        }
 
 
 class ConstraintEvaluator(Protocol):
@@ -79,7 +93,7 @@ class VisibilityFilter:
 
     def register_evaluator(self, evaluator: ConstraintEvaluator) -> None:
         """Register a constraint evaluator."""
-        if not hasattr(evaluator, "evaluate") or not callable(getattr(evaluator, "evaluate")):
+        if not hasattr(evaluator, "evaluate") or not callable(evaluator.evaluate):
             raise TypeError("evaluator must provide an async evaluate(capability, agent_id, context) method")
         self._evaluators.append(evaluator)
 

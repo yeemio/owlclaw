@@ -627,6 +627,9 @@ class AgentRuntime:
                 description=s["function"].get("description", ""),
                 task_type=name_to_meta.get(s["function"]["name"], {}).get("task_type"),
                 constraints=name_to_meta.get(s["function"]["name"], {}).get("constraints") or {},
+                focus=name_to_meta.get(s["function"]["name"], {}).get("focus"),
+                risk_level=name_to_meta.get(s["function"]["name"], {}).get("risk_level"),
+                requires_confirmation=name_to_meta.get(s["function"]["name"], {}).get("requires_confirmation"),
             )
             for s in cap_schemas
         ]
