@@ -1,0 +1,135 @@
+"""In-memory MemoryStore implementation — dict storage + brute-force cosine similarity (mock_mode / tests)."""
+
+from __future__ import annotations
+
+import math
+from copy import deepcopy
+from datetime import datetime, timedelta, timezone
+from uuid import UUID
+
+from owlclaw.agent.memory.models import MemoryEntry
+from owlclaw.agent.memory.store import MemoryStore
+from owlclaw.agent.memory.store_pgvector import time_decay
+
+
+def _cosine_similarity(a: list[float], b: list[float]) -> float:
+    """Cosine similarity in [0, 1] for non-negative normalized vectors; 0 if any norm is 0."""
+    if not a or not b or len(a) != len(b):
+        return 0.0
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(x * x for x in b))
+    if na <= 0 or nb <= 0:
+        return 0.0
+    sim = dot / (na * nb)
+    return max(0.0, min(1.0, sim))
+
+
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class InMemoryStore(MemoryStore):
+    """In-memory store: dict + brute-force cosine search. For mock_mode and tests."""
+
+    def __init__(self, time_decay_half_life_hours: float = 168.0) -> None:
+        self._store: dict[UUID, MemoryEntry] = {}
+        self._time_decay_half_life_hours = time_decay_half_life_hours
+
+    def _copy(self, entry: MemoryEntry) -> MemoryEntry:
+        return deepcopy(entry)
+
+    async def save(self, entry: MemoryEntry) -> UUID:
+        copy = self._copy(entry)
+        self._store[copy.id] = copy
+        return copy.id
+
+    async def search(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        query_embedding: list[float] | None,
+        limit: int = 5,
+        tags: list[str] | None = None,
+        include_archived: bool = False,
+    ) -> list[tuple[MemoryEntry, float]]:
+        candidates = [
+            e for e in self._store.values()
+            if e.agent_id == agent_id and e.tenant_id == tenant_id
+            and (include_archived or not e.archived)
+        ]
+        if tags:
+            for t in tags:
+                candidates = [e for e in candidates if t in (e.tags or [])]
+        if query_embedding is None:
+            candidates.sort(key=lambda e: e.created_at, reverse=True)
+            return [(self._copy(e), 1.0) for e in candidates[:limit]]
+        now = _now_utc()
+        scored: list[tuple[MemoryEntry, float]] = []
+        for e in candidates:
+            if not e.embedding:
+                continue
+            sim = _cosine_similarity(query_embedding, e.embedding)
+            created = e.created_at
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            age_hours = (now - created).total_seconds() / 3600.0
+            final = sim * time_decay(age_hours, self._time_decay_half_life_hours)
+            scored.append((self._copy(e), final))
+        scored.sort(key=lambda x: -x[1])
+        return scored[:limit]
+
+    async def get_recent(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        hours: int = 24,
+        limit: int = 5,
+    ) -> list[MemoryEntry]:
+        cutoff = _now_utc()
+        if hours > 0:
+            cutoff = cutoff - timedelta(hours=hours)
+        candidates = []
+        for e in self._store.values():
+            if e.agent_id != agent_id or e.tenant_id != tenant_id or e.archived:
+                continue
+            created = e.created_at
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            if created >= cutoff:
+                candidates.append(e)
+        candidates.sort(key=lambda e: e.created_at, reverse=True)
+        return [self._copy(e) for e in candidates[:limit]]
+
+    async def archive(self, entry_ids: list[UUID]) -> int:
+        n = 0
+        for uid in entry_ids:
+            if uid in self._store:
+                self._store[uid].archived = True
+                n += 1
+        return n
+
+    async def delete(self, entry_ids: list[UUID]) -> int:
+        n = 0
+        for uid in entry_ids:
+            if uid in self._store:
+                del self._store[uid]
+                n += 1
+        return n
+
+    async def count(self, agent_id: str, tenant_id: str) -> int:
+        return sum(
+            1 for e in self._store.values()
+            if e.agent_id == agent_id and e.tenant_id == tenant_id and not e.archived
+        )
+
+    async def update_access(
+        self, agent_id: str, tenant_id: str, entry_ids: list[UUID]
+    ) -> None:
+        now = _now_utc()
+        for uid in entry_ids:
+            e = self._store.get(uid)
+            if e is None or e.agent_id != agent_id or e.tenant_id != tenant_id:
+                continue
+            e.accessed_at = now
+            e.access_count += 1
