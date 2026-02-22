@@ -196,9 +196,16 @@ class AgentRuntime:
                     "reason": "heartbeat_no_events",
                 }
 
-        run_timeout = float(
-            self.config.get("run_timeout_seconds", _DEFAULT_RUN_TIMEOUT_SECONDS)
+        run_timeout_raw = self.config.get(
+            "run_timeout_seconds", _DEFAULT_RUN_TIMEOUT_SECONDS
         )
+        if isinstance(run_timeout_raw, bool):
+            run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
+        else:
+            try:
+                run_timeout = float(run_timeout_raw)
+            except (TypeError, ValueError):
+                run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
         if run_timeout <= 0:
             run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
         try:

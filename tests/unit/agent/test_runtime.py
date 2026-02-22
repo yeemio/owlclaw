@@ -179,6 +179,20 @@ class TestAgentRuntimeRun:
         assert "timed out" in result["error"]
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_invalid_run_timeout_config_falls_back_to_default(
+        self, mock_llm, tmp_path
+    ) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"run_timeout_seconds": "bad-timeout"},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_focus_used_in_user_message(self, mock_llm, tmp_path) -> None:
         """Focus should appear in the user message sent to LLM."""
         mock_llm.return_value = _make_llm_response()
