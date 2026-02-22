@@ -273,7 +273,7 @@ class OwlClaw:
         self,
         agent_id: str,
         tenant_id: str = "default",
-        confirmed_capabilities: list[str] | None = None,
+        confirmed_capabilities: list[str] | str | None = None,
     ) -> list[dict[str, Any]]:
         """Return capabilities visible after governance filtering (for use in Agent Run).
 
@@ -290,9 +290,19 @@ class OwlClaw:
         else:
             from owlclaw.governance.visibility import RunContext
 
-            confirmed = {
-                c.strip() for c in (confirmed_capabilities or []) if isinstance(c, str) and c.strip()
-            }
+            confirmed: set[str] = set()
+            if isinstance(confirmed_capabilities, list):
+                confirmed = {
+                    c.strip()
+                    for c in confirmed_capabilities
+                    if isinstance(c, str) and c.strip()
+                }
+            elif isinstance(confirmed_capabilities, str):
+                confirmed = {
+                    c.strip()
+                    for c in confirmed_capabilities.split(",")
+                    if c.strip()
+                }
             ctx = RunContext(
                 tenant_id=tenant_id,
                 confirmed_capabilities=confirmed or None,

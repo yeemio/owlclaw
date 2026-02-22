@@ -87,6 +87,27 @@ async def test_get_visible_capabilities_passes_confirmed_capabilities(app_with_s
 
 
 @pytest.mark.asyncio
+async def test_get_visible_capabilities_passes_confirmed_capabilities_csv(app_with_skills):
+    """CSV confirmation strings should be accepted for app-level visibility query."""
+    app = app_with_skills
+    app.configure(governance={"visibility": {"time": {}}, "router": {}})
+    app._ensure_governance()
+    app._visibility_filter.filter_capabilities = AsyncMock(return_value=[])  # type: ignore[union-attr]
+
+    @app.handler("entry-monitor")
+    async def handler(session):
+        return {}
+
+    await app.get_visible_capabilities(
+        "agent1",
+        "default",
+        confirmed_capabilities="entry-monitor, other",
+    )
+    run_ctx = app._visibility_filter.filter_capabilities.call_args.args[2]  # type: ignore[union-attr]
+    assert run_ctx.confirmed_capabilities == {"entry-monitor", "other"}
+
+
+@pytest.mark.asyncio
 async def test_get_visible_capabilities_coerces_requires_confirmation_string(app_with_skills):
     """requires_confirmation='false' should not be treated as true in capability view."""
     app = app_with_skills
