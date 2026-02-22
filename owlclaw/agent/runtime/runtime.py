@@ -649,7 +649,11 @@ class AgentRuntime:
             return []
 
         schemas: list[dict[str, Any]] = []
-        for capability in self.registry.list_capabilities():
+        capabilities = sorted(
+            self.registry.list_capabilities(),
+            key=lambda c: str(c.get("name", "")),
+        )
+        for capability in capabilities:
             schemas.append({
                 "type": "function",
                 "function": {

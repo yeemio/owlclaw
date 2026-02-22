@@ -200,6 +200,18 @@ class TestAgentRuntimeRun:
         assert result == "focused"
         rt.knowledge_injector.get_skills_knowledge.assert_called_once_with(["skill-a"])
 
+    def test_capability_schemas_sorted_by_name(self, tmp_path) -> None:
+        """Capability schema order should be deterministic by name."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        rt.registry = MagicMock()
+        rt.registry.list_capabilities.return_value = [
+            {"name": "z-skill", "description": "z"},
+            {"name": "a-skill", "description": "a"},
+        ]
+        schemas = rt._capability_schemas()
+        names = [item["function"]["name"] for item in schemas]
+        assert names == ["a-skill", "z-skill"]
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_accepts_dict_assistant_message(self, mock_llm, tmp_path) -> None:
         """Runtime should support providers returning dict message objects."""
