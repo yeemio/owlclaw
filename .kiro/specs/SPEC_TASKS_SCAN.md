@@ -114,10 +114,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-22 |
-| 当前批次 | skill-templates Task 25 |
-| 批次状态 | 完成。15 个模板有效；CLI 可用；脚本 test_template.py、review_template.py 已实现 |
-| 已完成项 | skill-templates Task 1-25（模板库全部完成） |
-| 下一待执行 | **integrations-llm Task 5**（Langfuse）或 **e2e-validation** |
+| 当前批次 | integrations-llm Task 12（验收测试） |
+| 批次状态 | 完成。test_llm_acceptance.py 已添加，12.1/12.2/12.3 全部验收通过 |
+| 已完成项 | integrations-llm Task 12.1.1–12.1.3、12.2.1–12.2.2、12.3.1–12.3.2 |
+| 下一待执行 | **e2e-validation** 或 **agent-tools**（或 integrations-llm 7.2.2 mock function call 占位） |
 | 阻塞项 | remember/recall 依赖 MemorySystem（agent-runtime memory 未实现） |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
