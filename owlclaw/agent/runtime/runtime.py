@@ -137,6 +137,8 @@ class AgentRuntime:
         Returns:
             Run result dict (see :meth:`run`).
         """
+        if isinstance(focus, str):
+            focus = focus.strip() or None
         context = AgentRunContext(
             agent_id=self.agent_id,
             trigger=event_name,

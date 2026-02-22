@@ -147,6 +147,17 @@ class TestAgentRuntimeRun:
         user_msg = next(m for m in call_messages if m["role"] == "user")
         assert "inventory_monitor" in user_msg["content"]
 
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_trigger_event_normalizes_blank_focus(self, mock_llm, tmp_path) -> None:
+        """Blank focus strings should be normalized to None."""
+        mock_llm.return_value = _make_llm_response()
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        await rt.setup()
+        await rt.trigger_event("check", focus="   ")
+        call_messages = mock_llm.call_args.kwargs["messages"]
+        user_msg = next(m for m in call_messages if m["role"] == "user")
+        assert "Focus:" not in user_msg["content"]
+
     def test_skill_focus_match_uses_owlclaw_focus(self, tmp_path) -> None:
         """Focus matching should prioritize owlclaw.focus extension field."""
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
