@@ -71,6 +71,24 @@ async def test_filter_fail_open_on_evaluator_exception():
 
 
 @pytest.mark.asyncio
+async def test_filter_propagates_cancellation():
+    """Cancellation must propagate instead of being swallowed as fail-open."""
+
+    class Cancelling:
+        async def evaluate(self, capability, agent_id, context):
+            raise asyncio.CancelledError()
+
+    import asyncio
+
+    vf = VisibilityFilter()
+    vf.register_evaluator(Cancelling())
+    caps = [CapabilityView("only")]
+    ctx = RunContext(tenant_id="t1")
+    with pytest.raises(asyncio.CancelledError):
+        await vf.filter_capabilities(caps, "agent1", ctx)
+
+
+@pytest.mark.asyncio
 async def test_capability_view_metadata():
     """CapabilityView.metadata exposes owlclaw.constraints."""
     cap = CapabilityView("x", task_type="t1", constraints={"max_daily": 10})

@@ -101,18 +101,10 @@ class VisibilityFilter:
                 *(
                     self._safe_evaluate(eval_fn, cap, agent_id, context)
                     for eval_fn in self._evaluators
-                ),
-                return_exceptions=True,
+                )
             )
             reasons: list[str] = []
             for r in results:
-                if isinstance(r, BaseException):
-                    logger.warning(
-                        "Constraint evaluator failed (fail-open): %s",
-                        r,
-                        exc_info=True,
-                    )
-                    continue
                 if not r.visible:
                     reasons.append(r.reason)
             if reasons:
@@ -135,6 +127,8 @@ class VisibilityFilter:
         """Run one evaluator; on exception return visible (fail-open)."""
         try:
             return await evaluator.evaluate(capability, agent_id, context)
+        except asyncio.CancelledError:
+            raise
         except Exception as e:
             logger.warning(
                 "Evaluator %s raised (fail-open): %s",
