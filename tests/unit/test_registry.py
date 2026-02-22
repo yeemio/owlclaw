@@ -55,6 +55,11 @@ def test_register_handler_duplicate_raises(registry):
         registry.register_handler("entry-monitor", h2)
 
 
+def test_register_handler_non_callable_raises_type_error(registry):
+    with pytest.raises(TypeError, match="must be callable"):
+        registry.register_handler("entry-monitor", 123)  # type: ignore[arg-type]
+
+
 @pytest.mark.asyncio
 async def test_invoke_handler_success_sync(registry):
     """invoke_handler() calls sync handler and returns result."""

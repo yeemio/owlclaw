@@ -46,8 +46,14 @@ class CapabilityRegistry:
             handler: Python function to execute when Skill is invoked
 
         Raises:
+            TypeError: If handler is not callable
             ValueError: If handler is already registered for this Skill
         """
+        if not callable(handler):
+            raise TypeError(
+                f"Handler for '{skill_name}' must be callable"
+            )
+
         # Validate Skill exists (warning only, not blocking)
         skill = self.skills_loader.get_skill(skill_name)
         if not skill:
