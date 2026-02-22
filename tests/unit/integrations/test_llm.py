@@ -166,6 +166,39 @@ class TestLLMClient:
             assert resp.model == "fallback"
             assert resp.cost == 0.3
 
+    @pytest.mark.asyncio
+    async def test_complete_applies_task_routing_temperature_and_max_tokens(self) -> None:
+        c = LLMConfig(
+            default_model="gpt-4o-mini",
+            models={
+                "gpt-4o-mini": ModelConfig(
+                    name="gpt-4o-mini",
+                    provider="openai",
+                    temperature=0.7,
+                    max_tokens=4096,
+                ),
+            },
+            task_type_routing=[
+                TaskTypeRouting(
+                    task_type="analysis",
+                    model="gpt-4o-mini",
+                    temperature=0.1,
+                    max_tokens=256,
+                )
+            ],
+        )
+        client = LLMClient(c)
+        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
+            mock.return_value = _fake_litellm_response("ok", [], 10, 5)
+            await client.complete(
+                messages=[{"role": "user", "content": "Hi"}],
+                task_type="analysis",
+            )
+
+            kwargs = mock.call_args.kwargs
+            assert kwargs["temperature"] == 0.1
+            assert kwargs["max_tokens"] == 256
+
 
 class TestLLMErrors:
     """Tests for LLM error types (Task 6.1)."""

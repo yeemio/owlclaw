@@ -232,6 +232,15 @@ class LLMClient:
             raise ValueError(f"Default model '{model_name}' not in config.models")
         return model_name, self.config.models[model_name], fallback
 
+    def _get_task_routing(self, task_type: str | None) -> TaskTypeRouting | None:
+        """Return routing entry for task_type, if configured."""
+        if not task_type:
+            return None
+        for routing in self.config.task_type_routing:
+            if routing.task_type == task_type:
+                return routing
+        return None
+
     def _wrap_litellm_error(self, e: Exception, model: str) -> LLMError:
         """Map litellm exception to OwlClaw LLM error and log details."""
         msg = str(e)
@@ -350,8 +359,15 @@ class LLMClient:
                 cost=0.0,
             )
         model_name, model_config, fallback = self._route_model(task_type)
-        temp = temperature if temperature is not None else model_config.temperature
-        max_tok = max_tokens if max_tokens is not None else model_config.max_tokens
+        routing = self._get_task_routing(task_type)
+        routed_temp = routing.temperature if routing is not None else None
+        routed_max_tokens = routing.max_tokens if routing is not None else None
+        temp = temperature if temperature is not None else (
+            routed_temp if routed_temp is not None else model_config.temperature
+        )
+        max_tok = max_tokens if max_tokens is not None else (
+            routed_max_tokens if routed_max_tokens is not None else model_config.max_tokens
+        )
         params: dict[str, Any] = {
             "model": model_name,
             "messages": messages,
