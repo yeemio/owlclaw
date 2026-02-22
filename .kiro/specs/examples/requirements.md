@@ -1,5 +1,13 @@
 # Requirements Document: examples
 
+## 文档联动
+
+- requirements: `.kiro/specs/examples/requirements.md`
+- design: `.kiro/specs/examples/design.md`
+- tasks: `.kiro/specs/examples/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Introduction
 
 examples（示例应用）是 OwlClaw 的端到端示例集合，用于展示 OwlClaw 的核心能力和最佳实践。作为用户学习和参考的重要资源，examples 提供完整的、可运行的业务场景示例，覆盖监控、分析、工作流、集成等常见应用场景。

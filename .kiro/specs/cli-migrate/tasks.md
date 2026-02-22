@@ -1,5 +1,13 @@
 # Tasks: 迁移工具
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-migrate/requirements.md`
+- design: `.kiro/specs/cli-migrate/design.md`
+- tasks: `.kiro/specs/cli-migrate/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **状态**：未开始  
 > **预估工作量**：4-6 天  
 > **最后更新**：2026-02-22  

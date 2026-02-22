@@ -1,5 +1,13 @@
 # 设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/capabilities-skills/requirements.md`
+- design: `.kiro/specs/capabilities-skills/design.md`
+- tasks: `.kiro/specs/capabilities-skills/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 本文档描述了 OwlClaw 能力注册和 Skills 挂载系统的技术设计。该系统由三个核心组件组成：

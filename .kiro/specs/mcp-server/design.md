@@ -1,5 +1,13 @@
 # Design Document: mcp-server
 
+## 文档联动
+
+- requirements: `.kiro/specs/mcp-server/requirements.md`
+- design: `.kiro/specs/mcp-server/design.md`
+- tasks: `.kiro/specs/mcp-server/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**: 实现 MCP 协议服务器,将 OwlClaw 能力通过标准 MCP 协议暴露给外部 AI Agent 系统  
 > **状态**: 设计中  
 > **最后更新**: 2025-02-22

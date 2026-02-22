@@ -1,5 +1,13 @@
 # Tasks: 安全模型
 
+## 文档联动
+
+- requirements: `.kiro/specs/security/requirements.md`
+- design: `.kiro/specs/security/design.md`
+- tasks: `.kiro/specs/security/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **状态**：未开始  
 > **预估工作量**：5-7 天  
 > **最后更新**：2026-02-22  

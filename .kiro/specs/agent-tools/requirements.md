@@ -1,5 +1,13 @@
 # 需求文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/agent-tools/requirements.md`
+- design: `.kiro/specs/agent-tools/design.md`
+- tasks: `.kiro/specs/agent-tools/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 本文档定义 OwlClaw Agent 内建工具的需求。内建工具是 Agent 的核心能力，使 Agent 能够自我调度、管理记忆、查询状态和记录决策。这些工具通过 LLM function calling 暴露给 Agent，让 Agent 自主决定何时使用。

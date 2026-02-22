@@ -1,5 +1,13 @@
 # Tasks: 开源发布
 
+## 文档联动
+
+- requirements: `.kiro/specs/release/requirements.md`
+- design: `.kiro/specs/release/design.md`
+- tasks: `.kiro/specs/release/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **状态**：未开始  
 > **预估工作量**：3-5 天  
 > **最后更新**：2026-02-22  

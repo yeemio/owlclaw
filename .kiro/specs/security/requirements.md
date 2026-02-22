@@ -1,5 +1,13 @@
 # Requirements: 安全模型
 
+## 文档联动
+
+- requirements: `.kiro/specs/security/requirements.md`
+- design: `.kiro/specs/security/design.md`
+- tasks: `.kiro/specs/security/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw Agent 基础设施提供系统性的安全保障，覆盖 Prompt Injection 防护、高风险操作二次确认、敏感数据保护  
 > **优先级**：P1  
 > **预估工作量**：5-7 天

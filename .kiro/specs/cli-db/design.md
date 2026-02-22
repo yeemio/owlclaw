@@ -1,5 +1,13 @@
 # 设计文档：CLI 数据库运维工具
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-db/requirements.md`
+- design: `.kiro/specs/cli-db/design.md`
+- tasks: `.kiro/specs/cli-db/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 CLI 数据库运维工具为 OwlClaw 提供统一的数据库运维命令行接口。该工具基于 Typer 框架构建，封装了 Alembic API、pg_dump、pg_restore 等底层工具，提供一致的用户体验。

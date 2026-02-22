@@ -1,5 +1,13 @@
 # 实现计划：LangChain 集成
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-langchain/requirements.md`
+- design: `.kiro/specs/integrations-langchain/design.md`
+- tasks: `.kiro/specs/integrations-langchain/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本实现计划将 LangChain 编排框架集成到 OwlClaw Agent 系统中。实现将遵循隔离设计模式，所有 LangChain 相关代码集中在 `owlclaw/integrations/langchain/` 目录中，提供 Runnable 注册、schema 验证、治理集成、可观测性追踪等功能。

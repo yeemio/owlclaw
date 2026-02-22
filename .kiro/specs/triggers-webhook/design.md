@@ -1,5 +1,13 @@
 # 设计文档：Webhook 触发器系统
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-webhook/requirements.md`
+- design: `.kiro/specs/triggers-webhook/design.md`
+- tasks: `.kiro/specs/triggers-webhook/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 Webhook 触发器系统是 OwlClaw Agent 平台的关键组件，负责接收外部 HTTP 请求并触发代理执行。系统采用事件驱动架构，提供高可用性、安全性和可扩展性。

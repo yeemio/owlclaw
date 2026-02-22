@@ -1,5 +1,13 @@
 # 数据库变更触发器设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-db-change/requirements.md`
+- design: `.kiro/specs/triggers-db-change/design.md`
+- tasks: `.kiro/specs/triggers-db-change/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 数据库变更触发器通过 PostgreSQL NOTIFY/LISTEN 机制监听数据变更事件，经过事件聚合（debounce/batch）后触发 Agent Run。采用适配器模式预留 CDC 扩展接口。

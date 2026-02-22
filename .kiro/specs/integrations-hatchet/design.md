@@ -1,5 +1,13 @@
 # 设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-hatchet/requirements.md`
+- design: `.kiro/specs/integrations-hatchet/design.md`
+- tasks: `.kiro/specs/integrations-hatchet/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 本文档描述 OwlClaw 与 Hatchet 的集成设计。Hatchet 为 OwlClaw 提供持久化任务执行、Cron 调度和自我调度能力。集成采用隔离设计，所有 Hatchet 相关代码集中在 `owlclaw/integrations/hatchet.py` 中，便于未来替换或支持其他持久执行引擎（如 Temporal）。

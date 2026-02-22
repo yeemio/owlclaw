@@ -1,5 +1,13 @@
 # 需求文档：数据库核心基础设施
 
+## 文档联动
+
+- requirements: `.kiro/specs/database-core/requirements.md`
+- design: `.kiro/specs/database-core/design.md`
+- tasks: `.kiro/specs/database-core/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 数据库核心基础设施为 OwlClaw 提供基于 SQLAlchemy 的异步数据库操作能力，支持 PostgreSQL 数据库。该基础设施从第一天起就强制实施多租户隔离，管理连接池，并提供 session 和 engine 管理工具。设计支持 OwlClaw 从自托管单租户部署演进到云端多租户 SaaS，同时保持向后兼容性。

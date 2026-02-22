@@ -1,5 +1,13 @@
 # Requirements: Governance Layer
 
+## 文档联动
+
+- requirements: `.kiro/specs/governance/requirements.md`
+- design: `.kiro/specs/governance/design.md`
+- tasks: `.kiro/specs/governance/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw Agent 提供生产级治理能力，包括能力可见性过滤、执行记录和模型路由  
 > **优先级**：P0  
 > **预估工作量**：8-10 天
@@ -32,11 +40,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 ### 2.1 作为系统管理员
 
 **故事 1**：预算控制
-`
+```
 作为系统管理员
 我希望限制 Agent 的月度 LLM 调用预算
 这样我可以避免成本失控
-`
+```
 
 **验收标准**：
 - [ ] 可以为每个 Agent 配置月度预算上限（如 ¥5000/月）
@@ -46,11 +54,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 - [ ] 预算使用情况可查询
 
 **故事 2**：时间约束
-`
+```
 作为业务负责人
 我希望某些能力只在特定时间可用（如交易时间）
 这样我可以避免 Agent 在非工作时间执行敏感操作
-`
+```
 
 **验收标准**：
 - [ ] 可以为能力配置时间约束（如 trading_hours_only）
@@ -59,11 +67,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 - [ ] 时间约束支持时区配置
 
 **故事 3**：频率限制
-`
+```
 作为系统管理员
 我希望限制某些能力的调用频率
 这样我可以避免 Agent 过度调用外部 API 或数据库
-`
+```
 
 **验收标准**：
 - [ ] 可以为能力配置调用频率限制（如 max_daily_calls: 50）
@@ -74,11 +82,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 ### 2.2 作为开发者
 
 **故事 4**：决策追溯
-`
+```
 作为开发者
 我希望能够查看 Agent 的每次决策记录
 这样我可以调试问题和优化 Agent 行为
-`
+```
 
 **验收标准**：
 - [ ] 每次能力执行都有完整记录（输入、输出、决策理由）
@@ -88,11 +96,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 - [ ] 记录支持导出（JSON、CSV）
 
 **故事 5**：模型路由
-`
+```
 作为开发者
 我希望不同类型的任务使用不同的 LLM 模型
 这样我可以平衡成本和性能
-`
+```
 
 **验收标准**：
 - [ ] 可以为不同 task_type 配置不同的模型（如 trading_decision → gpt-4）
@@ -100,11 +108,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 - [ ] 模型选择逻辑对 Agent Runtime 透明
 - [ ] 模型路由配置可热更新
 
-`
+```
 作为系统管理员
 我希望限制 Agent 每月的 LLM 调用成本
 这样我可以避免预算超支
-`
+```
 
 **验收标准**：
 - [ ] 可以为每个 Agent 配置月度预算上限
@@ -113,11 +121,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 - [ ] 预算重置时自动恢复所有能力
 
 **故事 2**：交易时间约束
-`
+```
 作为业务负责人
 我希望交易相关的能力只在交易时间可用
 这样我可以避免非交易时间的误操作
-`
+```
 
 **验收标准**：
 - [ ] 可以在 SKILL.md 中配置 trading_hours_only 约束
@@ -126,11 +134,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 - [ ] 支持自定义交易时间规则（工作日 9:30-15:00）
 
 **故事 3**：频率限制
-`
+```
 作为系统管理员
 我希望限制某些能力的调用频率
 这样我可以避免 Agent 过度调用外部 API
-`
+```
 
 **验收标准**：
 - [ ] 可以配置 max_daily_calls（每日最大调用次数）
@@ -141,11 +149,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 ### 2.2 作为审计人员
 
 **故事 4**：决策追溯
-`
+```
 作为审计人员
 我希望查看 Agent 的所有决策记录
 这样我可以审计 Agent 的行为是否合规
-`
+```
 
 **验收标准**：
 - [ ] 每次能力执行都记录到 Ledger
@@ -155,11 +163,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 - [ ] 记录持久化到数据库，支持长期存储
 
 **故事 5**：成本分析
-`
+```
 作为财务人员
 我希望查看每个 Agent 的 LLM 调用成本
 这样我可以优化成本分配
-`
+```
 
 **验收标准**：
 - [ ] Ledger 记录每次 LLM 调用的 token 使用量
@@ -170,11 +178,11 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 ### 2.3 作为开发者
 
 **故事 6**：模型路由
-`
+```
 作为开发者
 我希望不同类型的任务使用不同的 LLM 模型
 这样我可以平衡成本和性能
-`
+```
 
 **验收标准**：
 - [ ] 可以配置 task_type → model 的映射关系
@@ -194,7 +202,7 @@ OwlClaw 的核心差异化在于**开箱即用的治理层**，这是 LangChain�
 **需求**：根据 Agent 的月度预算使用情况，过滤高成本能力。
 
 **接口定义**：
-`python
+```python
 class BudgetConstraint:
     async def evaluate(
         self, 
@@ -209,7 +217,7 @@ class BudgetConstraint:
             FilterResult(visible=True) 如果预算充足
             FilterResult(visible=False, reason="预算不足") 如果预算用完
         \"\"\"
-`
+```
 
 **验收标准**：
 - [ ] WHEN Agent 月度预算未用完时，THE System SHALL 返回 visible=True
@@ -224,7 +232,7 @@ class BudgetConstraint:
 **需求**：根据时间规则（如交易时间）过滤能力。
 
 **接口定义**：
-`python
+```python
 class TimeConstraint:
     async def evaluate(
         self, 
@@ -239,7 +247,7 @@ class TimeConstraint:
             FilterResult(visible=True) 如果当前时间符合约束
             FilterResult(visible=False, reason="非交易时间") 如果不符合
         \"\"\"
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 支持 trading_hours_only 约束
@@ -254,7 +262,7 @@ class TimeConstraint:
 **需求**：根据调用频率限制过滤能力。
 
 **接口定义**：
-`python
+```python
 class RateLimitConstraint:
     async def evaluate(
         self, 
@@ -269,7 +277,7 @@ class RateLimitConstraint:
             FilterResult(visible=True) 如果未超过限制
             FilterResult(visible=False, reason="超过每日调用次数") 如果超限
         \"\"\"
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 支持 max_daily_calls 约束（每日最大调用次数）
@@ -285,7 +293,7 @@ class RateLimitConstraint:
 **需求**：根据能力的失败率自动熔断。
 
 **接口定义**：
-`python
+```python
 class CircuitBreakerConstraint:
     async def evaluate(
         self, 
@@ -300,7 +308,7 @@ class CircuitBreakerConstraint:
             FilterResult(visible=True) 如果熔断器关闭
             FilterResult(visible=False, reason="熔断中") 如果熔断器打开
         \"\"\"
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 支持 failure_threshold 配置（连续失败次数阈值，默认 5）
@@ -316,7 +324,7 @@ class CircuitBreakerConstraint:
 **需求**：将所有约束集成到统一的过滤器中。
 
 **接口定义**：
-`python
+```python
 class VisibilityFilter:
     async def filter_capabilities(
         self,
@@ -330,7 +338,7 @@ class VisibilityFilter:
         Returns:
             经过所有约束过滤后的能力列表
         \"\"\"
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 对每个能力应用所有约束评估
@@ -347,7 +355,7 @@ class VisibilityFilter:
 **需求**：记录每次能力执行的完整上下文。
 
 **数据模型**：
-`python
+```python
 class LedgerRecord(Base):
     __tablename__ = 'ledger_records'
     
@@ -368,7 +376,7 @@ class LedgerRecord(Base):
     status: str  # success / failure / timeout
     error_message: str
     created_at: datetime
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 在能力执行后记录到数据库
@@ -384,7 +392,7 @@ class LedgerRecord(Base):
 **需求**：提供查询接口支持审计和分析。
 
 **接口定义**：
-`python
+```python
 class Ledger:
     async def query_records(
         self,
@@ -408,7 +416,7 @@ class Ledger:
         \"\"\"
         统计成本摘要
         \"\"\"
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 支持按时间范围查询
@@ -440,7 +448,7 @@ governance:
         model: claude-3-sonnet
         fallback: [gpt-4, gpt-3.5-turbo]
     default_model: gpt-3.5-turbo
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 从配置文件加载路由规则
@@ -454,7 +462,7 @@ governance:
 **需求**：主模型失败时自动降级到备用模型。
 
 **接口定义**：
-`python
+```python
 class Router:
     async def select_model(
         self,
@@ -480,7 +488,7 @@ class Router:
         Returns:
             降级模型名称，如果没有可用降级则返回 None
         \"\"\"
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 在主模型失败时自动尝试 fallback 列表中的模型
@@ -495,7 +503,7 @@ class Router:
 **需求**：Router 在 Agent Runtime 的 function calling 循环中被调用。
 
 **集成点**：
-`python
+```python
 # Agent Runtime 中的调用
 model_selection = await router.select_model(
     task_type=current_skill.task_type,
@@ -507,7 +515,7 @@ llm_response = await litellm.acompletion(
     messages=messages,
     tools=visible_tools
 )
-`
+```
 
 **验收标准**：
 - [ ] THE System SHALL 在每次 LLM 调用前调用 Router
@@ -745,3 +753,4 @@ llm_response = await litellm.acompletion(
 
 **维护者**：OwlClaw 开发团队  
 **最后更新**：2026-02-11
+```

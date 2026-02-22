@@ -1,5 +1,13 @@
 # 设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/agent-runtime/requirements.md`
+- design: `.kiro/specs/agent-runtime/design.md`
+- tasks: `.kiro/specs/agent-runtime/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 本文档描述了 OwlClaw Agent 运行时核心模块的技术设计。Agent 运行时是 OwlClaw 的心脏，负责将 Agent 从无状态函数转变为**有身份、有记忆、有知识的持续实体**。

@@ -126,10 +126,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-22 |
-| 当前批次 | Spec 规范化（文档一致性修复批次） |
-| 批次状态 | **完成**。已完成第四批规范化：`agent-memory`/`triggers-signal`/`e2e-validation` 三层文档互链补齐；`agent-tools` 设计文档占位注释与代码块格式修复。 |
-| 已完成项 | AGENTS 规范化职责 + 关键词触发；requirements 模板补齐（triggers-webhook/e2e-validation）；路径漂移修复（langfuse/agent-tools/configuration/integrations-hatchet）；接口签名修复（triggers-webhook/e2e-validation）；`fc.*` 示例替换为 hypothesis；schema 对齐（triggers-webhook/triggers-queue/owlhub/agent-memory/triggers-signal）；三层文档互链补齐（agent-memory/triggers-signal/e2e-validation）；`agent-tools` 占位注释与 markdown 代码块修复 |
-| 下一待执行 | **Spec 规范化第五批**：`triggers-cron` 与 `cli-migrate` 等大文档的占位注释语义分级（可实现占位/需求性 TODO 区分）与格式统一。 |
+| 当前批次 | agent-memory Phase 1 单元测试（Task 8） |
+| 批次状态 | **完成**。Task 8 单元测试已补齐（test_memory_entry / test_time_decay / test_inmemory_store）；memory 单元测试 35 个全部通过。 |
+| 已完成项 | agent-memory Task 1～8；Spec 规范化（文档一致性修复）已收口；收尾复核已完成（修复 4 份文档未闭合 fenced code block：cli-skill/governance/langchain/skill-templates）。 |
+| 下一待执行 | **agent-memory Task 9**（集成测试：test_pgvector_store，testcontainers PostgreSQL + pgvector）→ Task 10（MemoryLifecycleManager）… |
+| 验收快照 | memory 单元测试 35 passed；spec 规范化 `triplets=29, linked=29`、坏代码块残留 `0`、占位/漂移关键词残留 `0`、旧路径残留 `0` |
 | 阻塞项 | 无 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
@@ -145,4 +146,3 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：清单中标注「验收备注」的项，若含当前 SKIP 的测试，在完成备注所指的后续工作后，须跑通该测试并更新文档（见「功能清单」中 integrations-hatchet 备注）
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
-

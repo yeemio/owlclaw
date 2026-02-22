@@ -1,5 +1,13 @@
 # Requirements: CI 配置
 
+## 文档联动
+
+- requirements: `.kiro/specs/ci-setup/requirements.md`
+- design: `.kiro/specs/ci-setup/design.md`
+- tasks: `.kiro/specs/ci-setup/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：建立 CI 流水线，覆盖 lint/test/build/release  
 > **优先级**：P0  
 > **预估工作量**：2-4 天
@@ -21,11 +29,11 @@
 ### 2.1 作为 平台开发者
 
 **故事 1**：快速接入
-`
+```
 作为 平台开发者
 我希望 能快速接入并使用 CI 配置
 这样我可以 降低接入成本并保证一致性
-`
+```
 
 **验收标准**：
 - [ ] 提供清晰的接入路径与约束

@@ -1,5 +1,13 @@
 # Design: Governance Layer
 
+## 文档联动
+
+- requirements: `.kiro/specs/governance/requirements.md`
+- design: `.kiro/specs/governance/design.md`
+- tasks: `.kiro/specs/governance/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw Agent 提供生产级治理能力的技术设计  
 > **状态**：设计中  
 > **最后更新**：2026-02-22

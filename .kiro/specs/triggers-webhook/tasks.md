@@ -1,5 +1,13 @@
 # 实施计划：Webhook 触发器系统
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-webhook/requirements.md`
+- design: `.kiro/specs/triggers-webhook/design.md`
+- tasks: `.kiro/specs/triggers-webhook/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本实施计划将 Webhook 触发器系统的设计转换为可执行的开发任务。系统采用 Python 实现，使用分层架构，包括 HTTP 接入层、验证层、转换层、执行层和持久化层。实施将按照从核心功能到高级特性的顺序进行，每个阶段都包含相应的测试任务。

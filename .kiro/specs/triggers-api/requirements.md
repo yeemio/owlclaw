@@ -1,5 +1,13 @@
 # Requirements: API 调用触发器
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-api/requirements.md`
+- design: `.kiro/specs/triggers-api/design.md`
+- tasks: `.kiro/specs/triggers-api/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：通过 HTTP REST 端点接收外部系统请求，触发 Agent Run 并返回智能响应  
 > **优先级**：P2  
 > **预估工作量**：4-6 天

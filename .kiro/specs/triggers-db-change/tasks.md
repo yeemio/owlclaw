@@ -1,5 +1,13 @@
 # 数据库变更触发器实现任务
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-db-change/requirements.md`
+- design: `.kiro/specs/triggers-db-change/design.md`
+- tasks: `.kiro/specs/triggers-db-change/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 任务列表
 
 ### Phase 1：核心监听与聚合

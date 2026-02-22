@@ -1,5 +1,13 @@
 # 实现计划：Cron 触发器
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-cron/requirements.md`
+- design: `.kiro/specs/triggers-cron/design.md`
+- tasks: `.kiro/specs/triggers-cron/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本实现计划将 Cron 触发器功能分解为离散的、可执行的任务。该功能提供持久化的、Agent 驱动的 cron 调度能力，集成了 Hatchet、治理约束和 fallback 机制，支持从传统 cron 任务的渐进式迁移。

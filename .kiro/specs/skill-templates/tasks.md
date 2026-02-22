@@ -1,5 +1,13 @@
 # 实施计划：SKILL.md 模板库
 
+## 文档联动
+
+- requirements: `.kiro/specs/skill-templates/requirements.md`
+- design: `.kiro/specs/skill-templates/design.md`
+- tasks: `.kiro/specs/skill-templates/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本实施计划将 SKILL.md 模板库系统的设计转换为可执行的开发任务。系统采用 Python 实现，提供 4 个核心组件（TemplateRegistry、TemplateRenderer、TemplateValidator、TemplateSearcher），15 个模板（5 个类别，每个类别 3 个模板），以及与 OwlClaw CLI 的集成。

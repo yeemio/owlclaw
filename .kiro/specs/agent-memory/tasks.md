@@ -59,7 +59,7 @@
   - 实现 `create_stm()` 和 `build_snapshot()` 代理
   - 实现工厂方法 `MemoryService.from_config(config)` 自动选择后端
 
-- [ ] **Task 8**: 单元测试（Phase 1）
+- [x] **Task 8**: 单元测试（Phase 1）
   - `test_memory_entry.py`: MemoryEntry 创建、序列化
   - `test_stm_manager.py`: 添加/压缩/注入/输出
   - `test_snapshot_builder.py`: 各种条件下的快照构建

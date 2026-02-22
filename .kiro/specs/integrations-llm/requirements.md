@@ -1,5 +1,13 @@
 # 需求文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-llm/requirements.md`
+- design: `.kiro/specs/integrations-llm/design.md`
+- tasks: `.kiro/specs/integrations-llm/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 本文档定义 OwlClaw 与 litellm 的集成需求。litellm 为 OwlClaw 提供统一的 LLM 调用接口，支持 100+ 模型（OpenAI、Anthropic、Google、Azure 等），并提供模型降级、重试、成本追踪等能力。

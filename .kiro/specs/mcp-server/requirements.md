@@ -1,5 +1,13 @@
 # Requirements Document: mcp-server
 
+## 文档联动
+
+- requirements: `.kiro/specs/mcp-server/requirements.md`
+- design: `.kiro/specs/mcp-server/design.md`
+- tasks: `.kiro/specs/mcp-server/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Introduction
 
 mcp-server（MCP Server）是 OwlClaw 的 MCP 协议服务器实现,用于将 OwlClaw 的业务能力通过 Model Context Protocol (MCP) 暴露给外部 AI Agent 系统。作为 OwlClaw 与 OpenClaw、Kiro IDE 等 AI 系统的标准通道,mcp-server 负责协议实现、能力发现、工具调用、资源访问和治理集成。

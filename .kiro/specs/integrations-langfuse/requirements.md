@@ -1,5 +1,13 @@
 # Requirements: Langfuse Integration
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-langfuse/requirements.md`
+- design: `.kiro/specs/integrations-langfuse/design.md`
+- tasks: `.kiro/specs/integrations-langfuse/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw Agent 提供 LLM 调用追踪和可观测性能力  
 > **优先级**：P1  
 > **预估工作量**：2-3 天

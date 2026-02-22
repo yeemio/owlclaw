@@ -1,5 +1,13 @@
 # Requirements Document: cli-migrate
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-migrate/requirements.md`
+- design: `.kiro/specs/cli-migrate/design.md`
+- tasks: `.kiro/specs/cli-migrate/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Introduction
 
 cli-migrate 是 OwlClaw 的 AI 辅助迁移工具，旨在帮助已有业务系统（Brownfield）快速接入 OwlClaw 的 AI 自主能力。该工具通过扫描已有项目代码，识别可接入的业务函数和 API，自动生成 OwlClaw 接入代码（@handler 注册）和对应的 SKILL.md 文档（遵循 Agent Skills 规范），从而实现零改造或最小改造接入。
@@ -41,7 +49,7 @@ cli-migrate 是 OwlClaw 的 AI 辅助迁移工具，旨在帮助已有业务系�
 1. THE CLI_Migrate SHALL 支持 Python 3.8+ 项目的扫描和代码生成
 2. WHEN 用户选择一个 Python 函数进行迁移，THE CLI_Migrate SHALL 生成包含 @app.handler 装饰器的注册代码
 3. THE CLI_Migrate SHALL 根据函数签名自动推断参数类型和返回类型（使用 type hints）
-4. IF 函数缺少 type hints，THEN THE CLI_Migrate SHALL 在生成的代码中添加 TODO 注释提示用户补充类型
+4. IF 函数缺少 type hints，THEN THE CLI_Migrate SHALL 在生成的代码中添加 `MANUAL_REVIEW` 注释提示用户补充类型
 5. THE CLI_Migrate SHALL 生成对应的 SKILL.md 文档骨架，包含函数描述、参数说明、使用场景
 6. THE CLI_Migrate SHALL 保留原函数的文档字符串并转换为 SKILL.md 的相应章节
 
@@ -149,7 +157,7 @@ cli-migrate 是 OwlClaw 的 AI 辅助迁移工具，旨在帮助已有业务系�
 4. THE CLI_Migrate SHALL 生成的代码 SHALL 包含错误处理逻辑（try-except 块）
 5. THE CLI_Migrate SHALL 生成的代码 SHALL 包含日志记录语句（使用 Python logging 模块）
 6. THE CLI_Migrate SHALL 提供代码格式化选项（black/autopep8）
-7. WHERE 生成的代码有 TODO 注释，THE CLI_Migrate SHALL 在 Migration_Report 中汇总所有 TODO 项
+7. WHERE 生成的代码有 `MANUAL_REVIEW` 注释，THE CLI_Migrate SHALL 在 Migration_Report 中汇总所有待人工复核项
 
 ### Requirement 11: 配置与定制化
 

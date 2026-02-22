@@ -1,5 +1,13 @@
 # Implementation Plan: OwlHub (Skills Registry/Hub)
 
+## 文档联动
+
+- requirements: `.kiro/specs/owlhub/requirements.md`
+- design: `.kiro/specs/owlhub/design.md`
+- tasks: `.kiro/specs/owlhub/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Overview
 
 This implementation plan breaks down the OwlHub feature into three progressive phases, following the design's architecture evolution from GitHub index mode to static site to service API. Each phase builds on the previous one while maintaining backward compatibility. The plan includes comprehensive testing with both unit tests and property-based tests for all 26 correctness properties.

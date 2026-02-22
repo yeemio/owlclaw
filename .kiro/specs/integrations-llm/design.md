@@ -1,5 +1,13 @@
 # 设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-llm/requirements.md`
+- design: `.kiro/specs/integrations-llm/design.md`
+- tasks: `.kiro/specs/integrations-llm/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 本文档描述 OwlClaw 与 litellm 的集成设计。litellm 为 OwlClaw 提供统一的 LLM 调用接口，支持 100+ 模型提供商。集成采用隔离设计，所有 litellm 相关代码集中在 `owlclaw/integrations/llm.py` 中。

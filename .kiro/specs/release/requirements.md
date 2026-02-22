@@ -1,5 +1,13 @@
 # Requirements: 开源发布
 
+## 文档联动
+
+- requirements: `.kiro/specs/release/requirements.md`
+- design: `.kiro/specs/release/design.md`
+- tasks: `.kiro/specs/release/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：将 OwlClaw 核心包和 MCP Server 发布到 PyPI，并在 GitHub 公开开源（MIT 许可证）  
 > **优先级**：P3（Phase 3）  
 > **预估工作量**：3-5 天

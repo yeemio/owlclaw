@@ -1,5 +1,13 @@
 # 设计文档：数据库核心基础设施
 
+## 文档联动
+
+- requirements: `.kiro/specs/database-core/requirements.md`
+- design: `.kiro/specs/database-core/design.md`
+- tasks: `.kiro/specs/database-core/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 数据库核心基础设施为 OwlClaw 提供基于 SQLAlchemy 2.0+ 异步 API 的数据库访问层。该模块实现了以下核心功能：

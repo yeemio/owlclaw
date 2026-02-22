@@ -1,5 +1,13 @@
 # Configuration 系统实现任务
 
+## 文档联动
+
+- requirements: `.kiro/specs/configuration/requirements.md`
+- design: `.kiro/specs/configuration/design.md`
+- tasks: `.kiro/specs/configuration/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 任务列表
 
 ### Phase 1：核心配置框架

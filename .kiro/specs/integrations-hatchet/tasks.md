@@ -1,5 +1,13 @@
 # 任务清单
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-hatchet/requirements.md`
+- design: `.kiro/specs/integrations-hatchet/design.md`
+- tasks: `.kiro/specs/integrations-hatchet/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 **后续与数据库相关的工作**须遵循数据库规范：使用 **`owlclaw db` CLI** 进行初始化与迁移（见 `docs/DATABASE_ARCHITECTURE.md`、`.cursor/rules/owlclaw_database.mdc`）；OwlClaw 业务表通过 Alembic 管理，Hatchet 仅使用 hatchet database、不操作 owlclaw database。
 
 **跳过测试与验收**：`tests/integration/test_hatchet_integration.py::test_hatchet_durable_task_aio_sleep_for_mock` 在 mock_run 下为 **SKIP**（aio_sleep_for 需 durable event listener，仅真实 Worker 具备）。完成 Task 7.2.3 或 7.2.4 后，须用真实 Hatchet Worker 跑通该用例并更新文档/去掉 skip。

@@ -1,5 +1,13 @@
 # Design Document: cli-scan
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-scan/requirements.md`
+- design: `.kiro/specs/cli-scan/design.md`
+- tasks: `.kiro/specs/cli-scan/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**: 提供 Python 项目 AST 代码扫描器，用于分析代码结构、函数签名、复杂度和依赖关系  
 > **状态**: 设计中  
 > **最后更新**: 2025-02-22

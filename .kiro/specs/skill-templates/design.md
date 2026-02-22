@@ -1,5 +1,13 @@
 # 设计文档：SKILL.md 模板库
 
+## 文档联动
+
+- requirements: `.kiro/specs/skill-templates/requirements.md`
+- design: `.kiro/specs/skill-templates/design.md`
+- tasks: `.kiro/specs/skill-templates/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本文档描述了 SKILL.md 模板库的设计。该模板库提供可复用的 SKILL.md 模板集合，降低业务接入成本，帮助开发者快速创建符合 Agent Skills 规范的能力描述文档。
@@ -2909,3 +2917,4 @@ def skill_generate(template_id, params, output, no_validate):
 **文档版本**：1.0  
 **最后更新**：2026-02-22  
 **维护者**：平台研发
+```

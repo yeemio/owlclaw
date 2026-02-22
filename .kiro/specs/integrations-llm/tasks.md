@@ -1,5 +1,13 @@
 # 任务清单
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-llm/requirements.md`
+- design: `.kiro/specs/integrations-llm/design.md`
+- tasks: `.kiro/specs/integrations-llm/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Task 0: 契约与文档
 
 - [x] 0.1 确认 requirements.md 完整且与架构文档一致

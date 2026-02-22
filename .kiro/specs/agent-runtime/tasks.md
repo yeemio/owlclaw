@@ -1,5 +1,13 @@
 # 实现计划：agent-runtime
 
+## 文档联动
+
+- requirements: `.kiro/specs/agent-runtime/requirements.md`
+- design: `.kiro/specs/agent-runtime/design.md`
+- tasks: `.kiro/specs/agent-runtime/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本实现计划将 agent-runtime 设计分解为离散的编码步骤。Agent 运行时是 OwlClaw 的核心，负责 Agent 的身份加载、记忆系统、知识注入、function calling 决策循环和 Heartbeat 机制。

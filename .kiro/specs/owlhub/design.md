@@ -1,5 +1,13 @@
 # Design Document: Skills 注册中心（OwlHub）
 
+## 文档联动
+
+- requirements: `.kiro/specs/owlhub/requirements.md`
+- design: `.kiro/specs/owlhub/design.md`
+- tasks: `.kiro/specs/owlhub/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**: 建立 Skills 注册、发布与发现机制，支持 OwlHub 生态  
 > **状态**: 设计中  
 > **最后更新**: 2025-02-22

@@ -1,5 +1,13 @@
 # 设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/agent-tools/requirements.md`
+- design: `.kiro/specs/agent-tools/design.md`
+- tasks: `.kiro/specs/agent-tools/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 本文档描述了 OwlClaw Agent 内建工具的技术设计。内建工具是 Agent 的核心能力，使 Agent 能够：
@@ -689,7 +697,7 @@ class BuiltInTools:
 
 ### 记忆条目结构
 
-`python
+```python
 {
     "memory_id": "mem_20260210_173000_xyz789",
     "agent_id": "mionyee-trading",
@@ -699,11 +707,11 @@ class BuiltInTools:
     "run_id": "run_20260210_173000_abc123",
     "embedding": [0.123, 0.456, ...],  # 向量表示
 }
-`
+```
 
 ### 决策日志结构
 
-`python
+```python
 {
     "decision_id": "dec_20260210_173000_def456",
     "agent_id": "mionyee-trading",
@@ -712,11 +720,11 @@ class BuiltInTools:
     "decision_type": "no_action",
     "timestamp": "2026-02-10T17:30:00Z",
 }
-`
+```
 
 ### Ledger 记录结构
 
-`python
+```python
 {
     "record_id": "rec_20260210_173000_ghi789",
     "agent_id": "mionyee-trading",
@@ -736,65 +744,65 @@ class BuiltInTools:
     "timestamp": "2026-02-10T17:30:00Z",
     "duration_ms": 45,
 }
-`
+```
 
 ## 错误处理
 
 ### 1. 参数验证错误
 
-`python
+```python
 # 场景：delay_seconds 超出范围
 # 行为：抛出 ValueError，不执行工具
 
 ValueError: delay_seconds must be between 1 and 2592000, got 3000000
-`
+```
 
 ### 2. 工具不存在错误
 
-`python
+```python
 # 场景：execute() 调用未知工具
 # 行为：抛出 ValueError
 
 ValueError: Unknown built-in tool: unknown_tool
-`
+```
 
 ### 3. 工具执行超时
 
-`python
+```python
 # 场景：工具执行超过 30 秒
 # 行为：抛出 TimeoutError，记录到 Ledger
 
 TimeoutError: Tool 'query_state' execution exceeded 30s timeout
-`
+```
 
 ### 4. 依赖组件失败
 
-`python
+```python
 # 场景：Hatchet 调用失败
 # 行为：抛出 RuntimeError，包含原始错误信息
 
 RuntimeError: Tool 'schedule_once' execution failed: 
   HatchetError: Failed to schedule task
-`
+```
 
 ### 5. 状态提供者不存在
 
-`python
+```python
 # 场景：query_state 调用不存在的 state_name
 # 行为：抛出 ValueError（来自 Capability Registry）
 
 ValueError: No state provider registered for 'unknown_state'
-`
+```
 
 ### 6. 记忆系统错误
 
-`python
+```python
 # 场景：向量数据库连接失败
 # 行为：抛出 RuntimeError
 
 RuntimeError: Tool 'recall' execution failed: 
   VectorDBError: Connection timeout
-`
+```
 
 ## 性能考虑
 
@@ -922,7 +930,7 @@ RuntimeError: Tool 'recall' execution failed:
 
 BuiltInTools 通过构造函数接受所有依赖，便于测试和替换：
 
-`python
+```python
 # 生产环境
 tools = BuiltInTools(
     hatchet_client=hatchet_client,
@@ -938,7 +946,7 @@ tools = BuiltInTools(
     capability_registry=mock_registry,
     governance_ledger=mock_ledger,
 )
-`
+```
 
 ## 未来扩展
 
@@ -947,7 +955,7 @@ tools = BuiltInTools(
 **需求：** 允许业务应用注册自定义内建工具。
 
 **实现：**
-`python
+```python
 class BuiltInTools:
     def register_custom_tool(
         self,
@@ -958,14 +966,14 @@ class BuiltInTools:
         """Register a custom built-in tool."""
         self.tool_methods[name] = handler
         self._custom_schemas.append(schema)
-`
+```
 
 ### 2. 工具执行的重试机制
 
 **需求：** 对于幂等工具（如 query_state、recall），支持自动重试。
 
 **实现：**
-`python
+```python
 async def execute(self, tool_name: str, arguments: dict, context: dict):
     max_retries = 3
     for attempt in range(max_retries):
@@ -975,27 +983,27 @@ async def execute(self, tool_name: str, arguments: dict, context: dict):
             if attempt == max_retries - 1:
                 raise
             await asyncio.sleep(2 ** attempt)  # 指数退避
-`
+```
 
 ### 3. 工具执行的 A/B 测试
 
 **需求：** 支持不同 Agent 实例使用不同版本的工具。
 
 **实现：**
-`python
+```python
 class BuiltInTools:
     def __init__(self, ..., version: str = "v1"):
         self.version = version
         if version == "v2":
             self.tool_methods["schedule_once"] = self.schedule_once_v2
-`
+```
 
 ### 4. 工具执行的限流
 
 **需求：** 防止 Agent 滥用工具（如频繁调用 schedule_once）。
 
 **实现：**
-`python
+```python
 class BuiltInTools:
     def __init__(self, ..., rate_limiter):
         self.rate_limiter = rate_limiter
@@ -1004,14 +1012,14 @@ class BuiltInTools:
         if not await self.rate_limiter.check(tool_name, context["agent_id"]):
             raise RateLimitError(f"Tool '{tool_name}' rate limit exceeded")
         ...
-`
+```
 
 ### 5. 工具执行的成本追踪
 
 **需求：** 追踪每个工具调用的成本（LLM token、数据库查询、API 调用）。
 
 **实现：**
-`python
+```python
 async def execute(self, tool_name: str, ...):
     cost_tracker = CostTracker()
     result = await method(**arguments, context=context, cost_tracker=cost_tracker)
@@ -1020,7 +1028,7 @@ async def execute(self, tool_name: str, ...):
         ...,
         cost=cost_tracker.total_cost,
     )
-`
+```
 
 ## 安全考虑
 
@@ -1082,7 +1090,7 @@ async def execute(self, tool_name: str, ...):
 
 BuiltInTools 将被 Agent Runtime 使用，集成方式如下：
 
-`python
+```python
 # owlclaw/agent/runtime/runtime.py
 class AgentRuntime:
     def __init__(self, ...):
@@ -1127,7 +1135,7 @@ class AgentRuntime:
             
             # 4. 将结果返回给 LLM（可能继续调用更多工具）
             ...
-`
+```
 
 ## 参考
 

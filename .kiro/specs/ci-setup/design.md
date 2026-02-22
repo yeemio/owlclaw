@@ -1,5 +1,13 @@
 # Design: CI 配置
 
+## 文档联动
+
+- requirements: `.kiro/specs/ci-setup/requirements.md`
+- design: `.kiro/specs/ci-setup/design.md`
+- tasks: `.kiro/specs/ci-setup/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：建立 CI 流水线，覆盖 lint/test/build/release  
 > **状态**：设计中  
 > **最后更新**：2026-02-22
@@ -755,7 +763,7 @@ def process_data(data: dict) -> dict:  # ✅
 **症状**：Pytest 测试失败
 
 **排查步骤**：
-1. 本地运行失败的测试：`pytest tests/test_xxx.py::test_yyy -v`
+1. 本地运行失败的测试：`pytest tests/test_sample.py::test_case -v`
 2. 检查测试日志和错误信息
 3. 确认数据库连接（如果是集成测试）
 4. 检查环境变量配置

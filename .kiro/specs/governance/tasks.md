@@ -1,5 +1,13 @@
 # Tasks: Governance Layer
 
+## 文档联动
+
+- requirements: `.kiro/specs/governance/requirements.md`
+- design: `.kiro/specs/governance/design.md`
+- tasks: `.kiro/specs/governance/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **状态**：Phase 1 已完成，Phase 2 未开始  
 > **预估工作量**：8-10 天  
 > **最后更新**：2026-02-11  

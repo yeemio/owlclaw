@@ -1,5 +1,13 @@
 # 设计文档：LangChain 集成
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-langchain/requirements.md`
+- design: `.kiro/specs/integrations-langchain/design.md`
+- tasks: `.kiro/specs/integrations-langchain/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本文档描述了将 LangChain 编排框架集成到 OwlClaw Agent 系统的设计。该集成提供适配层，使 LangChain 的 Runnable（chain、tool、graph）可以作为 OwlClaw capability 注册，并受治理层、Ledger 和可观测体系约束。
@@ -1710,8 +1718,8 @@ OWLCLAW_LANGCHAIN_TIMEOUT=30
 OWLCLAW_LANGCHAIN_TRACING_ENABLED=true
 
 # Langfuse 配置
-LANGFUSE_PUBLIC_KEY=pk_xxx
-LANGFUSE_SECRET_KEY=sk_xxx
+LANGFUSE_PUBLIC_KEY=pk_example
+LANGFUSE_SECRET_KEY=sk_example
 LANGFUSE_HOST=https://cloud.langfuse.com
 ```
 
@@ -2043,3 +2051,4 @@ LangChain 集成为 OwlClaw 提供了强大的编排能力，使得：
 
 **维护者**：平台研发  
 **最后更新**：2026-02-22
+```

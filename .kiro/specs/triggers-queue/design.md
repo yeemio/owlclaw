@@ -1,5 +1,13 @@
 # 设计文档：消息队列触发器
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-queue/requirements.md`
+- design: `.kiro/specs/triggers-queue/design.md`
+- tasks: `.kiro/specs/triggers-queue/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 消息队列触发器系统是 OwlClaw Agent 平台的关键组件，负责从外部消息队列（Kafka、RabbitMQ、SQS 等）消费事件并触发 Agent 执行。系统采用适配器模式，提供统一的队列接入层，支持多种消息队列实现。

@@ -1,5 +1,13 @@
 # 实现计划：Langfuse 集成
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-langfuse/requirements.md`
+- design: `.kiro/specs/integrations-langfuse/design.md`
+- tasks: `.kiro/specs/integrations-langfuse/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本实现计划将 Langfuse 可观测性集成到 OwlClaw Agent 系统中。实现将遵循隔离设计模式，所有 Langfuse 相关代码集中在 `owlclaw/integrations/langfuse.py` 中，提供 LLM 调用追踪、成本分析和性能监控能力。

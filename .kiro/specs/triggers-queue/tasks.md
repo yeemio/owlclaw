@@ -1,5 +1,13 @@
 # 实施计划：消息队列触发器
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-queue/requirements.md`
+- design: `.kiro/specs/triggers-queue/design.md`
+- tasks: `.kiro/specs/triggers-queue/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本实施计划将消息队列触发器系统的设计转换为可执行的开发任务。系统采用 Python 实现，使用适配器模式支持多种消息队列（Kafka、RabbitMQ、SQS），提供统一的队列接入层、消息解析与路由、幂等性保证、重试机制和治理集成。

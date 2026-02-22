@@ -1,5 +1,13 @@
 # 任务清单
 
+## 文档联动
+
+- requirements: `.kiro/specs/agent-tools/requirements.md`
+- design: `.kiro/specs/agent-tools/design.md`
+- tasks: `.kiro/specs/agent-tools/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Task 0: 文档和契约
 
 - [ ] 0.1 确认 requirements.md 完整且经过审核

@@ -1,5 +1,13 @@
 # 需求文档：Webhook 触发器
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-webhook/requirements.md`
+- design: `.kiro/specs/triggers-webhook/design.md`
+- tasks: `.kiro/specs/triggers-webhook/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：通过统一的 Python Webhook 入口安全触发 Agent Run，并与治理层、运行时、审计链路集成  
 > **优先级**：P1  
 > **预估工作量**：7-10 天

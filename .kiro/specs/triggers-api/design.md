@@ -1,5 +1,13 @@
 # API 调用触发器设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-api/requirements.md`
+- design: `.kiro/specs/triggers-api/design.md`
+- tasks: `.kiro/specs/triggers-api/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 API 触发器通过内置轻量 HTTP 服务暴露 REST 端点，外部系统通过 HTTP 请求触发 Agent Run。支持同步（等待 Agent 决策结果）和异步（立即返回 run_id）两种响应模式。

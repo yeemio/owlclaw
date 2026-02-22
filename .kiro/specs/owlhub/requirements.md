@@ -1,5 +1,13 @@
 # 需求文档：Skills 注册中心（OwlHub）
 
+## 文档联动
+
+- requirements: `.kiro/specs/owlhub/requirements.md`
+- design: `.kiro/specs/owlhub/design.md`
+- tasks: `.kiro/specs/owlhub/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 OwlHub 是 OwlClaw Skills 的注册、发现与分发中心，负责维护技能索引、版本、发布流程与审核策略，并为 CLI 提供搜索、安装、更新与统计能力。OwlHub 采用渐进式架构：GitHub 索引 → 静态站点 → 服务化数据库。

@@ -1,5 +1,13 @@
 # Implementation Plan: cli-scan
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-scan/requirements.md`
+- design: `.kiro/specs/cli-scan/design.md`
+- tasks: `.kiro/specs/cli-scan/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Overview
 
 This implementation plan breaks down the cli-scan Python AST code scanner into incremental, testable phases. The scanner will analyze Python projects to extract function signatures, type information, docstrings, dependencies, and complexity metrics. Each task builds on previous work, with property-based tests validating correctness properties throughout.

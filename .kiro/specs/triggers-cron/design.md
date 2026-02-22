@@ -1,5 +1,13 @@
 # Design: Cron Triggers
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-cron/requirements.md`
+- design: `.kiro/specs/triggers-cron/design.md`
+- tasks: `.kiro/specs/triggers-cron/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw Agent 提供 Cron 定时触发能力的详细设计  
 > **版本**：v1.0  
 > **状态**：Draft
@@ -453,7 +461,7 @@ class CronTriggerRegistry:
         
         config.enabled = False
         # 通知 Hatchet 暂停
-        # TODO: Hatchet API 调用
+        # Placeholder: call Hatchet API to pause workflow
     
     async def resume_trigger(self, event_name: str):
         """恢复触发器"""
@@ -463,7 +471,7 @@ class CronTriggerRegistry:
         
         config.enabled = True
         # 通知 Hatchet 恢复
-        # TODO: Hatchet API 调用
+        # Placeholder: call Hatchet API to resume workflow
     
     async def trigger_now(self, event_name: str, **kwargs):
         """手动触发"""
@@ -1098,7 +1106,7 @@ class CircuitBreaker:
         await self._set_state(event_name, "open", reason)
         
         # 2. 暂停 Cron 触发器
-        # TODO: 调用 Hatchet API 暂停 workflow
+        # Placeholder: call Hatchet API to pause workflow
         
         # 3. 发送告警
         await self._send_alert(
@@ -1113,7 +1121,7 @@ class CircuitBreaker:
         await self._set_state(event_name, "closed", None)
         
         # 2. 恢复 Cron 触发器
-        # TODO: 调用 Hatchet API 恢复 workflow
+        # Placeholder: call Hatchet API to resume workflow
         
         # 3. 发送通知
         await self._send_alert(
@@ -1602,7 +1610,7 @@ class CronHealthCheck:
         try:
             # 尝试连接 Hatchet
             from owlclaw.integrations.hatchet import hatchet_client
-            # TODO: 实际的健康检查逻辑
+            # Placeholder: implement real health probe logic
             return {"healthy": True, "message": "Connected"}
         except Exception as e:
             return {"healthy": False, "message": str(e)}
@@ -1624,7 +1632,7 @@ class CronHealthCheck:
         
         for trigger in triggers:
             # 检查熔断器状态
-            # TODO: 实际的检查逻辑
+            # Placeholder: implement real circuit breaker state inspection
             pass
         
         return {
@@ -1776,7 +1784,7 @@ class TestCronGovernance:
         )
         
         # 模拟今日已执行 10 次
-        # TODO: Mock ledger 返回 10 次执行记录
+        # Placeholder: mock ledger to return 10 executions today
         
         # 应该不通过（超过每日限制）
         passed, reason = await governance.check_constraints(config, execution)
@@ -1828,7 +1836,7 @@ class TestCronIntegration:
         await app.cron_registry.trigger_now("test_trigger")
         
         # 验证已执行
-        # TODO: 验证 Agent Run 已创建
+        # Placeholder: assert Agent Run was created
     
     @pytest.mark.asyncio
     async def test_focus_loading(self, app):
@@ -1845,7 +1853,7 @@ class TestCronIntegration:
         await app.cron_registry.trigger_now("test_trigger")
         
         # 验证只加载了匹配 focus 的 Skills
-        # TODO: 验证 Skills 加载逻辑
+        # Placeholder: assert focus-based Skills loading behavior
     
     @pytest.mark.asyncio
     async def test_governance_constraints(self, app):
@@ -1863,7 +1871,7 @@ class TestCronIntegration:
         await app.cron_registry.trigger_now("test_trigger")
         
         # 验证约束已应用
-        # TODO: 验证治理检查逻辑
+        # Placeholder: assert governance constraints were evaluated
 ```
 
 ### 8.3 端到端测试
@@ -1890,16 +1898,16 @@ class TestCronE2E:
             pass
         
         # 2. 等待 Hatchet 调度（模拟）
-        # TODO: 触发 Hatchet workflow
+        # Placeholder: simulate Hatchet workflow trigger
         
         # 3. 验证 Agent Run 已创建
-        # TODO: 查询 Agent Run
+        # Placeholder: query Agent Run records
         
         # 4. 验证 Ledger 记录
-        # TODO: 查询 Ledger
+        # Placeholder: query Ledger records
         
         # 5. 验证指标
-        # TODO: 查询 Prometheus 指标
+        # Placeholder: query Prometheus metrics
     
     @pytest.mark.asyncio
     @pytest.mark.e2e
@@ -1917,7 +1925,7 @@ class TestCronE2E:
             fallback_executed.append(True)
         
         # 模拟 Agent 失败
-        # TODO: Mock Agent Runtime 抛出异常
+        # Placeholder: mock Agent Runtime to raise exception
         
         # 手动触发
         await app.cron_registry.trigger_now("test_trigger")
@@ -1945,7 +1953,7 @@ class TestCronE2E:
                 pass
         
         # 验证熔断器已打开
-        # TODO: 查询熔断器状态
+        # Placeholder: query circuit breaker state
 ```
 
 

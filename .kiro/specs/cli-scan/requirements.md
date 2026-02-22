@@ -1,5 +1,13 @@
 # Requirements Document: cli-scan
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-scan/requirements.md`
+- design: `.kiro/specs/cli-scan/design.md`
+- tasks: `.kiro/specs/cli-scan/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Introduction
 
 cli-scan 是 OwlClaw 的 AST 代码扫描器，用于分析项目源代码的结构、能力点和元数据。作为 cli-migrate 的基础组件，cli-scan 负责解析源代码文件，构建抽象语法树（AST），提取函数签名、类型信息、文档字符串、依赖关系和复杂度指标，并输出结构化的扫描结果。

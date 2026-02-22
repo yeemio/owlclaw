@@ -1,5 +1,13 @@
 # Design: 安全模型
 
+## 文档联动
+
+- requirements: `.kiro/specs/security/requirements.md`
+- design: `.kiro/specs/security/design.md`
+- tasks: `.kiro/specs/security/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw 提供纵深防御的安全体系  
 > **状态**：已完成  
 > **最后更新**：2026-02-22

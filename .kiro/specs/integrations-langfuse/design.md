@@ -1,5 +1,13 @@
 # 设计文档：Langfuse 集成
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-langfuse/requirements.md`
+- design: `.kiro/specs/integrations-langfuse/design.md`
+- tasks: `.kiro/specs/integrations-langfuse/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本文档描述了将 Langfuse 可观测性集成到 OwlClaw Agent 系统的设计。Langfuse 为 Agent 运行提供 LLM 调用追踪、成本分析和可观测性能力。

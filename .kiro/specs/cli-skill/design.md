@@ -1,5 +1,13 @@
 # 设计文档：Skills CLI（owlclaw skill）
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-skill/requirements.md`
+- design: `.kiro/specs/cli-skill/design.md`
+- tasks: `.kiro/specs/cli-skill/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 Skills CLI 提供 `owlclaw skill` 子命令组，用于在本地创建、校验和列举 Agent Skills（SKILL.md）。MVP 包含三个子命令：**init**、**validate**、**list**，均不依赖 OwlHub 或网络。
@@ -270,3 +278,4 @@ def create_skill(
             f"[yellow]Warning:[/yellow] {skill_file} already exists. Use --force to overwrite.",
             style="bold"
   
+```

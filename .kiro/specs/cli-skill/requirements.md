@@ -1,5 +1,13 @@
 # 需求文档：Skills CLI（owlclaw skill）
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-skill/requirements.md`
+- design: `.kiro/specs/cli-skill/design.md`
+- tasks: `.kiro/specs/cli-skill/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw 提供 Skills 的本地创建、校验与列举命令行入口，纯本地操作，不依赖 OwlHub。
 > **优先级**：P0（MVP）
 > **预估工作量**：1–2 天

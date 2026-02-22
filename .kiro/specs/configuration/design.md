@@ -1,5 +1,13 @@
 # Configuration 系统设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/configuration/requirements.md`
+- design: `.kiro/specs/configuration/design.md`
+- tasks: `.kiro/specs/configuration/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 OwlClaw 统一配置系统采用 **YAML + Pydantic BaseSettings + 环境变量** 三层合并架构，为所有模块提供类型安全、可验证、可热更新的配置管理。

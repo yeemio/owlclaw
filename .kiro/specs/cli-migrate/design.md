@@ -1,5 +1,13 @@
 # Design Document: cli-migrate
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-migrate/requirements.md`
+- design: `.kiro/specs/cli-migrate/design.md`
+- tasks: `.kiro/specs/cli-migrate/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**: 提供 AI 辅助迁移 CLI，帮助旧项目接入 OwlClaw  
 > **状态**: 设计中  
 > **最后更新**: 2025-02-22
@@ -329,7 +337,7 @@ class GeneratedCode:
     file_path: Path
     content: str
     imports: List[str]
-    todos: List[str]
+    manual_reviews: List[str]
     warnings: List[str]
 
 class HandlerGenerator:
@@ -346,7 +354,7 @@ class HandlerGenerator:
 
 **实现细节**:
 - 使用 Jinja2 模板引擎生成代码
-- 每个生成的代码文件包含 TODO 注释（需要人工确认的部分）
+- 每个生成的代码文件包含 `MANUAL_REVIEW` 注释（需要人工确认的部分）
 - 生成的代码通过 black 格式化
 
 ### Component 7: SKILLGenerator

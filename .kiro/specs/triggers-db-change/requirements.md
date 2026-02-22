@@ -1,5 +1,13 @@
 # Requirements: 数据库变更触发器
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-db-change/requirements.md`
+- design: `.kiro/specs/triggers-db-change/design.md`
+- tasks: `.kiro/specs/triggers-db-change/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：通过 PostgreSQL NOTIFY/LISTEN 和 CDC 机制，让数据库变更事件自动触发 Agent Run  
 > **优先级**：P2  
 > **预估工作量**：5-7 天

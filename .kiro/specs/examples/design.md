@@ -1,5 +1,13 @@
 # Design: 示例应用
 
+## 文档联动
+
+- requirements: `.kiro/specs/examples/requirements.md`
+- design: `.kiro/specs/examples/design.md`
+- tasks: `.kiro/specs/examples/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：提供端到端示例，覆盖多行业业务场景，展示 OwlClaw 各子系统协作  
 > **状态**：设计中  
 > **最后更新**：2026-02-22

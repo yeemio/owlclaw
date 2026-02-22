@@ -1,5 +1,13 @@
 # Tasks: MCP Server
 
+## 文档联动
+
+- requirements: `.kiro/specs/mcp-server/requirements.md`
+- design: `.kiro/specs/mcp-server/design.md`
+- tasks: `.kiro/specs/mcp-server/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **状态**：未开始  
 > **预估工作量**：5-7 天  
 > **最后更新**：2026-02-22  

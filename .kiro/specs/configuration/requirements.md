@@ -1,5 +1,13 @@
 # Requirements: 统一配置系统
 
+## 文档联动
+
+- requirements: `.kiro/specs/configuration/requirements.md`
+- design: `.kiro/specs/configuration/design.md`
+- tasks: `.kiro/specs/configuration/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw 提供统一的配置管理，基于 owlclaw.yaml + Pydantic + 环境变量  
 > **优先级**：P1  
 > **预估工作量**：3-5 天

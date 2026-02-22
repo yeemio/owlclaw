@@ -1,5 +1,13 @@
 # 任务文档：Skills CLI（owlclaw skill）
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-skill/requirements.md`
+- design: `.kiro/specs/cli-skill/design.md`
+- tasks: `.kiro/specs/cli-skill/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 实现 `owlclaw skill` 子命令组 MVP：init、validate、list。任务按依赖顺序排列，验收以可执行命令与测试为准。

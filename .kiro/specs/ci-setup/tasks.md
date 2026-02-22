@@ -1,5 +1,13 @@
 # Implementation Plan: CI 配置
 
+## 文档联动
+
+- requirements: `.kiro/specs/ci-setup/requirements.md`
+- design: `.kiro/specs/ci-setup/design.md`
+- tasks: `.kiro/specs/ci-setup/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## Overview
 
 建立完整的 CI/CD 流水线，包括 Lint、Test、Build、Release 四个核心流水线，以及配套的质量门禁、本地开发工作流和监控告警机制。

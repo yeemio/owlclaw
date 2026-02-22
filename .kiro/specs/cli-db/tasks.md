@@ -1,5 +1,13 @@
 # 实现计划：CLI 数据库运维工具
 
+## 文档联动
+
+- requirements: `.kiro/specs/cli-db/requirements.md`
+- design: `.kiro/specs/cli-db/design.md`
+- tasks: `.kiro/specs/cli-db/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 概述
 
 本实现计划将 CLI 数据库运维工具分解为一系列增量开发任务。每个任务都是可独立完成的代码单元，并在完成后进行测试验证。实现将按照优先级进行：P0（MVP 必需）→ P1（开发必需）→ P2（运维增强）。

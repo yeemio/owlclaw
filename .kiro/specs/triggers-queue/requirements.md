@@ -1,5 +1,13 @@
 # 需求文档：消息队列触发器
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-queue/requirements.md`
+- design: `.kiro/specs/triggers-queue/design.md`
+- tasks: `.kiro/specs/triggers-queue/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 消息队列触发器用于从外部消息队列消费事件并触发 OwlClaw Agent Run。该触发器提供统一的队列适配层、消息解析与路由、幂等与重试、治理与可观测集成，以及最小可运行的端到端验证路径。

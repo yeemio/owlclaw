@@ -1,5 +1,13 @@
 # Requirements: SKILL.md 模板库
 
+## 文档联动
+
+- requirements: `.kiro/specs/skill-templates/requirements.md`
+- design: `.kiro/specs/skill-templates/design.md`
+- tasks: `.kiro/specs/skill-templates/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：提供可复用的 SKILL.md 模板集合，降低业务接入成本  
 > **优先级**：P1  
 > **预估工作量**：2-3 天

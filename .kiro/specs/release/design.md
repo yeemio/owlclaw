@@ -1,5 +1,13 @@
 # Design: 开源发布
 
+## 文档联动
+
+- requirements: `.kiro/specs/release/requirements.md`
+- design: `.kiro/specs/release/design.md`
+- tasks: `.kiro/specs/release/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：定义 OwlClaw 的 PyPI 发布流程和 GitHub 开源准备  
 > **状态**：设计中  
 > **最后更新**：2026-02-22

@@ -1,5 +1,13 @@
 # 需求文档：LangChain 集成
 
+## 文档联动
+
+- requirements: `.kiro/specs/integrations-langchain/requirements.md`
+- design: `.kiro/specs/integrations-langchain/design.md`
+- tasks: `.kiro/specs/integrations-langchain/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 > **目标**：为 OwlClaw 提供 LangChain 编排框架适配层  
 > **优先级**：P2  
 > **预估工作量**：4-6 天

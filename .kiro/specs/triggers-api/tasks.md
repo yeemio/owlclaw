@@ -1,5 +1,13 @@
 # API 调用触发器实现任务
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-api/requirements.md`
+- design: `.kiro/specs/triggers-api/design.md`
+- tasks: `.kiro/specs/triggers-api/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 任务列表
 
 ### Phase 1：HTTP 服务与端点注册

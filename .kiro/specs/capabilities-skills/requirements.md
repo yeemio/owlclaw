@@ -1,5 +1,13 @@
 # 需求文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/capabilities-skills/requirements.md`
+- design: `.kiro/specs/capabilities-skills/design.md`
+- tasks: `.kiro/specs/capabilities-skills/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
+
 ## 简介
 
 本文档定义了 OwlClaw 能力注册和 Skills 挂载系统的需求。这是 Agent 运行时的核心基础设施，负责从业务应用目录加载 Skills（遵循 Agent Skills 规范）、提供能力注册装饰器、以及将 Skills 知识文档注入到 Agent 的 system prompt 中。
