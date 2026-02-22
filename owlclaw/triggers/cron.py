@@ -569,7 +569,10 @@ class CronTriggerRegistry:
         from owlclaw.governance.ledger import LedgerQueryFilters
 
         checks: dict[str, Any] = {}
-        execution_day = execution.triggered_at.astimezone(timezone.utc).date()
+        triggered_at = execution.triggered_at
+        if triggered_at.tzinfo is None:
+            triggered_at = triggered_at.replace(tzinfo=timezone.utc)
+        execution_day = triggered_at.astimezone(timezone.utc).date()
 
         if ledger is not None and config.cooldown_seconds > 0:
             records = await ledger.query_records(
