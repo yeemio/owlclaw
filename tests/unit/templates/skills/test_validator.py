@@ -70,6 +70,26 @@ class TestTemplateValidator:
         errs = v.validate_skill_file(skill)
         assert any(e.field == "body" for e in errs)
 
+    def test_validate_skill_file_invalid_frontmatter_yaml(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: [invalid\ndescription: y\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "frontmatter" and "Invalid YAML" in e.message for e in errs)
+
+    def test_validate_skill_file_unrendered_jinja2_placeholder(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: x\ndescription: y\n---\n# Title\n\nUse {{ skill_name }}\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any("unrendered Jinja2 placeholders" in e.message for e in errs)
+
     def test_validate_trigger_syntax(self) -> None:
         v = TemplateValidator()
         assert v._validate_trigger_syntax('cron("*/5 * * * *")') is True

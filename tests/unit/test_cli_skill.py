@@ -1,6 +1,8 @@
 """Unit tests for owlclaw skill CLI (init, validate, list)."""
 
+import json
 import pytest
+from click.exceptions import Exit
 from typer.testing import CliRunner
 
 from owlclaw.cli.skill import skill_app
@@ -86,6 +88,69 @@ def test_skill_templates_list(tmp_path):
     assert result.exit_code == 0
     assert "monitoring/health-check" in result.output
     assert "Health Check" in result.output or "health-check" in result.output
+
+
+def test_skill_init_interactive_wizard_without_template(tmp_path, monkeypatch):
+    """init without --template enters interactive mode and creates SKILL.md."""
+    monkeypatch.chdir(tmp_path)
+    from owlclaw.cli.skill_init import init_command
+
+    prompts = iter(["1", "wizard-skill", "Wizard description", "/health"])
+
+    def _fake_prompt(*args, **kwargs):  # type: ignore[no-untyped-def]
+        return next(prompts, "1")
+
+    monkeypatch.setattr("typer.prompt", _fake_prompt)
+    init_command(
+        name="",
+        path=".",
+        template="",
+        category="",
+        params_file="",
+        param="",
+        force=False,
+    )
+
+    skill_file = tmp_path / "wizard-skill" / "SKILL.md"
+    assert skill_file.is_file()
+    content = skill_file.read_text(encoding="utf-8")
+    assert "name: wizard-skill" in content
+
+
+def test_skill_init_params_file_not_found_exits(tmp_path):
+    """Missing --params-file should fail with clear error."""
+    from owlclaw.cli.skill_init import init_command
+
+    with pytest.raises(Exit) as exc_info:
+        init_command(
+            name="",
+            path=str(tmp_path),
+            template="monitoring/health-check",
+            category="",
+            params_file=str(tmp_path / "missing.json"),
+            param="",
+            force=False,
+        )
+    assert exc_info.value.exit_code == 2
+
+
+def test_skill_init_params_file_json_object_required(tmp_path):
+    """--params-file must contain object mapping, not list/scalar."""
+    from owlclaw.cli.skill_init import init_command
+
+    params_file = tmp_path / "params.json"
+    params_file.write_text(json.dumps(["bad", "shape"]), encoding="utf-8")
+    with pytest.raises(Exit) as exc_info:
+        init_command(
+            name="",
+            path=str(tmp_path),
+            template="monitoring/health-check",
+            category="",
+            params_file=str(params_file),
+            param="",
+            force=False,
+        )
+    assert exc_info.value.exit_code == 2
 
 
 def test_skill_list_shows_skills(tmp_path, monkeypatch):

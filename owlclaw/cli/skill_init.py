@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import click
 import typer
 
 from owlclaw.templates.skills import (
@@ -47,7 +48,9 @@ def _load_params_file(path: Path) -> dict[str, Any]:
     content = path.read_text(encoding="utf-8")
     if path.suffix.lower() in (".json",):
         return json.loads(content)
-    return yaml.safe_load(content) or {}
+    if path.suffix.lower() in (".yaml", ".yml"):
+        return yaml.safe_load(content) or {}
+    raise ValueError(f"Unsupported params file format: {path.suffix}")
 
 
 def _run_interactive_wizard(
@@ -70,7 +73,7 @@ def _run_interactive_wizard(
     sel = typer.prompt(
         f"Select template (1-{len(templates)})",
         default="1",
-        type=typer.Choice(choices),
+        type=click.Choice(choices),
     )
     meta = templates[int(sel) - 1]
 
@@ -108,9 +111,9 @@ def init_command(
         help="Output directory.",
     ),
     template: str = typer.Option(
-        "default",
+        "",
         "--template",
-        help="Template ID (e.g. monitoring/health-check). Use 'default' for legacy scaffold.",
+        help="Template ID (e.g. monitoring/health-check). Leave empty for interactive wizard. Use 'default' for legacy scaffold.",
     ),
     category: str = typer.Option(
         "",
@@ -177,8 +180,18 @@ def init_command(
 
     if params_file:
         p = Path(params_file)
-        if p.exists():
-            params = _load_params_file(p)
+        if not p.exists():
+            typer.echo(f"Error: params file not found: {p}", err=True)
+            raise typer.Exit(2)
+        try:
+            loaded = _load_params_file(p)
+        except Exception as e:
+            typer.echo(f"Error: cannot load params file: {e}", err=True)
+            raise typer.Exit(2) from e
+        if not isinstance(loaded, dict):
+            typer.echo("Error: params file must contain a JSON/YAML object.", err=True)
+            raise typer.Exit(2)
+        params = loaded
     if param.strip():
         # Parse "k1=v1,k2=v2" or "k1=v1"
         parts = [p.strip() for p in param.split(",") if "=" in p]

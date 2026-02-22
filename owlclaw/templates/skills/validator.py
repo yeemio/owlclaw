@@ -98,7 +98,17 @@ class TemplateValidator:
             )
             return errors
 
-        frontmatter, body = self._parse_skill_file(content)
+        try:
+            frontmatter, body = self._parse_skill_file(content)
+        except yaml.YAMLError as e:
+            errors.append(
+                ValidationError(
+                    field="frontmatter",
+                    message=f"Invalid YAML frontmatter: {e}",
+                    severity="error",
+                )
+            )
+            return errors
         errors.extend(self._validate_frontmatter(frontmatter))
         errors.extend(self._validate_body(body))
         return errors
@@ -183,6 +193,15 @@ class TemplateValidator:
                     field="body",
                     message="Body should contain at least one heading",
                     severity="warning",
+                )
+            )
+        # Detect unrendered Jinja2 placeholders in generated SKILL.md.
+        if re.search(r"\{\{.*?\}\}|\{%.*?%\}", body, re.DOTALL):
+            errors.append(
+                ValidationError(
+                    field="body",
+                    message="Body contains unrendered Jinja2 placeholders",
+                    severity="error",
                 )
             )
         return errors
