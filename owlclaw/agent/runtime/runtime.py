@@ -178,7 +178,9 @@ class AgentRuntime:
         )
 
         if context.trigger == "heartbeat" and self._heartbeat_checker is not None:
-            has_events = await self._heartbeat_checker.check_events()
+            has_events = self._heartbeat_payload_has_events(context.payload)
+            if not has_events:
+                has_events = await self._heartbeat_checker.check_events()
             if not has_events:
                 logger.info(
                     "Heartbeat no events, skipping LLM agent_id=%s run_id=%s",
@@ -282,6 +284,25 @@ class AgentRuntime:
                 if m.get("role") == "tool"
             ),
         }
+
+    @staticmethod
+    def _heartbeat_payload_has_events(payload: dict[str, Any]) -> bool:
+        """Return True when heartbeat payload already indicates pending events.
+
+        This path keeps Heartbeat checks zero-I/O by trusting trigger-side
+        in-memory signals carried in payload.
+        """
+        if not payload:
+            return False
+        if payload.get("has_events") is True:
+            return True
+        pending = payload.get("pending_events")
+        if isinstance(pending, list) and len(pending) > 0:
+            return True
+        count = payload.get("event_count")
+        if isinstance(count, int) and count > 0:
+            return True
+        return False
 
     # ------------------------------------------------------------------
     # Tool execution
