@@ -160,7 +160,7 @@ def init_command(
             cat_enum = TemplateCategory(category.strip().lower())
         except ValueError:
             typer.echo(f"Error: invalid category '{category}'. Use: monitoring, analysis, workflow, integration, report.", err=True)
-            raise typer.Exit(2)
+            raise typer.Exit(2) from None
 
     params: dict[str, Any] = {}
     template_id: str

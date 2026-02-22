@@ -1,6 +1,7 @@
 """Unit tests for owlclaw skill CLI (init, validate, list)."""
 
 import json
+
 import pytest
 from click.exceptions import Exit
 from typer.testing import CliRunner

@@ -9,8 +9,6 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
-logger = logging.getLogger(__name__)
-
 from owlclaw.templates.skills.exceptions import (
     MissingParameterError,
     ParameterTypeError,
@@ -20,6 +18,8 @@ from owlclaw.templates.skills.exceptions import (
 )
 from owlclaw.templates.skills.models import TemplateParameter
 from owlclaw.templates.skills.registry import TemplateRegistry
+
+logger = logging.getLogger(__name__)
 
 
 class TemplateRenderer:

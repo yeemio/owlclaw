@@ -8,11 +8,11 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-
-logger = logging.getLogger(__name__)
 from jinja2 import Environment
 
 from owlclaw.templates.skills.models import ValidationError
+
+logger = logging.getLogger(__name__)
 
 # Pattern for metadata comment block
 _METADATA_BLOCK = re.compile(r"\{#.*?#\}", re.DOTALL)
