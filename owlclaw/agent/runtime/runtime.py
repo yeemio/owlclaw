@@ -368,10 +368,16 @@ class AgentRuntime:
     @staticmethod
     def _extract_assistant_message(response: Any) -> Any | None:
         """Extract assistant message from completion response."""
-        choices = getattr(response, "choices", None)
+        choices = (
+            response.get("choices")
+            if isinstance(response, dict)
+            else getattr(response, "choices", None)
+        )
         if not isinstance(choices, list) or not choices:
             return None
         first = choices[0]
+        if isinstance(first, dict):
+            return first.get("message")
         return getattr(first, "message", None)
 
     @staticmethod

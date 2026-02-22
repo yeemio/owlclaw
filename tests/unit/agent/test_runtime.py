@@ -58,6 +58,20 @@ def _make_llm_response_dict_message(content="Done.", tool_calls=None):
     return response
 
 
+def _make_llm_response_dict_payload(content="Done.", tool_calls=None):
+    return {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": content,
+                    "tool_calls": tool_calls or [],
+                }
+            }
+        ]
+    }
+
+
 def _make_tool_call(name: str, arguments: dict):
     tc = MagicMock()
     tc.id = "tc_1"
@@ -272,6 +286,16 @@ class TestAgentRuntimeRun:
         result = await rt.trigger_event("cron")
         assert result["status"] == "completed"
         assert result["final_response"] == "Dict done."
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_accepts_dict_completion_payload(self, mock_llm, tmp_path) -> None:
+        """Runtime should support providers returning dict payloads."""
+        mock_llm.return_value = _make_llm_response_dict_payload("Payload done.")
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        await rt.setup()
+        result = await rt.trigger_event("cron")
+        assert result["status"] == "completed"
+        assert result["final_response"] == "Payload done."
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_tool_call_dispatched_to_registry(
