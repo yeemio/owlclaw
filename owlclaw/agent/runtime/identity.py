@@ -16,7 +16,7 @@ class IdentityLoader:
     Both files must live in *app_dir*.  IDENTITY.md is expected to contain a
     ``## My Capabilities`` (or ``## 我的能力``) section whose content is
     extracted as the *capabilities summary* injected into the system prompt.
-    If IDENTITY.md is absent, only SOUL.md is used.
+    SOUL.md and IDENTITY.md are both required.
 
     Usage::
 
@@ -50,18 +50,16 @@ class IdentityLoader:
                 "Create a SOUL.md in your application directory to give "
                 "the Agent its role and principles."
             )
+        if not self.identity_path.exists():
+            raise FileNotFoundError(
+                f"IDENTITY.md not found at {self.identity_path}. "
+                "Create an IDENTITY.md in your application directory to "
+                "define capabilities and constraints."
+            )
         self._soul = self.soul_path.read_text(encoding="utf-8")
         logger.debug("Loaded SOUL.md from %s", self.soul_path)
-
-        if self.identity_path.exists():
-            self._identity = self.identity_path.read_text(encoding="utf-8")
-            logger.debug("Loaded IDENTITY.md from %s", self.identity_path)
-        else:
-            logger.warning(
-                "IDENTITY.md not found at %s — capabilities summary will be empty",
-                self.identity_path,
-            )
-            self._identity = ""
+        self._identity = self.identity_path.read_text(encoding="utf-8")
+        logger.debug("Loaded IDENTITY.md from %s", self.identity_path)
 
     async def reload(self) -> None:
         """Hot-reload identity files from disk (re-reads both files)."""
