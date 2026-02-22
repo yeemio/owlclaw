@@ -175,6 +175,15 @@ class TemplateValidator:
                             )
                         )
 
+        if self._contains_jinja_placeholder(frontmatter):
+            errors.append(
+                ValidationError(
+                    field="frontmatter",
+                    message="Frontmatter contains unrendered Jinja2 placeholders",
+                    severity="error",
+                )
+            )
+
         return errors
 
     def _validate_body(self, body: str) -> list[ValidationError]:
@@ -210,6 +219,16 @@ class TemplateValidator:
     def _validate_trigger_syntax(self, trigger: str) -> bool:
         """Check if trigger matches supported syntax (cron/webhook/queue)."""
         return any(p.match(trigger) for p in _TRIGGER_PATTERNS)
+
+    def _contains_jinja_placeholder(self, value: Any) -> bool:
+        """Recursively detect Jinja2 placeholders in parsed YAML values."""
+        if isinstance(value, str):
+            return bool(re.search(r"\{\{.*?\}\}|\{%.*?%\}", value, re.DOTALL))
+        if isinstance(value, dict):
+            return any(self._contains_jinja_placeholder(v) for v in value.values())
+        if isinstance(value, list):
+            return any(self._contains_jinja_placeholder(v) for v in value)
+        return False
 
     def validate_and_report(
         self,

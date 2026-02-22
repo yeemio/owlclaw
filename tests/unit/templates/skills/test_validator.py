@@ -90,6 +90,16 @@ class TestTemplateValidator:
         errs = v.validate_skill_file(skill)
         assert any("unrendered Jinja2 placeholders" in e.message for e in errs)
 
+    def test_validate_skill_file_unrendered_jinja2_in_frontmatter(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: my-skill\ndescription: \"{{ skill_description }}\"\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "frontmatter" and "unrendered Jinja2" in e.message for e in errs)
+
     def test_parse_frontmatter_without_trailing_newline_after_delimiter(self, tmp_path: Path) -> None:
         skill = tmp_path / "SKILL.md"
         skill.write_text(
