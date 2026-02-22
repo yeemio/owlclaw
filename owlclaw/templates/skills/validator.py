@@ -73,14 +73,40 @@ class TemplateValidator:
                             severity="error",
                         )
                     )
-                elif self._contains_jinja_placeholder(loaded):
-                    errors.append(
-                        ValidationError(
-                            field="metadata",
-                            message="Template metadata contains unrendered Jinja2 placeholders",
-                            severity="error",
+                else:
+                    for required in ("name", "description", "tags", "parameters"):
+                        if required not in loaded:
+                            errors.append(
+                                ValidationError(
+                                    field="metadata",
+                                    message=f"Template metadata missing required field: {required}",
+                                    severity="error",
+                                )
+                            )
+                    if "tags" in loaded and not isinstance(loaded["tags"], list):
+                        errors.append(
+                            ValidationError(
+                                field="metadata.tags",
+                                message="Template metadata field 'tags' must be a list",
+                                severity="error",
+                            )
                         )
-                    )
+                    if "parameters" in loaded and not isinstance(loaded["parameters"], list):
+                        errors.append(
+                            ValidationError(
+                                field="metadata.parameters",
+                                message="Template metadata field 'parameters' must be a list",
+                                severity="error",
+                            )
+                        )
+                    if self._contains_jinja_placeholder(loaded):
+                        errors.append(
+                            ValidationError(
+                                field="metadata",
+                                message="Template metadata contains unrendered Jinja2 placeholders",
+                                severity="error",
+                            )
+                        )
             except yaml.YAMLError as e:
                 errors.append(
                     ValidationError(
