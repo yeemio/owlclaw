@@ -14,6 +14,7 @@ This MVP implementation omits:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -37,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_MODEL = "gpt-4o-mini"
 _DEFAULT_MAX_ITERATIONS = 50
+_DEFAULT_LLM_TIMEOUT_SECONDS = 60.0
 
 
 class AgentRuntime:
@@ -230,6 +232,12 @@ class AgentRuntime:
         max_iterations: int = self.config.get(
             "max_function_calls", _DEFAULT_MAX_ITERATIONS
         )
+        max_iterations = max(1, int(max_iterations))
+        llm_timeout = float(
+            self.config.get("llm_timeout_seconds", _DEFAULT_LLM_TIMEOUT_SECONDS)
+        )
+        if llm_timeout <= 0:
+            llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
         model_used = self.model
         iteration = 0
         for _ in range(max_iterations):
@@ -251,7 +259,25 @@ class AgentRuntime:
                 call_kwargs["tools"] = visible_tools
                 call_kwargs["tool_choice"] = "auto"
 
-            response = await llm_integration.acompletion(**call_kwargs)
+            try:
+                response = await asyncio.wait_for(
+                    llm_integration.acompletion(**call_kwargs),
+                    timeout=llm_timeout,
+                )
+            except asyncio.TimeoutError:
+                logger.error(
+                    "LLM call timed out agent_id=%s run_id=%s timeout=%ss",
+                    context.agent_id,
+                    context.run_id,
+                    llm_timeout,
+                )
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"LLM call timed out after {llm_timeout:.1f}s.",
+                    }
+                )
+                break
             message = self._extract_assistant_message(response)
             if message is None:
                 logger.error(

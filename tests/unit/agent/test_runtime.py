@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -543,6 +544,25 @@ class TestAgentRuntimeRun:
         ctx = AgentRunContext(agent_id="bot", trigger="cron")
         result = await rt.run(ctx)
         assert result["iterations"] == 3
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_llm_timeout_returns_timeout_message(self, mock_llm, tmp_path) -> None:
+        """LLM timeout should end the loop gracefully with a clear final response."""
+
+        async def _slow_completion(**_: object):
+            await asyncio.sleep(0.05)
+            return _make_llm_response("late")
+
+        mock_llm.side_effect = _slow_completion
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"llm_timeout_seconds": 0.01},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert "timed out" in result["final_response"]
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_no_registry_no_tools(self, mock_llm, tmp_path) -> None:
