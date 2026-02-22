@@ -108,6 +108,50 @@ async def test_get_visible_capabilities_coerces_requires_confirmation_string(app
 
 
 @pytest.mark.asyncio
+async def test_get_visible_capabilities_risk_confirmation_gate(tmp_path):
+    """High-risk capability should be hidden until explicitly confirmed."""
+    skill_dir = tmp_path / "place-order"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: place-order
+description: Place trade order
+owlclaw:
+  risk_level: high
+  requires_confirmation: true
+---
+# Guide
+"""
+    )
+    app = OwlClaw("risk-app")
+    app.mount_skills(str(tmp_path))
+    app.configure(
+        governance={
+            "visibility": {
+                "time": {},
+                "risk_confirmation": {"enforce_high_risk_confirmation": True},
+            },
+            "router": {},
+        }
+    )
+
+    @app.handler("place-order")
+    async def handler(session):
+        return {}
+
+    hidden = await app.get_visible_capabilities("agent1", "default")
+    assert hidden == []
+
+    visible = await app.get_visible_capabilities(
+        "agent1",
+        "default",
+        confirmed_capabilities=["place-order"],
+    )
+    assert len(visible) == 1
+    assert visible[0]["name"] == "place-order"
+
+
+@pytest.mark.asyncio
 async def test_get_model_selection_with_router(app_with_skills):
     """With router config, get_model_selection returns ModelSelection."""
     app = app_with_skills
