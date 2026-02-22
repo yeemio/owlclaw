@@ -116,3 +116,53 @@
 3. 当资源竞争发生时，系统应当正确实施资源锁定和队列机制
 4. 系统应当支持配置并发测试的线程数和任务数
 5. 当并发测试完成时，系统应当验证数据一致性和完整性
+
+### 需求 9: 历史回放测试（Historical Replay）
+
+**用户故事:** 作为系统架构师，我希望用真实的历史业务数据回放过去的事件序列，以量化 Agent 决策与原始 cron 决策的差异。
+
+#### 验收标准
+
+1. 系统应当支持导入历史事件序列数据（CSV/JSON 格式，包含时间戳、事件类型、payload）
+2. 当执行历史回放时，系统应当按时间戳顺序依次触发 Agent Run，模拟真实事件流
+3. 系统应当记录 Agent 在每个历史事件上的决策（capability 选择、参数、结果）
+4. 系统应当支持同一历史数据分别在 V3 Agent 和 Original Cron 上回放，并生成对比报告
+5. 当回放完成时，系统应当计算以下指标：
+   - 决策一致率（Agent 决策 vs 历史最优决策）
+   - 决策偏差分布（按严重程度分类）
+   - 时间序列中的决策质量变化趋势（Agent 是否随记忆积累而改善）
+6. 系统应当支持指定回放的时间范围（如最近 30 天）
+7. 系统应当支持加速回放（忽略事件间的等待时间）和实时回放（模拟真实时间间隔）
+
+### 需求 10: Shadow Mode（影子模式）
+
+**用户故事:** 作为系统管理员，我希望在生产环境中让 Agent 和 cron 同时运行，Agent 的决策只记录不执行，以便安全地验证 Agent 决策质量。
+
+#### 验收标准
+
+1. 系统应当支持 Shadow Mode 运行模式，其中 Agent Run 正常执行但 capability 调用被拦截为只读
+2. 当 Shadow Mode 启用时，Agent 的所有 function calling 决策应当完整记录（包括选择的 capability、参数、决策理由）
+3. 当 Shadow Mode 启用时，Original Cron 继续正常执行业务逻辑
+4. 系统应当实时对比 Agent 决策与 cron 实际执行结果，记录差异
+5. 系统应当提供 Shadow Mode 仪表板，展示：
+   - Agent vs Cron 决策一致率（实时）
+   - 决策差异详情（每次不一致的详细对比）
+   - Agent 决策质量趋势（随时间变化）
+   - LLM 成本累计
+6. 当 Shadow Mode 运行满足预设条件时（如连续 7 天一致率 > 90%），系统应当建议切换到 Agent 模式
+7. Shadow Mode 应当与 migration_weight 机制协同：
+   - migration_weight=0.0 时 = 纯 Shadow Mode（Agent 不执行）
+   - migration_weight=0.1~0.9 时 = 部分 Shadow + 部分 Agent 执行
+   - migration_weight=1.0 时 = 完全 Agent 执行
+
+### 需求 11: A/B 测试
+
+**用户故事:** 作为系统架构师，我希望在 Shadow Mode 验证通过后，让 Agent 逐步接管部分任务并量化实际效果。
+
+#### 验收标准
+
+1. 系统应当支持通过 migration_weight 控制 Agent 接管比例
+2. 当 A/B 测试运行时，系统应当记录 Agent 执行组和 fallback 执行组的业务指标
+3. 系统应当支持统计显著性检验（如 chi-square 或 t-test），判断 Agent 组是否优于 fallback 组
+4. 系统应当支持自动调整 migration_weight（基于 A/B 结果自动提升或回退）
+5. 当 A/B 测试发现 Agent 组显著劣于 fallback 组时，系统应当自动回退 migration_weight 并发出告警

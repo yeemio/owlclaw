@@ -910,3 +910,225 @@ const performanceMetricsArbitrary = fc.record({
 - 缓存测试数据和配置
 - 使用连接池管理资源
 - 优化数据收集和存储
+
+## 历史回放测试设计（需求 9）
+
+### 架构
+
+```
+┌─────────────────────────────────────────────────────┐
+│              Historical Replay Engine                  │
+│                                                       │
+│  ┌──────────────┐   ┌─────────────────────────────┐ │
+│  │ EventImporter │   │  ReplayScheduler             │ │
+│  │ CSV/JSON →    │──→│  按时间戳排序               │ │
+│  │ EventSequence │   │  加速/实时两种模式           │ │
+│  └──────────────┘   └───────────┬─────────────────┘ │
+│                                  │                    │
+│          ┌───────────────────────┼──────────────┐    │
+│          │                       │              │    │
+│  ┌───────▼──────┐      ┌────────▼───────┐      │    │
+│  │ Agent Replay  │      │ Cron Replay    │      │    │
+│  │ (V3 Agent     │      │ (Original      │      │    │
+│  │  决策记录)     │      │  handler 执行)  │      │    │
+│  └───────┬──────┘      └────────┬───────┘      │    │
+│          │                       │              │    │
+│          └───────────┬───────────┘              │    │
+│                      │                          │    │
+│            ┌─────────▼──────────┐               │    │
+│            │ ReplayComparator    │               │    │
+│            │ 决策对比 + 指标计算  │               │    │
+│            └─────────┬──────────┘               │    │
+│                      │                          │    │
+│            ┌─────────▼──────────┐               │    │
+│            │ ReplayReport        │               │    │
+│            │ 一致率/偏差分布/趋势 │               │    │
+│            └────────────────────┘               │    │
+└─────────────────────────────────────────────────────┘
+```
+
+### 核心接口
+
+```python
+@dataclass
+class HistoricalEvent:
+    timestamp: datetime
+    event_type: str       # cron | webhook | db_change | api
+    event_name: str
+    payload: dict
+    actual_decision: str  # 历史实际决策（用于对比基准）
+    actual_result: dict   # 历史实际结果
+
+class ReplayEngine:
+    async def import_events(self, source: str, format: str = "json") -> EventSequence: ...
+    async def replay(
+        self,
+        events: EventSequence,
+        mode: str = "accelerated",  # accelerated | realtime
+        time_range: tuple[datetime, datetime] | None = None,
+    ) -> ReplayResult: ...
+
+@dataclass
+class ReplayResult:
+    total_events: int
+    agent_decisions: list[AgentDecision]
+    cron_decisions: list[CronDecision]
+    consistency_rate: float           # Agent 与历史决策的一致率
+    deviation_distribution: dict      # {low: N, medium: N, high: N, critical: N}
+    quality_trend: list[float]        # 按时间窗口的决策质量变化
+    memory_growth: list[int]          # Agent 记忆条目增长曲线
+```
+
+### 回放数据格式
+
+```json
+[
+  {
+    "timestamp": "2026-01-15T09:30:00Z",
+    "event_type": "cron",
+    "event_name": "hourly_check",
+    "payload": {"market_state": "open", "volatility": 0.023},
+    "actual_decision": "check_entry_opportunity",
+    "actual_result": {"action": "no_entry", "reason": "price_above_target"}
+  }
+]
+```
+
+## Shadow Mode 设计（需求 10）
+
+### 架构
+
+```
+┌───────────────────────────────────────────────────────┐
+│                  Shadow Mode Runtime                    │
+│                                                         │
+│  ┌─────────────┐                                      │
+│  │ Event Source │                                      │
+│  │(Cron/Webhook)│                                      │
+│  └──────┬──────┘                                      │
+│         │                                               │
+│         ├──────────────────┬────────────────────┐      │
+│         │                  │                    │      │
+│  ┌──────▼──────┐   ┌──────▼──────┐             │      │
+│  │ Cron Path    │   │ Agent Path  │             │      │
+│  │ (执行 real   │   │ (执行但     │             │      │
+│  │  handler)    │   │  拦截写操作) │             │      │
+│  └──────┬──────┘   └──────┬──────┘             │      │
+│         │                  │                    │      │
+│  ┌──────▼──────┐   ┌──────▼──────┐             │      │
+│  │ Real Result  │   │ Shadow      │             │      │
+│  │              │   │ Decision    │             │      │
+│  │ (实际执行)    │   │ Log         │             │      │
+│  └──────┬──────┘   └──────┬──────┘             │      │
+│         │                  │                    │      │
+│         └────────┬─────────┘                    │      │
+│                  │                              │      │
+│         ┌────────▼────────┐                     │      │
+│         │ ShadowComparator │                     │      │
+│         │ 实时对比 + 仪表板 │                     │      │
+│         └────────┬────────┘                     │      │
+│                  │                              │      │
+│         ┌────────▼────────┐                     │      │
+│         │ ShadowDashboard  │                     │      │
+│         │ 一致率/趋势/成本  │                     │      │
+│         └─────────────────┘                     │      │
+└───────────────────────────────────────────────────────┘
+```
+
+### 核心接口
+
+```python
+class ShadowModeInterceptor:
+    """拦截 Agent 的 capability 执行，记录但不实际执行"""
+
+    async def intercept(self, capability_name: str, args: dict) -> InterceptResult:
+        # 记录 Agent 想要执行的操作
+        decision_log = ShadowDecisionLog(
+            capability=capability_name,
+            args=args,
+            timestamp=datetime.utcnow(),
+        )
+        await self._store(decision_log)
+
+        # 返回模拟成功结果（不实际执行）
+        return InterceptResult(
+            executed=False,
+            simulated_result=self._simulate(capability_name, args),
+        )
+
+class ShadowComparator:
+    """实时对比 Agent 决策与 Cron 实际执行"""
+
+    async def compare_realtime(
+        self, agent_decision: ShadowDecisionLog, cron_result: CronExecutionLog
+    ) -> ComparisonEntry: ...
+
+    async def get_dashboard_metrics(
+        self, agent_id: str, time_range: tuple[datetime, datetime]
+    ) -> ShadowDashboardMetrics: ...
+
+@dataclass
+class ShadowDashboardMetrics:
+    consistency_rate: float              # 实时一致率
+    total_comparisons: int
+    consistent_decisions: int
+    inconsistent_decisions: list[dict]   # 不一致的详细对比
+    quality_trend: list[float]           # 按天的质量趋势
+    cumulative_llm_cost: float           # LLM 累计成本
+    recommendation: str | None           # "ready_to_switch" | None
+```
+
+### 与 migration_weight 的协同
+
+```python
+class MigrationWeightController:
+    """根据 Shadow Mode 指标自动调整 migration_weight"""
+
+    async def evaluate_and_adjust(self, agent_id: str):
+        metrics = await self.shadow_comparator.get_dashboard_metrics(agent_id, last_7_days)
+
+        if metrics.consistency_rate >= 0.95 and self.current_weight < 0.1:
+            # Shadow Mode 质量很高，建议开始小流量
+            await self._propose_weight_change(agent_id, 0.1)
+        elif metrics.consistency_rate >= 0.90 and self.current_weight < 0.5:
+            # 持续稳定，建议提升流量
+            await self._propose_weight_change(agent_id, 0.5)
+        elif metrics.consistency_rate < 0.70:
+            # 质量下降，自动回退
+            await self._rollback_weight(agent_id, 0.0)
+            await self._alert("Shadow mode quality dropped below threshold")
+```
+
+## A/B 测试设计（需求 11）
+
+### 核心接口
+
+```python
+class ABTestRunner:
+    """基于 migration_weight 的 A/B 测试执行器"""
+
+    async def should_use_agent(self, trigger_config) -> bool:
+        """根据 migration_weight 随机决定本次 Run 走 Agent 还是 fallback"""
+        return random.random() < trigger_config.migration_weight
+
+    async def record_outcome(
+        self, run_id: str, group: str, metrics: dict
+    ) -> None:
+        """记录 Agent 组或 fallback 组的业务指标"""
+        ...
+
+    async def statistical_test(
+        self, agent_id: str, metric_name: str, time_range: tuple
+    ) -> ABTestResult:
+        """对 Agent 组 vs fallback 组执行统计显著性检验"""
+        agent_data = await self._get_group_metrics(agent_id, "agent", metric_name, time_range)
+        fallback_data = await self._get_group_metrics(agent_id, "fallback", metric_name, time_range)
+        p_value = scipy.stats.ttest_ind(agent_data, fallback_data).pvalue
+        return ABTestResult(
+            agent_mean=np.mean(agent_data),
+            fallback_mean=np.mean(fallback_data),
+            p_value=p_value,
+            significant=p_value < 0.05,
+            recommendation="increase_weight" if agent_mean > fallback_mean and p_value < 0.05 else "hold",
+        )
+```

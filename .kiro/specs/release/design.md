@@ -1,6 +1,6 @@
-# Design: 发布流程
+# Design: 开源发布
 
-> **目标**：定义并实现标准化发布流程（版本、构建、发布、公告）  
+> **目标**：定义 OwlClaw 的 PyPI 发布流程和 GitHub 开源准备  
 > **状态**：设计中  
 > **最后更新**：2026-02-22
 
@@ -8,168 +8,182 @@
 
 ## 1. 架构设计
 
-### 1.1 整体架构
+### 1.1 发布流水线
 
-`
-┌───────────────┐    ┌────────────────────┐
-│ Capability    │───▶│ 发布流程 模块     │
-└───────────────┘    └─────────┬──────────┘
-                               ▼
-                      ┌───────────────────┐
-                      │ 外部依赖/适配层   │
-                      └───────────────────┘
-`
+```
+Developer: git tag v0.1.0 && git push --tags
+    │
+    ▼
+GitHub Actions: release.yml
+    │
+    ├── Step 1: Checkout + Setup Python
+    ├── Step 2: Run tests (poetry run pytest)
+    ├── Step 3: Build packages (poetry build)
+    ├── Step 4: Publish to PyPI (poetry publish)
+    ├── Step 5: Create GitHub Release + Changelog
+    └── Step 6: Notify (success/failure)
+```
 
-### 1.2 核心组件
+### 1.2 包结构
 
-#### 组件 1：能力适配层
-
-**职责**：对接外部依赖并转换为 OwlClaw 能力接口。
-
-**接口定义**：
-`	ypescript
-export interface Adapter {
-  register(): Promise<void>;
-  execute(input: unknown): Promise<unknown>;
-}
-`
+```
+PyPI Packages:
+├── owlclaw                    # 核心 SDK
+│   ├── owlclaw[langchain]     # 可选：LangChain 集成
+│   └── owlclaw[dev]           # 可选：开发工具
+└── owlclaw-mcp                # MCP Server（独立包）
+```
 
 ---
 
 ## 2. 实现细节
 
-### 2.1 文件结构
+### 2.1 pyproject.toml 配置
 
-`
-release/
-├── __init__.py
-└── adapter.py
-`
+```toml
+[tool.poetry]
+name = "owlclaw"
+version = "0.1.0"
+description = "Agent base for business applications — give your existing systems AI autonomy"
+authors = ["yeemio"]
+license = "MIT"
+readme = "README.md"
+keywords = ["agent", "ai", "autonomous", "business", "skills"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Software Development :: Libraries",
+]
 
-### 2.2 适配层实现
+[tool.poetry.extras]
+langchain = ["langchain-core"]
+dev = ["pytest", "pytest-asyncio", "ruff", "mypy"]
 
-**当前问题**：缺少统一的适配层导致接入分散。
+[tool.poetry.scripts]
+owlclaw = "owlclaw.cli:main"
+```
 
-**解决方案**：提供标准 Adapter 接口并集中注册。
+### 2.2 GitHub Actions Workflow
 
-**实现**：
-`	ypescript
-export class DefaultAdapter implements Adapter {
-  async register(): Promise<void> {}
-  async execute(input: unknown): Promise<unknown> { return input; }
-}
-`
+```yaml
+# .github/workflows/release.yml
+name: Release
+on:
+  push:
+    tags: ['v*']
 
-**关键点**：
-- 统一能力注册入口
-- 明确输入输出契约
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - run: pip install poetry
+      - run: poetry install
+      - run: poetry run pytest
+      - run: poetry build
+      - run: poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+```
+
+### 2.3 发布前检查清单
+
+```
+Pre-release Checklist:
+├── [ ] 所有测试通过
+├── [ ] CHANGELOG.md 更新
+├── [ ] 版本号更新（pyproject.toml）
+├── [ ] README.md Quick Start 验证
+├── [ ] examples/ 可独立运行
+├── [ ] 无敏感信息（git-secrets scan）
+├── [ ] MIT LICENSE 正确
+└── [ ] 文档链接有效
+```
 
 ---
 
 ## 3. 数据流
 
-### 3.1 触发到执行流程
+### 3.1 发布流程
 
-`
-Trigger/Event
-   │
-   ▼
-Adapter.register
-   │
-   ▼
-Adapter.execute
-`
-
-**关键点**：
-- 触发器负责启动
-- 适配层负责编排
+```
+git tag v0.1.0
+    → GitHub Actions triggered
+    → pytest (all tests pass)
+    → poetry build (sdist + wheel)
+    → poetry publish (upload to PyPI)
+    → gh release create (GitHub Release + notes)
+    → notification (success/failure)
+```
 
 ---
 
 ## 4. 错误处理
 
-### 4.1 适配失败
+### 4.1 发布失败
 
-**场景**：外部依赖不可用或响应异常。
+**场景**：PyPI 上传失败（网络、认证、版本冲突）
 
-**处理**：
-`	ypescript
-try { /* ... */ } catch (err) { throw err; }
-`
+**处理**：GitHub Actions 标记为失败，通知维护者手动处理。版本号不可重复使用。
+
+### 4.2 测试失败
+
+**场景**：Tag push 后测试未通过
+
+**处理**：发布流程终止，不上传到 PyPI。删除 tag 并修复后重新发布。
 
 ---
 
 ## 5. 配置
 
-### 5.1 配置文件
+### 5.1 环境变量
 
-`yaml
-release:
-  enabled: true
-`
-
-### 5.2 环境变量
-
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| OWLCLAW__ENABLED | 是否启用 | 	rue |
+| 变量 | 说明 | 存储位置 |
+|------|------|---------|
+| `PYPI_TOKEN` | PyPI API token | GitHub Secrets |
 
 ---
 
 ## 6. 测试策略
 
-### 6.1 单元测试
+### 6.1 发布验证测试
 
-`	ypescript
-// validate adapter behavior
-`
-
-### 6.2 集成测试
-
-`	ypescript
-// validate end-to-end path
-`
+```bash
+# 在干净环境中验证
+python -m venv test_env && source test_env/bin/activate
+pip install owlclaw
+owlclaw --version
+owlclaw skill list
+python -c "from owlclaw import OwlClaw; print('OK')"
+```
 
 ---
 
 ## 7. 迁移计划
 
-### 7.1 Phase 1：基础能力（2 天）
+### 7.1 Phase 1：准备（1-2 天）
+- [ ] 确认 pyproject.toml 包元数据完整
+- [ ] 创建 PyPI 账号和 token
+- [ ] 配置 GitHub Actions secrets
+- [ ] 编写 CHANGELOG.md
+- [ ] 编写 CONTRIBUTING.md
 
-- [ ] 适配层与接口定义
-- [ ] 最小可运行链路
+### 7.2 Phase 2：发布（1 天）
+- [ ] 创建 release workflow
+- [ ] 测试 tag-triggered 发布流程
+- [ ] 发布 v0.1.0 到 PyPI
 
----
-
-## 8. 风险与缓解
-
-### 8.1 风险：外部依赖变更
-
-**影响**：适配失效或行为不一致。
-
-**缓解**：
-- 引入契约与 Mock
-- 在 CI 中验证关键路径
-
----
-
-## 9. 契约与 Mock（依赖外部服务/Platform 时必写）
-
-### 9.1 API 契约
-- 记录外部依赖的接口与响应结构
-- 明确错误码与语义
-
-### 9.2 Mock 策略
-- 本地/CI 提供 mock 开关
-- 无外部依赖时可完成最小验收
+### 7.3 Phase 3：社区（1-2 天）
+- [ ] 创建 Issue 模板
+- [ ] 启用 Discussions
+- [ ] 编写 README 英文版
 
 ---
 
-## 10. 参考文档
-
-- docs/ARCHITECTURE_ANALYSIS.md
-
----
-
-**维护者**：平台研发  
+**维护者**：OwlClaw Team  
 **最后更新**：2026-02-22

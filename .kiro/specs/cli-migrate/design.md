@@ -333,4 +333,214 @@ class GeneratedCode:
     warnings: List[str]
 
 class HandlerGenerator:
-    def
+    def __init__(self, config: GenerationConfig):
+        self.config = config
+        self.template_selector = TemplateSelector()
+    
+    def generate_handler(self, func: MigratableFunction) -> GeneratedCode:
+        """为可迁移函数生成 @handler 注册代码"""
+        
+    def generate_trigger(self, cron_task: CronTask) -> GeneratedCode:
+        """为定时任务生成 @cron 触发器代码"""
+```
+
+**实现细节**:
+- 使用 Jinja2 模板引擎生成代码
+- 每个生成的代码文件包含 TODO 注释（需要人工确认的部分）
+- 生成的代码通过 black 格式化
+
+### Component 7: SKILLGenerator
+
+**职责**: 生成 SKILL.md 文档。
+
+**接口定义**:
+```python
+class SKILLGenerator:
+    def generate_skill(self, func: MigratableFunction) -> str:
+        """为可迁移函数生成 SKILL.md 文档"""
+        
+    def generate_skill_from_api(self, endpoint: APIEndpoint) -> str:
+        """为 API 端点生成 SKILL.md 文档"""
+```
+
+**实现细节**:
+- 遵循 Agent Skills 规范（agentskills.io）
+- 从函数签名和 docstring 提取 name、description、parameters
+- 生成 frontmatter（name, version, description）和正文（功能、参数、使用场景）
+
+### Component 8: MigrationReporter
+
+**职责**: 生成迁移报告。
+
+**接口定义**:
+```python
+@dataclass
+class MigrationReport:
+    summary: MigrationSummary
+    functions: List[FunctionMigrationDetail]
+    api_endpoints: List[APIMigrationDetail]
+    cron_tasks: List[CronMigrationDetail]
+    risks: List[RiskItem]
+    recommendations: List[Recommendation]
+    estimated_effort: EffortEstimate
+
+class MigrationReporter:
+    def generate_report(
+        self, 
+        scan_result: ScanResult,
+        analysis_result: AnalysisResult,
+        generation_result: GenerationResult
+    ) -> MigrationReport:
+        """生成完整的迁移报告"""
+    
+    def export_markdown(self, report: MigrationReport) -> str:
+        """导出为 Markdown 格式"""
+    
+    def export_json(self, report: MigrationReport) -> dict:
+        """导出为 JSON 格式"""
+```
+
+---
+
+## Data Flow
+
+### 完整迁移流程
+
+```
+owlclaw migrate --project ./my-app --output ./migration
+    │
+    ├── Step 1: Scan（扫描）
+    │   ├── PythonFunctionScanner → 函数列表
+    │   ├── OpenAPIScanner → API 端点列表
+    │   ├── CronScanner → 定时任务列表
+    │   └── ORMScanner → ORM 操作列表
+    │
+    ├── Step 2: Analyze（分析）
+    │   ├── 评估每个函数的迁移可行性
+    │   ├── 计算复杂度评分
+    │   ├── 识别风险项
+    │   └── 排列优先级
+    │
+    ├── Step 3: Generate（生成）
+    │   ├── @handler 注册代码
+    │   ├── @cron 触发器代码
+    │   ├── SKILL.md 文档
+    │   └── 配置文件模板
+    │
+    └── Step 4: Report（报告）
+        ├── 迁移摘要（总数、成功率、风险）
+        ├── 函数级别详细报告
+        ├── 建议和优先级
+        └── 工作量预估
+```
+
+### Dry-run 模式
+
+```
+owlclaw migrate --project ./my-app --dry-run
+    │
+    ├── Scan（实际执行）
+    ├── Analyze（实际执行）
+    ├── Generate（仅预览，不写文件）
+    └── Report（输出到 stdout）
+```
+
+---
+
+## Error Handling
+
+### 扫描失败
+
+**场景**：项目包含无法解析的 Python 文件
+
+**处理**：跳过该文件，记录 warning 到 ScanResult.errors，继续扫描其余文件
+
+### 生成冲突
+
+**场景**：目标文件已存在
+
+**处理**：默认不覆盖（`--force` 参数强制覆盖），生成 `.bak` 备份
+
+---
+
+## Configuration
+
+### 配置文件
+
+```yaml
+# .owlclaw-migrate.yaml
+scan:
+  include: ["src/**/*.py"]
+  exclude: ["tests/**", "migrations/**"]
+  scan_openapi: true
+  openapi_paths: ["docs/openapi.yaml"]
+
+generate:
+  output_dir: "./migration"
+  code_style: black
+  include_type_hints: true
+
+analysis:
+  min_complexity: 1
+  max_complexity: 10
+  skip_private: true
+```
+
+---
+
+## Testing Strategy
+
+### 单元测试
+
+```python
+def test_python_function_scanner_identifies_public_functions():
+    """测试 PythonFunctionScanner 正确识别公开函数"""
+
+def test_handler_generator_produces_valid_code():
+    """测试 HandlerGenerator 生成的代码语法正确"""
+
+def test_skill_generator_follows_agent_skills_spec():
+    """测试 SKILLGenerator 输出符合 Agent Skills 规范"""
+```
+
+### 集成测试
+
+```python
+def test_full_migration_pipeline():
+    """端到端测试：从扫描到生成报告"""
+
+def test_dry_run_no_side_effects():
+    """Dry-run 模式不产生文件副作用"""
+```
+
+---
+
+## Migration Plan
+
+### Phase 1：核心扫描和生成（3-4 天）
+- [ ] ProjectScanner + PythonFunctionScanner
+- [ ] HandlerGenerator + SKILLGenerator
+- [ ] MigrationReporter（Markdown）
+
+### Phase 2：高级功能（2-3 天）
+- [ ] OpenAPIScanner
+- [ ] CronScanner
+- [ ] Interactive Wizard
+
+### Phase 3：优化（1-2 天）
+- [ ] ORMScanner
+- [ ] 增量扫描
+- [ ] JSON/PDF 报告输出
+
+---
+
+## References
+
+- [OwlClaw 架构分析](../../docs/ARCHITECTURE_ANALYSIS.md) §5.2.4 能力注册
+- [CLI Scan Spec](../cli-scan/)
+- [Agent Skills 规范](https://agentskills.io)
+
+---
+
+**维护者**：OwlClaw Team  
+**最后更新**：2026-02-22
