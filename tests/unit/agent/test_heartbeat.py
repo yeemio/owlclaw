@@ -48,6 +48,13 @@ class TestHeartbeatCheckerNoEvents:
         checker = HeartbeatChecker(agent_id="bot", config={"event_sources": "webhook"})
         assert checker._event_sources == ["webhook"]
 
+    def test_normalize_event_sources_lowercases_values(self) -> None:
+        checker = HeartbeatChecker(
+            agent_id="bot",
+            config={"event_sources": ["Webhook", "QUEUE", " schedule "]},
+        )
+        assert checker._event_sources == ["webhook", "queue", "schedule"]
+
     def test_normalize_event_sources_invalid_type_uses_default(self) -> None:
         checker = HeartbeatChecker(agent_id="bot", config={"event_sources": 123})
         assert checker._event_sources == [

@@ -52,7 +52,7 @@ class HeartbeatChecker:
         for item in items:
             if not isinstance(item, str):
                 continue
-            source = item.strip()
+            source = item.strip().lower()
             if source and source not in normalized:
                 normalized.append(source)
         return normalized if normalized else list(_DEFAULT_EVENT_SOURCES)
