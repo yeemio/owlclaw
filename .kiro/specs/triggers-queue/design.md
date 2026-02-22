@@ -718,50 +718,57 @@ class MockQueueAdapter(QueueAdapter):
 ```sql
 CREATE TABLE idempotency_keys (
   key VARCHAR(255) PRIMARY KEY,
+  tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
   value JSONB NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  expires_at TIMESTAMP NOT NULL,
-  
-  INDEX idx_expires (expires_at)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE INDEX idx_idempotency_keys_tenant_expires
+  ON idempotency_keys (tenant_id, expires_at);
 ```
 
 ### 执行记录表 (queue_executions)
 
 ```sql
 CREATE TABLE queue_executions (
-  id VARCHAR(64) PRIMARY KEY,
+  id UUID PRIMARY KEY,
+  tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
   message_id VARCHAR(255) NOT NULL,
   queue_name VARCHAR(255) NOT NULL,
   event_name VARCHAR(255),
-  tenant_id VARCHAR(64),
   status VARCHAR(20) NOT NULL,
-  started_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  completed_at TIMESTAMP,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,
   duration_ms INTEGER,
-  agent_run_id VARCHAR(64),
+  agent_run_id UUID,
   error_message TEXT,
-  retry_count INTEGER DEFAULT 0,
-  
-  INDEX idx_message_id (message_id),
-  INDEX idx_queue_started (queue_name, started_at DESC),
-  INDEX idx_status (status)
+  retry_count INTEGER DEFAULT 0
 );
+
+CREATE INDEX idx_queue_executions_tenant_message_id
+  ON queue_executions (tenant_id, message_id);
+CREATE INDEX idx_queue_executions_tenant_queue_started
+  ON queue_executions (tenant_id, queue_name, started_at DESC);
+CREATE INDEX idx_queue_executions_tenant_status
+  ON queue_executions (tenant_id, status);
 ```
 
 ### 监控指标表 (queue_metrics)
 
 ```sql
 CREATE TABLE queue_metrics (
-  id BIGSERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY,
+  tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
   queue_name VARCHAR(255) NOT NULL,
   metric_name VARCHAR(100) NOT NULL,
   metric_value DOUBLE PRECISION NOT NULL,
-  timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
-  tags JSONB,
-  
-  INDEX idx_queue_metric_time (queue_name, metric_name, timestamp DESC)
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  tags JSONB
 );
+
+CREATE INDEX idx_queue_metrics_tenant_metric_time
+  ON queue_metrics (tenant_id, queue_name, metric_name, timestamp DESC);
 ```
 
 

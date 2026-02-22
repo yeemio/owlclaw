@@ -1,5 +1,12 @@
 # Signal 触发器（人工介入）设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-signal/requirements.md`
+- design: `.kiro/specs/triggers-signal/design.md`
+- tasks: `.kiro/specs/triggers-signal/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 ## 概述
 
 Signal 触发器提供人工介入通道，支持通过 CLI / API / MCP 三种入口对运行中的 Agent 执行 pause、resume、trigger、instruct 四种操作。所有操作经过权限验证并记录到 Ledger。
@@ -231,28 +238,31 @@ async def _start_run(self, trigger_event, focus):
 
 ```sql
 -- Agent 状态表（可与 agents 表合并）
-ALTER TABLE agents ADD COLUMN paused BOOLEAN DEFAULT FALSE;
+ALTER TABLE agents ADD COLUMN paused BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Pending instructions 表
 CREATE TABLE pending_instructions (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agent_id    VARCHAR(255) NOT NULL,
-    tenant_id   VARCHAR(255) NOT NULL,
+    tenant_id   VARCHAR(64) NOT NULL DEFAULT 'default',
+    agent_id    VARCHAR(64) NOT NULL,
     content     TEXT NOT NULL,
     operator    VARCHAR(255),
     source      VARCHAR(20),  -- cli | api | mcp
-    created_at  TIMESTAMPTZ DEFAULT now(),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     expires_at  TIMESTAMPTZ NOT NULL,
     consumed_at TIMESTAMPTZ,
-    consumed    BOOLEAN DEFAULT FALSE,
+    consumed    BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT fk_agent FOREIGN KEY (agent_id, tenant_id)
         REFERENCES agents(agent_id, tenant_id)
 );
 
 CREATE INDEX idx_instructions_pending
-    ON pending_instructions (agent_id, tenant_id)
+    ON pending_instructions (tenant_id, agent_id, expires_at)
     WHERE NOT consumed AND expires_at > now();
+
+CREATE INDEX idx_instructions_tenant_created
+    ON pending_instructions (tenant_id, created_at DESC);
 ```
 
 ## CLI 命令

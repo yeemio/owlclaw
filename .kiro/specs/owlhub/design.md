@@ -640,52 +640,61 @@ dependencies:
 ```sql
 -- 技能表
 CREATE TABLE skills (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
     name VARCHAR(255) NOT NULL,
     publisher VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     repository VARCHAR(500) NOT NULL,
     homepage VARCHAR(500),
     license VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    UNIQUE(publisher, name)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id, publisher, name)
 );
 
 -- 版本表
 CREATE TABLE skill_versions (
-    id SERIAL PRIMARY KEY,
-    skill_id INTEGER NOT NULL REFERENCES skills(id),
+    id UUID PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
+    skill_id UUID NOT NULL REFERENCES skills(id),
     version VARCHAR(50) NOT NULL,
     download_url VARCHAR(500) NOT NULL,
     checksum VARCHAR(64) NOT NULL,
     state VARCHAR(20) NOT NULL DEFAULT 'draft',
-    published_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    UNIQUE(skill_id, version)
+    published_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id, skill_id, version)
 );
 
 -- 统计表
 CREATE TABLE skill_statistics (
-    id SERIAL PRIMARY KEY,
-    skill_id INTEGER NOT NULL REFERENCES skills(id),
+    id UUID PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
+    skill_id UUID NOT NULL REFERENCES skills(id),
     date DATE NOT NULL,
     downloads INTEGER NOT NULL DEFAULT 0,
     installs INTEGER NOT NULL DEFAULT 0,
-    UNIQUE(skill_id, date)
+    UNIQUE(tenant_id, skill_id, date)
 );
 
 -- 审核记录表
 CREATE TABLE review_records (
-    id SERIAL PRIMARY KEY,
-    skill_id INTEGER NOT NULL REFERENCES skills(id),
-    version_id INTEGER NOT NULL REFERENCES skill_versions(id),
+    id UUID PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL DEFAULT 'default',
+    skill_id UUID NOT NULL REFERENCES skills(id),
+    version_id UUID NOT NULL REFERENCES skill_versions(id),
     reviewer VARCHAR(255) NOT NULL,
     status VARCHAR(20) NOT NULL,
     comments TEXT,
-    reviewed_at TIMESTAMP NOT NULL DEFAULT NOW()
+    reviewed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_skills_tenant_publisher_name ON skills (tenant_id, publisher, name);
+CREATE INDEX idx_skill_versions_tenant_skill_version ON skill_versions (tenant_id, skill_id, version);
+CREATE INDEX idx_skill_statistics_tenant_skill_date ON skill_statistics (tenant_id, skill_id, date);
+CREATE INDEX idx_review_records_tenant_skill_version ON review_records (tenant_id, skill_id, version_id);
 ```
 
 ---

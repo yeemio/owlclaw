@@ -1,5 +1,12 @@
 # 设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/e2e-validation/requirements.md`
+- design: `.kiro/specs/e2e-validation/design.md`
+- tasks: `.kiro/specs/e2e-validation/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 ## 概述
 
 端到端验证系统（E2E Validator）是一个综合测试框架，用于验证 OwlClaw Agent 系统的完整工作流程。该系统通过自动化测试验证从 Cron 触发器到 Agent 运行时、治理层、Skills 系统以及 Hatchet 集成的所有组件的集成正确性。
@@ -137,10 +144,10 @@ class TestScenarioManager(Protocol):
   def deleteScenario(self, scenarioId: str) -> None: ...
   
   # 列出所有场景
-  def listScenarios(self, filter: Optional[ScenarioFilter) -> list[TestScenario]: ...]
+  def listScenarios(self, filter: Optional[ScenarioFilter]) -> list[TestScenario]: ...
   
   # 验证场景配置
-  def validateScenario(self, scenario: TestScenario) -> list[ValidationError: ...
+  def validateScenario(self, scenario: TestScenario) -> list[ValidationError]: ...
   
   # 导入/导出场景
   def exportScenarios(self, scenarioIds: list[str]) -> str: ...
@@ -294,7 +301,7 @@ class ComparisonEngine(Protocol):
   def comparePerformance(self, v3Metrics: PerformanceMetrics, cronMetrics: PerformanceMetrics) -> PerformanceComparison: ...
   
   # 检测异常差异
-  def detectAnomalies(self, comparison: ComparisonResult, threshold: float) -> list[Anomaly: ...
+  def detectAnomalies(self, comparison: ComparisonResult, threshold: float) -> list[Anomaly]: ...
 
 class ComparisonResult(Protocol):
   scenarioId: str
@@ -388,39 +395,53 @@ class Chart(Protocol):
 ### 测试场景数据模型
 
 ```python
+from dataclasses import dataclass
+
+@dataclass
+class ExpectedFlow:
+  cron_trigger: bool
+  agent_runtime: bool
+  skills: list[str]
+  governance: list[str]
+  hatchet: bool
+
+@dataclass
+class MionyeeTaskConfig:
+  task_id: Literal["1", "2", "3"]
+  task_parameters: dict[str, Any]
+  expected_flow: ExpectedFlow
+
 # Mionyee 任务场景
 class MionyeeTaskScenario(TestScenario, Protocol):
-  type: 'mionyee-task'
-  config: {
-    taskId: Literal["1", "2"] | '3'
-    taskParameters: {
-      input: Any
-      context: dict[str, Any]
-    expectedFlow: {
-      cronTrigger: bool
-      agentRuntime: bool
-      skills: list[str]
-      governance: list[str]
-      hatchet: bool
+  type: Literal["mionyee-task"]
+  config: MionyeeTaskConfig
+
+@dataclass
+class DecisionComparisonCase:
+  input: Any
+  expected_decision: Any
+
+@dataclass
+class DecisionComparisonConfig:
+  scenarios: list[DecisionComparisonCase]
+  comparison_metrics: list[str]
+  threshold: float
 
 # 决策对比场景
 class DecisionComparisonScenario(TestScenario, Protocol):
-  type: 'decision-comparison'
-  config: {
-    scenarios: list[{
-      input: Any
-      expectedDecision: Any
-    }>
-    comparisonMetrics: list[str]
-    threshold: float
+  type: Literal["decision-comparison"]
+  config: DecisionComparisonConfig
+
+@dataclass
+class IntegrationTestConfig:
+  components: list["ComponentConfig"]
+  integration_points: list["IntegrationPoint"]
+  validations: list["ValidationRule"]
 
 # 集成测试场景
 class IntegrationTestScenario(TestScenario, Protocol):
-  type: 'integration'
-  config: {
-    components: list[ComponentConfig]
-    integrationPoints: list[IntegrationPoint]
-    validations: list[ValidationRule]
+  type: Literal["integration"]
+  config: IntegrationTestConfig
 
 class ComponentConfig(Protocol):
   name: str
@@ -780,30 +801,42 @@ class ErrorResponse(Protocol):
 使用 `hypothesis` 的策略（strategies）生成测试数据：
 
 ```python
+from hypothesis import strategies as st
+
 # 生成 mionyee 任务 ID
-const taskIdArbitrary = fc.constantFrom('1', '2', '3')
+task_id_strategy = st.sampled_from(["1", "2", "3"])
 
 # 生成任务参数
-const taskParamsArbitrary = fc.record({
-  input: fc.anything(),
-  context: fc.dictionary(fc.str(), fc.anything())
-})
+task_params_strategy = st.fixed_dictionaries(
+    {
+        "input": st.recursive(
+            st.none() | st.booleans() | st.integers() | st.floats(allow_nan=False) | st.text(),
+            lambda children: st.lists(children, max_size=5) | st.dictionaries(st.text(max_size=20), children, max_size=5),
+            max_leaves=20,
+        ),
+        "context": st.dictionaries(st.text(min_size=1, max_size=30), st.text(max_size=200), max_size=10),
+    }
+)
 
 # 生成测试场景
-const testScenarioArbitrary = fc.record({
-  id: fc.uuid(),
-  name: fc.str(),
-  type: fc.constantFrom('mionyee-task', 'decision-comparison', 'integration'),
-  config: fc.anything()
-})
+test_scenario_strategy = st.fixed_dictionaries(
+    {
+        "id": st.uuids().map(str),
+        "name": st.text(min_size=1, max_size=80),
+        "type": st.sampled_from(["mionyee-task", "decision-comparison", "integration"]),
+        "config": st.dictionaries(st.text(min_size=1, max_size=30), st.text(max_size=200), max_size=10),
+    }
+)
 
 # 生成性能指标
-const performanceMetricsArbitrary = fc.record({
-  responseTime: fc.nat(10000),
-  throughput: fc.nat(1000),
-  cpuUsage: fc.double(0, 100),
-  memoryUsage: fc.nat(1024 * 1024 * 1024)
-})
+performance_metrics_strategy = st.fixed_dictionaries(
+    {
+        "response_time_ms": st.integers(min_value=0, max_value=10000),
+        "throughput_qps": st.integers(min_value=0, max_value=1000),
+        "cpu_usage": st.floats(min_value=0.0, max_value=100.0, allow_nan=False),
+        "memory_usage_bytes": st.integers(min_value=0, max_value=1024 * 1024 * 1024),
+    }
+)
 ```
 
 ### 集成测试

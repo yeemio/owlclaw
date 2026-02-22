@@ -1,5 +1,12 @@
 # Agent Memory 系统设计文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/agent-memory/requirements.md`
+- design: `.kiro/specs/agent-memory/design.md`
+- tasks: `.kiro/specs/agent-memory/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 ## 概述
 
 Agent Memory 子系统采用**双层架构**（STM + LTM），通过可插拔的向量后端和多级降级策略，为 Agent 提供从"无状态"到"有经验"的核心基础设施。
@@ -283,18 +290,18 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE memory_entries (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agent_id        VARCHAR(255) NOT NULL,
-    tenant_id       VARCHAR(255) NOT NULL,
+    tenant_id       VARCHAR(64) NOT NULL DEFAULT 'default',
+    agent_id        VARCHAR(64) NOT NULL,
     content         TEXT NOT NULL CHECK (char_length(content) <= 2000),
     embedding       vector(1536),  -- 维度由配置决定
-    tags            JSONB DEFAULT '[]'::jsonb,
-    security_level  VARCHAR(20) DEFAULT 'internal'
+    tags            JSONB NOT NULL DEFAULT '[]'::jsonb,
+    security_level  VARCHAR(20) NOT NULL DEFAULT 'internal'
                     CHECK (security_level IN ('public','internal','confidential','restricted')),
-    version         INTEGER DEFAULT 1,
-    created_at      TIMESTAMPTZ DEFAULT now(),
+    version         INTEGER NOT NULL DEFAULT 1,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     accessed_at     TIMESTAMPTZ,
-    access_count    INTEGER DEFAULT 0,
-    archived        BOOLEAN DEFAULT FALSE,
+    access_count    INTEGER NOT NULL DEFAULT 0,
+    archived        BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT fk_agent FOREIGN KEY (agent_id, tenant_id)
         REFERENCES agents(agent_id, tenant_id)
@@ -305,11 +312,11 @@ CREATE INDEX idx_memory_embedding ON memory_entries
     USING hnsw (embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
 
--- 常规索引
-CREATE INDEX idx_memory_agent ON memory_entries (agent_id, tenant_id);
-CREATE INDEX idx_memory_created ON memory_entries (created_at DESC);
+-- 常规索引（tenant_id 前缀）
+CREATE INDEX idx_memory_tenant_agent ON memory_entries (tenant_id, agent_id);
+CREATE INDEX idx_memory_tenant_created ON memory_entries (tenant_id, created_at DESC);
+CREATE INDEX idx_memory_tenant_archived ON memory_entries (tenant_id, archived) WHERE NOT archived;
 CREATE INDEX idx_memory_tags ON memory_entries USING gin (tags);
-CREATE INDEX idx_memory_archived ON memory_entries (archived) WHERE NOT archived;
 ```
 
 ## 降级策略矩阵
