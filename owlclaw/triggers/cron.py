@@ -176,6 +176,8 @@ class CronTriggerRegistry:
                 is invalid.
         """
         event_name = self._normalize_event_name(event_name)
+        if not isinstance(expression, str):
+            raise ValueError("expression must be a non-empty string")
         expression = expression.strip()
         if not expression:
             raise ValueError("expression must not be empty")
