@@ -472,6 +472,39 @@ class TestAgentRuntimeRun:
         assert result["status"] == "completed"
         registry.invoke_handler.assert_called_once_with("market_scan", symbol="AAPL")
 
+    async def test_execute_tool_records_risk_audit_in_decision_reasoning(
+        self, tmp_path
+    ) -> None:
+        """Ledger decision_reasoning should include risk and confirmation audit fields."""
+        tc = _make_tool_call("place-order", {"symbol": "AAPL"})
+        registry = MagicMock()
+        registry.invoke_handler = AsyncMock(return_value={"ok": True})
+        registry.get_capability_metadata.return_value = {
+            "name": "place-order",
+            "task_type": "trading_decision",
+            "risk_level": "high",
+            "requires_confirmation": True,
+        }
+        ledger = AsyncMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+            ledger=ledger,
+        )
+        ctx = AgentRunContext(
+            agent_id="bot",
+            trigger="cron",
+            payload={"confirmed_capabilities": ["place-order"]},
+        )
+        out = await rt._execute_tool(tc, ctx)
+        assert out == {"ok": True}
+        kwargs = ledger.record_execution.await_args.kwargs
+        reasoning = json.loads(kwargs["decision_reasoning"])
+        assert reasoning["risk_level"] == "high"
+        assert reasoning["requires_confirmation"] is True
+        assert reasoning["confirmed"] is True
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_invalid_llm_response_shape_exits_gracefully(
         self, mock_llm, tmp_path

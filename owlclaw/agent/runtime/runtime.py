@@ -408,6 +408,7 @@ class AgentRuntime:
             if self._ledger is not None:
                 meta = self.registry.get_capability_metadata(tool_name)
                 task_type = (meta.get("task_type") or "unknown") if meta else "unknown"
+                decision_reasoning = self._build_tool_decision_reasoning(meta, context)
                 await self._ledger.record_execution(
                     tenant_id=context.tenant_id,
                     agent_id=context.agent_id,
@@ -416,7 +417,7 @@ class AgentRuntime:
                     task_type=task_type,
                     input_params=invoke_arguments,
                     output_result=result if isinstance(result, dict) else {"result": result},
-                    decision_reasoning=None,
+                    decision_reasoning=decision_reasoning,
                     execution_time_ms=execution_time_ms,
                     llm_model="",
                     llm_tokens_input=0,
@@ -434,6 +435,7 @@ class AgentRuntime:
                 execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
                 meta = self.registry.get_capability_metadata(tool_name)
                 task_type = (meta.get("task_type") or "unknown") if meta else "unknown"
+                decision_reasoning = self._build_tool_decision_reasoning(meta, context)
                 try:
                     await self._ledger.record_execution(
                         tenant_id=context.tenant_id,
@@ -443,7 +445,7 @@ class AgentRuntime:
                         task_type=task_type,
                         input_params=invoke_arguments,
                         output_result=None,
-                        decision_reasoning=None,
+                        decision_reasoning=decision_reasoning,
                         execution_time_ms=execution_time_ms,
                         llm_model="",
                         llm_tokens_input=0,
@@ -637,20 +639,7 @@ class AgentRuntime:
             )
             for s in cap_schemas
         ]
-        confirmed_raw = context.payload.get("confirmed_capabilities")
-        confirmed: set[str] = set()
-        if isinstance(confirmed_raw, list | tuple | set):
-            confirmed = {
-                str(name).strip()
-                for name in confirmed_raw
-                if isinstance(name, str) and name.strip()
-            }
-        elif isinstance(confirmed_raw, str):
-            confirmed = {
-                part.strip()
-                for part in confirmed_raw.split(",")
-                if part.strip()
-            }
+        confirmed = self._extract_confirmed_capabilities(context.payload)
         run_ctx = RunContext(
             tenant_id=context.tenant_id,
             confirmed_capabilities=confirmed or None,
@@ -661,6 +650,42 @@ class AgentRuntime:
         visible_names = {cap.name for cap in visible_caps}
         filtered_caps = [s for s in cap_schemas if s["function"]["name"] in visible_names]
         return all_schemas[: len(all_schemas) - len(cap_schemas)] + filtered_caps
+
+    @staticmethod
+    def _extract_confirmed_capabilities(payload: dict[str, Any]) -> set[str]:
+        """Parse confirmed capabilities from payload in list/set/tuple/csv forms."""
+        confirmed_raw = payload.get("confirmed_capabilities")
+        if isinstance(confirmed_raw, list | tuple | set):
+            return {
+                str(name).strip()
+                for name in confirmed_raw
+                if isinstance(name, str) and name.strip()
+            }
+        if isinstance(confirmed_raw, str):
+            return {
+                part.strip()
+                for part in confirmed_raw.split(",")
+                if part.strip()
+            }
+        return set()
+
+    def _build_tool_decision_reasoning(
+        self,
+        capability_meta: dict[str, Any] | None,
+        context: AgentRunContext,
+    ) -> str:
+        """Build compact audit payload for capability execution records."""
+        meta = capability_meta or {}
+        confirmed = self._extract_confirmed_capabilities(context.payload)
+        payload = {
+            "source": "runtime_tool_execution",
+            "trigger": context.trigger,
+            "focus": context.focus,
+            "risk_level": meta.get("risk_level", "low"),
+            "requires_confirmation": bool(meta.get("requires_confirmation", False)),
+            "confirmed": meta.get("name") in confirmed if meta.get("name") else False,
+        }
+        return json.dumps(payload, ensure_ascii=False, sort_keys=True)
 
     def _capability_schemas(self) -> list[dict[str, Any]]:
         """Convert registered capabilities to OpenAI function schemas."""
