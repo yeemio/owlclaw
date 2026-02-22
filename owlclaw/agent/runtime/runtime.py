@@ -364,7 +364,7 @@ class AgentRuntime:
         if payload.get("has_events") is True:
             return True
         pending = payload.get("pending_events")
-        if isinstance(pending, list) and len(pending) > 0:
+        if isinstance(pending, list | tuple | set) and len(pending) > 0:
             return True
         count = payload.get("event_count")
         return bool(isinstance(count, int) and not isinstance(count, bool) and count > 0)
