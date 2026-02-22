@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+import yaml
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 from owlclaw.templates.skills.exceptions import (
@@ -83,10 +84,14 @@ class TemplateRenderer:
             val = params[p.name]
             try:
                 if p.type == "int":
+                    if isinstance(val, bool):
+                        raise ValueError("bool is not a valid int parameter value")
                     result[p.name] = int(val)
                 elif p.type == "bool":
                     if isinstance(val, bool):
                         result[p.name] = val
+                    elif isinstance(val, int) and val in (0, 1):
+                        result[p.name] = bool(val)
                     elif isinstance(val, str):
                         normalized = val.strip().lower()
                         if normalized in ("1", "true", "yes", "on"):
@@ -101,8 +106,17 @@ class TemplateRenderer:
                     if isinstance(val, list):
                         result[p.name] = val
                     elif isinstance(val, str):
-                        parts = [item.strip() for item in val.split(",")]
-                        result[p.name] = [item for item in parts if item]
+                        stripped = val.strip()
+                        if stripped.startswith("[") and stripped.endswith("]"):
+                            parsed = yaml.safe_load(stripped)
+                            if isinstance(parsed, list):
+                                result[p.name] = parsed
+                            else:
+                                parts = [item.strip() for item in val.split(",")]
+                                result[p.name] = [item for item in parts if item]
+                        else:
+                            parts = [item.strip() for item in val.split(",")]
+                            result[p.name] = [item for item in parts if item]
                     else:
                         result[p.name] = [val]
                 else:

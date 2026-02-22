@@ -172,6 +172,28 @@ enabled: {{ enabled }}
         assert "enabled: True" in out_true
         assert "enabled: False" in out_false
 
+    def test_render_converts_bool_int_literals(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: enabled
+    type: bool
+    description: Enabled flag
+    required: true
+#}
+---
+enabled: {{ enabled }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        out_true = rdr.render("monitoring/health-check", {"enabled": 1})
+        out_false = rdr.render("monitoring/health-check", {"enabled": 0})
+        assert "enabled: True" in out_true
+        assert "enabled: False" in out_false
+
     def test_render_rejects_invalid_bool_literal(self, tmp_path: Path) -> None:
         content = """{#
 name: X
@@ -191,6 +213,26 @@ enabled: {{ enabled }}
         rdr = TemplateRenderer(reg)
         with pytest.raises(ParameterTypeError):
             rdr.render("monitoring/health-check", {"enabled": "maybe"})
+
+    def test_render_rejects_bool_for_int_parameter(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: interval
+    type: int
+    description: Interval
+    required: true
+#}
+---
+interval: {{ interval }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        with pytest.raises(ParameterTypeError):
+            rdr.render("monitoring/health-check", {"interval": True})
 
     def test_render_converts_csv_string_to_list(self, tmp_path: Path) -> None:
         content = """{#
@@ -231,3 +273,23 @@ items: {{ items|join(',') }}
         rdr = TemplateRenderer(reg)
         out = rdr.render("monitoring/health-check", {"items": ["x", "y"]})
         assert "items: x,y" in out
+
+    def test_render_parses_json_like_list_string(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: items
+    type: list
+    description: Items
+    required: true
+#}
+---
+items: {{ items|join(',') }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        out = rdr.render("monitoring/health-check", {"items": "[a, b, c]"})
+        assert "items: a,b,c" in out
