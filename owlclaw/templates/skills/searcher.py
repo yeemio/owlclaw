@@ -36,6 +36,8 @@ class TemplateSearcher:
         Returns:
             Search results sorted by relevance (descending).
         """
+        if limit <= 0:
+            return []
         logger.debug("Searching templates: query=%r, category=%s, tags=%s", query, category, tags)
         candidates = self.registry.list_templates(category=category, tags=tags)
         results: list[SearchResult] = []
@@ -107,6 +109,8 @@ class TemplateSearcher:
         Returns:
             Recommended templates.
         """
+        if limit <= 0:
+            return []
         context = context or {}
         use_case = context.get("use_case") or ""
         category_str = (context.get("category") or "").lower()

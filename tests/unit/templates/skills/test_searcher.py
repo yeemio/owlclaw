@@ -106,3 +106,15 @@ class TestTemplateSearcher:
         results = searcher.recommend(limit=5)
         assert len(results) >= 1
         assert results[0].match_reason == "recommended"
+
+    def test_search_with_non_positive_limit_returns_empty(self, tmp_path: Path) -> None:
+        reg = _make_registry(tmp_path, [("monitoring", "Health", "Monitor", ["health"])])
+        searcher = TemplateSearcher(reg)
+        assert searcher.search("health", limit=0) == []
+        assert searcher.search("health", limit=-1) == []
+
+    def test_recommend_with_non_positive_limit_returns_empty(self, tmp_path: Path) -> None:
+        reg = _make_registry(tmp_path, [("monitoring", "X", "Y", [])])
+        searcher = TemplateSearcher(reg)
+        assert searcher.recommend(limit=0) == []
+        assert searcher.recommend(limit=-1) == []
