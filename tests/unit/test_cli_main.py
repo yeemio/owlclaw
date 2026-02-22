@@ -105,5 +105,5 @@ def test_main_skill_unknown_subcommand_exits_2(monkeypatch, capsys) -> None:
     with pytest.raises(SystemExit) as exc_info:
         cli_main.main()
     assert exc_info.value.code == 2
-    out = capsys.readouterr().out
-    assert "unknown skill subcommand" in out.lower()
+    err = capsys.readouterr().err
+    assert "unknown skill subcommand" in err.lower()

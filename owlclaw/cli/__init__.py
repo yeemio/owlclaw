@@ -94,7 +94,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         )
         return True
 
-    print(f"Error: unknown skill subcommand: {sub}")
+    print(f"Error: unknown skill subcommand: {sub}", file=sys.stderr)
     raise SystemExit(2)
 
 
