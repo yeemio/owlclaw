@@ -35,6 +35,20 @@ OwlHub 是 OwlClaw Skills 的注册、发现与分发中心，负责维护技能
 - 优先支持自动化校验与审核
 - 提供清晰的迁移路径
 
+## 架构例外声明（实现阶段需固化）
+
+为保证设计与实现的一致性，以下例外在本 spec 中显式声明，并要求在 Alembic 迁移与实现注释中同步固化：
+
+1. `skill_statistics` 使用 `date DATE NOT NULL` 作为日粒度统计键，不使用 `TIMESTAMPTZ`。
+   - 原因：该表承载按天聚合结果，`DATE` 可避免时区换算导致的重复/遗漏统计窗口问题。
+   - 约束：事件明细若需追踪时间线，必须写入 `TIMESTAMPTZ` 字段的明细表，不得复用聚合表代替审计日志。
+2. Phase 1/2 可使用静态索引文件（`index.json`）作为发布介质，Phase 3 才引入服务化 API 与数据库。
+   - 原因：遵循架构的渐进式演进策略，优先降低早期运行复杂度。
+   - 约束：阶段迁移必须保持向后兼容，并在任务中提供迁移与回滚步骤。
+3. `alembic_version` 属于 Alembic 系统表，不适用业务表的 `tenant_id/UUID` 约束。
+
+除上述显式例外外，进入数据库阶段（Phase 3）的业务表仍严格遵循数据库五条铁律（`tenant_id`、`TIMESTAMPTZ`、索引前缀、Alembic 管理）。
+
 ---
 
 ## Architecture

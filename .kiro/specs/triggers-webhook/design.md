@@ -27,6 +27,17 @@ Webhook 触发器系统是 OwlClaw Agent 平台的关键组件，负责接收外
 2. 本文档中的接口代码块用于表达领域模型与契约，属于**语言无关伪代码**；落地实现以 Python `dataclass` / `Protocol` / Pydantic 模型为准。
 3. 多语言（Node/TypeScript）仅作为外部系统适配层存在，通过 HTTP/Queue 调用 OwlClaw 暴露的标准入口，不进入核心触发器模块。
 
+## 架构例外声明（实现阶段需固化）
+
+为保证设计与实现的一致性，以下例外在本 spec 中显式声明，并要求在 Alembic 迁移与实现注释中同步固化：
+
+1. `idempotency_keys` 表使用业务键 `key VARCHAR(255) PRIMARY KEY`，不使用 `UUID` 主键。
+   - 原因：幂等键天然来自外部请求标识（header/body 组合），字符串主键可避免额外映射层并降低查重路径复杂度。
+   - 约束：必须保留 `tenant_id`，并对 `(tenant_id, endpoint_id)`、`(tenant_id, expires_at)` 建索引。
+2. `alembic_version` 属于 Alembic 系统表，不适用业务表的 `tenant_id/UUID` 约束。
+
+除上述显式例外外，其余业务表仍严格遵循数据库五条铁律（`tenant_id`、`TIMESTAMPTZ`、索引前缀、Alembic 管理）。
+
 ## 架构
 
 系统采用分层架构，主要包含以下层次：

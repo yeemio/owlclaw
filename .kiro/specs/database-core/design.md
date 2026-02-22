@@ -20,6 +20,14 @@
 
 该设计遵循 OwlClaw 数据库架构的五条铁律（参见 `docs/DATABASE_ARCHITECTURE.md`），特别是从第一天起就强制实施 tenant_id，为未来的多租户 SaaS 演进做好准备。
 
+## 架构例外声明（实现阶段需固化）
+
+本 spec 当前未引入业务层面的数据库铁律例外。实现阶段遵循以下约束：
+
+1. 所有业务模型保持 `tenant_id VARCHAR(64)` 统一口径，不引入租户 ID 的多类型并存。
+2. 时间字段默认使用 `TIMESTAMPTZ`（按数据库规范）；若出现聚合场景使用 `DATE`，必须在对应业务 spec 显式声明原因与约束。
+3. `alembic_version` 属于 Alembic 系统表，不适用业务表约束（不要求 `tenant_id/UUID`）。
+
 ## 架构
 
 ### 模块结构

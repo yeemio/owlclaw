@@ -72,6 +72,17 @@
 6. **Mock 模式**：支持无外部依赖的本地测试和验证
 
 
+## 架构例外声明（实现阶段需固化）
+
+为保证设计与实现的一致性，以下例外在本 spec 中显式声明，并要求在 Alembic 迁移与实现注释中同步固化：
+
+1. `idempotency_keys` 表使用业务键（字符串）作为主键，不使用 `UUID` 主键。
+   - 原因：去重键来源于消息系统（`dedup_key` / `message_id`），字符串主键可直接映射跨队列语义，避免二次编码。
+   - 约束：必须保留 `tenant_id`，并对 `(tenant_id, expires_at)` 等查询路径建立索引。
+2. `alembic_version` 属于 Alembic 系统表，不适用业务表的 `tenant_id/UUID` 约束。
+
+除上述显式例外外，其余业务表仍严格遵循数据库五条铁律（`tenant_id`、`TIMESTAMPTZ`、索引前缀、Alembic 管理）。
+
 ## 组件和接口
 
 ### 1. QueueAdapter（队列适配器）

@@ -78,11 +78,11 @@
 
 ### Phase 2：生命周期管理 + 安全
 
-- [ ] **Task 10**: 实现 `MemoryLifecycleManager`
+- [x] **Task 10**: 实现 `MemoryLifecycleManager`
   - 实现自动归档：超过 max_entries 时归档最旧且低访问量的记忆
   - 实现自动清理：超过 retention_days 且低访问量的记忆删除
-  - 集成 Hatchet cron（每日凌晨运行）
-  - 记录归档/清理事件到 Ledger
+  - 集成 Hatchet cron（每日凌晨运行）：由应用层 @app.cron(\"0 0 * * *\", focus=\"memory_maintenance\") 调用 run_maintenance_for_agents
+  - 记录归档/清理事件到 Ledger（可选）
 
 - [ ] **Task 11**: 实现 CLI 命令
   - `owlclaw memory list --agent <name>`: 列出记忆（分页、标签过滤）
