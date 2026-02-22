@@ -3,6 +3,7 @@
 from owlclaw.agent.memory.embedder import EmbeddingProvider
 from owlclaw.agent.memory.embedder_litellm import LiteLLMEmbedder
 from owlclaw.agent.memory.embedder_random import RandomEmbedder
+from owlclaw.agent.memory.lifecycle import MaintenanceResult, MemoryLifecycleManager
 from owlclaw.agent.memory.models import (
     MemoryConfig,
     MemoryEntry,
@@ -19,6 +20,8 @@ from owlclaw.agent.memory.store_pgvector import PgVectorStore, time_decay
 __all__ = [
     "EmbeddingProvider",
     "InMemoryStore",
+    "MaintenanceResult",
+    "MemoryLifecycleManager",
     "LiteLLMEmbedder",
     "MemoryConfig",
     "MemoryEntry",

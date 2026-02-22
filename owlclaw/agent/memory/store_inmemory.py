@@ -133,3 +133,37 @@ class InMemoryStore(MemoryStore):
                 continue
             e.accessed_at = now
             e.access_count += 1
+
+    async def list_entries(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        order_created_asc: bool,
+        limit: int,
+        include_archived: bool = False,
+    ) -> list[MemoryEntry]:
+        candidates = [
+            e for e in self._store.values()
+            if e.agent_id == agent_id and e.tenant_id == tenant_id
+            and (include_archived or not e.archived)
+        ]
+        candidates.sort(key=lambda e: e.created_at, reverse=not order_created_asc)
+        return [self._copy(e) for e in candidates[:limit]]
+
+    async def get_expired_entry_ids(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        before: datetime,
+        max_access_count: int = 0,
+    ) -> list[UUID]:
+        out = []
+        for e in self._store.values():
+            if e.agent_id != agent_id or e.tenant_id != tenant_id or e.archived:
+                continue
+            created = e.created_at
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            if created < before and e.access_count <= max_access_count:
+                out.append(e.id)
+        return out

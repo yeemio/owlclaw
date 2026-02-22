@@ -259,3 +259,46 @@ class PgVectorStore(MemoryStore):
                 .values(accessed_at=now, access_count=MemoryEntryORM.access_count + 1)
             )
             await session.commit()
+
+    async def list_entries(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        order_created_asc: bool,
+        limit: int,
+        include_archived: bool = False,
+    ) -> list[MemoryEntry]:
+        async with self._session_factory() as session:
+            base = and_(
+                MemoryEntryORM.agent_id == agent_id,
+                MemoryEntryORM.tenant_id == tenant_id,
+            )
+            if not include_archived:
+                base = and_(base, MemoryEntryORM.archived.is_(False))
+            order = MemoryEntryORM.created_at.asc() if order_created_asc else MemoryEntryORM.created_at.desc()
+            q = select(MemoryEntryORM).where(base).order_by(order).limit(limit)
+            result = await session.execute(q)
+            return [_orm_to_entry(r) for r in result.scalars().all()]
+
+    async def get_expired_entry_ids(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        before: datetime,
+        max_access_count: int = 0,
+    ) -> list[UUID]:
+        async with self._session_factory() as session:
+            q = (
+                select(MemoryEntryORM.id)
+                .where(
+                    and_(
+                        MemoryEntryORM.agent_id == agent_id,
+                        MemoryEntryORM.tenant_id == tenant_id,
+                        MemoryEntryORM.archived.is_(False),
+                        MemoryEntryORM.created_at < before,
+                        MemoryEntryORM.access_count <= max_access_count,
+                    )
+                )
+            )
+            result = await session.execute(q)
+            return [row[0] for row in result.all()]

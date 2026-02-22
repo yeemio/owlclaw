@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 import pytest
@@ -62,6 +63,25 @@ class _CaptureLimitStore(MemoryStore):
         self, agent_id: str, tenant_id: str, entry_ids: list[UUID]
     ) -> None:
         return None
+
+    async def list_entries(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        order_created_asc: bool,
+        limit: int,
+        include_archived: bool = False,
+    ) -> list[MemoryEntry]:
+        return []
+
+    async def get_expired_entry_ids(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        before: datetime,
+        max_access_count: int = 0,
+    ) -> list[UUID]:
+        return []
 
 
 @pytest.mark.asyncio

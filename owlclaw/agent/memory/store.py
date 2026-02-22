@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from uuid import UUID
 
 from owlclaw.agent.memory.models import MemoryEntry
@@ -60,4 +61,27 @@ class MemoryStore(ABC):
         self, agent_id: str, tenant_id: str, entry_ids: list[UUID]
     ) -> None:
         """Update accessed_at and increment access_count for given entries (e.g. after recall)."""
+        ...
+
+    @abstractmethod
+    async def list_entries(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        order_created_asc: bool,
+        limit: int,
+        include_archived: bool = False,
+    ) -> list[MemoryEntry]:
+        """List entries by created_at order; for lifecycle (archive excess)."""
+        ...
+
+    @abstractmethod
+    async def get_expired_entry_ids(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        before: datetime,
+        max_access_count: int = 0,
+    ) -> list[UUID]:
+        """Return entry ids with created_at < before and access_count <= max_access_count (non-archived)."""
         ...
