@@ -34,6 +34,14 @@ def _coerce_focus(value: Any) -> list[str]:
     return []
 
 
+def _coerce_risk_level(value: Any) -> str:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"low", "medium", "high", "critical"}:
+            return normalized
+    return "low"
+
+
 @dataclass
 class FilterResult:
     """Result of a single constraint evaluation."""
@@ -77,7 +85,7 @@ class CapabilityView:
         self.task_type = task_type or ""
         self.constraints = constraints or {}
         self.focus = _coerce_focus(focus)
-        self.risk_level = risk_level or "low"
+        self.risk_level = _coerce_risk_level(risk_level)
         self.requires_confirmation = _coerce_bool(requires_confirmation)
 
     @property
