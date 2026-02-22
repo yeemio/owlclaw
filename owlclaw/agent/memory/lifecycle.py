@@ -82,7 +82,7 @@ class MemoryLifecycleManager:
                 agent_id,
                 tenant_id,
                 before=cutoff,
-                max_access_count=0,
+                max_access_count=2,
             )
             if expired_ids:
                 result.deleted_count = await self._store.delete(expired_ids)

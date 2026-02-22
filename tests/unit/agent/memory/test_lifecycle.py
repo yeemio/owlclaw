@@ -36,7 +36,7 @@ async def test_lifecycle_archive_excess() -> None:
 
 @pytest.mark.asyncio
 async def test_lifecycle_delete_expired() -> None:
-    """Entries older than retention_days with access_count 0 are deleted."""
+    """Entries older than retention_days with access_count < 3 are deleted."""
     store = InMemoryStore()
     embedder = RandomEmbedder(dimensions=8, seed=42)
     config = MemoryConfig(max_entries=10000, retention_days=1)
@@ -47,16 +47,22 @@ async def test_lifecycle_delete_expired() -> None:
     old = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="Old", embedding=emb)
     # Simulate old created_at (e.g. 2 days ago)
     old.created_at = _utc_now() - timedelta(days=2)
+    old.access_count = 2
     await store.save(old)
+
+    old_frequent = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="Old frequent", embedding=emb)
+    old_frequent.created_at = _utc_now() - timedelta(days=2)
+    old_frequent.access_count = 3
+    await store.save(old_frequent)
 
     recent = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="Recent", embedding=emb)
     await store.save(recent)
 
-    assert await store.count(agent_id, tenant_id) == 2
+    assert await store.count(agent_id, tenant_id) == 3
     result = await manager.run_maintenance(agent_id, tenant_id)
     assert result.error is None
     assert result.deleted_count == 1
-    assert await store.count(agent_id, tenant_id) == 1
+    assert await store.count(agent_id, tenant_id) == 2
 
 
 @pytest.mark.asyncio
