@@ -171,6 +171,16 @@ class TestTemplateValidator:
         assert any(e.field == "body" and "Body is empty" in e.message for e in errs)
         assert not any(e.field == "name" and "Missing required field" in e.message for e in errs)
 
+    def test_validate_skill_file_with_utf8_bom(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "\ufeff---\nname: my-skill\ndescription: A skill\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert errs == []
+
     def test_validate_trigger_syntax(self) -> None:
         v = TemplateValidator()
         assert v._validate_trigger_syntax('cron("*/5 * * * *")') is True

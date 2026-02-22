@@ -188,6 +188,20 @@ def test_parse_name_must_be_kebab_case(tmp_path):
     assert len(skills) == 0
 
 
+def test_parse_skill_with_utf8_bom(tmp_path):
+    """UTF-8 BOM at file start should not break frontmatter parsing."""
+    skill_dir = tmp_path / "bom"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "\ufeff---\nname: bom-skill\ndescription: has bom\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert skills[0].name == "bom-skill"
+
+
 def test_scan_duplicate_skill_names_keeps_first_sorted_path(tmp_path):
     """Duplicate skill names should not silently overwrite earlier entries."""
     a_dir = tmp_path / "a-skill"

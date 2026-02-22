@@ -205,6 +205,7 @@ class SkillsLoader:
         except OSError as e:
             logger.warning("Failed to read Skill file %s: %s", file_path, e)
             return None
+        content = content.lstrip("\ufeff")
 
         if not content.startswith("---"):
             logger.warning("Skill file %s missing frontmatter", file_path)

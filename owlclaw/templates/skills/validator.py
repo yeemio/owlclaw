@@ -171,6 +171,7 @@ class TemplateValidator:
 
     def _parse_skill_file(self, content: str) -> tuple[dict[str, Any], str]:
         """Parse SKILL.md content into frontmatter dict and body string."""
+        content = content.lstrip("\ufeff")
         match = re.match(r"^---\r?\n(.*?)\r?\n---(?:\r?\n(.*))?$", content, re.DOTALL)
         if not match:
             return {}, content
