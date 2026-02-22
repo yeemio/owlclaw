@@ -2221,3 +2221,341 @@ logger.error(
     error=str(e)
 )
 ```
+
+
+---
+
+## 12. 部署和运维
+
+### 12.1 数据库迁移
+
+**Alembic 迁移脚本**：
+
+```bash
+# 生成迁移脚本
+alembic revision --autogenerate -m "add ledger_records table"
+
+# 应用迁移
+alembic upgrade head
+
+# 回滚迁移
+alembic downgrade -1
+```
+
+**迁移脚本示例**：
+
+```python
+"""add ledger_records table
+
+Revision ID: abc123
+Revises: xyz789
+Create Date: 2026-02-22 10:00:00.000000
+
+"""
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+def upgrade():
+    op.create_table(
+        'ledger_records',
+        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+        sa.Column('tenant_id', postgresql.UUID(as_uuid=True), nullable=False, index=True),
+        sa.Column('agent_id', sa.String(255), nullable=False, index=True),
+        sa.Column('run_id', sa.String(255), nullable=False, index=True),
+        sa.Column('capability_name', sa.String(255), nullable=False, index=True),
+        sa.Column('task_type', sa.String(100), nullable=False, index=True),
+        sa.Column('input_params', postgresql.JSON, nullable=False),
+        sa.Column('output_result', postgresql.JSON, nullable=True),
+        sa.Column('decision_reasoning', sa.String, nullable=True),
+        sa.Column('execution_time_ms', sa.Integer, nullable=False),
+        sa.Column('llm_model', sa.String(100), nullable=False),
+        sa.Column('llm_tokens_input', sa.Integer, nullable=False),
+        sa.Column('llm_tokens_output', sa.Integer, nullable=False),
+        sa.Column('estimated_cost', sa.DECIMAL(10, 4), nullable=False),
+        sa.Column('status', sa.Enum('success', 'failure', 'timeout', name='execution_status'), nullable=False, index=True),
+        sa.Column('error_message', sa.String, nullable=True),
+        sa.Column('created_at', sa.DateTime, nullable=False, index=True),
+        comment='Agent 能力执行记录，用于审计和成本分析'
+    )
+    
+    # 创建复合索引
+    op.create_index(
+        'idx_ledger_tenant_agent_date',
+        'ledger_records',
+        ['tenant_id', 'agent_id', 'created_at']
+    )
+    
+    op.create_index(
+        'idx_ledger_tenant_capability_date',
+        'ledger_records',
+        ['tenant_id', 'capability_name', 'created_at']
+    )
+
+def downgrade():
+    op.drop_index('idx_ledger_tenant_capability_date', 'ledger_records')
+    op.drop_index('idx_ledger_tenant_agent_date', 'ledger_records')
+    op.drop_table('ledger_records')
+    op.execute('DROP TYPE execution_status')
+```
+
+### 12.2 配置管理
+
+**环境变量**：
+
+```bash
+# 数据库连接
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost/owlclaw
+
+# 治理层配置
+GOVERNANCE_LEDGER_BATCH_SIZE=10
+GOVERNANCE_LEDGER_FLUSH_INTERVAL=5
+GOVERNANCE_BUDGET_HIGH_COST_THRESHOLD=0.1
+
+# 日志级别
+LOG_LEVEL=INFO
+```
+
+**配置文件热重载**：
+
+```python
+import asyncio
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+class ConfigReloadHandler(FileSystemEventHandler):
+    def __init__(self, router: Router):
+        self.router = router
+    
+    def on_modified(self, event):
+        if event.src_path.endswith('owlclaw.yaml'):
+            logger.info("Config file modified, reloading router rules")
+            new_config = load_config('owlclaw.yaml')
+            self.router.reload_config(new_config['governance']['router'])
+
+# 启动配置监听
+observer = Observer()
+observer.schedule(ConfigReloadHandler(router), path='.', recursive=False)
+observer.start()
+```
+
+### 12.3 故障排查
+
+**常见问题**：
+
+1. **Ledger 队列积压**：
+   - 检查数据库连接是否正常
+   - 检查批量写入延迟是否过高
+   - 增加 batch_size 或减少 flush_interval
+
+2. **约束评估延迟过高**：
+   - 检查数据库查询性能
+   - 检查缓存是否生效
+   - 增加约束评估超时时间
+
+3. **模型降级频繁**：
+   - 检查主模型的可用性
+   - 检查 API 限流配置
+   - 调整降级策略
+
+**调试工具**：
+
+```python
+# 查看 Ledger 队列状态
+async def debug_ledger_queue(ledger: Ledger):
+    print(f"Queue size: {ledger.write_queue.qsize()}")
+    print(f"Writer task running: {ledger._writer_task and not ledger._writer_task.done()}")
+
+# 查看约束评估器状态
+async def debug_visibility_filter(visibility_filter: VisibilityFilter):
+    print(f"Registered evaluators: {len(visibility_filter.evaluators)}")
+    for evaluator in visibility_filter.evaluators:
+        print(f"  - {evaluator.__class__.__name__}")
+
+# 查看 Router 配置
+async def debug_router(router: Router):
+    print(f"Default model: {router.default_model}")
+    print(f"Rules: {len(router.rules)}")
+    for rule in router.rules:
+        print(f"  - {rule['task_type']} -> {rule['model']}")
+```
+
+
+---
+
+## 13. 未来扩展
+
+### 13.1 分布式追踪
+
+**集成 OpenTelemetry**：
+
+```python
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
+
+tracer = trace.get_tracer(__name__)
+
+class VisibilityFilter:
+    async def filter_capabilities(
+        self,
+        capabilities: List[Capability],
+        agent_id: str,
+        context: RunContext
+    ) -> List[Capability]:
+        with tracer.start_as_current_span("filter_capabilities") as span:
+            span.set_attribute("agent_id", agent_id)
+            span.set_attribute("capability_count", len(capabilities))
+            
+            filtered = []
+            for cap in capabilities:
+                with tracer.start_as_current_span(f"evaluate_{cap.name}"):
+                    # 评估逻辑
+                    pass
+            
+            span.set_attribute("filtered_count", len(filtered))
+            return filtered
+```
+
+### 13.2 成本优化建议
+
+**基于 Ledger 数据的成本分析**：
+
+```python
+class CostOptimizer:
+    def __init__(self, ledger: Ledger):
+        self.ledger = ledger
+    
+    async def analyze_cost_by_capability(
+        self, tenant_id: UUID, agent_id: str, days: int = 30
+    ) -> List[CostAnalysis]:
+        """分析各能力的成本"""
+        start_date = date.today() - timedelta(days=days)
+        records = await self.ledger.query_records(
+            tenant_id=tenant_id,
+            filters=LedgerQueryFilters(
+                agent_id=agent_id,
+                start_date=start_date
+            )
+        )
+        
+        # 按能力聚合成本
+        cost_by_capability = {}
+        for record in records:
+            if record.capability_name not in cost_by_capability:
+                cost_by_capability[record.capability_name] = {
+                    'total_cost': Decimal('0'),
+                    'call_count': 0
+                }
+            cost_by_capability[record.capability_name]['total_cost'] += record.estimated_cost
+            cost_by_capability[record.capability_name]['call_count'] += 1
+        
+        # 生成优化建议
+        suggestions = []
+        for capability_name, stats in cost_by_capability.items():
+            avg_cost = stats['total_cost'] / stats['call_count']
+            if avg_cost > Decimal('0.5'):
+                suggestions.append(CostAnalysis(
+                    capability_name=capability_name,
+                    total_cost=stats['total_cost'],
+                    call_count=stats['call_count'],
+                    avg_cost=avg_cost,
+                    suggestion=f"考虑优化 {capability_name}，平均成本较高（{avg_cost} 元/次）"
+                ))
+        
+        return suggestions
+```
+
+### 13.3 智能预算分配
+
+**基于历史数据的预算预测**：
+
+```python
+class BudgetPredictor:
+    def __init__(self, ledger: Ledger):
+        self.ledger = ledger
+    
+    async def predict_monthly_cost(
+        self, tenant_id: UUID, agent_id: str
+    ) -> Decimal:
+        """预测月度成本"""
+        # 获取过去 7 天的成本
+        start_date = date.today() - timedelta(days=7)
+        cost_summary = await self.ledger.get_cost_summary(
+            tenant_id=tenant_id,
+            agent_id=agent_id,
+            start_date=start_date,
+            end_date=date.today()
+        )
+        
+        # 计算日均成本
+        daily_avg = cost_summary.total_cost / 7
+        
+        # 预测月度成本（考虑工作日）
+        working_days_per_month = 22
+        predicted_cost = daily_avg * working_days_per_month
+        
+        return predicted_cost
+    
+    async def suggest_budget_limit(
+        self, tenant_id: UUID, agent_id: str, buffer: float = 1.2
+    ) -> Decimal:
+        """建议预算上限"""
+        predicted_cost = await self.predict_monthly_cost(tenant_id, agent_id)
+        suggested_limit = predicted_cost * Decimal(str(buffer))
+        
+        return suggested_limit
+```
+
+### 13.4 多租户成本分摊
+
+**基于使用量的成本分摊**：
+
+```python
+class CostAllocation:
+    def __init__(self, ledger: Ledger):
+        self.ledger = ledger
+    
+    async def allocate_shared_costs(
+        self, tenant_ids: List[UUID], shared_cost: Decimal, month: date
+    ) -> Dict[UUID, Decimal]:
+        """按使用量分摊共享成本"""
+        # 获取各租户的使用量
+        usage_by_tenant = {}
+        for tenant_id in tenant_ids:
+            records = await self.ledger.query_records(
+                tenant_id=tenant_id,
+                filters=LedgerQueryFilters(
+                    start_date=month.replace(day=1),
+                    end_date=month
+                )
+            )
+            usage_by_tenant[tenant_id] = len(records)
+        
+        # 计算总使用量
+        total_usage = sum(usage_by_tenant.values())
+        
+        # 按比例分摊成本
+        allocated_costs = {}
+        for tenant_id, usage in usage_by_tenant.items():
+            ratio = Decimal(usage) / Decimal(total_usage)
+            allocated_costs[tenant_id] = shared_cost * ratio
+        
+        return allocated_costs
+```
+
+---
+
+## 14. 参考文档
+
+- `.kiro/specs/governance/requirements.md` — 治理层需求文档
+- `.kiro/specs/governance/tasks.md` — 治理层任务清单
+- `.kiro/specs/agent-runtime/design.md` — Agent 运行时设计
+- `.kiro/specs/database-core/design.md` — 数据库核心设计
+- `docs/ARCHITECTURE_ANALYSIS.md` §4 — 治理层架构分析
+- Agent Skills 规范（agentskills.io）— SKILL.md frontmatter 格式
+
+---
+
+**维护者**：OwlClaw 开发团队  
+**最后更新**：2026-02-22  
+**版本**：1.0.0
