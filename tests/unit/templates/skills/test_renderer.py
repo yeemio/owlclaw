@@ -7,6 +7,7 @@ import pytest
 from owlclaw.templates.skills import TemplateRegistry, TemplateRenderer
 from owlclaw.templates.skills.exceptions import (
     MissingParameterError,
+    ParameterTypeError,
     ParameterValueError,
 )
 
@@ -148,3 +149,45 @@ parameters:
         rdr = TemplateRenderer(reg)
         out = rdr.render("monitoring/health-check", {"var": "Health Check"})
         assert "health_check" in out
+
+    def test_render_converts_bool_literals(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: enabled
+    type: bool
+    description: Enabled flag
+    required: true
+#}
+---
+enabled: {{ enabled }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        out_true = rdr.render("monitoring/health-check", {"enabled": "true"})
+        out_false = rdr.render("monitoring/health-check", {"enabled": "off"})
+        assert "enabled: True" in out_true
+        assert "enabled: False" in out_false
+
+    def test_render_rejects_invalid_bool_literal(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: enabled
+    type: bool
+    description: Enabled flag
+    required: true
+#}
+---
+enabled: {{ enabled }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        with pytest.raises(ParameterTypeError):
+            rdr.render("monitoring/health-check", {"enabled": "maybe"})

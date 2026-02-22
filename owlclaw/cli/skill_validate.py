@@ -43,7 +43,14 @@ def validate_command(
     """Validate SKILL.md files (frontmatter, name, description, body)."""
     if not paths:
         paths = ["."]
-    skill_files = _collect_skill_files([Path(p) for p in paths])
+    resolved_paths = [Path(p).resolve() for p in paths]
+    missing_paths = [p for p in resolved_paths if not p.exists()]
+    if missing_paths:
+        for p in missing_paths:
+            typer.echo(f"Error: path not found: {p}", err=True)
+        raise typer.Exit(2)
+
+    skill_files = _collect_skill_files(resolved_paths)
     if not skill_files:
         typer.echo("No SKILL.md files found.", err=True)
         raise typer.Exit(1)

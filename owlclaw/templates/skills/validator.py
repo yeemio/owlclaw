@@ -115,11 +115,12 @@ class TemplateValidator:
 
     def _parse_skill_file(self, content: str) -> tuple[dict[str, Any], str]:
         """Parse SKILL.md content into frontmatter dict and body string."""
-        match = re.match(r"^---\r?\n(.*?)\r?\n---\r?\n(.*)$", content, re.DOTALL)
+        match = re.match(r"^---\r?\n(.*?)\r?\n---(?:\r?\n(.*))?$", content, re.DOTALL)
         if not match:
             return {}, content
 
         frontmatter_str, body = match.groups()
+        body = body or ""
         frontmatter: dict[str, Any] = {}
         if frontmatter_str.strip():
             loaded = yaml.safe_load(frontmatter_str)

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import click
 import typer
@@ -33,9 +33,13 @@ def _parse_param_args(param_args: list[str]) -> dict[str, Any]:
     """Parse --param key=value into a dict."""
     result: dict[str, Any] = {}
     for s in param_args:
-        if "=" in s:
-            k, _, v = s.partition("=")
-            result[k.strip()] = v.strip()
+        if "=" not in s:
+            raise ValueError(f"Invalid --param entry (expected key=value): {s}")
+        k, _, v = s.partition("=")
+        key = k.strip()
+        if not key:
+            raise ValueError(f"Invalid --param entry (empty key): {s}")
+        result[key] = v.strip()
     return result
 
 
@@ -97,46 +101,29 @@ def _run_interactive_wizard(
 
 
 def init_command(
-    name: str = typer.Option(
-        "",
-        "--name",
-        help="Skill name. Required for default template.",
-    ),
-    path: str = typer.Option(
-        ".",
-        "--output",
-        "--path",
-        "-o",
-        "-p",
-        help="Output directory.",
-    ),
-    template: str = typer.Option(
-        "",
-        "--template",
-        help="Template ID (e.g. monitoring/health-check). Leave empty for interactive wizard. Use 'default' for legacy scaffold.",
-    ),
-    category: str = typer.Option(
-        "",
-        "--category",
-        "-c",
-        help="Filter templates by category (monitoring, analysis, workflow, integration, report).",
-    ),
-    params_file: str = typer.Option(
-        "",
-        "--params-file",
-        help="JSON or YAML file path with template parameters (non-interactive).",
-    ),
-    param: str = typer.Option(
-        "",
-        "--param",
-        help="Template parameters as key=value, comma-separated (e.g. skill_name=X,skill_description=Y).",
-    ),
-    force: bool = typer.Option(
-        False,
-        "--force",
-        "-f",
-        help="Overwrite existing SKILL.md if present.",
-    ),
+    name: Annotated[str, typer.Option("--name", help="Skill name. Required for default template.", is_flag=False)] = "",
+    path: Annotated[str, typer.Option("--output", "--path", "-o", "-p", help="Output directory.", is_flag=False)] = ".",
+    template: Annotated[
+        str,
+        typer.Option(
+            "--template",
+            help="Template ID (e.g. monitoring/health-check). Leave empty for interactive wizard. Use 'default' for legacy scaffold.",
+            is_flag=False,
+        ),
+    ] = "",
+    category: Annotated[
+        str,
+        typer.Option("--category", "-c", help="Filter templates by category (monitoring, analysis, workflow, integration, report).", is_flag=False),
+    ] = "",
+    params_file: Annotated[
+        str,
+        typer.Option("--params-file", help="JSON or YAML file path with template parameters (non-interactive).", is_flag=False),
+    ] = "",
+    param: Annotated[
+        str,
+        typer.Option("--param", help="Template parameters as key=value, comma-separated (e.g. skill_name=X,skill_description=Y).", is_flag=False),
+    ] = "",
+    force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite existing SKILL.md if present.")] = False,
 ) -> None:
     """Create a new Skill directory and SKILL.md from template or default scaffold."""
     base = Path(path).resolve()
@@ -170,13 +157,14 @@ def init_command(
     cat_enum: TemplateCategory | None = None
     if category:
         try:
-            cat_enum = TemplateCategory(category)
+            cat_enum = TemplateCategory(category.strip().lower())
         except ValueError:
             typer.echo(f"Error: invalid category '{category}'. Use: monitoring, analysis, workflow, integration, report.", err=True)
             raise typer.Exit(2)
 
     params: dict[str, Any] = {}
     template_id: str
+    non_interactive = bool(params_file or param.strip())
 
     if params_file:
         p = Path(params_file)
@@ -194,8 +182,12 @@ def init_command(
         params = loaded
     if param.strip():
         # Parse "k1=v1,k2=v2" or "k1=v1"
-        parts = [p.strip() for p in param.split(",") if "=" in p]
-        params.update(_parse_param_args(parts))
+        parts = [p.strip() for p in param.split(",") if p.strip()]
+        try:
+            params.update(_parse_param_args(parts))
+        except ValueError as e:
+            typer.echo(f"Error: {e}", err=True)
+            raise typer.Exit(2) from e
 
     if not template:
         # Full interactive wizard
@@ -207,9 +199,13 @@ def init_command(
             typer.echo(f"Error: template not found: {template}", err=True)
             raise typer.Exit(2)
         template_id = template
+        missing_required: list[str] = []
         # Prompt for missing required params
         for p in meta.parameters:
             if p.required and p.name not in params:
+                if non_interactive:
+                    missing_required.append(p.name)
+                    continue
                 default_val = p.default
                 if p.name == "skill_name" and name.strip():
                     default_val = name
@@ -221,6 +217,13 @@ def init_command(
                 params[p.name] = val
             elif not p.required and p.default is not None and p.name not in params:
                 params[p.name] = p.default
+        if missing_required:
+            typer.echo(
+                "Error: missing required template parameters in non-interactive mode: "
+                + ", ".join(missing_required),
+                err=True,
+            )
+            raise typer.Exit(2)
 
     content = renderer.render(template_id, params)
 

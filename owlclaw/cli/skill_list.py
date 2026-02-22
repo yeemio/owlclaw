@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -28,12 +29,7 @@ def _list_skills_in_dir(base: Path) -> None:
 
 
 def list_command(
-    path: str = typer.Option(
-        ".",
-        "--path",
-        "-p",
-        help="Directory to scan for SKILL.md files.",
-    ),
+    path: Annotated[str, typer.Option("--path", "-p", help="Directory to scan for SKILL.md files.", is_flag=False)] = ".",
 ) -> None:
     """List Skills (name and description) found under the given path."""
     base = Path(path).resolve()
@@ -57,7 +53,7 @@ def _list_templates(
     cat_enum: TemplateCategory | None = None
     if category:
         try:
-            cat_enum = TemplateCategory(category)
+            cat_enum = TemplateCategory(category.strip().lower())
         except ValueError:
             typer.echo(f"Error: invalid category '{category}'. Use: monitoring, analysis, workflow, integration, report.", err=True)
             raise typer.Exit(2) from None
@@ -133,12 +129,12 @@ def _list_templates(
 
 
 def templates_command(
-    category: str = typer.Option("", "--category", "-c", help="Filter by category."),
-    tags: str = typer.Option("", "--tags", help="Filter by tags, comma-separated."),
-    search: str = typer.Option("", "--search", "-s", help="Search by name, description, or tags."),
-    show: str = typer.Option("", "--show", help="Show details for template by ID."),
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed info."),
-    json_output: bool = typer.Option(False, "--json", help="Output in JSON format."),
+    category: Annotated[str, typer.Option("--category", "-c", help="Filter by category.", is_flag=False)] = "",
+    tags: Annotated[str, typer.Option("--tags", help="Filter by tags, comma-separated.", is_flag=False)] = "",
+    search: Annotated[str, typer.Option("--search", "-s", help="Search by name, description, or tags.", is_flag=False)] = "",
+    show: Annotated[str, typer.Option("--show", help="Show details for template by ID.", is_flag=False)] = "",
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Show detailed info.")] = False,
+    json_output: Annotated[bool, typer.Option("--json", help="Output in JSON format.")] = False,
 ) -> None:
     """List templates from the template library."""
     registry = TemplateRegistry(get_default_templates_dir())

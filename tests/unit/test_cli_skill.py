@@ -58,6 +58,14 @@ def test_skill_validate_fails_for_missing_description(tmp_path):
     assert "FAIL:" in result.output
 
 
+def test_skill_validate_nonexistent_path_exits_with_error(tmp_path):
+    """validate should report missing paths explicitly."""
+    missing = tmp_path / "does-not-exist"
+    result = runner.invoke(skill_app, ["validate", str(missing)])
+    assert result.exit_code == 2
+    assert "path not found" in result.output.lower()
+
+
 def test_skill_init_from_template_creates_valid_skill_md(tmp_path):
     """Template library produces valid SKILL.md from monitoring/health-check."""
     from owlclaw.templates.skills import (
@@ -88,6 +96,25 @@ def test_skill_templates_list(tmp_path):
     assert result.exit_code == 0
     assert "monitoring/health-check" in result.output
     assert "Health Check" in result.output or "health-check" in result.output
+
+
+def test_skill_templates_category_filter_case_insensitive():
+    """Template listing logic should accept mixed-case category names."""
+    from owlclaw.cli.skill_list import _list_templates
+    from owlclaw.templates.skills import TemplateRegistry, TemplateSearcher, get_default_templates_dir
+
+    registry = TemplateRegistry(get_default_templates_dir())
+    searcher = TemplateSearcher(registry)
+    _list_templates(
+        registry=registry,
+        searcher=searcher,
+        category="MONITORING",
+        tags="",
+        search="",
+        show="",
+        verbose=False,
+        json_output=False,
+    )
 
 
 def test_skill_init_interactive_wizard_without_template(tmp_path, monkeypatch):
@@ -148,6 +175,42 @@ def test_skill_init_params_file_json_object_required(tmp_path):
             category="",
             params_file=str(params_file),
             param="",
+            force=False,
+        )
+    assert exc_info.value.exit_code == 2
+
+
+def test_skill_init_non_interactive_missing_required_params_exits(tmp_path):
+    """Non-interactive init should fail fast when required params are missing."""
+    from owlclaw.cli.skill_init import init_command
+
+    params_file = tmp_path / "params.json"
+    params_file.write_text(json.dumps({"skill_name": "x"}), encoding="utf-8")
+    with pytest.raises(Exit) as exc_info:
+        init_command(
+            name="",
+            path=str(tmp_path),
+            template="monitoring/health-check",
+            category="",
+            params_file=str(params_file),
+            param="",
+            force=False,
+        )
+    assert exc_info.value.exit_code == 2
+
+
+def test_skill_init_invalid_param_entry_exits(tmp_path):
+    """Invalid --param fragment without '=' should fail explicitly."""
+    from owlclaw.cli.skill_init import init_command
+
+    with pytest.raises(Exit) as exc_info:
+        init_command(
+            name="",
+            path=str(tmp_path),
+            template="monitoring/health-check",
+            category="",
+            params_file="",
+            param="skill_name=test,broken_fragment",
             force=False,
         )
     assert exc_info.value.exit_code == 2

@@ -85,7 +85,18 @@ class TemplateRenderer:
                 if p.type == "int":
                     result[p.name] = int(val)
                 elif p.type == "bool":
-                    result[p.name] = bool(val) if isinstance(val, bool) else str(val).lower() in ("1", "true", "yes")
+                    if isinstance(val, bool):
+                        result[p.name] = val
+                    elif isinstance(val, str):
+                        normalized = val.strip().lower()
+                        if normalized in ("1", "true", "yes", "on"):
+                            result[p.name] = True
+                        elif normalized in ("0", "false", "no", "off"):
+                            result[p.name] = False
+                        else:
+                            raise ValueError(f"invalid bool literal: {val!r}")
+                    else:
+                        raise ValueError(f"invalid bool type: {type(val).__name__}")
                 elif p.type == "list":
                     result[p.name] = list(val) if isinstance(val, list) else [val]
                 else:
