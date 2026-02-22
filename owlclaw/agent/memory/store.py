@@ -55,8 +55,9 @@ class MemoryStore(ABC):
         """Return total entry count for agent/tenant (excluding archived by default if impl supports)."""
         ...
 
+    @abstractmethod
     async def update_access(
         self, agent_id: str, tenant_id: str, entry_ids: list[UUID]
     ) -> None:
-        """Update accessed_at and increment access_count for given entries (e.g. after recall). Default no-op."""
-        pass
+        """Update accessed_at and increment access_count for given entries (e.g. after recall)."""
+        ...

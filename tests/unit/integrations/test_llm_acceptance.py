@@ -261,4 +261,4 @@ class TestAcceptanceCost:
         assert hasattr(resp, "cost")
         assert hasattr(resp, "total_tokens")
         assert resp.total_tokens == resp.prompt_tokens + resp.completion_tokens
-        assert isinstance(resp.cost, (int, float))
+        assert isinstance(resp.cost, int | float)

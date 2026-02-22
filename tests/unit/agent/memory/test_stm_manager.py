@@ -1,6 +1,5 @@
 """Unit tests for STMManager."""
 
-import pytest
 
 from owlclaw.agent.memory.stm import STMManager
 

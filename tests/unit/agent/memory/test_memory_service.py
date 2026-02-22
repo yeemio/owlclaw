@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from uuid import UUID
+
 import pytest
 
 from owlclaw.agent.memory.models import MemoryConfig, MemoryEntry
@@ -55,6 +57,11 @@ class _CaptureLimitStore(MemoryStore):
 
     async def count(self, agent_id: str, tenant_id: str) -> int:
         return 0
+
+    async def update_access(
+        self, agent_id: str, tenant_id: str, entry_ids: list[UUID]
+    ) -> None:
+        return None
 
 
 @pytest.mark.asyncio
