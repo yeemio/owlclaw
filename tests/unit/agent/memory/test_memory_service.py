@@ -138,3 +138,16 @@ async def test_remember_trims_content_before_save() -> None:
 
     assert store.last_saved_entry is not None
     assert store.last_saved_entry.content == "hello"
+
+
+@pytest.mark.asyncio
+async def test_recall_rejects_empty_query() -> None:
+    store = _CaptureLimitStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+
+    with pytest.raises(ValueError, match="query must not be empty"):
+        await service.recall(
+            agent_id="a",
+            tenant_id="default",
+            query="   ",
+        )

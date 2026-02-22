@@ -58,8 +58,11 @@ class MemoryService:
         tags: list[str] | None = None,
     ) -> list[RecallResult]:
         """Search memories by query (embed + search + update access). Returns list of RecallResult."""
+        normalized_query = query.strip()
+        if not normalized_query:
+            raise ValueError("query must not be empty")
         safe_limit = max(1, min(limit, 20))
-        query_embedding = await self._embedder.embed(query)
+        query_embedding = await self._embedder.embed(normalized_query)
         pairs = await self._store.search(
             agent_id,
             tenant_id,
