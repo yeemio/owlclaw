@@ -141,9 +141,10 @@ class TemplateRegistry:
         if category is not None:
             templates = [t for t in templates if t.category == category]
         if tags:
+            normalized_tags = {tag.strip().lower() for tag in tags if tag and tag.strip()}
             templates = [
                 t for t in templates
-                if any(tag in t.tags for tag in tags)
+                if any(template_tag.lower() in normalized_tags for template_tag in t.tags)
             ]
         return templates
 

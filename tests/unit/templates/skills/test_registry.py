@@ -101,6 +101,16 @@ name: test
         assert len(results) >= 1
         assert any("health" in t.tags for t in results)
 
+    def test_list_templates_by_tags_is_case_insensitive(self, tmp_path: Path) -> None:
+        (tmp_path / "monitoring").mkdir()
+        (tmp_path / "monitoring" / "health-check.md.j2").write_text(
+            "{#\nname: X\ndescription: Y\ntags: [Health, Alert]\nparameters: []\n#}\n---\n",
+            encoding="utf-8",
+        )
+        reg = TemplateRegistry(tmp_path)
+        results = reg.list_templates(tags=["  health  "])
+        assert len(results) >= 1
+
     def test_search_templates(self, tmp_path: Path) -> None:
         (tmp_path / "monitoring").mkdir()
         (tmp_path / "monitoring" / "health-check.md.j2").write_text(
