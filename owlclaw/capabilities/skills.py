@@ -5,11 +5,13 @@ SKILL.md files from application directories following the Agent Skills specifica
 """
 
 import logging
+import re
 from pathlib import Path
 
 import yaml
 
 logger = logging.getLogger(__name__)
+_SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
 class Skill:
@@ -234,6 +236,9 @@ class SkillsLoader:
             return None
         if not isinstance(frontmatter["name"], str) or not frontmatter["name"].strip():
             logger.warning("Skill file %s invalid name field", file_path)
+            return None
+        if not _SKILL_NAME_PATTERN.match(frontmatter["name"].strip()):
+            logger.warning("Skill file %s name must be kebab-case", file_path)
             return None
         if not isinstance(frontmatter["description"], str) or not frontmatter["description"].strip():
             logger.warning("Skill file %s invalid description field", file_path)
