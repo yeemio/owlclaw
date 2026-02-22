@@ -199,19 +199,30 @@ class LLMClient:
     def __init__(self, config: LLMConfig) -> None:
         self.config = config
         self._langfuse: Any = None
+        self._langfuse_init_error: str | None = None
         if config.langfuse_enabled and config.langfuse_public_key and config.langfuse_secret_key:
             try:
                 mod = importlib.import_module("langfuse")
                 langfuse_cls = mod.Langfuse
-                self._langfuse = langfuse_cls(
-                    public_key=config.langfuse_public_key,
-                    secret_key=config.langfuse_secret_key,
-                    host=config.langfuse_host,
-                )
-            except ImportError:
+                # Prefer base_url (new SDK); fallback to host (older SDK)
+                try:
+                    self._langfuse = langfuse_cls(
+                        public_key=config.langfuse_public_key,
+                        secret_key=config.langfuse_secret_key,
+                        base_url=config.langfuse_host,
+                    )
+                except TypeError:
+                    self._langfuse = langfuse_cls(
+                        public_key=config.langfuse_public_key,
+                        secret_key=config.langfuse_secret_key,
+                        host=config.langfuse_host,
+                    )
+            except ImportError as e:
                 logger.warning("langfuse not installed; tracing disabled")
+                self._langfuse_init_error = f"langfuse not installed: {e}"
             except Exception as e:
                 logger.warning("Langfuse init failed: %s", e)
+                self._langfuse_init_error = str(e)
         try:
             import litellm
             litellm.drop_params = True

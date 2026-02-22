@@ -119,8 +119,9 @@ See [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md) for the compl
 ## Development
 
 ```bash
-# Install dependencies
+# Install dependencies (add observability for Langfuse integration tests)
 poetry install
+poetry install --with observability   # optional: langfuse, opentelemetry
 
 # Run tests
 poetry run pytest

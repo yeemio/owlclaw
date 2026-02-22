@@ -191,7 +191,8 @@ async def test_langfuse_trace_created():
     )
     client = LLMClient(config)
     if client._langfuse is None:
-        pytest.skip("Langfuse client 初始化失败（请确认 langfuse 已安装且服务可访问）")
+        err = getattr(client, "_langfuse_init_error", None) or "未知原因"
+        pytest.skip(f"Langfuse client 初始化失败: {err}")
 
     with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
         mock.return_value = _fake_litellm_response("Mocked reply", [], 10, 5)
@@ -238,7 +239,8 @@ async def test_langfuse_data_recorded():
     )
     client = LLMClient(config)
     if client._langfuse is None:
-        pytest.skip("Langfuse client not initialized")
+        err = getattr(client, "_langfuse_init_error", None) or "未知原因"
+        pytest.skip(f"Langfuse client not initialized: {err}")
 
     with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
         mock.return_value = _fake_litellm_response("Recorded output", [], 100, 50)
@@ -248,7 +250,8 @@ async def test_langfuse_data_recorded():
         resp = await client.complete(messages, task_type=None)
     assert resp.prompt_tokens == 100
     assert resp.completion_tokens == 50
-    assert resp.cost == pytest.approx(0.01 + 0.01, abs=1e-5)
+    # cost = (100/1000)*0.0001 + (50/1000)*0.0002 = 0.00001 + 0.00001 = 0.00002
+    assert resp.cost == pytest.approx(0.00002, abs=1e-8)
     try:
         client._langfuse.flush()
     except Exception:

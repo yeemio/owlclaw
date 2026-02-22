@@ -57,6 +57,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## 4. 运行集成测试
 
+需先安装可选依赖（含 langfuse）：`poetry install --with observability`
+
 ```bash
 # 运行 LLM 集成测试（含 9.1 真实 API、9.2 Langfuse）
 poetry run pytest tests/integration/test_llm_integration.py -v
@@ -65,7 +67,7 @@ poetry run pytest tests/integration/test_llm_integration.py -v
 poetry run pytest tests/integration/test_llm_integration.py -k langfuse -v
 ```
 
-未设置对应环境变量时，相关用例会自动 `pytest.skip`。
+未设置对应环境变量时，相关用例会自动 `pytest.skip`。`.env` 中等号两边不要有空格（如 `LANGFUSE_PUBLIC_KEY=pk-lf-...`）。
 
 ## 5. 若拉取镜像失败（cgr.dev / 网络超时）
 
@@ -96,4 +98,4 @@ docker compose up -d
 ## 6. 端口与冲突
 
 - Langfuse 默认占用：**3000**（Web）、**5432**（Postgres）、6379（Redis）、8123/9000（Clickhouse）、9090（MinIO）。
-- 若已使用 `deploy/docker-compose.lite.yml` 占用 5432，可修改 Langfuse 的 `postgres.ports` 为 `127.0.0.1:5433:5432`，其它服务仅绑定 127.0.0.1，一般无冲突。
+- 若本机 5432 已被占用，项目内已把 `.langfuse/docker-compose.yml` 中 postgres 端口改为 `127.0.0.1:15432:5432`（clone 后若上游更新需重新改一次）。

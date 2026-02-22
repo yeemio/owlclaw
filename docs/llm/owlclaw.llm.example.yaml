@@ -62,7 +62,8 @@ llm:
   max_retries: 3
   retry_delay_seconds: 1.0
 
-  # Langfuse 可观测（可选）：需安装 langfuse，并配置 public_key/secret_key
+  # Langfuse 可观测（可选）：poetry install --with observability；.env 中配置 LANGFUSE_PUBLIC_KEY、LANGFUSE_SECRET_KEY
+  # 自建时 langfuse_host: "http://localhost:3000"，详见 deploy/README.langfuse.md
   langfuse_enabled: false
   langfuse_public_key: ${LANGFUSE_PUBLIC_KEY}
   langfuse_secret_key: ${LANGFUSE_SECRET_KEY}
