@@ -128,7 +128,17 @@ class TestTemplateValidator:
         )
         v = TemplateValidator()
         errs = v.validate_skill_file(skill)
-        assert any(e.field == "frontmatter" and "Invalid YAML" in e.message for e in errs)
+        assert any(e.field == "frontmatter" and "Invalid frontmatter" in e.message for e in errs)
+
+    def test_validate_skill_file_frontmatter_must_be_mapping(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\n- not\n- mapping\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "frontmatter" and "mapping/object" in e.message for e in errs)
 
     def test_validate_skill_file_unrendered_jinja2_placeholder(self, tmp_path: Path) -> None:
         skill = tmp_path / "SKILL.md"

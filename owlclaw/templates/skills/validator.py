@@ -156,11 +156,11 @@ class TemplateValidator:
 
         try:
             frontmatter, body = self._parse_skill_file(content)
-        except yaml.YAMLError as e:
+        except (yaml.YAMLError, ValueError) as e:
             errors.append(
                 ValidationError(
                     field="frontmatter",
-                    message=f"Invalid YAML frontmatter: {e}",
+                    message=f"Invalid frontmatter: {e}",
                     severity="error",
                 )
             )
@@ -180,8 +180,12 @@ class TemplateValidator:
         frontmatter: dict[str, Any] = {}
         if frontmatter_str.strip():
             loaded = yaml.safe_load(frontmatter_str)
-            if isinstance(loaded, dict):
+            if loaded is None:
+                frontmatter = {}
+            elif isinstance(loaded, dict):
                 frontmatter = loaded
+            else:
+                raise ValueError("Frontmatter must be a YAML mapping/object")
         return frontmatter, body
 
     def _validate_frontmatter(self, frontmatter: dict[str, Any]) -> list[ValidationError]:
