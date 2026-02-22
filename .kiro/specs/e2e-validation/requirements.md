@@ -1,5 +1,12 @@
 # 需求文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/e2e-validation/requirements.md`
+- design: `.kiro/specs/e2e-validation/design.md`
+- tasks: `.kiro/specs/e2e-validation/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 > **目标**：验证 OwlClaw 从触发器到运行时与治理层的端到端行为正确性，并量化 Agent 决策质量  
 > **优先级**：P1  
 > **预估工作量**：8-12 天

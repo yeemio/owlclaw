@@ -17,9 +17,13 @@ from owlclaw.agent.runtime.runtime import AgentRuntime
 
 
 def _make_app_dir(tmp_path):
-    """Create minimal SOUL.md in tmp_path, return str path."""
+    """Create minimal SOUL.md + IDENTITY.md in tmp_path, return str path."""
     (tmp_path / "SOUL.md").write_text(
         "You are a helpful assistant.", encoding="utf-8"
+    )
+    (tmp_path / "IDENTITY.md").write_text(
+        "## My Capabilities\n- market_scan\n",
+        encoding="utf-8",
     )
     return str(tmp_path)
 
@@ -103,6 +107,12 @@ class TestAgentRuntimeLifecycle:
     async def test_setup_missing_soul_raises(self, tmp_path) -> None:
         rt = AgentRuntime(agent_id="bot", app_dir=str(tmp_path))
         with pytest.raises(FileNotFoundError, match="SOUL.md"):
+            await rt.setup()
+
+    async def test_setup_missing_identity_raises(self, tmp_path) -> None:
+        (tmp_path / "SOUL.md").write_text("You are a helpful assistant.", encoding="utf-8")
+        rt = AgentRuntime(agent_id="bot", app_dir=str(tmp_path))
+        with pytest.raises(FileNotFoundError, match="IDENTITY.md"):
             await rt.setup()
 
     async def test_setup_success(self, tmp_path) -> None:

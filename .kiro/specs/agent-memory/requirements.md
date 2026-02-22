@@ -1,5 +1,12 @@
 # Agent Memory 系统需求文档
 
+## 文档联动
+
+- requirements: `.kiro/specs/agent-memory/requirements.md`
+- design: `.kiro/specs/agent-memory/design.md`
+- tasks: `.kiro/specs/agent-memory/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 ## 简介
 
 本文档定义 OwlClaw Agent Memory 子系统的独立需求。Memory 是 Agent 从"无状态函数"跃升为"有经验的自主实体"的关键基础设施。

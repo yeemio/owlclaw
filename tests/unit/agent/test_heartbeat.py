@@ -50,7 +50,13 @@ class TestHeartbeatCheckerNoEvents:
 
     def test_normalize_event_sources_invalid_type_uses_default(self) -> None:
         checker = HeartbeatChecker(agent_id="bot", config={"event_sources": 123})
-        assert checker._event_sources == ["webhook", "queue", "database", "schedule"]
+        assert checker._event_sources == [
+            "webhook",
+            "queue",
+            "database",
+            "schedule",
+            "external_api",
+        ]
 
 
 class TestHeartbeatCheckerWithEvents:
@@ -67,6 +73,21 @@ class TestHeartbeatCheckerWithEvents:
         checker = CheckerWithWebhookEvents(
             agent_id="bot",
             config={"event_sources": ["webhook", "queue"]},
+        )
+        result = await checker.check_events()
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_check_events_external_api_source_supported(self) -> None:
+        """external_api should be a valid event source branch."""
+
+        class CheckerWithExternalApiEvents(HeartbeatChecker):
+            async def _check_external_api_events(self) -> bool:
+                return True
+
+        checker = CheckerWithExternalApiEvents(
+            agent_id="bot",
+            config={"event_sources": ["external_api"]},
         )
         result = await checker.check_events()
         assert result is True

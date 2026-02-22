@@ -1,5 +1,12 @@
 # Requirements: Signal 触发器（人工介入）
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-signal/requirements.md`
+- design: `.kiro/specs/triggers-signal/design.md`
+- tasks: `.kiro/specs/triggers-signal/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 > **目标**：提供人工介入机制，支持暂停、恢复、强制触发和指令注入 Agent Run  
 > **优先级**：P1-P2  
 > **预估工作量**：4-6 天

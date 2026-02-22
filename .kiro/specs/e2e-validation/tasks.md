@@ -1,5 +1,12 @@
 # 实现计划: e2e-validation
 
+## 文档联动
+
+- requirements: `.kiro/specs/e2e-validation/requirements.md`
+- design: `.kiro/specs/e2e-validation/design.md`
+- tasks: `.kiro/specs/e2e-validation/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 ## 概述
 
 本实现计划将端到端验证系统分解为一系列增量开发任务。系统使用 Python 实现，采用模块化架构，支持 mionyee 任务验证、决策质量对比、组件集成测试、性能基准测试、错误注入测试和并发测试。

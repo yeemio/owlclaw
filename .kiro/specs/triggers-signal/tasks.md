@@ -1,5 +1,12 @@
 # Signal 触发器实现任务
 
+## 文档联动
+
+- requirements: `.kiro/specs/triggers-signal/requirements.md`
+- design: `.kiro/specs/triggers-signal/design.md`
+- tasks: `.kiro/specs/triggers-signal/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 ## 任务列表
 
 ### Phase 1：核心 Signal 框架

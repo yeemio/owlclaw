@@ -1,5 +1,12 @@
 # Agent Memory 系统实现任务
 
+## 文档联动
+
+- requirements: `.kiro/specs/agent-memory/requirements.md`
+- design: `.kiro/specs/agent-memory/design.md`
+- tasks: `.kiro/specs/agent-memory/tasks.md`
+- status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
+
 ## 任务列表
 
 ### Phase 1：MVP（解锁 remember/recall 基本流程）

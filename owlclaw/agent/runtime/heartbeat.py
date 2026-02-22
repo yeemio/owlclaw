@@ -1,7 +1,7 @@
 """HeartbeatChecker — check pending events to decide if LLM call is needed.
 
 Heartbeat mechanism: when trigger is "heartbeat", no events => skip LLM, save cost.
-Event sources (webhook, queue, database, schedule) are pluggable; MVP uses
+Event sources (webhook, queue, database, schedule, external_api) are pluggable; MVP uses
 placeholder checks returning False until integrations are implemented.
 """
 
@@ -12,7 +12,7 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_EVENT_SOURCES = ["webhook", "queue", "database", "schedule"]
+_DEFAULT_EVENT_SOURCES = ["webhook", "queue", "database", "schedule", "external_api"]
 
 
 class HeartbeatChecker:
@@ -26,7 +26,7 @@ class HeartbeatChecker:
         agent_id: Stable identifier for the Agent.
         config: Heartbeat configuration. Keys:
             - event_sources: list of source names to check (default: webhook,
-              queue, database, schedule)
+              queue, database, schedule, external_api)
             - enabled: if False, check_events() always returns False
     """
 
@@ -43,7 +43,7 @@ class HeartbeatChecker:
         """Normalize event_sources config into a deduplicated string list."""
         if isinstance(raw_sources, str):
             items = [raw_sources]
-        elif isinstance(raw_sources, (list, tuple)):
+        elif isinstance(raw_sources, list | tuple):
             items = list(raw_sources)
         else:
             return list(_DEFAULT_EVENT_SOURCES)
@@ -100,6 +100,8 @@ class HeartbeatChecker:
             return await self._check_database_events()
         if source == "schedule":
             return await self._check_schedule_events()
+        if source == "external_api":
+            return await self._check_external_api_events()
         logger.warning("HeartbeatChecker unknown source=%s", source)
         return False
 
@@ -117,4 +119,8 @@ class HeartbeatChecker:
 
     async def _check_schedule_events(self) -> bool:
         """Check for due scheduled tasks. MVP: not implemented, returns False."""
+        return False
+
+    async def _check_external_api_events(self) -> bool:
+        """Check for external API notifications. MVP: not implemented, returns False."""
         return False

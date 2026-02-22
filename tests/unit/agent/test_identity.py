@@ -55,12 +55,10 @@ class TestIdentityLoader:
         with pytest.raises(FileNotFoundError, match="SOUL.md"):
             await loader.load()
 
-    async def test_missing_identity_md_allowed(self, soul_only_dir) -> None:
+    async def test_missing_identity_md_raises(self, soul_only_dir) -> None:
         loader = IdentityLoader(str(soul_only_dir))
-        await loader.load()
-        identity = loader.get_identity()
-        assert identity["soul"] == "Minimal soul."
-        assert identity["capabilities_summary"] == ""
+        with pytest.raises(FileNotFoundError, match="IDENTITY.md"):
+            await loader.load()
 
     async def test_get_identity_before_load_raises(self, app_dir) -> None:
         loader = IdentityLoader(str(app_dir))

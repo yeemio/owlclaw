@@ -349,7 +349,7 @@ class BuiltInTools:
         if len(parts) != 5:
             return False
         
-        # TODO: More sophisticated validation using croniter
+        # Placeholder: production implementation should validate with croniter
         return True
     
     # ── Cancel Schedule ──
@@ -475,7 +475,7 @@ class BuiltInTools:
         
         return {
             "memory_id": memory_id,
-            "timestamp": "now",  # TODO: actual timestamp
+            "timestamp": datetime.utcnow().isoformat(),
         }
     
     # ── Recall ──
@@ -658,7 +658,7 @@ class BuiltInTools:
         
         return {
             "decision_id": decision_id,
-            "timestamp": "now",  # TODO: actual timestamp
+            "timestamp": datetime.utcnow().isoformat(),
         }
 ```
 
@@ -667,25 +667,25 @@ class BuiltInTools:
 
 ### 工具调用上下文
 
-`python
+```python
 {
     "agent_id": "mionyee-trading",
     "run_id": "run_20260210_173000_abc123",
     "trigger": "schedule_once",  # 或 "cron", "webhook", "heartbeat"
     "focus": "check entry opportunities",  # 可选，来自调度
 }
-`
+```
 
 ### 调度任务 Payload
 
-`python
+```python
 {
     "agent_id": "mionyee-trading",
     "trigger": "schedule_once",  # 或 "schedule_cron"
     "focus": "check entry opportunities",
     "scheduled_by_run_id": "run_20260210_173000_abc123",
 }
-`
+```
 
 ### 记忆条目结构
 
