@@ -175,7 +175,9 @@ class TemplateRegistry:
 
     def search_templates(self, query: str) -> list[TemplateMetadata]:
         """Search templates by name, description, or tags."""
-        query_lower = query.lower()
+        query_lower = query.lower().strip()
+        if not query_lower:
+            return []
         return [
             t
             for t in self._templates.values()

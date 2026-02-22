@@ -158,6 +158,16 @@ name: test
         results = reg.search_templates("health")
         assert len(results) >= 1
 
+    def test_search_templates_empty_query_returns_empty(self, tmp_path: Path) -> None:
+        (tmp_path / "monitoring").mkdir()
+        (tmp_path / "monitoring" / "health-check.md.j2").write_text(
+            "{#\nname: Health Monitor\ndescription: Monitor health\ntags: [health]\nparameters: []\n#}\n---\n",
+            encoding="utf-8",
+        )
+        reg = TemplateRegistry(tmp_path)
+        assert reg.search_templates("") == []
+        assert reg.search_templates("   ") == []
+
     def test_empty_directory(self, tmp_path: Path) -> None:
         """Registry with empty dir has no templates."""
         reg = TemplateRegistry(tmp_path)
