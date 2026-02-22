@@ -599,6 +599,21 @@ class TestAgentRuntimeRun:
         assert result["iterations"] == 3
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_invalid_max_function_calls_falls_back_to_default(
+        self, mock_llm, tmp_path
+    ) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"max_function_calls": "not-an-int"},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert result["iterations"] == 1
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_llm_timeout_returns_timeout_message(self, mock_llm, tmp_path) -> None:
         """LLM timeout should end the loop gracefully with a clear final response."""
 

@@ -251,10 +251,16 @@ class AgentRuntime:
         user_msg = self._build_user_message(context)
         messages.append({"role": "user", "content": user_msg})
 
-        max_iterations: int = self.config.get(
+        max_iterations_raw = self.config.get(
             "max_function_calls", _DEFAULT_MAX_ITERATIONS
         )
-        max_iterations = max(1, int(max_iterations))
+        if isinstance(max_iterations_raw, bool):
+            max_iterations = _DEFAULT_MAX_ITERATIONS
+        else:
+            try:
+                max_iterations = max(1, int(max_iterations_raw))
+            except (TypeError, ValueError):
+                max_iterations = _DEFAULT_MAX_ITERATIONS
         llm_timeout = float(
             self.config.get("llm_timeout_seconds", _DEFAULT_LLM_TIMEOUT_SECONDS)
         )
