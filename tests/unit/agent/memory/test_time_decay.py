@@ -49,3 +49,10 @@ def test_time_decay_formula() -> None:
     half_life = 168.0
     expected = math.exp(-0.693 * age / half_life)
     assert time_decay(age, half_life_hours=half_life) == pytest.approx(expected)
+
+
+def test_time_decay_rejects_non_positive_half_life() -> None:
+    with pytest.raises(ValueError, match="half_life_hours must be > 0"):
+        time_decay(1.0, half_life_hours=0)
+    with pytest.raises(ValueError, match="half_life_hours must be > 0"):
+        time_decay(1.0, half_life_hours=-1.0)
