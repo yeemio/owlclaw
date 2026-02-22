@@ -250,7 +250,18 @@ class AgentRuntime:
                 call_kwargs["tool_choice"] = "auto"
 
             response = await llm_integration.acompletion(**call_kwargs)
-            message = response.choices[0].message
+            message = self._extract_assistant_message(response)
+            if message is None:
+                logger.error(
+                    "Invalid LLM response shape agent_id=%s run_id=%s",
+                    context.agent_id,
+                    context.run_id,
+                )
+                messages.append({
+                    "role": "assistant",
+                    "content": "LLM response missing assistant message.",
+                })
+                break
 
             # Append assistant turn to conversation
             messages.append(self._assistant_message_to_dict(message))
@@ -303,6 +314,15 @@ class AgentRuntime:
         if tool_calls:
             out["tool_calls"] = tool_calls
         return out
+
+    @staticmethod
+    def _extract_assistant_message(response: Any) -> Any | None:
+        """Extract assistant message from completion response."""
+        choices = getattr(response, "choices", None)
+        if not isinstance(choices, list) or not choices:
+            return None
+        first = choices[0]
+        return getattr(first, "message", None)
 
     @staticmethod
     def _heartbeat_payload_has_events(payload: dict[str, Any]) -> bool:

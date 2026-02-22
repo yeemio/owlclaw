@@ -59,15 +59,15 @@
     - **验证需求：FR-1.4**
     - 对于任意模板参数，应该包含名称、类型、描述和是否必需的信息
 
-- [ ] 3. 实现 TemplateRenderer 组件
-  - [ ] 3.1 创建 TemplateRenderer 类和 Jinja2 集成
+- [x] 3. 实现 TemplateRenderer 组件
+  - [x] 3.1 创建 TemplateRenderer 类和 Jinja2 集成
     - 初始化 Jinja2 Environment 和 FileSystemLoader
     - 配置环境（trim_blocks=True, lstrip_blocks=True）
     - 注册自定义过滤器（kebab_case, snake_case）
     - 实现 _get_template_path 方法获取模板文件路径
     - _需求：FR-2.1_
   
-  - [ ] 3.2 实现参数验证和转换
+  - [x] 3.2 实现参数验证和转换
     - 实现 _validate_parameters 方法验证必需参数
     - 实现 _apply_defaults 方法应用默认值
     - 实现 _validate_and_convert_parameters 方法类型转换
@@ -96,7 +96,7 @@
     - 对于任意带 choices 的参数，值不在选项中应该失败
 
 
-  - [ ] 3.7 实现模板渲染方法
+  - [x] 3.7 实现模板渲染方法
     - 实现 render(template_id, parameters) 方法
     - 加载 Jinja2 模板
     - 应用参数验证和默认值
@@ -114,7 +114,7 @@
     - **验证需求：FR-2.2**
     - 渲染后的输出不应该包含未替换的 Jinja2 占位符
   
-  - [ ] 3.10 实现自定义过滤器
+  - [x] 3.10 实现自定义过滤器
     - 实现 _kebab_case 静态方法（转换为 kebab-case）
     - 实现 _snake_case 静态方法（转换为 snake_case）
     - 处理特殊字符和空格

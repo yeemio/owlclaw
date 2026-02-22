@@ -387,6 +387,20 @@ class TestAgentRuntimeRun:
         registry.invoke_handler.assert_called_once_with("market_scan", symbol="AAPL")
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_invalid_llm_response_shape_exits_gracefully(
+        self, mock_llm, tmp_path
+    ) -> None:
+        response = MagicMock()
+        response.choices = []
+        mock_llm.return_value = response
+
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert result["final_response"] == "LLM response missing assistant message."
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_max_iterations_respected(self, mock_llm, tmp_path) -> None:
         """When every LLM response has a tool call, loop stops at max."""
         tc = _make_tool_call("loop_tool", {})

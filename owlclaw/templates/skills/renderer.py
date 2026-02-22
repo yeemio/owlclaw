@@ -1,0 +1,168 @@
+"""Template renderer — Jinja2-based rendering with parameter validation."""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+from typing import Any
+
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+
+from owlclaw.templates.skills.exceptions import (
+    MissingParameterError,
+    ParameterTypeError,
+    ParameterValueError,
+    TemplateNotFoundError,
+    TemplateRenderError,
+)
+from owlclaw.templates.skills.models import TemplateParameter
+from owlclaw.templates.skills.registry import TemplateRegistry
+
+
+class TemplateRenderer:
+    """Renders .md.j2 templates to SKILL.md content with parameter validation."""
+
+    def __init__(self, registry: TemplateRegistry) -> None:
+        """Initialize renderer with a template registry.
+
+        Args:
+            registry: Template registry (provides templates_dir and metadata).
+        """
+        self.registry = registry
+        self.templates_dir = Path(registry.templates_dir)
+        self.env = Environment(
+            loader=FileSystemLoader(str(self.templates_dir)),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        self.env.filters["kebab_case"] = self._kebab_case
+        self.env.filters["snake_case"] = self._snake_case
+
+    def _get_template_path(self, template_id: str) -> Path:
+        """Resolve template_id to file path. Format: category/name -> category/name.md.j2."""
+        return self.templates_dir / f"{template_id}.md.j2"
+
+    def _validate_parameters(
+        self,
+        params: dict[str, Any],
+        param_defs: list[TemplateParameter],
+    ) -> None:
+        """Raise MissingParameterError if required parameters are missing."""
+        missing = [p.name for p in param_defs if p.required and params.get(p.name) is None]
+        if missing:
+            raise MissingParameterError(
+                f"Missing required parameters: {', '.join(missing)}",
+                missing=missing,
+            )
+
+    def _apply_defaults(
+        self,
+        params: dict[str, Any],
+        param_defs: list[TemplateParameter],
+    ) -> dict[str, Any]:
+        """Apply default values for parameters not provided."""
+        result = dict(params)
+        for p in param_defs:
+            if p.name not in result and p.default is not None:
+                result[p.name] = p.default
+        return result
+
+    def _validate_and_convert_parameters(
+        self,
+        params: dict[str, Any],
+        param_defs: list[TemplateParameter],
+    ) -> dict[str, Any]:
+        """Convert parameter values to expected types."""
+        result = {}
+        for p in param_defs:
+            if p.name not in params:
+                continue
+            val = params[p.name]
+            try:
+                if p.type == "int":
+                    result[p.name] = int(val)
+                elif p.type == "bool":
+                    result[p.name] = bool(val) if isinstance(val, bool) else str(val).lower() in ("1", "true", "yes")
+                elif p.type == "list":
+                    result[p.name] = list(val) if isinstance(val, list) else [val]
+                else:
+                    result[p.name] = str(val)
+            except (TypeError, ValueError) as e:
+                raise ParameterTypeError(
+                    f"Parameter '{p.name}': expected {p.type}, got {type(val).__name__}",
+                    param_name=p.name,
+                    expected=p.type,
+                    got=type(val).__name__,
+                ) from e
+        return result
+
+    def _validate_parameter_choices(
+        self,
+        params: dict[str, Any],
+        param_defs: list[TemplateParameter],
+    ) -> None:
+        """Raise ParameterValueError if a value is not in choices."""
+        for p in param_defs:
+            if p.choices is None or p.name not in params:
+                continue
+            val = params[p.name]
+            if val not in p.choices:
+                raise ParameterValueError(
+                    f"Parameter '{p.name}' value {val!r} not in {p.choices}",
+                    param_name=p.name,
+                    value=repr(val),
+                    choices=p.choices,
+                )
+
+    def render(self, template_id: str, parameters: dict[str, Any] | None = None) -> str:
+        """Render template to SKILL.md content.
+
+        Args:
+            template_id: Template ID (e.g. "monitoring/health-check").
+            parameters: Template parameters (validated and defaults applied).
+
+        Returns:
+            Rendered SKILL.md content.
+
+        Raises:
+            TemplateNotFoundError: Template not found.
+            MissingParameterError: Required parameter missing.
+            ParameterTypeError: Parameter type mismatch.
+            ParameterValueError: Parameter value not in choices.
+            TemplateRenderError: Jinja2 render error.
+        """
+        parameters = parameters or {}
+        metadata = self.registry.get_template_or_raise(template_id)
+        params = self._apply_defaults(parameters, metadata.parameters)
+        self._validate_parameters(params, metadata.parameters)
+        converted = self._validate_and_convert_parameters(params, metadata.parameters)
+        params = {**params, **converted}
+        self._validate_parameter_choices(params, metadata.parameters)
+
+        template_name = f"{template_id}.md.j2"
+
+        try:
+            template = self.env.get_template(template_name)
+            return template.render(**params)
+        except TemplateNotFound as e:
+            raise TemplateNotFoundError(str(e)) from e
+        except Exception as e:
+            raise TemplateRenderError(f"Template render failed: {e}") from e
+
+    @staticmethod
+    def _kebab_case(text: str) -> str:
+        """Convert to kebab-case (lowercase, spaces/underscores to hyphens)."""
+        if not isinstance(text, str):
+            text = str(text)
+        text = re.sub(r"[^\w\s-]", "", text)
+        text = re.sub(r"[\s_]+", "-", text)
+        return text.strip("-").lower()
+
+    @staticmethod
+    def _snake_case(text: str) -> str:
+        """Convert to snake_case (lowercase, spaces/hyphens to underscores)."""
+        if not isinstance(text, str):
+            text = str(text)
+        text = re.sub(r"[^\w\s_-]", "", text)
+        text = re.sub(r"[\s-]+", "_", text)
+        return text.strip("_").lower()
