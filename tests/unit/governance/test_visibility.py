@@ -24,6 +24,11 @@ def test_run_context_is_confirmed_helper():
     assert ctx.is_confirmed("cap-b") is False
 
 
+def test_run_context_normalizes_confirmed_capabilities():
+    ctx = RunContext(tenant_id="t1", confirmed_capabilities={" cap-a ", "", "cap-b"})
+    assert ctx.confirmed_capabilities == {"cap-a", "cap-b"}
+
+
 def test_register_evaluator_invalid_raises_type_error():
     vf = VisibilityFilter()
     with pytest.raises(TypeError, match="evaluator must provide"):

@@ -57,6 +57,15 @@ class RunContext:
     tenant_id: str
     confirmed_capabilities: set[str] | None = None
 
+    def __post_init__(self) -> None:
+        if self.confirmed_capabilities is None:
+            return
+        self.confirmed_capabilities = {
+            str(name).strip()
+            for name in self.confirmed_capabilities
+            if str(name).strip()
+        } or None
+
     def is_confirmed(self, capability_name: str) -> bool:
         if not self.confirmed_capabilities:
             return False
