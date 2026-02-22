@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+
+logger = logging.getLogger(__name__)
 
 from owlclaw.templates.skills.exceptions import (
     MissingParameterError,
@@ -132,6 +135,7 @@ class TemplateRenderer:
             TemplateRenderError: Jinja2 render error.
         """
         parameters = parameters or {}
+        logger.debug("Rendering template %s with %d params", template_id, len(parameters))
         metadata = self.registry.get_template_or_raise(template_id)
         params = self._apply_defaults(parameters, metadata.parameters)
         self._validate_parameters(params, metadata.parameters)
@@ -145,8 +149,10 @@ class TemplateRenderer:
             template = self.env.get_template(template_name)
             return template.render(**params)
         except TemplateNotFound as e:
+            logger.warning("Template not found: %s", template_id, exc_info=False)
             raise TemplateNotFoundError(str(e)) from e
         except Exception as e:
+            logger.exception("Template render failed: template_id=%s", template_id)
             raise TemplateRenderError(f"Template render failed: {e}") from e
 
     @staticmethod

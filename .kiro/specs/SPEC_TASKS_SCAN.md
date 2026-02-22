@@ -47,7 +47,7 @@
   **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
 - [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
-- [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
+- [x] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
 
@@ -98,7 +98,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 待创建 | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 待创建 | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 文档齐全，MVP 已实现 | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| skill-templates | `.kiro/specs/skill-templates/` | 🟡 文档齐全，Task 1-3 已完成（结构+Registry+Renderer） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
+| skill-templates | `.kiro/specs/skill-templates/` | ✅ 文档齐全，Task 1-25 已完成 | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 待创建 | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 待创建 | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | 待创建 | owlclaw-mcp |
@@ -114,10 +114,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-22 |
-| 当前批次 | skill-templates Task 3 |
-| 批次状态 | 完成。TemplateRenderer 实现（Jinja2、参数验证、kebab_case/snake_case 过滤器）；6 个 renderer 测试通过 |
-| 已完成项 | Task 3.1、3.2、3.7、3.10（TemplateRenderer、参数验证与默认值、render、自定义过滤器） |
-| 下一待执行 | **skill-templates Task 5**（TemplateValidator）或 **integrations-llm Task 5**（Langfuse，可选）或 **agent-runtime**（memory） |
+| 当前批次 | skill-templates Task 25 |
+| 批次状态 | 完成。15 个模板有效；CLI 可用；脚本 test_template.py、review_template.py 已实现 |
+| 已完成项 | skill-templates Task 1-25（模板库全部完成） |
+| 下一待执行 | **integrations-llm Task 5**（Langfuse）或 **e2e-validation** |
 | 阻塞项 | remember/recall 依赖 MemorySystem（agent-runtime memory 未实现） |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

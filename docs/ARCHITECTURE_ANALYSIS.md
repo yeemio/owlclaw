@@ -695,7 +695,9 @@ owlclaw skill validate skills/my-skill/SKILL.md
 
 #### 2.7.6 SKILL.md 模板体系
 
-降低 SKILL.md 编写门槛是引爆的关键。OwlClaw 提供分类模板：
+降低 SKILL.md 编写门槛是引爆的关键。OwlClaw 提供分类模板。
+
+**实现说明**：模板库位于 `owlclaw/templates/skills/`，包含 TemplateRegistry、TemplateRenderer、TemplateValidator、TemplateSearcher。15 个模板（monitoring/analysis/workflow/integration/report 各 3 个）存放于 `owlclaw/templates/skills/templates/`。详见 `docs/templates/user-guide.md` 与 `docs/templates/template-development.md`。
 
 | 模板类型 | 适用场景 | 核心结构 |
 |---------|---------|---------|

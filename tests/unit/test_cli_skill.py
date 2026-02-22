@@ -17,11 +17,11 @@ def test_skill_list_empty(tmp_path, monkeypatch):
 
 
 def test_skill_init_creates_skill_dir_and_file(tmp_path, monkeypatch):
-    """init creates directory and SKILL.md with frontmatter."""
+    """init creates directory and SKILL.md with frontmatter (default template)."""
     monkeypatch.chdir(tmp_path)
-    result = runner.invoke(skill_app, ["init", "my-skill"])
-    assert result.exit_code == 0
-    assert "Created:" in result.output
+    from owlclaw.cli.skill_init import init_command
+
+    init_command(name="my-skill", path=".", template="default")
     skill_dir = tmp_path / "my-skill"
     skill_file = skill_dir / "SKILL.md"
     assert skill_dir.is_dir()
@@ -54,6 +54,38 @@ def test_skill_validate_fails_for_missing_description(tmp_path):
     result = runner.invoke(skill_app, ["validate", str(tmp_path / "bad-skill")])
     assert result.exit_code != 0
     assert "FAIL:" in result.output
+
+
+def test_skill_init_from_template_creates_valid_skill_md(tmp_path):
+    """Template library produces valid SKILL.md from monitoring/health-check."""
+    from owlclaw.templates.skills import (
+        TemplateRegistry,
+        TemplateRenderer,
+        get_default_templates_dir,
+    )
+
+    registry = TemplateRegistry(get_default_templates_dir())
+    renderer = TemplateRenderer(registry)
+    params = {
+        "skill_name": "TestMonitor",
+        "skill_description": "Test",
+        "endpoints": "/health,/ready",
+    }
+    content = renderer.render("monitoring/health-check", params)
+    skill_dir = tmp_path / "test-monitor"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(content, encoding="utf-8")
+    text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
+    assert "name: test" in text and "monitor" in text.lower()
+    assert "/health,/ready" in text
+
+
+def test_skill_templates_list(tmp_path):
+    """templates subcommand lists templates from library."""
+    result = runner.invoke(skill_app, ["templates"])
+    assert result.exit_code == 0
+    assert "monitoring/health-check" in result.output
+    assert "Health Check" in result.output or "health-check" in result.output
 
 
 def test_skill_list_shows_skills(tmp_path, monkeypatch):

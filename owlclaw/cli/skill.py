@@ -3,7 +3,7 @@
 import typer
 
 from owlclaw.cli.skill_init import init_command
-from owlclaw.cli.skill_list import list_command
+from owlclaw.cli.skill_list import list_command, templates_command
 from owlclaw.cli.skill_validate import validate_command
 
 skill_app = typer.Typer(
@@ -14,3 +14,4 @@ skill_app = typer.Typer(
 skill_app.command("init")(init_command)
 skill_app.command("validate")(validate_command)
 skill_app.command("list")(list_command)
+skill_app.command("templates")(templates_command)

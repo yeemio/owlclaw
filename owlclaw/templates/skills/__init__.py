@@ -18,6 +18,8 @@ from owlclaw.templates.skills.models import (
 )
 from owlclaw.templates.skills.registry import TemplateRegistry
 from owlclaw.templates.skills.renderer import TemplateRenderer
+from owlclaw.templates.skills.searcher import TemplateSearcher
+from owlclaw.templates.skills.validator import TemplateValidator
 
 __all__ = [
     "MissingParameterError",
@@ -31,6 +33,8 @@ __all__ = [
     "TemplateRenderError",
     "TemplateRegistry",
     "TemplateRenderer",
+    "TemplateSearcher",
+    "TemplateValidator",
     "ValidationError",
 ]
 

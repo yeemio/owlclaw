@@ -33,6 +33,8 @@ class TemplateRegistry:
         self.templates_dir = Path(templates_dir)
         self._templates: dict[str, TemplateMetadata] = {}
         self._load_templates()
+        if self._templates:
+            logger.info("Loaded %d templates from %s", len(self._templates), self.templates_dir)
 
     def _load_templates(self) -> None:
         """Recursively scan template directory and load all .md.j2 files."""

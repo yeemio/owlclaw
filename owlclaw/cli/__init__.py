@@ -59,10 +59,11 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw skill [OPTIONS] COMMAND [ARGS]...")
         print("\n  Create, validate, and list Agent Skills (SKILL.md). Local only.\n")
         print("Commands:")
-        print("  init     Scaffold a new SKILL.md")
-        print("  validate Validate SKILL.md in current dir")
-        print("  list     List skills in a directory")
-        print("\n  owlclaw skill init --help | owlclaw skill validate --help | owlclaw skill list --help")
+        print("  init      Scaffold a new SKILL.md from template")
+        print("  validate  Validate SKILL.md in current dir")
+        print("  list      List skills in a directory")
+        print("  templates List templates from the template library")
+        print("\n  owlclaw skill init --help | owlclaw skill templates --help")
         sys.exit(0)
     if argv == ["skill", "init"]:
         print("Usage: owlclaw skill init [OPTIONS]")
@@ -73,8 +74,12 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("\n  Validate SKILL.md (default: current dir).")
         sys.exit(0)
     if argv == ["skill", "list"]:
-        print("Usage: owlclaw skill list [OPTIONS] [DIR]")
+        print("Usage: owlclaw skill list [OPTIONS]")
         print("\n  List Agent Skills in directory.")
+        sys.exit(0)
+    if argv == ["skill", "templates"]:
+        print("Usage: owlclaw skill templates [OPTIONS]")
+        print("\n  List templates from the template library.")
         sys.exit(0)
     # Fallback
     print("Usage: owlclaw [OPTIONS] COMMAND [ARGS]...")
