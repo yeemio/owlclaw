@@ -67,6 +67,15 @@ def test_skill_validate_nonexistent_path_exits_with_error(tmp_path):
     assert "path not found" in result.output.lower()
 
 
+def test_skill_validate_non_skill_file_exits_with_error(tmp_path):
+    """validate should fail when a provided file is not named SKILL.md."""
+    not_skill = tmp_path / "README.md"
+    not_skill.write_text("# not a skill file\n", encoding="utf-8")
+    result = runner.invoke(skill_app, ["validate", str(not_skill)])
+    assert result.exit_code == 2
+    assert "file is not skill.md" in result.output.lower()
+
+
 def test_skill_validate_deduplicates_overlapping_paths(tmp_path):
     """validate should not process the same SKILL.md twice for overlapping inputs."""
     skill_dir = tmp_path / "dup-skill"

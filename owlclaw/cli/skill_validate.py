@@ -54,6 +54,11 @@ def validate_command(
         for p in missing_paths:
             typer.echo(f"Error: path not found: {p}", err=True)
         raise typer.Exit(2)
+    invalid_files = [p for p in resolved_paths if p.is_file() and p.name != "SKILL.md"]
+    if invalid_files:
+        for p in invalid_files:
+            typer.echo(f"Error: file is not SKILL.md: {p}", err=True)
+        raise typer.Exit(2)
 
     skill_files = _collect_skill_files(resolved_paths)
     if not skill_files:
