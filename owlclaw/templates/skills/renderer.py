@@ -98,7 +98,13 @@ class TemplateRenderer:
                     else:
                         raise ValueError(f"invalid bool type: {type(val).__name__}")
                 elif p.type == "list":
-                    result[p.name] = list(val) if isinstance(val, list) else [val]
+                    if isinstance(val, list):
+                        result[p.name] = val
+                    elif isinstance(val, str):
+                        parts = [item.strip() for item in val.split(",")]
+                        result[p.name] = [item for item in parts if item]
+                    else:
+                        result[p.name] = [val]
                 else:
                     result[p.name] = str(val)
             except (TypeError, ValueError) as e:

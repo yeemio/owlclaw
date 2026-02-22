@@ -191,3 +191,43 @@ enabled: {{ enabled }}
         rdr = TemplateRenderer(reg)
         with pytest.raises(ParameterTypeError):
             rdr.render("monitoring/health-check", {"enabled": "maybe"})
+
+    def test_render_converts_csv_string_to_list(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: items
+    type: list
+    description: Items
+    required: true
+#}
+---
+items: {{ items|join(',') }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        out = rdr.render("monitoring/health-check", {"items": "a, b, c"})
+        assert "items: a,b,c" in out
+
+    def test_render_keeps_list_parameter_as_list(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: items
+    type: list
+    description: Items
+    required: true
+#}
+---
+items: {{ items|join(',') }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        out = rdr.render("monitoring/health-check", {"items": ["x", "y"]})
+        assert "items: x,y" in out
