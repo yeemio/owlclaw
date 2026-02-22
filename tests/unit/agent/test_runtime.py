@@ -167,6 +167,39 @@ class TestAgentRuntimeRun:
         rt.registry.skills_loader.get_skill.return_value = skill
         assert rt._skill_has_focus("x", "inventory_monitor") is True
 
+    def test_build_skills_context_empty_when_focus_has_no_match(self, tmp_path) -> None:
+        """When focus is set and no skill matches, no skill knowledge should be injected."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        rt.registry = MagicMock()
+        rt.registry.handlers = {"skill-a": MagicMock()}
+        rt.registry.skills_loader.get_skill.return_value = MagicMock(
+            owlclaw_config={"focus": ["other"]},
+            metadata={},
+        )
+        rt.knowledge_injector = MagicMock()
+        ctx = AgentRunContext(agent_id="bot", trigger="cron", focus="inventory_monitor")
+        assert rt._build_skills_context(ctx) == ""
+        rt.knowledge_injector.get_skills_knowledge.assert_not_called()
+
+    def test_build_skills_context_includes_only_focus_matches(self, tmp_path) -> None:
+        """When focus is set, only matching skills are passed to knowledge injector."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        rt.registry = MagicMock()
+        rt.registry.handlers = {"skill-a": MagicMock(), "skill-b": MagicMock()}
+
+        def _get_skill(name):  # type: ignore[no-untyped-def]
+            if name == "skill-a":
+                return MagicMock(owlclaw_config={"focus": ["inventory_monitor"]}, metadata={})
+            return MagicMock(owlclaw_config={"focus": ["ops"]}, metadata={})
+
+        rt.registry.skills_loader.get_skill.side_effect = _get_skill
+        rt.knowledge_injector = MagicMock()
+        rt.knowledge_injector.get_skills_knowledge.return_value = "focused"
+        ctx = AgentRunContext(agent_id="bot", trigger="cron", focus="inventory_monitor")
+        result = rt._build_skills_context(ctx)
+        assert result == "focused"
+        rt.knowledge_injector.get_skills_knowledge.assert_called_once_with(["skill-a"])
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_accepts_dict_assistant_message(self, mock_llm, tmp_path) -> None:
         """Runtime should support providers returning dict message objects."""

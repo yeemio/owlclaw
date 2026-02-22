@@ -556,7 +556,9 @@ class AgentRuntime:
                 n for n in all_skill_names
                 if self._skill_has_focus(n, context.focus)
             ]
-            skill_names = focused if focused else all_skill_names
+            if not focused:
+                return ""
+            skill_names = focused
         else:
             skill_names = all_skill_names
 
