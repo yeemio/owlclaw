@@ -25,6 +25,15 @@ def _coerce_bool(value: Any) -> bool:
     return False
 
 
+def _coerce_focus(value: Any) -> list[str]:
+    if isinstance(value, str):
+        v = value.strip()
+        return [v] if v else []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return []
+
+
 @dataclass
 class FilterResult:
     """Result of a single constraint evaluation."""
@@ -67,7 +76,7 @@ class CapabilityView:
         self.description = description
         self.task_type = task_type or ""
         self.constraints = constraints or {}
-        self.focus = focus or []
+        self.focus = _coerce_focus(focus)
         self.risk_level = risk_level or "low"
         self.requires_confirmation = _coerce_bool(requires_confirmation)
 

@@ -121,3 +121,10 @@ async def test_capability_view_metadata():
 def test_capability_view_coerces_string_false_to_false():
     cap = CapabilityView("x", requires_confirmation="false")
     assert cap.requires_confirmation is False
+
+
+def test_capability_view_coerces_focus_to_string_list():
+    cap1 = CapabilityView("x", focus="inventory")
+    cap2 = CapabilityView("y", focus=["a", " ", 1])
+    assert cap1.focus == ["inventory"]
+    assert cap2.focus == ["a", "1"]
