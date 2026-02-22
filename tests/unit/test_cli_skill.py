@@ -74,6 +74,19 @@ def test_skill_validate_fails_for_missing_description(tmp_path):
     assert "FAIL:" in result.output
 
 
+def test_skill_validate_verbose_shows_warning_for_passed_file(tmp_path):
+    """Warning-only file should pass and show warning in verbose mode."""
+    (tmp_path / "warn-skill").mkdir()
+    (tmp_path / "warn-skill" / "SKILL.md").write_text(
+        "---\nname: warn-skill\ndescription: ok\n---\nBody without heading\n",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["validate", "--verbose", str(tmp_path / "warn-skill")])
+    assert result.exit_code == 0
+    assert "OK:" in result.output
+    assert "[warning] body:" in result.output
+
+
 def test_skill_validate_nonexistent_path_exits_with_error(tmp_path):
     """validate should report missing paths explicitly."""
     missing = tmp_path / "does-not-exist"
