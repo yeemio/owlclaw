@@ -240,6 +240,23 @@ def test_skill_init_invalid_param_entry_exits(tmp_path):
     assert exc_info.value.exit_code == 2
 
 
+def test_skill_init_non_interactive_requires_template(tmp_path):
+    """Non-interactive mode should require --template to avoid accidental prompts."""
+    from owlclaw.cli.skill_init import init_command
+
+    with pytest.raises(Exit) as exc_info:
+        init_command(
+            name="",
+            path=str(tmp_path),
+            template="",
+            category="",
+            params_file="",
+            param="skill_name=test",
+            force=False,
+        )
+    assert exc_info.value.exit_code == 2
+
+
 def test_skill_list_shows_skills(tmp_path, monkeypatch):
     """list shows name and description of discovered skills."""
     monkeypatch.chdir(tmp_path)

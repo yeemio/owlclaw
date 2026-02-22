@@ -142,6 +142,17 @@ class TemplateValidator:
                     )
                 )
 
+        if "description" in frontmatter:
+            description = frontmatter["description"]
+            if not isinstance(description, str) or not description.strip():
+                errors.append(
+                    ValidationError(
+                        field="description",
+                        message="Description must be a non-empty string",
+                        severity="error",
+                    )
+                )
+
         if "name" in frontmatter:
             name = frontmatter["name"]
             if not isinstance(name, str) or not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", name):
@@ -166,7 +177,15 @@ class TemplateValidator:
                     )
                 if "trigger" in owlclaw:
                     trigger = owlclaw["trigger"]
-                    if isinstance(trigger, str) and not self._validate_trigger_syntax(trigger):
+                    if not isinstance(trigger, str):
+                        errors.append(
+                            ValidationError(
+                                field="owlclaw.trigger",
+                                message="Trigger must be a string",
+                                severity="error",
+                            )
+                        )
+                    elif not self._validate_trigger_syntax(trigger):
                         errors.append(
                             ValidationError(
                                 field="owlclaw.trigger",

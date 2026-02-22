@@ -188,6 +188,12 @@ def init_command(
         except ValueError as e:
             typer.echo(f"Error: {e}", err=True)
             raise typer.Exit(2) from e
+    if non_interactive and not template:
+        typer.echo(
+            "Error: --template is required in non-interactive mode when using --params-file or --param.",
+            err=True,
+        )
+        raise typer.Exit(2)
 
     if not template:
         # Full interactive wizard

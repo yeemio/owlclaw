@@ -53,6 +53,16 @@ class TestTemplateValidator:
         errs = v.validate_skill_file(skill)
         assert any(e.field == "name" and "Missing" in e.message for e in errs)
 
+    def test_validate_skill_file_empty_description(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: my-skill\ndescription: \"\"\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "description" and "non-empty" in e.message for e in errs)
+
     def test_validate_skill_file_bad_name_format(self, tmp_path: Path) -> None:
         skill = tmp_path / "SKILL.md"
         skill.write_text(
@@ -117,6 +127,16 @@ class TestTemplateValidator:
         assert v._validate_trigger_syntax('webhook("/api/event")') is True
         assert v._validate_trigger_syntax('queue("my-queue")') is True
         assert v._validate_trigger_syntax("invalid") is False
+
+    def test_validate_skill_file_trigger_must_be_string(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: my-skill\ndescription: ok\nowlclaw:\n  trigger:\n    bad: true\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "owlclaw.trigger" and "must be a string" in e.message for e in errs)
 
     def test_validate_and_report(self, tmp_path: Path) -> None:
         skill = tmp_path / "SKILL.md"
