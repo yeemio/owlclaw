@@ -313,15 +313,29 @@ class AgentRuntime:
         registered or raises, so the LLM can handle it gracefully.
         """
         tool_name: str = tool_call.function.name
+        invalid_arguments = False
+        invalid_reason = ""
         try:
             raw_args = tool_call.function.arguments
             arguments: dict[str, Any] = (
                 json.loads(raw_args) if isinstance(raw_args, str) else raw_args
             )
-        except (json.JSONDecodeError, AttributeError):
+        except json.JSONDecodeError:
+            invalid_arguments = True
+            invalid_reason = "arguments must be valid JSON object"
+            arguments = {}
+        except AttributeError:
+            invalid_arguments = True
+            invalid_reason = "missing tool arguments"
             arguments = {}
         if not isinstance(arguments, dict):
+            invalid_arguments = True
+            invalid_reason = "arguments must be a JSON object"
             arguments = {}
+        if invalid_arguments:
+            return {
+                "error": f"Invalid arguments for tool '{tool_name}': {invalid_reason}",
+            }
 
         if self.builtin_tools is not None and self.builtin_tools.is_builtin(tool_name):
             from owlclaw.agent.tools import BuiltInToolsContext

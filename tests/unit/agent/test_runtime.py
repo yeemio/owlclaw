@@ -48,6 +48,14 @@ def _make_tool_call(name: str, arguments: dict):
     return tc
 
 
+def _make_tool_call_raw(name: str, raw_arguments):
+    tc = MagicMock()
+    tc.id = "tc_1"
+    tc.function.name = name
+    tc.function.arguments = raw_arguments
+    return tc
+
+
 # ---------------------------------------------------------------------------
 # AgentRunContext
 # ---------------------------------------------------------------------------
@@ -241,6 +249,60 @@ class TestAgentRuntimeRun:
         result = await rt.run(ctx)
         # The loop should still complete without raising
         assert result["status"] == "completed"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_invalid_json_arguments_not_executed(
+        self, mock_llm, tmp_path
+    ) -> None:
+        tc = _make_tool_call_raw("market_scan", "{not-json")
+        mock_llm.side_effect = [
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response("ok"),
+        ]
+
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [
+            {"name": "market_scan", "description": "Scans market data"}
+        ]
+        registry.invoke_handler = AsyncMock(return_value={"price": 180})
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        registry.invoke_handler.assert_not_called()
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_non_object_arguments_not_executed(
+        self, mock_llm, tmp_path
+    ) -> None:
+        tc = _make_tool_call_raw("market_scan", json.dumps(["not", "object"]))
+        mock_llm.side_effect = [
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response("ok"),
+        ]
+
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [
+            {"name": "market_scan", "description": "Scans market data"}
+        ]
+        registry.invoke_handler = AsyncMock(return_value={"price": 180})
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        registry.invoke_handler.assert_not_called()
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_max_iterations_respected(self, mock_llm, tmp_path) -> None:
