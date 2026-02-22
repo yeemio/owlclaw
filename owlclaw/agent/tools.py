@@ -222,12 +222,22 @@ class BuiltInTools:
         if tool_name not in _BUILTIN_TOOL_NAMES:
             raise ValueError(f"Unknown built-in tool: {tool_name}")
         if not isinstance(arguments, dict):
-            return {
+            error = (
+                f"Invalid arguments for built-in tool '{tool_name}': "
+                "arguments must be a JSON object"
+            )
+            out = {
                 "error": (
-                    f"Invalid arguments for built-in tool '{tool_name}': "
-                    "arguments must be a JSON object"
+                    error
                 )
             }
+            await self._record_validation_failure(
+                tool_name=tool_name,
+                context=context,
+                input_params={"arguments_type": type(arguments).__name__},
+                error_message=error,
+            )
+            return out
 
         if tool_name == "query_state":
             return await self._query_state(arguments, context)
@@ -248,10 +258,24 @@ class BuiltInTools:
     ) -> dict[str, Any]:
         state_name = self._non_empty_str(arguments.get("state_name"))
         if state_name is None:
-            return {"error": "state_name is required and must be a non-empty string"}
+            error = "state_name is required and must be a non-empty string"
+            await self._record_validation_failure(
+                tool_name="query_state",
+                context=context,
+                input_params={"state_name": arguments.get("state_name")},
+                error_message=error,
+            )
+            return {"error": error}
 
         if self._registry is None:
-            return {"error": "No capability registry configured; query_state unavailable"}
+            error = "No capability registry configured; query_state unavailable"
+            await self._record_validation_failure(
+                tool_name="query_state",
+                context=context,
+                input_params={"state_name": state_name},
+                error_message=error,
+            )
+            return {"error": error}
 
         start_ns = time.perf_counter_ns()
         try:
@@ -313,9 +337,23 @@ class BuiltInTools:
     ) -> dict[str, Any]:
         reasoning = self._non_empty_str(arguments.get("reasoning"))
         if reasoning is None:
-            return {"error": "reasoning is required and must be a non-empty string"}
+            error = "reasoning is required and must be a non-empty string"
+            await self._record_validation_failure(
+                tool_name="log_decision",
+                context=context,
+                input_params={"reasoning": arguments.get("reasoning")},
+                error_message=error,
+            )
+            return {"error": error}
         if len(reasoning) > 1000:
-            return {"error": "reasoning must not exceed 1000 characters"}
+            error = "reasoning must not exceed 1000 characters"
+            await self._record_validation_failure(
+                tool_name="log_decision",
+                context=context,
+                input_params={"reasoning_length": len(reasoning)},
+                error_message=error,
+            )
+            return {"error": error}
 
         decision_type = arguments.get("decision_type", "other")
         if decision_type not in ("capability_selection", "schedule_decision", "no_action", "other"):
@@ -354,13 +392,32 @@ class BuiltInTools:
         delay = arguments.get("delay_seconds")
         focus = self._non_empty_str(arguments.get("focus"))
         if isinstance(delay, bool) or not isinstance(delay, int) or delay < 1 or delay > 2592000:
-            return {
-                "error": "delay_seconds must be an integer between 1 and 2592000",
-            }
+            error = "delay_seconds must be an integer between 1 and 2592000"
+            await self._record_validation_failure(
+                tool_name="schedule_once",
+                context=context,
+                input_params={"delay_seconds": delay},
+                error_message=error,
+            )
+            return {"error": error}
         if focus is None:
-            return {"error": "focus is required and must be a non-empty string"}
+            error = "focus is required and must be a non-empty string"
+            await self._record_validation_failure(
+                tool_name="schedule_once",
+                context=context,
+                input_params={"focus": arguments.get("focus")},
+                error_message=error,
+            )
+            return {"error": error}
         if self._hatchet is None:
-            return {"error": "Hatchet not configured; schedule_once unavailable"}
+            error = "Hatchet not configured; schedule_once unavailable"
+            await self._record_validation_failure(
+                tool_name="schedule_once",
+                context=context,
+                input_params={"delay_seconds": delay, "focus": focus},
+                error_message=error,
+            )
+            return {"error": error}
         start_ns = time.perf_counter_ns()
         try:
             schedule_id = await asyncio.wait_for(
@@ -427,13 +484,41 @@ class BuiltInTools:
         cron_expr = self._non_empty_str(arguments.get("cron_expression"))
         focus = self._non_empty_str(arguments.get("focus"))
         if cron_expr is None:
-            return {"error": "cron_expression is required and must be a non-empty string"}
+            error = "cron_expression is required and must be a non-empty string"
+            await self._record_validation_failure(
+                tool_name="schedule_cron",
+                context=context,
+                input_params={"cron_expression": arguments.get("cron_expression")},
+                error_message=error,
+            )
+            return {"error": error}
         if focus is None:
-            return {"error": "focus is required and must be a non-empty string"}
+            error = "focus is required and must be a non-empty string"
+            await self._record_validation_failure(
+                tool_name="schedule_cron",
+                context=context,
+                input_params={"focus": arguments.get("focus")},
+                error_message=error,
+            )
+            return {"error": error}
         if not self._validate_cron_expression(cron_expr):
-            return {"error": f"Invalid cron expression: {cron_expr!r}"}
+            error = f"Invalid cron expression: {cron_expr!r}"
+            await self._record_validation_failure(
+                tool_name="schedule_cron",
+                context=context,
+                input_params={"cron_expression": cron_expr, "focus": focus},
+                error_message=error,
+            )
+            return {"error": error}
         if self._hatchet is None:
-            return {"error": "Hatchet not configured; schedule_cron unavailable"}
+            error = "Hatchet not configured; schedule_cron unavailable"
+            await self._record_validation_failure(
+                tool_name="schedule_cron",
+                context=context,
+                input_params={"cron_expression": cron_expr, "focus": focus},
+                error_message=error,
+            )
+            return {"error": error}
         cron_name = f"agent_cron_{context.agent_id}_{uuid.uuid4().hex[:12]}"
         input_data = {
             "agent_id": context.agent_id,
@@ -500,9 +585,23 @@ class BuiltInTools:
     ) -> dict[str, Any]:
         schedule_id = self._non_empty_str(arguments.get("schedule_id"))
         if schedule_id is None:
-            return {"error": "schedule_id is required and must be a non-empty string"}
+            error = "schedule_id is required and must be a non-empty string"
+            await self._record_validation_failure(
+                tool_name="cancel_schedule",
+                context=context,
+                input_params={"schedule_id": arguments.get("schedule_id")},
+                error_message=error,
+            )
+            return {"error": error}
         if self._hatchet is None:
-            return {"error": "Hatchet not configured; cancel_schedule unavailable"}
+            error = "Hatchet not configured; cancel_schedule unavailable"
+            await self._record_validation_failure(
+                tool_name="cancel_schedule",
+                context=context,
+                input_params={"schedule_id": schedule_id},
+                error_message=error,
+            )
+            return {"error": error}
         start_ns = time.perf_counter_ns()
         try:
             ok = await asyncio.wait_for(
@@ -582,3 +681,22 @@ class BuiltInTools:
             )
         except Exception:
             logger.exception("Failed to record built-in tool execution: %s", tool_name)
+
+    async def _record_validation_failure(
+        self,
+        *,
+        tool_name: str,
+        context: BuiltInToolsContext,
+        input_params: dict[str, Any],
+        error_message: str,
+    ) -> None:
+        """Record validation/availability errors for built-in tools."""
+        await self._record_tool_execution(
+            tool_name=tool_name,
+            context=context,
+            input_params=input_params,
+            output_result=None,
+            start_ns=time.perf_counter_ns(),
+            status="validation_error",
+            error_message=error_message,
+        )

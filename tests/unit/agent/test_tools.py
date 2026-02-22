@@ -209,7 +209,8 @@ class TestScheduleOnce:
 
     @pytest.mark.asyncio
     async def test_schedule_once_no_hatchet_returns_error(self) -> None:
-        tools = BuiltInTools(hatchet_client=None)
+        ledger = AsyncMock()
+        tools = BuiltInTools(hatchet_client=None, ledger=ledger)
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
         result = await tools.execute(
             "schedule_once",
@@ -218,6 +219,8 @@ class TestScheduleOnce:
         )
         assert "error" in result
         assert "Hatchet" in result["error"]
+        ledger.record_execution.assert_awaited_once()
+        assert ledger.record_execution.call_args.kwargs["status"] == "validation_error"
 
     @pytest.mark.asyncio
     async def test_schedule_once_whitespace_focus_returns_error(self) -> None:
