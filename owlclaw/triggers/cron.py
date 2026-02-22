@@ -220,7 +220,10 @@ class CronTriggerRegistry:
 
     def get_trigger(self, event_name: str) -> CronTriggerConfig | None:
         """Return the CronTriggerConfig for *event_name*, or None if missing."""
-        event_name = self._normalize_event_name(event_name)
+        try:
+            event_name = self._normalize_event_name(event_name)
+        except ValueError:
+            return None
         return self._triggers.get(event_name)
 
     def list_triggers(self) -> list[CronTriggerConfig]:

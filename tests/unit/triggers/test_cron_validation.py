@@ -108,6 +108,10 @@ class TestCronRegistration:
         reg = self._registry()
         assert reg.get_trigger("nonexistent") is None
 
+    def test_get_trigger_empty_name_returns_none(self) -> None:
+        reg = self._registry()
+        assert reg.get_trigger("   ") is None
+
     def test_register_stores_optional_fields(self) -> None:
         reg = self._registry()
 
