@@ -18,6 +18,12 @@ async def test_filter_result_default_reason():
     assert r.reason == ""
 
 
+def test_register_evaluator_invalid_raises_type_error():
+    vf = VisibilityFilter()
+    with pytest.raises(TypeError, match="evaluator must provide"):
+        vf.register_evaluator(object())  # type: ignore[arg-type]
+
+
 @pytest.mark.asyncio
 async def test_filter_empty_evaluators_returns_all():
     """With no evaluators, all capabilities pass."""

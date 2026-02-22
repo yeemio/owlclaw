@@ -79,6 +79,8 @@ class VisibilityFilter:
 
     def register_evaluator(self, evaluator: ConstraintEvaluator) -> None:
         """Register a constraint evaluator."""
+        if not hasattr(evaluator, "evaluate") or not callable(getattr(evaluator, "evaluate")):
+            raise TypeError("evaluator must provide an async evaluate(capability, agent_id, context) method")
         self._evaluators.append(evaluator)
 
     async def filter_capabilities(
