@@ -1,5 +1,6 @@
 """CLI tools — owlclaw db, owlclaw skill, owlclaw scan, owlclaw migrate."""
 
+import argparse
 import sys
 
 import typer
@@ -13,6 +14,84 @@ app = typer.Typer(
 )
 app.add_typer(db_app, name="db")
 app.add_typer(skill_app, name="skill")
+
+
+def _dispatch_skill_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw skill ...` using argparse for Typer option-parse compatibility."""
+    if not argv or argv[0] != "skill":
+        return False
+
+    if len(argv) < 2:
+        return False
+
+    sub = argv[1]
+    sub_argv = argv[2:]
+
+    if sub == "init":
+        from owlclaw.cli.skill_init import init_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill init")
+        parser.add_argument("--name", default="")
+        parser.add_argument("--output", "--path", "-o", "-p", dest="path", default=".")
+        parser.add_argument("--template", default="")
+        parser.add_argument("--category", "-c", default="")
+        parser.add_argument("--params-file", dest="params_file", default="")
+        parser.add_argument("--param", default="")
+        parser.add_argument("--force", "-f", action="store_true", default=False)
+        ns = parser.parse_args(sub_argv)
+        init_command(
+            name=ns.name,
+            path=ns.path,
+            template=ns.template,
+            category=ns.category,
+            params_file=ns.params_file,
+            param=ns.param,
+            force=ns.force,
+        )
+        return True
+
+    if sub == "validate":
+        from owlclaw.cli.skill_validate import validate_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill validate")
+        parser.add_argument("paths", nargs="*", default=["."])
+        parser.add_argument("--verbose", "-v", action="store_true", default=False)
+        parser.add_argument("--strict", "-s", action="store_true", default=False)
+        ns = parser.parse_args(sub_argv)
+        validate_command(paths=ns.paths, verbose=ns.verbose, strict=ns.strict)
+        return True
+
+    if sub == "list":
+        from owlclaw.cli.skill_list import list_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill list")
+        parser.add_argument("--path", "-p", default=".")
+        ns = parser.parse_args(sub_argv)
+        list_command(path=ns.path)
+        return True
+
+    if sub == "templates":
+        from owlclaw.cli.skill_list import templates_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill templates")
+        parser.add_argument("--category", "-c", default="")
+        parser.add_argument("--tags", default="")
+        parser.add_argument("--search", "-s", default="")
+        parser.add_argument("--show", default="")
+        parser.add_argument("--verbose", "-v", action="store_true", default=False)
+        parser.add_argument("--json", dest="json_output", action="store_true", default=False)
+        ns = parser.parse_args(sub_argv)
+        templates_command(
+            category=ns.category,
+            tags=ns.tags,
+            search=ns.search,
+            show=ns.show,
+            verbose=ns.verbose,
+            json_output=ns.json_output,
+        )
+        return True
+
+    return False
 
 
 def _print_help_and_exit(argv: list[str]) -> None:
@@ -93,6 +172,8 @@ def main() -> None:
     if "--help" in sys.argv or "-h" in sys.argv:
         argv = [a for a in sys.argv[1:] if a not in ("--help", "-h")]
         _print_help_and_exit(argv)
+    if _dispatch_skill_command(sys.argv[1:]):
+        return
     try:
         app()
     except TypeError as e:
