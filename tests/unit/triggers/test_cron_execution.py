@@ -84,10 +84,13 @@ class TestRunCron:
         # agent_runtime=None → should fall back even with weight=1.0
         result = await reg._run_cron(cfg, None, None, "default")
         fallback.assert_called_once()
-        assert result["status"] in (
-            ExecutionStatus.FALLBACK.value,
-            ExecutionStatus.SUCCESS.value,
-        )
+        assert result["status"] == ExecutionStatus.FALLBACK.value
+
+    async def test_no_fallback_handler_returns_skipped(self) -> None:
+        cfg = _config(fallback_handler=None, migration_weight=0.0)
+        reg = _registry()
+        result = await reg._run_cron(cfg, None, None, "default")
+        assert result["status"] == ExecutionStatus.SKIPPED.value
 
     async def test_duration_recorded(self) -> None:
         reg = _registry()

@@ -491,7 +491,7 @@ class CronTriggerRegistry:
             if not config.enabled:
                 execution.status = ExecutionStatus.SKIPPED
                 execution.skip_reason = "trigger disabled"
-                return {"status": execution.status, "reason": execution.skip_reason}
+                return {"status": execution.status.value, "reason": execution.skip_reason}
 
             # Task 3.3 — governance checks
             passed, reason = await self._check_governance(
@@ -500,7 +500,7 @@ class CronTriggerRegistry:
             if not passed:
                 execution.status = ExecutionStatus.SKIPPED
                 execution.skip_reason = reason
-                return {"status": execution.status, "reason": reason}
+                return {"status": execution.status.value, "reason": reason}
 
             # Task 3.4 — Agent vs Fallback decision
             use_agent = self._should_use_agent(config)
@@ -515,7 +515,8 @@ class CronTriggerRegistry:
                 # Task 3.6 — Fallback path
                 await self._execute_fallback(config, execution)
 
-            execution.status = ExecutionStatus.SUCCESS
+            if execution.status == ExecutionStatus.RUNNING:
+                execution.status = ExecutionStatus.SUCCESS
 
         except Exception as exc:
             execution.status = ExecutionStatus.FAILED
