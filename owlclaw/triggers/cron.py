@@ -246,7 +246,10 @@ class CronTriggerRegistry:
         Raises:
             KeyError: If *event_name* is not registered.
         """
-        event_name = self._normalize_event_name(event_name)
+        try:
+            event_name = self._normalize_event_name(event_name)
+        except ValueError:
+            raise KeyError("Cron trigger '' not found") from None
         config = self._triggers.get(event_name)
         if config is None:
             raise KeyError(f"Cron trigger '{event_name}' not found")
@@ -259,7 +262,10 @@ class CronTriggerRegistry:
         Raises:
             KeyError: If *event_name* is not registered.
         """
-        event_name = self._normalize_event_name(event_name)
+        try:
+            event_name = self._normalize_event_name(event_name)
+        except ValueError:
+            raise KeyError("Cron trigger '' not found") from None
         config = self._triggers.get(event_name)
         if config is None:
             raise KeyError(f"Cron trigger '{event_name}' not found")
@@ -287,7 +293,10 @@ class CronTriggerRegistry:
             KeyError: If *event_name* is not registered.
             RuntimeError: If start() has not been called (no Hatchet client).
         """
-        event_name = self._normalize_event_name(event_name)
+        try:
+            event_name = self._normalize_event_name(event_name)
+        except ValueError:
+            raise KeyError("Cron trigger '' not found") from None
         if event_name not in self._triggers:
             raise KeyError(f"Cron trigger '{event_name}' not found")
         if self._hatchet_client is None:
@@ -327,7 +336,10 @@ class CronTriggerRegistry:
             KeyError: If *event_name* is not registered.
             RuntimeError: If Ledger was not provided to start().
         """
-        event_name = self._normalize_event_name(event_name)
+        try:
+            event_name = self._normalize_event_name(event_name)
+        except ValueError:
+            raise KeyError("Cron trigger '' not found") from None
         if event_name not in self._triggers:
             raise KeyError(f"Cron trigger '{event_name}' not found")
         if self._ledger is None:
@@ -376,7 +388,10 @@ class CronTriggerRegistry:
         Raises:
             KeyError: If *event_name* is not registered.
         """
-        event_name = self._normalize_event_name(event_name)
+        try:
+            event_name = self._normalize_event_name(event_name)
+        except ValueError:
+            raise KeyError("Cron trigger '' not found") from None
         config = self._triggers.get(event_name)
         if config is None:
             raise KeyError(f"Cron trigger '{event_name}' not found")

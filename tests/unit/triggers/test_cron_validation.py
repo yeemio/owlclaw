@@ -190,6 +190,11 @@ class TestTaskManagement:
         with pytest.raises(KeyError, match="not found"):
             reg.pause_trigger("missing")
 
+    def test_pause_blank_name_raises_keyerror(self) -> None:
+        reg = self._registry()
+        with pytest.raises(KeyError, match="not found"):
+            reg.pause_trigger("   ")
+
     def test_resume_missing_raises(self) -> None:
         reg = self._registry()
         with pytest.raises(KeyError, match="not found"):
