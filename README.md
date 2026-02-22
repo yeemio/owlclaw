@@ -87,6 +87,23 @@ client.start_worker()  # blocking
 
 Examples: [examples/hatchet_basic_task.py](examples/hatchet_basic_task.py), [examples/hatchet_cron_task.py](examples/hatchet_cron_task.py), [examples/hatchet_self_schedule.py](examples/hatchet_self_schedule.py).
 
+### LLM integration (config, routing, fallback)
+
+All LLM calls go through `owlclaw.integrations.llm`: config (YAML or code), model routing by `task_type`, fallback chain, optional Langfuse tracing, and mock mode for tests.
+
+```python
+from owlclaw.integrations.llm import LLMConfig, LLMClient, PromptBuilder
+
+config = LLMConfig.from_yaml("owlclaw.yaml")  # or LLMConfig.default_for_owlclaw()
+client = LLMClient(config)
+messages = [PromptBuilder.build_system_message("..."), PromptBuilder.build_user_message("...")]
+resp = await client.complete(messages, task_type="simple_query")
+# resp.content, resp.function_calls, resp.model, resp.prompt_tokens, resp.cost
+```
+
+- **Config**: `llm` section in `owlclaw.yaml` — see [docs/llm/owlclaw.llm.example.yaml](docs/llm/owlclaw.llm.example.yaml) (models, task_type_routing, Langfuse, mock_mode).
+- **Examples**: [examples/integrations_llm/](examples/integrations_llm/) — basic call, function calling, model routing (all runnable in mock mode without API keys).
+
 ## Installation
 
 ```bash

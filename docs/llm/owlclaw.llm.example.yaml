@@ -1,0 +1,75 @@
+# LLM 配置示例 — 将下方的 llm 段合并到项目根目录的 owlclaw.yaml 中。
+# 加载方式: LLMConfig.from_yaml("owlclaw.yaml")
+# 环境变量: 支持 ${VAR} 语法，如 ${OPENAI_API_KEY}、${LANGFUSE_PUBLIC_KEY}
+
+llm:
+  # 默认模型（未配置 task_type 或路由未命中时使用）
+  default_model: gpt-4o-mini
+
+  # 模型定义：name 需与 default_model / task_type_routing 中的 model 一致
+  models:
+    gpt-4o-mini:
+      name: gpt-4o-mini
+      provider: openai
+      api_key_env: OPENAI_API_KEY
+      temperature: 0.7
+      max_tokens: 4096
+      context_window: 128000
+      supports_function_calling: true
+      cost_per_1k_prompt_tokens: 0.00015
+      cost_per_1k_completion_tokens: 0.0006
+
+    gpt-4o:
+      name: gpt-4o
+      provider: openai
+      api_key_env: OPENAI_API_KEY
+      temperature: 0.7
+      max_tokens: 4096
+      context_window: 128000
+      supports_function_calling: true
+      cost_per_1k_prompt_tokens: 0.005
+      cost_per_1k_completion_tokens: 0.015
+
+    claude-3-5-sonnet:
+      name: claude-3-5-sonnet-20241022
+      provider: anthropic
+      api_key_env: ANTHROPIC_API_KEY
+      temperature: 0.7
+      max_tokens: 8192
+      context_window: 200000
+      supports_function_calling: true
+      cost_per_1k_prompt_tokens: 0.003
+      cost_per_1k_completion_tokens: 0.015
+
+  # task_type → 模型路由；可配置 fallback_models、temperature、max_tokens
+  task_type_routing:
+    - task_type: trading_decision
+      model: gpt-4o
+      fallback_models: [claude-3-5-sonnet, gpt-4o-mini]
+      temperature: 0.3
+      max_tokens: 4096
+
+    - task_type: knowledge_generation
+      model: claude-3-5-sonnet
+      fallback_models: [gpt-4o]
+      temperature: 0.7
+
+    - task_type: simple_query
+      model: gpt-4o-mini
+      fallback_models: [gpt-4o]
+
+  # 重试：仅对可重试错误（如 rate limit）重试
+  max_retries: 3
+  retry_delay_seconds: 1.0
+
+  # Langfuse 可观测（可选）：需安装 langfuse，并配置 public_key/secret_key
+  langfuse_enabled: false
+  langfuse_public_key: ${LANGFUSE_PUBLIC_KEY}
+  langfuse_secret_key: ${LANGFUSE_SECRET_KEY}
+  langfuse_host: "https://cloud.langfuse.com"
+
+  # 测试用：mock_mode 为 true 时不调用真实 API，返回 mock_responses
+  # mock_mode: false
+  # mock_responses:
+  #   default: "Mocked response"
+  #   trading_decision: "Mocked trading reply"

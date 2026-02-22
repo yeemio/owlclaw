@@ -53,3 +53,6 @@ logs/
 # Database
 *.db
 *.sqlite3
+
+# External dependencies (submodules / vendored projects)
+.langfuse/

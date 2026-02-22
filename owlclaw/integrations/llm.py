@@ -109,6 +109,7 @@ class ModelConfig(BaseModel):
     name: str
     provider: str
     api_key_env: str = "OPENAI_API_KEY"
+    api_base: str | None = None  # e.g. https://api.siliconflow.cn/v1 for OpenAI-compatible
     temperature: float = 0.7
     max_tokens: int = 4096
     context_window: int = 128000
@@ -291,9 +292,16 @@ class LLMClient:
         retries_per_model = max(1, int(self.config.max_retries))
         for model_idx, model in enumerate(models_to_try):
             last_model = model
+            mc = self.config.models.get(model)
+            call_params = {**params, "model": model}
+            if mc:
+                api_key = os.environ.get(mc.api_key_env, "").strip()
+                if api_key:
+                    call_params["api_key"] = api_key
+                if mc.api_base:
+                    call_params["api_base"] = mc.api_base
             for retry_idx in range(retries_per_model):
                 try:
-                    call_params = {**params, "model": model}
                     response = await acompletion(**call_params)
                     return response, model
                 except Exception as e:
@@ -434,8 +442,14 @@ class LLMClient:
                             "completion_tokens": llm_resp.completion_tokens,
                             "total_tokens": llm_resp.total_tokens,
                         },
-                        metadata={"cost": llm_resp.cost},
+                        metadata={
+                            "cost": llm_resp.cost,
+                            "fallback_used": used_model != model_name,
+                            "actual_model": used_model,
+                        },
                     )
+                    if used_model != model_name:
+                        trace.update(metadata={"fallback_used": True, "actual_model": used_model})
                 except Exception as e:
                     logger.warning("Langfuse generation record failed: %s", e)
             return llm_resp

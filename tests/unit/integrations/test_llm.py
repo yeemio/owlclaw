@@ -324,6 +324,39 @@ class TestLLMClient:
             assert kwargs["max_tokens"] == 256
 
 
+class TestModelFallbackIntegration:
+    """Integration tests for model fallback (Task 9.3)."""
+
+    @pytest.mark.asyncio
+    async def test_primary_model_failure_simulated_then_fallback_used(self) -> None:
+        """9.3.1: Simulate primary model failure; 9.3.2: Verify fallback is executed."""
+        config = LLMConfig(
+            default_model="primary",
+            models={
+                "primary": ModelConfig(name="primary", provider="openai"),
+                "fallback": ModelConfig(name="fallback", provider="openai"),
+            },
+            task_type_routing=[
+                TaskTypeRouting(task_type="trading", model="primary", fallback_models=["fallback"])
+            ],
+            max_retries=1,
+            retry_delay_seconds=0,
+        )
+        client = LLMClient(config)
+        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
+            mock.side_effect = [
+                ServiceUnavailableError("Primary model down", model="primary"),
+                _fake_litellm_response("Fallback reply", [], 5, 3),
+            ]
+            resp = await client.complete(
+                messages=[{"role": "user", "content": "Hi"}],
+                task_type="trading",
+            )
+        assert resp.model == "fallback"
+        assert resp.content == "Fallback reply"
+        assert mock.await_count == 2
+
+
 class TestLLMErrors:
     """Tests for LLM error types (Task 6.1)."""
 
