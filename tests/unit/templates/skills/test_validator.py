@@ -243,6 +243,21 @@ class TestTemplateValidator:
         errs = v.validate_skill_file(skill)
         assert any(e.field == "owlclaw" and "mapping/object" in e.message for e in errs)
 
+    def test_validate_skill_file_high_risk_without_confirmation_warns(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            "---\nname: my-skill\ndescription: ok\nowlclaw:\n  risk_level: high\n  requires_confirmation: false\n---\n# Title\n",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(
+            e.field == "owlclaw.requires_confirmation"
+            and e.severity == "warning"
+            and "should generally require confirmation" in e.message
+            for e in errs
+        )
+
     def test_validate_and_report(self, tmp_path: Path) -> None:
         skill = tmp_path / "SKILL.md"
         skill.write_text("---\n---\n", encoding="utf-8")

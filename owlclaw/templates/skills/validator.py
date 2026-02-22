@@ -305,12 +305,25 @@ class TemplateValidator:
                                 severity="error",
                             )
                         )
+                risk_level_val = owlclaw.get("risk_level")
                 if "requires_confirmation" in owlclaw and not isinstance(owlclaw["requires_confirmation"], bool):
                     errors.append(
                         ValidationError(
                             field="owlclaw.requires_confirmation",
                             message="requires_confirmation must be a boolean",
                             severity="error",
+                        )
+                    )
+                elif (
+                    isinstance(risk_level_val, str)
+                    and risk_level_val.strip().lower() in {"high", "critical"}
+                    and owlclaw.get("requires_confirmation") is False
+                ):
+                    errors.append(
+                        ValidationError(
+                            field="owlclaw.requires_confirmation",
+                            message="High/critical risk skills should generally require confirmation",
+                            severity="warning",
                         )
                     )
             else:
