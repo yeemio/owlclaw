@@ -417,7 +417,7 @@ class TemplateValidator:
         webhook_match = _WEBHOOK_PATTERN.match(trigger)
         if webhook_match:
             path = webhook_match.group(1).strip()
-            return bool(path) and path.startswith("/")
+            return bool(path) and path.startswith("/") and not any(ch.isspace() for ch in path)
 
         queue_match = _QUEUE_PATTERN.match(trigger)
         if queue_match:

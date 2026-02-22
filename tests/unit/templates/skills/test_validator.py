@@ -207,6 +207,7 @@ class TestTemplateValidator:
         assert v._validate_trigger_syntax('cron("invalid")') is False
         assert v._validate_trigger_syntax('webhook("/api/event")') is True
         assert v._validate_trigger_syntax('webhook("api/event")') is False
+        assert v._validate_trigger_syntax('webhook("/api /event")') is False
         assert v._validate_trigger_syntax('queue("my-queue")') is True
         assert v._validate_trigger_syntax('queue("my queue")') is False
         assert v._validate_trigger_syntax('queue("my/queue")') is False
