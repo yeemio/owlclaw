@@ -97,7 +97,7 @@ class KnowledgeInjector:
             "You have access to the following capabilities:\n"
         ]
 
-        for skill in skills:
+        for skill in sorted(skills, key=lambda s: s.name):
             summary_parts.append(
                 f"- **{skill.name}**: {skill.description}"
             )

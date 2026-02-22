@@ -83,3 +83,18 @@ def test_get_all_skills_summary_empty(tmp_path):
     injector = KnowledgeInjector(loader)
     result = injector.get_all_skills_summary()
     assert result == "No Skills available."
+
+
+def test_get_all_skills_summary_sorted_by_name():
+    """Summary ordering should be deterministic by skill name."""
+
+    class _Loader:
+        def list_skills(self):  # type: ignore[no-untyped-def]
+            return [
+                Skill("z-skill", "Z", file_path="z/SKILL.md", metadata={}),
+                Skill("a-skill", "A", file_path="a/SKILL.md", metadata={}),
+            ]
+
+    injector = KnowledgeInjector(_Loader())  # type: ignore[arg-type]
+    result = injector.get_all_skills_summary()
+    assert result.index("**a-skill**") < result.index("**z-skill**")
