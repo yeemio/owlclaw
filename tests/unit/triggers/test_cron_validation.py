@@ -67,6 +67,13 @@ class TestCronRegistration:
         assert config.event_name == "daily_check"
         assert config.expression == "0 9 * * *"
 
+    def test_get_trigger_trims_event_name(self) -> None:
+        reg = self._registry()
+        reg.register("daily_check", "0 9 * * *")
+        config = reg.get_trigger("  daily_check  ")
+        assert config is not None
+        assert config.event_name == "daily_check"
+
     def test_register_duplicate_raises(self) -> None:
         reg = self._registry()
         reg.register("check", "0 * * * *")
@@ -156,9 +163,9 @@ class TestTaskManagement:
         reg = self._registry()
         reg.register("job", "0 * * * *")
         assert reg.get_trigger("job").enabled is True
-        reg.pause_trigger("job")
+        reg.pause_trigger(" job ")
         assert reg.get_trigger("job").enabled is False
-        reg.resume_trigger("job")
+        reg.resume_trigger(" job ")
         assert reg.get_trigger("job").enabled is True
 
     def test_pause_missing_raises(self) -> None:

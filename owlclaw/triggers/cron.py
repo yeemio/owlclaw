@@ -143,6 +143,13 @@ class CronTriggerRegistry:
         except Exception:
             return False
 
+    @staticmethod
+    def _normalize_event_name(event_name: str) -> str:
+        normalized = event_name.strip()
+        if not normalized:
+            raise ValueError("event_name must not be empty")
+        return normalized
+
     # ------------------------------------------------------------------
     # Task 2.4 — trigger registration
     # ------------------------------------------------------------------
@@ -168,10 +175,7 @@ class CronTriggerRegistry:
             ValueError: If *event_name* is already registered or *expression*
                 is invalid.
         """
-        normalized_event_name = event_name.strip()
-        if not normalized_event_name:
-            raise ValueError("event_name must not be empty")
-        event_name = normalized_event_name
+        event_name = self._normalize_event_name(event_name)
         expression = expression.strip()
         if not expression:
             raise ValueError("expression must not be empty")
@@ -215,6 +219,7 @@ class CronTriggerRegistry:
 
     def get_trigger(self, event_name: str) -> CronTriggerConfig | None:
         """Return the CronTriggerConfig for *event_name*, or None if missing."""
+        event_name = self._normalize_event_name(event_name)
         return self._triggers.get(event_name)
 
     def list_triggers(self) -> list[CronTriggerConfig]:
@@ -235,6 +240,7 @@ class CronTriggerRegistry:
         Raises:
             KeyError: If *event_name* is not registered.
         """
+        event_name = self._normalize_event_name(event_name)
         config = self._triggers.get(event_name)
         if config is None:
             raise KeyError(f"Cron trigger '{event_name}' not found")
@@ -247,6 +253,7 @@ class CronTriggerRegistry:
         Raises:
             KeyError: If *event_name* is not registered.
         """
+        event_name = self._normalize_event_name(event_name)
         config = self._triggers.get(event_name)
         if config is None:
             raise KeyError(f"Cron trigger '{event_name}' not found")
@@ -274,6 +281,7 @@ class CronTriggerRegistry:
             KeyError: If *event_name* is not registered.
             RuntimeError: If start() has not been called (no Hatchet client).
         """
+        event_name = self._normalize_event_name(event_name)
         if event_name not in self._triggers:
             raise KeyError(f"Cron trigger '{event_name}' not found")
         if self._hatchet_client is None:
@@ -311,6 +319,7 @@ class CronTriggerRegistry:
             KeyError: If *event_name* is not registered.
             RuntimeError: If Ledger was not provided to start().
         """
+        event_name = self._normalize_event_name(event_name)
         if event_name not in self._triggers:
             raise KeyError(f"Cron trigger '{event_name}' not found")
         if self._ledger is None:
@@ -350,6 +359,7 @@ class CronTriggerRegistry:
         Raises:
             KeyError: If *event_name* is not registered.
         """
+        event_name = self._normalize_event_name(event_name)
         config = self._triggers.get(event_name)
         if config is None:
             raise KeyError(f"Cron trigger '{event_name}' not found")
