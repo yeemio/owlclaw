@@ -269,7 +269,10 @@ class SkillsLoader:
 
     def get_skill(self, name: str) -> Skill | None:
         """Retrieve a Skill by name."""
-        return self.skills.get(name)
+        normalized = name.strip()
+        if not normalized:
+            return None
+        return self.skills.get(normalized)
 
     def list_skills(self) -> list[Skill]:
         """List all loaded Skills."""
