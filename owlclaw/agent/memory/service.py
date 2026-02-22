@@ -26,6 +26,20 @@ class MemoryService:
         self._config = config
         self._snapshot_builder = SnapshotBuilder(store, embedder)
 
+    @staticmethod
+    def _normalize_tags(tags: list[str] | None) -> list[str]:
+        if not tags:
+            return []
+        out: list[str] = []
+        seen: set[str] = set()
+        for raw in tags:
+            normalized = raw.strip()
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            out.append(normalized)
+        return out
+
     async def remember(
         self,
         agent_id: str,
@@ -45,7 +59,7 @@ class MemoryService:
             tenant_id=tenant_id,
             content=normalized,
             embedding=embedding,
-            tags=list(tags) if tags else [],
+            tags=self._normalize_tags(tags),
         )
         return await self._store.save(entry)
 
@@ -63,12 +77,13 @@ class MemoryService:
             raise ValueError("query must not be empty")
         safe_limit = max(1, min(limit, 20))
         query_embedding = await self._embedder.embed(normalized_query)
+        normalized_tags = self._normalize_tags(tags)
         pairs = await self._store.search(
             agent_id,
             tenant_id,
             query_embedding,
             limit=safe_limit,
-            tags=tags,
+            tags=normalized_tags,
         )
         if not pairs:
             return []

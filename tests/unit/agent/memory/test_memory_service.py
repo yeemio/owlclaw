@@ -28,6 +28,7 @@ class _CaptureLimitStore(MemoryStore):
     def __init__(self) -> None:
         self.last_limit: int | None = None
         self.last_saved_entry: MemoryEntry | None = None
+        self.last_search_tags: list[str] | None = None
 
     async def save(self, entry: MemoryEntry):
         self.last_saved_entry = entry
@@ -43,6 +44,7 @@ class _CaptureLimitStore(MemoryStore):
         include_archived: bool = False,
     ) -> list[tuple[MemoryEntry, float]]:
         self.last_limit = limit
+        self.last_search_tags = tags
         return []
 
     async def get_recent(
@@ -151,3 +153,34 @@ async def test_recall_rejects_empty_query() -> None:
             tenant_id="default",
             query="   ",
         )
+
+
+@pytest.mark.asyncio
+async def test_remember_normalizes_tags() -> None:
+    store = _CaptureLimitStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+
+    await service.remember(
+        agent_id="a",
+        tenant_id="default",
+        content="hello",
+        tags=[" foo ", "", "foo", "bar", "  "],
+    )
+
+    assert store.last_saved_entry is not None
+    assert store.last_saved_entry.tags == ["foo", "bar"]
+
+
+@pytest.mark.asyncio
+async def test_recall_normalizes_tags_before_search() -> None:
+    store = _CaptureLimitStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+
+    await service.recall(
+        agent_id="a",
+        tenant_id="default",
+        query="q",
+        tags=[" x ", "", "x", "y"],
+    )
+
+    assert store.last_search_tags == ["x", "y"]
