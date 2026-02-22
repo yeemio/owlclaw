@@ -214,12 +214,21 @@ class SkillsLoader:
         if frontmatter is None:
             logger.warning("Skill file %s empty frontmatter", file_path)
             return None
+        if not isinstance(frontmatter, dict):
+            logger.warning("Skill file %s frontmatter must be a mapping", file_path)
+            return None
 
         if "name" not in frontmatter or "description" not in frontmatter:
             logger.warning(
                 "Skill file %s missing required fields (name, description)",
                 file_path,
             )
+            return None
+        if not isinstance(frontmatter["name"], str) or not frontmatter["name"].strip():
+            logger.warning("Skill file %s invalid name field", file_path)
+            return None
+        if not isinstance(frontmatter["description"], str) or not frontmatter["description"].strip():
+            logger.warning("Skill file %s invalid description field", file_path)
             return None
 
         metadata = frontmatter.get("metadata", {})
@@ -230,8 +239,8 @@ class SkillsLoader:
             owlclaw_config = {}
 
         return Skill(
-            name=frontmatter["name"],
-            description=frontmatter["description"],
+            name=frontmatter["name"].strip(),
+            description=frontmatter["description"].strip(),
             file_path=file_path,
             metadata=metadata,
             owlclaw_config=owlclaw_config,

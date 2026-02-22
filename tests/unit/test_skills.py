@@ -147,3 +147,29 @@ def test_parse_missing_required_fields_skipped(tmp_path):
     loader = SkillsLoader(tmp_path)
     skills = loader.scan()
     assert len(skills) == 0
+
+
+def test_parse_non_mapping_frontmatter_skipped(tmp_path):
+    """Non-dict YAML frontmatter should be skipped safely."""
+    skill_dir = tmp_path / "bad-shape"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\n- bad\n- list\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 0
+
+
+def test_parse_name_description_must_be_non_empty_strings(tmp_path):
+    """name/description must be non-empty strings."""
+    skill_dir = tmp_path / "bad-fields"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: 123\ndescription: \"\"\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 0
