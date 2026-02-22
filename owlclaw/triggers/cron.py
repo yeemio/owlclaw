@@ -177,7 +177,7 @@ class CronTriggerRegistry:
         migration_weight = kwargs.get("migration_weight", 1.0)
         if (
             isinstance(migration_weight, bool)
-            or not isinstance(migration_weight, (int, float))
+            or not isinstance(migration_weight, int | float)
             or migration_weight < 0.0
             or migration_weight > 1.0
         ):
