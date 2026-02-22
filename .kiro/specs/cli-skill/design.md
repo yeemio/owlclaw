@@ -90,3 +90,183 @@ owlclaw/
 - `0`：成功。
 - `1`：校验失败（validate 发现错误）。
 - `2`：用法错误（如缺少必填参数、path 不存在）。
+
+
+---
+
+## 实现细节
+
+### 文件结构
+
+```
+owlclaw/
+├── cli/
+│   ├── __init__.py          # CLI 主入口
+│   ├── skill.py             # skill 子命令组
+│   ├── skill_init.py        # init 命令实现
+│   ├── skill_validate.py    # validate 命令实现
+│   ├── skill_list.py        # list 命令实现
+│   └── templates/
+│       └── skill_default.md # 默认 SKILL.md 模板
+└── capabilities/
+    └── skills/
+        ├── __init__.py
+        ├── loader.py        # SkillsLoader
+        └── validator.py     # 共享的校验逻辑
+```
+
+### CLI 主入口（__init__.py）
+
+```python
+import typer
+from owlclaw.cli import skill
+
+app = typer.Typer(
+    name="owlclaw",
+    help="OwlClaw CLI - Agent framework for production",
+    add_completion=False
+)
+
+# 注册子命令组
+app.add_typer(skill.app, name="skill")
+
+def main():
+    app()
+
+if __name__ == "__main__":
+    main()
+```
+
+### skill 子命令组（skill.py）
+
+```python
+import typer
+from pathlib import Path
+from owlclaw.cli import skill_init, skill_validate, skill_list
+
+app = typer.Typer(
+    name="skill",
+    help="Manage Agent Skills (SKILL.md files)",
+    add_completion=False
+)
+
+@app.command("init")
+def init(
+    name: str = typer.Argument(..., help="Skill name (kebab-case)"),
+    path: Path = typer.Option(
+        Path.cwd(),
+        "--path",
+        "-p",
+        help="Parent directory for the skill"
+    ),
+    template: str = typer.Option(
+        "default",
+        "--template",
+        "-t",
+        help="Template to use (default, monitoring, analysis)"
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite existing SKILL.md"
+    )
+):
+    """Create a new Skill with SKILL.md"""
+    skill_init.create_skill(name, path, template, force)
+
+@app.command("validate")
+def validate(
+    paths: list[Path] = typer.Argument(..., help="Paths to SKILL.md files or directories"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed errors")
+):
+    """Validate SKILL.md files"""
+    skill_validate.validate_skills(paths, verbose)
+
+@app.command("list")
+def list_skills(
+    path: Path = typer.Option(
+        Path.cwd(),
+        "--path",
+        "-p",
+        help="Directory to scan for skills"
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Output as JSON"
+    )
+):
+    """List all Skills in a directory"""
+    skill_list.list_skills(path, json_output)
+```
+
+### init 命令实现（skill_init.py）
+
+```python
+from pathlib import Path
+from typing import Optional
+import typer
+from rich.console import Console
+
+console = Console()
+
+SKILL_TEMPLATE = """---
+name: {name}
+description: {description}
+metadata:
+  version: "1.0.0"
+  author: ""
+  tags: []
+owlclaw:
+  task_type: ""
+  constraints: {{}}
+---
+
+# {title}
+
+## When to Use
+
+Describe when this skill should be used.
+
+## How to Use
+
+Provide step-by-step instructions for using this skill.
+
+## Examples
+
+```
+Example usage here
+```
+
+## Notes
+
+Additional notes or warnings.
+"""
+
+def create_skill(
+    name: str,
+    path: Path,
+    template: str,
+    force: bool
+):
+    """Create a new Skill directory with SKILL.md"""
+    
+    # Validate name format (kebab-case)
+    if not is_valid_skill_name(name):
+        console.print(
+            f"[red]Error:[/red] Skill name must be kebab-case (e.g., 'my-skill')",
+            style="bold"
+        )
+        raise typer.Exit(2)
+    
+    # Create skill directory
+    skill_dir = path / name
+    skill_file = skill_dir / "SKILL.md"
+    
+    # Check if exists
+    if skill_file.exists() and not force:
+        console.print(
+            f"[yellow]Warning:[/yellow] {skill_file} already exists. Use --force to overwrite.",
+            style="bold"
+  
