@@ -13,6 +13,18 @@ from typing import Any, Protocol
 logger = logging.getLogger(__name__)
 
 
+def _coerce_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return False
+
+
 @dataclass
 class FilterResult:
     """Result of a single constraint evaluation."""
@@ -57,7 +69,7 @@ class CapabilityView:
         self.constraints = constraints or {}
         self.focus = focus or []
         self.risk_level = risk_level or "low"
-        self.requires_confirmation = bool(requires_confirmation)
+        self.requires_confirmation = _coerce_bool(requires_confirmation)
 
     @property
     def metadata(self) -> dict[str, Any]:

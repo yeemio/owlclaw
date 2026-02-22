@@ -27,7 +27,7 @@ def _dict_to_capability_view(d: dict[str, Any]) -> CapabilityView:
         constraints=d.get("constraints") or {},
         focus=d.get("focus") or [],
         risk_level=d.get("risk_level") or "low",
-        requires_confirmation=bool(d.get("requires_confirmation")),
+        requires_confirmation=d.get("requires_confirmation"),
     )
 
 
@@ -283,29 +283,29 @@ class OwlClaw:
         if not self.registry:
             return []
         self._ensure_governance()
-        if self._visibility_filter is None:
-            raw = self.registry.list_capabilities()
-            return raw
-        from owlclaw.governance.visibility import RunContext
-
         raw = self.registry.list_capabilities()
         views = [_dict_to_capability_view(d) for d in raw]
-        confirmed = {
-            c.strip() for c in (confirmed_capabilities or []) if isinstance(c, str) and c.strip()
-        }
-        ctx = RunContext(
-            tenant_id=tenant_id,
-            confirmed_capabilities=confirmed or None,
-        )
-        filtered = await self._visibility_filter.filter_capabilities(
-            views, agent_id, ctx
-        )
-        logger.info(
-            "VisibilityFilter: %d of %d capabilities visible for agent %s",
-            len(filtered),
-            len(raw),
-            agent_id,
-        )
+        if self._visibility_filter is None:
+            filtered = views
+        else:
+            from owlclaw.governance.visibility import RunContext
+
+            confirmed = {
+                c.strip() for c in (confirmed_capabilities or []) if isinstance(c, str) and c.strip()
+            }
+            ctx = RunContext(
+                tenant_id=tenant_id,
+                confirmed_capabilities=confirmed or None,
+            )
+            filtered = await self._visibility_filter.filter_capabilities(
+                views, agent_id, ctx
+            )
+            logger.info(
+                "VisibilityFilter: %d of %d capabilities visible for agent %s",
+                len(filtered),
+                len(raw),
+                agent_id,
+            )
         return [
             {
                 "name": c.name,

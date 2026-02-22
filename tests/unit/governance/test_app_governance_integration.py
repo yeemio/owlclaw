@@ -87,6 +87,27 @@ async def test_get_visible_capabilities_passes_confirmed_capabilities(app_with_s
 
 
 @pytest.mark.asyncio
+async def test_get_visible_capabilities_coerces_requires_confirmation_string(app_with_skills):
+    """requires_confirmation='false' should not be treated as true in capability view."""
+    app = app_with_skills
+
+    @app.handler("entry-monitor")
+    async def handler(session):
+        return {}
+
+    original = app.registry.list_capabilities  # type: ignore[union-attr]
+
+    def _patched_caps():  # type: ignore[no-untyped-def]
+        rows = original()
+        rows[0]["requires_confirmation"] = "false"
+        return rows
+
+    app.registry.list_capabilities = _patched_caps  # type: ignore[assignment,union-attr]
+    out = await app.get_visible_capabilities("agent1", "default")
+    assert out[0]["requires_confirmation"] is False
+
+
+@pytest.mark.asyncio
 async def test_get_model_selection_with_router(app_with_skills):
     """With router config, get_model_selection returns ModelSelection."""
     app = app_with_skills

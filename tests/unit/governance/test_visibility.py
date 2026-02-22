@@ -116,3 +116,8 @@ async def test_capability_view_metadata():
     assert cap.metadata["owlclaw"]["focus"] == ["inventory_monitor"]
     assert cap.metadata["owlclaw"]["risk_level"] == "high"
     assert cap.metadata["owlclaw"]["requires_confirmation"] is True
+
+
+def test_capability_view_coerces_string_false_to_false():
+    cap = CapabilityView("x", requires_confirmation="false")
+    assert cap.requires_confirmation is False
