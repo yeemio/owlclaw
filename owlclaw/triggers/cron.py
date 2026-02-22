@@ -191,11 +191,12 @@ class CronTriggerRegistry:
         migration_weight = kwargs.get("migration_weight", 1.0)
         if (
             isinstance(migration_weight, bool)
-            or not isinstance(migration_weight, int | float)
+            or not isinstance(migration_weight, int | float | Decimal)
             or migration_weight < 0.0
             or migration_weight > 1.0
         ):
             raise ValueError("migration_weight must be a float between 0.0 and 1.0")
+        kwargs["migration_weight"] = float(migration_weight)
 
         config = CronTriggerConfig(
             event_name=event_name,

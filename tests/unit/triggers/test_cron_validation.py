@@ -1,5 +1,6 @@
 """Unit tests for CronTriggerRegistry cron expression validation (Task 2.3)."""
 
+from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -151,6 +152,13 @@ class TestCronRegistration:
         reg.register("multi_hour", "0 8,12,18 * * *")
         assert reg.get_trigger("every_15m") is not None
         assert reg.get_trigger("multi_hour") is not None
+
+    def test_register_accepts_decimal_migration_weight(self) -> None:
+        reg = self._registry()
+        reg.register("weighted_job", "0 * * * *", migration_weight=Decimal("0.5"))
+        config = reg.get_trigger("weighted_job")
+        assert config is not None
+        assert config.migration_weight == 0.5
 
 
 class TestTaskManagement:
