@@ -9,6 +9,7 @@ from owlclaw.templates.skills.exceptions import (
     MissingParameterError,
     ParameterTypeError,
     ParameterValueError,
+    TemplateRenderError,
 )
 
 
@@ -313,3 +314,24 @@ name: {{ skill_name }}
         rdr = TemplateRenderer(reg)
         with pytest.raises(ParameterValueError, match="Unknown template parameters"):
             rdr.render("monitoring/health-check", {"skill_name": "ok", "unexpected": "x"})
+
+    def test_render_fails_for_undeclared_template_variable(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: skill_name
+    type: str
+    description: Name
+    required: true
+#}
+---
+name: {{ skill_name }}
+owner: {{ owner }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        with pytest.raises(TemplateRenderError):
+            rdr.render("monitoring/health-check", {"skill_name": "ok"})

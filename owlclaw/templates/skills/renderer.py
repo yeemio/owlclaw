@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, TemplateNotFound
 
 from owlclaw.templates.skills.exceptions import (
     MissingParameterError,
@@ -38,6 +38,7 @@ class TemplateRenderer:
             loader=FileSystemLoader(str(self.templates_dir)),
             trim_blocks=True,
             lstrip_blocks=True,
+            undefined=StrictUndefined,
         )
         self.env.filters["kebab_case"] = self._kebab_case
         self.env.filters["snake_case"] = self._snake_case
