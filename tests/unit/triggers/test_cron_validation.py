@@ -163,6 +163,15 @@ class TestTaskManagement:
         with pytest.raises(KeyError, match="not found"):
             reg.get_trigger_status("missing")
 
+    def test_get_trigger_status_invalid_expression_returns_none_next_run(self) -> None:
+        reg = self._registry()
+        reg.register("daily", "0 9 * * *", focus="morning")
+        cfg = reg.get_trigger("daily")
+        assert cfg is not None
+        cfg.expression = "invalid cron expression"
+        status = reg.get_trigger_status("daily")
+        assert status["next_run"] is None
+
     @pytest.mark.asyncio
     async def test_trigger_now_calls_hatchet_run_task_now(self) -> None:
         reg = self._registry()

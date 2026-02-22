@@ -334,8 +334,13 @@ class CronTriggerRegistry:
             it = croniter(config.expression, datetime.now(timezone.utc))
             next_dt = it.get_next(datetime)
             next_run = next_dt.isoformat() if next_dt else None
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning(
+                "Failed to compute next cron run event_name=%s expression=%s: %s",
+                event_name,
+                config.expression,
+                exc,
+            )
         return {
             "event_name": event_name,
             "enabled": config.enabled,
