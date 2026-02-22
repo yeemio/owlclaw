@@ -168,6 +168,13 @@ class CronTriggerRegistry:
             ValueError: If *event_name* is already registered or *expression*
                 is invalid.
         """
+        normalized_event_name = event_name.strip()
+        if not normalized_event_name:
+            raise ValueError("event_name must not be empty")
+        event_name = normalized_event_name
+        if isinstance(focus, str):
+            focus = focus.strip() or None
+
         if event_name in self._triggers:
             raise ValueError(f"Cron trigger '{event_name}' is already registered")
 

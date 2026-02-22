@@ -115,6 +115,22 @@ class TestCronRegistration:
         assert config.max_daily_runs == 1
         assert config.priority == 5
 
+    def test_register_rejects_empty_event_name(self) -> None:
+        reg = self._registry()
+        with pytest.raises(ValueError, match="event_name must not be empty"):
+            reg.register("   ", "0 * * * *")
+
+    def test_register_normalizes_focus_whitespace(self) -> None:
+        reg = self._registry()
+        reg.register("daily", "0 9 * * *", focus="  reporting  ")
+        config = reg.get_trigger("daily")
+        assert config is not None
+        assert config.focus == "reporting"
+        reg.register("daily2", "0 10 * * *", focus="   ")
+        config2 = reg.get_trigger("daily2")
+        assert config2 is not None
+        assert config2.focus is None
+
     def test_register_special_chars(self) -> None:
         reg = self._registry()
         reg.register("every_15m", "*/15 * * * *")
