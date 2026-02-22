@@ -198,7 +198,9 @@ class BuiltInTools:
 
     def is_builtin(self, tool_name: str) -> bool:
         """Return True if *tool_name* is a built-in tool."""
-        return tool_name in _BUILTIN_TOOL_NAMES
+        if not isinstance(tool_name, str):
+            return False
+        return tool_name.strip() in _BUILTIN_TOOL_NAMES
 
     @staticmethod
     def _non_empty_str(value: Any) -> str | None:

@@ -56,6 +56,10 @@ class TestBuiltInToolsIsBuiltin:
         assert tools.is_builtin("remember") is False
         assert tools.is_builtin("foo") is False
 
+    def test_is_builtin_trims_whitespace(self) -> None:
+        tools = BuiltInTools()
+        assert tools.is_builtin(" query_state ") is True
+
 
 class TestQueryState:
     @pytest.mark.asyncio
