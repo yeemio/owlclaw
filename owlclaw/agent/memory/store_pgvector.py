@@ -104,12 +104,14 @@ class PgVectorStore(MemoryStore):
 
     async def save(self, entry: MemoryEntry) -> UUID:
         self._validate_embedding(entry.embedding, "entry.embedding", allow_none=True)
+        if len(entry.content) > 2000:
+            raise ValueError("entry.content length must be <= 2000")
         async with self._session_factory() as session:
             row = MemoryEntryORM(
                 id=entry.id,
                 agent_id=entry.agent_id,
                 tenant_id=entry.tenant_id,
-                content=entry.content[:2000],
+                content=entry.content,
                 embedding=entry.embedding,
                 tags=entry.tags,
                 security_level=entry.security_level.value,

@@ -24,8 +24,10 @@ class _DummyEmbedder:
 class _CaptureLimitStore(MemoryStore):
     def __init__(self) -> None:
         self.last_limit: int | None = None
+        self.last_saved_entry: MemoryEntry | None = None
 
     async def save(self, entry: MemoryEntry):
+        self.last_saved_entry = entry
         return entry.id
 
     async def search(
@@ -68,3 +70,44 @@ async def test_recall_clamps_limit_to_spec_max() -> None:
         limit=999,
     )
     assert store.last_limit == 20
+
+
+@pytest.mark.asyncio
+async def test_remember_rejects_empty_content() -> None:
+    store = _CaptureLimitStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+
+    with pytest.raises(ValueError, match="content must not be empty"):
+        await service.remember(
+            agent_id="a",
+            tenant_id="default",
+            content="   ",
+        )
+
+
+@pytest.mark.asyncio
+async def test_remember_rejects_content_over_max_length() -> None:
+    store = _CaptureLimitStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+
+    with pytest.raises(ValueError, match="content length must be <= 2000"):
+        await service.remember(
+            agent_id="a",
+            tenant_id="default",
+            content="x" * 2001,
+        )
+
+
+@pytest.mark.asyncio
+async def test_remember_trims_content_before_save() -> None:
+    store = _CaptureLimitStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+
+    await service.remember(
+        agent_id="a",
+        tenant_id="default",
+        content="  hello  ",
+    )
+
+    assert store.last_saved_entry is not None
+    assert store.last_saved_entry.content == "hello"

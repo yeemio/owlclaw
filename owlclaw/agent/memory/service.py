@@ -34,11 +34,16 @@ class MemoryService:
         tags: list[str] | None = None,
     ) -> UUID:
         """Store one memory (embed + save). Optionally Ledger can be wired later."""
-        embedding = await self._embedder.embed(content)
+        normalized = content.strip()
+        if not normalized:
+            raise ValueError("content must not be empty")
+        if len(normalized) > 2000:
+            raise ValueError("content length must be <= 2000")
+        embedding = await self._embedder.embed(normalized)
         entry = MemoryEntry(
             agent_id=agent_id,
             tenant_id=tenant_id,
-            content=content,
+            content=normalized,
             embedding=embedding,
             tags=list(tags) if tags else [],
         )

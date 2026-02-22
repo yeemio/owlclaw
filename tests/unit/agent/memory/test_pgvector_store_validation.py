@@ -47,3 +47,19 @@ async def test_pgvector_store_search_rejects_invalid_query_embedding_length() ->
             query_embedding=[0.1, 0.2],
         )
 
+
+@pytest.mark.asyncio
+async def test_pgvector_store_save_rejects_content_over_2000_chars() -> None:
+    store = PgVectorStore(
+        session_factory=_NeverSessionFactory(),  # type: ignore[arg-type]
+        embedding_dimensions=1536,
+    )
+    entry = MemoryEntry(
+        agent_id="a",
+        tenant_id="default",
+        content="x" * 2001,
+        embedding=[0.0] * 1536,
+    )
+
+    with pytest.raises(ValueError, match="entry.content length must be <= 2000"):
+        await store.save(entry)
