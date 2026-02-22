@@ -543,6 +543,7 @@ class BuiltInTools:
             )
             out = {
                 "schedule_id": schedule_id,
+                "cron_name": cron_name,
                 "cron_expression": cron_expr,
                 "focus": focus,
             }

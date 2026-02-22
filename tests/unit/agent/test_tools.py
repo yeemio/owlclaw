@@ -303,6 +303,7 @@ class TestScheduleCron:
             ctx,
         )
         assert result["schedule_id"] == "cron-abc"
+        assert result["cron_name"].startswith("agent_cron_bot_")
         assert result["cron_expression"] == "0 9 * * 1-5"
         assert result["focus"] == "morning check"
         hatchet.schedule_cron.assert_awaited_once()
