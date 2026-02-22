@@ -254,7 +254,7 @@ class LLMClient:
         )
         if "Authentication" in err_name or "authentication" in msg_lower or ("invalid" in msg_lower and "api" in msg_lower and "key" in msg_lower):
             return AuthenticationError(msg, model=model, cause=e)
-        if "RateLimit" in err_name or "rate_limit" in msg_lower or "too many requests" in msg_lower:
+        if self._is_rate_limit_error(err_name, msg_lower):
             return RateLimitError(msg, model=model, cause=e)
         if "ContextWindow" in err_name or ("context" in msg_lower and "window" in msg_lower):
             return ContextWindowExceededError(msg, model=model, cause=e)
@@ -262,6 +262,17 @@ class LLMClient:
             return ServiceUnavailableError(msg, model=model, cause=e)
         return ServiceUnavailableError(
             f"LLM call failed: {msg}", model=model, cause=e
+        )
+
+    @staticmethod
+    def _is_rate_limit_error(err_name: str, msg_lower: str) -> bool:
+        """Detect provider rate-limit errors from type/message patterns."""
+        err_lower = err_name.lower()
+        return (
+            "ratelimit" in err_lower
+            or "rate_limit" in msg_lower
+            or "ratelimit" in msg_lower
+            or "too many requests" in msg_lower
         )
 
     async def _call_with_fallback(
@@ -277,25 +288,27 @@ class LLMClient:
         models_to_try = [params["model"]] + fallback_models
         last_error: Exception | None = None
         last_model = ""
-        for attempt, model in enumerate(models_to_try):
+        retries_per_model = max(1, int(self.config.max_retries))
+        for model_idx, model in enumerate(models_to_try):
             last_model = model
-            try:
-                call_params = {**params, "model": model}
-                response = await acompletion(**call_params)
-                return response, model
-            except Exception as e:
-                last_error = e
-                err_name = type(e).__name__
-                if (
-                    "RateLimit" in err_name or "rate_limit" in str(e).lower()
-                ) and attempt < self.config.max_retries - 1:
-                    await asyncio.sleep(self.config.retry_delay_seconds)
-                    continue
-                if "Authentication" in err_name or "InvalidApiKey" in err_name:
-                    raise self._wrap_litellm_error(e, model) from e
-                if attempt < len(models_to_try) - 1:
-                    logger.warning("Model %s failed, trying fallback: %s", model, e)
-                    continue
+            for retry_idx in range(retries_per_model):
+                try:
+                    call_params = {**params, "model": model}
+                    response = await acompletion(**call_params)
+                    return response, model
+                except Exception as e:
+                    last_error = e
+                    err_name = type(e).__name__
+                    msg_lower = str(e).lower()
+                    is_rate_limit = self._is_rate_limit_error(err_name, msg_lower)
+                    if "Authentication" in err_name or "InvalidApiKey" in err_name:
+                        raise self._wrap_litellm_error(e, model) from e
+                    if is_rate_limit and retry_idx < retries_per_model - 1:
+                        await asyncio.sleep(self.config.retry_delay_seconds)
+                        continue
+                    if model_idx < len(models_to_try) - 1:
+                        logger.warning("Model %s failed, trying fallback: %s", model, e)
+                    break
         if last_error:
             raise self._wrap_litellm_error(last_error, last_model) from last_error
         raise ServiceUnavailableError("All models failed", model=last_model)

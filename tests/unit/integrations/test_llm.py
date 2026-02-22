@@ -174,6 +174,54 @@ class TestLLMClient:
             assert "Too many" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    async def test_complete_retries_same_model_on_rate_limit_then_succeeds(self) -> None:
+        c = LLMConfig.default_for_owlclaw()
+        c.max_retries = 3
+        c.retry_delay_seconds = 0
+        client = LLMClient(c)
+        with (
+            patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock,
+            patch("owlclaw.integrations.llm.asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+        ):
+            mock.side_effect = [
+                Exception("RateLimitError: Too many requests"),
+                Exception("RateLimitError: Too many requests"),
+                _fake_litellm_response("ok", [], 10, 5),
+            ]
+            resp = await client.complete(messages=[{"role": "user", "content": "Hi"}])
+            assert resp.content == "ok"
+            assert mock.await_count == 3
+            assert mock_sleep.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_complete_exhausts_retries_then_uses_fallback(self) -> None:
+        c = LLMConfig(
+            default_model="primary",
+            models={
+                "primary": ModelConfig(name="primary", provider="openai"),
+                "fallback": ModelConfig(name="fallback", provider="openai"),
+            },
+            task_type_routing=[
+                TaskTypeRouting(task_type="trading", model="primary", fallback_models=["fallback"])
+            ],
+            max_retries=2,
+            retry_delay_seconds=0,
+        )
+        client = LLMClient(c)
+        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
+            mock.side_effect = [
+                Exception("RateLimitError: Too many requests"),  # primary retry 1
+                Exception("RateLimitError: Too many requests"),  # primary retry 2 -> fallback
+                _fake_litellm_response("ok", [], 10, 5),         # fallback success
+            ]
+            resp = await client.complete(
+                messages=[{"role": "user", "content": "Hi"}],
+                task_type="trading",
+            )
+            assert resp.model == "fallback"
+            assert mock.await_count == 3
+
+    @pytest.mark.asyncio
     async def test_complete_stream_true_raises(self) -> None:
         c = LLMConfig.default_for_owlclaw()
         client = LLMClient(c)
