@@ -583,8 +583,8 @@ class AgentRuntime:
             declared_focus = [declared_focus]
         if isinstance(declared_focus, list):
             normalized_focus = {str(item).strip().lower() for item in declared_focus if str(item).strip()}
-            if target in normalized_focus:
-                return True
+            if normalized_focus:
+                return target in normalized_focus
 
         tags = skill.metadata.get("tags") or []
         if isinstance(tags, str):

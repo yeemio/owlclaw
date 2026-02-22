@@ -167,6 +167,16 @@ class TestAgentRuntimeRun:
         rt.registry.skills_loader.get_skill.return_value = skill
         assert rt._skill_has_focus("x", "inventory_monitor") is True
 
+    def test_skill_focus_declared_disables_metadata_tag_fallback(self, tmp_path) -> None:
+        """When owlclaw.focus is declared, metadata.tags should not override it."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        skill = MagicMock()
+        skill.owlclaw_config = {"focus": ["ops"]}
+        skill.metadata = {"tags": ["inventory_monitor"]}
+        rt.registry = MagicMock()
+        rt.registry.skills_loader.get_skill.return_value = skill
+        assert rt._skill_has_focus("x", "inventory_monitor") is False
+
     def test_build_skills_context_empty_when_focus_has_no_match(self, tmp_path) -> None:
         """When focus is set and no skill matches, no skill knowledge should be injected."""
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
