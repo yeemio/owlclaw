@@ -60,13 +60,16 @@ class MemoryLifecycleManager:
         try:
             count = await self._store.count(agent_id, tenant_id)
             if count > self._config.max_entries:
-                to_archive = await self._store.list_entries(
+                overflow = max(1, count - self._config.max_entries)
+                candidates = await self._store.list_entries(
                     agent_id,
                     tenant_id,
                     order_created_asc=True,
-                    limit=max(1, count - self._config.max_entries),
+                    limit=count,
                     include_archived=False,
                 )
+                # Archive least-accessed entries first; use age as tie-breaker.
+                to_archive = sorted(candidates, key=lambda e: (e.access_count, e.created_at))[:overflow]
                 if to_archive:
                     ids = [e.id for e in to_archive]
                     result.archived_count = await self._store.archive(ids)

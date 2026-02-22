@@ -75,3 +75,38 @@ async def test_lifecycle_run_for_agents() -> None:
     assert len(results) == 2
     assert results[0].agent_id == "agent1" and results[0].tenant_id == "t1"
     assert results[1].agent_id == "agent2" and results[1].tenant_id == "t2"
+
+
+@pytest.mark.asyncio
+async def test_lifecycle_archive_prioritizes_low_access_entries() -> None:
+    store = InMemoryStore()
+    embedder = RandomEmbedder(dimensions=8, seed=42)
+    config = MemoryConfig(max_entries=2, retention_days=365)
+    manager = MemoryLifecycleManager(store, config)
+
+    agent_id, tenant_id = "a", "default"
+    emb = await embedder.embed("Entry")
+
+    oldest_high_access = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="old-high", embedding=emb)
+    oldest_high_access.created_at = _utc_now() - timedelta(days=3)
+    oldest_high_access.access_count = 10
+    await store.save(oldest_high_access)
+
+    old_low_access = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="old-low", embedding=emb)
+    old_low_access.created_at = _utc_now() - timedelta(days=2)
+    old_low_access.access_count = 0
+    await store.save(old_low_access)
+
+    recent_low_access = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="recent-low", embedding=emb)
+    recent_low_access.created_at = _utc_now() - timedelta(days=1)
+    recent_low_access.access_count = 0
+    await store.save(recent_low_access)
+
+    result = await manager.run_maintenance(agent_id, tenant_id)
+    assert result.error is None
+    assert result.archived_count == 1
+
+    remaining = await store.list_entries(agent_id, tenant_id, order_created_asc=True, limit=10)
+    remaining_contents = {entry.content for entry in remaining}
+    assert "old-high" in remaining_contents
+    assert "old-low" not in remaining_contents
