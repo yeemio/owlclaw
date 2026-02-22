@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import importlib
 
+import pytest
 from click.exceptions import Exit
 
 
@@ -47,8 +48,22 @@ def test_main_dispatches_skill_init_with_template_value(monkeypatch, tmp_path) -
             str(tmp_path),
         ],
     )
-    with contextlib.suppress(Exit):
+    with contextlib.suppress(SystemExit):
         cli_main.main()
 
     assert captured["template"] == "monitoring/health-check"
     assert captured["path"] == str(tmp_path)
+
+
+def test_main_converts_click_exit_to_system_exit(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+
+    def _fake_templates_command(**kwargs):  # type: ignore[no-untyped-def]
+        raise Exit(2)
+
+    monkeypatch.setattr("owlclaw.cli.skill_list.templates_command", _fake_templates_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "templates"])
+
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 2

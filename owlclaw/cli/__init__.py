@@ -4,6 +4,7 @@ import argparse
 import sys
 
 import typer
+from click.exceptions import Exit as ClickExit
 
 from owlclaw.cli.db import db_app
 from owlclaw.cli.skill import skill_app
@@ -172,8 +173,11 @@ def main() -> None:
     if "--help" in sys.argv or "-h" in sys.argv:
         argv = [a for a in sys.argv[1:] if a not in ("--help", "-h")]
         _print_help_and_exit(argv)
-    if _dispatch_skill_command(sys.argv[1:]):
-        return
+    try:
+        if _dispatch_skill_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
     try:
         app()
     except TypeError as e:
