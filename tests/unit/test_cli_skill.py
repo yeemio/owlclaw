@@ -7,6 +7,7 @@ from click.exceptions import Exit
 from typer.testing import CliRunner
 
 from owlclaw.cli.skill import skill_app
+from owlclaw.templates.skills.models import ValidationError
 
 runner = CliRunner()
 
@@ -255,6 +256,28 @@ def test_skill_init_non_interactive_requires_template(tmp_path):
             force=False,
         )
     assert exc_info.value.exit_code == 2
+
+
+def test_skill_init_exits_when_generated_skill_has_validation_error(tmp_path, monkeypatch):
+    """init should return non-zero if generated SKILL.md has validation errors."""
+    monkeypatch.chdir(tmp_path)
+    from owlclaw.cli.skill_init import init_command
+
+    def _fake_validate(_self, _path):  # type: ignore[no-untyped-def]
+        return [ValidationError(field="name", message="bad name", severity="error")]
+
+    monkeypatch.setattr("owlclaw.cli.skill_init.TemplateValidator.validate_skill_file", _fake_validate)
+    with pytest.raises(Exit) as exc_info:
+        init_command(
+            name="my-skill",
+            path=".",
+            template="default",
+            category="",
+            params_file="",
+            param="",
+            force=False,
+        )
+    assert exc_info.value.exit_code == 1
 
 
 def test_skill_list_shows_skills(tmp_path, monkeypatch):

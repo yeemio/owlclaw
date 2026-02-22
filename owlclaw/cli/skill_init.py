@@ -130,6 +130,17 @@ def init_command(
     if not base.is_dir():
         base.mkdir(parents=True, exist_ok=True)
 
+    validator = TemplateValidator()
+
+    def _validate_generated_skill(skill_file: Path) -> None:
+        errs = validator.validate_skill_file(skill_file)
+        if errs:
+            for e in errs:
+                level = "Error" if e.severity == "error" else "Warning"
+                typer.echo(f"{level}: {e.field}: {e.message}", err=True)
+            if any(e.severity == "error" for e in errs):
+                raise typer.Exit(1)
+
     # Legacy default template (no template library)
     use_default = template == "default"
     if use_default and name.strip():
@@ -141,6 +152,7 @@ def init_command(
         skill_dir.mkdir(parents=True, exist_ok=True)
         content = DEFAULT_SKILL_TEMPLATE.format(name=name.strip())
         skill_file.write_text(content, encoding="utf-8")
+        _validate_generated_skill(skill_file)
         typer.echo(f"Created: {skill_file}")
         return
 
@@ -152,7 +164,6 @@ def init_command(
     templates_dir = get_default_templates_dir()
     registry = TemplateRegistry(templates_dir)
     renderer = TemplateRenderer(registry)
-    validator = TemplateValidator()
 
     cat_enum: TemplateCategory | None = None
     if category:
@@ -255,10 +266,5 @@ def init_command(
     skill_dir.mkdir(parents=True, exist_ok=True)
     skill_file.write_text(content, encoding="utf-8")
 
-    # Validate generated file
-    errs = validator.validate_skill_file(skill_file)
-    if errs:
-        for e in errs:
-            typer.echo(f"Warning: {e.field}: {e.message}", err=True)
-    else:
-        typer.echo(f"Created: {skill_file}")
+    _validate_generated_skill(skill_file)
+    typer.echo(f"Created: {skill_file}")
