@@ -8,7 +8,6 @@ from owlclaw import OwlClaw
 from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.capabilities.skills import SkillsLoader
 
-
 # --- Task 8.1: E2E ---
 
 

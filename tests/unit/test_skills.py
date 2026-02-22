@@ -1,8 +1,7 @@
 """Unit tests for Skills Loader (SKILL.md discovery and parsing)."""
 
-import pytest
 
-from owlclaw.capabilities.skills import Skill, SkillsLoader
+from owlclaw.capabilities.skills import SkillsLoader
 
 
 def test_skills_loader_scan_discovers_skill_md(tmp_path):

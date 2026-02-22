@@ -2,7 +2,7 @@
 
 import pytest
 
-from owlclaw.governance.router import ModelSelection, Router
+from owlclaw.governance.router import Router
 from owlclaw.governance.visibility import RunContext
 
 

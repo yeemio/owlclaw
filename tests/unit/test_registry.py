@@ -95,6 +95,32 @@ async def test_invoke_handler_failure_wraps(registry):
         await registry.invoke_handler("entry-monitor")
 
 
+@pytest.mark.asyncio
+async def test_invoke_handler_maps_kwargs_to_session_when_missing(registry):
+    """If handler expects session, raw kwargs are mapped into session."""
+    def sync_handler(session):
+        return {"symbol": session.get("symbol")}
+
+    registry.register_handler("entry-monitor", sync_handler)
+    result = await registry.invoke_handler("entry-monitor", symbol="AAPL")
+    assert result == {"symbol": "AAPL"}
+
+
+@pytest.mark.asyncio
+async def test_invoke_handler_filters_unknown_kwargs(registry):
+    """Unknown kwargs are filtered out for explicitly typed handlers."""
+    def sync_handler(symbol):
+        return {"symbol": symbol}
+
+    registry.register_handler("entry-monitor", sync_handler)
+    result = await registry.invoke_handler(
+        "entry-monitor",
+        symbol="AAPL",
+        unexpected="x",
+    )
+    assert result == {"symbol": "AAPL"}
+
+
 def test_register_state(registry):
     """register_state() accepts sync and async providers."""
     def sync_state():

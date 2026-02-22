@@ -1,7 +1,7 @@
 """Unit tests for owlclaw db CLI (init, migrate, status)."""
 
-import pytest
 from unittest.mock import AsyncMock, patch
+
 from typer.testing import CliRunner
 
 from owlclaw.cli import app

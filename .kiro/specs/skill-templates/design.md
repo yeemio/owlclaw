@@ -978,3 +978,1693 @@ owlclaw:
 
 **验证需求：FR-4.5**
 
+
+## 错误处理
+
+### 1. 模板文件不存在
+
+**场景**：请求的模板 ID 对应的文件不存在
+
+**处理策略**：
+- 返回 None 或抛出 `TemplateNotFoundError`
+- 记录警告日志
+- 向用户提供可用模板列表
+
+**实现**：
+```python
+def get_template(self, template_id: str) -> Optional[TemplateMetadata]:
+    if template_id not in self._templates:
+        logger.warning(f"Template not found: {template_id}")
+        return None
+    return self._templates[template_id]
+```
+
+### 2. 模板语法错误
+
+**场景**：模板文件包含无效的 Jinja2 语法
+
+**处理策略**：
+- 在加载时验证模板语法
+- 跳过无效的模板并记录错误
+- 不影响其他模板的加载
+
+**实现**：
+```python
+def _load_templates(self) -> None:
+    for template_file in self._find_template_files():
+        try:
+            self._validate_template_syntax(template_file)
+            metadata = self._parse_template_metadata(template_file)
+            self._templates[metadata.id] = metadata
+        except Exception as e:
+            logger.error(f"Failed to load template {template_file}: {e}")
+            # 继续加载其他模板
+```
+
+### 3. 缺少必需参数
+
+**场景**：渲染模板时缺少必需参数
+
+**处理策略**：
+- 在渲染前验证参数
+- 抛出 `MissingParameterError` 并列出缺少的参数
+- 不执行渲染操作
+
+**实现**：
+```python
+def render(self, template_id: str, parameters: Dict[str, Any]) -> str:
+    template_meta = self.registry.get_template(template_id)
+    
+    # 验证必需参数
+    missing = []
+    for param in template_meta.parameters:
+        if param.required and param.name not in parameters:
+            if param.default is None:
+                missing.append(param.name)
+    
+    if missing:
+        raise MissingParameterError(
+            f"Missing required parameters: {', '.join(missing)}"
+        )
+    
+    # 应用默认值
+    for param in template_meta.parameters:
+        if param.name not in parameters and param.default is not None:
+            parameters[param.name] = param.default
+    
+    # 渲染模板
+    return self._render_template(template_id, parameters)
+```
+
+### 4. 参数类型错误
+
+**场景**：提供的参数类型与定义不匹配
+
+**处理策略**：
+- 尝试自动类型转换
+- 如果转换失败，抛出 `ParameterTypeError`
+- 记录详细的错误信息
+
+**实现**：
+```python
+def _validate_and_convert_parameters(
+    self,
+    parameters: Dict[str, Any],
+    param_defs: List[TemplateParameter],
+) -> Dict[str, Any]:
+    converted = {}
+    
+    for param_def in param_defs:
+        if param_def.name not in parameters:
+            continue
+        
+        value = parameters[param_def.name]
+        
+        try:
+            # 尝试类型转换
+            if param_def.type == 'int':
+                converted[param_def.name] = int(value)
+            elif param_def.type == 'bool':
+                converted[param_def.name] = bool(value)
+            elif param_def.type == 'list':
+                if not i
+                    isinstance(value, list):
+                    raise ParameterTypeError(
+                        param_def.name,
+                        param_def.type,
+                        type(value).__name__,
+                    )
+                converted[param_def.name] = value
+            else:
+                converted[param_def.name] = str(value)
+        except (ValueError, TypeError) as e:
+            raise ParameterTypeError(
+                param_def.name,
+                param_def.type,
+                type(value).__name__,
+                str(e),
+            )
+    
+    return converted
+```
+
+### 5. 参数选项验证错误
+
+**场景**：参数值不在允许的选项列表中
+
+**处理策略**：
+- 检查参数是否有 `choices` 限制
+- 如果值不在选项中，抛出 `ParameterValueError`
+- 在错误信息中列出所有有效选项
+
+**实现**：
+```python
+def _validate_parameter_choices(
+    self,
+    parameters: Dict[str, Any],
+    param_defs: List[TemplateParameter],
+) -> None:
+    for param_def in param_defs:
+        if param_def.choices is None:
+            continue
+        
+        if param_def.name not in parameters:
+            continue
+        
+        value = parameters[param_def.name]
+        
+        if value not in param_def.choices:
+            raise ParameterValueError(
+                param_def.name,
+                value,
+                param_def.choices,
+                f"Value '{value}' is not in allowed choices: {param_def.choices}",
+            )
+```
+
+### 6. 模板渲染错误
+
+**场景**：Jinja2 渲染过程中出现错误
+
+**处理策略**：
+- 捕获 Jinja2 异常
+- 转换为 `TemplateRenderError`
+- 提供模板位置和错误上下文
+
+**实现**：
+```python
+from jinja2 import TemplateError as Jinja2TemplateError
+
+def render(
+    self,
+    template_id: str,
+    parameters: Dict[str, Any],
+) -> str:
+    try:
+        template_path = self._get_template_path(template_id)
+        template = self.env.get_template(
+            str(template_path.relative_to(self.templates_dir))
+        )
+        content = template.render(**parameters)
+        return content
+    except Jinja2TemplateError as e:
+        raise TemplateRenderError(
+            template_id,
+            str(e),
+            e.lineno if hasattr(e, 'lineno') else None,
+        )
+```
+
+### 7. 文件系统错误
+
+**场景**：模板文件不存在或无法读取
+
+**处理策略**：
+- 检查文件是否存在
+- 检查文件权限
+- 提供清晰的错误信息
+
+**实现**：
+```python
+def _get_template_path(self, template_id: str) -> Path:
+    template_path = self.templates_dir / f"{template_id}.md.j2"
+    
+    if not template_path.exists():
+        raise TemplateNotFoundError(
+            template_id,
+            f"Template file not found: {template_path}",
+        )
+    
+    if not template_path.is_file():
+        raise TemplateError(
+            template_id,
+            f"Template path is not a file: {template_path}",
+        )
+    
+    return template_path
+```
+
+### 8. 验证错误处理
+
+**场景**：生成的 SKILL.md 文件验证失败
+
+**处理策略**：
+- 收集所有验证错误
+- 按严重程度分类（error/warning）
+- 提供修复建议
+
+**实现**：
+```python
+def validate_and_report(self, skill_path: Path) -> bool:
+    errors = self.validate_skill_file(skill_path)
+    
+    if not errors:
+        print(f"✓ {skill_path} is valid")
+        return True
+    
+    # 分类错误
+    critical_errors = [e for e in errors if e.severity == "error"]
+    warnings = [e for e in errors if e.severity == "warning"]
+    
+    # 报告错误
+    if critical_errors:
+        print(f"✗ {skill_path} has {len(critical_errors)} error(s):")
+        for error in critical_errors:
+            print(f"  - {error.field}: {error.message}")
+    
+    if warnings:
+        print(f"⚠ {skill_path} has {len(warnings)} warning(s):")
+        for warning in warnings:
+            print(f"  - {warning.field}: {warning.message}")
+    
+    return len(critical_errors) == 0
+```
+
+## 测试策略
+
+### 测试方法
+
+本设计采用双重测试策略：
+
+1. **单元测试**：验证特定示例、边界情况和错误条件
+2. **属性测试**：验证跨所有输入的通用属性
+
+两者互补，共同提供全面覆盖：
+- 单元测试捕获具体错误
+- 属性测试验证通用正确性
+
+### 属性测试配置
+
+使用 Hypothesis 作为 Python 的属性测试库。
+
+配置要求：
+- 每个属性测试最少运行 100 次迭代
+- 每个测试必须引用设计文档中的属性
+- 标签格式：`# Feature: skill-templates, Property {number}: {property_text}`
+
+### 单元测试
+
+**测试范围**：
+- 模板加载和注册
+- 参数验证和类型转换
+- 模板渲染
+- 文件验证
+- 错误处理
+
+**示例测试用例**：
+
+```python
+import pytest
+from pathlib import Path
+from owlclaw.templates.skills import (
+    TemplateRegistry,
+    TemplateRenderer,
+    TemplateValidator,
+    TemplateNotFoundError,
+    MissingParameterError,
+)
+
+class TestTemplateRegistry:
+    def test_load_templates_from_directory(self, tmp_path):
+        """测试从目录加载模板"""
+        # 创建测试模板
+        monitoring_dir = tmp_path / "monitoring"
+        monitoring_dir.mkdir()
+        (monitoring_dir / "test.md.j2").write_text(
+            "{# name: Test Template\ndescription: Test\ntags: [test] #}\n"
+            "---\nname: {{ name }}\n---\n# Test"
+        )
+        
+        registry = TemplateRegistry(tmp_path)
+        templates = registry.list_templates()
+        
+        assert len(templates) == 1
+        assert templates[0].id == "monitoring/test"
+    
+    def test_get_template_by_id(self, registry):
+        """测试通过 ID 获取模板"""
+        template = registry.get_template("monitoring/health-check")
+        
+        assert template is not None
+        assert template.name == "Health Check Monitor"
+        assert template.category.value == "monitoring"
+    
+    def test_search_templates(self, registry):
+        """测试搜索模板"""
+        results = registry.search_templates("health")
+        
+        assert len(results) > 0
+        assert any("health" in t.name.lower() for t in results)
+
+class TestTemplateRenderer:
+    def test_render_template_with_parameters(self, renderer):
+        """测试使用参数渲染模板"""
+        content = renderer.render(
+            "monitoring/health-check",
+            {
+                "skill_name": "api-health",
+                "skill_description": "Monitor API health",
+                "check_interval": 60,
+            }
+        )
+        
+        assert "name: api-health" in content
+        assert "Monitor API health" in content
+        assert "60" in content
+    
+    def test_render_missing_required_parameter(self, renderer):
+        """测试缺少必需参数"""
+        with pytest.raises(MissingParameterError) as exc_info:
+            renderer.render(
+                "monitoring/health-check",
+                {"skill_name": "test"}  # 缺少 skill_description
+            )
+        
+        assert "skill_description" in str(exc_info.value)
+    
+    def test_render_with_default_parameters(self, renderer):
+        """测试使用默认参数"""
+        content = renderer.render(
+            "monitoring/health-check",
+            {
+                "skill_name": "test",
+                "skill_description": "Test",
+                # check_interval 使用默认值 60
+            }
+        )
+        
+        assert "60" in content  # 默认值
+
+
+class TestTemplateValidator:
+    def test_validate_valid_skill_file(self, validator, tmp_path):
+        """测试验证有效的 SKILL.md 文件"""
+        skill_file = tmp_path / "test-skill.md"
+        skill_file.write_text("""---
+name: test-skill
+description: Test skill
+owlclaw:
+  spec_version: "1.0"
+---
+
+# Test Skill
+
+This is a test skill.
+""")
+        
+        errors = validator.validate_skill_file(skill_file)
+        assert len(errors) == 0
+    
+    def test_validate_missing_required_field(self, validator, tmp_path):
+        """测试验证缺少必需字段"""
+        skill_file = tmp_path / "test-skill.md"
+        skill_file.write_text("""---
+name: test-skill
+# 缺少 description
+---
+
+# Test
+""")
+        
+        errors = validator.validate_skill_file(skill_file)
+        assert any(e.field == "description" for e in errors)
+    
+    def test_validate_invalid_name_format(self, validator, tmp_path):
+        """测试验证无效的名称格式"""
+        skill_file = tmp_path / "test-skill.md"
+        skill_file.write_text("""---
+name: TestSkill  # 应该是 kebab-case
+description: Test
+---
+
+# Test
+""")
+        
+        errors = validator.validate_skill_file(skill_file)
+        assert any(e.field == "name" and "kebab-case" in e.message for e in errors)
+```
+
+### 属性测试
+
+**测试范围**：
+- 模板注册完整性
+- 渲染幂等性
+- 参数验证
+- 搜索正确性
+- 格式转换
+
+**示例属性测试**：
+
+```python
+from hypothesis import given, strategies as st, settings
+from owlclaw.templates.skills import TemplateRegistry, TemplateRenderer
+
+# Feature: skill-templates, Property 5: 模板渲染幂等性
+@given(
+    skill_name=st.text(min_size=1, max_size=50).filter(lambda x: x.strip()),
+    skill_description=st.text(min_size=1, max_size=200).filter(lambda x: x.strip()),
+    check_interval=st.integers(min_value=10, max_value=3600),
+)
+@settings(max_examples=100)
+def test_render_idempotency(renderer, skill_name, skill_description, check_interval):
+    """
+    属性 5：对于任意模板和参数集合，使用相同的参数多次渲染同一个模板应该产生相同的输出
+    """
+    parameters = {
+        "skill_name": skill_name,
+        "skill_description": skill_description,
+        "check_interval": check_interval,
+    }
+    
+    result1 = renderer.render("monitoring/health-check", parameters)
+    result2 = renderer.render("monitoring/health-check", parameters)
+    
+    assert result1 == result2
+
+# Feature: skill-templates, Property 20: Kebab-case 转换正确性
+@given(text=st.text(min_size=1, max_size=100))
+@settings(max_examples=100)
+def test_kebab_case_conversion(text):
+    """
+    属性 20：对于任意字符串，kebab-case 过滤器应该将其转换为小写字母、数字和连字符组成的字符串
+    """
+    from owlclaw.templates.skills.renderer import TemplateRenderer
+    
+    result = TemplateRenderer._kebab_case(text)
+    
+    # 验证只包含小写字母、数字和连字符
+    assert all(c.islower() or c.isdigit() or c == '-' for c in result)
+    # 验证不以连字符开头或结尾
+    if result:
+        assert not result.startswith('-')
+        assert not result.endswith('-')
+
+
+# Feature: skill-templates, Property 13: 搜索结果相关性
+@given(
+    query=st.text(min_size=1, max_size=50),
+)
+@settings(max_examples=100)
+def test_search_results_relevance_ordering(registry, query):
+    """
+    属性 13：对于任意搜索查询，返回的结果应该按相关性分数降序排列
+    """
+    from owlclaw.templates.skills import TemplateSearcher
+    
+    searcher = TemplateSearcher(registry)
+    results = searcher.search(query)
+    
+    # 验证结果按分数降序排列
+    for i in range(len(results) - 1):
+        assert results[i].score >= results[i+1].score
+
+# Feature: skill-templates, Property 14: 搜索结果唯一性
+@given(
+    query=st.text(min_size=1, max_size=50),
+)
+@settings(max_examples=100)
+def test_search_results_uniqueness(registry, query):
+    """
+    属性 14：对于任意搜索查询，返回的结果列表中不应该包含重复的模板
+    """
+    from owlclaw.templates.skills import TemplateSearcher
+    
+    searcher = TemplateSearcher(registry)
+    results = searcher.search(query)
+    
+    # 验证没有重复的模板 ID
+    template_ids = [r.template.id for r in results]
+    assert len(template_ids) == len(set(template_ids))
+
+# Feature: skill-templates, Property 23: 参数类型验证
+@given(
+    int_value=st.one_of(st.integers(), st.text(), st.floats()),
+)
+@settings(max_examples=100)
+def test_parameter_type_conversion(renderer, int_value):
+    """
+    属性 23：对于任意模板参数，如果提供的参数值类型与参数定义的类型不匹配，
+    渲染操作应该失败或自动进行类型转换
+    """
+    from owlclaw.templates.skills import ParameterTypeError
+    
+    parameters = {
+        "skill_name": "test",
+        "skill_description": "Test",
+        "check_interval": int_value,  # 应该是 int 类型
+    }
+    
+    try:
+        result = renderer.render("monitoring/health-check", parameters)
+        # 如果成功，验证值已被转换为 int
+        assert isinstance(int_value, int) or str(int(int_value)) in result
+    except (ParameterTypeError, ValueError):
+        # 如果失败，应该是因为无法转换
+        assert not isinstance(int_value, int)
+```
+
+### 集成测试
+
+**测试范围**：
+- CLI 集成
+- 端到端工作流
+- 文件系统操作
+
+**示例集成测试**：
+
+```python
+def test_end_to_end_template_workflow(tmp_path):
+    """测试完整的模板工作流"""
+    # 1. 初始化注册表
+    templates_dir = Path("owlclaw/templates/skills/templates")
+    registry = TemplateRegistry(templates_dir)
+    
+    # 2. 搜索模板
+    searcher = TemplateSearcher(registry)
+    results = searcher.search("health")
+    assert len(results) > 0
+    
+    # 3. 选择模板
+    template = results[0].template
+    
+    # 4. 渲染模板
+    renderer = TemplateRenderer(templates_dir)
+    content = renderer.render(
+        template.id,
+        {
+            "skill_name": "test-health-check",
+            "skill_description": "Test health monitoring",
+            "check_interval": 60,
+        }
+    )
+    
+    # 5. 写入文件
+    output_file = tmp_path / "test-health-check.md"
+    output_file.write_text(content)
+    
+    # 6. 验证文件
+    validator = TemplateValidator()
+    errors = validator.validate_skill_file(output_file)
+    assert len(errors) == 0
+```
+
+
+### 测试覆盖率目标
+
+- 单元测试覆盖率：> 80%
+- 属性测试：覆盖所有 25 个正确性属性
+- 集成测试：覆盖核心场景
+
+## 部署考虑
+
+### 打包和分发
+
+**模板文件打包**：
+- 模板文件作为 Python 包的一部分分发
+- 使用 `package_data` 包含模板文件
+- 确保模板文件在安装后可访问
+
+**setup.py 配置**：
+```python
+setup(
+    name="owlclaw",
+    packages=find_packages(),
+    package_data={
+        "owlclaw.templates.skills": [
+            "templates/**/*.md.j2",
+        ],
+    },
+    include_package_data=True,
+)
+```
+
+### 模板版本管理
+
+**版本策略**：
+- 模板库使用语义化版本
+- 每个模板包含版本信息
+- 支持模板向后兼容
+
+**版本检查**：
+```python
+@dataclass
+class TemplateMetadata:
+    # ... 其他字段
+    template_version: str  # 模板版本，如 "1.0.0"
+    min_owlclaw_version: str  # 最低 OwlClaw 版本要求
+
+def check_compatibility(template: TemplateMetadata) -> bool:
+    """检查模板与当前 OwlClaw 版本的兼容性"""
+    from packaging import version
+    import owlclaw
+    
+    current_version = version.parse(owlclaw.__version__)
+    min_version = version.parse(template.min_owlclaw_version)
+    
+    return current_version >= min_version
+```
+
+### 模板更新机制
+
+**更新策略**：
+- 支持在线更新模板库
+- 提供模板更新通知
+- 允许用户选择模板版本
+
+**实现**：
+```python
+class TemplateUpdater:
+    """模板更新器"""
+    
+    def check_updates(self) -> List[TemplateUpdate]:
+        """检查可用的模板更新"""
+        # 从远程仓库获取最新模板信息
+        # 比较本地和远程版本
+        # 返回可更新的模板列表
+        pass
+    
+    def update_template(self, template_id: str) -> bool:
+        """更新指定模板"""
+        # 下载最新模板文件
+        # 备份旧版本
+        # 替换模板文件
+        # 更新注册表
+        pass
+```
+
+
+## 性能考虑
+
+### 模板加载性能
+
+**优化策略**：
+- 延迟加载：只在需要时加载模板内容
+- 缓存：缓存已解析的模板元数据
+- 索引：建立模板索引加速搜索
+
+**实现**：
+```python
+class TemplateRegistry:
+    def __init__(self, templates_dir: Path):
+        self.templates_dir = templates_dir
+        self._templates: Dict[str, TemplateMetadata] = {}
+        self._template_cache: Dict[str, Template] = {}
+        self._search_index: Dict[str, Set[str]] = {}
+        
+        self._load_templates()
+        self._build_search_index()
+    
+    def _build_search_index(self) -> None:
+        """构建搜索索引"""
+        for template_id, template in self._templates.items():
+            # 索引名称
+            for word in template.name.lower().split():
+                self._search_index.setdefault(word, set()).add(template_id)
+            
+            # 索引标签
+            for tag in template.tags:
+                self._search_index.setdefault(tag.lower(), set()).add(template_id)
+    
+    def search_templates(self, query: str) -> List[TemplateMetadata]:
+        """使用索引加速搜索"""
+        query_lower = query.lower()
+        matching_ids = self._search_index.get(query_lower, set())
+        
+        return [self._templates[tid] for tid in matching_ids]
+```
+
+### 渲染性能
+
+**优化策略**：
+- 模板预编译：使用 Jinja2 的编译缓存
+- 参数验证优化：只验证必要的参数
+- 批量渲染：支持批量渲染多个模板
+
+**实现**：
+```python
+from jinja2 import Environment, FileSystemLoader
+from jinja2.ext import Extension
+
+class TemplateRenderer:
+    def __init__(self, templates_dir: Path):
+        self.templates_dir = templates_dir
+        self.env = Environment(
+            loader=FileSystemLoader(templates_dir),
+            trim_blocks=True,
+            lstrip_blocks=True,
+            auto_reload=False,  # 禁用自动重载以提高性能
+            cache_size=400,  # 增加缓存大小
+        )
+    
+    def render_batch(
+        self,
+        templates: List[Tuple[str, Dict[str, Any]]],
+    ) -> List[str]:
+        """批量渲染模板"""
+        results = []
+        for template_id, parameters in templates:
+            results.append(self.render(template_id, parameters))
+        return results
+```
+
+### 内存使用
+
+**优化策略**：
+- 流式处理：对大型模板使用流式渲染
+- 及时释放：渲染完成后释放不需要的资源
+- 限制缓存大小：避免缓存过多模板
+
+**监控**：
+```python
+import psutil
+import logging
+
+class PerformanceMonitor:
+    """性能监控器"""
+    
+    @staticmethod
+    def log_memory_usage(operation: str):
+        """记录内存使用情况"""
+        process = psutil.Process()
+        memory_info = process.memory_info()
+        
+        logging.info(
+            f"{operation}: RSS={memory_info.rss / 1024 / 1024:.2f}MB, "
+            f"VMS={memory_info.vms / 1024 / 1024:.2f}MB"
+        )
+```
+
+
+## 安全考虑
+
+### 模板注入防护
+
+**风险**：恶意用户可能通过参数注入恶意代码
+
+**防护措施**：
+- 参数白名单：只允许预定义的参数
+- 输入验证：验证参数值的格式和内容
+- 沙箱执行：在受限环境中渲染模板
+- 禁用危险功能：禁用 Jinja2 的危险特性
+
+**实现**：
+```python
+from jinja2.sandbox import SandboxedEnvironment
+
+class SecureTemplateRenderer(TemplateRenderer):
+    """安全的模板渲染器"""
+    
+    def __init__(self, templates_dir: Path):
+        self.templates_dir = templates_dir
+        # 使用沙箱环境
+        self.env = SandboxedEnvironment(
+            loader=FileSystemLoader(templates_dir),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        
+        # 注册安全的过滤器
+        self.env.filters['kebab_case'] = self._kebab_case
+        self.env.filters['snake_case'] = self._snake_case
+    
+    def _validate_parameter_safety(
+        self,
+        parameters: Dict[str, Any],
+    ) -> None:
+        """验证参数安全性"""
+        for key, value in parameters.items():
+            # 检查参数名
+            if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', key):
+                raise SecurityError(f"Invalid parameter name: {key}")
+            
+            # 检查参数值
+            if isinstance(value, str):
+                # 禁止包含危险字符
+                if any(c in value for c in ['{{', '}}', '{%', '%}']):
+                    raise SecurityError(
+                        f"Parameter value contains dangerous characters: {key}"
+                    )
+```
+
+### 文件系统安全
+
+**风险**：路径遍历攻击
+
+**防护措施**：
+- 路径验证：确保所有路径在模板目录内
+- 符号链接检查：拒绝符号链接
+- 权限检查：验证文件权限
+
+**实现**：
+```python
+def _validate_template_path(self, template_id: str) -> Path:
+    """验证模板路径安全性"""
+    template_path = self.templates_dir / f"{template_id}.md.j2"
+    
+    # 解析为绝对路径
+    resolved_path = template_path.resolve()
+    resolved_base = self.templates_dir.resolve()
+    
+    # 确保路径在模板目录内
+    if not str(resolved_path).startswith(str(resolved_base)):
+        raise SecurityError(
+            f"Template path outside templates directory: {template_id}"
+        )
+    
+    # 检查是否为符号链接
+    if template_path.is_symlink():
+        raise SecurityError(
+            f"Template path is a symbolic link: {template_id}"
+        )
+    
+    return template_path
+```
+
+### 输出验证
+
+**风险**：生成的文件可能包含恶意内容
+
+**防护措施**：
+- 输出验证：验证生成的 SKILL.md 文件
+- 内容过滤：过滤潜在的恶意内容
+- 大小限制：限制生成文件的大小
+
+**实现**：
+```python
+def render_safe(
+    self,
+    template_id: str,
+    parameters: Dict[str, Any],
+    max_size: int = 1024 * 1024,  # 1MB
+) -> str:
+    """安全渲染模板"""
+    # 验证参数安全性
+    self._validate_parameter_safety(parameters)
+    
+    # 渲染模板
+    content = self.render(template_id, parameters)
+    
+    # 检查输出大小
+    if len(content) > max_size:
+        raise SecurityError(
+            f"Rendered content exceeds maximum size: {len(content)} > {max_size}"
+        )
+    
+    # 验证输出内容
+    validator = TemplateValidator()
+    errors = validator.validate_skill_content(content)
+    if any(e.severity == "error" for e in errors):
+        raise SecurityError("Rendered content failed validation")
+    
+    return content
+```
+
+
+## 可扩展性
+
+### 自定义模板
+
+**支持场景**：
+- 用户自定义模板
+- 团队特定模板
+- 第三方模板
+
+**实现**：
+```python
+class TemplateRegistry:
+    def __init__(
+        self,
+        templates_dir: Path,
+        custom_dirs: Optional[List[Path]] = None,
+    ):
+        """
+        初始化模板注册表
+        
+        Args:
+            templates_dir: 内置模板目录
+            custom_dirs: 自定义模板目录列表
+        """
+        self.templates_dir = templates_dir
+        self.custom_dirs = custom_dirs or []
+        self._templates: Dict[str, TemplateMetadata] = {}
+        
+        # 加载内置模板
+        self._load_templates_from_dir(templates_dir, builtin=True)
+        
+        # 加载自定义模板
+        for custom_dir in self.custom_dirs:
+            self._load_templates_from_dir(custom_dir, builtin=False)
+    
+    def add_custom_template(
+        self,
+        template_path: Path,
+        category: TemplateCategory,
+    ) -> TemplateMetadata:
+        """添加自定义模板"""
+        metadata = self._parse_template_metadata(template_path, category)
+        metadata.custom = True
+        self._templates[metadata.id] = metadata
+        return metadata
+```
+
+### 模板继承
+
+**支持场景**：
+- 基于现有模板创建新模板
+- 共享通用结构
+- 覆盖特定部分
+
+**实现**：
+```python
+# 基础模板：base-skill.md.j2
+{#
+name: Base Skill Template
+description: Base template for all skills
+tags: [base]
+#}
+---
+name: {{ skill_name }}
+description: {{ skill_description }}
+metadata:
+  author: {{ author | default("team-name") }}
+  version: "1.0"
+owlclaw:
+  spec_version: "1.0"
+{% block owlclaw_config %}
+  # 子模板可以覆盖此块
+{% endblock %}
+---
+
+{% block content %}
+# {{ skill_description }}
+
+## 目标
+
+{{ objective | default("请描述此 skill 的目标") }}
+
+{% block details %}
+# 子模板可以覆盖此块
+{% endblock %}
+{% endblock %}
+
+# 继承模板：monitoring/health-check.md.j2
+{% extends "base-skill.md.j2" %}
+
+{% block owlclaw_config %}
+  task_type: monitoring
+  constraints:
+    max_daily_calls: 1440
+  trigger: cron("*/{{ check_interval }} * * * * *")
+{% endblock %}
+
+{% block details %}
+## 检查项
+
+{% for endpoint in endpoints %}
+- {{ endpoint }}
+{% endfor %}
+
+## 告警策略
+
+- 连续失败 {{ alert_threshold }} 次后触发告警
+{% endblock %}
+```
+
+### 插件系统
+
+**支持场景**：
+- 自定义过滤器
+- 自定义验证器
+- 自定义搜索算法
+
+**实现**：
+```python
+from typing import Protocol
+
+class TemplatePlugin(Protocol):
+    """模板插件接口"""
+    
+    def register_filters(self, env: Environment) -> None:
+        """注册自定义过滤器"""
+        pass
+    
+    def register_validators(self, validator: TemplateValidator) -> None:
+        """注册自定义验证器"""
+        pass
+
+class TemplateRegistry:
+    def __init__(
+        self,
+        templates_dir: Path,
+        plugins: Optional[List[TemplatePlugin]] = None,
+    ):
+        self.templates_dir = templates_dir
+        self.plugins = plugins or []
+        
+        # 初始化插件
+        for plugin in self.plugins:
+            plugin.register_filters(self.env)
+            plugin.register_validators(self.validator)
+
+# 示例插件
+class CustomFiltersPlugin:
+    """自定义过滤器插件"""
+    
+    def register_filters(self, env: Environment) -> None:
+        env.filters['camel_case'] = self._camel_case
+        env.filters['pascal_case'] = self._pascal_case
+    
+    @staticmethod
+    def _camel_case(text: str) -> str:
+        words = text.replace('-', ' ').replace('_', ' ').split()
+        return words[0].lower() + ''.join(w.capitalize() for w in words[1:])
+    
+    @staticmethod
+    def _pascal_case(text: str) -> str:
+        words = text.replace('-', ' ').replace('_', ' ').split()
+        return ''.join(w.capitalize() for w in words)
+```
+
+
+## CLI 集成
+
+### 命令设计
+
+**主命令**：`owlclaw skill init`
+
+**交互流程**：
+1. 询问使用场景或搜索关键词
+2. 展示匹配的模板列表
+3. 选择模板
+4. 收集模板参数
+5. 渲染并保存 SKILL.md
+6. 自动验证生成的文件
+
+**实现**：
+```python
+import click
+from pathlib import Path
+from owlclaw.templates.skills import (
+    TemplateRegistry,
+    TemplateRenderer,
+    TemplateValidator,
+    TemplateSearcher,
+)
+
+@click.command()
+@click.option(
+    '--category',
+    type=click.Choice(['monitoring', 'analysis', 'workflow', 'integration', 'report']),
+    help='Filter templates by category',
+)
+@click.option(
+    '--output-dir',
+    type=click.Path(path_type=Path),
+    default=Path('capabilities'),
+    help='Output directory for generated SKILL.md',
+)
+@click.option(
+    '--no-validate',
+    is_flag=True,
+    help='Skip validation after generation',
+)
+def skill_init(category, output_dir, no_validate):
+    """Initialize a new SKILL.md from template"""
+    
+    # 初始化组件
+    templates_dir = Path(__file__).parent / 'templates' / 'skills' / 'templates'
+    registry = TemplateRegistry(templates_dir)
+    searcher = TemplateSearcher(registry)
+    renderer = TemplateRenderer(templates_dir)
+    validator = TemplateValidator()
+    
+    # 1. 搜索模板
+    query = click.prompt('What kind of skill do you want to create?')
+    results = searcher.search(query, category=category)
+    
+    if not results:
+        click.echo('No templates found. Try a different search term.')
+        return
+    
+    # 2. 展示模板列表
+    click.echo('\nAvailable templates:')
+    for i, result in enumerate(results[:10], 1):
+        template = result.template
+        click.echo(
+            f'{i}. {template.name} ({template.category.value})\n'
+            f'   {template.description}\n'
+            f'   Match: {result.match_reason}\n'
+        )
+    
+    # 3. 选择模板
+    choice = click.prompt(
+        'Select a template',
+        type=click.IntRange(1, len(results[:10])),
+    )
+    selected_template = results[choice - 1].template
+    
+    # 4. 收集参数
+    click.echo(f'\nConfiguring {selected_template.name}...')
+    parameters = {}
+    
+    for param in selected_template.parameters:
+        if param.required or click.confirm(f'Set {param.name}?', default=False):
+            value = click.prompt(
+                f'{param.name} ({param.description})',
+                default=param.default,
+                type=_get_click_type(param.type),
+            )
+            parameters[param.name] = value
+    
+    # 5. 渲染模板
+    try:
+        content = renderer.render(selected_template.id, parameters)
+    except Exception as e:
+        click.echo(f'Error rendering template: {e}', err=True)
+        return
+    
+    # 6. 保存文件
+    output_dir.mkdir(parents=True, exist_ok=True)
+    skill_name = parameters.get('skill_name', 'new-skill')
+    output_file = output_dir / f'{skill_name}.md'
+    
+    output_file.write_text(content)
+    click.echo(f'\n✓ Created {output_file}')
+    
+    # 7. 验证文件
+    if not no_validate:
+        errors = validator.validate_skill_file(output_file)
+        if errors:
+            click.echo('\n⚠ Validation warnings:')
+            for error in errors:
+                click.echo(f'  - {error.field}: {error.message}')
+        else:
+            click.echo('✓ Validation passed')
+
+def _get_click_type(param_type: str):
+    """获取 Click 参数类型"""
+    if param_type == 'int':
+        return int
+    elif param_type == 'bool':
+        return bool
+    elif param_type == 'list':
+        return str  # 以逗号分隔的字符串
+    else:
+        return str
+```
+
+
+### 非交互模式
+
+**支持场景**：
+- CI/CD 自动化
+- 批量生成
+- 脚本集成
+
+**实现**：
+```python
+@click.command()
+@click.argument('template_id')
+@click.option('--param', '-p', multiple=True, help='Template parameter (key=value)')
+@click.option('--output', '-o', type=click.Path(path_type=Path), required=True)
+def skill_generate(template_id, param, output):
+    """Generate SKILL.md from template (non-interactive)"""
+    
+    # 解析参数
+    parameters = {}
+    for p in param:
+        if '=' not in p:
+            click.echo(f'Invalid parameter format: {p}', err=True)
+            return
+        key, value = p.split('=', 1)
+        parameters[key] = value
+    
+    # 渲染模板
+    templates_dir = Path(__file__).parent / 'templates' / 'skills' / 'templates'
+    renderer = TemplateRenderer(templates_dir)
+    
+    try:
+        content = renderer.render(template_id, parameters)
+        output.write_text(content)
+        click.echo(f'✓ Generated {output}')
+    except Exception as e:
+        click.echo(f'Error: {e}', err=True)
+        raise click.Abort()
+
+# 使用示例：
+# owlclaw skill generate monitoring/health-check \
+#   -p skill_name=api-health \
+#   -p skill_description="Monitor API health" \
+#   -p check_interval=60 \
+#   -o capabilities/api-health.md
+```
+
+## 监控和日志
+
+### 日志记录
+
+**日志级别**：
+- DEBUG：详细的调试信息
+- INFO：正常操作信息
+- WARNING：警告信息
+- ERROR：错误信息
+
+**实现**：
+```python
+import logging
+
+logger = logging.getLogger('owlclaw.templates.skills')
+
+class TemplateRegistry:
+    def _load_templates(self) -> None:
+        logger.info(f"Loading templates from {self.templates_dir}")
+        
+        for category_dir in self.templates_dir.iterdir():
+            if not category_dir.is_dir():
+                continue
+            
+            logger.debug(f"Scanning category: {category_dir.name}")
+            
+            for template_file in category_dir.glob("*.md.j2"):
+                try:
+                    metadata = self._parse_template_metadata(template_file, category)
+                    self._templates[metadata.id] = metadata
+                    logger.debug(f"Loaded template: {metadata.id}")
+                except Exception as e:
+                    logger.error(
+                        f"Failed to load template {template_file}: {e}",
+                        exc_info=True,
+                    )
+        
+        logger.info(f"Loaded {len(self._templates)} templates")
+```
+
+### 指标收集
+
+**关键指标**：
+- 模板加载时间
+- 渲染时间
+- 验证时间
+- 错误率
+
+**实现**：
+```python
+import time
+from contextlib import contextmanager
+from typing import Dict, List
+
+class MetricsCollector:
+    """指标收集器"""
+    
+    def __init__(self):
+        self.metrics: Dict[str, List[float]] = {}
+    
+    @contextmanager
+    def measure(self, operation: str):
+        """测量操作耗时"""
+        start = time.time()
+        try:
+            yield
+        finally:
+            duration = time.time() - start
+            self.metrics.setdefault(operation, []).append(duration)
+            logger.debug(f"{operation} took {duration:.3f}s")
+    
+    def get_stats(self, operation: str) -> Dict[str, float]:
+        """获取操作统计信息"""
+        if operation not in self.metrics:
+            return {}
+        
+        durations = self.metrics[operation]
+        return {
+            'count': len(durations),
+            'total': sum(durations),
+            'avg': sum(durations) / len(durations),
+            'min': min(durations),
+            'max': max(durations),
+        }
+
+# 使用示例
+metrics = MetricsCollector()
+
+class TemplateRenderer:
+    def render(self, template_id: str, parameters: Dict[str, Any]) -> str:
+        with metrics.measure(f'render:{template_id}'):
+            # 渲染逻辑
+            pass
+```
+
+
+## 文档和示例
+
+### 用户文档
+
+**文档结构**：
+- 快速开始指南
+- 模板参考
+- API 文档
+- 最佳实践
+- 故障排除
+
+**快速开始示例**：
+```markdown
+# SKILL.md 模板库快速开始
+
+## 安装
+
+```bash
+pip install owlclaw
+```
+
+## 创建第一个 Skill
+
+### 交互式创建
+
+```bash
+owlclaw skill init
+```
+
+按照提示选择模板并填写参数。
+
+### 非交互式创建
+
+```bash
+owlclaw skill generate monitoring/health-check \
+  -p skill_name=api-health \
+  -p skill_description="Monitor API health" \
+  -p check_interval=60 \
+  -o capabilities/api-health.md
+```
+
+## 验证 Skill
+
+```bash
+owlclaw skill validate capabilities/api-health.md
+```
+
+## 可用模板
+
+### Monitoring（监控）
+- health-check: 健康检查监控
+- metric-monitor: 指标监控
+- alert-handler: 告警处理
+
+### Analysis（分析）
+- data-analyzer: 数据分析
+- trend-detector: 趋势检测
+- anomaly-detector: 异常检测
+
+### Workflow（工作流）
+- approval-flow: 审批流程
+- task-scheduler: 任务调度
+- event-handler: 事件处理
+
+### Integration（集成）
+- api-client: API 客户端
+- webhook-handler: Webhook 处理
+- data-sync: 数据同步
+
+### Report（报告）
+- daily-report: 日报生成
+- summary-generator: 摘要生成
+- notification-sender: 通知发送
+```
+
+### 开发者文档
+
+**API 参考**：
+```python
+# 模板注册表
+from owlclaw.templates.skills import TemplateRegistry
+
+registry = TemplateRegistry(templates_dir)
+templates = registry.list_templates(category='monitoring')
+template = registry.get_template('monitoring/health-check')
+
+# 模板渲染
+from owlclaw.templates.skills import TemplateRenderer
+
+renderer = TemplateRenderer(templates_dir)
+content = renderer.render('monitoring/health-check', {
+    'skill_name': 'api-health',
+    'skill_description': 'Monitor API health',
+    'check_interval': 60,
+})
+
+# 模板验证
+from owlclaw.templates.skills import TemplateValidator
+
+validator = TemplateValidator()
+errors = validator.validate_skill_file(Path('capabilities/api-health.md'))
+
+# 模板搜索
+from owlclaw.templates.skills import TemplateSearcher
+
+searcher = TemplateSearcher(registry)
+results = searcher.search('health monitoring')
+```
+
+### 示例项目
+
+**完整示例**：
+```python
+#!/usr/bin/env python3
+"""
+示例：使用模板库创建监控 Skill
+"""
+
+from pathlib import Path
+from owlclaw.templates.skills import (
+    TemplateRegistry,
+    TemplateRenderer,
+    TemplateValidator,
+)
+
+def main():
+    # 1. 初始化组件
+    templates_dir = Path('owlclaw/templates/skills/templates')
+    registry = TemplateRegistry(templates_dir)
+    renderer = TemplateRenderer(templates_dir)
+    validator = TemplateValidator()
+    
+    # 2. 选择模板
+    template = registry.get_template('monitoring/health-check')
+    print(f"Using template: {template.name}")
+    print(f"Description: {template.description}")
+    
+    # 3. 准备参数
+    parameters = {
+        'skill_name': 'api-health-monitor',
+        'skill_description': 'Monitor API endpoints health',
+        'check_interval': 60,
+        'alert_threshold': 3,
+        'endpoints': [
+            'https://api.example.com/health',
+            'https://api.example.com/db/health',
+        ],
+        'author': 'platform-team',
+    }
+    
+    # 4. 渲染模板
+    content = renderer.render(template.id, parameters)
+    
+    # 5. 保存文件
+    output_dir = Path('capabilities')
+    output_dir.mkdir(exist_ok=True)
+    output_file = output_dir / f"{parameters['skill_name']}.md"
+    output_file.write_text(content)
+    print(f"Created: {output_file}")
+    
+    # 6. 验证文件
+    errors = validator.validate_skill_file(output_file)
+    if errors:
+        print("Validation errors:")
+        for error in errors:
+            print(f"  - {error.field}: {error.message}")
+    else:
+        print("✓ Validation passed")
+
+if __name__ == '__main__':
+    main()
+```
+
+
+## 迁移和向后兼容
+
+### 版本迁移
+
+**场景**：模板格式升级时的迁移
+
+**策略**：
+- 提供迁移工具
+- 支持多版本共存
+- 渐进式迁移
+
+**实现**：
+```python
+class TemplateMigrator:
+    """模板迁移器"""
+    
+    def migrate_template(
+        self,
+        template_path: Path,
+        from_version: str,
+        to_version: str,
+    ) -> str:
+        """迁移模板到新版本"""
+        content = template_path.read_text()
+        
+        # 应用迁移规则
+        for version in self._get_migration_path(from_version, to_version):
+            migrator = self._get_migrator(version)
+            content = migrator.migrate(content)
+        
+        return content
+    
+    def _get_migration_path(
+        self,
+        from_version: str,
+        to_version: str,
+    ) -> List[str]:
+        """获取迁移路径"""
+        # 返回需要应用的迁移版本列表
+        pass
+    
+    def _get_migrator(self, version: str):
+        """获取版本迁移器"""
+        # 返回特定版本的迁移器
+        pass
+
+# 示例：1.0 -> 2.0 迁移器
+class Migration_1_0_to_2_0:
+    """从 1.0 迁移到 2.0"""
+    
+    def migrate(self, content: str) -> str:
+        # 更新元数据格式
+        content = self._update_metadata_format(content)
+        
+        # 更新参数定义
+        content = self._update_parameter_format(content)
+        
+        return content
+```
+
+### 向后兼容
+
+**策略**：
+- 保持旧版本模板可用
+- 自动检测模板版本
+- 提供兼容层
+
+**实现**：
+```python
+class TemplateRegistry:
+    def _parse_template_metadata(
+        self,
+        template_file: Path,
+        category: TemplateCategory,
+    ) -> TemplateMetadata:
+        content = template_file.read_text(encoding='utf-8')
+        
+        # 检测模板版本
+        version = self._detect_template_version(content)
+        
+        # 使用对应版本的解析器
+        parser = self._get_parser(version)
+        metadata = parser.parse(content, template_file, category)
+        
+        return metadata
+    
+    def _detect_template_version(self, content: str) -> str:
+        """检测模板版本"""
+        # 从元数据中提取版本信息
+        # 如果没有版本信息，默认为 1.0
+        match = re.search(r'template_version:\s*"?([0-9.]+)"?', content)
+        return match.group(1) if match else "1.0"
+```
+
+## 未来扩展
+
+### 计划功能
+
+1. **模板市场**
+   - 社区贡献的模板
+   - 模板评分和评论
+   - 模板下载统计
+
+2. **可视化编辑器**
+   - Web 界面编辑模板
+   - 实时预览
+   - 拖拽式参数配置
+
+3. **AI 辅助**
+   - 根据描述自动推荐模板
+   - 自动生成模板参数
+   - 智能补全和建议
+
+4. **模板组合**
+   - 组合多个模板
+   - 模板依赖管理
+   - 批量生成
+
+5. **国际化**
+   - 多语言模板
+   - 本地化参数
+   - 区域特定模板
+
+### 扩展点
+
+**自定义类别**：
+```python
+class CustomTemplateCategory(Enum):
+    """自定义模板类别"""
+    MONITORING = "monitoring"
+    ANALYSIS = "analysis"
+    WORKFLOW = "workflow"
+    INTEGRATION = "integration"
+    REPORT = "report"
+    # 用户可以添加自定义类别
+    CUSTOM_1 = "custom-1"
+    CUSTOM_2 = "custom-2"
+```
+
+**自定义参数类型**：
+```python
+class TemplateParameterType(Enum):
+    """模板参数类型"""
+    STRING = "str"
+    INTEGER = "int"
+    BOOLEAN = "bool"
+    LIST = "list"
+    # 扩展类型
+    DICT = "dict"
+    ENUM = "enum"
+    FILE_PATH = "file_path"
+    URL = "url"
+    EMAIL = "email"
+```
+
+## 总结
+
+本设计文档描述了 SKILL.md 模板库的完整架构和实现方案。核心组件包括：
+
+1. **TemplateRegistry**：管理模板注册和发现
+2. **TemplateRenderer**：渲染模板生成 SKILL.md
+3. **TemplateValidator**：验证模板和生成的文件
+4. **TemplateSearcher**：智能搜索和推荐模板
+
+设计遵循以下原则：
+- 分类清晰，便于查找
+- 结构完整，包含最佳实践
+- 可扩展，支持自定义和插件
+- 安全可靠，防护注入攻击
+- 性能优化，支持大规模使用
+
+通过 25 个正确性属性和全面的测试策略，确保系统的正确性和可靠性。与 OwlClaw CLI 的集成使得模板库易于使用，降低了业务接入成本。
+
+---
+
+**文档版本**：1.0  
+**最后更新**：2026-02-22  
+**维护者**：平台研发团队
+              

@@ -5,15 +5,12 @@ from __future__ import annotations
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from owlclaw.triggers.cron import (
     CronExecution,
     CronTriggerConfig,
     CronTriggerRegistry,
     ExecutionStatus,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -146,9 +143,10 @@ class TestGovernanceChecks:
     async def test_no_ledger_passes_all_checks(self) -> None:
         reg = _registry()
         cfg = _config(cooldown_seconds=3600, max_daily_runs=1, max_daily_cost=5.0)
-        from owlclaw.triggers.cron import CronExecution, ExecutionStatus
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
+
+        from owlclaw.triggers.cron import CronExecution, ExecutionStatus
 
         execution = CronExecution(
             execution_id=str(uuid.uuid4()),
@@ -162,8 +160,8 @@ class TestGovernanceChecks:
         assert reason == ""
 
     async def test_cooldown_blocks_run(self) -> None:
-        from datetime import datetime, timedelta, timezone
         import uuid
+        from datetime import datetime, timedelta, timezone
 
         reg = _registry()
         cfg = _config(cooldown_seconds=3600)
@@ -186,8 +184,8 @@ class TestGovernanceChecks:
         assert "Cooldown" in reason
 
     async def test_max_daily_runs_blocks(self) -> None:
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         reg = _registry()
         cfg = _config(max_daily_runs=2)
@@ -208,8 +206,8 @@ class TestGovernanceChecks:
         assert "Daily run limit" in reason
 
     async def test_max_daily_cost_blocks(self) -> None:
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         reg = _registry()
         cfg = _config(max_daily_cost=1.0)
@@ -271,8 +269,8 @@ class TestShouldUseAgent:
 
 class TestExecuteAgent:
     async def test_agent_run_id_recorded(self) -> None:
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         reg = _registry()
         cfg = _config()
@@ -291,8 +289,8 @@ class TestExecuteAgent:
 
 class TestExecuteFallback:
     async def test_async_fallback_called(self) -> None:
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         fallback = AsyncMock()
         reg = _registry()
@@ -309,8 +307,8 @@ class TestExecuteFallback:
         assert execution.status == ExecutionStatus.FALLBACK
 
     async def test_sync_fallback_called(self) -> None:
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         called = []
         def sync_handler():
@@ -330,8 +328,8 @@ class TestExecuteFallback:
         assert execution.status == ExecutionStatus.FALLBACK
 
     async def test_no_fallback_handler_skips(self) -> None:
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         reg = _registry()
         cfg = _config(fallback_handler=None)
@@ -356,8 +354,8 @@ class TestHandleFailure:
         fallback = AsyncMock()
         reg = _registry()
         cfg = _config(fallback_handler=fallback, fallback_strategy="on_failure")
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         execution = CronExecution(
             execution_id=str(uuid.uuid4()),
@@ -373,8 +371,8 @@ class TestHandleFailure:
         fallback = AsyncMock()
         reg = _registry()
         cfg = _config(fallback_handler=fallback, fallback_strategy="never")
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         execution = CronExecution(
             execution_id=str(uuid.uuid4()),
@@ -392,8 +390,8 @@ class TestHandleFailure:
 
         reg = _registry()
         cfg = _config(fallback_handler=bad_fallback, fallback_strategy="on_failure")
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime, timezone
 
         execution = CronExecution(
             execution_id=str(uuid.uuid4()),

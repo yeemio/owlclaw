@@ -154,15 +154,15 @@ class HatchetClient:
             raise ValueError(
                 "Hatchet API token required: set api_token in config or HATCHET_API_TOKEN"
             )
-        Hatchet, ClientConfig = _get_hatchet()
+        hatchet_cls, client_config_cls = _get_hatchet()
         try:
-            client_config = ClientConfig(
+            client_config = client_config_cls(
                 host_port=_server_url_to_host_port(self.config.server_url),
                 server_url=self.config.server_url,
                 token=token,
                 namespace=self.config.namespace,
             )
-            self._hatchet = Hatchet(config=client_config)
+            self._hatchet = hatchet_cls(config=client_config)
             logger.info("Connected to Hatchet at %s", self.config.server_url)
         except Exception as e:
             logger.exception("Failed to connect to Hatchet")
@@ -244,7 +244,7 @@ class HatchetClient:
         try:
             result = await wf.aio_run(input=kwargs)
             return getattr(result, "workflow_run_id", getattr(result, "id", "")) or ""
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to run task %s", task_name)
             raise
 
@@ -269,7 +269,7 @@ class HatchetClient:
                 input=input_data,
             )
             return getattr(result, "workflow_run_id", "") or f"scheduled-{task_name}"
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to schedule task %s", task_name)
             raise
 

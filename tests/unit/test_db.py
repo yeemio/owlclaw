@@ -11,7 +11,6 @@ from owlclaw.db import (
     get_engine,
     get_session,
 )
-from owlclaw.db.base import Base as BaseClass
 
 
 def test_base_has_metadata():
@@ -23,7 +22,6 @@ def test_base_tenant_id_column():
     """Base has tenant_id mapped column."""
     assert hasattr(Base, "tenant_id")
     # Mapped column is on the class
-    from sqlalchemy.orm import attributes
     assert "tenant_id" in Base.__dict__ or hasattr(Base, "tenant_id")
 
 

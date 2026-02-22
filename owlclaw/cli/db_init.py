@@ -99,7 +99,7 @@ async def _init_impl(
     finally:
         try:
             await conn.close()
-        except (ConnectionResetError, OSError) as e:
+        except (ConnectionResetError, OSError):
             typer.echo("Warning: connection close failed (e.g. WinError 64); continuing. Run init again if hatchet was not created.", err=True)
         except Exception:
             pass

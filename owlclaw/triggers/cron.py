@@ -416,7 +416,6 @@ class CronTriggerRegistry:
         tenant_id: str,
     ) -> None:
         """Register agent_scheduled_run task for schedule_once built-in tool."""
-        registry = self
 
         async def agent_scheduled_run_handler(inp: Any, _ctx: Any) -> dict[str, Any]:
             data = inp if isinstance(inp, dict) else {}

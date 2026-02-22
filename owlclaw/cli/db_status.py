@@ -33,10 +33,10 @@ def status_command(
         typer.echo("Error: Set OWLCLAW_DATABASE_URL or pass --database-url.", err=True)
         raise typer.Exit(2)
     try:
-        engine = get_engine(url)
+        get_engine(url)
     except ConfigurationError as e:
         typer.echo(f"Error: {e}", err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from e
     typer.echo("OwlClaw Database Status")
     typer.echo("=" * 40)
     typer.echo("Connection: " + _mask_url(url))

@@ -11,18 +11,18 @@ from owlclaw.capabilities.skills import Skill, SkillsLoader
 
 class KnowledgeInjector:
     """Formats and injects Skills knowledge into Agent prompts.
-    
+
     The KnowledgeInjector retrieves Skills knowledge documents and formats
     them as Markdown for inclusion in Agent system prompts. It supports
     context-based filtering to include only relevant Skills.
-    
+
     Attributes:
         skills_loader: SkillsLoader instance for accessing Skills
     """
 
     def __init__(self, skills_loader: SkillsLoader):
         """Initialize the KnowledgeInjector.
-        
+
         Args:
             skills_loader: SkillsLoader instance for accessing Skills
         """
@@ -34,16 +34,16 @@ class KnowledgeInjector:
         context_filter: Callable[[Skill], bool] | None = None
     ) -> str:
         """Retrieve and format Skills knowledge for specified Skills.
-        
+
         This method loads the full content of specified Skills and formats
         them as Markdown sections. An optional context filter can exclude
         Skills based on runtime context (e.g., trading hours).
-        
+
         Args:
             skill_names: List of Skill names to include
             context_filter: Optional filter function to exclude Skills
                            based on context (e.g., trading hours)
-        
+
         Returns:
             Formatted Markdown string with Skills knowledge
         """
@@ -80,10 +80,10 @@ class KnowledgeInjector:
 
     def get_all_skills_summary(self) -> str:
         """Get a summary of all Skills (metadata only, no full content).
-        
+
         This method provides a lightweight overview of available Skills
         without loading their full content. Useful for Agent startup.
-        
+
         Returns:
             Formatted Markdown summary of all Skills
         """

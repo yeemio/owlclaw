@@ -87,16 +87,16 @@
 
 ## Task 6: 错误处理
 
-- [ ] 6.1 实现错误类型定义
-  - [ ] 6.1.1 定义 AuthenticationError
-  - [ ] 6.1.2 定义 RateLimitError
-  - [ ] 6.1.3 定义 ContextWindowExceededError
-  - [ ] 6.1.4 定义 ServiceUnavailableError
+- [x] 6.1 实现错误类型定义
+  - [x] 6.1.1 定义 AuthenticationError
+  - [x] 6.1.2 定义 RateLimitError
+  - [x] 6.1.3 定义 ContextWindowExceededError
+  - [x] 6.1.4 定义 ServiceUnavailableError
 
-- [ ] 6.2 实现错误处理逻辑
-  - [ ] 6.2.1 捕获 litellm 异常
-  - [ ] 6.2.2 包装为 OwlClaw 异常
-  - [ ] 6.2.3 记录详细错误信息
+- [x] 6.2 实现错误处理逻辑
+  - [x] 6.2.1 捕获 litellm 异常
+  - [x] 6.2.2 包装为 OwlClaw 异常（_wrap_litellm_error）
+  - [x] 6.2.3 记录详细错误信息（logger.warning model/error_type/message）
 
 ## Task 7: Mock 模式
 

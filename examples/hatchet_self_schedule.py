@@ -5,7 +5,6 @@ Requires Hatchet server. The task uses client.schedule_task() to enqueue a futur
 """
 
 import asyncio
-from pathlib import Path
 
 from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
 

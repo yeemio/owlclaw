@@ -1,7 +1,7 @@
 """Unit tests for Ledger and LedgerRecord."""
 
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 

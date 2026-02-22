@@ -174,7 +174,7 @@ class BuiltInTools:
         *,
         capability_registry: CapabilityRegistry | None = None,
         ledger: Ledger | None = None,
-        hatchet_client: "HatchetClient | None" = None,
+        hatchet_client: HatchetClient | None = None,
         scheduled_run_task_name: str = _SCHEDULED_RUN_TASK,
         timeout_seconds: float = 30,
     ) -> None:

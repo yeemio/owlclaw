@@ -8,7 +8,6 @@ Run with server: set HATCHET_API_TOKEN, start Hatchet (e.g. deploy/docker-compos
 """
 
 import asyncio
-from pathlib import Path
 
 from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from owlclaw.integrations.hatchet import HatchetConfig, HatchetClient, _substitute_env_dict
+from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig, _substitute_env_dict
 
 
 def test_hatchet_config_defaults(monkeypatch):

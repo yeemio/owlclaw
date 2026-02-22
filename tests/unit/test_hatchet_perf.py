@@ -1,10 +1,9 @@
 """Light performance tests for Hatchet integration (no server)."""
 
+import contextlib
 import time
 
-import pytest
-
-from owlclaw.integrations.hatchet import HatchetConfig, HatchetClient
+from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
 
 
 def test_config_from_yaml_perf(tmp_path):
@@ -24,10 +23,8 @@ def test_schedule_task_validation_perf():
 
     async def run_many():
         for _ in range(200):
-            try:
+            with contextlib.suppress(ValueError):
                 await client.schedule_task("x", delay_seconds=1)
-            except ValueError:
-                pass
 
     start = time.perf_counter()
     asyncio.run(run_many())

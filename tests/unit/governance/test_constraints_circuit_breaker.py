@@ -7,7 +7,6 @@ import pytest
 
 from owlclaw.governance.constraints.circuit_breaker import (
     CircuitBreakerConstraint,
-    CircuitState,
 )
 from owlclaw.governance.ledger import Ledger, LedgerRecord
 from owlclaw.governance.visibility import CapabilityView, RunContext

@@ -6,6 +6,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
+
 from owlclaw.db import Base
 
 # Import models so their tables are attached to Base.metadata for Alembic

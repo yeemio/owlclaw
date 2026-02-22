@@ -21,7 +21,6 @@ from owlclaw.governance.visibility import (
     VisibilityFilter,
 )
 
-
 # ---- 2.5.1 All constraints working together ----
 
 

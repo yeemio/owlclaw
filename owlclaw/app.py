@@ -8,18 +8,18 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from owlclaw.agent import AgentRuntime
 from owlclaw.capabilities.knowledge import KnowledgeInjector
 from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.capabilities.skills import SkillsLoader
+from owlclaw.governance.visibility import CapabilityView
 from owlclaw.triggers.cron import CronTriggerRegistry
 
 logger = logging.getLogger(__name__)
 
 
-def _dict_to_capability_view(d: dict[str, Any]) -> "CapabilityView":
+def _dict_to_capability_view(d: dict[str, Any]) -> CapabilityView:
     """Build CapabilityView from registry list_capabilities() item."""
-    from owlclaw.governance.visibility import CapabilityView
-
     return CapabilityView(
         name=d.get("name", ""),
         description=d.get("description", ""),
@@ -71,20 +71,20 @@ class OwlClaw:
 
         Scans the directory for SKILL.md files following the Agent Skills spec,
         loads their frontmatter metadata, and registers them as capabilities.
-        
+
         Args:
             path: Path to capabilities directory containing SKILL.md files
         """
         self._skills_path = path
-        
+
         # Initialize Skills Loader
         self.skills_loader = SkillsLoader(Path(path))
         skills = self.skills_loader.scan()
-        
+
         # Initialize Registry and Knowledge Injector
         self.registry = CapabilityRegistry(self.skills_loader)
         self.knowledge_injector = KnowledgeInjector(self.skills_loader)
-        
+
         logger.info("Loaded %d Skills from %s", len(skills), path)
 
     def handler(self, skill_name: str) -> Callable:
@@ -92,10 +92,10 @@ class OwlClaw:
 
         The handler function is called when the Agent decides to invoke this capability
         via function calling. The skill_name must match a loaded SKILL.md's `name` field.
-        
+
         Args:
             skill_name: Name of the Skill this handler implements
-            
+
         Raises:
             RuntimeError: If mount_skills() hasn't been called yet
         """
@@ -105,7 +105,7 @@ class OwlClaw:
                 raise RuntimeError(
                     "Must call mount_skills() before registering handlers"
                 )
-            
+
             self.registry.register_handler(skill_name, fn)
             self._handlers[skill_name] = fn
             return fn
@@ -185,10 +185,10 @@ class OwlClaw:
 
         State providers are called by the Agent's query_state built-in tool
         to get current business state snapshots.
-        
+
         Args:
             name: Name of the state this provider supplies
-            
+
         Raises:
             RuntimeError: If mount_skills() hasn't been called yet
         """
@@ -198,7 +198,7 @@ class OwlClaw:
                 raise RuntimeError(
                     "Must call mount_skills() before registering states"
                 )
-            
+
             self.registry.register_state(name, fn)
             self._states[name] = fn
             return fn
@@ -370,7 +370,7 @@ class OwlClaw:
         self,
         app_dir: str | None = None,
         hatchet_client: Any = None,
-    ) -> "AgentRuntime":
+    ) -> AgentRuntime:
         """Create an AgentRuntime configured with this app's registry, governance, and built-in tools.
 
         Must be called after mount_skills(). If *app_dir* is omitted, uses the parent

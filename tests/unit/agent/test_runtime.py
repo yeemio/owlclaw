@@ -10,7 +10,6 @@ import pytest
 from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.runtime import AgentRuntime
 
-
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
 # ---------------------------------------------------------------------------

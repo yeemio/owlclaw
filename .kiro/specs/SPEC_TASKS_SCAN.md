@@ -24,7 +24,7 @@
 - [x] 清理 OwlClaw 仓库
 - [x] 建立包结构（owlclaw / owlclaw-mcp）
 - [x] pyproject.toml + MIT LICENSE + README
-- [ ] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
+- [x] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
 
 ### Phase 1：Agent 核心（MVP）
 
@@ -105,7 +105,7 @@
 | examples | `.kiro/specs/examples/` | 待创建 | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 待创建 | 迁移工具 |
 | release | `.kiro/specs/release/` | 待创建 | PyPI + GitHub 发布 |
-| ci-setup | `.kiro/specs/ci-setup/` | 待创建 | GitHub Actions CI |
+| ci-setup | `.kiro/specs/ci-setup/` | ✅ 最小实现已完成 | GitHub Actions CI（lint + test） |
 
 ---
 
@@ -114,9 +114,9 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-21 |
-| 当前批次 | agent-tools Task 6.2（调度工具测试） |
-| 批次状态 | 完成。schedule_once/cron/cancel 测试补齐；258 passed, 3 skipped |
-| 已完成项 | agent-tools Task 6.2（schedule_once 超范围、cancel 任务不存在）；agent-runtime Heartbeat 已完成 |
+| 当前批次 | ci-setup（GitHub Actions lint + test） |
+| 批次状态 | 完成。.github/workflows/ci.yml 已创建；ruff + pytest 通过；修复 8 个 Ruff 错误 |
+| 已完成项 | ci-setup 2.1.1–2.1.2；Phase 0 全部完成 |
 | 下一待执行 | **agent-runtime**（memory）、**agent-tools**（remember/recall 依赖 Memory）或 **integrations-llm** |
 | 阻塞项 | remember/recall 依赖 MemorySystem |
 | 健康状态 | 正常 |

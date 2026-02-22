@@ -10,13 +10,14 @@ can be centralized. Provides:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field
@@ -143,7 +144,7 @@ class LLMConfig(BaseModel):
     mock_responses: dict[str, str] = Field(default_factory=dict)
 
     @classmethod
-    def from_yaml(cls, config_path: str | Path) -> "LLMConfig":
+    def from_yaml(cls, config_path: str | Path) -> LLMConfig:
         """Load LLM config from owlclaw.yaml (llm section)."""
         path = Path(config_path)
         if not path.exists():
@@ -155,7 +156,7 @@ class LLMConfig(BaseModel):
         return cls.model_validate(llm_data)
 
     @classmethod
-    def default_for_owlclaw(cls) -> "LLMConfig":
+    def default_for_owlclaw(cls) -> LLMConfig:
         """Minimal config using default model (no yaml)."""
         return cls(
             default_model="gpt-4o-mini",
@@ -231,33 +232,59 @@ class LLMClient:
             raise ValueError(f"Default model '{model_name}' not in config.models")
         return model_name, self.config.models[model_name], fallback
 
+    def _wrap_litellm_error(self, e: Exception, model: str) -> LLMError:
+        """Map litellm exception to OwlClaw LLM error and log details."""
+        msg = str(e)
+        err_name = type(e).__name__
+        msg_lower = msg.lower()
+        logger.warning(
+            "LLM call failed model=%s error_type=%s message=%s",
+            model,
+            err_name,
+            msg[:200] + ("..." if len(msg) > 200 else ""),
+        )
+        if "Authentication" in err_name or "authentication" in msg_lower or ("invalid" in msg_lower and "api" in msg_lower and "key" in msg_lower):
+            return AuthenticationError(msg, model=model, cause=e)
+        if "RateLimit" in err_name or "rate_limit" in msg_lower or "too many requests" in msg_lower:
+            return RateLimitError(msg, model=model, cause=e)
+        if "ContextWindow" in err_name or ("context" in msg_lower and "window" in msg_lower):
+            return ContextWindowExceededError(msg, model=model, cause=e)
+        if "ServiceUnavailable" in err_name or "503" in msg or "unavailable" in msg_lower:
+            return ServiceUnavailableError(msg, model=model, cause=e)
+        return ServiceUnavailableError(
+            f"LLM call failed: {msg}", model=model, cause=e
+        )
+
     async def _call_with_fallback(
         self,
         params: dict[str, Any],
         fallback_models: list[str],
     ) -> Any:
-        """Call litellm; on failure try fallback models."""
-        import litellm
-
+        """Call litellm; on failure try fallback models. Wraps litellm exceptions as OwlClaw errors."""
         models_to_try = [params["model"]] + fallback_models
         last_error: Exception | None = None
+        last_model = ""
         for attempt, model in enumerate(models_to_try):
+            last_model = model
             try:
                 call_params = {**params, "model": model}
                 return await acompletion(**call_params)
             except Exception as e:
                 last_error = e
                 err_name = type(e).__name__
-                if "RateLimit" in err_name or "rate_limit" in str(e).lower():
-                    if attempt < self.config.max_retries - 1:
-                        await asyncio.sleep(self.config.retry_delay_seconds)
-                        continue
+                if (
+                    "RateLimit" in err_name or "rate_limit" in str(e).lower()
+                ) and attempt < self.config.max_retries - 1:
+                    await asyncio.sleep(self.config.retry_delay_seconds)
+                    continue
                 if "Authentication" in err_name or "InvalidApiKey" in err_name:
-                    raise
+                    raise self._wrap_litellm_error(e, model) from e
                 if attempt < len(models_to_try) - 1:
                     logger.warning("Model %s failed, trying fallback: %s", model, e)
                     continue
-        raise RuntimeError(f"All models failed. Last error: {last_error}") from last_error
+        if last_error:
+            raise self._wrap_litellm_error(last_error, last_model) from last_error
+        raise ServiceUnavailableError("All models failed", model=last_model)
 
     def _parse_response(self, response: Any, model: str) -> LLMResponse:
         """Parse litellm response into LLMResponse."""
@@ -360,8 +387,6 @@ class LLMClient:
             return llm_resp
         except Exception as e:
             if trace:
-                try:
+                with contextlib.suppress(Exception):
                     trace.update(status="error", output=str(e))
-                except Exception:
-                    pass
             raise

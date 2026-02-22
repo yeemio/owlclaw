@@ -14,18 +14,16 @@ This MVP implementation omits:
 
 from __future__ import annotations
 
-import inspect
 import json
 import logging
 import time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from owlclaw.integrations import llm as llm_integration
-
 from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.heartbeat import HeartbeatChecker
 from owlclaw.agent.runtime.identity import IdentityLoader
+from owlclaw.integrations import llm as llm_integration
 
 if TYPE_CHECKING:
     from owlclaw.agent.tools import BuiltInTools
@@ -72,8 +70,8 @@ class AgentRuntime:
         knowledge_injector: KnowledgeInjector | None = None,
         visibility_filter: VisibilityFilter | None = None,
         builtin_tools: BuiltInTools | None = None,
-        router: "Router | None" = None,
-        ledger: "Ledger | None" = None,
+        router: Router | None = None,
+        ledger: Ledger | None = None,
         model: str = _DEFAULT_MODEL,
         config: dict[str, Any] | None = None,
     ) -> None:
@@ -230,10 +228,10 @@ class AgentRuntime:
         max_iterations: int = self.config.get(
             "max_function_calls", _DEFAULT_MAX_ITERATIONS
         )
-        iteration = 0
-
         model_used = self.model
-        for iteration in range(max_iterations):
+        iteration = 0
+        for _ in range(max_iterations):
+            iteration += 1
             if self._router is not None:
                 from owlclaw.governance.visibility import RunContext
 
@@ -276,7 +274,7 @@ class AgentRuntime:
             final_content = messages[-1].get("content") or ""
 
         return {
-            "iterations": iteration + 1,
+            "iterations": iteration,
             "final_response": final_content,
             "tool_calls_total": sum(
                 1
@@ -300,9 +298,7 @@ class AgentRuntime:
         if isinstance(pending, list) and len(pending) > 0:
             return True
         count = payload.get("event_count")
-        if isinstance(count, int) and count > 0:
-            return True
-        return False
+        return bool(isinstance(count, int) and count > 0)
 
     # ------------------------------------------------------------------
     # Tool execution

@@ -12,12 +12,10 @@ from owlclaw.integrations.llm import (
     ContextWindowExceededError,
     LLMClient,
     LLMConfig,
-    LLMResponse,
     ModelConfig,
     RateLimitError,
     ServiceUnavailableError,
     TaskTypeRouting,
-    acompletion,
 )
 
 
@@ -108,6 +106,28 @@ class TestLLMClient:
             assert resp.content == "ok"
             assert resp.prompt_tokens == 10
             assert resp.completion_tokens == 5
+
+    @pytest.mark.asyncio
+    async def test_complete_wraps_auth_error(self) -> None:
+        c = LLMConfig.default_for_owlclaw()
+        client = LLMClient(c)
+        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
+            mock.side_effect = Exception("AuthenticationError: Invalid API key")
+            with pytest.raises(AuthenticationError) as exc_info:
+                await client.complete(messages=[{"role": "user", "content": "Hi"}])
+            assert "Invalid API key" in str(exc_info.value)
+            assert exc_info.value.model == "gpt-4o-mini"
+
+    @pytest.mark.asyncio
+    async def test_complete_wraps_rate_limit_error(self) -> None:
+        c = LLMConfig.default_for_owlclaw()
+        c.max_retries = 1
+        client = LLMClient(c)
+        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
+            mock.side_effect = Exception("RateLimitError: Too many requests")
+            with pytest.raises(RateLimitError) as exc_info:
+                await client.complete(messages=[{"role": "user", "content": "Hi"}])
+            assert "Too many" in str(exc_info.value)
 
 
 class TestLLMErrors:

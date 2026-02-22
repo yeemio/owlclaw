@@ -5,6 +5,7 @@ is started/stopped via start()/stop().
 """
 
 import asyncio
+import contextlib
 import logging
 import uuid
 from dataclasses import dataclass
@@ -109,10 +110,8 @@ class Ledger:
         """Stop the background writer task."""
         if self._writer_task is not None:
             self._writer_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._writer_task
-            except asyncio.CancelledError:
-                pass
             self._writer_task = None
 
     async def record_execution(

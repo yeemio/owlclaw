@@ -25,7 +25,7 @@ def _collect_skill_files(paths: list[Path]) -> list[Path]:
 
 
 def validate_command(
-    paths: list[str] = typer.Argument(
+    paths: list[str] = typer.Argument(  # noqa: B008
         default=["."],
         help="Paths to SKILL.md files or directories containing them.",
     ),

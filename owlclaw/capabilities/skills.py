@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 class Skill:
     """Represents a loaded Skill with metadata and optional full content.
-    
+
     A Skill is a knowledge document (SKILL.md) that describes a capability's
     purpose, usage guidelines, and relationships with other capabilities.
     Skills follow the Agent Skills open specification (Anthropic, Dec 2025).
-    
+
     Attributes:
         name: Unique identifier for the Skill
         description: Brief description of what the Skill does
@@ -61,10 +61,10 @@ class Skill:
 
     def load_full_content(self) -> str:
         """Load full instruction text from SKILL.md (lazy loading).
-        
+
         The full content is loaded only when needed and cached for subsequent
         access. This minimizes memory usage during startup.
-        
+
         Returns:
             The instruction text (content after frontmatter)
         """
@@ -82,7 +82,7 @@ class Skill:
     @property
     def references_dir(self) -> Path | None:
         """Path to references/ directory if it exists.
-        
+
         The references/ directory contains supporting documentation
         referenced by the Skill (e.g., trading-rules.md).
         """
@@ -92,7 +92,7 @@ class Skill:
     @property
     def scripts_dir(self) -> Path | None:
         """Path to scripts/ directory if it exists.
-        
+
         The scripts/ directory contains helper scripts used by the Skill
         (e.g., check_signals.py).
         """
@@ -101,7 +101,7 @@ class Skill:
 
     def to_dict(self) -> dict:
         """Serialize metadata to dict (excludes full content).
-        
+
         Returns:
             Dictionary with Skill metadata suitable for JSON serialization
         """
