@@ -871,6 +871,11 @@ metadata:
 # ── OwlClaw 扩展字段 ──
 owlclaw:
   task_type: trading_decision        # AI 路由
+  focus:                             # Focus 标签（v4.1）
+    - inventory_monitor              # 当触发器的 focus 匹配时才加载
+    - trading_decision
+  risk_level: medium                 # 风险等级：low / medium / high / critical
+  requires_confirmation: false       # 是否需要人工二次确认（high/critical 默认 true）
   constraints:
     trading_hours_only: true
     cooldown_seconds: 300
@@ -1734,17 +1739,34 @@ OpenClaw → owlclaw_trigger("检查入场机会") → Agent Run → 返回结�
 
 #### 5.3.2 统一的触发器设计（owlclaw.triggers）
 
-v3 中不再叫 `compat`（兼容层），而是 `triggers`（触发器），因为它们不是"兼容旧系统"的权宜之计，而是 Agent 感知外部世界的正式通道：
+v3 中不再叫 `compat`（兼容层），而是 `triggers`（触发器），因为它们不是"兼容旧系统"的权宜之计，而是 Agent 感知外部世界的正式通道。
+
+**API 双模式（v4.1 决策）**：OwlClaw 提供两种等价的触发器注册方式，开发者按场景选择：
 
 ```python
 from owlclaw import OwlClaw
-from owlclaw.triggers import cron, webhook, queue, db_change, api_call
 
 app = OwlClaw("mionyee-trading")
 
-# ── 定时触发 ──
-# 不是"把 cron handler 注册为 capability"
-# 而是"每60秒产生一个事件，Agent 自己决定要不要做什么"
+# ── 方式一：装饰器风格（推荐：需要 fallback 的渐进式迁移场景） ──
+# 被装饰的函数自动作为 fallback handler
+@app.cron(
+    expression="0 * * * *",
+    event_name="hourly_check",
+    focus="inventory_monitor",
+    migration_weight=0.5,        # 50% Agent / 50% fallback
+)
+async def hourly_check():
+    """Fallback: 固定逻辑"""
+    await legacy_hourly_check()
+
+@app.webhook(path="/webhook/payment", method="POST")
+async def payment_handler(payload: dict):
+    """Fallback: 固定处理"""
+    await process_payment(payload)
+
+# ── 方式二：函数调用风格（推荐：纯 Agent 决策场景，无 fallback） ──
+# 触发器只产生事件，不绑定任何 handler
 app.trigger(cron(
     expression="*/60 * * * * *",
     event_name="periodic_check",
@@ -1752,56 +1774,63 @@ app.trigger(cron(
     constraints={"trading_hours_only": True},
 ))
 
-# ── Webhook 触发 ──
 app.trigger(webhook(
-    path="/webhook/payment",
+    path="/webhook/order",
     method="POST",
-    event_name="payment_callback",
-    description="支付回调事件",
+    event_name="order_callback",
 ))
 
-# ── 消息队列触发 ──
-app.trigger(queue(
-    source="kafka",
-    topic="market-data",
-    event_name="market_data_update",
-    description="行情数据更新事件",
-))
-
-# ── 数据库变更触发 ──
 app.trigger(db_change(
     source="postgresql",
     channel="position_changes",
     event_name="position_changed",
-    description="持仓变化事件",
 ))
 
-# ── API 调用触发 ──
 app.trigger(api_call(
     path="/api/v1/analysis",
     method="POST",
     event_name="analysis_request",
-    description="外部分析请求",
 ))
 ```
 
-**注意区别**：触发器只产生事件，不绑定 handler。Agent 收到事件后，自己通过 function calling 从注册的 capability 中选择要执行什么。这与 v2 的 `from_cron(handler=...)` 根本不同 —— v2 仍然是"事件 → 固定 handler"的思路，只是在外面包了一层 Agent；v3 是"事件 → Agent 自主决策 → 选择 capability"。
+**两种方式的本质相同**：都是注册触发器 → 产生事件 → Agent 自主决策。装饰器风格是函数调用风格的语法糖，额外提供了 fallback handler 绑定，适用于从传统 cron/handler 渐进式迁移的场景。
 
-**Fallback 机制仍然保留**（渐进式迁移）：
+**核心原则不变**：触发器只产生事件，不替 Agent 做决策。Agent 收到事件后，自己通过 function calling 从注册的 capability 中选择要执行什么。
+
+**事件聚合**（v4.1 新增，适用于所有触发器类型）：
+
+高频事件源（数据库变更、消息队列、webhook 重试）可通过聚合参数减少不必要的 Agent Run：
 
 ```python
-# Day 1: 保留原始 handler 作为 fallback
-app.trigger(cron(
-    expression="*/60 * * * * *",
-    event_name="periodic_check",
-    fallback=position_entry_monitor_handler,  # Agent 不可用时执行原逻辑
+app.trigger(db_change(
+    channel="order_updates",
+    event_name="order_changed",
+    debounce_seconds=5,    # 窗口期内只触发一次（取最后一条）
+    batch_size=10,         # 累积 10 条后统一触发
 ))
+```
 
-# Week 2: 去掉 fallback，完全由 Agent 接管
-app.trigger(cron(
-    expression="*/60 * * * * *",
-    event_name="periodic_check",
-))
+**Focus 机制**（v4.1 新增，适用于所有触发器类型）：
+
+通过 `focus` 参数引导 Agent 只加载与当前任务相关的 Skills，减少 token 消耗、提升决策质量：
+
+```python
+@app.cron(expression="0 * * * *", focus="inventory_monitor")
+# → Agent 只看到 SKILL.md frontmatter 中 focus 包含 "inventory_monitor" 的 Skills
+```
+
+**Fallback 与渐进式迁移**：
+
+```python
+# Day 1: migration_weight=0.0 → 100% fallback（零风险接入）
+@app.cron(expression="0 * * * *", migration_weight=0.0)
+async def task(): await legacy_logic()
+
+# Week 1: migration_weight=0.1 → 10% Agent（小流量验证）
+# Week 2: migration_weight=0.5 → 50% Agent（A/B 对比）
+# Month 1: migration_weight=1.0 → 100% Agent（完全接管）
+# Steady: 去掉 fallback，使用函数调用风格
+app.trigger(cron(expression="0 * * * *", event_name="task"))
 ```
 
 #### 5.3.3 Cron 迁移的具体策略（最常见场景）
@@ -2136,6 +2165,95 @@ Agent 执行业务操作（如建仓），安全是关键：
 - **Agent 记忆版本兼容**：记忆条目带 `version` 字段，新版 Agent 可以选择忽略旧版记忆
 - **治理规则热更新**：可见性过滤规则从配置文件（YAML）加载，支持 `owlclaw reload` 不重启更新
 
+### 8.9 Spec 洞察反哺架构（v4.1 新增）
+
+在详细设计各模块 Spec 的过程中，涌现出以下 6 个跨模块通用洞察，已回写为架构级决策：
+
+#### 8.9.1 渐进式迁移权重（migration_weight）
+
+**来源**：triggers-cron Spec
+
+传统 cron 任务迁移到 Agent 自主决策时，不应是"全有或全无"的切换。`migration_weight`（0.0–1.0）定义了 Agent 接管的比例：
+- `0.0` → 100% fallback（Day 1 零风险接入）
+- `0.1` → 10% Agent（小流量验证决策质量）
+- `0.5` → 50%（A/B 对比 Agent vs fallback）
+- `1.0` → 100% Agent（完全接管，可去掉 fallback）
+
+**架构影响**：此机制写入触发器 API（§5.3.2），适用于所有触发器类型，不限于 cron。
+
+#### 8.9.2 Focus 选择性加载机制
+
+**来源**：triggers-cron Spec
+
+Agent 每次 Run 不必加载所有 Skills 的完整指令。触发器通过 `focus` 参数声明本次事件的关注领域，Agent 运行时只加载 `SKILL.md` frontmatter 中 `owlclaw.focus` 包含匹配标签的 Skills。
+
+**架构影响**：
+- `SKILL.md` 的 `owlclaw:` 扩展字段增加 `focus: [tag1, tag2]`（§4.3）
+- Agent 运行时的 Skills 加载器需根据 focus 过滤
+- 减少 token 消耗、提升决策质量，尤其在 Skills 数量多（>10）的场景下效果显著
+
+#### 8.9.3 零依赖开发模式（mock_mode）
+
+**来源**：examples Spec
+
+为降低 OwlClaw 上手门槛，所有 examples 和开发时可通过 `mock_mode=True` 运行，无需真实 LLM、Hatchet、PostgreSQL：
+
+```python
+app = OwlClaw("demo", mock_mode=True)
+# → LLM: 返回预设响应 / echo
+# → Hatchet: 内存任务队列
+# → DB: SQLite 内存模式
+# → Langfuse: 本地日志
+```
+
+**架构影响**：OwlClaw 核心需要抽象出依赖注入点，mock 实现作为内建组件提供，而非外部 monkeypatch。这影响 `owlclaw.runtime` 和 `owlclaw.integrations` 的接口设计。
+
+#### 8.9.4 指令注入（Instruction Injection）
+
+**来源**：triggers-signal Spec
+
+运行中的 Agent 可通过 Signal 触发器接收临时人工指令，而不需要停止/重新部署：
+
+```bash
+owlclaw signal instruct --agent mionyee-trading \
+  --message "今天大盘暴跌，所有买入操作暂停，只允许减仓"
+```
+
+**架构影响**：
+- Agent 运行时需要一个 `pending_instructions` 队列
+- 指令在下一次 Run 的 system prompt 中注入（作为临时 context）
+- 执行后自动清除（或标记为已执行）
+- 这是 Agent 自主性的必要补充 —— 在极端情况下人类需要快速介入
+
+#### 8.9.5 能力风险等级（risk_level + requires_confirmation）
+
+**来源**：security Spec
+
+每个 SKILL.md 的 `owlclaw:` 扩展字段增加风险声明：
+
+| risk_level | 行为 | 示例 |
+|-----------|------|------|
+| `low` | 直接执行 | 查询行情、读取持仓 |
+| `medium` | 执行 + 记录到 Ledger | 修改止损价、更新策略参数 |
+| `high` | 需要人工确认后执行 | 建仓、平仓 |
+| `critical` | 需要双重确认（人工 + 审批流） | 大额交易、策略全局调整 |
+
+**架构影响**：
+- 治理层的可见性过滤需要读取 `risk_level`
+- 高风险能力执行前发送通知（Webhook/消息推送）等待确认
+- 这弥补了原架构中安全模型的粗粒度描述（§8.5），使安全策略可通过声明式配置而非硬编码实现
+
+#### 8.9.6 事件聚合模式（Event Aggregation）
+
+**来源**：triggers-db-change Spec
+
+高频事件源产生的大量细粒度事件可通过两种策略聚合，避免过度触发 Agent Run：
+
+- **Debounce（防抖）**：窗口期内只取最后一条事件，适合"最终状态"场景
+- **Batch（批量）**：累积 N 条后统一发给 Agent，适合"批量处理"场景
+
+**架构影响**：事件聚合不是 db_change 特有的，而是触发器框架的通用能力。所有触发器工厂函数（cron、webhook、queue、db_change、api_call）均可接收 `debounce_seconds` 和 `batch_size` 可选参数（§5.3.2 已更新）。
+
 ---
 
 ## 九、下一步行动
@@ -2192,7 +2310,8 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 
 ---
 
-> **文档版本**: v4.0（v3.9 + §2.7 产品愿景"Markdown 即 AI 能力" + OwlHub 架构 + §4.10 Skills 生态决策）
+> **文档版本**: v4.1（v4.0 + §5.3.2 触发器 API 双模式决策 + §4.3 SKILL.md focus/risk_level 扩展 + §8.9 Spec 洞察反哺架构 6 项）
 > **创建时间**: 2026-02-10
+> **最后更新**: 2026-02-22
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`
 > **文档维护**: 本文档应随架构决策变化持续更新。
