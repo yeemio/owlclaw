@@ -610,7 +610,10 @@ class BuiltInTools:
                 timeout=self._timeout,
             )
             if not ok and hasattr(self._hatchet, "cancel_cron"):
-                ok = await self._hatchet.cancel_cron(schedule_id)
+                ok = await asyncio.wait_for(
+                    self._hatchet.cancel_cron(schedule_id),
+                    timeout=self._timeout,
+                )
             out = {"cancelled": ok, "schedule_id": schedule_id}
             await self._record_tool_execution(
                 tool_name="cancel_schedule",

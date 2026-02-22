@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
@@ -393,6 +394,25 @@ class TestCancelSchedule:
         hatchet.cancel_task.assert_awaited_once_with("nonexistent-run")
         ledger.record_execution.assert_awaited_once()
         assert ledger.record_execution.call_args.kwargs["status"] == "not_found"
+
+    @pytest.mark.asyncio
+    async def test_cancel_schedule_cancel_cron_timeout_returns_error(self) -> None:
+        async def _slow_cancel_cron(_: str) -> bool:
+            await asyncio.sleep(0.05)
+            return False
+
+        hatchet = AsyncMock()
+        hatchet.cancel_task.return_value = False
+        hatchet.cancel_cron.side_effect = _slow_cancel_cron
+        tools = BuiltInTools(hatchet_client=hatchet, timeout_seconds=0.01)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute(
+            "cancel_schedule",
+            {"schedule_id": "cron-1"},
+            ctx,
+        )
+        assert "error" in result
+        assert "timed out" in result["error"]
 
 
 class TestExecuteUnknownTool:
