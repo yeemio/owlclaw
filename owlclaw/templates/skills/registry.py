@@ -88,8 +88,13 @@ class TemplateRegistry:
         tags = [str(t).strip() for t in tags if t]
 
         parameters: list[TemplateParameter] = []
+        seen_param_names: set[str] = set()
         for p in data.get("parameters") or []:
             if isinstance(p, dict):
+                param_name = str(p.get("name", "")).strip()
+                if not param_name or param_name in seen_param_names:
+                    continue
+                seen_param_names.add(param_name)
                 raw_required = p.get("required", True)
                 if isinstance(raw_required, str):
                     required = raw_required.strip().lower() not in ("0", "false", "no", "off")
@@ -104,7 +109,7 @@ class TemplateRegistry:
                     choices = None
                 parameters.append(
                     TemplateParameter(
-                        name=str(p.get("name", "")),
+                        name=param_name,
                         type=str(p.get("type", "str")),
                         description=str(p.get("description", "")),
                         required=required,
