@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+from contextlib import suppress
 
 from owlclaw.templates.skills.models import SearchResult, TemplateCategory, TemplateMetadata
+from owlclaw.templates.skills.registry import TemplateRegistry
 
 logger = logging.getLogger(__name__)
-from owlclaw.templates.skills.registry import TemplateRegistry
 
 
 class TemplateSearcher:
@@ -112,10 +113,8 @@ class TemplateSearcher:
 
         category: TemplateCategory | None = None
         if category_str:
-            try:
+            with suppress(ValueError):
                 category = TemplateCategory(category_str)
-            except ValueError:
-                pass
 
         if use_case:
             return self.search(use_case, category=category, limit=limit)
