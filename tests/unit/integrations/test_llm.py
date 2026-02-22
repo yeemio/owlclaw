@@ -54,6 +54,28 @@ llm:
         with pytest.raises(FileNotFoundError, match="not found"):
             LLMConfig.from_yaml("/nonexistent/owlclaw.yaml")
 
+    def test_from_yaml_substitutes_env_in_lists(self, tmp_path: Path, monkeypatch) -> None:
+        monkeypatch.setenv("MODEL_A", "gpt-4o")
+        monkeypatch.setenv("MODEL_B", "gpt-4o-mini")
+        yaml_path = tmp_path / "owlclaw.yaml"
+        yaml_path.write_text("""
+llm:
+  default_model: ${MODEL_A}
+  models:
+    ${MODEL_A}:
+      name: ${MODEL_A}
+      provider: openai
+      api_key_env: OPENAI_API_KEY
+  task_type_routing:
+    - task_type: trading
+      model: ${MODEL_A}
+      fallback_models: ["${MODEL_B}"]
+""")
+        c = LLMConfig.from_yaml(yaml_path)
+        assert c.default_model == "gpt-4o"
+        assert c.task_type_routing[0].model == "gpt-4o"
+        assert c.task_type_routing[0].fallback_models == ["gpt-4o-mini"]
+
 
 class TestLLMClient:
     def test_route_model_default(self) -> None:
@@ -128,6 +150,16 @@ class TestLLMClient:
             with pytest.raises(RateLimitError) as exc_info:
                 await client.complete(messages=[{"role": "user", "content": "Hi"}])
             assert "Too many" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_complete_stream_true_raises(self) -> None:
+        c = LLMConfig.default_for_owlclaw()
+        client = LLMClient(c)
+        with pytest.raises(ValueError, match="stream=True"):
+            await client.complete(
+                messages=[{"role": "user", "content": "Hi"}],
+                stream=True,
+            )
 
     @pytest.mark.asyncio
     async def test_complete_uses_fallback_model_for_response_and_cost(self) -> None:

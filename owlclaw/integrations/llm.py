@@ -91,17 +91,15 @@ def _substitute_env(value: str) -> str:
     return pattern.sub(repl, value)
 
 
-def _substitute_env_dict(data: dict) -> dict:
-    """Recursively substitute ${VAR} in string values."""
-    out: dict[str, Any] = {}
-    for k, v in data.items():
-        if isinstance(v, dict):
-            out[k] = _substitute_env_dict(v)
-        elif isinstance(v, str):
-            out[k] = _substitute_env(v)
-        else:
-            out[k] = v
-    return out
+def _substitute_env_any(value: Any) -> Any:
+    """Recursively substitute ${VAR} in mappings, lists, and strings."""
+    if isinstance(value, dict):
+        return {k: _substitute_env_any(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_substitute_env_any(v) for v in value]
+    if isinstance(value, str):
+        return _substitute_env(value)
+    return value
 
 
 class ModelConfig(BaseModel):
@@ -152,7 +150,7 @@ class LLMConfig(BaseModel):
         with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
         llm_data = data.get("llm", {})
-        llm_data = _substitute_env_dict(llm_data)
+        llm_data = _substitute_env_any(llm_data)
         return cls.model_validate(llm_data)
 
     @classmethod
@@ -347,6 +345,11 @@ class LLMClient:
         stream: bool = False,
     ) -> LLMResponse:
         """Complete LLM call with routing and fallback."""
+        if stream:
+            raise ValueError(
+                "LLMClient.complete(stream=True) is not supported; "
+                "this API returns a single LLMResponse."
+            )
         if self.config.mock_mode and self.config.mock_responses:
             key = task_type or "default"
             content = self.config.mock_responses.get(key, self.config.mock_responses.get("default", ""))
