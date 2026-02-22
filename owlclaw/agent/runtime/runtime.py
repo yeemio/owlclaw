@@ -704,11 +704,14 @@ class AgentRuntime:
         """Parse confirmed capabilities from payload in list/set/tuple/csv forms."""
         confirmed_raw = payload.get("confirmed_capabilities")
         if isinstance(confirmed_raw, list | tuple | set):
-            return {
-                str(name).strip()
-                for name in confirmed_raw
-                if isinstance(name, str) and name.strip()
-            }
+            out: set[str] = set()
+            for name in confirmed_raw:
+                if name is None:
+                    continue
+                normalized = str(name).strip()
+                if normalized:
+                    out.add(normalized)
+            return out
         if isinstance(confirmed_raw, str):
             return {
                 part.strip()
