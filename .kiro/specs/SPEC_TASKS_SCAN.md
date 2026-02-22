@@ -127,9 +127,9 @@
 |------|---|
 | 最后更新 | 2026-02-22 |
 | 当前批次 | Spec 规范化（文档一致性修复批次） |
-| 批次状态 | **完成**。已完成第三批规范化：`agent-memory`/`triggers-signal` 数据库 schema 规范对齐（tenant_id 字段收敛、TIMESTAMPTZ、默认值与 NOT NULL、tenant 前缀索引）。 |
-| 已完成项 | AGENTS 规范化职责 + 关键词触发；requirements 模板补齐（triggers-webhook/e2e-validation）；路径漂移修复（langfuse/agent-tools/configuration/integrations-hatchet）；接口签名修复（triggers-webhook/e2e-validation）；`fc.*` 示例替换为 hypothesis；schema 对齐（triggers-webhook/triggers-queue/owlhub/agent-memory/triggers-signal） |
-| 下一待执行 | **Spec 规范化第四批**：全仓文档语义清理（如遗留示例中的占位注释、接口命名风格统一、requirements/design/tasks 交叉链接补齐）。 |
+| 批次状态 | **完成**。已完成第四批规范化：`agent-memory`/`triggers-signal`/`e2e-validation` 三层文档互链补齐；`agent-tools` 设计文档占位注释与代码块格式修复。 |
+| 已完成项 | AGENTS 规范化职责 + 关键词触发；requirements 模板补齐（triggers-webhook/e2e-validation）；路径漂移修复（langfuse/agent-tools/configuration/integrations-hatchet）；接口签名修复（triggers-webhook/e2e-validation）；`fc.*` 示例替换为 hypothesis；schema 对齐（triggers-webhook/triggers-queue/owlhub/agent-memory/triggers-signal）；三层文档互链补齐（agent-memory/triggers-signal/e2e-validation）；`agent-tools` 占位注释与 markdown 代码块修复 |
+| 下一待执行 | **Spec 规范化第五批**：`triggers-cron` 与 `cli-migrate` 等大文档的占位注释语义分级（可实现占位/需求性 TODO 区分）与格式统一。 |
 | 阻塞项 | 无 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
