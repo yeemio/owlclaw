@@ -25,6 +25,12 @@ class TestHeartbeatCheckerNoEvents:
         assert result is False
 
     @pytest.mark.asyncio
+    async def test_check_events_string_false_disables_checker(self) -> None:
+        checker = HeartbeatChecker(agent_id="bot", config={"enabled": "false"})
+        result = await checker.check_events()
+        assert result is False
+
+    @pytest.mark.asyncio
     async def test_check_events_custom_sources(self) -> None:
         """Custom event_sources still return False when unimplemented."""
         checker = HeartbeatChecker(

@@ -33,10 +33,23 @@ class HeartbeatChecker:
     def __init__(self, agent_id: str, config: dict[str, Any] | None = None) -> None:
         self.agent_id = agent_id
         cfg = config or {}
-        self._enabled = cfg.get("enabled", True)
+        self._enabled = self._normalize_enabled(cfg.get("enabled", True))
         self._event_sources = self._normalize_event_sources(
             cfg.get("event_sources", _DEFAULT_EVENT_SOURCES)
         )
+
+    @staticmethod
+    def _normalize_enabled(raw_enabled: Any) -> bool:
+        """Normalize enabled flag from bool/string values."""
+        if isinstance(raw_enabled, bool):
+            return raw_enabled
+        if isinstance(raw_enabled, str):
+            value = raw_enabled.strip().lower()
+            if value in {"false", "0", "no", "off"}:
+                return False
+            if value in {"true", "1", "yes", "on"}:
+                return True
+        return bool(raw_enabled)
 
     @staticmethod
     def _normalize_event_sources(raw_sources: Any) -> list[str]:
