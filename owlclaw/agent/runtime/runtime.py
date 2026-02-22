@@ -398,7 +398,7 @@ class AgentRuntime:
             if isinstance(response, dict)
             else getattr(response, "choices", None)
         )
-        if not isinstance(choices, list) or not choices:
+        if not isinstance(choices, list | tuple) or not choices:
             return None
         first = choices[0]
         if isinstance(first, dict):
