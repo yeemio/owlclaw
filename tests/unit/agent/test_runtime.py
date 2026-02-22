@@ -40,6 +40,19 @@ def _make_llm_response(content="Done.", tool_calls=None):
     return response
 
 
+def _make_llm_response_dict_message(content="Done.", tool_calls=None):
+    """Build a fake litellm response whose message is already a dict."""
+    choice = MagicMock()
+    choice.message = {
+        "role": "assistant",
+        "content": content,
+        "tool_calls": tool_calls or [],
+    }
+    response = MagicMock()
+    response.choices = [choice]
+    return response
+
+
 def _make_tool_call(name: str, arguments: dict):
     tc = MagicMock()
     tc.id = "tc_1"
@@ -133,6 +146,16 @@ class TestAgentRuntimeRun:
         call_messages = mock_llm.call_args.kwargs["messages"]
         user_msg = next(m for m in call_messages if m["role"] == "user")
         assert "inventory_monitor" in user_msg["content"]
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_accepts_dict_assistant_message(self, mock_llm, tmp_path) -> None:
+        """Runtime should support providers returning dict message objects."""
+        mock_llm.return_value = _make_llm_response_dict_message("Dict done.")
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        await rt.setup()
+        result = await rt.trigger_event("cron")
+        assert result["status"] == "completed"
+        assert result["final_response"] == "Dict done."
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_tool_call_dispatched_to_registry(

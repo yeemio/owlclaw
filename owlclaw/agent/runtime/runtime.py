@@ -253,7 +253,7 @@ class AgentRuntime:
             message = response.choices[0].message
 
             # Append assistant turn to conversation
-            messages.append(message.model_dump(exclude_none=True))
+            messages.append(self._assistant_message_to_dict(message))
 
             tool_calls = getattr(message, "tool_calls", None) or []
             if not tool_calls:
@@ -282,6 +282,26 @@ class AgentRuntime:
                 if m.get("role") == "tool"
             ),
         }
+
+    @staticmethod
+    def _assistant_message_to_dict(message: Any) -> dict[str, Any]:
+        """Normalize LLM message object to a serializable assistant dict."""
+        if isinstance(message, dict):
+            normalized = dict(message)
+            normalized.setdefault("role", "assistant")
+            return normalized
+        model_dump = getattr(message, "model_dump", None)
+        if callable(model_dump):
+            dumped = model_dump(exclude_none=True)
+            if isinstance(dumped, dict):
+                dumped.setdefault("role", "assistant")
+                return dumped
+        content = getattr(message, "content", "")
+        tool_calls = getattr(message, "tool_calls", None)
+        out: dict[str, Any] = {"role": "assistant", "content": content}
+        if tool_calls:
+            out["tool_calls"] = tool_calls
+        return out
 
     @staticmethod
     def _heartbeat_payload_has_events(payload: dict[str, Any]) -> bool:
