@@ -93,6 +93,8 @@ class Skill:
         raw = self.owlclaw_config.get("requires_confirmation")
         if isinstance(raw, bool):
             return raw
+        if isinstance(raw, int) and raw in {0, 1}:
+            return bool(raw)
         if isinstance(raw, str):
             normalized = raw.strip().lower()
             if normalized in {"1", "true", "yes", "on"}:

@@ -150,6 +150,28 @@ owlclaw:
     assert skill.focus == ["valid_tag", "another"]
 
 
+def test_skills_loader_requires_confirmation_accepts_int_literals(tmp_path):
+    skill_dir = tmp_path / "confirm-int"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: confirm-int
+description: confirm by int
+owlclaw:
+  risk_level: low
+  requires_confirmation: 1
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("confirm-int")
+    assert skill is not None
+    assert skill.requires_confirmation is True
+
+
 def test_parse_invalid_yaml_skipped(tmp_path):
     """Invalid YAML in frontmatter is logged and skill is skipped."""
     skill_dir = tmp_path / "bad"
