@@ -95,6 +95,13 @@ class TemplateRegistry:
                     required = raw_required.strip().lower() not in ("0", "false", "no", "off")
                 else:
                     required = bool(raw_required)
+                raw_choices = p.get("choices")
+                if isinstance(raw_choices, list):
+                    choices = raw_choices
+                elif isinstance(raw_choices, str):
+                    choices = [c.strip() for c in raw_choices.split(",") if c.strip()]
+                else:
+                    choices = None
                 parameters.append(
                     TemplateParameter(
                         name=str(p.get("name", "")),
@@ -102,7 +109,7 @@ class TemplateRegistry:
                         description=str(p.get("description", "")),
                         required=required,
                         default=p.get("default"),
-                        choices=p.get("choices"),
+                        choices=choices,
                     )
                 )
 

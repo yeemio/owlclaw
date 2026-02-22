@@ -123,6 +123,18 @@ name: test
         assert len(tpl.parameters) == 1
         assert tpl.parameters[0].required is False
 
+    def test_parse_parameter_choices_string(self, tmp_path: Path) -> None:
+        (tmp_path / "monitoring").mkdir()
+        (tmp_path / "monitoring" / "health-check.md.j2").write_text(
+            "{#\nname: X\ndescription: Y\ntags: []\nparameters:\n  - name: fmt\n    type: str\n    choices: json, yaml\n#}\n---\n",
+            encoding="utf-8",
+        )
+        reg = TemplateRegistry(tmp_path)
+        tpl = reg.get_template("monitoring/health-check")
+        assert tpl is not None
+        assert len(tpl.parameters) == 1
+        assert tpl.parameters[0].choices == ["json", "yaml"]
+
     def test_search_templates(self, tmp_path: Path) -> None:
         (tmp_path / "monitoring").mkdir()
         (tmp_path / "monitoring" / "health-check.md.j2").write_text(
