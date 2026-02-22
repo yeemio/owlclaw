@@ -618,6 +618,7 @@ class BuiltInTools:
                     self._hatchet.cancel_cron(schedule_id),
                     timeout=self._timeout,
                 )
+            ok = bool(ok)
             out = {"cancelled": ok, "schedule_id": schedule_id}
             await self._record_tool_execution(
                 tool_name="cancel_schedule",

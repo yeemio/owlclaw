@@ -358,6 +358,19 @@ class TestCancelSchedule:
         hatchet.cancel_task.assert_awaited_once_with("run-123")
 
     @pytest.mark.asyncio
+    async def test_cancel_schedule_coerces_truthy_result_to_bool(self) -> None:
+        hatchet = AsyncMock()
+        hatchet.cancel_task.return_value = "ok"
+        tools = BuiltInTools(hatchet_client=hatchet)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute(
+            "cancel_schedule",
+            {"schedule_id": "run-123"},
+            ctx,
+        )
+        assert result["cancelled"] is True
+
+    @pytest.mark.asyncio
     async def test_cancel_schedule_no_hatchet_returns_error(self) -> None:
         tools = BuiltInTools(hatchet_client=None)
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
