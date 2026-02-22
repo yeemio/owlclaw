@@ -305,7 +305,7 @@ class BuiltInTools:
     ) -> dict[str, Any]:
         delay = arguments.get("delay_seconds")
         focus = arguments.get("focus")
-        if not isinstance(delay, int) or delay < 1 or delay > 2592000:
+        if isinstance(delay, bool) or not isinstance(delay, int) or delay < 1 or delay > 2592000:
             return {
                 "error": "delay_seconds must be an integer between 1 and 2592000",
             }

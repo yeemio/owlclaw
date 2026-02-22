@@ -216,6 +216,18 @@ class TestScheduleOnce:
         assert "2592000" in result["error"]
 
     @pytest.mark.asyncio
+    async def test_schedule_once_bool_delay_returns_error(self) -> None:
+        tools = BuiltInTools()
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute(
+            "schedule_once",
+            {"delay_seconds": True, "focus": "x"},
+            ctx,
+        )
+        assert "error" in result
+        assert "integer" in result["error"].lower()
+
+    @pytest.mark.asyncio
     async def test_schedule_once_delay_seconds_over_max_returns_error(self) -> None:
         tools = BuiltInTools()
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
