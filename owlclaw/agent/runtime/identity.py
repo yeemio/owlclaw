@@ -7,7 +7,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-_CAPABILITY_HEADINGS = {"## My Capabilities", "## 我的能力"}
+_CAPABILITY_HEADINGS = {"## my capabilities", "## 我的能力"}
 
 
 class IdentityLoader:
@@ -98,7 +98,7 @@ class IdentityLoader:
 
         for line in lines:
             stripped = line.rstrip()
-            if stripped in _CAPABILITY_HEADINGS:
+            if stripped.strip().lower() in _CAPABILITY_HEADINGS:
                 in_section = True
                 continue
             if in_section:

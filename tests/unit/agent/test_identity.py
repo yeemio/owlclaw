@@ -87,3 +87,14 @@ class TestIdentityLoader:
         summary = loader.get_identity()["capabilities_summary"]
         assert "监控市场" in summary
         assert "限额" not in summary
+
+    async def test_capabilities_heading_case_and_trailing_spaces(self, tmp_path) -> None:
+        (tmp_path / "SOUL.md").write_text("You are assistant.", encoding="utf-8")
+        (tmp_path / "IDENTITY.md").write_text(
+            "# Identity\n\n## MY CAPABILITIES   \n- A\n## Other\n- B\n",
+            encoding="utf-8",
+        )
+        loader = IdentityLoader(str(tmp_path))
+        await loader.load()
+        summary = loader.get_identity()["capabilities_summary"]
+        assert summary == "- A"
