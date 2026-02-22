@@ -293,3 +293,23 @@ items: {{ items|join(',') }}
         rdr = TemplateRenderer(reg)
         out = rdr.render("monitoring/health-check", {"items": "[a, b, c]"})
         assert "items: a,b,c" in out
+
+    def test_render_rejects_unknown_parameters(self, tmp_path: Path) -> None:
+        content = """{#
+name: X
+description: Y
+tags: []
+parameters:
+  - name: skill_name
+    type: str
+    description: Name
+    required: true
+#}
+---
+name: {{ skill_name }}
+---
+"""
+        reg = _make_registry(tmp_path, content)
+        rdr = TemplateRenderer(reg)
+        with pytest.raises(ParameterValueError, match="Unknown template parameters"):
+            rdr.render("monitoring/health-check", {"skill_name": "ok", "unexpected": "x"})

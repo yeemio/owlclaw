@@ -59,6 +59,20 @@ class TemplateRenderer:
                 missing=missing,
             )
 
+    def _validate_unknown_parameters(
+        self,
+        params: dict[str, Any],
+        param_defs: list[TemplateParameter],
+    ) -> None:
+        allowed = {p.name for p in param_defs}
+        unknown = sorted(k for k in params if k not in allowed)
+        if unknown:
+            raise ParameterValueError(
+                f"Unknown template parameters: {', '.join(unknown)}",
+                param_name=unknown[0],
+                value=repr(params.get(unknown[0])),
+            )
+
     def _apply_defaults(
         self,
         params: dict[str, Any],
@@ -168,6 +182,7 @@ class TemplateRenderer:
         parameters = parameters or {}
         logger.debug("Rendering template %s with %d params", template_id, len(parameters))
         metadata = self.registry.get_template_or_raise(template_id)
+        self._validate_unknown_parameters(parameters, metadata.parameters)
         params = self._apply_defaults(parameters, metadata.parameters)
         self._validate_parameters(params, metadata.parameters)
         converted = self._validate_and_convert_parameters(params, metadata.parameters)
