@@ -261,8 +261,13 @@ class CronTriggerRegistry:
             raise RuntimeError(
                 "trigger_now requires start() to be called with a Hatchet client"
             )
+        run_task_now = getattr(self._hatchet_client, "run_task_now", None)
+        if not callable(run_task_now):
+            raise RuntimeError(
+                "trigger_now requires Hatchet client with run_task_now() support"
+            )
         task_name = f"cron_{event_name}"
-        return await self._hatchet_client.run_task_now(task_name, **kwargs)
+        return await run_task_now(task_name, **kwargs)
 
     async def get_execution_history(
         self,

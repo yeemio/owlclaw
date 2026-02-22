@@ -191,6 +191,18 @@ class TestTaskManagement:
             await reg.trigger_now("job")
 
     @pytest.mark.asyncio
+    async def test_trigger_now_without_run_task_now_support_raises(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        # Simulate client missing async run_task_now capability
+        if hasattr(hatchet, "run_task_now"):
+            del hatchet.run_task_now
+        reg.start(hatchet, agent_runtime=None, ledger=None)
+        with pytest.raises(RuntimeError, match="run_task_now"):
+            await reg.trigger_now("job")
+
+    @pytest.mark.asyncio
     async def test_get_execution_history_missing_raises(self) -> None:
         reg = self._registry()
         reg.register("job", "0 * * * *")
