@@ -359,6 +359,34 @@ class TestAgentRuntimeRun:
         registry.invoke_handler.assert_not_called()
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_missing_id_uses_fallback_tool_call_id(
+        self, mock_llm, tmp_path
+    ) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        tc.id = None
+        mock_llm.side_effect = [
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response("ok"),
+        ]
+
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [
+            {"name": "market_scan", "description": "Scans market data"}
+        ]
+        registry.invoke_handler = AsyncMock(return_value={"price": 180})
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        registry.invoke_handler.assert_called_once_with("market_scan", symbol="AAPL")
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_max_iterations_respected(self, mock_llm, tmp_path) -> None:
         """When every LLM response has a tool call, loop stops at max."""
         tc = _make_tool_call("loop_tool", {})

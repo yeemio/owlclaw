@@ -261,11 +261,12 @@ class AgentRuntime:
                 break
 
             # Execute each tool call and add results
-            for tc in tool_calls:
+            for idx, tc in enumerate(tool_calls):
                 tool_result = await self._execute_tool(tc, context)
+                tool_call_id = getattr(tc, "id", None) or f"tool_call_{iteration}_{idx}"
                 messages.append({
                     "role": "tool",
-                    "tool_call_id": tc.id,
+                    "tool_call_id": tool_call_id,
                     "content": json.dumps(tool_result, default=str),
                 })
 
