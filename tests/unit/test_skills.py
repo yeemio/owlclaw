@@ -222,3 +222,22 @@ def test_scan_duplicate_skill_names_keeps_first_sorted_path(tmp_path):
     skill = loader.get_skill("same")
     assert skill is not None
     assert skill.description == "first"
+
+
+def test_skill_exposes_optional_assets_references_and_scripts_dirs(tmp_path):
+    skill_dir = tmp_path / "with-dirs"
+    skill_dir.mkdir()
+    (skill_dir / "references").mkdir()
+    (skill_dir / "scripts").mkdir()
+    (skill_dir / "assets").mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: with-dirs\ndescription: has optional dirs\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("with-dirs")
+    assert skill is not None
+    assert skill.references_dir == skill_dir / "references"
+    assert skill.scripts_dir == skill_dir / "scripts"
+    assert skill.assets_dir == skill_dir / "assets"

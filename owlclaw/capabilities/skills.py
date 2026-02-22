@@ -140,6 +140,12 @@ class Skill:
         scripts_dir = self.file_path.parent / "scripts"
         return scripts_dir if scripts_dir.exists() else None
 
+    @property
+    def assets_dir(self) -> Path | None:
+        """Path to assets/ directory if it exists."""
+        assets_dir = self.file_path.parent / "assets"
+        return assets_dir if assets_dir.exists() else None
+
     def to_dict(self) -> dict:
         """Serialize metadata to dict (excludes full content).
 
