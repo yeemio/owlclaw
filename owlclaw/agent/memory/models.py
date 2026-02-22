@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SecurityLevel(str, Enum):
@@ -70,5 +70,4 @@ class MemoryConfig(BaseModel):
     compaction_threshold: int = 50
     embedding_cache_size: int = 1000
 
-    class Config:
-        extra = "ignore"
+    model_config = ConfigDict(extra="ignore")
