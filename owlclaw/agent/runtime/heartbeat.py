@@ -34,9 +34,28 @@ class HeartbeatChecker:
         self.agent_id = agent_id
         cfg = config or {}
         self._enabled = cfg.get("enabled", True)
-        self._event_sources: list[str] = cfg.get(
-            "event_sources", _DEFAULT_EVENT_SOURCES
+        self._event_sources = self._normalize_event_sources(
+            cfg.get("event_sources", _DEFAULT_EVENT_SOURCES)
         )
+
+    @staticmethod
+    def _normalize_event_sources(raw_sources: Any) -> list[str]:
+        """Normalize event_sources config into a deduplicated string list."""
+        if isinstance(raw_sources, str):
+            items = [raw_sources]
+        elif isinstance(raw_sources, (list, tuple)):
+            items = list(raw_sources)
+        else:
+            return list(_DEFAULT_EVENT_SOURCES)
+
+        normalized: list[str] = []
+        for item in items:
+            if not isinstance(item, str):
+                continue
+            source = item.strip()
+            if source and source not in normalized:
+                normalized.append(source)
+        return normalized if normalized else list(_DEFAULT_EVENT_SOURCES)
 
     async def check_events(self) -> bool:
         """Check if there are pending events in any configured source.
