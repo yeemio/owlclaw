@@ -56,19 +56,19 @@
 
 ## Task 4: 模型路由和降级
 
-- [ ] 4.1 实现 task_type 路由
-  - [ ] 4.1.1 根据 task_type 选择模型
-  - [ ] 4.1.2 应用 task_type 特定的参数
+- [x] 4.1 实现 task_type 路由
+  - [x] 4.1.1 根据 task_type 选择模型（_route_model）
+  - [x] 4.1.2 应用 task_type 特定的参数（temperature、max_tokens via _get_task_routing）
 
-- [ ] 4.2 实现模型降级链
-  - [ ] 4.2.1 主模型失败时尝试 fallback
-  - [ ] 4.2.2 记录降级日志
-  - [ ] 4.2.3 所有模型失败时抛出异常
+- [x] 4.2 实现模型降级链
+  - [x] 4.2.1 主模型失败时尝试 fallback（_call_with_fallback）
+  - [x] 4.2.2 记录降级日志（logger.warning）
+  - [x] 4.2.3 所有模型失败时抛出异常（ServiceUnavailableError）
 
-- [ ] 4.3 实现重试策略
-  - [ ] 4.3.1 Rate limit 错误自动重试
-  - [ ] 4.3.2 配置重试次数和延迟
-  - [ ] 4.3.3 区分可重试和不可重试错误
+- [x] 4.3 实现重试策略
+  - [x] 4.3.1 Rate limit 错误自动重试
+  - [x] 4.3.2 配置重试次数和延迟（max_retries、retry_delay_seconds）
+  - [x] 4.3.3 区分可重试和不可重试错误（Auth 不重试，RateLimit 重试）
 
 ## Task 5: Langfuse 集成
 
@@ -100,36 +100,36 @@
 
 ## Task 7: Mock 模式
 
-- [ ] 7.1 实现 Mock 模式
-  - [ ] 7.1.1 检测 mock_mode 配置
-  - [ ] 7.1.2 返回预定义响应
-  - [ ] 7.1.3 模拟 token 使用量
+- [x] 7.1 实现 Mock 模式
+  - [x] 7.1.1 检测 mock_mode 配置
+  - [x] 7.1.2 返回预定义响应
+  - [x] 7.1.3 模拟 token 使用量（~4 chars/token）
 
-- [ ] 7.2 实现 Mock 响应配置
-  - [ ] 7.2.1 支持文本响应
-  - [ ] 7.2.2 支持 function call 响应
+- [x] 7.2 实现 Mock 响应配置
+  - [x] 7.2.1 支持文本响应（mock_responses dict）
+  - [ ] 7.2.2 支持 function call 响应（当前仅文本，占位）
 
 ## Task 8: 单元测试
 
-- [ ] 8.1 LLMConfig 测试
-  - [ ] 8.1.1 测试 from_yaml() 加载配置
-  - [ ] 8.1.2 测试环境变量替换
+- [x] 8.1 LLMConfig 测试
+  - [x] 8.1.1 测试 from_yaml() 加载配置
+  - [x] 8.1.2 测试环境变量替换
   - [ ] 8.1.3 测试配置验证
 
-- [ ] 8.2 LLMClient 测试
-  - [ ] 8.2.1 测试模型路由
-  - [ ] 8.2.2 测试 function calling
-  - [ ] 8.2.3 测试响应解析
+- [x] 8.2 LLMClient 测试
+  - [x] 8.2.1 测试模型路由
+  - [x] 8.2.2 测试 function calling（通过 complete + tools）
+  - [x] 8.2.3 测试响应解析
 
 - [ ] 8.3 辅助组件测试
   - [ ] 8.3.1 测试 PromptBuilder
   - [ ] 8.3.2 测试 ToolsConverter
   - [ ] 8.3.3 测试 TokenEstimator
 
-- [ ] 8.4 错误处理测试
-  - [ ] 8.4.1 测试认证错误
-  - [ ] 8.4.2 测试 rate limit 重试
-  - [ ] 8.4.3 测试模型降级
+- [x] 8.4 错误处理测试
+  - [x] 8.4.1 测试认证错误
+  - [x] 8.4.2 测试 rate limit 重试
+  - [x] 8.4.3 测试模型降级
 
 ## Task 9: 集成测试
 

@@ -1487,3 +1487,559 @@ langchain = [
 
 **维护者**：平台研发  
 **最后更新**：2025-01-15
+```
+
+### 端到端测试
+
+**测试场景**：
+1. 完整的 Runnable 注册和执行流程
+2. 与 Governance Layer 的集成
+3. 与 Ledger 的集成
+4. 与 Langfuse 的集成
+5. Fallback 机制
+6. 重试机制
+
+**示例测试**：
+```python
+@pytest.mark.asyncio
+async def test_end_to_end_langchain_execution():
+    """端到端测试：从注册到执行"""
+    # 创建 mock 组件
+    app = create_test_app()
+    governance = MockGovernanceLayer()
+    ledger = MockLedger()
+    
+    # 创建 LangChain Runnable
+    from langchain.chains import LLMChain
+    from langchain.prompts import PromptTemplate
+    from langchain.llms import FakeListLLM
+    
+    prompt = PromptTemplate(
+        input_variables=["text"],
+        template="Summarize: {text}"
+    )
+    llm = FakeListLLM(responses=["This is a summary"])
+    chain = LLMChain(llm=llm, prompt=prompt)
+    
+    # 注册 Runnable
+    adapter = LangChainAdapter(app, config)
+    adapter.register_runnable(
+        runnable=chain,
+        config=RunnableConfig(
+            name="summarize",
+            description="Summarize text",
+            input_schema={
+                "type": "object",
+                "properties": {"text": {"type": "string"}},
+                "required": ["text"]
+            }
+        )
+    )
+    
+    # 执行
+    result = await app.execute_capability(
+        name="summarize",
+        input={"text": "Long text to summarize..."},
+        context=create_test_context()
+    )
+    
+    # 验证结果
+    assert result["status"] == "success"
+    assert "summary" in result or "result" in result
+    
+    # 验证 Governance Layer 被调用
+    assert governance.validate_called
+    
+    # 验证 Ledger 记录
+    records = ledger.get_records()
+    assert len(records) == 1
+    assert records[0]["capability_name"] == "summarize"
+    assert records[0]["status"] == "success"
+```
+
+### 性能测试
+
+**测试目标**：
+- 验证适配层开销 < 20ms (P95)
+- 验证支持每秒 100+ 次执行
+- 验证支持 10+ 个并发执行
+
+**测试工具**：
+- locust：负载测试
+- pytest-benchmark：性能基准测试
+
+**示例测试**：
+```python
+import pytest
+from locust import HttpUser, task, between
+
+def test_adapter_overhead(benchmark):
+    """测试适配层开销"""
+    adapter = LangChainAdapter(app, config)
+    runnable = create_simple_runnable()
+    
+    def execute():
+        return adapter.execute(
+            runnable,
+            {"text": "test"},
+            create_test_context(),
+            create_test_config()
+        )
+    
+    result = benchmark(execute)
+    
+    # 验证开销 < 20ms
+    assert result.stats.mean < 0.02  # 20ms
+
+class LangChainLoadTest(HttpUser):
+    """负载测试"""
+    wait_time = between(0.1, 0.5)
+    
+    @task
+    def execute_runnable(self):
+        self.client.post("/capabilities/summarize", json={
+            "text": "Test text to summarize"
+        })
+
+# 运行负载测试
+# locust -f test_performance.py --host=http://localhost:8000
+```
+
+## 部署考虑
+
+### 1. 依赖管理
+
+#### 可选依赖配置
+
+```python
+# setup.py
+
+setup(
+    name="owlclaw",
+    version="1.0.0",
+    packages=find_packages(),
+    install_requires=[
+        "pydantic>=2.0.0",
+        "httpx>=0.24.0",
+        # 核心依赖...
+    ],
+    extras_require={
+        "langchain": [
+            "langchain>=0.1.0,<0.3.0",
+            "langchain-core>=0.1.0,<0.3.0",
+            "jsonschema>=4.0.0",
+        ],
+        "all": [
+            "langchain>=0.1.0,<0.3.0",
+            "langchain-core>=0.1.0,<0.3.0",
+            "jsonschema>=4.0.0",
+            # 其他可选依赖...
+        ],
+    },
+)
+```
+
+#### 版本检查
+
+```python
+def check_langchain_version():
+    """检查 LangChain 版本兼容性"""
+    try:
+        import langchain
+        from packaging import version
+        
+        current_version = version.parse(langchain.__version__)
+        min_version = version.parse("0.1.0")
+        max_version = version.parse("0.3.0")
+        
+        if not (min_version <= current_version < max_version):
+            raise ImportError(
+                f"LangChain version {langchain.__version__} is not supported. "
+                f"Please install version >= {min_version} and < {max_version}"
+            )
+    except ImportError:
+        raise ImportError(
+            "LangChain is not installed. "
+            "Install it with: pip install owlclaw[langchain]"
+        )
+```
+
+### 2. 配置管理
+
+#### 配置文件示例
+
+```yaml
+# config/langchain.yaml
+
+langchain:
+  enabled: true
+  
+  # 版本验证
+  version_check: true
+  min_version: "0.1.0"
+  max_version: "0.3.0"
+  
+  # 执行配置
+  default_timeout_seconds: 30
+  max_concurrent_executions: 10
+  
+  # 可观测性
+  tracing:
+    enabled: true
+    langfuse_integration: true
+  
+  # 隐私保护
+  privacy:
+    mask_inputs: false
+    mask_outputs: false
+    mask_patterns:
+      - "api_key"
+      - "password"
+      - "token"
+      - "secret"
+```
+
+#### 环境变量
+
+```bash
+# .env
+
+# LangChain 配置
+OWLCLAW_LANGCHAIN_ENABLED=true
+OWLCLAW_LANGCHAIN_TIMEOUT=30
+OWLCLAW_LANGCHAIN_TRACING_ENABLED=true
+
+# Langfuse 配置
+LANGFUSE_PUBLIC_KEY=pk_xxx
+LANGFUSE_SECRET_KEY=sk_xxx
+LANGFUSE_HOST=https://cloud.langfuse.com
+```
+
+### 3. 监控和告警
+
+#### Prometheus 指标
+
+```python
+from prometheus_client import Counter, Histogram, Gauge
+
+# 定义指标
+langchain_executions_total = Counter(
+    'langchain_executions_total',
+    'Total number of LangChain executions',
+    ['capability', 'status']
+)
+
+langchain_execution_duration = Histogram(
+    'langchain_execution_duration_seconds',
+    'Time spent executing LangChain Runnables',
+    ['capability']
+)
+
+langchain_active_executions = Gauge(
+    'langchain_active_executions',
+    'Number of active LangChain executions',
+    ['capability']
+)
+
+langchain_fallback_used = Counter(
+    'langchain_fallback_used_total',
+    'Total number of times fallback was used',
+    ['capability', 'reason']
+)
+
+# 在代码中使用
+langchain_executions_total.labels(
+    capability=config.name,
+    status='success'
+).inc()
+
+langchain_execution_duration.labels(
+    capability=config.name
+).observe(duration)
+```
+
+#### 告警规则
+
+```yaml
+# prometheus-alerts.yaml
+
+groups:
+- name: langchain_integration
+  rules:
+  - alert: LangChainHighFailureRate
+    expr: rate(langchain_executions_total{status="failed"}[5m]) / rate(langchain_executions_total[5m]) > 0.1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "LangChain execution failure rate is high"
+      description: "{{ $value | humanizePercentage }} of executions are failing"
+
+  - alert: LangChainHighLatency
+    expr: histogram_quantile(0.95, rate(langchain_execution_duration_seconds_bucket[5m])) > 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "LangChain execution latency is high"
+      description: "P95 latency is {{ $value }}s"
+
+  - alert: LangChainFrequentFallback
+    expr: rate(langchain_fallback_used_total[5m]) > 0.5
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: "LangChain fallback is frequently used"
+      description: "Fallback is being used {{ $value }} times per second"
+```
+
+### 4. 安全考虑
+
+#### 输入验证
+
+```python
+def validate_input_safety(input_data: Dict[str, Any]) -> None:
+    """验证输入数据的安全性"""
+    # 检查输入大小
+    import json
+    input_size = len(json.dumps(input_data))
+    if input_size > 1024 * 1024:  # 1MB
+        raise ValueError(f"Input size {input_size} exceeds limit")
+    
+    # 检查嵌套深度
+    def check_depth(obj, current_depth=0, max_depth=10):
+        if current_depth > max_depth:
+            raise ValueError(f"Input nesting depth exceeds {max_depth}")
+        if isinstance(obj, dict):
+            for value in obj.values():
+                check_depth(value, current_depth + 1, max_depth)
+        elif isinstance(obj, list):
+            for item in obj:
+                check_depth(item, current_depth + 1, max_depth)
+    
+    check_depth(input_data)
+```
+
+#### 输出脱敏
+
+```python
+import re
+
+def mask_sensitive_data(data: Any, patterns: List[str]) -> Any:
+    """脱敏敏感数据"""
+    if isinstance(data, str):
+        for pattern in patterns:
+            # 使用正则表达式匹配并替换
+            data = re.sub(
+                pattern,
+                lambda m: m.group(0)[:3] + '*' * (len(m.group(0)) - 3),
+                data,
+                flags=re.IGNORECASE
+            )
+        return data
+    elif isinstance(data, dict):
+        return {k: mask_sensitive_data(v, patterns) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [mask_sensitive_data(item, patterns) for item in data]
+    else:
+        return data
+
+# 使用
+masked_output = mask_sensitive_data(
+    output,
+    patterns=[
+        r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',  # 邮箱
+        r'\b\d{3}-\d{4}-\d{4}\b',  # 电话号码
+        r'\b(api[_-]?key|token|secret|password)\s*[:=]\s*\S+\b',  # API keys
+    ]
+)
+```
+
+### 5. 故障排查
+
+#### 日志配置
+
+```python
+import logging
+
+# 配置 LangChain 集成日志
+logger = logging.getLogger('owlclaw.integrations.langchain')
+logger.setLevel(logging.INFO)
+
+# 添加处理器
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+))
+logger.addHandler(handler)
+
+# 在代码中使用
+logger.info(f"Executing LangChain Runnable: {config.name}")
+logger.debug(f"Input: {input}")
+logger.debug(f"Output: {output}")
+logger.error(f"Execution failed: {error}", exc_info=True)
+```
+
+#### 调试模式
+
+```python
+class LangChainAdapter:
+    def __init__(self, app, config):
+        self.app = app
+        self.config = config
+        self.debug = config.debug if hasattr(config, 'debug') else False
+    
+    async def execute(self, runnable, input, context, config):
+        if self.debug:
+            # 记录详细的调试信息
+            logger.debug(f"=== LangChain Execution Debug ===")
+            logger.debug(f"Runnable: {type(runnable).__name__}")
+            logger.debug(f"Config: {config}")
+            logger.debug(f"Input: {json.dumps(input, indent=2)}")
+        
+        # 执行...
+        
+        if self.debug:
+            logger.debug(f"Output: {json.dumps(output, indent=2)}")
+            logger.debug(f"Duration: {duration}ms")
+            logger.debug(f"=== End Debug ===")
+```
+
+#### 常见问题
+
+| 问题 | 可能原因 | 解决方案 |
+|------|---------|---------|
+| ImportError: No module named 'langchain' | LangChain 未安装 | `pip install owlclaw[langchain]` |
+| ValidationError: Input validation failed | 输入不符合 schema | 检查 input_schema 定义和输入数据 |
+| TimeoutError: Execution timeout | Runnable 执行时间过长 | 增加 timeout_seconds 或优化 Runnable |
+| RateLimitError: Rate limit exceeded | 超过 LLM API 速率限制 | 配置重试策略或降低并发 |
+| TypeError: Expected Runnable | 注册的对象不是 Runnable | 确保对象实现 Runnable 接口 |
+
+## 迁移指南
+
+### 从纯 LangChain 迁移到 OwlClaw
+
+#### 步骤 1：安装 OwlClaw
+
+```bash
+pip install owlclaw[langchain]
+```
+
+#### 步骤 2：创建 OwlClaw 应用
+
+```python
+from owlclaw import OwlClawApp
+
+app = OwlClawApp(
+    name="my-agent",
+    config_path="config/owlclaw.yaml"
+)
+```
+
+#### 步骤 3：注册现有 LangChain Chain
+
+```python
+# 原有代码
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.llms import OpenAI
+
+prompt = PromptTemplate(
+    input_variables=["text"],
+    template="Summarize the following text: {text}"
+)
+llm = OpenAI(temperature=0.7)
+chain = LLMChain(llm=llm, prompt=prompt)
+
+# 迁移后：注册为 capability
+@app.handler(
+    name="summarize",
+    description="Summarize text using LangChain",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "text": {"type": "string"}
+        },
+        "required": ["text"]
+    }
+)
+def summarize_handler(input: dict) -> dict:
+    result = chain.run(input["text"])
+    return {"summary": result}
+```
+
+#### 步骤 4：调用 Capability
+
+```python
+# 原有调用方式
+result = chain.run("Long text to summarize...")
+
+# 迁移后：通过 OwlClaw 调用
+result = await app.execute_capability(
+    name="summarize",
+    input={"text": "Long text to summarize..."}
+)
+summary = result["summary"]
+```
+
+#### 步骤 5：添加治理和审计
+
+```python
+# 配置治理策略
+app.governance.add_policy(
+    name="rate_limit_summarize",
+    capability="summarize",
+    rate_limit={"max_calls": 100, "window_seconds": 60}
+)
+
+# 查询审计日志
+records = await app.ledger.query(
+    capability_name="summarize",
+    start_time=datetime.now() - timedelta(days=1)
+)
+```
+
+### 最佳实践
+
+1. **Schema 定义**：
+   - 使用详细的 JSON Schema 定义输入
+   - 包含 description 字段帮助理解
+   - 使用 required 字段标记必需参数
+
+2. **错误处理**：
+   - 为关键 capability 配置 fallback
+   - 配置合理的重试策略
+   - 记录详细的错误日志
+
+3. **性能优化**：
+   - 使用异步 Runnable（ainvoke）
+   - 配置合理的超时时间
+   - 限制并发执行数量
+
+4. **安全性**：
+   - 启用输入输出脱敏
+   - 配置权限控制策略
+   - 定期审查审计日志
+
+5. **可观测性**：
+   - 启用 Langfuse 集成
+   - 配置 Prometheus 指标
+   - 设置告警规则
+
+## 总结
+
+LangChain 集成为 OwlClaw 提供了强大的编排能力，使得：
+
+1. **无缝集成**：现有 LangChain 代码可以直接注册为 capability
+2. **治理一致**：LangChain 执行受相同的治理和审计约束
+3. **可观测性**：完整的追踪和监控支持
+4. **易于迁移**：提供清晰的迁移路径和最佳实践
+5. **可选依赖**：不影响核心 SDK 的体积和复杂度
+
+通过隔离设计、完善的错误处理、配置管理和监控告警，该集成在提供强大功能的同时，保持了系统的稳定性和可维护性。
+
+---
+
+**维护者**：平台研发  
+**最后更新**：2026-02-22

@@ -45,7 +45,7 @@
 - [x] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
 - [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
   **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
-- [ ] `owlclaw.integrations.llm` — litellm 集成 → spec: integrations-llm
+- [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
@@ -91,7 +91,7 @@
 | governance | `.kiro/specs/governance/` | ✅ 文档齐全 | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 文档齐全，实现进行中（Task 1/2/4 已完成） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 文档齐全；集成测试 1 个 SKIP（见清单验收备注） | Hatchet 集成 |
-| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 文档齐全 | litellm 集成 |
+| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 文档齐全，核心实现已完成 | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 待创建 | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 待创建 | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 待创建 | 消息队列触发器 |
@@ -114,10 +114,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-21 |
-| 当前批次 | ci-setup（GitHub Actions lint + test） |
-| 批次状态 | 完成。.github/workflows/ci.yml 已创建；ruff + pytest 通过；修复 8 个 Ruff 错误 |
-| 已完成项 | ci-setup 2.1.1–2.1.2；Phase 0 全部完成 |
-| 下一待执行 | **agent-runtime**（memory）、**agent-tools**（remember/recall 依赖 Memory）或 **integrations-llm** |
+| 当前批次 | integrations-llm Task 7 + Task 8 |
+| 批次状态 | 完成。Task 7.1/7.2.1 完成，7.1.3 token 模拟；Task 8.1/8.2/8.4 完成 |
+| 已完成项 | Task 7.1.1–7.1.3、7.2.1；Task 8.1.1–8.1.2、8.2、8.4 |
+| 下一待执行 | **agent-runtime**（memory）、**agent-tools**（remember/recall 依赖 Memory）或 integrations-llm Task 3/5 |
 | 阻塞项 | remember/recall 依赖 MemorySystem |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

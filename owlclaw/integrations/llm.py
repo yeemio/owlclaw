@@ -353,12 +353,17 @@ class LLMClient:
         if self.config.mock_mode and self.config.mock_responses:
             key = task_type or "default"
             content = self.config.mock_responses.get(key, self.config.mock_responses.get("default", ""))
+            # Simulate token usage (~4 chars per token)
+            prompt_chars = len(json.dumps(messages, default=str))
+            completion_chars = len(content)
+            prompt_tokens = max(1, prompt_chars // 4)
+            completion_tokens = max(0, completion_chars // 4)
             return LLMResponse(
                 content=content,
                 function_calls=[],
                 model="mock",
-                prompt_tokens=0,
-                completion_tokens=0,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
                 cost=0.0,
             )
         model_name, model_config, fallback = self._route_model(task_type)

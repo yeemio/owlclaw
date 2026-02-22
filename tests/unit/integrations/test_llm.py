@@ -112,8 +112,11 @@ class TestLLMClient:
         )
         assert resp.content == "Hello"
         assert resp.model == "mock"
-        assert resp.prompt_tokens == 0
-        assert resp.completion_tokens == 0
+        # Simulated token usage (~4 chars per token, Task 7.1.3)
+        assert resp.prompt_tokens >= 1
+        assert resp.completion_tokens >= 1
+        # "Hello" = 5 chars -> 5//4 = 1
+        assert resp.completion_tokens == 1
 
     @pytest.mark.asyncio
     async def test_complete_delegates_to_acompletion(self) -> None:
