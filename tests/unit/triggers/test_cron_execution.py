@@ -237,6 +237,31 @@ class TestGovernanceChecks:
         assert passed is False
         assert "Daily cost limit" in reason
 
+    async def test_daily_limits_use_execution_triggered_date(self) -> None:
+        import uuid
+        from datetime import datetime, timezone
+
+        reg = _registry()
+        cfg = _config(max_daily_runs=10)
+
+        ledger = MagicMock()
+        ledger.query_records = AsyncMock(return_value=[])
+
+        execution = CronExecution(
+            execution_id=str(uuid.uuid4()),
+            event_name="test_job",
+            triggered_at=datetime(2026, 2, 21, 23, 59, tzinfo=timezone.utc),
+            status=ExecutionStatus.PENDING,
+            context={},
+        )
+        passed, reason = await reg._check_governance(cfg, execution, ledger, "default")
+        assert passed is True
+        assert reason == ""
+
+        call_filters = ledger.query_records.call_args.args[1]
+        assert call_filters.start_date == execution.triggered_at.date()
+        assert call_filters.end_date == execution.triggered_at.date()
+
 
 # ---------------------------------------------------------------------------
 # Task 3.4 — Agent vs Fallback decision

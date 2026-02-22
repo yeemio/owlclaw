@@ -18,7 +18,7 @@ import traceback as _traceback
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -569,6 +569,7 @@ class CronTriggerRegistry:
         from owlclaw.governance.ledger import LedgerQueryFilters
 
         checks: dict[str, Any] = {}
+        execution_day = execution.triggered_at.astimezone(timezone.utc).date()
 
         if ledger is not None and config.cooldown_seconds > 0:
             records = await ledger.query_records(
@@ -597,13 +598,12 @@ class CronTriggerRegistry:
             checks["cooldown"] = True
 
         if ledger is not None and config.max_daily_runs is not None:
-            today = date.today()
             records = await ledger.query_records(
                 tenant_id,
                 LedgerQueryFilters(
                     capability_name=config.event_name,
-                    start_date=today,
-                    end_date=today,
+                    start_date=execution_day,
+                    end_date=execution_day,
                 ),
             )
             today_runs = len(records)
@@ -617,13 +617,12 @@ class CronTriggerRegistry:
             checks["daily_runs"] = True
 
         if ledger is not None and config.max_daily_cost is not None:
-            today = date.today()
             records = await ledger.query_records(
                 tenant_id,
                 LedgerQueryFilters(
                     capability_name=config.event_name,
-                    start_date=today,
-                    end_date=today,
+                    start_date=execution_day,
+                    end_date=execution_day,
                 ),
             )
             today_cost = sum(
