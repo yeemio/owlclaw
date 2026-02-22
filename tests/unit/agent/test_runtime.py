@@ -662,6 +662,34 @@ class TestAgentRuntimeRun:
         assert result["final_response"] == "ok"
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_non_finite_llm_timeout_config_falls_back_to_default(
+        self, mock_llm, tmp_path
+    ) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"llm_timeout_seconds": float("nan")},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_non_finite_run_timeout_config_falls_back_to_default(
+        self, mock_llm, tmp_path
+    ) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"run_timeout_seconds": float("inf")},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_no_registry_no_tools(self, mock_llm, tmp_path) -> None:
         """Without a registry the visible tools list is empty."""
         mock_llm.return_value = _make_llm_response()

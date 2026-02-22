@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
 import time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
@@ -208,6 +209,8 @@ class AgentRuntime:
                 run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
         if run_timeout <= 0:
             run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
+        if not math.isfinite(run_timeout):
+            run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
         try:
             result = await asyncio.wait_for(
                 self._decision_loop(context),
@@ -279,6 +282,8 @@ class AgentRuntime:
             except (TypeError, ValueError):
                 llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
         if llm_timeout <= 0:
+            llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
+        if not math.isfinite(llm_timeout):
             llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
         model_used = self.model
         iteration = 0
