@@ -55,6 +55,14 @@ class TemplateRegistry:
             for template_file in sorted(category_dir.glob("*.md.j2")):
                 try:
                     metadata = self._parse_template_metadata(template_file, category)
+                    if metadata.id in self._templates:
+                        logger.warning(
+                            "Duplicate template id '%s' in %s (already loaded from %s); skipping",
+                            metadata.id,
+                            template_file,
+                            self._templates[metadata.id].file_path,
+                        )
+                        continue
                     self._templates[metadata.id] = metadata
                 except Exception as e:
                     logger.warning(

@@ -9,6 +9,7 @@ from owlclaw.templates.skills import (
     TemplateRegistry,
 )
 from owlclaw.templates.skills.exceptions import TemplateNotFoundError
+from owlclaw.templates.skills.models import TemplateMetadata
 
 
 def _templates_dir() -> Path:
@@ -163,3 +164,40 @@ name: test
         assert reg.get_template("any/id") is None
         assert reg.list_templates() == []
         assert reg.search_templates("x") == []
+
+    def test_duplicate_template_id_keeps_first_loaded(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        (tmp_path / "monitoring").mkdir()
+        (tmp_path / "analysis").mkdir()
+        first = tmp_path / "monitoring" / "health-check.md.j2"
+        second = tmp_path / "analysis" / "trend-detector.md.j2"
+        first.write_text("{#\nname: First\ndescription: first\ntags: []\nparameters: []\n#}\n", encoding="utf-8")
+        second.write_text("{#\nname: Second\ndescription: second\ntags: []\nparameters: []\n#}\n", encoding="utf-8")
+
+        def _fake_parse(self: TemplateRegistry, template_file: Path, category: TemplateCategory) -> TemplateMetadata:
+            if "health-check" in template_file.name:
+                return TemplateMetadata(
+                    id="monitoring/duplicate",
+                    name="First",
+                    category=TemplateCategory.MONITORING,
+                    description="first",
+                    tags=[],
+                    parameters=[],
+                    examples=[],
+                    file_path=template_file,
+                )
+            return TemplateMetadata(
+                id="monitoring/duplicate",
+                name="Second",
+                category=TemplateCategory.MONITORING,
+                description="second",
+                tags=[],
+                parameters=[],
+                examples=[],
+                file_path=template_file,
+            )
+
+        monkeypatch.setattr(TemplateRegistry, "_parse_template_metadata", _fake_parse)
+        reg = TemplateRegistry(tmp_path)
+        loaded = reg.get_template("monitoring/duplicate")
+        assert loaded is not None
+        assert loaded.name == "Second"
