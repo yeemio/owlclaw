@@ -45,6 +45,13 @@ class CapabilityRegistry:
             raise ValueError(f"{field} must be a non-empty string")
         return normalized
 
+    @staticmethod
+    def _callable_name(func: Callable) -> str:
+        name = getattr(func, "__name__", None)
+        if isinstance(name, str) and name:
+            return name
+        return func.__class__.__name__
+
     def register_handler(self, skill_name: str, handler: Callable) -> None:
         """Register a handler function for a Skill.
 
@@ -73,8 +80,8 @@ class CapabilityRegistry:
         if skill_name in self.handlers:
             raise ValueError(
                 f"Handler for '{skill_name}' already registered. "
-                f"Existing: {self.handlers[skill_name].__name__}, "
-                f"New: {handler.__name__}"
+                f"Existing: {self._callable_name(self.handlers[skill_name])}, "
+                f"New: {self._callable_name(handler)}"
             )
 
         self.handlers[skill_name] = handler
@@ -239,7 +246,7 @@ class CapabilityRegistry:
                     "focus": skill.focus,
                     "risk_level": skill.risk_level,
                     "requires_confirmation": skill.requires_confirmation,
-                    "handler": handler.__name__,
+                    "handler": self._callable_name(handler),
                 })
 
         return capabilities
@@ -267,7 +274,7 @@ class CapabilityRegistry:
             "focus": skill.focus,
             "risk_level": skill.risk_level,
             "requires_confirmation": skill.requires_confirmation,
-            "handler": handler.__name__ if handler else None,
+            "handler": self._callable_name(handler) if handler else None,
         }
 
     def filter_by_task_type(self, task_type: str) -> list[str]:

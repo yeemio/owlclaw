@@ -68,6 +68,18 @@ def test_register_handler_trims_skill_name(registry):
     assert "entry-monitor" in registry.handlers
 
 
+def test_register_handler_callable_object_metadata_name(registry):
+    class CallableHandler:
+        def __call__(self, session):
+            return {"ok": True}
+
+    handler = CallableHandler()
+    registry.register_handler("entry-monitor", handler)
+    meta = registry.get_capability_metadata("entry-monitor")
+    assert meta is not None
+    assert meta["handler"] == "CallableHandler"
+
+
 @pytest.mark.asyncio
 async def test_invoke_handler_success_sync(registry):
     """invoke_handler() calls sync handler and returns result."""
