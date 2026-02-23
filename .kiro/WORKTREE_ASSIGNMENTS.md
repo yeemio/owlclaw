@@ -165,6 +165,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：agent-runtime 已完成（105/105），hatchet_bridge 已就绪，integrations-hatchet 收尾阶段。
 
+**下一任务（当前完成后）**：integrations-hatchet 收口后 → **triggers-cron** (39/92)。
+
 **禁止触碰**（分配给编码 2 的路径）：
 
 - `owlclaw/security/**`
@@ -188,7 +190,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | capabilities-skills | 107/108 | `owlclaw/capabilities/skills.py`, `owlclaw/capabilities/knowledge.py`, `tests/unit/test_skills*.py` |
 | agent-tools | 66/139 | `owlclaw/agent/tools.py`, `tests/unit/agent/test_tools*.py` |
 
-**前置条件**：governance 已完成（173/173），capabilities-skills 只差 1 task 可快速收口；agent-tools 接续推进。
+**下一任务（当前完成后）**：capabilities-skills 收口后继续 agent-tools；agent-tools 全部完成后 → **skill-templates** (92/149)。
 
 **禁止触碰**（分配给编码 1 的路径）：
 

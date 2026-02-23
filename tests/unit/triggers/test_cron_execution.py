@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,7 +25,7 @@ def _registry() -> CronTriggerRegistry:
 
 
 def _config(**kwargs) -> CronTriggerConfig:
-    defaults = dict(
+    defaults: dict[str, Any] = dict(
         event_name="test_job",
         expression="0 * * * *",
         migration_weight=1.0,
@@ -174,6 +175,7 @@ class TestGovernanceChecks:
         # Mock a Ledger record created 10 seconds ago
         recent_record = MagicMock()
         recent_record.created_at = datetime.now(timezone.utc) - timedelta(seconds=10)
+        recent_record.status = "success"
         ledger = MagicMock()
         ledger.query_records = AsyncMock(return_value=[recent_record])
 
@@ -284,6 +286,68 @@ class TestGovernanceChecks:
         passed, reason = await reg._check_governance(cfg, execution, ledger, "default")
         assert passed is True
         assert reason == ""
+
+    async def test_get_last_successful_execution_prefers_success_or_fallback(self) -> None:
+        reg = _registry()
+        failed = MagicMock()
+        failed.status = "failed"
+        fallback = MagicMock()
+        fallback.status = "fallback"
+        ledger = MagicMock()
+        ledger.query_records = AsyncMock(return_value=[failed, fallback])
+        rec = await reg._get_last_successful_execution(
+            ledger=ledger,
+            tenant_id="default",
+            event_name="test_job",
+        )
+        assert rec is fallback
+
+    async def test_count_today_executions_returns_record_count(self) -> None:
+        from datetime import date
+
+        reg = _registry()
+        ledger = MagicMock()
+        ledger.query_records = AsyncMock(return_value=[MagicMock(), MagicMock(), MagicMock()])
+        count = await reg._count_today_executions(
+            ledger=ledger,
+            tenant_id="default",
+            event_name="test_job",
+            day=date(2026, 2, 23),
+        )
+        assert count == 3
+
+    async def test_sum_today_cost_accumulates_estimated_cost(self) -> None:
+        from datetime import date
+
+        reg = _registry()
+        r1 = MagicMock()
+        r1.estimated_cost = Decimal("0.25")
+        r2 = MagicMock()
+        r2.estimated_cost = Decimal("0.75")
+        ledger = MagicMock()
+        ledger.query_records = AsyncMock(return_value=[r1, r2])
+        total = await reg._sum_today_cost(
+            ledger=ledger,
+            tenant_id="default",
+            event_name="test_job",
+            day=date(2026, 2, 23),
+        )
+        assert total == 1.0
+
+    async def test_get_recent_executions_honors_limit_bounds(self) -> None:
+        reg = _registry()
+        records = [MagicMock() for _ in range(3)]
+        ledger = MagicMock()
+        ledger.query_records = AsyncMock(return_value=records)
+        out = await reg._get_recent_executions(
+            ledger=ledger,
+            tenant_id="default",
+            event_name="test_job",
+            limit=500,
+        )
+        assert out == records
+        filters = ledger.query_records.call_args.args[1]
+        assert filters.limit == 100
 
 
 # ---------------------------------------------------------------------------

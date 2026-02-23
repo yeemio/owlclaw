@@ -95,7 +95,7 @@
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（66/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
+| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（96/117） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（agent-tools + integrations-hatchet 性能补测） |
-| 批次状态 | **完成**。已补齐 BuiltInTools 记忆工具，并完成 Hatchet 并发/调度精度性能测试。 |
-| 已完成项 | `owlclaw/agent/tools.py` 新增 `remember/recall` schema 与执行逻辑（含参数校验、Memory 调用、Ledger 记录）；`tests/unit/agent/test_tools.py` 增加记忆工具成功/失败/无结果用例；`tests/unit/test_hatchet_perf.py` 新增 10 并发任务与 schedule 精度测试；回填 `.kiro/specs/agent-tools/tasks.md` Task 1.5/3.1/3.2/6.3 与 `.kiro/specs/integrations-hatchet/tasks.md` Task 11.2/11.3。 |
-| 下一待执行 | 继续收口 `integrations-hatchet` 剩余 7.2.3/7.2.4/11.1.2（需真实 Hatchet 环境）并推进 `triggers-cron` 6~16。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py tests/unit/test_app.py -q` -> `71 passed`；`poetry run ruff check owlclaw/agent/tools.py tests/unit/agent/test_tools.py` + `poetry run mypy owlclaw/agent/tools.py tests/unit/agent/test_tools.py` 通过；`poetry run pytest tests/unit/test_hatchet_perf.py -q` 通过。 |
+| 当前批次 | review 循环（triggers-cron 熔断器持久化与多渠道通知补齐） |
+| 批次状态 | **完成**。已补齐熔断器持久化状态存储适配与 ErrorNotifier 多渠道通知，治理与错误处理章节进一步收口。 |
+| 已完成项 | `owlclaw/triggers/cron.py` 的 `CircuitBreaker` 新增 `state_store` 持久化适配（`get/set/delete`），`check/open/close` 读写持久状态；`ErrorNotifier` 新增多渠道通知能力（支持同步/异步 channel）；新增 `tests/unit/triggers/test_cron_observability_and_resilience.py` 覆盖持久化状态读写与多渠道通知。 |
+| 下一待执行 | 继续推进 `triggers-cron` 的 12~16（性能优化、部署、文档、最终集成），并并行收口 `integrations-hatchet` 剩余真实环境项。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/cron.py tests/unit/triggers/test_cron_observability_and_resilience.py`、`poetry run mypy owlclaw/triggers/cron.py tests/unit/triggers/test_cron_observability_and_resilience.py`、`poetry run pytest tests/unit/triggers/test_cron_observability_and_resilience.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py -q` 均通过（103 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

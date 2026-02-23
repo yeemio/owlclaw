@@ -133,6 +133,7 @@ class TestCronRegistration:
             priority=5,
         )
         config = reg.get_trigger("weekly_report")
+        assert config is not None
         assert config.focus == "reporting"
         assert config.fallback_handler is fallback
         assert config.description == "Weekly report"
@@ -184,11 +185,17 @@ class TestTaskManagement:
     def test_pause_resume_toggle_enabled(self) -> None:
         reg = self._registry()
         reg.register("job", "0 * * * *")
-        assert reg.get_trigger("job").enabled is True
+        first = reg.get_trigger("job")
+        assert first is not None
+        assert first.enabled is True
         reg.pause_trigger(" job ")
-        assert reg.get_trigger("job").enabled is False
+        paused = reg.get_trigger("job")
+        assert paused is not None
+        assert paused.enabled is False
         reg.resume_trigger(" job ")
-        assert reg.get_trigger("job").enabled is True
+        resumed = reg.get_trigger("job")
+        assert resumed is not None
+        assert resumed.enabled is True
 
     def test_pause_missing_raises(self) -> None:
         reg = self._registry()
@@ -205,6 +212,40 @@ class TestTaskManagement:
         with pytest.raises(KeyError, match="not found"):
             reg.resume_trigger("missing")
 
+    def test_pause_calls_hatchet_pause_task_when_supported(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.pause_task = MagicMock(return_value=None)
+        reg._hatchet_client = hatchet  # type: ignore[assignment]
+        reg.pause_trigger("job")
+        hatchet.pause_task.assert_called_once_with("cron_job")
+
+    def test_resume_calls_hatchet_resume_task_when_supported(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.resume_task = MagicMock(return_value=None)
+        reg._hatchet_client = hatchet  # type: ignore[assignment]
+        reg.resume_trigger("job")
+        hatchet.resume_task.assert_called_once_with("cron_job")
+
+    def test_pause_resume_record_management_actions_to_ledger(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        ledger = MagicMock()
+        ledger.record_execution = AsyncMock(return_value=None)
+        reg._ledger = ledger  # type: ignore[assignment]
+        reg.pause_trigger("job")
+        reg.resume_trigger("job")
+        assert ledger.record_execution.call_count == 2
+        first = ledger.record_execution.call_args_list[0].kwargs
+        second = ledger.record_execution.call_args_list[1].kwargs
+        assert first["task_type"] == "cron_management"
+        assert first["input_params"]["action"] == "pause"
+        assert second["task_type"] == "cron_management"
+        assert second["input_params"]["action"] == "resume"
+
     def test_get_trigger_status_returns_expected_fields(self) -> None:
         reg = self._registry()
         reg.register("daily", "0 9 * * *", focus="morning")
@@ -214,6 +255,20 @@ class TestTaskManagement:
         assert status["expression"] == "0 9 * * *"
         assert status["focus"] == "morning"
         assert "next_run" in status
+        assert status["success_rate"] is None
+        assert status["average_duration_seconds"] is None
+        assert status["sample_size"] == 0
+
+    def test_get_trigger_status_computes_success_rate_and_avg_duration(self) -> None:
+        reg = self._registry()
+        reg.register("daily", "0 9 * * *", focus="morning")
+        reg._record_recent_execution("daily", "success", 1.0)
+        reg._record_recent_execution("daily", "failed", 2.0)
+        reg._record_recent_execution("daily", "fallback", 3.0)
+        status = reg.get_trigger_status("daily")
+        assert status["sample_size"] == 3
+        assert status["success_rate"] == pytest.approx(2 / 3)
+        assert status["average_duration_seconds"] == pytest.approx(2.0)
 
     def test_get_trigger_status_missing_raises(self) -> None:
         reg = self._registry()
@@ -279,6 +334,25 @@ class TestTaskManagement:
         reg.start(hatchet, agent_runtime=None, ledger=None, tenant_id="  tenant-a  ")
         await reg.trigger_now("job")
         hatchet.run_task_now.assert_awaited_once_with("cron_job", tenant_id="tenant-a")
+
+    @pytest.mark.asyncio
+    async def test_trigger_now_records_manual_trigger_to_ledger(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.run_task_now = AsyncMock(return_value="run-123")
+        ledger = MagicMock()
+        ledger.record_execution = AsyncMock()
+        reg.start(hatchet, agent_runtime=None, ledger=ledger, tenant_id="tenant-a")
+
+        await reg.trigger_now("job", foo="bar")
+
+        ledger.record_execution.assert_awaited_once()
+        call = ledger.record_execution.call_args.kwargs
+        assert call["tenant_id"] == "tenant-a"
+        assert call["capability_name"] == "job"
+        assert call["task_type"] == "cron_manual_trigger"
+        assert call["input_params"]["trigger_type"] == "manual"
 
     @pytest.mark.asyncio
     async def test_trigger_now_without_start_raises(self) -> None:
