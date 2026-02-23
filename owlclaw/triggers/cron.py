@@ -111,6 +111,84 @@ class CronExecution:
     retry_count: int = 0
 
 
+class FocusManager:
+    """Load and format skills with optional focus filtering."""
+
+    def __init__(self, skills_manager: Any) -> None:
+        self.skills_manager = skills_manager
+
+    async def load_skills_for_focus(self, focus: str | None) -> list[Any]:
+        """Load skills and filter by focus when provided."""
+        list_skills = getattr(self.skills_manager, "list_skills", None)
+        if not callable(list_skills):
+            return []
+        skills = list_skills()
+        if inspect.isawaitable(skills):
+            skills = await skills
+        if not isinstance(skills, list):
+            return []
+        if not focus:
+            return [skill for skill in skills if hasattr(skill, "name") and hasattr(skill, "description")]
+        normalized_focus = focus.strip().lower()
+        if not normalized_focus:
+            return [skill for skill in skills if hasattr(skill, "name") and hasattr(skill, "description")]
+        return [skill for skill in skills if self._skill_matches_focus(skill, normalized_focus)]
+
+    def _skill_matches_focus(self, skill: Any, focus: str) -> bool:
+        """Return whether a single skill matches the given focus."""
+        target = focus.strip().lower()
+        if not target:
+            return True
+        try:
+            direct_focus = getattr(skill, "focus", [])
+            direct_values: list[str]
+            if isinstance(direct_focus, str):
+                direct_values = [direct_focus]
+            elif isinstance(direct_focus, list):
+                direct_values = [str(value) for value in direct_focus]
+            else:
+                direct_values = []
+            if any(value.strip().lower() == target for value in direct_values if value.strip()):
+                return True
+
+            metadata = getattr(skill, "metadata", {})
+            if isinstance(metadata, dict):
+                meta_focus = metadata.get("focus", [])
+                if isinstance(meta_focus, str):
+                    meta_values = [meta_focus]
+                elif isinstance(meta_focus, list):
+                    meta_values = [str(value) for value in meta_focus]
+                else:
+                    meta_values = []
+                if any(value.strip().lower() == target for value in meta_values if value.strip()):
+                    return True
+        except Exception:
+            return False
+        return False
+
+    def build_agent_prompt(self, focus: str | None, skills: list[Any]) -> str:
+        """Build a prompt snippet describing current focus and available skills."""
+        prompt_parts: list[str] = []
+        if focus and focus.strip():
+            normalized_focus = focus.strip()
+            prompt_parts.append(f"Current focus: {normalized_focus}")
+            prompt_parts.append(f"You should prioritize actions related to {normalized_focus}.")
+        else:
+            prompt_parts.append("Current focus: none")
+        prompt_parts.append("")
+        prompt_parts.append("Available skills:")
+        if not skills:
+            prompt_parts.append("- (none)")
+            return "\n".join(prompt_parts)
+        for skill in skills:
+            name = str(getattr(skill, "name", "")).strip()
+            description = str(getattr(skill, "description", "")).strip()
+            if not name:
+                continue
+            prompt_parts.append(f"- {name}: {description}")
+        return "\n".join(prompt_parts)
+
+
 # ---------------------------------------------------------------------------
 # CronTriggerRegistry — Task 2
 # ---------------------------------------------------------------------------

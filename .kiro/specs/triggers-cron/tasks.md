@@ -151,33 +151,33 @@
   - 验证 cron 表达式得到验证
   - _验收_：68 个 triggers + app 测试全通过（2026-02-21）
 
-- [ ] 6. 实现 Focus 和 Skills 集成
-  - [ ] 6.1 创建 FocusManager 类
-    - 使用 SkillsManager 依赖实现 `__init__`
-    - 创建 `load_skills_for_focus` 方法
-    - 如果 focus 为 None 则加载所有 skills
-    - 如果提供了 focus 则按 focus 标签过滤 skills
+- [x] 6. 实现 Focus 和 Skills 集成
+  - [x] 6.1 创建 FocusManager 类
+    - [x] 使用 SkillsManager 依赖实现 `__init__`
+    - [x] 创建 `load_skills_for_focus` 方法
+    - [x] 如果 focus 为 None 则加载所有 skills
+    - [x] 如果提供了 focus 则按 focus 标签过滤 skills
     - _需求: FR-5_
   
-  - [ ] 6.2 实现 skill 匹配逻辑
-    - 创建 `_skill_matches_focus` 方法
-    - 从 skill 元数据/frontmatter 读取 focus 标签
-    - 支持字符串和列表 focus 值
-    - 返回布尔匹配结果
+  - [x] 6.2 实现 skill 匹配逻辑
+    - [x] 创建 `_skill_matches_focus` 方法
+    - [x] 从 skill 元数据/frontmatter 读取 focus 标签
+    - [x] 支持字符串和列表 focus 值
+    - [x] 返回布尔匹配结果
     - _需求: FR-5_
   
-  - [ ] 6.3 实现 Agent prompt 构建
-    - 创建 `build_agent_prompt` 方法
-    - 如果指定则在 prompt 中包含当前 focus
-    - 列出可用 skills 及其名称和描述
-    - 格式化 prompt 供 Agent 使用
+  - [x] 6.3 实现 Agent prompt 构建
+    - [x] 创建 `build_agent_prompt` 方法
+    - [x] 如果指定则在 prompt 中包含当前 focus
+    - [x] 列出可用 skills 及其名称和描述
+    - [x] 格式化 prompt 供 Agent 使用
     - _需求: FR-5_
   
-  - [ ]* 6.4 编写 FocusManager 的单元测试
-    - 测试 focus 为 None 时加载所有 skills
-    - 测试按 focus 标签过滤 skills
-    - 测试 skill 匹配逻辑
-    - 测试有无 focus 的 prompt 构建
+  - [x]* 6.4 编写 FocusManager 的单元测试
+    - [x] 测试 focus 为 None 时加载所有 skills
+    - [x] 测试按 focus 标签过滤 skills
+    - [x] 测试 skill 匹配逻辑
+    - [x] 测试有无 focus 的 prompt 构建
     - _需求: FR-5_
 
 - [ ] 7. 实现治理集成
