@@ -1,5 +1,17 @@
 """Security utilities."""
 
-from owlclaw.security.data_masker import DataMasker
+from owlclaw.security.audit import SecurityAuditLog
+from owlclaw.security.data_masker import DataMasker, MaskRule
+from owlclaw.security.risk_gate import RiskDecision, RiskGate
+from owlclaw.security.sanitizer import InputSanitizer, SanitizationRule, SanitizeResult
 
-__all__ = ["DataMasker"]
+__all__ = [
+    "DataMasker",
+    "InputSanitizer",
+    "MaskRule",
+    "RiskDecision",
+    "RiskGate",
+    "SanitizeResult",
+    "SanitizationRule",
+    "SecurityAuditLog",
+]
