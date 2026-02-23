@@ -9,8 +9,8 @@
 
 
 > **目标**：为 OwlClaw Agent 提供生产级治理能力的技术设计  
-> **状态**：设计中  
-> **最后更新**：2026-02-22
+> **状态**：已落地并通过验收  
+> **最后更新**：2026-02-23
 
 ---
 
@@ -175,7 +175,7 @@ import asyncio
 class Ledger:
     def __init__(self, session_factory, batch_size=10, flush_interval=5):
         self.session_factory = session_factory
-        self.write_queue = asyncio.Queue()
+        self._write_queue = asyncio.Queue()
         self.batch_size = batch_size
         self.flush_interval = flush_interval
         self._writer_task = None
@@ -230,7 +230,7 @@ class Ledger:
             error_message=error_message
         )
         
-        await self.write_queue.put(record)
+        await self._write_queue.put(record)
 
     async def query_records(
         self,
@@ -271,22 +271,36 @@ class Ledger:
     ) -> CostSummary:
         """统计成本摘要"""
         async with self.session_factory() as session:
-            query = select(
-                func.sum(LedgerRecord.estimated_cost).label('total_cost'),
-                func.count(LedgerRecord.id).label('total_calls')
+            total_query = select(
+                func.coalesce(func.sum(LedgerRecord.estimated_cost), 0)
             ).where(
                 LedgerRecord.tenant_id == tenant_id,
                 LedgerRecord.agent_id == agent_id,
                 LedgerRecord.created_at >= start_date,
                 LedgerRecord.created_at <= end_date
             )
-            
-            result = await session.execute(query)
-            row = result.first()
-            
+
+            by_capability_query = select(
+                LedgerRecord.capability_name,
+                func.coalesce(func.sum(LedgerRecord.estimated_cost), 0)
+            ).where(
+                LedgerRecord.tenant_id == tenant_id,
+                LedgerRecord.agent_id == agent_id,
+                LedgerRecord.created_at >= start_date,
+                LedgerRecord.created_at <= end_date
+            ).group_by(LedgerRecord.capability_name)
+
+            total_result = await session.execute(total_query)
+            by_capability_result = await session.execute(by_capability_query)
+            total_cost = Decimal(str(total_result.scalar_one()))
+
             return CostSummary(
-                total_cost=row.total_cost or Decimal('0'),
-                total_calls=row.total_calls or 0
+                total_cost=total_cost,
+                by_agent={agent_id: total_cost},
+                by_capability={
+                    capability: Decimal(str(cost))
+                    for capability, cost in by_capability_result.all()
+                },
             )
 ```
 
@@ -313,23 +327,20 @@ class ModelSelection:
 
 class Router:
     def __init__(self, config: dict):
-        self.rules = config.get('rules', [])
-        self.default_model = config.get('default_model', 'gpt-3.5-turbo')
-        self._validate_config()
-    
-    def _validate_config(self):
-        """验证配置的模型名称合法性"""
-        valid_models = {
-            'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-4o-mini',
-            'claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'
-        }
-        
-        for rule in self.rules:
-            if rule['model'] not in valid_models:
-                logger.warning(f"Unknown model in config: {rule['model']}")
-            for fallback in rule.get('fallback', []):
-                if fallback not in valid_models:
-                    logger.warning(f"Unknown fallback model: {fallback}")
+        self._rules = []
+        self._default_model = "gpt-4o-mini"
+        self.reload_config(config)
+
+    def reload_config(self, config: dict):
+        """热更新路由配置并做基础归一化"""
+        cfg = config if isinstance(config, dict) else {}
+        raw_rules = cfg.get("rules", [])
+        self._rules = raw_rules if isinstance(raw_rules, list) else []
+        raw_default_model = cfg.get("default_model", "gpt-4o-mini")
+        if isinstance(raw_default_model, str) and raw_default_model.strip():
+            self._default_model = raw_default_model.strip()
+        else:
+            self._default_model = "gpt-4o-mini"
     
     async def select_model(
         self,
@@ -337,7 +348,7 @@ class Router:
         context: RunContext
     ) -> ModelSelection:
         """选择 LLM 模型"""
-        for rule in self.rules:
+        for rule in self._rules:
             if rule['task_type'] == task_type:
                 return ModelSelection(
                     model=rule['model'],
@@ -345,7 +356,7 @@ class Router:
                 )
         
         return ModelSelection(
-            model=self.default_model,
+            model=self._default_model,
             fallback=[]
         )
     
@@ -372,7 +383,7 @@ class Router:
 **设计要点**：
 - 基于 task_type 的路由规则，支持不同任务使用不同模型
 - 降级链机制，主模型失败时自动尝试备用模型
-- 配置验证，启动时检查模型名称合法性
+- 配置归一化与容错，异常配置自动回退到 default_model
 - 降级事件记录到 Ledger，便于事后分析
 
 
@@ -731,7 +742,7 @@ class LedgerRecord(Base):
     __tablename__ = 'ledger_records'
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    tenant_id = Column(String(64), nullable=False, index=True)
     agent_id = Column(String(255), nullable=False, index=True)
     run_id = Column(String(255), nullable=False, index=True)
     capability_name = Column(String(255), nullable=False, index=True)
@@ -790,7 +801,8 @@ class LedgerQueryFilters:
 @dataclass
 class CostSummary:
     total_cost: Decimal
-    total_calls: int
+    by_agent: dict[str, Decimal]
+    by_capability: dict[str, Decimal]
 ```
 
 
@@ -817,7 +829,7 @@ class Ledger:
             try:
                 # 等待新记录或超时
                 record = await asyncio.wait_for(
-                    self.write_queue.get(),
+                    self._write_queue.get(),
                     timeout=self.flush_interval
                 )
                 batch.append(record)
@@ -844,10 +856,10 @@ class Ledger:
     
     async def _flush_batch(self, batch: List[LedgerRecord]):
         """批量写入数据库"""
-        max_retries = 3
-        retry_delay = 1
-        
-        for attempt in range(max_retries):
+        max_retries = self._flush_max_retries
+        base_delay = self._flush_backoff_base_seconds
+
+        for attempt in range(1, max_retries + 1):
             try:
                 async with self.session_factory() as session:
                     session.add_all(batch)
@@ -856,13 +868,13 @@ class Ledger:
                     return
             
             except Exception as e:
-                logger.warning(f"Ledger write attempt {attempt + 1} failed: {e}")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay * (attempt + 1))
-                else:
+                if attempt >= max_retries:
                     logger.error(f"Ledger write failed after {max_retries} attempts")
-                    # 写入失败时记录到本地日志文件
                     await self._write_to_fallback_log(batch)
+                    return
+                delay = base_delay * (2 ** (attempt - 1))
+                logger.warning(f"Ledger write attempt {attempt}/{max_retries} failed: {e}")
+                await asyncio.sleep(delay)
     
     async def _write_to_fallback_log(self, batch: List[LedgerRecord]):
         """写入失败时的降级方案"""
@@ -1130,7 +1142,7 @@ async def filter_capabilities(
 **实现**：见 2.4 节 `_flush_batch` 方法
 
 **关键点**：
-- 重试 3 次，指数退避（1s, 2s, 3s）
+- 重试 3 次，指数退避（`base_delay * 2^(attempt-1)`）
 - 最终失败时降级到本地日志文件
 - 写入失败不抛出异常，不中断 Agent Run
 - 记录详细错误日志，便于事后恢复数据
@@ -1150,7 +1162,7 @@ async def select_model(
 ) -> ModelSelection:
     """选择 LLM 模型"""
     try:
-        for rule in self.rules:
+        for rule in self._rules:
             if rule['task_type'] == task_type:
                 return ModelSelection(
                     model=rule['model'],
@@ -1158,7 +1170,7 @@ async def select_model(
                 )
         
         return ModelSelection(
-            model=self.default_model,
+            model=self._default_model,
             fallback=[]
         )
     
@@ -1166,7 +1178,7 @@ async def select_model(
         logger.error(f"Router error for task_type {task_type}: {e}")
         # 降级到 default_model
         return ModelSelection(
-            model=self.default_model,
+            model=self._default_model,
             fallback=[]
         )
 ```
@@ -1557,7 +1569,7 @@ ON ledger_records (tenant_id, capability_name, created_at DESC);
 class Ledger:
     def __init__(self, session_factory, batch_size=10, flush_interval=5):
         self.session_factory = session_factory
-        self.write_queue = asyncio.Queue()
+        self._write_queue = asyncio.Queue()
         self.batch_size = batch_size
         self.flush_interval = flush_interval
         self._writer_task = None
@@ -1659,7 +1671,7 @@ class Ledger:
             # ... 其他字段
         )
         
-        await self.write_queue.put(record)
+        await self._write_queue.put(record)
 ```
 
 ### 8.3 审计日志不可篡改（可选）
@@ -1737,8 +1749,8 @@ from typing import Callable
 
 class Router:
     def __init__(self, config: dict):
-        self.rules = config.get('rules', [])
-        self.default_model = config.get('default_model', 'gpt-3.5-turbo')
+        self._rules = config.get('rules', [])
+        self._default_model = config.get('default_model', 'gpt-4o-mini')
         self.custom_selector: Optional[Callable] = None
     
     def set_custom_selector(
@@ -1762,7 +1774,7 @@ class Router:
                 logger.error(f"Custom selector error: {e}")
         
         # 降级到配置规则
-        for rule in self.rules:
+        for rule in self._rules:
             if rule['task_type'] == task_type:
                 return ModelSelection(
                     model=rule['model'],
@@ -1770,7 +1782,7 @@ class Router:
                 )
         
         return ModelSelection(
-            model=self.default_model,
+            model=self._default_model,
             fallback=[]
         )
 
@@ -2277,7 +2289,7 @@ def upgrade():
     op.create_table(
         'ledger_records',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', postgresql.UUID(as_uuid=True), nullable=False, index=True),
+        sa.Column('tenant_id', sa.String(64), nullable=False, index=True),
         sa.Column('agent_id', sa.String(255), nullable=False, index=True),
         sa.Column('run_id', sa.String(255), nullable=False, index=True),
         sa.Column('capability_name', sa.String(255), nullable=False, index=True),
@@ -2380,7 +2392,7 @@ observer.start()
 ```python
 # 查看 Ledger 队列状态
 async def debug_ledger_queue(ledger: Ledger):
-    print(f"Queue size: {ledger.write_queue.qsize()}")
+    print(f"Queue size: {ledger._write_queue.qsize()}")
     print(f"Writer task running: {ledger._writer_task and not ledger._writer_task.done()}")
 
 # 查看约束评估器状态
@@ -2391,9 +2403,9 @@ async def debug_visibility_filter(visibility_filter: VisibilityFilter):
 
 # 查看 Router 配置
 async def debug_router(router: Router):
-    print(f"Default model: {router.default_model}")
-    print(f"Rules: {len(router.rules)}")
-    for rule in router.rules:
+    print(f"Default model: {router._default_model}")
+    print(f"Rules: {len(router._rules)}")
+    for rule in router._rules:
         print(f"  - {rule['task_type']} -> {rule['model']}")
 ```
 
@@ -2574,6 +2586,6 @@ class CostAllocation:
 ---
 
 **维护者**：OwlClaw 开发团队  
-**最后更新**：2026-02-22  
+**最后更新**：2026-02-23  
 **版本**：1.0.0
 
