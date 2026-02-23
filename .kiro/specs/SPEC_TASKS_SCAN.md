@@ -100,7 +100,7 @@
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（32/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
-| **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（2/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
+| **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（3/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/89） | 消息队列触发器 |

@@ -83,7 +83,7 @@
 - [x] 4.1.3 实现内置脱敏规则（手机号、身份证、银行卡、邮箱）
 
 ### 4.2 集成
-- [ ] 4.2.1 在 MCP Server 输出层集成 DataMasker
+- [x] 4.2.1 在 MCP Server 输出层集成 DataMasker
 - [x] 4.2.2 记忆 `remember()` 工具支持 `sensitivity` 参数
 
 ### 4.3 单元测试
@@ -95,30 +95,30 @@
 ## 5. 配置与审计（1 天）
 
 ### 5.1 安全配置
-- [ ] 5.1.1 在 `owlclaw.yaml` 中添加 `security` 配置节
-- [ ] 5.1.2 实现配置加载和验证
+- [x] 5.1.1 在 `owlclaw.yaml` 中添加 `security` 配置节
+- [x] 5.1.2 实现配置加载和验证
 
 ### 5.2 审计日志
 - [x] 5.2.1 实现 `SecurityAuditLog` 类
-- [ ] 5.2.2 所有安全事件写入审计日志（sanitization、risk gate、masking）
+- [x] 5.2.2 所有安全事件写入审计日志（sanitization、risk gate、masking）
 
 ---
 
 ## 6. 验收清单
 
 ### 6.1 功能验收
-- [ ] InputSanitizer 正确移除已知 injection 模式
-- [ ] system/user 角色隔离在 Agent Runtime 中强制执行
-- [ ] RiskGate 按风险等级正确拦截高风险操作
-- [ ] DataMasker 正确脱敏敏感数据
-- [ ] 审计日志完整记录安全事件
+- [x] InputSanitizer 正确移除已知 injection 模式
+- [x] system/user 角色隔离在 Agent Runtime 中强制执行
+- [x] RiskGate 按风险等级正确拦截高风险操作
+- [x] DataMasker 正确脱敏敏感数据
+- [x] 审计日志完整记录安全事件
 
 ### 6.2 测试验收
-- [ ] 单元测试覆盖率 > 80%
-- [ ] 包含 OWASP LLM Top 10 攻击向量测试
+- [x] 单元测试覆盖率 > 80%
+- [x] 包含 OWASP LLM Top 10 攻击向量测试
 
 ### 6.3 文档验收
-- [ ] 安全配置文档完整
+- [x] 安全配置文档完整
 
 ---
 
