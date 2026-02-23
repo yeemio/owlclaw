@@ -93,6 +93,16 @@ class TestBuiltInToolsInitValidation:
         with pytest.raises(ValueError, match="scheduled_run_task_name must be a non-empty string"):
             BuiltInTools(scheduled_run_task_name=task_name)  # type: ignore[arg-type]
 
+    @pytest.mark.parametrize("max_calls", [0, -1, True, 1.2, "bad"])
+    def test_init_rejects_invalid_max_calls_per_run(self, max_calls) -> None:
+        with pytest.raises(ValueError, match="max_calls_per_run must be a positive integer"):
+            BuiltInTools(max_calls_per_run=max_calls)  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize("raise_errors", ["yes", 1, None])
+    def test_init_rejects_invalid_raise_errors(self, raise_errors) -> None:
+        with pytest.raises(ValueError, match="raise_errors must be a boolean"):
+            BuiltInTools(raise_errors=raise_errors)  # type: ignore[arg-type]
+
 
 class TestQueryState:
     @pytest.mark.asyncio
@@ -504,6 +514,84 @@ class TestExecuteUnknownTool:
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
         result = await tools.execute(" query_state ", {"state_name": "x"}, ctx)
         assert result == {"state": {"ok": True}}
+
+    @pytest.mark.asyncio
+    async def test_execute_enforces_max_calls_per_run(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.return_value = {"ok": True}
+        ledger = AsyncMock()
+        tools = BuiltInTools(capability_registry=reg, ledger=ledger, max_calls_per_run=1)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        first = await tools.execute("query_state", {"state_name": "x"}, ctx)
+        second = await tools.execute("query_state", {"state_name": "x"}, ctx)
+
+        assert first == {"state": {"ok": True}}
+        assert "error" in second
+        assert "max_calls_per_run=1" in second["error"]
+
+    @pytest.mark.asyncio
+    async def test_execute_limit_is_concurrency_safe(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.return_value = {"ok": True}
+        tools = BuiltInTools(capability_registry=reg, max_calls_per_run=1)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        results = await asyncio.gather(
+            tools.execute("query_state", {"state_name": "x"}, ctx),
+            tools.execute("query_state", {"state_name": "x"}, ctx),
+        )
+
+        success_count = sum(1 for item in results if "state" in item)
+        error_count = sum(1 for item in results if "error" in item)
+        assert success_count == 1
+        assert error_count == 1
+
+    @pytest.mark.asyncio
+    async def test_reset_run_call_budget_allows_new_calls(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.return_value = {"ok": True}
+        tools = BuiltInTools(capability_registry=reg, max_calls_per_run=1)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        first = await tools.execute("query_state", {"state_name": "x"}, ctx)
+        blocked = await tools.execute("query_state", {"state_name": "x"}, ctx)
+        tools.reset_run_call_budget("r1")
+        after_reset = await tools.execute("query_state", {"state_name": "x"}, ctx)
+
+        assert "state" in first
+        assert "error" in blocked
+        assert "state" in after_reset
+
+    @pytest.mark.asyncio
+    async def test_raise_errors_converts_validation_error(self) -> None:
+        tools = BuiltInTools(raise_errors=True)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        with pytest.raises(ValueError, match="state_name is required"):
+            await tools.execute("query_state", {}, ctx)
+
+    @pytest.mark.asyncio
+    async def test_raise_errors_converts_runtime_error(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.side_effect = RuntimeError("dependency down")
+        tools = BuiltInTools(capability_registry=reg, raise_errors=True)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        with pytest.raises(RuntimeError, match="query_state failed: dependency down"):
+            await tools.execute("query_state", {"state_name": "market_state"}, ctx)
+
+    @pytest.mark.asyncio
+    async def test_raise_errors_converts_timeout_error(self) -> None:
+        async def _slow_cancel_cron(_: str) -> bool:
+            await asyncio.sleep(0.05)
+            return False
+
+        hatchet = AsyncMock()
+        hatchet.cancel_task.return_value = False
+        hatchet.cancel_cron.side_effect = _slow_cancel_cron
+        tools = BuiltInTools(hatchet_client=hatchet, timeout_seconds=0.01, raise_errors=True)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        with pytest.raises(TimeoutError, match="cancel_schedule timed out"):
+            await tools.execute("cancel_schedule", {"schedule_id": "cron-1"}, ctx)
 
 
 class TestMemoryTools:

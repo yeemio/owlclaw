@@ -250,6 +250,8 @@ class BuiltInTools:
         memory_system: Any | None = None,
         scheduled_run_task_name: str = _SCHEDULED_RUN_TASK,
         timeout_seconds: float = 30,
+        max_calls_per_run: int = 50,
+        raise_errors: bool = False,
     ) -> None:
         self._registry = capability_registry
         self._ledger = ledger
@@ -265,6 +267,14 @@ class BuiltInTools:
         if not math.isfinite(timeout_val) or timeout_val <= 0:
             raise ValueError("timeout_seconds must be a positive finite number")
         self._timeout = timeout_val
+        if isinstance(max_calls_per_run, bool) or not isinstance(max_calls_per_run, int) or max_calls_per_run < 1:
+            raise ValueError("max_calls_per_run must be a positive integer")
+        self._max_calls_per_run = max_calls_per_run
+        self._run_call_counts: dict[str, int] = {}
+        self._run_call_locks: dict[str, asyncio.Lock] = {}
+        if not isinstance(raise_errors, bool):
+            raise ValueError("raise_errors must be a boolean")
+        self._raise_errors = raise_errors
 
     def get_tool_schemas(self) -> list[dict[str, Any]]:
         """Return OpenAI-style function schemas for all built-in tools."""
@@ -313,6 +323,15 @@ class BuiltInTools:
         normalized_tool_name = tool_name.strip() if isinstance(tool_name, str) else ""
         if normalized_tool_name not in _BUILTIN_TOOL_NAMES:
             raise ValueError(f"Unknown built-in tool: {tool_name}")
+
+        call_limit_error = await self._consume_run_call_budget(
+            run_id=context.run_id,
+            tool_name=normalized_tool_name,
+            context=context,
+        )
+        if call_limit_error is not None:
+            return {"error": call_limit_error}
+
         if not isinstance(arguments, dict):
             error = (
                 f"Invalid arguments for built-in tool '{normalized_tool_name}': "
@@ -332,20 +351,86 @@ class BuiltInTools:
             return out
 
         if normalized_tool_name == "query_state":
-            return await self._query_state(arguments, context)
+            result = await self._query_state(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "log_decision":
-            return await self._log_decision(arguments, context)
+            result = await self._log_decision(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "schedule_once":
-            return await self._schedule_once(arguments, context)
+            result = await self._schedule_once(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "schedule_cron":
-            return await self._schedule_cron(arguments, context)
+            result = await self._schedule_cron(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "cancel_schedule":
-            return await self._cancel_schedule(arguments, context)
+            result = await self._cancel_schedule(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "remember":
-            return await self._remember(arguments, context)
+            result = await self._remember(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "recall":
-            return await self._recall(arguments, context)
+            result = await self._recall(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         raise ValueError(f"Unknown built-in tool: {normalized_tool_name}")
+
+    def _coerce_error_result(self, result: Any, tool_name: str) -> Any:
+        """Optionally convert tool error payloads into typed exceptions."""
+        if not self._raise_errors:
+            return result
+        if not isinstance(result, dict):
+            return result
+        error_message = result.get("error")
+        if not isinstance(error_message, str) or not error_message.strip():
+            return result
+        normalized_error = error_message.strip()
+        lower_error = normalized_error.lower()
+        if "timed out" in lower_error:
+            raise TimeoutError(normalized_error)
+        validation_markers = (
+            "required",
+            "must be",
+            "invalid ",
+            "unknown built-in tool",
+            "not configured",
+            "limit exceeded",
+        )
+        if any(marker in lower_error for marker in validation_markers):
+            raise ValueError(normalized_error)
+        raise RuntimeError(f"{tool_name} failed: {normalized_error}")
+
+    def reset_run_call_budget(self, run_id: str) -> None:
+        """Clear call counters for a completed Agent run."""
+        normalized_run_id = self._non_empty_str(run_id)
+        if normalized_run_id is None:
+            raise ValueError("run_id must be a non-empty string")
+        self._run_call_counts.pop(normalized_run_id, None)
+        self._run_call_locks.pop(normalized_run_id, None)
+
+    async def _consume_run_call_budget(
+        self,
+        *,
+        run_id: str,
+        tool_name: str,
+        context: BuiltInToolsContext,
+    ) -> str | None:
+        lock = self._run_call_locks.setdefault(run_id, asyncio.Lock())
+        async with lock:
+            current_count = self._run_call_counts.get(run_id, 0)
+            next_count = current_count + 1
+            if next_count > self._max_calls_per_run:
+                error = (
+                    f"Tool call limit exceeded for run '{run_id}': "
+                    f"max_calls_per_run={self._max_calls_per_run}"
+                )
+                await self._record_validation_failure(
+                    tool_name=tool_name,
+                    context=context,
+                    input_params={"run_id": run_id, "max_calls_per_run": self._max_calls_per_run},
+                    error_message=error,
+                )
+                return error
+            self._run_call_counts[run_id] = next_count
+        return None
 
     @staticmethod
     def _normalize_tags(raw_tags: Any) -> list[str] | None:

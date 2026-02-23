@@ -10,9 +10,9 @@
 
 ## Task 0: 文档和契约
 
-- [ ] 0.1 确认 requirements.md 完整且经过审核
-- [ ] 0.2 确认 design.md 完整且经过审核
-- [ ] 0.3 与依赖组件的接口契约已明确（Hatchet、Memory System、Capability Registry、Governance Ledger）
+- [x] 0.1 确认 requirements.md 完整且经过审核
+- [x] 0.2 确认 design.md 完整且经过审核
+- [x] 0.3 与依赖组件的接口契约已明确（Hatchet、Memory System、Capability Registry、Governance Ledger）
 
 ## Task 1: BuiltInTools 核心类实现
 
@@ -72,20 +72,20 @@
 
 ## Task 5: 错误处理和边界条件
 
-- [ ] 5.1 实现参数验证错误的统一处理（返回 ValueError）
-- [ ] 5.2 实现系统错误的统一处理（返回 RuntimeError）
-- [ ] 5.3 实现超时错误的统一处理（返回 TimeoutError）
-- [ ] 5.4 实现工具不存在错误的处理（execute 方法中）
-- [ ] 5.5 实现并发调用的数据一致性保护（如果需要）
-- [ ] 5.6 实现单次 Agent Run 中工具调用次数限制（max_calls_per_run）
+- [x] 5.1 实现参数验证错误的统一处理（新增 `raise_errors=True` 时抛 ValueError，默认兼容返回 error dict）
+- [x] 5.2 实现系统错误的统一处理（新增 `raise_errors=True` 时抛 RuntimeError，默认兼容返回 error dict）
+- [x] 5.3 实现超时错误的统一处理（新增 `raise_errors=True` 时抛 TimeoutError，默认兼容返回 error dict）
+- [x] 5.4 实现工具不存在错误的处理（execute 方法中）
+- [x] 5.5 实现并发调用的数据一致性保护（通过 run 级计数锁保证并发安全）
+- [x] 5.6 实现单次 Agent Run 中工具调用次数限制（max_calls_per_run）
 
 ## Task 6: 单元测试
 
 - [ ] 6.1 测试 `BuiltInTools` 类基础功能
-  - [ ] 6.1.1 测试 `get_tool_schemas()` 返回所有工具的 schema
-  - [ ] 6.1.2 测试 `execute()` 方法的工具路由逻辑
-  - [ ] 6.1.3 测试 `execute()` 方法的超时机制
-  - [ ] 6.1.4 测试 `execute()` 方法的错误处理
+  - [x] 6.1.1 测试 `get_tool_schemas()` 返回所有工具的 schema
+  - [x] 6.1.2 测试 `execute()` 方法的工具路由逻辑
+  - [x] 6.1.3 测试 `execute()` 方法的超时机制
+  - [x] 6.1.4 测试 `execute()` 方法的错误处理
 - [x] 6.2 测试调度工具
   - [x] 6.2.1 测试 `schedule_once` 成功场景
   - [x] 6.2.2 测试 `schedule_once` 参数验证（delay_seconds 超出范围）
