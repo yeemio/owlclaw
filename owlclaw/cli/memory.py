@@ -96,6 +96,10 @@ def _create_store(backend: str) -> MemoryStore:
     if normalized_backend == "qdrant":
         qdrant_url = os.environ.get("OWLCLAW_QDRANT_URL", config.qdrant_url).strip()
         qdrant_collection = os.environ.get("OWLCLAW_QDRANT_COLLECTION", config.qdrant_collection_name).strip()
+        if not qdrant_url:
+            raise ConfigurationError("OWLCLAW_QDRANT_URL must not be empty when memory backend is qdrant.")
+        if not qdrant_collection:
+            raise ConfigurationError("OWLCLAW_QDRANT_COLLECTION must not be empty when memory backend is qdrant.")
         return QdrantStore(
             url=qdrant_url,
             collection_name=qdrant_collection,

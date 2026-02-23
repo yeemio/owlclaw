@@ -11,11 +11,14 @@ import pytest
 from owlclaw.agent.memory.models import MemoryEntry, SecurityLevel
 from owlclaw.agent.memory.store_inmemory import InMemoryStore
 from owlclaw.cli.memory import (
+    _create_store,
     _list_entries_impl,
+    _normalize_backend,
     _prune_impl,
     _reset_impl,
     _security_marker,
     _stats_impl,
+    migrate_backend_command,
 )
 
 
@@ -211,3 +214,26 @@ def test_stats_impl_outputs_distribution() -> None:
     assert stats["total_entries"] == 2
     assert stats["tag_distribution"]["alpha"] == 1
     assert stats["tag_distribution"]["beta"] == 2
+
+
+def test_normalize_backend_accepts_case_and_spaces() -> None:
+    assert _normalize_backend("  QDRANT ") == "qdrant"
+
+
+def test_migrate_backend_rejects_equivalent_backends_after_normalization() -> None:
+    with pytest.raises(Exception, match="source and target backend must be different"):
+        migrate_backend_command(
+            agent="agent-a",
+            tenant="default",
+            source_backend=" PGVECTOR ",
+            target_backend="pgvector",
+            batch_size=100,
+            include_archived=True,
+        )
+
+
+def test_create_store_qdrant_rejects_empty_collection(monkeypatch) -> None:
+    monkeypatch.setenv("OWLCLAW_QDRANT_URL", "http://localhost:6333")
+    monkeypatch.setenv("OWLCLAW_QDRANT_COLLECTION", "   ")
+    with pytest.raises(Exception, match="OWLCLAW_QDRANT_COLLECTION must not be empty"):
+        _create_store("qdrant")
