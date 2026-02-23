@@ -141,7 +141,7 @@ class LLMConfig(BaseModel):
     langfuse_secret_key: str | None = None
     langfuse_host: str = "https://cloud.langfuse.com"
     mock_mode: bool = False
-    mock_responses: dict[str, str] = Field(default_factory=dict)
+    mock_responses: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def from_yaml(cls, config_path: str | Path) -> LLMConfig:
@@ -369,6 +369,54 @@ class LLMClient:
             cost=round(cost, 6),
         )
 
+    @staticmethod
+    def _parse_mock_response(raw: Any) -> tuple[str | None, list[dict[str, Any]]]:
+        """Parse configured mock response into text content and function calls.
+
+        Supported shapes:
+          - "plain text"
+          - {"content": "plain text"}
+          - {"function_calls": [{"name": "...", "arguments": {...}}]}
+          - {"content": "...", "function_calls": [...]}
+        """
+        if isinstance(raw, str):
+            return raw, []
+        if not isinstance(raw, dict):
+            return str(raw), []
+
+        content = raw.get("content")
+        if content is not None and not isinstance(content, str):
+            content = str(content)
+
+        function_calls_raw = raw.get("function_calls", [])
+        function_calls: list[dict[str, Any]] = []
+        if isinstance(function_calls_raw, list):
+            for idx, fc in enumerate(function_calls_raw):
+                if not isinstance(fc, dict):
+                    continue
+                name = fc.get("name")
+                if not isinstance(name, str) or not name:
+                    continue
+                arguments = fc.get("arguments", {})
+                if isinstance(arguments, str):
+                    try:
+                        arguments = json.loads(arguments)
+                    except json.JSONDecodeError:
+                        arguments = {}
+                if not isinstance(arguments, dict):
+                    arguments = {}
+                call_id = fc.get("id")
+                if not isinstance(call_id, str) or not call_id:
+                    call_id = f"mock_call_{idx + 1}"
+                function_calls.append(
+                    {
+                        "id": call_id,
+                        "name": name,
+                        "arguments": arguments,
+                    }
+                )
+        return content, function_calls
+
     async def complete(
         self,
         messages: list[dict[str, Any]],
@@ -386,15 +434,17 @@ class LLMClient:
             )
         if self.config.mock_mode and self.config.mock_responses:
             key = task_type or "default"
-            content = self.config.mock_responses.get(key, self.config.mock_responses.get("default", ""))
+            raw_mock = self.config.mock_responses.get(key, self.config.mock_responses.get("default", ""))
+            content, function_calls = self._parse_mock_response(raw_mock)
             # Simulate token usage (~4 chars per token)
             prompt_chars = len(json.dumps(messages, default=str))
-            completion_chars = len(content)
+            completion_payload = content if content is not None else function_calls
+            completion_chars = len(json.dumps(completion_payload, default=str))
             prompt_tokens = max(1, prompt_chars // 4)
             completion_tokens = max(0, completion_chars // 4)
             return LLMResponse(
                 content=content,
-                function_calls=[],
+                function_calls=function_calls,
                 model="mock",
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,

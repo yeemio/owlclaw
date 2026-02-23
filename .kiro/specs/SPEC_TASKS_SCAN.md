@@ -46,7 +46,7 @@
 - [ ] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
 - [ ] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
   **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
-- [ ] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
+- [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [ ] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
@@ -97,7 +97,7 @@
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
-| integrations-llm | `.kiro/specs/integrations-llm/` | 🟡 三层齐全，进行中（127/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
+| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（27/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：triggers-queue 术语对齐，仅 specs） |
-| 批次状态 | **完成**。queue 触发器 spec 的 Agent 触发术语已对齐。 |
-| 已完成项 | `triggers-queue/requirements.md` 将“触发 Agent Run 与上下文传递”统一为“payload 传递”；`triggers-queue/design.md` 属性测试描述同步改为 payload 语义。 |
-| 下一待执行 | 继续 specs 循环；`cli-db/tasks.md` 仍有旧口径，按协作约定暂不改动（该方向由其他 agent 处理）。 |
-| 验收快照 | `rg` 复扫未发现 triggers-queue 中“上下文传递”旧术语残留。 |
+| 当前批次 | spec 循环（本轮：integrations-llm Task 7.2.2 mock function call 响应） |
+| 批次状态 | **完成**。mock 模式已支持 function_calls 返回并通过单测。 |
+| 已完成项 | `owlclaw/integrations/llm.py` 新增 mock 响应解析，支持 `content` + `function_calls`；`tests/unit/integrations/test_llm.py` 新增 function call 响应测试；`integrations-llm/tasks.md` 的 7.2.2 已打勾。 |
+| 下一待执行 | 在分配范围内继续推进 `security`（优先 5.1.1/5.1.2 配置加载）或启动 `configuration` Task 1。 |
+| 验收快照 | 在当前沙箱环境执行 `poetry run pytest tests/unit/integrations/test_llm.py -q` 时卡在虚拟环境创建阶段并超时；需在可用 Poetry 环境复验。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

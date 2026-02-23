@@ -115,7 +115,7 @@
 
 - [x] 7.2 实现 Mock 响应配置
   - [x] 7.2.1 支持文本响应（mock_responses dict）
-  - [ ] 7.2.2 支持 function call 响应（当前仅文本，占位）
+  - [x] 7.2.2 支持 function call 响应（支持 content + function_calls）
 
 ## Task 8: 单元测试
 
