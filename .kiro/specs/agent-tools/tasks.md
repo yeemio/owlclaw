@@ -81,7 +81,7 @@
 
 ## Task 6: 单元测试
 
-- [ ] 6.1 测试 `BuiltInTools` 类基础功能
+- [x] 6.1 测试 `BuiltInTools` 类基础功能
   - [x] 6.1.1 测试 `get_tool_schemas()` 返回所有工具的 schema
   - [x] 6.1.2 测试 `execute()` 方法的工具路由逻辑
   - [x] 6.1.3 测试 `execute()` 方法的超时机制
@@ -112,22 +112,22 @@
 ## Task 7: 集成测试
 
 - [ ] 7.1 测试与 Hatchet 集成
-  - [ ] 7.1.1 测试 schedule_once 调用 Hatchet schedule_task
-  - [ ] 7.1.2 测试 schedule_cron 调用 Hatchet schedule_cron
-  - [ ] 7.1.3 测试 cancel_schedule 调用 Hatchet cancel_task
+  - [x] 7.1.1 测试 schedule_once 调用 Hatchet schedule_task
+  - [x] 7.1.2 测试 schedule_cron 调用 Hatchet schedule_cron
+  - [x] 7.1.3 测试 cancel_schedule 调用 Hatchet cancel_task
   - [ ] 7.1.4 测试 Hatchet 任务执行后触发 Agent Run
 - [ ] 7.2 测试与 Memory System 集成
   - [ ] 7.2.1 测试 remember 写入 MEMORY.md 和向量数据库
   - [ ] 7.2.2 测试 recall 从向量数据库搜索
   - [ ] 7.2.3 测试记忆的时间衰减
 - [ ] 7.3 测试与 Capability Registry 集成
-  - [ ] 7.3.1 测试 query_state 调用注册的 state provider
-  - [ ] 7.3.2 测试 state provider 异步执行
-  - [ ] 7.3.3 测试 state provider 超时
+  - [x] 7.3.1 测试 query_state 调用注册的 state provider
+  - [x] 7.3.2 测试 state provider 异步执行
+  - [x] 7.3.3 测试 state provider 超时
 - [ ] 7.4 测试与 Governance Ledger 集成
-  - [ ] 7.4.1 测试所有工具调用都记录到 Ledger
-  - [ ] 7.4.2 测试 log_decision 写入 Ledger
-  - [ ] 7.4.3 测试 Ledger 记录包含完整上下文（agent_id、run_id、参数、结果）
+  - [x] 7.4.1 测试所有工具调用都记录到 Ledger
+  - [x] 7.4.2 测试 log_decision 写入 Ledger
+  - [x] 7.4.3 测试 Ledger 记录包含完整上下文（agent_id、run_id、参数、结果）
 
 ## Task 8: 端到端测试
 
@@ -160,14 +160,14 @@
 
 ## Task 10: 文档和示例
 
-- [ ] 10.1 编写 `owlclaw/agent/tools.py` 的 docstrings
-- [ ] 10.2 编写使用示例（examples/agent_tools_demo.py）
-  - [ ] 10.2.1 示例：Agent 自我调度
-  - [ ] 10.2.2 示例：Agent 记住并回忆经验
-  - [ ] 10.2.3 示例：Agent 查询状态后决策
-  - [ ] 10.2.4 示例：Agent 记录决策理由
-- [ ] 10.3 更新 README.md 的内建工具部分
-- [ ] 10.4 编写 API 文档（Sphinx/MkDocs）
+- [x] 10.1 编写 `owlclaw/agent/tools.py` 的 docstrings
+- [x] 10.2 编写使用示例（examples/agent_tools_demo.py）
+  - [x] 10.2.1 示例：Agent 自我调度
+  - [x] 10.2.2 示例：Agent 记住并回忆经验
+  - [x] 10.2.3 示例：Agent 查询状态后决策
+  - [x] 10.2.4 示例：Agent 记录决策理由
+- [x] 10.3 更新 README.md 的内建工具部分
+- [x] 10.4 编写 API 文档（新增 `docs/AGENT_TOOLS_API.md`）
 
 ## Task 11: 安全审查
 
@@ -180,11 +180,11 @@
 
 ## Task 12: 与其他组件的集成验证
 
-- [ ] 12.1 验证与 `owlclaw.integrations.hatchet` 的接口契约
-- [ ] 12.2 验证与 `owlclaw.agent.memory` 的接口契约（待实现）
-- [ ] 12.3 验证与 `owlclaw.capabilities.registry` 的接口契约
-- [ ] 12.4 验证与 `owlclaw.governance.ledger` 的接口契约（待实现）
-- [ ] 12.5 验证工具在 Agent Runtime 中的注册和调用流程
+- [x] 12.1 验证与 `owlclaw.integrations.hatchet` 的接口契约
+- [x] 12.2 验证与 `owlclaw.agent.memory` 的接口契约（通过 `MemoryService` 适配器集成测试）
+- [x] 12.3 验证与 `owlclaw.capabilities.registry` 的接口契约
+- [x] 12.4 验证与 `owlclaw.governance.ledger` 的接口契约（待实现）
+- [x] 12.5 验证工具在 Agent Runtime 中的注册和调用流程
 
 ## 依赖关系
 
