@@ -43,3 +43,10 @@ def test_db_init_with_env_url(monkeypatch):
     assert result.exit_code == 0, (result.output or str(result.exception))
     mock_impl.assert_called_once()
     assert mock_impl.call_args[1]["admin_url"] == "postgresql://u:p@localhost/postgres"
+
+
+def test_db_migrate_rejects_blank_target(monkeypatch):
+    """migrate with blank --target should fail fast."""
+    monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
+    result = runner.invoke(app, ["db", "migrate", "--target", "   "])
+    assert result.exit_code == 2
