@@ -69,8 +69,18 @@ class Skill:
         if isinstance(raw, str):
             normalized = raw.strip()
             return [normalized] if normalized else []
-        if isinstance(raw, list):
-            return [item.strip() for item in raw if isinstance(item, str) and item.strip()]
+        if isinstance(raw, (list, tuple, set)):
+            out: list[str] = []
+            seen: set[str] = set()
+            for item in raw:
+                if not isinstance(item, str):
+                    continue
+                normalized = item.strip()
+                if not normalized or normalized in seen:
+                    continue
+                seen.add(normalized)
+                out.append(normalized)
+            return out
         return []
 
     @property

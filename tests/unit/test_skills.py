@@ -157,6 +157,19 @@ owlclaw:
     assert skill.focus == ["valid_tag", "another"]
 
 
+def test_skill_focus_supports_tuple_and_dedupes():
+    from owlclaw.capabilities.skills import Skill
+
+    skill = Skill(
+        name="x",
+        description="d",
+        file_path="SKILL.md",
+        metadata={},
+        owlclaw_config={"focus": ("a", " a ", "b", "", "b")},
+    )
+    assert skill.focus == ["a", "b"]
+
+
 def test_skills_loader_requires_confirmation_accepts_int_literals(tmp_path):
     skill_dir = tmp_path / "confirm-int"
     skill_dir.mkdir()
