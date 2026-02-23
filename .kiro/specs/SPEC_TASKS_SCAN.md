@@ -100,7 +100,7 @@
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（27/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
-| **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
+| **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（1/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/89） | 消息队列触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：integrations-llm Task 7.2.2 mock function call 响应） |
-| 批次状态 | **完成**。mock 模式已支持 function_calls 返回并通过单测。 |
-| 已完成项 | `owlclaw/integrations/llm.py` 新增 mock 响应解析，支持 `content` + `function_calls`；`tests/unit/integrations/test_llm.py` 新增 function call 响应测试；`integrations-llm/tasks.md` 的 7.2.2 已打勾。 |
-| 下一待执行 | 在分配范围内继续推进 `security`（优先 5.1.1/5.1.2 配置加载）或启动 `configuration` Task 1。 |
-| 验收快照 | 在当前沙箱环境执行 `poetry run pytest tests/unit/integrations/test_llm.py -q` 时卡在虚拟环境创建阶段并超时；需在可用 Poetry 环境复验。 |
+| 当前批次 | spec 循环（第 1/7 轮：configuration Task 1 模块骨架与模型） |
+| 批次状态 | **完成**。`owlclaw/config` 模块、Pydantic 配置模型与基础单测已落地。 |
+| 已完成项 | 新增 `owlclaw/config/{__init__,models,loader,manager}.py`；新增 `tests/unit/test_config_models.py`；`configuration/tasks.md` Task 1 已打勾。 |
+| 下一待执行 | 第 2 轮：完成 `configuration` Task 2（YAMLConfigLoader 的路径优先级与错误处理）并补单测。 |
+| 验收快照 | `poetry run pytest tests/unit/test_config_models.py -q` 通过（2 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
