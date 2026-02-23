@@ -169,7 +169,20 @@ def test_db_status_trims_database_url_before_engine_check(monkeypatch):
     from owlclaw.cli.db_status import status_command
 
     monkeypatch.setenv("OWLCLAW_DATABASE_URL", "  postgresql://u:p@localhost/owlclaw  ")
-    with patch("owlclaw.cli.db_status.get_engine") as mock_get_engine:
+    with patch("owlclaw.cli.db_status.get_engine") as mock_get_engine, patch(
+        "owlclaw.cli.db_status._collect_status_info",
+        new_callable=AsyncMock,
+    ) as mock_collect, patch("owlclaw.cli.db_status._print_status_table"):
+        mock_collect.return_value = {
+            "connection": "x",
+            "server_version": "x",
+            "extensions": [],
+            "current_migration": "x",
+            "pending_migrations": 0,
+            "table_count": 0,
+            "total_rows": 0,
+            "disk_usage_bytes": 0,
+        }
         status_command(database_url=None)
     mock_get_engine.assert_called_once_with("postgresql://u:p@localhost/owlclaw")
 
@@ -210,6 +223,19 @@ def test_db_status_handles_optioninfo_database_url(monkeypatch):
     from owlclaw.cli.db_status import status_command
 
     monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
-    with patch("owlclaw.cli.db_status.get_engine") as mock_get_engine:
+    with patch("owlclaw.cli.db_status.get_engine") as mock_get_engine, patch(
+        "owlclaw.cli.db_status._collect_status_info",
+        new_callable=AsyncMock,
+    ) as mock_collect, patch("owlclaw.cli.db_status._print_status_table"):
+        mock_collect.return_value = {
+            "connection": "x",
+            "server_version": "x",
+            "extensions": [],
+            "current_migration": "x",
+            "pending_migrations": 0,
+            "table_count": 0,
+            "total_rows": 0,
+            "disk_usage_bytes": 0,
+        }
         status_command(database_url=OptionInfo(default=None))  # type: ignore[arg-type]
     mock_get_engine.assert_called_once_with("postgresql://u:p@localhost/owlclaw")
