@@ -107,3 +107,41 @@ def test_main_skill_unknown_subcommand_exits_2(monkeypatch, capsys) -> None:
     assert exc_info.value.code == 2
     err = capsys.readouterr().err
     assert "unknown skill subcommand" in err.lower()
+
+
+def test_main_dispatches_db_rollback(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_rollback_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.db_rollback.rollback_command", _fake_rollback_command)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "db",
+            "rollback",
+            "--target",
+            "base",
+            "--database-url",
+            "postgresql://u:p@localhost/owlclaw",
+            "--dry-run",
+            "--yes",
+        ],
+    )
+    cli_main.main()
+    assert captured["target"] == "base"
+    assert captured["steps"] == 0
+    assert captured["dry_run"] is True
+    assert captured["yes"] is True
+
+
+def test_main_db_rollback_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "db", "rollback", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    assert "Usage: owlclaw db rollback [OPTIONS]" in capsys.readouterr().out
