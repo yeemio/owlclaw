@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：静态审校缺口收口） |
-| 批次状态 | **完成**。已完成上一轮列出的 6 个类型/兼容性缺口修复并通过验证。 |
-| 已完成项 | 修复 `governance/visibility.py` 协程结果类型；`governance/constraints/time.py` 与 `rate_limit.py` 类型收敛；`capabilities/skills.py` 返回类型与 frontmatter 解析类型；`config/models.py` fallback/no-redef；`config/loader.py` 与 `capabilities/skills.py` 的 yaml 导入类型策略。 |
-| 下一待执行 | 继续常规存量审校（优先 agent-tools/governance/triggers-cron 进行中 spec），并逐步清理全仓历史 lint/type 债务。 |
-| 验收快照 | `poetry run mypy owlclaw/governance/visibility.py owlclaw/governance/constraints/time.py owlclaw/governance/constraints/rate_limit.py owlclaw/capabilities/skills.py owlclaw/config/models.py owlclaw/config/loader.py` -> `Success: no issues found in 6 source files`；`poetry run pytest tests/unit/governance/test_visibility.py tests/unit/governance/test_constraints_time.py tests/unit/governance/test_constraints_rate_limit.py tests/unit/test_capabilities_acceptance.py tests/unit/test_config_models.py tests/unit/test_config_loader.py tests/unit/test_config_manager.py tests/unit/agent/test_runtime_memory.py -q` -> `67 passed in 47.33s`。 |
+| 当前批次 | review 循环（本轮：agent-tools/governance/triggers-cron 存量静态收口） |
+| 批次状态 | **完成**。已修复 cron 注册与治理/工具模块的类型与风格缺口并通过回归。 |
+| 已完成项 | 修复 `owlclaw/triggers/cron.py`（`croniter` 类型、workflow 存储类型、`run_task_now` 返回值归一化）；修复 `owlclaw/agent/tools.py`、`owlclaw/governance/ledger.py`、`owlclaw/governance/constraints/budget.py` 的静态问题。 |
+| 下一待执行 | 继续对进行中 spec 做存量审校（优先 `agent-runtime` Task 4+ 与 `governance` 剩余任务），并分批清理全仓历史 lint/type 债务。 |
+| 验收快照 | `poetry run mypy owlclaw/triggers/cron.py` -> `Success: no issues found in 1 source file`；`poetry run pytest tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py tests/unit/triggers/test_cron_decorator.py -q` -> `95 passed`；`poetry run mypy owlclaw/agent/tools.py owlclaw/governance/ledger.py owlclaw/governance/constraints/budget.py owlclaw/triggers/cron.py` -> `Success: no issues found in 4 source files`；`poetry run pytest tests/unit/agent/test_tools.py tests/unit/governance/test_ledger.py tests/unit/governance/test_constraints_budget.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py tests/unit/triggers/test_cron_decorator.py -q` -> `163 passed`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

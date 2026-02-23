@@ -1,8 +1,7 @@
 """Budget constraint: hide high-cost capabilities when agent budget is exhausted."""
 
 from datetime import date
-from decimal import Decimal
-from decimal import InvalidOperation
+from decimal import Decimal, InvalidOperation
 
 from owlclaw.governance.ledger import Ledger
 from owlclaw.governance.visibility import CapabilityView, FilterResult, RunContext

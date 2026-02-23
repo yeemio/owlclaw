@@ -196,7 +196,7 @@ class BuiltInTools:
         if task_name is None:
             raise ValueError("scheduled_run_task_name must be a non-empty string")
         self._scheduled_run_task = task_name
-        if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)):
+        if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, int | float):
             raise ValueError("timeout_seconds must be a positive finite number")
         timeout_val = float(timeout_seconds)
         if not math.isfinite(timeout_val) or timeout_val <= 0:

@@ -23,7 +23,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
-from croniter import croniter
+from croniter import croniter  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     from owlclaw.agent.runtime import AgentRuntime
@@ -126,7 +126,7 @@ class CronTriggerRegistry:
     def __init__(self, app: Any) -> None:
         self.app = app
         self._triggers: dict[str, CronTriggerConfig] = {}
-        self._hatchet_workflows: dict[str, type] = {}
+        self._hatchet_workflows: dict[str, Callable[..., Any]] = {}
         self._hatchet_client: HatchetClient | None = None
         self._ledger: Ledger | None = None
         self._tenant_id: str = "default"
@@ -139,7 +139,7 @@ class CronTriggerRegistry:
     def _validate_cron_expression(expression: str) -> bool:
         """Return True if *expression* is a valid 5-field cron expression."""
         try:
-            return croniter.is_valid(expression)
+            return bool(croniter.is_valid(expression))
         except Exception:
             return False
 
@@ -324,7 +324,8 @@ class CronTriggerRegistry:
             kwargs["tenant_id"] = self._tenant_id
         else:
             kwargs["tenant_id"] = self._normalize_tenant_id(kwargs["tenant_id"])
-        return await run_task_now(task_name, **kwargs)
+        run_id = await run_task_now(task_name, **kwargs)
+        return str(run_id)
 
     async def get_execution_history(
         self,

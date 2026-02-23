@@ -98,7 +98,7 @@ class Ledger:
     ) -> None:
         if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
             raise ValueError("batch_size must be a positive integer")
-        if isinstance(flush_interval, bool) or not isinstance(flush_interval, (int, float)):
+        if isinstance(flush_interval, bool) or not isinstance(flush_interval, int | float):
             raise ValueError("flush_interval must be a positive number")
         flush_interval_value = float(flush_interval)
         if flush_interval_value <= 0:
