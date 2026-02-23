@@ -25,6 +25,17 @@
 - Apply `.cursor/rules/owlclaw_spec_standards.mdc` when creating/updating specs under `.kiro/specs/`.
 - Apply `.cursor/rules/owlclaw_database.mdc` for DB-related changes.
 
+## Multi-Agent Coordination (Git Worktree)
+- **Must-read**: `docs/WORKTREE_GUIDE.md` — full coordination guide for all AI agents.
+- Isolation model: each AI tool works in its own Git worktree (physically separate directory, shared `.git`).
+  - Main worktree (`D:\AI\owlclaw\`, branch `main`): Cursor, human.
+  - Codex worktree (`D:\AI\owlclaw-codex\`, branch `codex-work`): Codex-CLI.
+- Before starting work: confirm which worktree you are in (`git worktree list`).
+- Work only in your own worktree; commit to your own branch.
+- Merging `codex-work` into `main` is done by human or Cursor in the main worktree.
+- Before each Spec loop round in the Codex worktree: sync with `git merge main`.
+- No file-level claim mechanism needed — worktree isolation replaces `AGENT_WORK_CLAIMS.md`.
+
 ## Project Structure & Module Organization
 - Core package: `owlclaw/` (agent runtime, governance, triggers, integrations, CLI).
 - Tests: `tests/unit/` and `tests/integration/`; shared fixtures in `tests/conftest.py`.
