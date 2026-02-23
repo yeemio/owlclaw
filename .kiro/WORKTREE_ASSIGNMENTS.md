@@ -161,7 +161,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| agent-runtime | 19/105 | `owlclaw/agent/runtime/**`, `owlclaw/agent/heartbeat/**`, `tests/unit/test_agent_runtime*.py` |
+| agent-runtime | 70/105 | `owlclaw/agent/runtime/**`, `owlclaw/agent/heartbeat/**`, `tests/unit/agent/test_runtime*.py` |
 
 **前置条件**：database-core + cli-db 已完成并合并到 main，agent-runtime 可正式启动。
 
