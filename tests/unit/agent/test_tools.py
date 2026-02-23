@@ -61,6 +61,26 @@ class TestBuiltInToolsIsBuiltin:
         assert tools.is_builtin(" query_state ") is True
 
 
+class TestBuiltInToolsContextValidation:
+    def test_context_trims_fields(self) -> None:
+        ctx = BuiltInToolsContext(agent_id=" bot ", run_id=" r1 ", tenant_id=" default ")
+        assert ctx.agent_id == "bot"
+        assert ctx.run_id == "r1"
+        assert ctx.tenant_id == "default"
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"agent_id": " ", "run_id": "r1"},
+            {"agent_id": "bot", "run_id": ""},
+            {"agent_id": "bot", "run_id": "r1", "tenant_id": " "},
+        ],
+    )
+    def test_context_rejects_blank_fields(self, kwargs) -> None:
+        with pytest.raises(ValueError, match="must be a non-empty string"):
+            BuiltInToolsContext(**kwargs)  # type: ignore[arg-type]
+
+
 class TestBuiltInToolsInitValidation:
     @pytest.mark.parametrize("timeout_value", [0, -1, float("nan"), float("inf"), True, "bad"])
     def test_init_rejects_invalid_timeout_seconds(self, timeout_value) -> None:

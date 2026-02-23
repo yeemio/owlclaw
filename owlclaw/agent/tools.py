@@ -40,6 +40,13 @@ class BuiltInToolsContext:
     run_id: str
     tenant_id: str = "default"
 
+    def __post_init__(self) -> None:
+        for field_name in ("agent_id", "run_id", "tenant_id"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be a non-empty string")
+            setattr(self, field_name, value.strip())
+
 
 def _query_state_schema() -> dict[str, Any]:
     return {
