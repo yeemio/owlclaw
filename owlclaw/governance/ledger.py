@@ -156,6 +156,10 @@ class Ledger:
         normalized_run_id = _normalize_non_empty(run_id, "run_id")
         normalized_capability_name = _normalize_non_empty(capability_name, "capability_name")
         normalized_task_type = _normalize_non_empty(task_type, "task_type")
+        if not isinstance(input_params, dict):
+            raise ValueError("input_params must be a dictionary")
+        if output_result is not None and not isinstance(output_result, dict):
+            raise ValueError("output_result must be a dictionary when provided")
 
         record = LedgerRecord(
             tenant_id=normalized_tenant_id,

@@ -76,6 +76,30 @@ async def test_ledger_record_execution_rejects_blank_scope_fields():
 
 
 @pytest.mark.asyncio
+async def test_ledger_record_execution_rejects_non_dict_input_params():
+    session_factory = MagicMock()
+    ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
+    with pytest.raises(ValueError, match="input_params must be a dictionary"):
+        await ledger.record_execution(
+            tenant_id="default",
+            agent_id="agent1",
+            run_id="run1",
+            capability_name="cap1",
+            task_type="t1",
+            input_params="bad",  # type: ignore[arg-type]
+            output_result=None,
+            decision_reasoning=None,
+            execution_time_ms=100,
+            llm_model="gpt-4o-mini",
+            llm_tokens_input=10,
+            llm_tokens_output=5,
+            estimated_cost=Decimal("0.001"),
+            status="success",
+            error_message=None,
+        )
+
+
+@pytest.mark.asyncio
 async def test_ledger_start_stop():
     """start() and stop() manage background task."""
     session_factory = MagicMock()
