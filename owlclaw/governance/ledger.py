@@ -96,9 +96,16 @@ class Ledger:
         batch_size: int = 10,
         flush_interval: float = 5.0,
     ) -> None:
+        if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
+            raise ValueError("batch_size must be a positive integer")
+        if isinstance(flush_interval, bool) or not isinstance(flush_interval, (int, float)):
+            raise ValueError("flush_interval must be a positive number")
+        flush_interval_value = float(flush_interval)
+        if flush_interval_value <= 0:
+            raise ValueError("flush_interval must be a positive number")
         self._session_factory = session_factory
         self._batch_size = batch_size
-        self._flush_interval = flush_interval
+        self._flush_interval = flush_interval_value
         self._write_queue: asyncio.Queue[LedgerRecord] = asyncio.Queue()
         self._writer_task: asyncio.Task[None] | None = None
 

@@ -88,3 +88,15 @@ async def test_ledger_can_restart_after_stop():
     assert second_task is not None
     assert second_task is not first_task
     await ledger.stop()
+
+
+def test_ledger_rejects_invalid_batch_size():
+    session_factory = MagicMock()
+    with pytest.raises(ValueError, match="batch_size must be a positive integer"):
+        Ledger(session_factory, batch_size=0, flush_interval=1.0)
+
+
+def test_ledger_rejects_invalid_flush_interval():
+    session_factory = MagicMock()
+    with pytest.raises(ValueError, match="flush_interval must be a positive number"):
+        Ledger(session_factory, batch_size=1, flush_interval=0)
