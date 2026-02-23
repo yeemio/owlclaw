@@ -33,8 +33,8 @@
 - [ ] `owlclaw.capabilities.registry` — 能力注册（@handler + @state 装饰器） → spec: capabilities-skills
 - [x] `docs/DATABASE_ARCHITECTURE.md` — 数据库架构设计（部署模式、数据模型、迁移策略、运维 CLI 设计、灾备） → 架构文档（已完成）
 - [x] `.cursor/rules/owlclaw_database.mdc` — 数据库编码规范（tenant_id、SQLAlchemy、Alembic、pgvector） → 编码规则（已完成）
-- [ ] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status` P0 已实现并集成） → spec: cli-db
-- [ ] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移） → spec: database-core
+- [x] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status/revision/rollback/backup/restore/check` 已实现并通过测试） → spec: cli-db
+- [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移 + 属性测试） → spec: database-core
 - [ ] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
 - [ ] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
 - [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule 已完成；remember/recall 待 Memory） → spec: agent-tools
@@ -90,8 +90,8 @@
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
-| database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（24/30） | SQLAlchemy Base、engine、session、异常、Alembic |
-| cli-db | `.kiro/specs/cli-db/` | 🟡 三层齐全，进行中（17/53） | `owlclaw db` init/migrate/status，已挂载到主入口 |
+| database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
+| cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（Round 5/7：cli-db rollback 单元测试验收） |
-| 批次状态 | **完成**。cli-db 8.4 已通过测试并勾选。 |
-| 已完成项 | 验收 `tests/unit/test_cli_db_rollback.py`（5 条用例），并将 `cli-db/tasks.md` 的 8.4 由 `[ ]` 更新为 `[x]`。 |
-| 下一待执行 | Round 6/7：验收并勾选 cli-db 10.4（backup 单元测试）。 |
-| 验收快照 | `poetry run pytest tests/unit/test_cli_db_rollback.py -q` -> `5 passed in 5.05s`。 |
+| 当前批次 | spec 循环（收口轮：cli-db 10.4/11.4/12.4/13.1/13.2/14.1 验收与收口） |
+| 批次状态 | **完成**。当前 worktree 分配（database-core + cli-db）已无未勾任务。 |
+| 已完成项 | 新增单测：`test_cli_db_backup.py`、`test_cli_db_restore.py`、`test_cli_db_check.py`、`test_cli_db_properties.py`；新增集成流测试：`tests/integration/test_cli_db_workflows.py`；并勾选 cli-db 1.1、10.4、11.4、12.4、13.1、13.2、14.1 与父任务 13/14。 |
+| 下一待执行 | 当前分配范围无待执行项；等待新的 spec 分配或由审校 worktree 进入 Review Loop。 |
+| 验收快照 | `poetry run pytest tests/unit/test_cli_db.py tests/unit/test_cli_db_revision.py tests/unit/test_cli_db_rollback.py tests/unit/test_cli_db_backup.py tests/unit/test_cli_db_restore.py tests/unit/test_cli_db_check.py tests/unit/test_cli_db_properties.py tests/integration/test_cli_db_workflows.py -q` -> `42 passed in 4.27s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
