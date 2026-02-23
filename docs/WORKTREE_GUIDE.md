@@ -128,27 +128,37 @@ D:/AI/owlclaw-codex-gpt  <hash> [codex-gpt-work]
 5. 工作完成后通知人工（或在 commit message 中标注）
 ```
 
-### 4.2 合并流程（由人工或 Cursor 在主 worktree 执行）
+### 4.2 合并流程（审校 worktree 把关）
 
-**推荐合并顺序**：审校 → 编码 1 → 编码 2（审校改动最轻，先合并冲突最少）
+**编码分支的变更不直接合并到 main，必须经过审校 worktree 的 Review Loop 审核。**
+
+审校 worktree（owlclaw-review）承担技术经理角色，执行完整的 Review Loop（定义见 `.kiro/WORKTREE_ASSIGNMENTS.md`）：
+
+```
+编码 worktree commit
+  ↓
+审校 worktree Review Loop（Scan → Review → Verdict）
+  ↓ APPROVE
+审校 worktree 合并编码分支到 review-work 并运行测试
+  ↓ 测试通过
+人工将 review-work 合并到 main
+  ↓
+各 worktree git merge main 同步
+```
+
+**人工在主 worktree 中执行最终合并**：
 
 ```bash
 cd D:\AI\owlclaw
 
-# 1. 先合并审校（改动轻，冲突少）
+# 合并审校 worktree（已包含审核通过的编码变更）
 git log main..review-work --oneline
 git merge review-work
 
-# 2. 合并编码 1
-git log main..codex-work --oneline
-git merge codex-work
-
-# 3. 合并编码 2
-git log main..codex-gpt-work --oneline
-git merge codex-gpt-work
-
-# 如果任一步有冲突，解决后 commit 再继续下一个
+# 通知各 worktree 同步
 ```
+
+**注意**：审校 worktree 负责将编码分支合并到 review-work 并验证测试通过，人工只需将 review-work 合并到 main 这一步。
 
 ### 4.3 保持同步
 
@@ -165,10 +175,10 @@ cd D:\AI\owlclaw-codex-gpt && git merge main
 
 ### 4.4 冲突处理
 
-- **预防**：各 worktree 工作在不同的 spec/模块上（通过 SPEC_TASKS_SCAN 的批次分配自然实现）；两个编码 worktree 必须分配到不同 spec
-- **检测**：合并时 Git 会自动报告冲突文件
-- **解决**：由人工或 Cursor 在主 worktree 中解决冲突
-- **原则**：谁后合并谁负责解决冲突；审校 worktree 优先合并
+- **预防**：各 worktree 工作在不同的 spec/模块上（通过 `.kiro/WORKTREE_ASSIGNMENTS.md` 分配）；两个编码 worktree 必须分配到不同 spec
+- **检测**：审校 worktree 在 Review Loop 的 Merge 步骤中检测冲突
+- **解决**：审校 worktree 负责解决编码分支之间的冲突；无法解决的由人工裁决
+- **原则**：审校 worktree 是合并网关，所有编码变更经审校后统一进入 main
 
 ---
 
@@ -188,7 +198,18 @@ cd D:\AI\owlclaw-codex-gpt && git merge main
 > 若某 task 涉及的文件在工作区中已被修改（git status 显示该文件被他人/其他会话改动），则跳过该 task。
 
 **新规则**：
-> 每个 AI Agent 在自己的 worktree 中独立工作，无需检查文件是否被其他 Agent 修改。Spec 循环正常推进，不跳过任何 task。合并时的冲突由人工解决。
+> 每个编码 Agent 在自己的 worktree 中独立工作，无需检查文件是否被其他 Agent 修改。Spec 循环正常推进，不跳过任何 task。编码完成后 commit 到自己的分支，由审校 worktree 的 Review Loop 审核后合并到 main。
+
+### 5.4 审校 worktree 的独立循环
+
+审校 worktree 运行独立的 **Review Loop**（非 Spec 循环），职责包括：
+
+1. **审核编码分支**：检查 spec 一致性、代码质量、测试覆盖、架构合规
+2. **合并把关**：只有审校 APPROVE 的分支才能合并到 review-work
+3. **测试验证**：合并后运行完整测试套件，确保不引入回归
+4. **状态同步**：更新 SPEC_TASKS_SCAN 的 Checkpoint
+
+Review Loop 的完整定义见 `.kiro/WORKTREE_ASSIGNMENTS.md` 中审校部分。
 
 ### 5.3 SPEC_TASKS_SCAN 的使用
 

@@ -18,21 +18,68 @@
 
 ## 当前分配
 
-### owlclaw-review（审校）
+### owlclaw-review（审校 — 技术经理角色）
 
 | 字段 | 值 |
 |------|---|
 | 目录 | `D:\AI\owlclaw-review\` |
 | 分支 | `review-work` |
-| 角色 | 审校：spec 对齐、code review、文档修正 |
+| 角色 | **技术经理**：代码终审 + 合并把关 + spec 对齐 + 质量守门 |
 
-**当前任务**：
+**职责定义**：
 
-- [ ] Spec 规范化审计：检查所有进行中 spec 的 requirements/design/tasks 与架构文档、代码实现的一致性
+审校 worktree 是所有编码产出进入 main 的**最后一道关卡**。编码 worktree 的变更必须经过审校确认后才能合并。
+
+**审校循环（Review Loop）**：
+
+审校 worktree 运行独立的循环流程，触发词与 Spec 循环相同（`继续`、`自主推进` 等）：
+
+```
+1. Sync — git merge main，获取最新 main 状态
+   ↓
+2. Scan — 检查各编码分支是否有待审变更
+   - git log main..codex-work --oneline
+   - git log main..codex-gpt-work --oneline
+   若无新变更 → 执行常规审校任务（见下方）→ 回 1
+   ↓
+3. Review — 对每个有变更的编码分支：
+   a. 读取该分支的 commit log 和 diff（git diff main..codex-work）
+   b. Spec 一致性：变更是否符合对应 spec 的 design.md 和 tasks.md
+   c. 代码质量：类型注解、错误处理、命名规范、绝对导入
+   d. 测试覆盖：新代码是否有对应测试、测试是否通过
+   e. 架构合规：是否违反 owlclaw_architecture.mdc 的包边界和集成隔离
+   f. 禁令检查：无 TODO/FIXME、无假数据、无硬编码业务规则
+   ↓
+4. Verdict — 对每个分支给出结论：
+   - ✅ APPROVE：可以合并，在 commit message 中记录审校结论
+   - 🔧 FIX_NEEDED：列出具体问题，在 review-work 分支上提交修正建议
+     （或直接在 review-work 上修复轻量问题，合并时一并带入）
+   - ❌ REJECT：严重问题（架构违规、数据安全），标记原因，等人工裁决
+   ↓
+5. Merge（仅 APPROVE 的分支）— 在 review worktree 中执行：
+   - git merge codex-work（或 codex-gpt-work）
+   - 运行 poetry run pytest 确认合并后测试通过
+   - 若测试失败 → 回滚合并，标记 FIX_NEEDED
+   - 若测试通过 → commit 合并结果
+   ↓
+6. Report — 更新 SPEC_TASKS_SCAN 的 Checkpoint，记录：
+   - 本轮审校了哪些分支/spec
+   - 审校结论（APPROVE/FIX_NEEDED/REJECT）
+   - 合并状态
+   ↓
+7. Push to main — 将 review-work 的审校+合并结果推送到 main：
+   - 切换到主 worktree 合并 review-work，或由人工执行
+   - 通知各编码 worktree 同步：git merge main
+```
+
+**常规审校任务**（无编码分支变更时执行）：
+
+- [ ] Spec 规范化审计：检查进行中 spec 的 requirements/design/tasks 与架构文档、代码实现的一致性
 - [ ] SPEC_TASKS_SCAN 状态校准：核实各 spec 的 (checked/total) 是否与 tasks.md 实际勾选一致
 - [ ] 代码质量审查：检查已实现模块的类型注解、错误处理、测试覆盖
+- [ ] 架构漂移检测：代码实现是否偏离 docs/ARCHITECTURE_ANALYSIS.md
 
-**范围限制**：全仓库只读审查 + 轻量修正（文档、注释、类型注解）。不做功能实现。
+**权限**：全仓库读 + 轻量修正（文档、注释、类型注解、测试补全）。不做功能实现。可以在 review-work 分支上直接修复审校发现的轻量问题。
 
 ---
 
