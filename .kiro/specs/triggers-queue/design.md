@@ -864,9 +864,9 @@ CREATE INDEX idx_queue_metrics_tenant_metric_time
 
 **验证需求：2.5**
 
-### 属性 8：Agent 触发与上下文传递
+### 属性 8：Agent 触发与 payload 传递
 
-*对于任意*有效的消息封装，系统应该调用 agent_runtime.trigger_event() 启动 Agent Run，且传递的上下文应该包含完整的消息信息（message、headers、source、message_id、received_at）。
+*对于任意*有效的消息封装，系统应该调用 agent_runtime.trigger_event() 启动 Agent Run，且传递的 payload 应该包含完整的消息信息（message、headers、source、message_id、received_at）。
 
 **验证需求：4.1, 4.2**
 

@@ -64,14 +64,14 @@
 4. WHEN 消息无法解析时，THE Queue_Trigger SHALL 标记为失败并可路由到死信
 5. THE Queue_Trigger SHALL 支持自定义转换规则
 
-### 需求 4：触发 Agent Run 与上下文传递
+### 需求 4：触发 Agent Run 与 payload 传递
 
-**用户故事：** 作为业务开发者，我希望队列消息触发后能携带完整上下文，以便 Agent 做出正确决策。
+**用户故事：** 作为业务开发者，我希望队列消息触发后能携带完整 payload，以便 Agent 做出正确决策。
 
 #### 验收标准
 
 1. THE Queue_Trigger SHALL 调用 agent_runtime.trigger_event() 启动 Agent Run
-2. THE Queue_Trigger SHALL 将 Message_Envelope 与来源信息传入上下文
+2. THE Queue_Trigger SHALL 将 Message_Envelope 与来源信息传入 payload
 3. THE Queue_Trigger SHALL 支持根据消息路由到不同 event_name
 4. THE Queue_Trigger SHALL 支持 focus 参数以限定 Skills 范围
 5. WHEN Governance_Layer 拒绝执行时，THE Queue_Trigger SHALL 记录并处理 ack_policy
