@@ -152,6 +152,15 @@ class CronTriggerRegistry:
             raise ValueError("event_name must not be empty")
         return normalized
 
+    @staticmethod
+    def _normalize_tenant_id(tenant_id: str) -> str:
+        if not isinstance(tenant_id, str):
+            raise ValueError("tenant_id must be a non-empty string")
+        normalized = tenant_id.strip()
+        if not normalized:
+            raise ValueError("tenant_id must be a non-empty string")
+        return normalized
+
     # ------------------------------------------------------------------
     # Task 2.4 — trigger registration
     # ------------------------------------------------------------------
@@ -359,7 +368,7 @@ class CronTriggerRegistry:
                 safe_limit = 10
         safe_limit = max(1, min(safe_limit, 100))
 
-        tid = tenant_id if tenant_id is not None else self._tenant_id
+        tid = self._tenant_id if tenant_id is None else self._normalize_tenant_id(tenant_id)
         filters = LedgerQueryFilters(
             capability_name=event_name,
             limit=safe_limit,
@@ -443,6 +452,7 @@ class CronTriggerRegistry:
                 governance constraint queries.
             tenant_id: Multi-tenancy identifier forwarded to runs.
         """
+        tenant_id = self._normalize_tenant_id(tenant_id)
         self._hatchet_client = hatchet_client
         self._ledger = ledger
         self._tenant_id = tenant_id

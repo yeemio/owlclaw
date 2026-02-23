@@ -251,6 +251,16 @@ class TestTaskManagement:
         hatchet.run_task_now.assert_awaited_once_with("cron_job", tenant_id="tenant-b")
 
     @pytest.mark.asyncio
+    async def test_trigger_now_uses_trimmed_start_tenant_id(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.run_task_now = AsyncMock(return_value="run-123")
+        reg.start(hatchet, agent_runtime=None, ledger=None, tenant_id="  tenant-a  ")
+        await reg.trigger_now("job")
+        hatchet.run_task_now.assert_awaited_once_with("cron_job", tenant_id="tenant-a")
+
+    @pytest.mark.asyncio
     async def test_trigger_now_without_start_raises(self) -> None:
         reg = self._registry()
         reg.register("job", "0 * * * *")
@@ -325,3 +335,14 @@ class TestTaskManagement:
         await reg.get_execution_history("daily", limit="bad")  # type: ignore[arg-type]
         filters = ledger.query_records.call_args.kwargs["filters"]
         assert filters.limit == 10
+
+    @pytest.mark.asyncio
+    async def test_get_execution_history_rejects_blank_tenant_override(self) -> None:
+        reg = self._registry()
+        reg.register("daily", "0 9 * * *")
+        hatchet = MagicMock()
+        ledger = MagicMock()
+        ledger.query_records = AsyncMock(return_value=[])
+        reg.start(hatchet, agent_runtime=None, ledger=ledger)
+        with pytest.raises(ValueError, match="tenant_id must be a non-empty string"):
+            await reg.get_execution_history("daily", tenant_id="  ")
