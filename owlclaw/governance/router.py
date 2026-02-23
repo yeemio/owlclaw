@@ -20,6 +20,15 @@ class Router:
     """Selects LLM model by task_type; supports fallback on failure."""
 
     def __init__(self, config: dict) -> None:
+        self._rules: list[dict] = []
+        self._default_model = "gpt-4o-mini"
+        self._load_config(config)
+
+    def reload_config(self, config: dict) -> None:
+        """Hot-reload router rules and default model from new config."""
+        self._load_config(config)
+
+    def _load_config(self, config: dict) -> None:
         cfg = config if isinstance(config, dict) else {}
         raw_rules = cfg.get("rules", [])
         self._rules = raw_rules if isinstance(raw_rules, list) else []

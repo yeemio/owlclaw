@@ -8,7 +8,7 @@ import asyncio
 import contextlib
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, time, timezone
 from decimal import Decimal
 from typing import Any
@@ -40,6 +40,8 @@ class CostSummary:
     """Aggregated cost over a period."""
 
     total_cost: Decimal
+    by_agent: dict[str, Decimal] = field(default_factory=dict)
+    by_capability: dict[str, Decimal] = field(default_factory=dict)
 
 
 class LedgerRecord(Base):
@@ -98,7 +100,7 @@ class Ledger:
     ) -> None:
         if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
             raise ValueError("batch_size must be a positive integer")
-        if isinstance(flush_interval, bool) or not isinstance(flush_interval, (int, float)):
+        if isinstance(flush_interval, bool) or not isinstance(flush_interval, int | float):
             raise ValueError("flush_interval must be a positive number")
         flush_interval_value = float(flush_interval)
         if flush_interval_value <= 0:
@@ -224,20 +226,41 @@ class Ledger:
         from sqlalchemy import func as sql_func
 
         async with self._session_factory() as session:
-            stmt = (
+            start_dt = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
+            end_dt = datetime.combine(end_date, time.max, tzinfo=timezone.utc)
+            total_stmt = (
                 select(sql_func.coalesce(sql_func.sum(LedgerRecord.estimated_cost), 0))
                 .where(LedgerRecord.tenant_id == tenant_id)
                 .where(LedgerRecord.agent_id == agent_id)
-                .where(LedgerRecord.created_at >= datetime.combine(
-                    start_date, time.min, tzinfo=timezone.utc
-                ))
-                .where(LedgerRecord.created_at <= datetime.combine(
-                    end_date, time.max, tzinfo=timezone.utc
-                ))
+                .where(LedgerRecord.created_at >= start_dt)
+                .where(LedgerRecord.created_at <= end_dt)
             )
-            result = await session.execute(stmt)
-            total = result.scalar_one()
-            return CostSummary(total_cost=Decimal(str(total)) if total is not None else Decimal("0"))
+            total_result = await session.execute(total_stmt)
+            total = total_result.scalar_one()
+
+            by_capability_stmt = (
+                select(
+                    LedgerRecord.capability_name,
+                    sql_func.coalesce(sql_func.sum(LedgerRecord.estimated_cost), 0),
+                )
+                .where(LedgerRecord.tenant_id == tenant_id)
+                .where(LedgerRecord.agent_id == agent_id)
+                .where(LedgerRecord.created_at >= start_dt)
+                .where(LedgerRecord.created_at <= end_dt)
+                .group_by(LedgerRecord.capability_name)
+            )
+            by_capability_result = await session.execute(by_capability_stmt)
+            by_capability = {
+                str(capability): Decimal(str(cost)) if cost is not None else Decimal("0")
+                for capability, cost in by_capability_result.all()
+            }
+
+            total_decimal = Decimal(str(total)) if total is not None else Decimal("0")
+            return CostSummary(
+                total_cost=total_decimal,
+                by_agent={agent_id: total_decimal},
+                by_capability=by_capability,
+            )
 
     async def _background_writer(self) -> None:
         """Consume queue and flush batches to the database."""
@@ -265,14 +288,30 @@ class Ledger:
 
     async def _flush_batch(self, batch: list[LedgerRecord]) -> None:
         """Write a batch of records to the database."""
-        try:
-            async with self._session_factory() as session:
-                session.add_all(batch)
-                await session.commit()
-            logger.debug("Flushed %d ledger records", len(batch))
-        except Exception as e:
-            logger.exception("Failed to flush ledger batch: %s", e)
-            await self._write_to_fallback_log(batch)
+        max_attempts = 3
+        base_delay_seconds = 0.1
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                async with self._session_factory() as session:
+                    session.add_all(batch)
+                    await session.commit()
+                logger.debug("Flushed %d ledger records", len(batch))
+                return
+            except Exception as e:
+                if attempt >= max_attempts:
+                    logger.exception("Failed to flush ledger batch after %d attempts: %s", max_attempts, e)
+                    await self._write_to_fallback_log(batch)
+                    return
+                backoff = base_delay_seconds * (2 ** (attempt - 1))
+                logger.warning(
+                    "Failed to flush ledger batch attempt %d/%d; retry in %.2fs: %s",
+                    attempt,
+                    max_attempts,
+                    backoff,
+                    e,
+                )
+                await asyncio.sleep(backoff)
 
     async def _write_to_fallback_log(self, batch: list[LedgerRecord]) -> None:
         """On DB failure, append records to a local fallback log."""
