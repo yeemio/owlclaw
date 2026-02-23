@@ -28,12 +28,15 @@
 ## Multi-Agent Coordination (Git Worktree)
 - **Must-read**: `docs/WORKTREE_GUIDE.md` — full coordination guide for all AI agents.
 - Isolation model: each AI tool works in its own Git worktree (physically separate directory, shared `.git`).
-  - Main worktree (`D:\AI\owlclaw\`, branch `main`): Cursor, human.
-  - Codex worktree (`D:\AI\owlclaw-codex\`, branch `codex-work`): Codex-CLI.
+  - `D:\AI\owlclaw\` (branch `main`): Cursor / human — interactive dev, merge operations.
+  - `D:\AI\owlclaw-review\` (branch `review-work`): Codex-CLI — spec audit, code review, doc fixes.
+  - `D:\AI\owlclaw-codex\` (branch `codex-work`): Codex-CLI — feature implementation, tests.
+  - `D:\AI\owlclaw-codex-gpt\` (branch `codex-gpt-work`): Codex-CLI — feature implementation, tests.
 - Before starting work: confirm which worktree you are in (`git worktree list`).
 - Work only in your own worktree; commit to your own branch.
-- Merging `codex-work` into `main` is done by human or Cursor in the main worktree.
-- Before each Spec loop round in the Codex worktree: sync with `git merge main`.
+- Two coding worktrees must work on **different** specs/modules to minimize merge conflicts.
+- Merging into `main` is done by human or Cursor; recommended order: review → codex → codex-gpt.
+- Before each work round: sync with `git merge main` in your worktree.
 - No file-level claim mechanism needed — worktree isolation replaces `AGENT_WORK_CLAIMS.md`.
 
 ## Project Structure & Module Organization

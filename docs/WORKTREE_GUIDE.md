@@ -12,29 +12,27 @@
 本项目使用 **Git Worktree** 实现多 AI Agent 物理隔离，避免工作区文件冲突。
 
 ```
-D:\AI\owlclaw\          ← 主 worktree（main 分支）
-D:\AI\owlclaw-codex\    ← Codex worktree（codex-work 分支）
+D:\AI\owlclaw\              ← 主 worktree（main 分支）— Cursor / 人工
+D:\AI\owlclaw-review\       ← 审校 worktree（review-work 分支）— Codex-CLI 审校
+D:\AI\owlclaw-codex\        ← 编码 worktree 1（codex-work 分支）— Codex-CLI 编码
+D:\AI\owlclaw-codex-gpt\    ← 编码 worktree 2（codex-gpt-work 分支）— Codex-CLI 编码
 ```
 
-两个目录共享同一个 `.git` 仓库（历史、分支、远程全部共享），但文件系统完全独立。在一个 worktree 中的编辑不会影响另一个 worktree 的文件。
+所有目录共享同一个 `.git` 仓库（历史、分支、远程全部共享），但文件系统完全独立。在一个 worktree 中的编辑不会影响其他 worktree 的文件。
 
 ```
-┌─────────────────────────────┐    ┌─────────────────────────────┐
-│  D:\AI\owlclaw\             │    │  D:\AI\owlclaw-codex\       │
-│  ┌───────────────────────┐  │    │  ┌───────────────────────┐  │
-│  │ Cursor / 人工          │  │    │  │ Codex-CLI             │  │
-│  │ 分支: main             │  │    │  │ 分支: codex-work      │  │
-│  │ 角色: 交互式开发/review │  │    │  │ 角色: 批量/自主实现    │  │
-│  └───────────────────────┘  │    │  └───────────────────────┘  │
-│          独立文件系统         │    │         独立文件系统         │
-└──────────────┬──────────────┘    └──────────────┬──────────────┘
-               │                                   │
-               └──────────┬───────────────────────┘
-                          │
-                ┌─────────▼─────────┐
-                │   共享 .git 仓库   │
-                │  （历史/分支/远程） │
-                └───────────────────┘
+┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
+│ owlclaw\         │ │ owlclaw-review\  │ │ owlclaw-codex\   │ │ owlclaw-codex-gpt│
+│ Cursor / 人工     │ │ Codex-CLI 审校   │ │ Codex-CLI 编码1  │ │ Codex-CLI 编码2  │
+│ main             │ │ review-work      │ │ codex-work       │ │ codex-gpt-work   │
+└────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘ └────────┬─────────┘
+         │                    │                     │                    │
+         └────────────────────┴──────────┬──────────┴────────────────────┘
+                                         │
+                               ┌─────────▼─────────┐
+                               │   共享 .git 仓库   │
+                               │  （历史/分支/远程） │
+                               └───────────────────┘
 ```
 
 ---
@@ -52,13 +50,20 @@ git worktree list
 输出示例：
 
 ```
-D:/AI/owlclaw        <hash> [main]
-D:/AI/owlclaw-codex  <hash> [codex-work]
+D:/AI/owlclaw            <hash> [main]
+D:/AI/owlclaw-review     <hash> [review-work]
+D:/AI/owlclaw-codex      <hash> [codex-work]
+D:/AI/owlclaw-codex-gpt  <hash> [codex-gpt-work]
 ```
 
 判断规则：
-- 当前工作目录在 `D:\AI\owlclaw\` 下 → 你在**主 worktree**，使用 `main` 分支
-- 当前工作目录在 `D:\AI\owlclaw-codex\` 下 → 你在 **Codex worktree**，使用 `codex-work` 分支
+
+| 当前工作目录 | Worktree | 分支 | 角色 |
+|-------------|----------|------|------|
+| `D:\AI\owlclaw\` | 主 worktree | `main` | Cursor / 人工交互式开发 |
+| `D:\AI\owlclaw-review\` | 审校 worktree | `review-work` | Codex-CLI 审校（spec 对齐、code review、文档修正） |
+| `D:\AI\owlclaw-codex\` | 编码 worktree 1 | `codex-work` | Codex-CLI 编码（功能实现、测试编写） |
+| `D:\AI\owlclaw-codex-gpt\` | 编码 worktree 2 | `codex-gpt-work` | Codex-CLI 编码（功能实现、测试编写） |
 
 **禁止**：在一个 worktree 中切换到另一个 worktree 正在使用的分支（Git 会拒绝，但不要尝试）。
 
@@ -77,14 +82,32 @@ D:/AI/owlclaw-codex  <hash> [codex-work]
 ### 3.2 主 Worktree（`D:\AI\owlclaw\`，main 分支）
 
 - **使用者**：Cursor、人工
-- **适合的工作**：交互式开发、复杂重构、设计讨论、code review、合并操作
+- **适合的工作**：交互式开发、复杂重构、设计讨论、合并操作
 - **分支策略**：直接在 `main` 上工作，或按需创建 feature 分支
 
-### 3.3 Codex Worktree（`D:\AI\owlclaw-codex\`，codex-work 分支）
+### 3.3 审校 Worktree（`D:\AI\owlclaw-review\`，review-work 分支）
 
-- **使用者**：Codex-CLI
-- **适合的工作**：批量实现、测试补全、文档生成、Spec 循环自主推进
+- **使用者**：Codex-CLI（审校角色）
+- **适合的工作**：
+  - Spec 规范化（spec → architecture → code 一致性审计）
+  - Code review（检查其他 worktree 合并后的代码质量）
+  - 文档修正（修复过时路径、术语不一致、格式问题）
+  - SPEC_TASKS_SCAN 状态对齐
+- **分支策略**：在 `review-work` 分支上工作，完成后等待合并到 `main`
+- **注意**：审校 worktree 以读为主、改动较轻，优先合并以减少冲突
+
+### 3.4 编码 Worktree 1（`D:\AI\owlclaw-codex\`，codex-work 分支）
+
+- **使用者**：Codex-CLI（编码角色）
+- **适合的工作**：功能实现、测试编写、Spec 循环自主推进
 - **分支策略**：在 `codex-work` 分支上工作，完成后等待合并到 `main`
+
+### 3.5 编码 Worktree 2（`D:\AI\owlclaw-codex-gpt\`，codex-gpt-work 分支）
+
+- **使用者**：Codex-CLI（编码角色）
+- **适合的工作**：功能实现、测试编写、Spec 循环自主推进
+- **分支策略**：在 `codex-gpt-work` 分支上工作，完成后等待合并到 `main`
+- **与编码 1 的分工**：两个编码 worktree 应分配到**不同的 spec/模块**，避免改动同一组文件导致合并冲突
 
 ---
 
@@ -104,44 +127,47 @@ D:/AI/owlclaw-codex  <hash> [codex-work]
 5. 工作完成后通知人工（或在 commit message 中标注）
 ```
 
-### 4.2 合并流程（由人工或 Cursor 执行）
+### 4.2 合并流程（由人工或 Cursor 在主 worktree 执行）
+
+**推荐合并顺序**：审校 → 编码 1 → 编码 2（审校改动最轻，先合并冲突最少）
 
 ```bash
-# 在主 worktree 中操作
 cd D:\AI\owlclaw
 
-# 查看 codex-work 分支的变更
-git log main..codex-work --oneline
+# 1. 先合并审校（改动轻，冲突少）
+git log main..review-work --oneline
+git merge review-work
 
-# 合并 codex-work 到 main
+# 2. 合并编码 1
+git log main..codex-work --oneline
 git merge codex-work
 
-# 如果有冲突，解决后 commit
-# git add . && git commit
+# 3. 合并编码 2
+git log main..codex-gpt-work --oneline
+git merge codex-gpt-work
 
-# 合并完成后，codex worktree 同步 main
-cd D:\AI\owlclaw-codex
-git merge main
+# 如果任一步有冲突，解决后 commit 再继续下一个
 ```
 
 ### 4.3 保持同步
 
-Codex worktree 需要定期同步 main 的最新变更，避免分支偏离过远：
+所有 Codex worktree 需要定期同步 main 的最新变更，避免分支偏离过远：
 
 ```bash
-# 在 codex worktree 中
-cd D:\AI\owlclaw-codex
-git merge main
+# 在各 worktree 中分别执行
+cd D:\AI\owlclaw-review    && git merge main
+cd D:\AI\owlclaw-codex     && git merge main
+cd D:\AI\owlclaw-codex-gpt && git merge main
 ```
 
-**建议频率**：每次开始新一轮 Spec 循环前同步一次。
+**建议频率**：每次开始新一轮工作前同步一次。人工合并完一批变更后，通知各 worktree 同步。
 
 ### 4.4 冲突处理
 
-- **预防**：两个 worktree 尽量工作在不同的 spec/模块上（通过 SPEC_TASKS_SCAN 的批次分配自然实现）
+- **预防**：各 worktree 工作在不同的 spec/模块上（通过 SPEC_TASKS_SCAN 的批次分配自然实现）；两个编码 worktree 必须分配到不同 spec
 - **检测**：合并时 Git 会自动报告冲突文件
 - **解决**：由人工或 Cursor 在主 worktree 中解决冲突
-- **原则**：谁后合并谁负责解决冲突
+- **原则**：谁后合并谁负责解决冲突；审校 worktree 优先合并
 
 ---
 
@@ -165,11 +191,13 @@ git merge main
 
 ### 5.3 SPEC_TASKS_SCAN 的使用
 
-两个 worktree 各自有一份 `SPEC_TASKS_SCAN.md` 的副本。更新规则：
+每个 worktree 各自有一份 `SPEC_TASKS_SCAN.md` 的副本。更新规则：
 
 - 各自在自己的副本中更新 Checkpoint
 - 合并时以最新进度为准（人工判断）
-- 建议：主 worktree 的 SPEC_TASKS_SCAN 为权威版本，codex worktree 合并后以 main 为准
+- 主 worktree 的 SPEC_TASKS_SCAN 为权威版本，各 worktree 合并后以 main 为准
+- **审校 worktree** 可以修正 SPEC_TASKS_SCAN 的状态对齐，但不改动 task 勾选
+- **编码 worktree** 完成 task 后在自己的副本中打勾，合并后反映到 main
 
 ---
 
@@ -179,21 +207,26 @@ git merge main
 # 查看所有 worktree
 git worktree list
 
-# 在 codex worktree 中同步 main 最新代码
-cd D:\AI\owlclaw-codex && git merge main
+# 同步所有 worktree（在各自目录中执行）
+cd D:\AI\owlclaw-review    && git merge main
+cd D:\AI\owlclaw-codex     && git merge main
+cd D:\AI\owlclaw-codex-gpt && git merge main
 
-# 在主 worktree 中合并 codex-work
-cd D:\AI\owlclaw && git merge codex-work
+# 在主 worktree 中合并各分支（推荐顺序）
+cd D:\AI\owlclaw
+git merge review-work       # 审校优先
+git merge codex-work        # 编码 1
+git merge codex-gpt-work    # 编码 2
 
-# 查看 codex-work 相对于 main 的变更
+# 查看某分支相对于 main 的变更
 git log main..codex-work --oneline
 git diff main..codex-work --stat
 
 # 删除 worktree（如果不再需要）
-git worktree remove D:\AI\owlclaw-codex
+git worktree remove D:\AI\owlclaw-review
 
-# 重新创建 worktree（如果需要重建）
-git worktree add -b codex-work D:\AI\owlclaw-codex main
+# 重新创建 worktree
+git worktree add -b review-work D:\AI\owlclaw-review main
 ```
 
 ---
@@ -206,11 +239,14 @@ git worktree add -b codex-work D:\AI\owlclaw-codex main
 ### Q: Codex worktree 落后 main 太多，合并冲突很多
 **A**: 定期在 codex worktree 中运行 `git merge main` 保持同步。建议每轮 Spec 循环开始前同步。
 
-### Q: 需要增加第三个 AI Agent
+### Q: 需要增加更多 AI Agent
 **A**: 创建新 worktree：`git worktree add -b <branch-name> D:\AI\owlclaw-<name> main`，然后在本文档中添加对应条目。
 
-### Q: 想让 Codex-CLI 在不同分支上做不同 spec
-**A**: 可以为 codex worktree 切换分支（先 commit 当前工作），或创建多个 codex worktree。
+### Q: 两个编码 worktree 改了同一个文件怎么办
+**A**: 合并时会产生冲突，由人工在主 worktree 中解决。预防方法：分配任务时确保两个编码 worktree 工作在不同的 spec/模块上。
+
+### Q: 审校 worktree 发现了编码 worktree 的 bug
+**A**: 审校 worktree 在自己的分支上修复并 commit。合并时如果编码 worktree 也改了同一处，由人工裁决。
 
 ---
 
