@@ -57,6 +57,14 @@ def test_mount_skills_and_decorators(tmp_path):
     ]
 
 
+def test_mount_skills_validates_path():
+    app = OwlClaw("test-app")
+    with pytest.raises(ValueError, match="path must be a non-empty string"):
+        app.mount_skills("   ")
+    with pytest.raises(ValueError, match="path must be a non-empty string"):
+        app.mount_skills(None)  # type: ignore[arg-type]
+
+
 def test_handler_before_mount_skills_raises():
     """Using @handler before mount_skills() raises RuntimeError."""
     app = OwlClaw("test-app")

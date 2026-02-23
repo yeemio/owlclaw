@@ -80,17 +80,20 @@ class OwlClaw:
         Args:
             path: Path to capabilities directory containing SKILL.md files
         """
-        self._skills_path = path
+        if not isinstance(path, str) or not path.strip():
+            raise ValueError("path must be a non-empty string")
+        normalized_path = path.strip()
+        self._skills_path = normalized_path
 
         # Initialize Skills Loader
-        self.skills_loader = SkillsLoader(Path(path))
+        self.skills_loader = SkillsLoader(Path(normalized_path))
         skills = self.skills_loader.scan()
 
         # Initialize Registry and Knowledge Injector
         self.registry = CapabilityRegistry(self.skills_loader)
         self.knowledge_injector = KnowledgeInjector(self.skills_loader)
 
-        logger.info("Loaded %d Skills from %s", len(skills), path)
+        logger.info("Loaded %d Skills from %s", len(skills), normalized_path)
 
     def handler(self, skill_name: str) -> Callable:
         """Decorator to register a capability handler associated with a Skill.
