@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：cli-db Task 7） |
-| 批次状态 | **完成**。cli-db revision 命令已实现并验收。 |
-| 已完成项 | cli-db Task 7.1/7.2/7.3：db_revision.py（revision_command、危险操作检测、边缘情况）；CLI 通过 argparse 调度；Typer 兼容性修复（db Option 空串 + memory include_archived 单标志）。 |
-| 下一待执行 | cli-db Task 8（rollback）或 database-core。 |
-| 验收快照 | `tests/unit/test_cli_db.py` + `test_db.py` 23 passed。 |
+| 当前批次 | spec 循环（本轮：agent-memory Task 13-18） |
+| 批次状态 | **完成**。agent-memory 高级能力与文档任务已全部完成。 |
+| 已完成项 | Task 13-18：[QdrantStore + 迁移工具]、[TFIDFEmbedder 降级]、[Compaction]、[性能测试基线]、[降级集成测试]、[README + docs/memory 指南]。 |
+| 下一待执行 | 按优先级继续其他 spec 未勾任务（建议 cli-db Task 7 或 database-core）。 |
+| 验收快照 | `tests/unit/agent/memory` 64 passed；新增高级能力相关定向测试 20 passed；`test_memory_performance.py` 在未安装 benchmark 插件时按预期 skip。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

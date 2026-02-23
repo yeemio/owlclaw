@@ -104,6 +104,30 @@ resp = await client.complete(messages, task_type="simple_query")
 - **Config**: `llm` section in `owlclaw.yaml` — see [docs/llm/owlclaw.llm.example.yaml](docs/llm/owlclaw.llm.example.yaml) (models, task_type_routing, Langfuse, mock_mode).
 - **Examples**: [examples/integrations_llm/](examples/integrations_llm/) — basic call, function calling, model routing (all runnable in mock mode without API keys).
 
+### Memory system (STM + LTM)
+
+OwlClaw provides a pluggable memory subsystem for `remember()` / `recall()`:
+
+- `pgvector` (default): PostgreSQL + vector search.
+- `qdrant`: external vector database for larger-scale retrieval.
+- `inmemory`: local development and tests.
+
+CLI commands:
+
+```bash
+owlclaw memory list --agent <agent_id> --tenant default
+owlclaw memory stats --agent <agent_id> --tenant default
+owlclaw memory prune --agent <agent_id> --before 2026-01-01T00:00:00+00:00
+owlclaw memory reset --agent <agent_id> --confirm
+owlclaw memory migrate-backend --agent <agent_id> --source-backend pgvector --target-backend qdrant
+```
+
+Memory documentation:
+
+- [docs/memory/configuration.md](docs/memory/configuration.md)
+- [docs/memory/backend-selection.md](docs/memory/backend-selection.md)
+- [docs/memory/lifecycle-best-practices.md](docs/memory/lifecycle-best-practices.md)
+
 ## Installation
 
 ```bash

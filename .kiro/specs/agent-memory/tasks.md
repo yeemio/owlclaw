@@ -90,7 +90,7 @@
   - `owlclaw memory reset --agent <name> --confirm`: 重置所有记忆
   - `owlclaw memory stats --agent <name>`: 显示统计信息（总数、存储大小、标签分布）
 
-- [ ] **Task 12**: 实现安全分类
+- [x] **Task 12**: 实现安全分类
   - 自动安全分类规则引擎（关键词 + 正则）
   - 集成 DataMasker：confidential/restricted 记忆的输出脱敏
   - MCP 通道脱敏拦截器
@@ -98,36 +98,36 @@
 
 ### Phase 3：高级功能
 
-- [ ] **Task 13**: 实现 `QdrantStore`
+- [x] **Task 13**: 实现 `QdrantStore`
   - Qdrant 集合创建/管理
   - 向量 CRUD 操作
   - 与 PgVectorStore 相同的接口契约
   - 数据迁移工具（pgvector ↔ Qdrant）
 
-- [ ] **Task 14**: 实现 `TFIDFEmbedder`（降级后端）
+- [x] **Task 14**: 实现 `TFIDFEmbedder`（降级后端）
   - 基于 scikit-learn 的 TF-IDF 向量化
   - 作为 embedding API 不可用时的自动降级
   - 维度可配置（默认 256）
 
-- [ ] **Task 15**: 实现 Compaction（记忆合并）
+- [x] **Task 15**: 实现 Compaction（记忆合并）
   - 同标签记忆超过阈值时触发
   - 使用 LLM 生成合并摘要（降级为截断拼接）
   - 原始记忆归档，摘要作为新记忆写入
   - 合并事件记录到 Ledger
 
-- [ ] **Task 16**: 性能测试
+- [x] **Task 16**: 性能测试
   - 使用 pytest-benchmark 测量 recall 延迟
   - 准备 1M 条记忆的测试数据集
   - 验证 P95 < 200ms 的性能目标
   - HNSW 索引参数调优
 
-- [ ] **Task 17**: 降级集成测试
+- [x] **Task 17**: 降级集成测试
   - 模拟 pgvector 不可用 → 验证全文搜索降级
   - 模拟 embedding API 不可用 → 验证 TF-IDF 降级
   - 模拟 PostgreSQL 不可用 → 验证 MEMORY.md 降级
   - 验证降级事件正确记录到 Ledger
 
-- [ ] **Task 18**: 文档
+- [x] **Task 18**: 文档
   - 更新 README 的 Memory 章节
   - 编写 Memory 配置指南（owlclaw.yaml memory 段落）
   - 编写向量后端选择指南（pgvector vs Qdrant vs InMemory）
