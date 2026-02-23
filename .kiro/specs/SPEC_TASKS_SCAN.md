@@ -98,7 +98,7 @@
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | 🟡 三层齐全，进行中（127/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
-| **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（23/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
+| **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（27/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（spec 规范化：`triggers-api`、`triggers-db-change`、`triggers-signal`） |
-| 批次状态 | **完成**。三份 design 文档已做架构口径统一，不涉及实现代码。 |
-| 已完成项 | 统一补齐“Python 单栈 + 组件边界 + DB 五条铁律 + 禁止项”口径；将触发器执行入口对齐到 `AgentRuntime.trigger_event`、审计口径对齐到 `Ledger`。 |
-| 下一待执行 | 继续 spec 规范化：`triggers-queue` 与 `triggers-webhook` 的同口径对齐（重点核查语言无关契约与 DB 约束一致性）。 |
-| 验收快照 | 文档审计通过：三份 spec 无 TypeScript 双栈表述，均明确集成边界与数据库铁律。 |
+| 当前批次 | spec 循环（本轮：security Runtime 集成与角色隔离测试） |
+| 批次状态 | **完成**。InputSanitizer 已集成到 Runtime 消息构建链路，system/user 角色分离通过测试验证。 |
+| 已完成项 | security Task 2.2.1-2.2.3、2.3.3：新增 `_build_messages()` 强制角色隔离；`_build_user_message()` 接入净化与审计；新增 runtime 单测覆盖角色隔离与审计事件。 |
+| 下一待执行 | security 任务 3.2.x（Governance 集成）与 3.3.x（RiskGate 决策测试收口），随后推进 4.2.x（MCP/remember 集成）。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py -k "focus_used_in_user_message or trigger_event_normalizes_blank_focus or user_payload_is_sanitized_and_role_isolated or sanitization_writes_security_audit_event" -q` → 4 passed；`poetry run pytest tests/unit/security -q` → 19 passed；`poetry run ruff check owlclaw/agent/runtime/runtime.py owlclaw/security/rules.py tests/unit/agent/test_runtime.py tests/unit/security` 通过。 |
 | 阻塞项 | 与其他 agent 的实现文件存在并行修改风险，本轮仅处理 `.kiro/specs/**`。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

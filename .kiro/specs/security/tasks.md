@@ -46,14 +46,14 @@
 - [x] 2.1.5 实现 `_default_rules()` 内置规则集（至少 10 条已知 injection 模式）
 
 ### 2.2 Agent Runtime 集成
-- [ ] 2.2.1 在 `agent.runtime.runtime.py` 的 prompt 构建流程中集成 InputSanitizer
-- [ ] 2.2.2 确保 system/user 角色隔离在 `_build_messages()` 中强制执行
-- [ ] 2.2.3 sanitization 修改时写入审计日志
+- [x] 2.2.1 在 `agent.runtime.runtime.py` 的 prompt 构建流程中集成 InputSanitizer
+- [x] 2.2.2 确保 system/user 角色隔离在 `_build_messages()` 中强制执行
+- [x] 2.2.3 sanitization 修改时写入审计日志
 
 ### 2.3 单元测试
 - [x] 2.3.1 测试已知 injection 模式检测（至少 10 个攻击向量）
 - [x] 2.3.2 测试自定义规则加载和应用
-- [ ] 2.3.3 测试角色隔离（system/user 不可混入）
+- [x] 2.3.3 测试角色隔离（system/user 不可混入）
 
 ---
 

@@ -35,6 +35,11 @@ def default_sanitize_rules() -> list[BuiltinSanitizeRule]:
         BuiltinSanitizeRule(r"(?i)you\s+are\s+now\s+(developer|system)", "remove", description="Role rewrite"),
         BuiltinSanitizeRule(r"(?im)^\s*system\s*:", "remove", description="System prefix"),
         BuiltinSanitizeRule(r"(?im)^\s*assistant\s*:", "remove", description="Assistant prefix"),
+        BuiltinSanitizeRule(
+            r"(?i)\\n\s*(system|assistant|developer)\s*:",
+            "remove",
+            description="Escaped role prefix",
+        ),
         BuiltinSanitizeRule(r"(?i)reveal\s+(your\s+)?(system\s+prompt|instructions)", "remove", description="Prompt exfiltration"),
         BuiltinSanitizeRule(r"(?i)print\s+hidden\s+prompt", "remove", description="Hidden prompt print"),
         BuiltinSanitizeRule(r"(?i)tool\s*:\s*.*", "remove", description="Tool spoofing"),

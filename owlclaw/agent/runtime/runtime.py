@@ -26,6 +26,8 @@ from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.heartbeat import HeartbeatChecker
 from owlclaw.agent.runtime.identity import IdentityLoader
 from owlclaw.integrations import llm as llm_integration
+from owlclaw.security.audit import SecurityAuditLog
+from owlclaw.security.sanitizer import InputSanitizer
 
 if TYPE_CHECKING:
     from owlclaw.agent.tools import BuiltInTools
@@ -89,6 +91,8 @@ class AgentRuntime:
         self._ledger = ledger
         self.model = model
         self.config: dict[str, Any] = config or {}
+        self._input_sanitizer = InputSanitizer()
+        self._security_audit = SecurityAuditLog()
 
         self._identity_loader: IdentityLoader | None = None
         self._heartbeat_checker: HeartbeatChecker | None = None
@@ -251,15 +255,7 @@ class AgentRuntime:
         # Build context components
         skills_context = self._build_skills_context(context)
         visible_tools = await self._get_visible_tools(context)
-        system_prompt = self._build_system_prompt(skills_context, visible_tools)
-
-        messages: list[dict[str, Any]] = [
-            {"role": "system", "content": system_prompt},
-        ]
-
-        # Add user-facing trigger message
-        user_msg = self._build_user_message(context)
-        messages.append({"role": "user", "content": user_msg})
+        messages = self._build_messages(context, skills_context, visible_tools)
 
         max_iterations_raw = self.config.get(
             "max_function_calls", _DEFAULT_MAX_ITERATIONS
@@ -620,7 +616,33 @@ class AgentRuntime:
         if context.payload:
             parts.append(f"Context: {json.dumps(context.payload, default=str)}")
 
-        return "\n".join(parts)
+        raw_message = "\n".join(parts)
+        sanitized = self._input_sanitizer.sanitize(raw_message, source=context.trigger)
+        if sanitized.changed:
+            self._security_audit.record(
+                event_type="sanitization",
+                source=context.trigger,
+                details={
+                    "agent_id": context.agent_id,
+                    "run_id": context.run_id,
+                    "modifications": sanitized.modifications,
+                },
+            )
+        return sanitized.sanitized
+
+    def _build_messages(
+        self,
+        context: AgentRunContext,
+        skills_context: str,
+        visible_tools: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Build initial messages with strict system/user role separation."""
+        system_prompt = self._build_system_prompt(skills_context, visible_tools)
+        user_message = self._build_user_message(context)
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ]
 
     def _build_skills_context(self, context: AgentRunContext) -> str:
         """Return Skills knowledge string, optionally filtered by focus."""
