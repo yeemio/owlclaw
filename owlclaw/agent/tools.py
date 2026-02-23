@@ -185,7 +185,10 @@ class BuiltInTools:
         self._registry = capability_registry
         self._ledger = ledger
         self._hatchet = hatchet_client
-        self._scheduled_run_task = scheduled_run_task_name
+        task_name = self._non_empty_str(scheduled_run_task_name)
+        if task_name is None:
+            raise ValueError("scheduled_run_task_name must be a non-empty string")
+        self._scheduled_run_task = task_name
         if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)):
             raise ValueError("timeout_seconds must be a positive finite number")
         timeout_val = float(timeout_seconds)

@@ -67,6 +67,11 @@ class TestBuiltInToolsInitValidation:
         with pytest.raises(ValueError, match="timeout_seconds must be a positive finite number"):
             BuiltInTools(timeout_seconds=timeout_value)  # type: ignore[arg-type]
 
+    @pytest.mark.parametrize("task_name", ["", "   ", None, 123])
+    def test_init_rejects_invalid_scheduled_run_task_name(self, task_name) -> None:
+        with pytest.raises(ValueError, match="scheduled_run_task_name must be a non-empty string"):
+            BuiltInTools(scheduled_run_task_name=task_name)  # type: ignore[arg-type]
+
 
 class TestQueryState:
     @pytest.mark.asyncio
