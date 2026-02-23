@@ -1,12 +1,9 @@
-"""Built-in tools available to all Agents via LLM function calling.
-
-Tools: query_state, log_decision, schedule_once, schedule_cron, cancel_schedule.
-remember/recall require Memory integration (see agent-tools spec).
-"""
+"""Built-in tools available to all Agents via LLM function calling."""
 
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import math
 import re
@@ -27,7 +24,15 @@ logger = logging.getLogger(__name__)
 
 _SCHEDULED_RUN_TASK = "agent_scheduled_run"
 _BUILTIN_TOOL_NAMES = frozenset(
-    {"query_state", "log_decision", "schedule_once", "schedule_cron", "cancel_schedule"}
+    {
+        "query_state",
+        "log_decision",
+        "schedule_once",
+        "schedule_cron",
+        "cancel_schedule",
+        "remember",
+        "recall",
+    }
 )
 _SAFE_NAME_PATTERN = re.compile(r"[^a-zA-Z0-9_-]+")
 
@@ -172,6 +177,62 @@ def _cancel_schedule_schema() -> dict[str, Any]:
     }
 
 
+def _remember_schema() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "function": {
+            "name": "remember",
+            "description": "Store durable memory for future Agent runs.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": "Memory content to store (1-2000 chars)",
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional tags for later recall filtering",
+                    },
+                },
+                "required": ["content"],
+            },
+        },
+    }
+
+
+def _recall_schema() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "function": {
+            "name": "recall",
+            "description": "Search previously stored memories by query and optional tags.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search query for relevant memories",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20,
+                        "description": "Maximum number of memories to return (default 5)",
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Optional tag filter",
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    }
+
+
 class BuiltInTools:
     """Built-in tools: query_state, log_decision, schedule_once, cancel_schedule.
 
@@ -186,12 +247,14 @@ class BuiltInTools:
         capability_registry: CapabilityRegistry | None = None,
         ledger: Ledger | None = None,
         hatchet_client: HatchetClient | None = None,
+        memory_system: Any | None = None,
         scheduled_run_task_name: str = _SCHEDULED_RUN_TASK,
         timeout_seconds: float = 30,
     ) -> None:
         self._registry = capability_registry
         self._ledger = ledger
         self._hatchet = hatchet_client
+        self._memory = memory_system
         task_name = self._non_empty_str(scheduled_run_task_name)
         if task_name is None:
             raise ValueError("scheduled_run_task_name must be a non-empty string")
@@ -211,6 +274,8 @@ class BuiltInTools:
             _schedule_once_schema(),
             _schedule_cron_schema(),
             _cancel_schedule_schema(),
+            _remember_schema(),
+            _recall_schema(),
         ]
         return schemas
 
@@ -276,7 +341,35 @@ class BuiltInTools:
             return await self._schedule_cron(arguments, context)
         if normalized_tool_name == "cancel_schedule":
             return await self._cancel_schedule(arguments, context)
+        if normalized_tool_name == "remember":
+            return await self._remember(arguments, context)
+        if normalized_tool_name == "recall":
+            return await self._recall(arguments, context)
         raise ValueError(f"Unknown built-in tool: {normalized_tool_name}")
+
+    @staticmethod
+    def _normalize_tags(raw_tags: Any) -> list[str] | None:
+        if raw_tags is None:
+            return []
+        if not isinstance(raw_tags, list):
+            return None
+        tags: list[str] = []
+        for raw in raw_tags:
+            if not isinstance(raw, str):
+                return None
+            normalized = raw.strip().lower()
+            if normalized and normalized not in tags:
+                tags.append(normalized)
+        return tags
+
+    async def _call_memory_method(self, method_name: str, **kwargs: Any) -> Any:
+        method = getattr(self._memory, method_name, None)
+        if method is None:
+            raise RuntimeError(f"memory system does not support '{method_name}'")
+        result = method(**kwargs)
+        if inspect.isawaitable(result):
+            return await result
+        return result
 
     async def _query_state(
         self,
@@ -673,6 +766,185 @@ class BuiltInTools:
                 tool_name="cancel_schedule",
                 context=context,
                 input_params={"schedule_id": schedule_id},
+                output_result=None,
+                start_ns=start_ns,
+                status="error",
+                error_message=str(e),
+            )
+            return {"error": str(e)}
+
+    async def _remember(
+        self,
+        arguments: dict[str, Any],
+        context: BuiltInToolsContext,
+    ) -> dict[str, Any]:
+        content = self._non_empty_str(arguments.get("content"))
+        if content is None:
+            error = "content is required and must be a non-empty string"
+            await self._record_validation_failure(
+                tool_name="remember",
+                context=context,
+                input_params={"content": arguments.get("content")},
+                error_message=error,
+            )
+            return {"error": error}
+        if len(content) > 2000:
+            error = "content must not exceed 2000 characters"
+            await self._record_validation_failure(
+                tool_name="remember",
+                context=context,
+                input_params={"content_length": len(content)},
+                error_message=error,
+            )
+            return {"error": error}
+        tags = self._normalize_tags(arguments.get("tags"))
+        if tags is None:
+            error = "tags must be an array of strings"
+            await self._record_validation_failure(
+                tool_name="remember",
+                context=context,
+                input_params={"tags_type": type(arguments.get("tags")).__name__},
+                error_message=error,
+            )
+            return {"error": error}
+        if self._memory is None:
+            error = "Memory system not configured; remember unavailable"
+            await self._record_validation_failure(
+                tool_name="remember",
+                context=context,
+                input_params={"tags": tags},
+                error_message=error,
+            )
+            return {"error": error}
+
+        start_ns = time.perf_counter_ns()
+        try:
+            payload = await self._call_memory_method("write", content=content, tags=tags)
+            memory_id = None
+            created_at = None
+            if isinstance(payload, dict):
+                raw_memory_id = payload.get("memory_id")
+                raw_created_at = payload.get("created_at")
+                if isinstance(raw_memory_id, str) and raw_memory_id.strip():
+                    memory_id = raw_memory_id.strip()
+                if isinstance(raw_created_at, str) and raw_created_at.strip():
+                    created_at = raw_created_at.strip()
+            memory_id = memory_id or f"memory-{uuid.uuid4().hex}"
+            created_at = created_at or ""
+            out = {"memory_id": memory_id, "created_at": created_at, "tags": tags}
+            await self._record_tool_execution(
+                tool_name="remember",
+                context=context,
+                input_params={"content_length": len(content), "tags": tags},
+                output_result=out,
+                start_ns=start_ns,
+                status="success",
+                error_message=None,
+            )
+            return out
+        except asyncio.TimeoutError:
+            error = f"remember timed out after {self._timeout}s"
+            await self._record_tool_execution(
+                tool_name="remember",
+                context=context,
+                input_params={"content_length": len(content), "tags": tags},
+                output_result=None,
+                start_ns=start_ns,
+                status="timeout",
+                error_message=error,
+            )
+            return {"error": error}
+        except Exception as e:
+            logger.exception("remember failed")
+            await self._record_tool_execution(
+                tool_name="remember",
+                context=context,
+                input_params={"content_length": len(content), "tags": tags},
+                output_result=None,
+                start_ns=start_ns,
+                status="error",
+                error_message=str(e),
+            )
+            return {"error": str(e)}
+
+    async def _recall(
+        self,
+        arguments: dict[str, Any],
+        context: BuiltInToolsContext,
+    ) -> dict[str, Any]:
+        query = self._non_empty_str(arguments.get("query"))
+        if query is None:
+            error = "query is required and must be a non-empty string"
+            await self._record_validation_failure(
+                tool_name="recall",
+                context=context,
+                input_params={"query": arguments.get("query")},
+                error_message=error,
+            )
+            return {"error": error}
+        raw_limit = arguments.get("limit", 5)
+        if isinstance(raw_limit, bool) or not isinstance(raw_limit, int) or raw_limit < 1 or raw_limit > 20:
+            error = "limit must be an integer between 1 and 20"
+            await self._record_validation_failure(
+                tool_name="recall",
+                context=context,
+                input_params={"limit": raw_limit},
+                error_message=error,
+            )
+            return {"error": error}
+        tags = self._normalize_tags(arguments.get("tags"))
+        if tags is None:
+            error = "tags must be an array of strings"
+            await self._record_validation_failure(
+                tool_name="recall",
+                context=context,
+                input_params={"tags_type": type(arguments.get("tags")).__name__},
+                error_message=error,
+            )
+            return {"error": error}
+        if self._memory is None:
+            error = "Memory system not configured; recall unavailable"
+            await self._record_validation_failure(
+                tool_name="recall",
+                context=context,
+                input_params={"query": query, "limit": raw_limit, "tags": tags},
+                error_message=error,
+            )
+            return {"error": error}
+
+        start_ns = time.perf_counter_ns()
+        try:
+            result = await self._call_memory_method("search", query=query, limit=raw_limit, tags=tags)
+            memories: list[Any] = result if isinstance(result, list) else []
+            out = {"memories": memories, "count": len(memories)}
+            await self._record_tool_execution(
+                tool_name="recall",
+                context=context,
+                input_params={"query": query, "limit": raw_limit, "tags": tags},
+                output_result={"count": len(memories)},
+                start_ns=start_ns,
+                status="success",
+                error_message=None,
+            )
+            return out
+        except asyncio.TimeoutError:
+            error = f"recall timed out after {self._timeout}s"
+            await self._record_tool_execution(
+                tool_name="recall",
+                context=context,
+                input_params={"query": query, "limit": raw_limit, "tags": tags},
+                output_result=None,
+                start_ns=start_ns,
+                status="timeout",
+                error_message=error,
+            )
+            return {"error": error}
+        except Exception as e:
+            logger.exception("recall failed")
+            await self._record_tool_execution(
+                tool_name="recall",
+                context=context,
+                input_params={"query": query, "limit": raw_limit, "tags": tags},
                 output_result=None,
                 start_ns=start_ns,
                 status="error",
