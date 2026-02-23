@@ -151,42 +151,42 @@
   - 验证 cron 表达式得到验证
   - _验收_：68 个 triggers + app 测试全通过（2026-02-21）
 
-- [ ] 6. 实现 Focus 和 Skills 集成
-  - [ ] 6.1 创建 FocusManager 类
-    - 使用 SkillsManager 依赖实现 `__init__`
-    - 创建 `load_skills_for_focus` 方法
-    - 如果 focus 为 None 则加载所有 skills
-    - 如果提供了 focus 则按 focus 标签过滤 skills
+- [x] 6. 实现 Focus 和 Skills 集成
+  - [x] 6.1 创建 FocusManager 类
+    - [x] 使用 SkillsManager 依赖实现 `__init__`
+    - [x] 创建 `load_skills_for_focus` 方法
+    - [x] 如果 focus 为 None 则加载所有 skills
+    - [x] 如果提供了 focus 则按 focus 标签过滤 skills
     - _需求: FR-5_
   
-  - [ ] 6.2 实现 skill 匹配逻辑
-    - 创建 `_skill_matches_focus` 方法
-    - 从 skill 元数据/frontmatter 读取 focus 标签
-    - 支持字符串和列表 focus 值
-    - 返回布尔匹配结果
+  - [x] 6.2 实现 skill 匹配逻辑
+    - [x] 创建 `_skill_matches_focus` 方法
+    - [x] 从 skill 元数据/frontmatter 读取 focus 标签
+    - [x] 支持字符串和列表 focus 值
+    - [x] 返回布尔匹配结果
     - _需求: FR-5_
   
-  - [ ] 6.3 实现 Agent prompt 构建
-    - 创建 `build_agent_prompt` 方法
-    - 如果指定则在 prompt 中包含当前 focus
-    - 列出可用 skills 及其名称和描述
-    - 格式化 prompt 供 Agent 使用
+  - [x] 6.3 实现 Agent prompt 构建
+    - [x] 创建 `build_agent_prompt` 方法
+    - [x] 如果指定则在 prompt 中包含当前 focus
+    - [x] 列出可用 skills 及其名称和描述
+    - [x] 格式化 prompt 供 Agent 使用
     - _需求: FR-5_
   
-  - [ ]* 6.4 编写 FocusManager 的单元测试
-    - 测试 focus 为 None 时加载所有 skills
-    - 测试按 focus 标签过滤 skills
-    - 测试 skill 匹配逻辑
-    - 测试有无 focus 的 prompt 构建
+  - [x]* 6.4 编写 FocusManager 的单元测试
+    - [x] 测试 focus 为 None 时加载所有 skills
+    - [x] 测试按 focus 标签过滤 skills
+    - [x] 测试 skill 匹配逻辑
+    - [x] 测试有无 focus 的 prompt 构建
     - _需求: FR-5_
 
-- [ ] 7. 实现治理集成
-  - [ ] 7.1 创建 CronGovernance 类
+- [x] 7. 实现治理集成
+  - [x] 7.1 创建 CronGovernance 类
     - 使用 GovernanceManager 和 Ledger 依赖实现 `__init__`
     - 设置约束检查基础设施
     - _需求: FR-6_
   
-  - [ ] 7.2 实现约束检查方法
+  - [x] 7.2 实现约束检查方法
     - 创建返回 (passed, reason) 的 `check_constraints` 方法
     - 通过 `_get_last_successful_execution` 实现冷却时间检查
     - 通过 `_count_today_executions` 实现每日运行次数检查
@@ -195,7 +195,7 @@
     - 使用结果更新 execution.governance_checks
     - _需求: FR-6_
   
-  - [ ] 7.3 实现 Ledger 记录
+  - [x] 7.3 实现 Ledger 记录
     - 创建 `record_execution` 方法
     - 将 event_type 记录为 "cron_execution"
     - 包含 execution_id、status、duration、cost、llm_calls
@@ -203,7 +203,7 @@
     - 使用结构化数据格式
     - _需求: FR-7_
   
-  - [ ] 7.4 实现熔断器逻辑
+  - [x] 7.4 实现熔断器逻辑
     - 创建 `update_circuit_breaker` 方法
     - 获取最近 N 次执行（默认 10）
     - 计算失败率
@@ -212,15 +212,15 @@
     - 熔断器打开时发送告警
     - _需求: FR-6_
   
-  - [ ] 7.5 实现 Ledger 查询辅助方法
-    - 创建 `_get_last_successful_execution` 方法
-    - 创建 `_count_today_executions` 方法
-    - 创建 `_sum_today_cost` 方法
-    - 创建 `_get_recent_executions` 方法
-    - 正确处理时间范围和过滤
+  - [x] 7.5 实现 Ledger 查询辅助方法
+    - [x] 创建 `_get_last_successful_execution` 方法
+    - [x] 创建 `_count_today_executions` 方法
+    - [x] 创建 `_sum_today_cost` 方法
+    - [x] 创建 `_get_recent_executions` 方法
+    - [x] 正确处理时间范围和过滤
     - _需求: FR-7_
   
-  - [ ]* 7.6 编写治理的单元测试
+  - [x]* 7.6 编写治理的单元测试
     - 测试冷却约束检查
     - 测试每日运行限制检查
     - 测试每日成本限制检查
@@ -228,28 +228,28 @@
     - 测试 Ledger 记录
     - _需求: FR-6, FR-7_
 
-- [ ] 8. 实现任务管理操作
+- [x] 8. 实现任务管理操作
   - [x] 8.1 实现暂停/恢复功能
     - [x] 创建 `pause_trigger(event_name)` 方法
     - [x] 创建 `resume_trigger(event_name)` 方法
     - [x] 更新 config.enabled 标志
-    - [ ] 与 Hatchet API 集成以暂停/恢复 workflows（当前通过 config.enabled 在 _run_cron 中跳过）
-    - [ ] 将暂停/恢复操作记录到 Ledger
+    - [x] 与 Hatchet API 集成以暂停/恢复 workflows（支持 pause_task/resume_task）
+    - [x] 将暂停/恢复操作记录到 Ledger
     - _需求: FR-11_
   
-  - [x] 8.2 实现手动触发功能
-    - [x] 创建 `trigger_now(event_name, **kwargs)` 方法
-    - [x] 直接执行 workflow（调用 Hatchet run_task_now）
-    - [x] 支持通过 kwargs 传递额外上下文
-    - [ ] 将手动触发记录到 Ledger（由 _run_cron 统一记录）
-    - _需求: FR-12_
+- [x] 8.2 实现手动触发功能
+  - [x] 创建 `trigger_now(event_name, **kwargs)` 方法
+  - [x] 直接执行 workflow（调用 Hatchet run_task_now）
+  - [x] 支持通过 kwargs 传递额外上下文
+  - [x] 将手动触发记录到 Ledger
+  - _需求: FR-12_
   
-  - [x] 8.3 实现状态查询方法
-    - [x] 创建 `get_trigger_status(event_name)` 方法
-    - [x] 返回触发器配置、启用状态、下次执行时间（croniter）
-    - [ ] 从最近执行计算成功率
-    - [ ] 计算平均执行时长
-    - _需求: FR-10_
+- [x] 8.3 实现状态查询方法
+  - [x] 创建 `get_trigger_status(event_name)` 方法
+  - [x] 返回触发器配置、启用状态、下次执行时间（croniter）
+  - [x] 从最近执行计算成功率
+  - [x] 计算平均执行时长
+  - _需求: FR-10_
   
   - [x] 8.4 实现执行历史查询
     - [x] 创建 `get_execution_history(event_name, limit, tenant_id)` 方法
@@ -259,22 +259,22 @@
     - [x] 按 created_at 降序排序
     - _需求: FR-10_
   
-  - [ ]* 8.5 编写任务管理的集成测试
-    - 测试暂停和恢复操作
-    - 测试手动触发执行
-    - 测试带指标的状态查询
-    - 测试执行历史检索
-    - _需求: FR-10, FR-11, FR-12_
+- [x]* 8.5 编写任务管理的集成测试
+  - [x] 测试暂停和恢复操作
+  - [x] 测试手动触发执行
+  - [x] 测试带指标的状态查询
+  - [x] 测试执行历史检索
+  - _需求: FR-10, FR-11, FR-12_
 
-- [ ] 9. 检查点 - 确保治理和管理功能正常工作
+- [x] 9. 检查点 - 确保治理和管理功能正常工作
   - 验证治理约束得到执行
   - 验证暂停/恢复功能
   - 验证手动触发工作
   - 验证执行历史被记录
   - 如有问题请询问用户
 
-- [ ] 10. 实现监控和可观测性
-  - [ ] 10.1 使用 Prometheus 指标创建 CronMetrics 类
+- [x] 10. 实现监控和可观测性
+  - [x] 10.1 使用 Prometheus 指标创建 CronMetrics 类
     - 定义带标签的 executions_total Counter
     - 定义 execution_duration_seconds Histogram
     - 定义 trigger_delay_seconds Histogram
@@ -284,7 +284,7 @@
     - 定义 circuit_breaker_open Gauge
     - _需求: NFR-6_
   
-  - [ ] 10.2 实现指标记录方法
+  - [x] 10.2 实现指标记录方法
     - 创建 `record_execution` 类方法
     - 按状态和 decision_mode 记录执行次数
     - 记录执行时长
@@ -293,7 +293,7 @@
     - 创建用于延迟跟踪的 `record_trigger_delay` 方法
     - _需求: NFR-6_
   
-  - [ ] 10.3 创建用于结构化日志的 CronLogger
+  - [x] 10.3 创建用于结构化日志的 CronLogger
     - 实现触发器注册的 `log_registration`
     - 实现 cron 触发事件的 `log_trigger`
     - 实现执行开始的 `log_execution_start`
@@ -304,7 +304,7 @@
     - 使用 structlog 进行结构化日志记录
     - _需求: NFR-5_
   
-  - [ ] 10.4 实现健康检查端点
+  - [x] 10.4 实现健康检查端点
     - 创建 CronHealthCheck 类
     - 实现返回状态字典的 `check_health` 方法
     - 检查 Hatchet 连接健康状况
@@ -313,14 +313,14 @@
     - 返回 "healthy"、"degraded" 或 "unhealthy" 状态
     - _需求: NFR-5_
   
-  - [ ]* 10.5 编写监控测试
+  - [x]* 10.5 编写监控测试
     - 测试指标记录
     - 测试结构化日志输出
     - 测试健康检查响应
     - _需求: NFR-5, NFR-6_
 
-- [ ] 11. 实现错误处理和重试逻辑
-  - [ ] 11.1 创建 RetryStrategy 类
+- [x] 11. 实现错误处理和重试逻辑
+  - [x] 11.1 创建 RetryStrategy 类
     - 实现 `should_retry` 静态方法
     - 检查错误类型（不重试 ValueError、TypeError）
     - 检查重试次数与 max_retries
@@ -328,13 +328,13 @@
     - 返回布尔决策
     - _需求: FR-8_
   
-  - [ ] 11.2 实现重试延迟计算
+  - [x] 11.2 实现重试延迟计算
     - 创建 `calculate_delay` 静态方法
     - 实现指数退避：base_delay * (2 ** retry_count)
     - 限制最大延迟
     - _需求: FR-8_
   
-  - [ ] 11.3 创建 CircuitBreaker 类
+  - [x] 11.3 创建 CircuitBreaker 类
     - 使用 failure_threshold 和 window_size 实现 `__init__`
     - 创建 `check` 方法评估熔断器状态
     - 创建 `open` 方法打开熔断器
@@ -342,14 +342,14 @@
     - 与 Redis/DB 集成以实现状态持久化
     - _需求: FR-6_
   
-  - [ ] 11.4 创建 ErrorNotifier 类
+  - [x] 11.4 创建 ErrorNotifier 类
     - 实现 `notify_failure` 方法
     - 创建 `_should_notify` 逻辑（在第 1、3、5 次失败时通知）
     - 创建通知内容的 `_build_message`
     - 支持多个通知渠道（邮件、Slack）
     - _需求: FR-8_
   
-  - [ ]* 11.5 编写错误处理测试
+  - [x]* 11.5 编写错误处理测试
     - 测试重试决策逻辑
     - 测试指数退避计算
     - 测试熔断器状态转换
