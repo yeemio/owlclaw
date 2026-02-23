@@ -95,7 +95,7 @@
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | ✅ 三层齐全，已完成（139/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（96/117） | cron 触发器 |
+| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（116/117） | cron 触发器（仅剩真实 Hatchet 外部 E2E 验收） |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
@@ -143,12 +143,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | codex-gpt-work 循环（capabilities-skills 缓存释放收口） |
-| 批次状态 | **完成**。实现并验证 Run 结束后释放 Skill 完整内容缓存，capabilities-skills 最后 backlog 项收口。 |
-| 已完成项 | `owlclaw/agent/runtime/runtime.py` 在 run 结束/失败/heartbeat 跳过时统一调用 `_release_skill_content_cache()`；新增 `tests/unit/agent/test_runtime.py` 验证 run 完成后 Skill `full_content` 缓存与 runtime skills cache 清空；`capabilities-skills/tasks.md` 勾选 Backlog R4。 |
-| 下一待执行 | 当前分配 spec `agent-tools` 与 `capabilities-skills` 已全部完成，等待按 `WORKTREE_ASSIGNMENTS.md` 分配下一 spec。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_tools.py tests/integration/test_agent_tools_integration.py -q` 通过（178 passed）；`poetry run ruff check owlclaw/agent/runtime/runtime.py owlclaw/agent/tools.py tests/unit/agent/test_runtime.py tests/unit/agent/test_tools.py tests/integration/test_agent_tools_integration.py` 通过。 |
-| 阻塞项 | 无。 |
+| 当前批次 | spec 循环（triggers-cron Task 13~15 收口） |
+| 批次状态 | **部分完成**。Task 13~15 已实现并验收，`triggers-cron` 进度更新为 **116/117**；仅剩 Task 16 的“真实 Hatchet 实例 E2E”外部依赖验证。 |
+| 已完成项 | 1) 配置与加载：扩展 `owlclaw/config/models.py`（cron 治理/重试/通知 + hatchet api_token）、`CronTriggerRegistry.apply_settings()` 与 `OwlClaw.configure()` 联动；2) 生命周期：新增 `OwlClaw.start()/stop()/health_status()` 与 `CronTriggerRegistry.wait_for_all_tasks()`；3) 部署：新增 `deploy/Dockerfile.owlclaw`、`deploy/docker-compose.cron.yml`、`deploy/prometheus.yml`、`deploy/k8s/*`；4) 文档与示例：新增 `docs/CRON_TRIGGERS.md` 和 `examples/cron/*`；5) 测试：新增 `tests/integration/test_triggers_cron_e2e.py`、`tests/integration/test_triggers_cron_performance.py` 并补齐相关 unit tests。 |
+| 下一待执行 | Task 16：在可用 `HATCHET_API_TOKEN` + 真实 Hatchet 服务环境下执行端到端验证并更新最终验收结论。 |
+| 验收快照 | `poetry run ruff check ...`（本批变更文件） -> `All checks passed!`；`poetry run pytest tests/unit/test_config_models.py tests/unit/test_config_manager.py tests/unit/test_app_configure.py tests/unit/test_app.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_performance_helpers.py tests/integration/test_triggers_cron_e2e.py tests/integration/test_triggers_cron_performance.py -q` -> `102 passed`。 |
+| 阻塞项 | `triggers-cron` Task 16 的“使用真实 Hatchet 实例运行端到端测试”需要外部 token 与在线服务，当前环境不可控。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

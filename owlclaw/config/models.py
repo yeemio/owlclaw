@@ -55,12 +55,39 @@ class CronTriggersConfig(BaseModel):
 
     max_concurrent: int = Field(default=10, ge=1)
     default_timeout_seconds: int = Field(default=300, ge=1)
+    enabled: bool = Field(default=True)
+
+
+class CronGovernanceDefaultsConfig(BaseModel):
+    """Default governance values for cron triggers."""
+
+    max_daily_runs: int = Field(default=24, ge=1)
+    max_daily_cost: float = Field(default=10.0, ge=0.0)
+    cooldown_seconds: int = Field(default=0, ge=0)
+
+
+class CronRetryConfig(BaseModel):
+    """Retry defaults for cron execution."""
+
+    retry_on_failure: bool = Field(default=True)
+    max_retries: int = Field(default=3, ge=0)
+    retry_delay_seconds: int = Field(default=60, ge=0)
+
+
+class CronNotificationConfig(BaseModel):
+    """Notification defaults for cron execution."""
+
+    enabled: bool = Field(default=False)
+    channels: list[str] = Field(default_factory=list)
 
 
 class TriggersConfig(BaseModel):
     """Trigger subsystem configuration."""
 
     cron: CronTriggersConfig = Field(default_factory=CronTriggersConfig)
+    governance: CronGovernanceDefaultsConfig = Field(default_factory=CronGovernanceDefaultsConfig)
+    retry: CronRetryConfig = Field(default_factory=CronRetryConfig)
+    notifications: CronNotificationConfig = Field(default_factory=CronNotificationConfig)
 
 
 class LLMIntegrationConfig(BaseModel):
@@ -75,6 +102,7 @@ class HatchetIntegrationConfig(BaseModel):
     """Hatchet integration configuration."""
 
     server_url: str = Field(default="")
+    api_token: str = Field(default="")
     namespace: str = Field(default="default")
 
 

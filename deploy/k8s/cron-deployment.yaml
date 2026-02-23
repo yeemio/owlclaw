@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: owlclaw-cron
+  labels:
+    app: owlclaw-cron
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: owlclaw-cron
+  template:
+    metadata:
+      labels:
+        app: owlclaw-cron
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: owlclaw
+          image: owlclaw:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OWLCLAW_INTEGRATIONS__HATCHET__SERVER_URL
+              value: "http://hatchet:7077"
+            - name: OWLCLAW_INTEGRATIONS__HATCHET__API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hatchet-secret
+                  key: api_token
+            - name: OWLCLAW_TRIGGERS__CRON__ENABLED
+              value: "true"
+            - name: OWLCLAW_TRIGGERS__CRON__MAX_CONCURRENT
+              value: "20"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15

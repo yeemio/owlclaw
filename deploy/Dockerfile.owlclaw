@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir poetry==1.8.3
+
+COPY pyproject.toml poetry.lock* /app/
+RUN poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi
+
+COPY owlclaw /app/owlclaw
+COPY docs /app/docs
+COPY examples /app/examples
+
+EXPOSE 8080
+CMD ["python", "-m", "owlclaw", "--help"]

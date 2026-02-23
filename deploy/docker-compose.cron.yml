@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  owlclaw:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.owlclaw
+    environment:
+      OWLCLAW_TRIGGERS__CRON__ENABLED: "true"
+      OWLCLAW_TRIGGERS__CRON__MAX_CONCURRENT: "20"
+      OWLCLAW_TRIGGERS__GOVERNANCE__MAX_DAILY_RUNS: "48"
+      OWLCLAW_TRIGGERS__RETRY__MAX_RETRIES: "3"
+      OWLCLAW_INTEGRATIONS__HATCHET__SERVER_URL: "http://hatchet-server:7077"
+      OWLCLAW_INTEGRATIONS__HATCHET__API_TOKEN: "${HATCHET_API_TOKEN:-}"
+      OWLCLAW_DATABASE_URL: "postgresql://owlclaw:owlclaw@owlclaw-db:5432/owlclaw"
+    depends_on:
+      - owlclaw-db
+      - hatchet-server
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-m", "owlclaw", "--help"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  owlclaw-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - owlclaw_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  hatchet-server:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest
+    environment:
+      DATABASE_URL: postgresql://hatchet:hatchet@owlclaw-db:5432/hatchet
+      SERVER_PORT: "7077"
+      SERVER_MSGQUEUE_KIND: "postgres"
+    depends_on:
+      - owlclaw-db
+    ports:
+      - "7077:7077"
+      - "8081:8080"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+volumes:
+  owlclaw_db_data:
+  prometheus_data:

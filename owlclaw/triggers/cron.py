@@ -622,6 +622,58 @@ class CronTriggerRegistry:
         self._governance = CronGovernance(self)
         self._health_check = CronHealthCheck(self)
         self._active_tasks = 0
+        self._concurrency_controller = ConcurrencyController()
+        self._default_trigger_kwargs: dict[str, Any] = {}
+        self._runtime_cron_enabled = True
+        self._notification_channels: list[str] = []
+
+    def apply_settings(self, settings: dict[str, Any] | None) -> None:
+        """Apply runtime defaults from `config.triggers` settings."""
+        if not isinstance(settings, dict):
+            return
+        cron_cfg = settings.get("cron", {}) if isinstance(settings.get("cron"), dict) else {}
+        governance_cfg = settings.get("governance", {}) if isinstance(settings.get("governance"), dict) else {}
+        retry_cfg = settings.get("retry", {}) if isinstance(settings.get("retry"), dict) else {}
+        notifications_cfg = settings.get("notifications", {}) if isinstance(settings.get("notifications"), dict) else {}
+
+        defaults: dict[str, Any] = {}
+        if "max_daily_runs" in governance_cfg:
+            defaults["max_daily_runs"] = governance_cfg["max_daily_runs"]
+        if "max_daily_cost" in governance_cfg:
+            defaults["max_daily_cost"] = governance_cfg["max_daily_cost"]
+        if "cooldown_seconds" in governance_cfg:
+            defaults["cooldown_seconds"] = governance_cfg["cooldown_seconds"]
+        if "retry_on_failure" in retry_cfg:
+            defaults["retry_on_failure"] = retry_cfg["retry_on_failure"]
+        if "max_retries" in retry_cfg:
+            defaults["max_retries"] = retry_cfg["max_retries"]
+        if "retry_delay_seconds" in retry_cfg:
+            defaults["retry_delay_seconds"] = retry_cfg["retry_delay_seconds"]
+
+        self._default_trigger_kwargs = defaults
+        self._runtime_cron_enabled = bool(cron_cfg.get("enabled", True))
+        max_concurrent = cron_cfg.get("max_concurrent")
+        if isinstance(max_concurrent, int) and max_concurrent > 0:
+            self._concurrency_controller = ConcurrencyController(max_concurrency=max_concurrent)
+        channels = notifications_cfg.get("channels", [])
+        self._notification_channels = (
+            [str(ch).strip() for ch in channels if str(ch).strip()]
+            if isinstance(channels, list)
+            else []
+        )
+
+        logger.info(
+            "Applied cron runtime settings enabled=%s default_kwargs=%s channels=%s",
+            self._runtime_cron_enabled,
+            sorted(self._default_trigger_kwargs.keys()),
+            self._notification_channels,
+        )
+
+    async def wait_for_all_tasks(self, timeout_seconds: float = 10.0) -> None:
+        """Wait for in-flight cron tasks to finish up to timeout."""
+        deadline = asyncio.get_running_loop().time() + max(0.1, float(timeout_seconds))
+        while self._active_tasks > 0 and asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0.05)
 
     # ------------------------------------------------------------------
     # Task 2.2 — cron expression validation
@@ -693,7 +745,9 @@ class CronTriggerRegistry:
         if not self._validate_cron_expression(expression):
             raise ValueError(f"Invalid cron expression: '{expression}'")
 
-        migration_weight = kwargs.get("migration_weight", 1.0)
+        merged_kwargs = {**self._default_trigger_kwargs, **kwargs}
+
+        migration_weight = merged_kwargs.get("migration_weight", 1.0)
         if (
             isinstance(migration_weight, bool)
             or not isinstance(migration_weight, int | float | Decimal)
@@ -701,14 +755,17 @@ class CronTriggerRegistry:
             or migration_weight > 1.0
         ):
             raise ValueError("migration_weight must be a float between 0.0 and 1.0")
-        kwargs["migration_weight"] = float(migration_weight)
+        merged_kwargs["migration_weight"] = float(migration_weight)
+
+        if not self._runtime_cron_enabled:
+            merged_kwargs["enabled"] = False
 
         config = CronTriggerConfig(
             event_name=event_name,
             expression=expression,
             focus=focus,
             fallback_handler=fallback_handler,
-            **kwargs,
+            **merged_kwargs,
         )
         self._triggers[event_name] = config
         self._cron_logger.log_registration(config)

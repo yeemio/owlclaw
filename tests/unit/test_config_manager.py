@@ -82,10 +82,14 @@ def test_config_manager_env_overrides_yaml(monkeypatch, tmp_path: Path) -> None:
     )
     monkeypatch.setenv("OWLCLAW_AGENT__HEARTBEAT_INTERVAL_MINUTES", "55")
     monkeypatch.setenv("OWLCLAW_SECURITY__SANITIZER__ENABLED", "false")
+    monkeypatch.setenv("OWLCLAW_TRIGGERS__CRON__MAX_CONCURRENT", "22")
+    monkeypatch.setenv("OWLCLAW_INTEGRATIONS__HATCHET__API_TOKEN", "env-token")
     manager = ConfigManager.load(config_path=str(cfg_path))
     cfg = manager.get()
     assert cfg.agent.heartbeat_interval_minutes == 55
     assert cfg.security.sanitizer.enabled is False
+    assert cfg.triggers.cron.max_concurrent == 22
+    assert cfg.integrations.hatchet.api_token == "env-token"
 
 
 def test_config_manager_runtime_overrides_env(monkeypatch, tmp_path: Path) -> None:

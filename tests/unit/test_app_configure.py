@@ -34,3 +34,23 @@ def test_configure_nested_delimiter_path_supported() -> None:
     cfg = ConfigManager.instance().get()
     assert cfg.integrations.llm.temperature == 0.3
 
+
+def test_configure_applies_cron_runtime_defaults_to_registry() -> None:
+    ConfigManager._reset_for_tests()
+    app = OwlClaw("test-app")
+    app.configure(
+        triggers={
+            "cron": {"enabled": False},
+            "governance": {"max_daily_runs": 3, "cooldown_seconds": 60},
+            "retry": {"retry_on_failure": False, "max_retries": 0},
+            "notifications": {"enabled": True, "channels": ["slack"]},
+        }
+    )
+    app.cron_registry.register("job", "0 * * * *")
+    trigger = app.cron_registry.get_trigger("job")
+    assert trigger is not None
+    assert trigger.enabled is False
+    assert trigger.max_daily_runs == 3
+    assert trigger.cooldown_seconds == 60
+    assert trigger.retry_on_failure is False
+
