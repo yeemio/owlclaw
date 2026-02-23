@@ -128,6 +128,24 @@ Memory documentation:
 - [docs/memory/backend-selection.md](docs/memory/backend-selection.md)
 - [docs/memory/lifecycle-best-practices.md](docs/memory/lifecycle-best-practices.md)
 
+### Database core usage
+
+OwlClaw database infrastructure provides a shared async engine and session helpers:
+
+```python
+from sqlalchemy import text
+
+from owlclaw.db import get_engine, get_session
+
+engine = get_engine()  # reads OWLCLAW_DATABASE_URL
+
+async with get_session(engine) as session:
+    value = await session.scalar(text("SELECT 1"))
+    assert value == 1
+```
+
+Use `owlclaw db` commands for schema lifecycle (`init/migrate/status/revision`).
+
 ## Installation
 
 ```bash

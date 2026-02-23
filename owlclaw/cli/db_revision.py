@@ -6,7 +6,6 @@ from pathlib import Path
 import typer
 from alembic import command
 from alembic.config import Config
-from alembic.script import ScriptDirectory
 from typer.models import OptionInfo
 
 
@@ -51,8 +50,15 @@ def _find_newest_revision_file(cfg: Config, revision_id: str | None) -> Path | N
     for p in versions_dir.glob("*.py"):
         if p.name.startswith("__"):
             continue
-        if revision_id and (revision_id in p.name or p.read_text(encoding="utf-8", errors="ignore").find(f'"{revision_id}"') >= 0):
-            return p
+        if revision_id:
+            if revision_id in p.name:
+                return p
+            try:
+                content = p.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                content = ""
+            if f'"{revision_id}"' in content:
+                return p
         try:
             mtime = p.stat().st_mtime
             candidates.append((mtime, p))
