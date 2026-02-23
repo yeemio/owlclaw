@@ -91,14 +91,14 @@
 |-----------|------|------|---------|
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（24/30） | SQLAlchemy Base、engine、session、异常、Alembic |
-| cli-db | `.kiro/specs/cli-db/` | 🟡 三层齐全，进行中（17/53） | `owlclaw db` init/migrate/status，已挂载到主入口 |
+| cli-db | `.kiro/specs/cli-db/` | 🟡 三层齐全，进行中（42/53） | `owlclaw db` init/migrate/status，已挂载到主入口 |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | 🟡 三层齐全，进行中（127/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
-| **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（27/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
+| **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（32/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：triggers-queue 术语对齐，仅 specs） |
-| 批次状态 | **完成**。queue 触发器 spec 的 Agent 触发术语已对齐。 |
-| 已完成项 | `triggers-queue/requirements.md` 将“触发 Agent Run 与上下文传递”统一为“payload 传递”；`triggers-queue/design.md` 属性测试描述同步改为 payload 语义。 |
-| 下一待执行 | 继续 specs 循环；`cli-db/tasks.md` 仍有旧口径，按协作约定暂不改动（该方向由其他 agent 处理）。 |
-| 验收快照 | `rg` 复扫未发现 triggers-queue 中“上下文传递”旧术语残留。 |
+| 当前批次 | review 循环（本轮：审校扫描 + spec 进度数字对齐） |
+| 批次状态 | **完成**。`main`、`codex-work`、`codex-gpt-work` 均无待审提交；已校准清单中的偏差进度。 |
+| 已完成项 | 复核并对齐 Spec 索引进度：`cli-db` 由 `17/53` 更正为 `42/53`，`security` 由 `27/44` 更正为 `32/44`。 |
+| 下一待执行 | 等待编码 worktree 新提交进入 Review Loop；期间持续执行 spec 一致性与路径漂移审计。 |
+| 验收快照 | `git log main..codex-work`、`git log main..codex-gpt-work` 为空；基于 `tasks.md` 全量勾选统计完成对齐。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

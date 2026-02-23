@@ -96,7 +96,7 @@
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
 | database-core | 24/30 | `owlclaw/db/**`, `tests/unit/test_db*.py`, `migrations/` |
-| cli-db | 17/53 | `owlclaw/cli/db*.py`, `tests/unit/test_cli_db*.py` |
+| cli-db | 42/53 | `owlclaw/cli/db*.py`, `tests/unit/test_cli_db*.py` |
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -118,7 +118,7 @@
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| security | 27/44 | `owlclaw/security/**`, `tests/unit/security/**` |
+| security | 32/44 | `owlclaw/security/**`, `tests/unit/security/**` |
 | integrations-llm | 127/128 | `owlclaw/integrations/llm/**`, `tests/unit/integrations/llm/**` |
 | configuration | 0/12 | `owlclaw/config/**`, `tests/unit/test_config*.py` |
 
