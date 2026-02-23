@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（22/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（29/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：configuration/CLI 工作流收口 + 回归修复） |
-| 批次状态 | **完成**。已吸收 `codex-gpt-work` 的 configuration/CLI 增量并修复 Typer 参数声明回归。 |
-| 已完成项 | configuration Task 4-12 完成（env 映射、`app.configure`、`owlclaw init/reload`、listeners、模板、测试与文档）；新增 `docs/CONFIGURATION.md` 与 `docs/SECURITY_CONFIGURATION.md`。 |
-| 下一待执行 | 继续审校剩余未合并提交（含流程编排规则文档变更），并保持 scan 与 tasks 一致。 |
-| 验收快照 | `poetry run pytest tests/unit/test_cli_db.py tests/unit/test_cli_main.py tests/unit/test_cli_skill.py tests/unit/test_cli_memory.py tests/unit/test_config_models.py tests/unit/test_config_loader.py tests/unit/test_config_manager.py tests/unit/test_config_listeners.py tests/unit/test_app_configure.py tests/unit/test_cli_init_config.py tests/unit/test_cli_reload_config.py tests/integration/test_config_manager_integration.py tests/unit/security/test_security_config.py tests/unit/security/test_data_masker.py tests/unit/security/test_risk_gate.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py -q` -> `61 passed, 2 skipped`。 |
+| 当前批次 | review 循环（本轮：agent-runtime 属性测试 Round 2） |
+| 批次状态 | **完成**。已吸收并验收 agent-runtime Task 6.4/7.2/7.4/7.5/8.2/8.3/8.5 对应属性测试。 |
+| 已完成项 | 新增 `tests/unit/agent/test_runtime_properties.py`，覆盖工具可见性上下文、工具错误传播、function call 次数上限、LLM 超时、heartbeat 有/无事件分支、run 超时控制。 |
+| 下一待执行 | 继续审校剩余未合并提交（主要为流程规则文档更新），并保持 scan 与 tasks 一致。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py -q` -> `68 passed in 8.56s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
