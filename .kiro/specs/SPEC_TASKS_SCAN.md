@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：triggers-queue 术语对齐，仅 specs） |
-| 批次状态 | **完成**。queue 触发器 spec 的 Agent 触发术语已对齐。 |
-| 已完成项 | `triggers-queue/requirements.md` 将“触发 Agent Run 与上下文传递”统一为“payload 传递”；`triggers-queue/design.md` 属性测试描述同步改为 payload 语义。 |
-| 下一待执行 | 继续 specs 循环；`cli-db/tasks.md` 仍有旧口径，按协作约定暂不改动（该方向由其他 agent 处理）。 |
-| 验收快照 | `rg` 复扫未发现 triggers-queue 中“上下文传递”旧术语残留。 |
+| 当前批次 | spec 循环（Round 1/7：database-core engine 属性测试验收） |
+| 批次状态 | **完成**。database-core 4.4~4.7 属性测试已新增并通过。 |
+| 已完成项 | 新增 `tests/unit/test_db_engine_properties.py`，覆盖 URL 格式校验、引擎复用、方言拒绝、连接池参数透传；`poetry run pytest tests/unit/test_db_engine_properties.py -q` 通过（4 passed）。 |
+| 下一待执行 | Round 2/7：完成 database-core 6.2（session 属性测试）并验收。 |
+| 验收快照 | `poetry run pytest tests/unit/test_db_engine_properties.py -q` -> `4 passed in 19.97s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
@@ -163,3 +163,4 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：清单中标注「验收备注」的项，若含当前 SKIP 的测试，在完成备注所指的后续工作后，须跑通该测试并更新文档（见「功能清单」中 integrations-hatchet 备注）
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
+
