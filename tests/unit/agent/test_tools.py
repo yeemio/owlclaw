@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from unittest.mock import AsyncMock
 
 import pytest
@@ -112,6 +113,11 @@ class TestBuiltInToolsInitValidation:
     def test_init_rejects_invalid_enforce_schedule_ownership(self, enforce_ownership) -> None:
         with pytest.raises(ValueError, match="enforce_schedule_ownership must be a boolean"):
             BuiltInTools(enforce_schedule_ownership=enforce_ownership)  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize("remember_write_background", ["yes", 1, None])
+    def test_init_rejects_invalid_remember_write_background(self, remember_write_background) -> None:
+        with pytest.raises(ValueError, match="remember_write_background must be a boolean"):
+            BuiltInTools(remember_write_background=remember_write_background)  # type: ignore[arg-type]
 
 
 class TestQueryState:
@@ -742,3 +748,24 @@ class TestMemoryTools:
         await tools.execute("query_state", {"state_name": "invalid name!"}, ctx)
         events = tools.list_security_events()
         assert any(event.event_type == "query_state_invalid_name" for event in events)
+
+    @pytest.mark.asyncio
+    async def test_remember_background_write_returns_immediately(self) -> None:
+        async def _slow_write(*, content: str, tags: list[str]) -> dict[str, str]:
+            _ = (content, tags)
+            await asyncio.sleep(0.05)
+            return {"memory_id": "m-slow", "created_at": "2026-01-01T00:00:00Z"}
+
+        memory = AsyncMock()
+        memory.write.side_effect = _slow_write
+        tools = BuiltInTools(memory_system=memory, remember_write_background=True)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        start = time.perf_counter()
+        result = await tools.execute("remember", {"content": "lesson", "tags": ["ops"]}, ctx)
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+
+        assert result["queued"] is True
+        assert elapsed_ms < 30.0
+        await asyncio.sleep(0.06)
+        memory.write.assert_awaited_once_with(content="lesson", tags=["ops"])

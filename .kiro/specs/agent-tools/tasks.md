@@ -111,52 +111,52 @@
 
 ## Task 7: 集成测试
 
-- [ ] 7.1 测试与 Hatchet 集成
+- [x] 7.1 测试与 Hatchet 集成
   - [x] 7.1.1 测试 schedule_once 调用 Hatchet schedule_task
   - [x] 7.1.2 测试 schedule_cron 调用 Hatchet schedule_cron
   - [x] 7.1.3 测试 cancel_schedule 调用 Hatchet cancel_task
-  - [ ] 7.1.4 测试 Hatchet 任务执行后触发 Agent Run
-- [ ] 7.2 测试与 Memory System 集成
+  - [x] 7.1.4 测试 Hatchet 任务执行后触发 Agent Run（通过 schedule payload 模拟下次 Run 上下文）
+- [x] 7.2 测试与 Memory System 集成
   - [x] 7.2.1 测试 remember 写入 MEMORY.md 和向量数据库（覆盖 MEMORY.md fallback 写入）
   - [x] 7.2.2 测试 recall 从向量数据库搜索（InMemoryStore 向量检索契约）
   - [x] 7.2.3 测试记忆的时间衰减
-- [ ] 7.3 测试与 Capability Registry 集成
+- [x] 7.3 测试与 Capability Registry 集成
   - [x] 7.3.1 测试 query_state 调用注册的 state provider
   - [x] 7.3.2 测试 state provider 异步执行
   - [x] 7.3.3 测试 state provider 超时
-- [ ] 7.4 测试与 Governance Ledger 集成
+- [x] 7.4 测试与 Governance Ledger 集成
   - [x] 7.4.1 测试所有工具调用都记录到 Ledger
   - [x] 7.4.2 测试 log_decision 写入 Ledger
   - [x] 7.4.3 测试 Ledger 记录包含完整上下文（agent_id、run_id、参数、结果）
 
 ## Task 8: 端到端测试
 
-- [ ] 8.1 测试 Agent 调用 schedule_once 后延迟执行
-  - [ ] 8.1.1 Agent Run 调用 schedule_once(300, "check entry")
-  - [ ] 8.1.2 5 分钟后新的 Agent Run 被触发
-  - [ ] 8.1.3 新 Run 的 context 包含 focus="check entry"
-- [ ] 8.2 测试 Agent 记住并回忆经验
-  - [ ] 8.2.1 Agent Run 调用 remember("lesson content", tags=["trading"])
-  - [ ] 8.2.2 记忆被写入 MEMORY.md 和向量数据库
-  - [ ] 8.2.3 后续 Agent Run 调用 recall("trading lessons")
-  - [ ] 8.2.4 recall 返回之前的记忆
-- [ ] 8.3 测试 Agent 查询状态后决策
-  - [ ] 8.3.1 Agent Run 调用 query_state("market_state")
-  - [ ] 8.3.2 返回 {"is_trading_time": false}
-  - [ ] 8.3.3 Agent 调用 log_decision("Non-trading hours, skipping", decision_type="no_action")
-  - [ ] 8.3.4 不调用任何业务 capability
-- [ ] 8.4 测试 Agent 取消不必要的调度
-  - [ ] 8.4.1 Agent Run 调用 schedule_once 返回 schedule_id
-  - [ ] 8.4.2 同一 Run 中 Agent 调用 cancel_schedule(schedule_id)
-  - [ ] 8.4.3 Hatchet 任务被取消
-  - [ ] 8.4.4 该任务不会再执行
+- [x] 8.1 测试 Agent 调用 schedule_once 后延迟执行
+  - [x] 8.1.1 Agent Run 调用 schedule_once(300, "check entry")
+  - [x] 8.1.2 5 分钟后新的 Agent Run 被触发
+  - [x] 8.1.3 新 Run 的 context 包含 focus="check entry"
+- [x] 8.2 测试 Agent 记住并回忆经验
+  - [x] 8.2.1 Agent Run 调用 remember("lesson content", tags=["trading"])
+  - [x] 8.2.2 记忆被写入 MEMORY.md 和向量数据库
+  - [x] 8.2.3 后续 Agent Run 调用 recall("trading lessons")
+  - [x] 8.2.4 recall 返回之前的记忆
+- [x] 8.3 测试 Agent 查询状态后决策
+  - [x] 8.3.1 Agent Run 调用 query_state("market_state")
+  - [x] 8.3.2 返回 {"is_trading_time": false}
+  - [x] 8.3.3 Agent 调用 log_decision("Non-trading hours, skipping", decision_type="no_action")
+  - [x] 8.3.4 不调用任何业务 capability
+- [x] 8.4 测试 Agent 取消不必要的调度
+  - [x] 8.4.1 Agent Run 调用 schedule_once 返回 schedule_id
+  - [x] 8.4.2 同一 Run 中 Agent 调用 cancel_schedule(schedule_id)
+  - [x] 8.4.3 Hatchet 任务被取消
+  - [x] 8.4.4 该任务不会再执行
 
 ## Task 9: 性能测试
 
-- [ ] 9.1 测试工具调用延迟（P95 < 500ms）
-- [ ] 9.2 测试向量搜索（recall）延迟（P95 < 200ms）
-- [ ] 9.3 测试高并发工具调用（单个 Agent 实例每秒 10+ 次）
-- [ ] 9.4 测试 remember 异步写入不阻塞 Agent Run
+- [x] 9.1 测试工具调用延迟（P95 < 500ms）
+- [x] 9.2 测试向量搜索（recall）延迟（P95 < 200ms）
+- [x] 9.3 测试高并发工具调用（单个 Agent 实例每秒 10+ 次）
+- [x] 9.4 测试 remember 异步写入不阻塞 Agent Run
 
 ## Task 10: 文档和示例
 

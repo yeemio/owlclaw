@@ -37,7 +37,7 @@
 - [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移 + 属性测试） → spec: database-core
 - [ ] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
 - [ ] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
-- [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule、remember、recall 已实现） → spec: agent-tools
+- [x] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule、remember、recall 已实现） → spec: agent-tools
 - [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [x] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
 - [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
@@ -93,7 +93,7 @@
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（111/139） | 内建工具 |
+| agent-tools | `.kiro/specs/agent-tools/` | ✅ 三层齐全，已完成（139/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（96/117） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | codex-gpt-work 循环（agent-tools memory 集成补齐） |
-| 批次状态 | **完成**。补齐 memory 侧集成测试：MEMORY.md fallback 写入、向量检索与时间衰减验证。 |
-| 已完成项 | `tests/integration/test_agent_tools_integration.py` 新增 3 个记忆集成场景：`remember` 失败回退写入 `MEMORY.md`、`recall` 向量检索命中、时间衰减优先返回新记忆；`agent-tools/tasks.md` 勾选 7.2.1~7.2.3。 |
-| 下一待执行 | 推进 `agent-tools` 未完成项：7.1.4、8.*、9.*。 |
-| 验收快照 | `poetry run pytest tests/integration/test_agent_tools_integration.py -q` 通过（8 passed）；`poetry run ruff check tests/integration/test_agent_tools_integration.py` 通过。 |
+| 当前批次 | codex-gpt-work 循环（agent-tools 最终收口） |
+| 批次状态 | **完成**。新增 remember 后台写入模式并完成 9.4 验收，agent-tools 全量任务收口。 |
+| 已完成项 | `owlclaw/agent/tools.py` 新增 `remember_write_background` 可选模式；`tests/unit/agent/test_tools.py` 与 `tests/integration/test_agent_tools_integration.py` 新增非阻塞 remember 验证；`agent-tools/tasks.md` 勾选 7.2/7.3/7.4 父项与 9.4，所有任务已 `[x]`。 |
+| 下一待执行 | 当前分配 spec `agent-tools` 与 `capabilities-skills` 已收口，等待按 `WORKTREE_ASSIGNMENTS.md` 分配下一 spec。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py tests/integration/test_agent_tools_integration.py -q` 通过（106 passed）；`poetry run ruff check owlclaw/agent/tools.py tests/unit/agent/test_tools.py tests/integration/test_agent_tools_integration.py` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -262,6 +262,7 @@ class BuiltInTools:
         max_schedule_calls_per_run: int = 20,
         raise_errors: bool = False,
         enforce_schedule_ownership: bool = False,
+        remember_write_background: bool = False,
     ) -> None:
         self._registry = capability_registry
         self._ledger = ledger
@@ -297,6 +298,10 @@ class BuiltInTools:
         if not isinstance(enforce_schedule_ownership, bool):
             raise ValueError("enforce_schedule_ownership must be a boolean")
         self._enforce_schedule_ownership = enforce_schedule_ownership
+        if not isinstance(remember_write_background, bool):
+            raise ValueError("remember_write_background must be a boolean")
+        self._remember_write_background = remember_write_background
+        self._background_tasks: set[asyncio.Task[Any]] = set()
         self._sanitizer = InputSanitizer()
         self._security_audit = SecurityAuditLog()
 
@@ -1048,6 +1053,24 @@ class BuiltInTools:
 
         start_ns = time.perf_counter_ns()
         try:
+            if self._remember_write_background:
+                memory_id = f"memory-{uuid.uuid4().hex}"
+                out = {"memory_id": memory_id, "created_at": "", "tags": tags, "queued": True}
+                task = asyncio.create_task(
+                    self._call_memory_method("write", content=content, tags=tags)
+                )
+                self._background_tasks.add(task)
+                task.add_done_callback(lambda t: self._background_tasks.discard(t))
+                await self._record_tool_execution(
+                    tool_name="remember",
+                    context=context,
+                    input_params={"content_length": len(content), "tags": tags, "queued": True},
+                    output_result=out,
+                    start_ns=start_ns,
+                    status="success",
+                    error_message=None,
+                )
+                return out
             payload = await self._call_memory_method("write", content=content, tags=tags)
             memory_id = None
             created_at = None
