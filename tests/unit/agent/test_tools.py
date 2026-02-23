@@ -98,6 +98,11 @@ class TestBuiltInToolsInitValidation:
         with pytest.raises(ValueError, match="max_calls_per_run must be a positive integer"):
             BuiltInTools(max_calls_per_run=max_calls)  # type: ignore[arg-type]
 
+    @pytest.mark.parametrize("raise_errors", ["yes", 1, None])
+    def test_init_rejects_invalid_raise_errors(self, raise_errors) -> None:
+        with pytest.raises(ValueError, match="raise_errors must be a boolean"):
+            BuiltInTools(raise_errors=raise_errors)  # type: ignore[arg-type]
+
 
 class TestQueryState:
     @pytest.mark.asyncio
@@ -557,6 +562,36 @@ class TestExecuteUnknownTool:
         assert "state" in first
         assert "error" in blocked
         assert "state" in after_reset
+
+    @pytest.mark.asyncio
+    async def test_raise_errors_converts_validation_error(self) -> None:
+        tools = BuiltInTools(raise_errors=True)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        with pytest.raises(ValueError, match="state_name is required"):
+            await tools.execute("query_state", {}, ctx)
+
+    @pytest.mark.asyncio
+    async def test_raise_errors_converts_runtime_error(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.side_effect = RuntimeError("dependency down")
+        tools = BuiltInTools(capability_registry=reg, raise_errors=True)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        with pytest.raises(RuntimeError, match="query_state failed: dependency down"):
+            await tools.execute("query_state", {"state_name": "market_state"}, ctx)
+
+    @pytest.mark.asyncio
+    async def test_raise_errors_converts_timeout_error(self) -> None:
+        async def _slow_cancel_cron(_: str) -> bool:
+            await asyncio.sleep(0.05)
+            return False
+
+        hatchet = AsyncMock()
+        hatchet.cancel_task.return_value = False
+        hatchet.cancel_cron.side_effect = _slow_cancel_cron
+        tools = BuiltInTools(hatchet_client=hatchet, timeout_seconds=0.01, raise_errors=True)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        with pytest.raises(TimeoutError, match="cancel_schedule timed out"):
+            await tools.execute("cancel_schedule", {"schedule_id": "cron-1"}, ctx)
 
 
 class TestMemoryTools:

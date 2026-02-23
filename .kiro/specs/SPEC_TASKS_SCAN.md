@@ -93,7 +93,7 @@
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（76/139） | 内建工具 |
+| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（79/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（96/117） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | codex-gpt-work 循环（agent-tools 并发一致性 + 调用上限） |
-| 批次状态 | **完成**。`BuiltInTools` 新增 run 级调用预算（`max_calls_per_run`）与并发安全计数；补齐对应单测并回填 tasks 勾选。 |
-| 已完成项 | `owlclaw/agent/tools.py` 新增 `max_calls_per_run` 参数校验、`_consume_run_call_budget()` 并发安全计数、`reset_run_call_budget()`；`tests/unit/agent/test_tools.py` 新增上限校验、并发安全、重置后可继续调用等测试；`agent-tools/tasks.md` 勾选 Task 0.1/0.2/0.3、5.4/5.5/5.6、6.1.1~6.1.4。 |
-| 下一待执行 | 继续推进 `agent-tools` Task 5.1~5.3（统一错误语义）与 Task 7（Hatchet/Memory/Registry/Ledger 集成测试）。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py -q` 通过（67 passed）；`poetry run ruff check owlclaw/agent/tools.py tests/unit/agent/test_tools.py` 通过。 |
+| 当前批次 | codex-gpt-work 循环（agent-tools 统一错误语义） |
+| 批次状态 | **完成**。`BuiltInTools` 增加可选严格错误模式（`raise_errors=True`）实现 ValueError/RuntimeError/TimeoutError 统一语义，默认行为保持兼容。 |
+| 已完成项 | `owlclaw/agent/tools.py` 新增 `raise_errors` 配置与 `_coerce_error_result()`；`tests/unit/agent/test_tools.py` 新增错误类型映射测试（validation/runtime/timeout）与构造参数校验；`agent-tools/tasks.md` 勾选 Task 5.1/5.2/5.3。 |
+| 下一待执行 | 推进 `agent-tools` Task 7（Hatchet/Memory/Registry/Ledger 集成测试）并补齐 Task 10 文档示例。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py -q` 通过（73 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

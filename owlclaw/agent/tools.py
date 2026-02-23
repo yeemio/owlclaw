@@ -251,6 +251,7 @@ class BuiltInTools:
         scheduled_run_task_name: str = _SCHEDULED_RUN_TASK,
         timeout_seconds: float = 30,
         max_calls_per_run: int = 50,
+        raise_errors: bool = False,
     ) -> None:
         self._registry = capability_registry
         self._ledger = ledger
@@ -271,6 +272,9 @@ class BuiltInTools:
         self._max_calls_per_run = max_calls_per_run
         self._run_call_counts: dict[str, int] = {}
         self._run_call_locks: dict[str, asyncio.Lock] = {}
+        if not isinstance(raise_errors, bool):
+            raise ValueError("raise_errors must be a boolean")
+        self._raise_errors = raise_errors
 
     def get_tool_schemas(self) -> list[dict[str, Any]]:
         """Return OpenAI-style function schemas for all built-in tools."""
@@ -347,20 +351,52 @@ class BuiltInTools:
             return out
 
         if normalized_tool_name == "query_state":
-            return await self._query_state(arguments, context)
+            result = await self._query_state(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "log_decision":
-            return await self._log_decision(arguments, context)
+            result = await self._log_decision(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "schedule_once":
-            return await self._schedule_once(arguments, context)
+            result = await self._schedule_once(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "schedule_cron":
-            return await self._schedule_cron(arguments, context)
+            result = await self._schedule_cron(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "cancel_schedule":
-            return await self._cancel_schedule(arguments, context)
+            result = await self._cancel_schedule(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "remember":
-            return await self._remember(arguments, context)
+            result = await self._remember(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         if normalized_tool_name == "recall":
-            return await self._recall(arguments, context)
+            result = await self._recall(arguments, context)
+            return self._coerce_error_result(result, normalized_tool_name)
         raise ValueError(f"Unknown built-in tool: {normalized_tool_name}")
+
+    def _coerce_error_result(self, result: Any, tool_name: str) -> Any:
+        """Optionally convert tool error payloads into typed exceptions."""
+        if not self._raise_errors:
+            return result
+        if not isinstance(result, dict):
+            return result
+        error_message = result.get("error")
+        if not isinstance(error_message, str) or not error_message.strip():
+            return result
+        normalized_error = error_message.strip()
+        lower_error = normalized_error.lower()
+        if "timed out" in lower_error:
+            raise TimeoutError(normalized_error)
+        validation_markers = (
+            "required",
+            "must be",
+            "invalid ",
+            "unknown built-in tool",
+            "not configured",
+            "limit exceeded",
+        )
+        if any(marker in lower_error for marker in validation_markers):
+            raise ValueError(normalized_error)
+        raise RuntimeError(f"{tool_name} failed: {normalized_error}")
 
     def reset_run_call_budget(self, run_id: str) -> None:
         """Clear call counters for a completed Agent run."""
