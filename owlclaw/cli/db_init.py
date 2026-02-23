@@ -7,6 +7,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import typer
+from typer.models import OptionInfo
 
 try:
     import asyncpg
@@ -37,6 +38,32 @@ def _parse_pg_url(url: str) -> dict:
         "password": parsed.password or "",
         "database": (parsed.path or "/").lstrip("/") or "postgres",
     }
+
+
+def _normalize_optional_str_option(value: object) -> str | None:
+    if isinstance(value, OptionInfo):
+        return None
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return None
+    return value
+
+
+def _normalize_bool_option(value: object, default: bool) -> bool:
+    if isinstance(value, OptionInfo):
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off", ""}:
+            return False
+    return default
 
 
 async def _init_impl(
@@ -334,6 +361,11 @@ def init_command(
 ) -> None:
     """Create owlclaw (and optionally hatchet) database, role, and pgvector."""
     import sys
+    admin_url = _normalize_optional_str_option(admin_url)
+    owlclaw_password = _normalize_optional_str_option(owlclaw_password)
+    hatchet_password = _normalize_optional_str_option(hatchet_password)
+    dry_run = _normalize_bool_option(dry_run, False)
+    skip_hatchet = _normalize_bool_option(skip_hatchet, False)
     url = admin_url or os.environ.get("OWLCLAW_ADMIN_URL")
     if not url or not url.strip():
         typer.echo("Error: Set --admin-url or OWLCLAW_ADMIN_URL.", err=True)

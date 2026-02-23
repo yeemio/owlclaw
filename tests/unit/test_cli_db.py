@@ -107,6 +107,36 @@ def test_db_init_honors_explicit_skip_hatchet_argument(monkeypatch):
     assert captured.get("skip_hatchet") is True
 
 
+def test_db_init_handles_optioninfo_inputs(monkeypatch):
+    from owlclaw.cli.db_init import init_command
+
+    monkeypatch.setenv("OWLCLAW_ADMIN_URL", "postgresql://u:p@localhost/postgres")
+    captured: dict[str, object] = {}
+
+    async def _fake_init_impl(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    def _run_coro(coro):  # type: ignore[no-untyped-def]
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+
+    monkeypatch.setattr("owlclaw.cli.db_init.asyncio.run", _run_coro)
+    monkeypatch.setattr("owlclaw.cli.db_init._init_impl", _fake_init_impl)
+    init_command(
+        admin_url=OptionInfo(default=None),  # type: ignore[arg-type]
+        owlclaw_password=OptionInfo(default=None),  # type: ignore[arg-type]
+        hatchet_password=OptionInfo(default=None),  # type: ignore[arg-type]
+        skip_hatchet=OptionInfo(default=False),  # type: ignore[arg-type]
+        dry_run=OptionInfo(default=False),  # type: ignore[arg-type]
+    )
+    assert captured.get("admin_url") == "postgresql://u:p@localhost/postgres"
+
+
 def test_db_migrate_handles_optioninfo_defaults_without_crashing(monkeypatch):
     monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
     with patch("owlclaw.cli.db_migrate.command.upgrade") as mock_upgrade:
