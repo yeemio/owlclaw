@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import heapq
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
@@ -34,6 +35,8 @@ class InMemoryStore(MemoryStore):
 
     def __init__(self, time_decay_half_life_hours: float = 168.0) -> None:
         self._store: dict[UUID, MemoryEntry] = {}
+        self._embedding_norms: dict[UUID, float] = {}
+        self._search_cache: dict[tuple[str, str, tuple[float, ...], int, tuple[str, ...], bool], list[tuple[UUID, float]]] = {}
         self._time_decay_half_life_hours = time_decay_half_life_hours
 
     def _copy(self, entry: MemoryEntry) -> MemoryEntry:
@@ -42,6 +45,11 @@ class InMemoryStore(MemoryStore):
     async def save(self, entry: MemoryEntry) -> UUID:
         copy = self._copy(entry)
         self._store[copy.id] = copy
+        if copy.embedding:
+            self._embedding_norms[copy.id] = math.sqrt(sum(x * x for x in copy.embedding))
+        else:
+            self._embedding_norms[copy.id] = 0.0
+        self._search_cache.clear()
         return copy.id
 
     async def search(
@@ -64,20 +72,45 @@ class InMemoryStore(MemoryStore):
         if query_embedding is None:
             candidates.sort(key=lambda e: e.created_at, reverse=True)
             return [(self._copy(e), 1.0) for e in candidates[:limit]]
+        cache_key = (
+            agent_id,
+            tenant_id,
+            tuple(round(v, 6) for v in query_embedding),
+            limit,
+            tuple(sorted(tags or [])),
+            include_archived,
+        )
+        cached = self._search_cache.get(cache_key)
+        if cached is not None:
+            out: list[tuple[MemoryEntry, float]] = []
+            for entry_id, score in cached:
+                entry = self._store.get(entry_id)
+                if entry is None:
+                    continue
+                out.append((self._copy(entry), score))
+            return out
         now = _now_utc()
-        scored: list[tuple[MemoryEntry, float]] = []
+        query_norm = math.sqrt(sum(x * x for x in query_embedding))
+        if query_norm <= 0:
+            return []
+        scored: list[tuple[float, MemoryEntry]] = []
         for e in candidates:
             if not e.embedding:
                 continue
-            sim = _cosine_similarity(query_embedding, e.embedding)
+            emb_norm = self._embedding_norms.get(e.id, 0.0)
+            if emb_norm <= 0:
+                continue
+            dot = sum(x * y for x, y in zip(query_embedding, e.embedding, strict=True))
+            sim = max(0.0, min(1.0, dot / (query_norm * emb_norm)))
             created = e.created_at
             if created.tzinfo is None:
                 created = created.replace(tzinfo=timezone.utc)
             age_hours = (now - created).total_seconds() / 3600.0
             final = sim * time_decay(age_hours, self._time_decay_half_life_hours)
-            scored.append((self._copy(e), final))
-        scored.sort(key=lambda x: -x[1])
-        return scored[:limit]
+            scored.append((final, e))
+        top = heapq.nlargest(limit, scored, key=lambda item: item[0])
+        self._search_cache[cache_key] = [(entry.id, score) for score, entry in top]
+        return [(self._copy(entry), score) for score, entry in top]
 
     async def get_recent(
         self,
@@ -107,6 +140,8 @@ class InMemoryStore(MemoryStore):
             if uid in self._store:
                 self._store[uid].archived = True
                 n += 1
+        if n:
+            self._search_cache.clear()
         return n
 
     async def delete(self, entry_ids: list[UUID]) -> int:
@@ -114,7 +149,10 @@ class InMemoryStore(MemoryStore):
         for uid in entry_ids:
             if uid in self._store:
                 del self._store[uid]
+                self._embedding_norms.pop(uid, None)
                 n += 1
+        if n:
+            self._search_cache.clear()
         return n
 
     async def count(self, agent_id: str, tenant_id: str) -> int:

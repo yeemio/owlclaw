@@ -11,81 +11,95 @@ from owlclaw.capabilities.skills import Skill, SkillsLoader
 
 
 class KnowledgeInjector:
-    """Formats and injects Skills knowledge into Agent prompts.
+    """Formats and injects Skills knowledge into Agent prompts."""
 
-    The KnowledgeInjector retrieves Skills knowledge documents and formats
-    them as Markdown for inclusion in Agent system prompts. It supports
-    context-based filtering to include only relevant Skills.
-
-    Attributes:
-        skills_loader: SkillsLoader instance for accessing Skills
-    """
-
-    def __init__(self, skills_loader: SkillsLoader):
-        """Initialize the KnowledgeInjector.
-
-        Args:
-            skills_loader: SkillsLoader instance for accessing Skills
-        """
+    def __init__(self, skills_loader: SkillsLoader, *, token_limit: int = 4000):
+        """Initialize the KnowledgeInjector."""
+        if not isinstance(token_limit, int) or token_limit < 1:
+            raise ValueError("token_limit must be a positive integer")
         self.skills_loader = skills_loader
-        self._default_max_tokens: int | None = None
+        self.token_limit = token_limit
 
     @staticmethod
     def _estimate_tokens(text: str) -> int:
         """Estimate token usage with a lightweight word-count heuristic."""
-        if not text:
+        if not text or not text.strip():
             return 0
         return len(text.split())
 
+    @staticmethod
+    def _matches_focus(skill: Skill, focus: str | None) -> bool:
+        """Match focus with owlclaw.focus first, then metadata.tags fallback."""
+        if not focus:
+            return True
+        target = focus.strip().lower()
+        if not target:
+            return True
+
+        declared_focus = {item.strip().lower() for item in skill.focus if item.strip()}
+        if declared_focus:
+            return target in declared_focus
+
+        tags = skill.metadata.get("tags", [])
+        if isinstance(tags, str):
+            tags = [tags]
+        if isinstance(tags, list):
+            normalized_tags = {str(tag).strip().lower() for tag in tags if str(tag).strip()}
+            return target in normalized_tags
+        return False
+
     def load_skills_metadata(self) -> list[dict[str, Any]]:
-        """Load and return normalized metadata for all scanned skills."""
-        metadata: list[dict[str, Any]] = []
-        for skill in sorted(self.skills_loader.list_skills(), key=lambda s: s.name):
-            metadata.append(
-                {
-                    "name": skill.name,
-                    "description": skill.description,
-                    "task_type": skill.task_type,
-                    "constraints": skill.constraints,
-                    "trigger": skill.trigger,
-                    "focus": skill.focus,
-                    "risk_level": skill.risk_level,
-                    "requires_confirmation": skill.requires_confirmation,
-                }
-            )
-        return metadata
+        """Load metadata summary for all scanned skills."""
+        return [skill.to_dict() for skill in sorted(self.skills_loader.list_skills(), key=lambda s: s.name)]
 
     def select_skills(
         self,
         skill_names: list[str],
         context_filter: Callable[[Skill], bool] | None = None,
         max_tokens: int | None = None,
-    ) -> list[Skill]:
-        """Select skills in order with optional filter and token budget."""
-        selected: list[Skill] = []
+        *,
+        focus: str | None = None,
+        token_limit: int | None = None,
+    ) -> list[str]:
+        """Select relevant skill names with optional focus/filter and token budget."""
+        if isinstance(token_limit, int) and token_limit > 0:
+            budget = token_limit
+        elif isinstance(max_tokens, int) and max_tokens > 0:
+            budget = max_tokens
+        else:
+            budget = self.token_limit
+
+        selected: list[str] = []
         seen: set[str] = set()
-        budget = max_tokens if isinstance(max_tokens, int) and max_tokens > 0 else self._default_max_tokens
         used_tokens = 0
 
-        for skill_name in skill_names:
-            if not isinstance(skill_name, str):
+        for raw_name in skill_names:
+            if not isinstance(raw_name, str):
                 continue
-            normalized_name = skill_name.strip().lower()
+            normalized_name = raw_name.strip().lower()
             if not normalized_name or normalized_name in seen:
                 continue
             seen.add(normalized_name)
+
             skill = self.skills_loader.get_skill(normalized_name)
             if skill is None:
                 continue
             if context_filter is not None and not context_filter(skill):
                 continue
+            if not self._matches_focus(skill, focus):
+                continue
 
-            if budget is not None:
-                estimated = self._estimate_tokens(skill.load_full_content())
-                if used_tokens + estimated > budget:
-                    continue
-                used_tokens += estimated
-            selected.append(skill)
+            content = skill.load_full_content()
+            content_tokens = self._estimate_tokens(content)
+            if selected and used_tokens + content_tokens > budget:
+                continue
+            if not selected and content_tokens > budget:
+                selected.append(skill.name)
+                break
+
+            selected.append(skill.name)
+            used_tokens += content_tokens
+
         return selected
 
     def reload_skills(self) -> list[Skill]:
@@ -100,31 +114,19 @@ class KnowledgeInjector:
         context_filter: Callable[[Skill], bool] | None = None,
         max_tokens: int | None = None,
     ) -> str:
-        """Retrieve and format Skills knowledge for specified Skills.
-
-        This method loads the full content of specified Skills and formats
-        them as Markdown sections. An optional context filter can exclude
-        Skills based on runtime context (e.g., trading hours).
-
-        Args:
-            skill_names: List of Skill names to include
-            context_filter: Optional filter function to exclude Skills
-                           based on context (e.g., trading hours)
-
-        Returns:
-            Formatted Markdown string with Skills knowledge
-        """
+        """Retrieve and format Skills knowledge for specified skills."""
         knowledge_parts: list[str] = []
-        selected_skills = self.select_skills(
+        selected_names = self.select_skills(
             skill_names,
             context_filter=context_filter,
             max_tokens=max_tokens,
         )
 
-        for skill in selected_skills:
+        for selected_name in selected_names:
+            skill = self.skills_loader.get_skill(selected_name)
+            if skill is None:
+                continue
             full_content = skill.load_full_content()
-
-            # Format as Markdown section
             knowledge_parts.append(
                 f"## Skill: {skill.name}\n\n"
                 f"**Description:** {skill.description}\n\n"
@@ -142,14 +144,7 @@ class KnowledgeInjector:
         )
 
     def get_all_skills_summary(self) -> str:
-        """Get a summary of all Skills (metadata only, no full content).
-
-        This method provides a lightweight overview of available Skills
-        without loading their full content. Useful for Agent startup.
-
-        Returns:
-            Formatted Markdown summary of all Skills
-        """
+        """Get a summary of all skills (metadata only, no full content)."""
         skills = self.skills_loader.list_skills()
 
         if not skills:
@@ -161,8 +156,6 @@ class KnowledgeInjector:
         ]
 
         for skill in sorted(skills, key=lambda s: s.name):
-            summary_parts.append(
-                f"- **{skill.name}**: {skill.description}"
-            )
+            summary_parts.append(f"- **{skill.name}**: {skill.description}")
 
         return "\n".join(summary_parts)

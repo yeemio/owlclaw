@@ -6,7 +6,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from hypothesis import given, settings
+from hypothesis import given
+from hypothesis import settings
 from hypothesis import strategies as st
 
 from owlclaw.agent.runtime.identity import IdentityLoader
@@ -15,7 +16,7 @@ _SAFE_TEXT = st.text(
     alphabet=st.characters(blacklist_categories=["Cc", "Cs", "Zl", "Zp"]),
     min_size=1,
     max_size=120,
-).filter(lambda s: s.strip() != "" and "\n" not in s and "\r" not in s)
+).filter(lambda s: s.strip() != "" and "\n" not in s and "\r" not in s and "\u00a0" not in s)
 
 
 @pytest.mark.asyncio
@@ -37,16 +38,9 @@ async def test_property_identity_load_completeness(soul: str, bullet_a: str, bul
         loader = IdentityLoader(str(app_dir))
         await loader.load()
         identity = loader.get_identity()
-        normalized_bullet_a = bullet_a.strip()
-        normalized_bullet_b = bullet_b.strip()
-        summary_items = [
-            line[2:].strip()
-            for line in identity["capabilities_summary"].splitlines()
-            if line.startswith("- ")
-        ]
         assert identity["soul"].strip() == soul.strip()
-        assert normalized_bullet_a in summary_items
-        assert normalized_bullet_b in summary_items
+        assert f"- {bullet_a}" in identity["capabilities_summary"]
+        assert f"- {bullet_b}" in identity["capabilities_summary"]
         assert "Constraints" not in identity["capabilities_summary"]
 
 

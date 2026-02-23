@@ -15,13 +15,23 @@ This MVP implementation omits:
 from __future__ import annotations
 
 import asyncio
+from collections import deque
+import importlib
+import inspect
 import json
 import logging
 import math
+import os
 import time
 from decimal import Decimal
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from owlclaw.agent.runtime.config import (
+    DEFAULT_RUNTIME_CONFIG,
+    load_runtime_config,
+    merge_runtime_config,
+)
 from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.heartbeat import HeartbeatChecker
 from owlclaw.agent.runtime.identity import IdentityLoader
@@ -43,6 +53,7 @@ _DEFAULT_MODEL = "gpt-4o-mini"
 _DEFAULT_MAX_ITERATIONS = 50
 _DEFAULT_LLM_TIMEOUT_SECONDS = 60.0
 _DEFAULT_RUN_TIMEOUT_SECONDS = 300.0
+_DEFAULT_LLM_RETRY_ATTEMPTS = 1
 
 
 def _coerce_confirmation_flag(value: Any) -> bool:
@@ -102,6 +113,7 @@ class AgentRuntime:
         ledger: Ledger | None = None,
         model: str = _DEFAULT_MODEL,
         config: dict[str, Any] | None = None,
+        config_path: str | None = None,
     ) -> None:
         if not isinstance(agent_id, str) or not agent_id.strip():
             raise ValueError("agent_id must be a non-empty string")
@@ -116,13 +128,180 @@ class AgentRuntime:
         self._router = router
         self._ledger = ledger
         self.model = model
-        self.config: dict[str, Any] = config or {}
+        base_config = dict(DEFAULT_RUNTIME_CONFIG)
+        user_config = dict(config or {})
+        self.config = merge_runtime_config(base_config, user_config)
+        if config_path:
+            file_config = load_runtime_config(config_path)
+            self.config = merge_runtime_config(self.config, file_config)
+            loaded_model = file_config.get("model")
+            if isinstance(loaded_model, str) and loaded_model.strip():
+                self.model = loaded_model.strip()
+        self._config_path = config_path
+        user_model = user_config.get("model")
+        if isinstance(user_model, str) and user_model.strip():
+            self.model = user_model.strip()
         self._input_sanitizer = InputSanitizer()
         self._security_audit = SecurityAuditLog()
 
         self._identity_loader: IdentityLoader | None = None
         self._heartbeat_checker: HeartbeatChecker | None = None
+        self._langfuse_init_error: str | None = None
+        self._langfuse = self._init_langfuse_client()
+        self._tool_call_timestamps: deque[float] = deque()
+        self._skills_context_cache: dict[tuple[str | None, tuple[str, ...]], str] = {}
+        self._visible_tools_cache: dict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = {}
+        self._perf_metrics: dict[str, float] = {
+            "llm_calls": 0.0,
+            "tool_calls": 0.0,
+            "skills_cache_hits": 0.0,
+            "tools_cache_hits": 0.0,
+            "llm_time_ms_total": 0.0,
+        }
         self.is_initialized = False
+
+    def _init_langfuse_client(self) -> Any | None:
+        """Initialize optional Langfuse client from runtime config."""
+        cfg = self.config.get("langfuse")
+        if not isinstance(cfg, dict):
+            return None
+        injected = cfg.get("client")
+        if injected is not None:
+            return injected
+        if not cfg.get("enabled", False):
+            return None
+
+        public_key = cfg.get("public_key") or os.environ.get("LANGFUSE_PUBLIC_KEY")
+        secret_key = cfg.get("secret_key") or os.environ.get("LANGFUSE_SECRET_KEY")
+        host = cfg.get("host", "https://cloud.langfuse.com")
+        if not public_key or not secret_key:
+            return None
+        try:
+            module = importlib.import_module("langfuse")
+            langfuse_cls = getattr(module, "Langfuse")
+            try:
+                return langfuse_cls(
+                    public_key=public_key,
+                    secret_key=secret_key,
+                    base_url=host,
+                )
+            except TypeError:
+                return langfuse_cls(
+                    public_key=public_key,
+                    secret_key=secret_key,
+                    host=host,
+                )
+        except Exception as exc:
+            self._langfuse_init_error = str(exc)
+            logger.warning("Langfuse init failed: %s", exc)
+            return None
+
+    @staticmethod
+    def _classify_error(exc: Exception) -> str:
+        if isinstance(exc, FileNotFoundError):
+            return "initialization_error"
+        if isinstance(exc, asyncio.TimeoutError):
+            return "timeout_error"
+        if isinstance(exc, ValueError):
+            return "validation_error"
+        if isinstance(exc, ConnectionError | OSError):
+            return "dependency_error"
+        return "runtime_error"
+
+    async def _notify_error(
+        self,
+        *,
+        context: AgentRunContext | None,
+        stage: str,
+        category: str,
+        message: str,
+    ) -> None:
+        notifier = self.config.get("error_notifier")
+        if not callable(notifier):
+            return
+        payload = {
+            "agent_id": self.agent_id,
+            "run_id": context.run_id if context else None,
+            "trigger": context.trigger if context else None,
+            "stage": stage,
+            "category": category,
+            "message": message,
+        }
+        try:
+            maybe_awaitable = notifier(payload)
+            if inspect.isawaitable(maybe_awaitable):
+                await maybe_awaitable
+        except Exception as exc:
+            logger.warning("error_notifier failed: %s", exc)
+
+    def _create_trace(self, context: AgentRunContext) -> Any | None:
+        if self._langfuse is None:
+            return None
+        trace_fn = getattr(self._langfuse, "trace", None)
+        if not callable(trace_fn):
+            return None
+        try:
+            return trace_fn(
+                name="agent_run",
+                metadata={
+                    "agent_id": context.agent_id,
+                    "run_id": context.run_id,
+                    "trigger": context.trigger,
+                    "focus": context.focus,
+                    "tenant_id": context.tenant_id,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Langfuse trace create failed: %s", exc)
+            return None
+
+    @staticmethod
+    def _update_trace(trace: Any | None, **kwargs: Any) -> None:
+        if trace is None:
+            return
+        update_fn = getattr(trace, "update", None)
+        if callable(update_fn):
+            try:
+                update_fn(**kwargs)
+            except Exception:
+                logger.debug("Langfuse trace update failed", exc_info=True)
+
+    @staticmethod
+    def _observe_tool(trace: Any | None, name: str, payload: dict[str, Any]) -> Any | None:
+        if trace is None:
+            return None
+        span_fn = getattr(trace, "span", None)
+        if callable(span_fn):
+            try:
+                return span_fn(name=name, input=payload)
+            except Exception:
+                logger.debug("Langfuse span create failed", exc_info=True)
+        event_fn = getattr(trace, "event", None)
+        if callable(event_fn):
+            try:
+                return event_fn(name=name, input=payload)
+            except Exception:
+                logger.debug("Langfuse event create failed", exc_info=True)
+        return None
+
+    @staticmethod
+    def _finish_observation(observation: Any | None, **kwargs: Any) -> None:
+        if observation is None:
+            return
+        for method_name in ("end", "update"):
+            method = getattr(observation, method_name, None)
+            if callable(method):
+                try:
+                    method(**kwargs)
+                    return
+                except TypeError:
+                    try:
+                        method()
+                        return
+                    except Exception:
+                        logger.debug("Langfuse observation finish failed", exc_info=True)
+                except Exception:
+                    logger.debug("Langfuse observation finish failed", exc_info=True)
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -136,13 +315,51 @@ class AgentRuntime:
         Raises:
             FileNotFoundError: If SOUL.md is missing from *app_dir*.
         """
-        self._identity_loader = IdentityLoader(self.app_dir)
-        await self._identity_loader.load()
-        hb_config = self.config.get("heartbeat", {})
-        if hb_config.get("enabled", True):
-            self._heartbeat_checker = HeartbeatChecker(self.agent_id, hb_config)
-        self.is_initialized = True
-        logger.info("AgentRuntime '%s' initialized", self.agent_id)
+        try:
+            self._identity_loader = IdentityLoader(self.app_dir)
+            await self._identity_loader.load()
+            hb_config = self.config.get("heartbeat", {})
+            if hb_config.get("enabled", True):
+                self._heartbeat_checker = HeartbeatChecker(self.agent_id, hb_config)
+            self.is_initialized = True
+            logger.info("AgentRuntime '%s' initialized", self.agent_id)
+        except Exception as exc:
+            category = self._classify_error(exc)
+            await self._notify_error(
+                context=None,
+                stage="setup",
+                category=category,
+                message=str(exc),
+            )
+            raise
+
+    def load_config_file(self, path: str) -> dict[str, Any]:
+        """Load runtime config from YAML and apply it."""
+        self._validate_path_within_app_dir(path)
+        loaded = load_runtime_config(path)
+        self.config = merge_runtime_config(self.config, loaded)
+        self._config_path = path
+        self.model = str(self.config.get("model", self.model))
+        return dict(self.config)
+
+    def reload_config(self) -> dict[str, Any]:
+        """Reload runtime config from the last loaded config file."""
+        if not self._config_path:
+            raise RuntimeError("config path is not set")
+        return self.load_config_file(self._config_path)
+
+    def get_performance_metrics(self) -> dict[str, float]:
+        """Get in-memory runtime performance counters."""
+        return dict(self._perf_metrics)
+
+    def _validate_path_within_app_dir(self, path: str | Path) -> Path:
+        candidate = Path(path).expanduser().resolve()
+        app_root = Path(self.app_dir).resolve()
+        if candidate == app_root:
+            return candidate
+        if app_root not in candidate.parents:
+            raise ValueError("path must stay within app_dir")
+        return candidate
 
     # ------------------------------------------------------------------
     # Public trigger entry point
@@ -241,6 +458,8 @@ class AgentRuntime:
                     "reason": "heartbeat_no_events",
                 }
 
+        trace = self._create_trace(context)
+
         run_timeout_raw = self.config.get(
             "run_timeout_seconds", _DEFAULT_RUN_TIMEOUT_SECONDS
         )
@@ -256,8 +475,14 @@ class AgentRuntime:
         if not math.isfinite(run_timeout):
             run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
         try:
+            decision_loop_fn = self._decision_loop
+            decision_loop_params = inspect.signature(decision_loop_fn).parameters
+            if len(decision_loop_params) >= 2:
+                decision_loop_coro = decision_loop_fn(context, trace)
+            else:
+                decision_loop_coro = decision_loop_fn(context)
             result = await asyncio.wait_for(
-                self._decision_loop(context),
+                decision_loop_coro,
                 timeout=run_timeout,
             )
         except asyncio.TimeoutError:
@@ -266,6 +491,17 @@ class AgentRuntime:
                 context.agent_id,
                 context.run_id,
                 run_timeout,
+            )
+            self._update_trace(
+                trace,
+                status="error",
+                output=f"run timed out after {run_timeout:.1f}s",
+            )
+            await self._notify_error(
+                context=context,
+                stage="run",
+                category="timeout_error",
+                message=f"run timed out after {run_timeout:.1f}s",
             )
             return {
                 "status": "failed",
@@ -279,13 +515,14 @@ class AgentRuntime:
             context.run_id,
             result.get("iterations", 0),
         )
+        self._update_trace(trace, status="success", output=result)
         return {"status": "completed", "run_id": context.run_id, **result}
 
     # ------------------------------------------------------------------
     # Decision loop
     # ------------------------------------------------------------------
 
-    async def _decision_loop(self, context: AgentRunContext) -> dict[str, Any]:
+    async def _decision_loop(self, context: AgentRunContext, trace: Any | None = None) -> dict[str, Any]:
         """Core LLM function-calling loop.
 
         1. Build system prompt (identity + skills knowledge)
@@ -343,9 +580,22 @@ class AgentRuntime:
                 call_kwargs["tool_choice"] = "auto"
 
             try:
-                response = await asyncio.wait_for(
-                    llm_integration.acompletion(**call_kwargs),
+                llm_started_ns = time.perf_counter_ns()
+                response, model_used, llm_tokens_input, llm_tokens_output = await self._call_llm_completion(
+                    call_kwargs,
                     timeout=llm_timeout,
+                )
+                llm_elapsed_ms = (time.perf_counter_ns() - llm_started_ns) // 1_000_000
+                self._perf_metrics["llm_calls"] += 1
+                self._perf_metrics["llm_time_ms_total"] += float(llm_elapsed_ms)
+                await self._record_llm_usage(
+                    context=context,
+                    model=model_used,
+                    llm_tokens_input=llm_tokens_input,
+                    llm_tokens_output=llm_tokens_output,
+                    execution_time_ms=llm_elapsed_ms,
+                    status="success",
+                    error_message=None,
                 )
             except asyncio.TimeoutError:
                 logger.error(
@@ -354,10 +604,43 @@ class AgentRuntime:
                     context.run_id,
                     llm_timeout,
                 )
+                await self._record_llm_usage(
+                    context=context,
+                    model=model_used,
+                    llm_tokens_input=0,
+                    llm_tokens_output=0,
+                    execution_time_ms=int(llm_timeout * 1000),
+                    status="timeout",
+                    error_message=f"LLM call timed out after {llm_timeout:.1f}s",
+                )
                 messages.append(
                     {
                         "role": "assistant",
                         "content": f"LLM call timed out after {llm_timeout:.1f}s.",
+                    }
+                )
+                break
+            except Exception as exc:
+                await self._record_llm_usage(
+                    context=context,
+                    model=model_used,
+                    llm_tokens_input=0,
+                    llm_tokens_output=0,
+                    execution_time_ms=0,
+                    status="error",
+                    error_message=str(exc),
+                )
+                logger.error("LLM call failed agent_id=%s run_id=%s error=%s", context.agent_id, context.run_id, exc)
+                await self._notify_error(
+                    context=context,
+                    stage="llm_call",
+                    category=self._classify_error(exc),
+                    message=str(exc),
+                )
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"LLM call failed: {exc}",
                     }
                 )
                 break
@@ -384,7 +667,7 @@ class AgentRuntime:
 
             # Execute each tool call and add results
             for idx, tc in enumerate(tool_calls):
-                tool_result = await self._execute_tool(tc, context)
+                tool_result = await self._execute_tool(tc, context, trace=trace)
                 tool_call_id = getattr(tc, "id", None) or f"tool_call_{iteration}_{idx}"
                 messages.append({
                     "role": "tool",
@@ -405,6 +688,114 @@ class AgentRuntime:
                 if m.get("role") == "tool"
             ),
         }
+
+    @staticmethod
+    def _extract_usage_tokens(response: Any) -> tuple[int, int]:
+        usage = (
+            response.get("usage")
+            if isinstance(response, dict)
+            else getattr(response, "usage", None)
+        )
+        if usage is None:
+            return 0, 0
+        if isinstance(usage, dict):
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+        else:
+            prompt_tokens = getattr(usage, "prompt_tokens", 0)
+            completion_tokens = getattr(usage, "completion_tokens", 0)
+        try:
+            prompt = int(prompt_tokens)
+        except (TypeError, ValueError):
+            prompt = 0
+        try:
+            completion = int(completion_tokens)
+        except (TypeError, ValueError):
+            completion = 0
+        return max(0, prompt), max(0, completion)
+
+    async def _call_llm_completion(
+        self,
+        call_kwargs: dict[str, Any],
+        *,
+        timeout: float,
+    ) -> tuple[Any, str, int, int]:
+        """Call LLM facade with retry and fallback model support."""
+        retries_raw = self.config.get("llm_retry_attempts", _DEFAULT_LLM_RETRY_ATTEMPTS)
+        if isinstance(retries_raw, bool):
+            retries = _DEFAULT_LLM_RETRY_ATTEMPTS
+        else:
+            try:
+                retries = max(1, int(retries_raw))
+            except (TypeError, ValueError):
+                retries = _DEFAULT_LLM_RETRY_ATTEMPTS
+
+        fallback_raw = self.config.get("llm_fallback_models", [])
+        fallback_models: list[str] = []
+        if isinstance(fallback_raw, list):
+            for item in fallback_raw:
+                if isinstance(item, str) and item.strip():
+                    fallback_models.append(item.strip())
+
+        primary_model = str(call_kwargs.get("model", self.model))
+        model_chain = [primary_model] + [m for m in fallback_models if m != primary_model]
+        last_error: Exception | None = None
+
+        for model_name in model_chain:
+            kwargs = dict(call_kwargs)
+            kwargs["model"] = model_name
+            for _ in range(retries):
+                try:
+                    response = await asyncio.wait_for(
+                        llm_integration.acompletion(**kwargs),
+                        timeout=timeout,
+                    )
+                    prompt_tokens, completion_tokens = self._extract_usage_tokens(response)
+                    return response, model_name, prompt_tokens, completion_tokens
+                except asyncio.TimeoutError:
+                    raise
+                except Exception as exc:
+                    last_error = exc
+                    continue
+
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("LLM call failed without an explicit error")
+
+    async def _record_llm_usage(
+        self,
+        *,
+        context: AgentRunContext,
+        model: str,
+        llm_tokens_input: int,
+        llm_tokens_output: int,
+        execution_time_ms: int,
+        status: str,
+        error_message: str | None,
+    ) -> None:
+        if self._ledger is None:
+            return
+        task_type = context.payload.get("task_type") or self.config.get("default_task_type") or "default"
+        try:
+            await self._ledger.record_execution(
+                tenant_id=context.tenant_id,
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                capability_name="llm_completion",
+                task_type=str(task_type),
+                input_params={"trigger": context.trigger, "focus": context.focus},
+                output_result={"status": status},
+                decision_reasoning="runtime_llm_call",
+                execution_time_ms=max(0, int(execution_time_ms)),
+                llm_model=model or "",
+                llm_tokens_input=max(0, int(llm_tokens_input)),
+                llm_tokens_output=max(0, int(llm_tokens_output)),
+                estimated_cost=Decimal("0"),
+                status=status,
+                error_message=error_message,
+            )
+        except Exception as exc:
+            logger.warning("Failed to record LLM usage in ledger: %s", exc)
 
     @staticmethod
     def _assistant_message_to_dict(message: Any) -> dict[str, Any]:
@@ -467,7 +858,7 @@ class AgentRuntime:
     # ------------------------------------------------------------------
 
     async def _execute_tool(
-        self, tool_call: Any, context: AgentRunContext
+        self, tool_call: Any, context: AgentRunContext, *, trace: Any | None = None
     ) -> Any:
         """Dispatch a single LLM tool call to the capability registry.
 
@@ -478,6 +869,7 @@ class AgentRuntime:
         tool_name = getattr(function, "name", None)
         if not isinstance(tool_name, str) or not tool_name.strip():
             return {"error": "Invalid tool call: missing function name"}
+        tool_name = tool_name.strip()
         invalid_arguments = False
         invalid_reason = ""
         try:
@@ -504,6 +896,24 @@ class AgentRuntime:
                 "error": f"Invalid arguments for tool '{tool_name}': {invalid_reason}",
             }
 
+        permission_error = self._enforce_tool_permissions(tool_name)
+        if permission_error is not None:
+            self._security_audit.record(
+                event_type="tool_permission_denied",
+                source="runtime",
+                details={"tool_name": tool_name, "run_id": context.run_id, "reason": permission_error},
+            )
+            return {"error": permission_error}
+
+        rate_limit_error = self._enforce_rate_limit(tool_name)
+        if rate_limit_error is not None:
+            self._security_audit.record(
+                event_type="tool_rate_limited",
+                source="runtime",
+                details={"tool_name": tool_name, "run_id": context.run_id, "reason": rate_limit_error},
+            )
+            return {"error": rate_limit_error}
+
         if self.builtin_tools is not None and self.builtin_tools.is_builtin(tool_name):
             from owlclaw.agent.tools import BuiltInToolsContext
 
@@ -522,6 +932,12 @@ class AgentRuntime:
             return {"error": f"No capability registry configured for tool '{tool_name}'"}
 
         invoke_arguments = self._normalize_capability_arguments(arguments, context)
+        self._perf_metrics["tool_calls"] += 1
+        observation = self._observe_tool(
+            trace,
+            "tool_execution",
+            {"tool": tool_name, "run_id": context.run_id, "arguments": invoke_arguments},
+        )
         start_ns = time.perf_counter_ns()
         try:
             result = await self.registry.invoke_handler(tool_name, **invoke_arguments)
@@ -544,14 +960,26 @@ class AgentRuntime:
                     llm_tokens_input=0,
                     llm_tokens_output=0,
                     estimated_cost=Decimal("0"),
-                    status="success",
-                    error_message=None,
-                )
+                        status="success",
+                        error_message=None,
+                    )
+            self._finish_observation(
+                observation,
+                output=result if isinstance(result, dict) else {"result": result},
+                status="success",
+            )
             return result
         except ValueError:
+            self._finish_observation(observation, status="error", output={"error": "not registered"})
             return {"error": f"Capability '{tool_name}' is not registered"}
         except Exception as exc:
             logger.exception("Tool '%s' failed", tool_name)
+            await self._notify_error(
+                context=context,
+                stage="tool_execution",
+                category=self._classify_error(exc),
+                message=f"{tool_name}: {exc}",
+            )
             if self._ledger is not None:
                 execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
                 meta = self.registry.get_capability_metadata(tool_name)
@@ -577,7 +1005,47 @@ class AgentRuntime:
                     )
                 except Exception as ledger_exc:
                     logger.exception("Ledger record_execution failed: %s", ledger_exc)
+            self._finish_observation(observation, status="error", output={"error": str(exc)})
             return {"error": str(exc)}
+
+    def _enforce_tool_permissions(self, tool_name: str) -> str | None:
+        security = self.config.get("security")
+        if not isinstance(security, dict):
+            return None
+        allow = security.get("allow_tools")
+        deny = security.get("deny_tools")
+        normalized = tool_name.strip()
+        if isinstance(allow, list):
+            allow_set = {str(item).strip() for item in allow if str(item).strip()}
+            if allow_set and normalized not in allow_set:
+                return f"Tool '{normalized}' is not permitted"
+        if isinstance(deny, list):
+            deny_set = {str(item).strip() for item in deny if str(item).strip()}
+            if normalized in deny_set:
+                return f"Tool '{normalized}' is denied by policy"
+        return None
+
+    def _enforce_rate_limit(self, tool_name: str) -> str | None:
+        security = self.config.get("security")
+        if not isinstance(security, dict):
+            return None
+        max_calls = security.get("max_tool_calls_per_minute")
+        if isinstance(max_calls, bool):
+            return None
+        try:
+            limit = int(max_calls)
+        except (TypeError, ValueError):
+            return None
+        if limit < 1:
+            return None
+        now = time.monotonic()
+        cutoff = now - 60.0
+        while self._tool_call_timestamps and self._tool_call_timestamps[0] < cutoff:
+            self._tool_call_timestamps.popleft()
+        if len(self._tool_call_timestamps) >= limit:
+            return f"Rate limit exceeded for tool '{tool_name}'"
+        self._tool_call_timestamps.append(now)
+        return None
 
     def _normalize_capability_arguments(
         self, arguments: dict[str, Any], context: AgentRunContext
@@ -694,6 +1162,10 @@ class AgentRuntime:
         all_skill_names = list(self.registry.handlers.keys())
         if not all_skill_names:
             return ""
+        cache_key = (context.focus, tuple(sorted(all_skill_names)))
+        if cache_key in self._skills_context_cache:
+            self._perf_metrics["skills_cache_hits"] += 1
+            return self._skills_context_cache[cache_key]
 
         # Focus filter: if focus is set, prefer skills whose tag list includes it
         if context.focus:
@@ -707,7 +1179,11 @@ class AgentRuntime:
         else:
             skill_names = all_skill_names
 
-        return self.knowledge_injector.get_skills_knowledge(skill_names)
+        out = self.knowledge_injector.get_skills_knowledge(skill_names)
+        self._skills_context_cache[cache_key] = out
+        if len(self._skills_context_cache) > 64:
+            self._skills_context_cache.pop(next(iter(self._skills_context_cache)))
+        return out
 
     def _skill_has_focus(self, skill_name: str, focus: str) -> bool:
         """Return True if the skill declares *focus* in owlclaw.focus.
@@ -751,6 +1227,12 @@ class AgentRuntime:
         self, context: AgentRunContext
     ) -> list[dict[str, Any]]:
         """Build the governance-filtered OpenAI-style function schema list."""
+        confirmed = self._extract_confirmed_capabilities(context.payload)
+        cache_key = (context.agent_id, context.tenant_id, tuple(sorted(confirmed)))
+        if cache_key in self._visible_tools_cache:
+            self._perf_metrics["tools_cache_hits"] += 1
+            return list(self._visible_tools_cache[cache_key])
+
         all_schemas: list[dict[str, Any]] = []
 
         if self.builtin_tools is not None:
@@ -760,7 +1242,11 @@ class AgentRuntime:
             all_schemas.extend(self._capability_schemas())
 
         if self.visibility_filter is None:
-            return all_schemas
+            out = self._apply_tool_resource_limits(all_schemas)
+            self._visible_tools_cache[cache_key] = list(out)
+            if len(self._visible_tools_cache) > 64:
+                self._visible_tools_cache.pop(next(iter(self._visible_tools_cache)))
+            return out
 
         builtin_names = {s["function"]["name"] for s in all_schemas if self.builtin_tools and self.builtin_tools.is_builtin(s["function"]["name"])}
         cap_schemas = [s for s in all_schemas if s["function"]["name"] not in builtin_names]
@@ -786,7 +1272,6 @@ class AgentRuntime:
             )
             for s in cap_schemas
         ]
-        confirmed = self._extract_confirmed_capabilities(context.payload)
         run_ctx = RunContext(
             tenant_id=context.tenant_id,
             confirmed_capabilities=confirmed or None,
@@ -796,7 +1281,23 @@ class AgentRuntime:
         )
         visible_names = {cap.name for cap in visible_caps}
         filtered_caps = [s for s in cap_schemas if s["function"]["name"] in visible_names]
-        return all_schemas[: len(all_schemas) - len(cap_schemas)] + filtered_caps
+        out = all_schemas[: len(all_schemas) - len(cap_schemas)] + filtered_caps
+        out = self._apply_tool_resource_limits(out)
+        self._visible_tools_cache[cache_key] = list(out)
+        if len(self._visible_tools_cache) > 64:
+            self._visible_tools_cache.pop(next(iter(self._visible_tools_cache)))
+        return out
+
+    def _apply_tool_resource_limits(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        perf_cfg = self.config.get("performance")
+        if not isinstance(perf_cfg, dict):
+            return tools
+        max_visible_tools = perf_cfg.get("max_visible_tools")
+        if isinstance(max_visible_tools, bool):
+            return tools
+        if isinstance(max_visible_tools, int) and max_visible_tools >= 1:
+            return tools[:max_visible_tools]
+        return tools
 
     @staticmethod
     def _extract_confirmed_capabilities(payload: dict[str, Any]) -> set[str]:

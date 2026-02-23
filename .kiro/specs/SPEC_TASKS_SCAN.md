@@ -50,7 +50,7 @@
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [ ] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
-- [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
+- [ ] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
 
@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（47/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：合并 governance 收尾 + agent-runtime KnowledgeInjector 补强） |
-| 批次状态 | **完成**。governance 全量任务已完成（173/173），并已在审校分支吸收 agent-runtime 的知识注入补强。 |
-| 已完成项 | governance：补齐 `docs/GOVERNANCE_GUIDE.md`、性能/迁移/租户隔离测试与任务收口；agent-runtime：`KnowledgeInjector` 增加 metadata/select/token budget/reload 与对应测试，回填 Task 4.1-4.6。 |
-| 下一待执行 | 持续审校 `agent-runtime` 剩余任务与编码分支待审变更，分批清理 lint/type 债务。 |
-| 验收快照 | governance 分支自带验收快照 `89 passed`；本分支 knowledge 批次验收为 `117 passed` + mypy 成功。 |
+| 当前批次 | spec 循环（agent-runtime Round 13：Checkpoint + Integration/E2E + Docs） |
+| 批次状态 | **完成**。agent-runtime Task 15~19 已实现并通过，spec 全部完成（105/105）。 |
+| 已完成项 | 修复 `InMemoryStore` 性能瓶颈（norm 预计算 + Top-K + 查询缓存）以通过 `test_memory_performance`；新增 `tests/integration/test_agent_runtime_integration.py`（Hatchet/litellm/vector/langfuse）与 `tests/integration/test_agent_runtime_e2e.py`（完整流程、Heartbeat、热重载、记忆、错误恢复）；补充 `docs/AGENT_RUNTIME_API.md`、`docs/AGENT_RUNTIME_USAGE.md`、`examples/agent_runtime_flow.py`。 |
+| 下一待执行 | 无（agent-runtime 已完成）。 |
+| 验收快照 | `poetry run pytest -q` -> `878 passed, 9 skipped in 82.46s`；`poetry run pytest ... --cov=owlclaw/agent/runtime --cov-report=term-missing -q` -> runtime 总覆盖率 `84%`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

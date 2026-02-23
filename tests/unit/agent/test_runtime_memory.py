@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck
+from hypothesis import given
+from hypothesis import settings
 from hypothesis import strategies as st
 
 from owlclaw.agent.runtime.memory import MemorySystem
@@ -167,3 +168,22 @@ def test_property_memory_file_size_limit(payload: list[str], tmp_path: Path) -> 
         memory.write(item, tags=["limit"])
     archives = list(tmp_path.glob("MEMORY.*.archive.md"))
     assert archives
+
+
+@given(
+    content=st.text(min_size=1, max_size=100).filter(lambda s: s.strip() != "" and "\n" not in s and "\r" not in s)
+)
+@settings(deadline=None)
+def test_property_vector_db_degradation_falls_back_to_memory_file(content: str) -> None:
+    """Property 20: vector index failure degrades gracefully without breaking write/recall."""
+
+    class _BrokenIndex:
+        def upsert(self, payload):  # type: ignore[no-untyped-def]
+            raise ConnectionError("vector db offline")
+
+    memory = MemorySystem(vector_index=_BrokenIndex())
+    written = memory.write(content, tags=["degrade"])
+    assert written["content"] == content.strip()
+    assert memory.vector_index_degraded is True
+    recalled = memory.recall_relevant(content, limit=1)
+    assert recalled

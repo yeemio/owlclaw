@@ -28,7 +28,7 @@ def _make_app_dir(tmp_path):
     return str(tmp_path)
 
 
-def _make_llm_response(content="Done.", tool_calls=None):
+def _make_llm_response(content="Done.", tool_calls=None, *, prompt_tokens=0, completion_tokens=0):
     """Build a fake litellm response object."""
     message = MagicMock()
     message.content = content
@@ -42,6 +42,10 @@ def _make_llm_response(content="Done.", tool_calls=None):
     choice.message = message
     response = MagicMock()
     response.choices = [choice]
+    usage = MagicMock()
+    usage.prompt_tokens = prompt_tokens
+    usage.completion_tokens = completion_tokens
+    response.usage = usage
     return response
 
 
@@ -100,6 +104,41 @@ def _make_tool_call_raw(name: str, raw_arguments):
     tc.function.name = name
     tc.function.arguments = raw_arguments
     return tc
+
+
+class _FakeLangfuseObservation:
+    def __init__(self) -> None:
+        self.updates: list[dict[str, object]] = []
+
+    def end(self, **kwargs: object) -> None:
+        self.updates.append(dict(kwargs))
+
+    def update(self, **kwargs: object) -> None:
+        self.updates.append(dict(kwargs))
+
+
+class _FakeLangfuseTrace:
+    def __init__(self) -> None:
+        self.updates: list[dict[str, object]] = []
+        self.spans: list[_FakeLangfuseObservation] = []
+
+    def update(self, **kwargs: object) -> None:
+        self.updates.append(dict(kwargs))
+
+    def span(self, **_: object) -> _FakeLangfuseObservation:
+        span = _FakeLangfuseObservation()
+        self.spans.append(span)
+        return span
+
+
+class _FakeLangfuseClient:
+    def __init__(self) -> None:
+        self.traces: list[_FakeLangfuseTrace] = []
+
+    def trace(self, **_: object) -> _FakeLangfuseTrace:
+        trace = _FakeLangfuseTrace()
+        self.traces.append(trace)
+        return trace
 
 
 # ---------------------------------------------------------------------------
@@ -813,6 +852,56 @@ class TestAgentRuntimeRun:
         assert result["final_response"] == "ok"
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_llm_retries_on_failure(self, mock_llm, tmp_path) -> None:
+        mock_llm.side_effect = [RuntimeError("transient"), _make_llm_response("ok")]
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"llm_retry_attempts": 2},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert result["final_response"] == "ok"
+        assert mock_llm.call_count == 2
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_llm_fallback_model_used_after_primary_failure(self, mock_llm, tmp_path) -> None:
+        mock_llm.side_effect = [RuntimeError("primary down"), _make_llm_response("ok")]
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            model="primary-model",
+            config={"llm_retry_attempts": 1, "llm_fallback_models": ["fallback-model"]},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert mock_llm.call_args_list[0].kwargs["model"] == "primary-model"
+        assert mock_llm.call_args_list[1].kwargs["model"] == "fallback-model"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_records_llm_token_usage_to_ledger(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response("ok", prompt_tokens=11, completion_tokens=7)
+        ledger = AsyncMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            ledger=ledger,
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        llm_records = [
+            call.kwargs
+            for call in ledger.record_execution.await_args_list
+            if call.kwargs.get("capability_name") == "llm_completion"
+        ]
+        assert llm_records
+        assert llm_records[0]["llm_tokens_input"] == 11
+        assert llm_records[0]["llm_tokens_output"] == 7
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_non_finite_llm_timeout_config_falls_back_to_default(
         self, mock_llm, tmp_path
     ) -> None:
@@ -1064,3 +1153,122 @@ class TestAgentRuntimeRun:
         assert result["reason"] == "heartbeat_no_events"
         mock_check_events.assert_called_once()
         mock_llm.assert_not_called()
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_run_creates_langfuse_trace_when_enabled(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        client = _FakeLangfuseClient()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"langfuse": {"enabled": True, "client": client}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert len(client.traces) == 1
+        assert any(update.get("status") == "success" for update in client.traces[0].updates)
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_execution_emits_langfuse_span(self, mock_llm, tmp_path) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        mock_llm.side_effect = [_make_llm_response(tool_calls=[tc]), _make_llm_response("ok")]
+        client = _FakeLangfuseClient()
+
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [{"name": "market_scan", "description": "scan"}]
+        registry.invoke_handler = AsyncMock(return_value={"price": 1})
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+            config={"langfuse": {"enabled": True, "client": client}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert len(client.traces) == 1
+        assert len(client.traces[0].spans) == 1
+        assert any(update.get("status") == "success" for update in client.traces[0].spans[0].updates)
+
+    async def test_setup_calls_error_notifier_on_failure(self, tmp_path) -> None:
+        notified: list[dict[str, object]] = []
+
+        async def _notifier(payload: dict[str, object]) -> None:
+            notified.append(payload)
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=str(tmp_path),
+            config={"error_notifier": _notifier},
+        )
+        with pytest.raises(FileNotFoundError):
+            await rt.setup()
+        assert notified
+        assert notified[0]["stage"] == "setup"
+        assert notified[0]["category"] == "initialization_error"
+
+    def test_classify_error_returns_expected_categories(self, tmp_path) -> None:
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        assert rt._classify_error(FileNotFoundError("x")) == "initialization_error"
+        assert rt._classify_error(asyncio.TimeoutError()) == "timeout_error"
+        assert rt._classify_error(ValueError("x")) == "validation_error"
+        assert rt._classify_error(ConnectionError("x")) == "dependency_error"
+
+    async def test_load_config_rejects_path_outside_app_dir(self, tmp_path) -> None:
+        app_dir = tmp_path / "app"
+        app_dir.mkdir()
+        _make_app_dir(app_dir)
+        outside = tmp_path / "runtime.yaml"
+        outside.write_text("runtime:\n  model: gpt-4o-mini\n", encoding="utf-8")
+        rt = AgentRuntime(agent_id="bot", app_dir=str(app_dir))
+        with pytest.raises(ValueError, match="within app_dir"):
+            rt.load_config_file(str(outside))
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_permission_denied_blocks_execution(self, mock_llm, tmp_path) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        mock_llm.side_effect = [_make_llm_response(tool_calls=[tc]), _make_llm_response("done")]
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [{"name": "market_scan", "description": "scan"}]
+        registry.invoke_handler = AsyncMock(return_value={"ok": True})
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+            config={"security": {"allow_tools": ["other_tool"]}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        registry.invoke_handler.assert_not_called()
+        events = rt._security_audit.list_events()
+        assert any(e.event_type == "tool_permission_denied" for e in events)
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_rate_limit_blocks_excess_calls(self, mock_llm, tmp_path) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        mock_llm.side_effect = [
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response("done"),
+        ]
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [{"name": "market_scan", "description": "scan"}]
+        registry.invoke_handler = AsyncMock(return_value={"ok": True})
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+            config={"security": {"max_tool_calls_per_minute": 1}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert registry.invoke_handler.await_count == 1
+        events = rt._security_audit.list_events()
+        assert any(e.event_type == "tool_rate_limited" for e in events)

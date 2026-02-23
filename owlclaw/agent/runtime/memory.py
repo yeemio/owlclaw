@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -21,6 +22,9 @@ class _LongTermEntry:
     tags: list[str]
     embedding: list[float]
     created_at: datetime
+
+
+logger = logging.getLogger(__name__)
 
 
 class MemorySystem:
@@ -44,6 +48,7 @@ class MemorySystem:
         self.memory_file = Path(memory_file) if memory_file else None
         self.vector_index = vector_index
         self.embedder = embedder
+        self.vector_index_degraded = False
         self._short_term_entries: list[_ShortTermEntry] = []
         self._long_term_entries: list[_LongTermEntry] = []
 
@@ -243,7 +248,11 @@ class MemorySystem:
             "created_at": entry.created_at.isoformat(),
             "embedding": entry.embedding,
         }
-        if hasattr(self.vector_index, "upsert"):
-            self.vector_index.upsert(payload)
-        elif hasattr(self.vector_index, "add"):
-            self.vector_index.add(payload)
+        try:
+            if hasattr(self.vector_index, "upsert"):
+                self.vector_index.upsert(payload)
+            elif hasattr(self.vector_index, "add"):
+                self.vector_index.add(payload)
+        except Exception as exc:
+            self.vector_index_degraded = True
+            logger.warning("Vector index degraded, falling back to MEMORY.md only: %s", exc)
