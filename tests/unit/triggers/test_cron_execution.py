@@ -420,6 +420,31 @@ class TestExecuteFallback:
         assert called == [True]
         assert execution.status == ExecutionStatus.FALLBACK
 
+    async def test_async_callable_object_fallback_called(self) -> None:
+        import uuid
+        from datetime import datetime, timezone
+
+        class AsyncCallableFallback:
+            def __init__(self) -> None:
+                self.called = False
+
+            async def __call__(self) -> None:
+                self.called = True
+
+        fallback = AsyncCallableFallback()
+        reg = _registry()
+        cfg = _config(fallback_handler=fallback)
+        execution = CronExecution(
+            execution_id=str(uuid.uuid4()),
+            event_name="test_job",
+            triggered_at=datetime.now(timezone.utc),
+            status=ExecutionStatus.RUNNING,
+            context={},
+        )
+        await reg._execute_fallback(cfg, execution)
+        assert fallback.called is True
+        assert execution.status == ExecutionStatus.FALLBACK
+
     async def test_no_fallback_handler_skips(self) -> None:
         import uuid
         from datetime import datetime, timezone

@@ -764,10 +764,9 @@ class CronTriggerRegistry:
             return
 
         execution.decision_mode = "fallback"
-        if inspect.iscoroutinefunction(config.fallback_handler):
-            await config.fallback_handler()
-        else:
-            config.fallback_handler()
+        result = config.fallback_handler()
+        if inspect.isawaitable(result):
+            await result
         execution.status = ExecutionStatus.FALLBACK
 
     # ------------------------------------------------------------------
