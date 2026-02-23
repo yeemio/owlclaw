@@ -93,6 +93,11 @@ class TestBuiltInToolsInitValidation:
         with pytest.raises(ValueError, match="scheduled_run_task_name must be a non-empty string"):
             BuiltInTools(scheduled_run_task_name=task_name)  # type: ignore[arg-type]
 
+    @pytest.mark.parametrize("max_calls", [0, -1, True, 1.2, "bad"])
+    def test_init_rejects_invalid_max_calls_per_run(self, max_calls) -> None:
+        with pytest.raises(ValueError, match="max_calls_per_run must be a positive integer"):
+            BuiltInTools(max_calls_per_run=max_calls)  # type: ignore[arg-type]
+
 
 class TestQueryState:
     @pytest.mark.asyncio
@@ -504,6 +509,54 @@ class TestExecuteUnknownTool:
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
         result = await tools.execute(" query_state ", {"state_name": "x"}, ctx)
         assert result == {"state": {"ok": True}}
+
+    @pytest.mark.asyncio
+    async def test_execute_enforces_max_calls_per_run(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.return_value = {"ok": True}
+        ledger = AsyncMock()
+        tools = BuiltInTools(capability_registry=reg, ledger=ledger, max_calls_per_run=1)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        first = await tools.execute("query_state", {"state_name": "x"}, ctx)
+        second = await tools.execute("query_state", {"state_name": "x"}, ctx)
+
+        assert first == {"state": {"ok": True}}
+        assert "error" in second
+        assert "max_calls_per_run=1" in second["error"]
+
+    @pytest.mark.asyncio
+    async def test_execute_limit_is_concurrency_safe(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.return_value = {"ok": True}
+        tools = BuiltInTools(capability_registry=reg, max_calls_per_run=1)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        results = await asyncio.gather(
+            tools.execute("query_state", {"state_name": "x"}, ctx),
+            tools.execute("query_state", {"state_name": "x"}, ctx),
+        )
+
+        success_count = sum(1 for item in results if "state" in item)
+        error_count = sum(1 for item in results if "error" in item)
+        assert success_count == 1
+        assert error_count == 1
+
+    @pytest.mark.asyncio
+    async def test_reset_run_call_budget_allows_new_calls(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.return_value = {"ok": True}
+        tools = BuiltInTools(capability_registry=reg, max_calls_per_run=1)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        first = await tools.execute("query_state", {"state_name": "x"}, ctx)
+        blocked = await tools.execute("query_state", {"state_name": "x"}, ctx)
+        tools.reset_run_call_budget("r1")
+        after_reset = await tools.execute("query_state", {"state_name": "x"}, ctx)
+
+        assert "state" in first
+        assert "error" in blocked
+        assert "state" in after_reset
 
 
 class TestMemoryTools:

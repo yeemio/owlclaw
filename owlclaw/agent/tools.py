@@ -250,6 +250,7 @@ class BuiltInTools:
         memory_system: Any | None = None,
         scheduled_run_task_name: str = _SCHEDULED_RUN_TASK,
         timeout_seconds: float = 30,
+        max_calls_per_run: int = 50,
     ) -> None:
         self._registry = capability_registry
         self._ledger = ledger
@@ -265,6 +266,11 @@ class BuiltInTools:
         if not math.isfinite(timeout_val) or timeout_val <= 0:
             raise ValueError("timeout_seconds must be a positive finite number")
         self._timeout = timeout_val
+        if isinstance(max_calls_per_run, bool) or not isinstance(max_calls_per_run, int) or max_calls_per_run < 1:
+            raise ValueError("max_calls_per_run must be a positive integer")
+        self._max_calls_per_run = max_calls_per_run
+        self._run_call_counts: dict[str, int] = {}
+        self._run_call_locks: dict[str, asyncio.Lock] = {}
 
     def get_tool_schemas(self) -> list[dict[str, Any]]:
         """Return OpenAI-style function schemas for all built-in tools."""
@@ -313,6 +319,15 @@ class BuiltInTools:
         normalized_tool_name = tool_name.strip() if isinstance(tool_name, str) else ""
         if normalized_tool_name not in _BUILTIN_TOOL_NAMES:
             raise ValueError(f"Unknown built-in tool: {tool_name}")
+
+        call_limit_error = await self._consume_run_call_budget(
+            run_id=context.run_id,
+            tool_name=normalized_tool_name,
+            context=context,
+        )
+        if call_limit_error is not None:
+            return {"error": call_limit_error}
+
         if not isinstance(arguments, dict):
             error = (
                 f"Invalid arguments for built-in tool '{normalized_tool_name}': "
@@ -346,6 +361,40 @@ class BuiltInTools:
         if normalized_tool_name == "recall":
             return await self._recall(arguments, context)
         raise ValueError(f"Unknown built-in tool: {normalized_tool_name}")
+
+    def reset_run_call_budget(self, run_id: str) -> None:
+        """Clear call counters for a completed Agent run."""
+        normalized_run_id = self._non_empty_str(run_id)
+        if normalized_run_id is None:
+            raise ValueError("run_id must be a non-empty string")
+        self._run_call_counts.pop(normalized_run_id, None)
+        self._run_call_locks.pop(normalized_run_id, None)
+
+    async def _consume_run_call_budget(
+        self,
+        *,
+        run_id: str,
+        tool_name: str,
+        context: BuiltInToolsContext,
+    ) -> str | None:
+        lock = self._run_call_locks.setdefault(run_id, asyncio.Lock())
+        async with lock:
+            current_count = self._run_call_counts.get(run_id, 0)
+            next_count = current_count + 1
+            if next_count > self._max_calls_per_run:
+                error = (
+                    f"Tool call limit exceeded for run '{run_id}': "
+                    f"max_calls_per_run={self._max_calls_per_run}"
+                )
+                await self._record_validation_failure(
+                    tool_name=tool_name,
+                    context=context,
+                    input_params={"run_id": run_id, "max_calls_per_run": self._max_calls_per_run},
+                    error_message=error,
+                )
+                return error
+            self._run_call_counts[run_id] = next_count
+        return None
 
     @staticmethod
     def _normalize_tags(raw_tags: Any) -> list[str] | None:
