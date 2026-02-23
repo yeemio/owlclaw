@@ -186,7 +186,15 @@ class SkillsLoader:
     """
 
     def __init__(self, base_path: Path | str):
-        self.base_path = Path(base_path)
+        if isinstance(base_path, str):
+            normalized = base_path.strip()
+            if not normalized:
+                raise ValueError("base_path must be a non-empty path")
+            self.base_path = Path(normalized)
+        elif isinstance(base_path, Path):
+            self.base_path = base_path
+        else:
+            raise ValueError("base_path must be a non-empty path")
         self.skills: dict[str, Skill] = {}
 
     def scan(self) -> list[Skill]:

@@ -1,6 +1,8 @@
 """Unit tests for Skills Loader (SKILL.md discovery and parsing)."""
 
 
+import pytest
+
 from owlclaw.capabilities.skills import SkillsLoader
 
 
@@ -36,6 +38,13 @@ def test_skills_loader_scan_on_missing_base_path_returns_empty(tmp_path):
     missing = tmp_path / "does-not-exist"
     loader = SkillsLoader(missing)
     assert loader.scan() == []
+
+
+def test_skills_loader_rejects_invalid_base_path():
+    with pytest.raises(ValueError, match="base_path must be a non-empty path"):
+        SkillsLoader("   ")
+    with pytest.raises(ValueError, match="base_path must be a non-empty path"):
+        SkillsLoader(None)  # type: ignore[arg-type]
 
 
 def test_skills_loader_get_skill(tmp_path):
