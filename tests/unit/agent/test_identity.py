@@ -34,6 +34,10 @@ def soul_only_dir(tmp_path):
 
 
 class TestIdentityLoader:
+    def test_init_rejects_blank_app_dir(self) -> None:
+        with pytest.raises(ValueError, match="app_dir must be a non-empty string"):
+            IdentityLoader(" ")
+
     async def test_load_success(self, app_dir) -> None:
         loader = IdentityLoader(str(app_dir))
         await loader.load()
@@ -112,3 +116,15 @@ class TestIdentityLoader:
         await loader.load()
         summary = loader.get_identity()["capabilities_summary"]
         assert summary == "- A"
+
+    async def test_load_handles_utf8_bom(self, tmp_path) -> None:
+        (tmp_path / "SOUL.md").write_text("\ufeffYou are assistant.", encoding="utf-8")
+        (tmp_path / "IDENTITY.md").write_text(
+            "\ufeff## My Capabilities\n- A\n",
+            encoding="utf-8",
+        )
+        loader = IdentityLoader(str(tmp_path))
+        await loader.load()
+        identity = loader.get_identity()
+        assert identity["soul"].startswith("You are assistant.")
+        assert identity["capabilities_summary"] == "- A"

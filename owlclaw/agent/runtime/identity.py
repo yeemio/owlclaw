@@ -27,7 +27,9 @@ class IdentityLoader:
     """
 
     def __init__(self, app_dir: str) -> None:
-        self.app_dir = Path(app_dir)
+        if not isinstance(app_dir, str) or not app_dir.strip():
+            raise ValueError("app_dir must be a non-empty string")
+        self.app_dir = Path(app_dir.strip())
         self.soul_path = self.app_dir / "SOUL.md"
         self.identity_path = self.app_dir / "IDENTITY.md"
 
@@ -56,11 +58,11 @@ class IdentityLoader:
                 "Create an IDENTITY.md in your application directory to "
                 "define capabilities and constraints."
             )
-        self._soul = self.soul_path.read_text(encoding="utf-8")
+        self._soul = self.soul_path.read_text(encoding="utf-8").lstrip("\ufeff")
         if not self._soul.strip():
             raise ValueError("SOUL.md must not be empty")
         logger.debug("Loaded SOUL.md from %s", self.soul_path)
-        self._identity = self.identity_path.read_text(encoding="utf-8")
+        self._identity = self.identity_path.read_text(encoding="utf-8").lstrip("\ufeff")
         if not self._identity.strip():
             raise ValueError("IDENTITY.md must not be empty")
         logger.debug("Loaded IDENTITY.md from %s", self.identity_path)
