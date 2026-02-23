@@ -185,15 +185,16 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| security | 32/44 | `owlclaw/security/**`, `tests/unit/security/**` |
-| integrations-llm | 128/128 | `owlclaw/integrations/llm/**`, `tests/unit/integrations/llm/**` |
-| configuration | 3/12 | `owlclaw/config/**`, `tests/unit/test_config*.py` |
+| governance | 130/173 | `owlclaw/governance/**`, `tests/unit/governance/**` |
+
+**前置条件**：security 已完成（44/44），configuration 已完成（12/12），governance 可正式推进。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
 - `owlclaw/db/**`
 - `owlclaw/cli/db*.py`
 - `migrations/`
+- `owlclaw/agent/runtime/**`
 
 ---
 
@@ -221,6 +222,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|------|------|
 | 2026-02-23 | 初始分配 | 建立 4 worktree 并行架构 |
 | 2026-02-23 | codex-work：database-core/cli-db → agent-runtime | database-core/cli-db 已完成并通过审校合并到 main |
+| 2026-02-23 | codex-gpt-work：security/configuration → governance | security(44/44) + configuration(12/12) 已完成，governance 进度最高(130/173)且 security 完成可解锁协调需求 |
 
 ---
 
@@ -230,7 +232,6 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 1 剩余**（优先）：
 - agent-tools (46/139)
-- governance (130/173)
 - triggers-cron (39/92)
 - integrations-hatchet (138/147)
 - capabilities-skills (107/108)
