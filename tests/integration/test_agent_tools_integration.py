@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -82,6 +83,11 @@ class _MemoryServiceAdapter:
             }
             for item in results
         ]
+
+
+class _FailingStore(InMemoryStore):
+    async def save(self, entry):  # type: ignore[override]
+        raise RuntimeError("forced save failure")
 
 
 def _tool_call(name: str, arguments: dict[str, object]) -> object:
@@ -197,3 +203,82 @@ async def test_memory_service_adapter_contract_with_builtin_tools() -> None:
     assert remember_result["memory_id"]
     assert recall_result["count"] >= 1
     assert any("lesson about retries" in item["content"] for item in recall_result["memories"])
+
+
+@pytest.mark.asyncio
+async def test_remember_writes_memory_md_when_store_fallback_enabled(tmp_path) -> None:
+    memory_file = tmp_path / "MEMORY.md"
+    service = MemoryService(
+        store=_FailingStore(),
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(
+            vector_backend="inmemory",
+            embedding_dimensions=8,
+            enable_file_fallback=True,
+            file_fallback_path=str(memory_file),
+        ),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    result = await tools.execute("remember", {"content": "memory fallback lesson", "tags": ["ops"]}, ctx)
+
+    assert result["memory_id"]
+    assert memory_file.exists()
+    content = memory_file.read_text(encoding="utf-8")
+    assert "memory fallback lesson" in content
+
+
+@pytest.mark.asyncio
+async def test_recall_uses_vector_search_results_from_memory_service() -> None:
+    store = InMemoryStore()
+    service = MemoryService(
+        store=store,
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(vector_backend="inmemory", embedding_dimensions=8),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    await tools.execute("remember", {"content": "entry timing lesson", "tags": ["trading"]}, ctx)
+    await tools.execute("remember", {"content": "portfolio rebalance checklist", "tags": ["ops"]}, ctx)
+    result = await tools.execute("recall", {"query": "entry timing", "limit": 5, "tags": ["trading"]}, ctx)
+
+    assert result["count"] >= 1
+    assert any("entry timing lesson" in item["content"] for item in result["memories"])
+
+
+@pytest.mark.asyncio
+async def test_recall_applies_time_decay_prefer_recent_memories() -> None:
+    store = InMemoryStore(time_decay_half_life_hours=1.0)
+    service = MemoryService(
+        store=store,
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(
+            vector_backend="inmemory",
+            embedding_dimensions=8,
+            time_decay_half_life_hours=1.0,
+        ),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    first = await tools.execute("remember", {"content": "volatility lesson", "tags": ["trading"]}, ctx)
+    second = await tools.execute("remember", {"content": "volatility lesson", "tags": ["trading"]}, ctx)
+    old_id = first["memory_id"]
+    new_id = second["memory_id"]
+
+    # Force the first entry to become stale so decay lowers its score.
+    for entry in store._store.values():  # noqa: SLF001
+        entry_id = str(entry.id)
+        if entry_id == old_id:
+            entry.created_at = entry.created_at - timedelta(hours=48)
+            break
+
+    recalled = await tools.execute("recall", {"query": "volatility", "limit": 2, "tags": ["trading"]}, ctx)
+    assert recalled["count"] >= 1
+    top_memory_id = recalled["memories"][0]["memory_id"]
+    assert top_memory_id == new_id

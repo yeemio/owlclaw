@@ -93,7 +93,7 @@
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（108/139） | 内建工具 |
+| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（111/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（96/117） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | codex-gpt-work 循环（agent-tools 安全审查落地） |
-| 批次状态 | **完成**。内建工具新增安全控制与审计能力，覆盖内容净化、状态名限制、调度频率限制、可选归属校验。 |
-| 已完成项 | `owlclaw/agent/tools.py` 新增 `InputSanitizer` 与 `SecurityAuditLog` 接入、`max_schedule_calls_per_run`、`enforce_schedule_ownership`、`list_security_events()`、state_name 白名单校验；`tests/unit/agent/test_tools.py` 新增对应安全测试；`agent-tools/tasks.md` 勾选 11.1~11.6。 |
-| 下一待执行 | 推进 `agent-tools` 未完成项：7.1.4、7.2.*、8.*、9.*。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py -q` 通过（86 passed）；`poetry run pytest tests/integration/test_agent_tools_integration.py -q` 通过（5 passed）；`poetry run ruff check owlclaw/agent/tools.py tests/unit/agent/test_tools.py` 通过。 |
+| 当前批次 | codex-gpt-work 循环（agent-tools memory 集成补齐） |
+| 批次状态 | **完成**。补齐 memory 侧集成测试：MEMORY.md fallback 写入、向量检索与时间衰减验证。 |
+| 已完成项 | `tests/integration/test_agent_tools_integration.py` 新增 3 个记忆集成场景：`remember` 失败回退写入 `MEMORY.md`、`recall` 向量检索命中、时间衰减优先返回新记忆；`agent-tools/tasks.md` 勾选 7.2.1~7.2.3。 |
+| 下一待执行 | 推进 `agent-tools` 未完成项：7.1.4、8.*、9.*。 |
+| 验收快照 | `poetry run pytest tests/integration/test_agent_tools_integration.py -q` 通过（8 passed）；`poetry run ruff check tests/integration/test_agent_tools_integration.py` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -117,9 +117,9 @@
   - [x] 7.1.3 测试 cancel_schedule 调用 Hatchet cancel_task
   - [ ] 7.1.4 测试 Hatchet 任务执行后触发 Agent Run
 - [ ] 7.2 测试与 Memory System 集成
-  - [ ] 7.2.1 测试 remember 写入 MEMORY.md 和向量数据库
-  - [ ] 7.2.2 测试 recall 从向量数据库搜索
-  - [ ] 7.2.3 测试记忆的时间衰减
+  - [x] 7.2.1 测试 remember 写入 MEMORY.md 和向量数据库（覆盖 MEMORY.md fallback 写入）
+  - [x] 7.2.2 测试 recall 从向量数据库搜索（InMemoryStore 向量检索契约）
+  - [x] 7.2.3 测试记忆的时间衰减
 - [ ] 7.3 测试与 Capability Registry 集成
   - [x] 7.3.1 测试 query_state 调用注册的 state provider
   - [x] 7.3.2 测试 state provider 异步执行
