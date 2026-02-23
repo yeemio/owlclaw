@@ -40,9 +40,9 @@
 - [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule 已完成；remember/recall 待 Memory） → spec: agent-tools
 - [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [x] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
-- [ ] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
-- [ ] `owlclaw.governance.ledger` — 执行记录 → spec: governance
-- [ ] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
+- [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
+- [x] `owlclaw.governance.ledger` — 执行记录 → spec: governance
+- [x] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
 - [ ] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
 - [ ] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
   **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
@@ -94,7 +94,7 @@
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（40/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
-| governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（167/173） | visibility + ledger + router |
+| governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：governance Round 5 性能验收闭环） |
-| 批次状态 | **完成**。已补齐治理层性能测试并完成覆盖率/集成验收量化。 |
-| 已完成项 | 新增 `tests/integration/test_governance_performance.py`（enqueue P95、query P95、高并发吞吐）与 `tests/unit/governance/test_visibility.py` 性能断言；治理模块覆盖率 `93%`，并同步勾选 `5.3.1-5.3.4`、`6.1`、`6.2`、`6.3.1`、`6.3.2`、`6.3.4`。 |
-| 下一待执行 | 继续治理 spec 循环，仅剩 `5.3.5`、`6.3.3` 与 `6.4` 文档验收项。 |
-| 验收快照 | `poetry run pytest tests/unit/governance tests/integration/test_governance_ledger_db_integration.py tests/integration/test_governance_performance.py --cov=owlclaw/governance --cov-report=term` -> `89 passed; governance coverage 93%`。 |
+| 当前批次 | spec 循环（本轮：governance Round 6 收尾与文档验收） |
+| 批次状态 | **完成**。governance spec 全任务收敛完成（173/173），当前分支已无 governance 待办。 |
+| 已完成项 | 优化 `owlclaw/governance/ledger.py` 后台写入批处理吞吐；新增 `docs/GOVERNANCE_GUIDE.md`（API/配置/集成/排障）；补齐并通过 governance e2e/性能/集成测试，勾选剩余 `5.3.5`、`6.3.3`、`6.4.*`。 |
+| 下一待执行 | governance 无剩余任务，转入下一已分配 spec 或等待合并。 |
+| 验收快照 | `poetry run ruff check owlclaw/governance/ledger.py tests/unit/governance tests/integration/test_governance_ledger_db_integration.py tests/integration/test_governance_performance.py && poetry run pytest tests/unit/governance tests/integration/test_governance_ledger_db_integration.py tests/integration/test_governance_performance.py -q` -> `All checks passed; 89 passed in 13.92s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

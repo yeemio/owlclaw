@@ -272,6 +272,10 @@ class Ledger:
                     timeout=self._flush_interval,
                 )
                 batch.append(record)
+                # Drain immediately available queue items to improve throughput
+                # under burst traffic while keeping timeout-based flush behavior.
+                while len(batch) < self._batch_size and not self._write_queue.empty():
+                    batch.append(self._write_queue.get_nowait())
                 if len(batch) >= self._batch_size:
                     await self._flush_batch(batch)
                     batch = []
