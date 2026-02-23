@@ -18,12 +18,12 @@ import random
 import traceback as _traceback
 import uuid
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from croniter import croniter  # type: ignore[import-untyped]
 
@@ -223,13 +223,56 @@ class RetryStrategy:
 class CircuitBreaker:
     """In-memory circuit breaker state for trigger-level failure protection."""
 
-    def __init__(self, failure_threshold: float = 0.5, window_size: int = 10) -> None:
+    def __init__(
+        self,
+        failure_threshold: float = 0.5,
+        window_size: int = 10,
+        *,
+        state_store: Any | None = None,
+        store_prefix: str = "cron:circuit_breaker",
+    ) -> None:
         self.failure_threshold = max(0.0, min(float(failure_threshold), 1.0))
         self.window_size = max(1, int(window_size))
         self._open_events: set[str] = set()
+        self._state_store = state_store
+        self._store_prefix = store_prefix
+
+    def _store_key(self, event_name: str) -> str:
+        return f"{self._store_prefix}:{event_name}"
+
+    def _read_store(self, event_name: str) -> bool | None:
+        if self._state_store is None:
+            return None
+        getter = getattr(self._state_store, "get", None)
+        if not callable(getter):
+            return None
+        value = getter(self._store_key(event_name))
+        if value is None:
+            return False
+        return str(value).strip().lower() in {"1", "true", "open", "yes"}
+
+    def _write_store(self, event_name: str, opened: bool) -> None:
+        if self._state_store is None:
+            return
+        key = self._store_key(event_name)
+        if opened:
+            setter = getattr(self._state_store, "set", None)
+            if callable(setter):
+                setter(key, "1")
+                return
+        deleter = getattr(self._state_store, "delete", None)
+        if callable(deleter):
+            deleter(key)
+            return
+        setter = getattr(self._state_store, "set", None)
+        if callable(setter):
+            setter(key, "0")
 
     def check(self, event_name: str) -> tuple[bool, str]:
         """Return whether execution can proceed for the given event."""
+        stored = self._read_store(event_name)
+        if stored:
+            self._open_events.add(event_name)
         if event_name in self._open_events:
             return False, "Circuit breaker is open"
         return True, ""
@@ -254,10 +297,12 @@ class CircuitBreaker:
     def open(self, event_name: str) -> None:
         """Open the breaker for an event."""
         self._open_events.add(event_name)
+        self._write_store(event_name, True)
 
     def close(self, event_name: str) -> None:
         """Close the breaker for an event."""
         self._open_events.discard(event_name)
+        self._write_store(event_name, False)
 
     def is_open(self, event_name: str) -> bool:
         """Return whether breaker is open for an event."""
@@ -270,6 +315,9 @@ class CircuitBreaker:
 
 class ErrorNotifier:
     """Failure notification helper with low-noise sampling policy."""
+
+    def __init__(self, channels: dict[str, Callable[[str], Any]] | None = None) -> None:
+        self.channels = channels or {}
 
     @staticmethod
     def _should_notify(failure_count: int) -> bool:
@@ -286,7 +334,28 @@ class ErrorNotifier:
         """Emit a notification log for selected failure counts."""
         if not self._should_notify(failure_count):
             return
-        logger.warning(self._build_message(event_name, failure_count, error))
+        message = self._build_message(event_name, failure_count, error)
+        if not self.channels:
+            logger.warning(message)
+            return
+        for channel_name, channel in self.channels.items():
+            try:
+                result = channel(message)
+                if inspect.isawaitable(result):
+                    coroutine_result = cast(Coroutine[Any, Any, Any], result)
+                    try:
+                        loop = asyncio.get_running_loop()
+                    except RuntimeError:
+                        asyncio.run(coroutine_result)
+                    else:
+                        loop.create_task(coroutine_result)
+            except Exception as exc:
+                logger.exception(
+                    "Error notifier channel '%s' failed for event '%s': %s",
+                    channel_name,
+                    event_name,
+                    exc,
+                )
 
 
 class CronMetrics:

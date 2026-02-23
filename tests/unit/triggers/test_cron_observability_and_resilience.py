@@ -82,12 +82,52 @@ def test_circuit_breaker_state_transitions() -> None:
     assert breaker.is_open("job") is False
 
 
+def test_circuit_breaker_persistent_state_store() -> None:
+    class Store:
+        def __init__(self) -> None:
+            self.data: dict[str, str] = {}
+
+        def get(self, key: str) -> str | None:
+            return self.data.get(key)
+
+        def set(self, key: str, value: str) -> None:
+            self.data[key] = value
+
+        def delete(self, key: str) -> None:
+            self.data.pop(key, None)
+
+    store = Store()
+    breaker = CircuitBreaker(window_size=2, state_store=store)
+    breaker.open("job")
+    assert store.get("cron:circuit_breaker:job") == "1"
+    ok, _ = breaker.check("job")
+    assert ok is False
+    breaker.close("job")
+    assert store.get("cron:circuit_breaker:job") is None
+
+
 def test_error_notifier_sampling_policy() -> None:
     notifier = ErrorNotifier()
     assert notifier._should_notify(1) is True
     assert notifier._should_notify(2) is False
     assert notifier._should_notify(3) is True
     assert notifier._should_notify(5) is True
+
+
+def test_error_notifier_supports_multiple_channels() -> None:
+    channel_calls: list[str] = []
+
+    def email_channel(message: str) -> None:
+        channel_calls.append(f"email:{message}")
+
+    def slack_channel(message: str) -> None:
+        channel_calls.append(f"slack:{message}")
+
+    notifier = ErrorNotifier(channels={"email": email_channel, "slack": slack_channel})
+    notifier.notify_failure("job", 1, "boom")
+    assert len(channel_calls) == 2
+    assert channel_calls[0].startswith("email:")
+    assert channel_calls[1].startswith("slack:")
 
 
 def test_cron_metrics_records_execution_in_fallback_store() -> None:

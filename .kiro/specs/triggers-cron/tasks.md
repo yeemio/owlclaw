@@ -180,7 +180,7 @@
     - [x] 测试有无 focus 的 prompt 构建
     - _需求: FR-5_
 
-- [ ] 7. 实现治理集成
+- [x] 7. 实现治理集成
   - [x] 7.1 创建 CronGovernance 类
     - 使用 GovernanceManager 和 Ledger 依赖实现 `__init__`
     - 设置约束检查基础设施
@@ -203,7 +203,7 @@
     - 使用结构化数据格式
     - _需求: FR-7_
   
-  - [ ] 7.4 实现熔断器逻辑
+  - [x] 7.4 实现熔断器逻辑
     - 创建 `update_circuit_breaker` 方法
     - 获取最近 N 次执行（默认 10）
     - 计算失败率
@@ -319,7 +319,7 @@
     - 测试健康检查响应
     - _需求: NFR-5, NFR-6_
 
-- [ ] 11. 实现错误处理和重试逻辑
+- [x] 11. 实现错误处理和重试逻辑
   - [x] 11.1 创建 RetryStrategy 类
     - 实现 `should_retry` 静态方法
     - 检查错误类型（不重试 ValueError、TypeError）
@@ -334,7 +334,7 @@
     - 限制最大延迟
     - _需求: FR-8_
   
-  - [ ] 11.3 创建 CircuitBreaker 类
+  - [x] 11.3 创建 CircuitBreaker 类
     - 使用 failure_threshold 和 window_size 实现 `__init__`
     - 创建 `check` 方法评估熔断器状态
     - 创建 `open` 方法打开熔断器
@@ -342,7 +342,7 @@
     - 与 Redis/DB 集成以实现状态持久化
     - _需求: FR-6_
   
-  - [ ] 11.4 创建 ErrorNotifier 类
+  - [x] 11.4 创建 ErrorNotifier 类
     - 实现 `notify_failure` 方法
     - 创建 `_should_notify` 逻辑（在第 1、3、5 次失败时通知）
     - 创建通知内容的 `_build_message`
