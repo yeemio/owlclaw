@@ -212,6 +212,40 @@ class TestTaskManagement:
         with pytest.raises(KeyError, match="not found"):
             reg.resume_trigger("missing")
 
+    def test_pause_calls_hatchet_pause_task_when_supported(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.pause_task = MagicMock(return_value=None)
+        reg._hatchet_client = hatchet  # type: ignore[assignment]
+        reg.pause_trigger("job")
+        hatchet.pause_task.assert_called_once_with("cron_job")
+
+    def test_resume_calls_hatchet_resume_task_when_supported(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.resume_task = MagicMock(return_value=None)
+        reg._hatchet_client = hatchet  # type: ignore[assignment]
+        reg.resume_trigger("job")
+        hatchet.resume_task.assert_called_once_with("cron_job")
+
+    def test_pause_resume_record_management_actions_to_ledger(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        ledger = MagicMock()
+        ledger.record_execution = AsyncMock(return_value=None)
+        reg._ledger = ledger  # type: ignore[assignment]
+        reg.pause_trigger("job")
+        reg.resume_trigger("job")
+        assert ledger.record_execution.call_count == 2
+        first = ledger.record_execution.call_args_list[0].kwargs
+        second = ledger.record_execution.call_args_list[1].kwargs
+        assert first["task_type"] == "cron_management"
+        assert first["input_params"]["action"] == "pause"
+        assert second["task_type"] == "cron_management"
+        assert second["input_params"]["action"] == "resume"
+
     def test_get_trigger_status_returns_expected_fields(self) -> None:
         reg = self._registry()
         reg.register("daily", "0 9 * * *", focus="morning")

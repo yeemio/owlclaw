@@ -228,13 +228,13 @@
     - 测试 Ledger 记录
     - _需求: FR-6, FR-7_
 
-- [ ] 8. 实现任务管理操作
+- [x] 8. 实现任务管理操作
   - [x] 8.1 实现暂停/恢复功能
     - [x] 创建 `pause_trigger(event_name)` 方法
     - [x] 创建 `resume_trigger(event_name)` 方法
     - [x] 更新 config.enabled 标志
-    - [ ] 与 Hatchet API 集成以暂停/恢复 workflows（当前通过 config.enabled 在 _run_cron 中跳过）
-    - [ ] 将暂停/恢复操作记录到 Ledger
+    - [x] 与 Hatchet API 集成以暂停/恢复 workflows（支持 pause_task/resume_task）
+    - [x] 将暂停/恢复操作记录到 Ledger
     - _需求: FR-11_
   
 - [x] 8.2 实现手动触发功能
@@ -266,7 +266,7 @@
   - [x] 测试执行历史检索
   - _需求: FR-10, FR-11, FR-12_
 
-- [ ] 9. 检查点 - 确保治理和管理功能正常工作
+- [x] 9. 检查点 - 确保治理和管理功能正常工作
   - 验证治理约束得到执行
   - 验证暂停/恢复功能
   - 验证手动触发工作

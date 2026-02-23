@@ -11,6 +11,7 @@ Hatchet connection.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import logging
 import random
@@ -696,6 +697,20 @@ class CronTriggerRegistry:
         if config is None:
             raise KeyError(f"Cron trigger '{event_name}' not found")
         config.enabled = False
+        if self._hatchet_client is not None:
+            pause_fn = getattr(self._hatchet_client, "pause_task", None)
+            if callable(pause_fn):
+                result = pause_fn(f"cron_{event_name}")
+                if inspect.isawaitable(result):
+                    self._dispatch_async(result)
+        if self._ledger is not None:
+            self._dispatch_async(
+                self._record_management_action(
+                    event_name=event_name,
+                    action="pause",
+                    tenant_id=self._tenant_id,
+                )
+            )
         logger.info("Paused cron trigger: %s", event_name)
 
     def resume_trigger(self, event_name: str) -> None:
@@ -712,7 +727,63 @@ class CronTriggerRegistry:
         if config is None:
             raise KeyError(f"Cron trigger '{event_name}' not found")
         config.enabled = True
+        if self._hatchet_client is not None:
+            resume_fn = getattr(self._hatchet_client, "resume_task", None)
+            if callable(resume_fn):
+                result = resume_fn(f"cron_{event_name}")
+                if inspect.isawaitable(result):
+                    self._dispatch_async(result)
+        if self._ledger is not None:
+            self._dispatch_async(
+                self._record_management_action(
+                    event_name=event_name,
+                    action="resume",
+                    tenant_id=self._tenant_id,
+                )
+            )
         logger.info("Resumed cron trigger: %s", event_name)
+
+    @staticmethod
+    def _dispatch_async(awaitable: Any) -> None:
+        """Run awaitable in running loop or fallback to asyncio.run."""
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(awaitable)
+            return
+        loop.create_task(awaitable)
+
+    async def _record_management_action(
+        self,
+        *,
+        event_name: str,
+        action: str,
+        tenant_id: str,
+    ) -> None:
+        """Record pause/resume management action to Ledger."""
+        if self._ledger is None:
+            return
+        run_id = str(uuid.uuid4())
+        try:
+            await self._ledger.record_execution(
+                tenant_id=tenant_id,
+                agent_id=(self.app.name if self.app else "") or event_name,
+                run_id=run_id,
+                capability_name=event_name,
+                task_type="cron_management",
+                input_params={"action": action, "trigger_type": "management"},
+                output_result={"event_name": event_name, "action": action},
+                decision_reasoning=f"trigger_{action}",
+                execution_time_ms=0,
+                llm_model="",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="success",
+                error_message=None,
+            )
+        except Exception as exc:
+            logger.exception("Failed to record trigger action for '%s': %s", event_name, exc)
 
     async def trigger_now(
         self,
