@@ -313,6 +313,19 @@ def test_filter_by_task_type(tmp_path):
     assert reg.filter_by_task_type(None) == []  # type: ignore[arg-type]
 
 
+def test_filter_by_task_type_matches_trimmed_skill_task_type(tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "a" / "SKILL.md").write_text(
+        "---\nname: a\ndescription: Skill a\nowlclaw:\n  task_type: \"  t1  \"\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    reg = CapabilityRegistry(loader)
+    reg.register_handler("a", lambda: None)
+    assert reg.filter_by_task_type("t1") == ["a"]
+
+
 def test_capability_metadata_includes_focus_and_risk(tmp_path):
     """list/get metadata should expose v4.1 risk and focus extensions."""
     (tmp_path / "x").mkdir()

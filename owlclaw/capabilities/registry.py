@@ -308,7 +308,8 @@ class CapabilityRegistry:
 
         for skill_name in self.handlers:
             skill = self.skills_loader.get_skill(skill_name)
-            if skill and skill.task_type == normalized_task_type:
+            skill_task_type = getattr(skill, "task_type", None) if skill else None
+            if isinstance(skill_task_type, str) and skill_task_type.strip() == normalized_task_type:
                 matching.append(skill_name)
 
         return matching
