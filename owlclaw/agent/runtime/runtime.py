@@ -481,7 +481,9 @@ class AgentRuntime:
         invalid_arguments = False
         invalid_reason = ""
         try:
-            raw_args = function.arguments
+            raw_args = getattr(function, "arguments", None)
+            if raw_args is None:
+                raise AttributeError
             arguments: dict[str, Any] = (
                 json.loads(raw_args) if isinstance(raw_args, str) else raw_args
             )
@@ -768,6 +770,8 @@ class AgentRuntime:
         # Use governance VisibilityFilter for capabilities only (with task_type/constraints from registry)
         from owlclaw.governance.visibility import CapabilityView, RunContext
 
+        if self.registry is None:
+            return all_schemas
         cap_list = self.registry.list_capabilities()
         name_to_meta = {c["name"]: c for c in cap_list}
         cap_views = [

@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：agent-tools/governance/triggers-cron 存量静态收口） |
-| 批次状态 | **完成**。已修复 cron 注册与治理/工具模块的类型与风格缺口并通过回归。 |
-| 已完成项 | 修复 `owlclaw/triggers/cron.py`（`croniter` 类型、workflow 存储类型、`run_task_now` 返回值归一化）；修复 `owlclaw/agent/tools.py`、`owlclaw/governance/ledger.py`、`owlclaw/governance/constraints/budget.py` 的静态问题。 |
+| 当前批次 | review 循环（本轮：agent-runtime 存量类型收口） |
+| 批次状态 | **完成**。已修复 runtime/heartbeat 的静态类型缺口并通过回归。 |
+| 已完成项 | 修复 `owlclaw/agent/runtime/runtime.py` 的 tool call 参数空值路径与 registry 空指针类型问题；修复 `owlclaw/agent/runtime/heartbeat.py` 的 `UP038` 规则项。 |
 | 下一待执行 | 继续对进行中 spec 做存量审校（优先 `agent-runtime` Task 4+ 与 `governance` 剩余任务），并分批清理全仓历史 lint/type 债务。 |
-| 验收快照 | `poetry run mypy owlclaw/triggers/cron.py` -> `Success: no issues found in 1 source file`；`poetry run pytest tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py tests/unit/triggers/test_cron_decorator.py -q` -> `95 passed`；`poetry run mypy owlclaw/agent/tools.py owlclaw/governance/ledger.py owlclaw/governance/constraints/budget.py owlclaw/triggers/cron.py` -> `Success: no issues found in 4 source files`；`poetry run pytest tests/unit/agent/test_tools.py tests/unit/governance/test_ledger.py tests/unit/governance/test_constraints_budget.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py tests/unit/triggers/test_cron_decorator.py -q` -> `163 passed`。 |
+| 验收快照 | `poetry run mypy owlclaw/agent/runtime/runtime.py owlclaw/agent/runtime/heartbeat.py` -> `Success: no issues found in 2 source files`；`poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_heartbeat.py -q` -> `81 passed in 10.23s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

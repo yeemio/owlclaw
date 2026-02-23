@@ -59,7 +59,7 @@ class HeartbeatChecker:
         """Normalize event_sources config into a deduplicated string list."""
         if isinstance(raw_sources, str):
             items = [raw_sources]
-        elif isinstance(raw_sources, (list, tuple, set)):
+        elif isinstance(raw_sources, list | tuple | set):
             if len(raw_sources) == 0:
                 return []
             items = list(raw_sources)
