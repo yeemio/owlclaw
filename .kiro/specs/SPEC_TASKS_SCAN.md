@@ -90,7 +90,7 @@
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
-| database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（20/30） | SQLAlchemy Base、engine、session、异常、Alembic |
+| database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（21/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | 🟡 三层齐全，进行中（17/53） | `owlclaw db` init/migrate/status，已挂载到主入口 |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：cli-db Task 8） |
-| 批次状态 | **完成**。cli-db rollback 命令已实现并验收。 |
-| 已完成项 | cli-db Task 8.1/8.2/8.3：db_rollback.py（rollback_command、target/steps 互斥、确认/--yes、dry-run、Already at base、失败详情）；CLI 通过 _dispatch_db_rollback 调度。 |
-| 下一待执行 | cli-db Task 9（Checkpoint P1）或 Task 10（backup）或 database-core 可选任务。 |
-| 验收快照 | `tests/unit/test_cli_db.py` + `test_db.py` 23 passed；`owlclaw db rollback --help` / 无 URL 时 exit 2 验证通过。 |
+| 当前批次 | spec 循环（本轮：database-core Task 2.2） |
+| 批次状态 | **完成**。database-core 异常类单元测试已补齐并通过。 |
+| 已完成项 | Task 2.2：新增 `tests/unit/test_db_exceptions.py`，覆盖 `DatabaseConnectionError`、`AuthenticationError`、`PoolTimeoutError` 消息与敏感信息约束。 |
+| 下一待执行 | database-core 可选任务 3.2 / 3.3 / 3.4 / 4.4-4.7 / 6.2，继续避开被其他 AI 占用的 cli-db。 |
+| 验收快照 | `poetry run pytest tests/unit/test_db.py tests/unit/test_db_exceptions.py -q` → `10 passed`。 |
 | 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
