@@ -111,6 +111,17 @@ async def test_invoke_handler_success_async(registry):
 
 
 @pytest.mark.asyncio
+async def test_invoke_handler_async_callable_object(registry):
+    class AsyncCallableHandler:
+        async def __call__(self, session):
+            return {"async_obj": True, "session": session}
+
+    registry.register_handler("entry-monitor", AsyncCallableHandler())
+    result = await registry.invoke_handler("entry-monitor", session={"x": 1})
+    assert result == {"async_obj": True, "session": {"x": 1}}
+
+
+@pytest.mark.asyncio
 async def test_invoke_handler_not_found_raises(registry):
     """invoke_handler() for unregistered skill raises ValueError."""
     with pytest.raises(ValueError, match="No handler registered"):

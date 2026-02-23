@@ -137,10 +137,10 @@ class CapabilityRegistry:
 
         try:
             invoke_kwargs = self._prepare_handler_kwargs(handler, kwargs)
-            if inspect.iscoroutinefunction(handler):
-                return await handler(**invoke_kwargs)
-            else:
-                return handler(**invoke_kwargs)
+            result = handler(**invoke_kwargs)
+            if inspect.isawaitable(result):
+                return await result
+            return result
         except Exception as e:
             raise RuntimeError(
                 f"Handler '{skill_name}' failed: {e}"
