@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：7 轮节奏复审，确认已合并提交与回归状态） |
-| 批次状态 | **完成**。`codex-work`/`codex-gpt-work` 相对 `main` 的提交已被 `review-work` 吸收，无新增未审提交。 |
-| 已完成项 | 完成 7 轮复审：分支吸收校验、spec 进度一致性校验、路径漂移校验、红线扫描、回归测试。 |
-| 下一待执行 | 按 7 轮节奏继续 Review Loop；若出现新的编码提交，执行审校结论与合并把关。 |
-| 验收快照 | 使用 `D:\\AI\\owlclaw\\.venv\\Scripts\\python.exe` 执行 `pytest tests/unit/integrations/test_llm.py tests/unit/test_db_engine_properties.py -q`，结果 `44 passed`。 |
+| 当前批次 | review 循环（本轮：合并 codex-work 并继续审校 codex-gpt-work） |
+| 批次状态 | **进行中**。`codex-work` 变更已进入 review-work 合并流程；待继续完成 `codex-gpt-work` 审校与合并。 |
+| 已完成项 | 吸收并审校 `database-core`/`cli-db` 相关 spec 进度与测试补充（含 `test_db_session_properties.py`）。 |
+| 下一待执行 | 完成当前 merge commit 后，审校并合并 `codex-gpt-work`（configuration Task 1/2）。 |
+| 验收快照 | 本轮以 review 流程为主；合并后执行定向单测回归并更新结果。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
@@ -163,3 +163,4 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：清单中标注「验收备注」的项，若含当前 SKIP 的测试，在完成备注所指的后续工作后，须跑通该测试并更新文档（见「功能清单」中 integrations-hatchet 备注）
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
+
