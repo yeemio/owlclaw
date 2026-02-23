@@ -43,6 +43,25 @@ def _make_llm_response(content: str = "Done.", tool_calls: list[MagicMock] | Non
     return response
 
 
+class _FakeTrace:
+    def __init__(self) -> None:
+        self.updates: list[dict[str, object]] = []
+
+    def update(self, **kwargs: object) -> None:
+        self.updates.append(dict(kwargs))
+
+
+class _FakeLangfuseClient:
+    def __init__(self) -> None:
+        self.trace_calls = 0
+        self.last_trace: _FakeTrace | None = None
+
+    def trace(self, **_: object) -> _FakeTrace:
+        self.trace_calls += 1
+        self.last_trace = _FakeTrace()
+        return self.last_trace
+
+
 @pytest.mark.asyncio
 @given(raw=st.one_of(st.lists(st.text(min_size=0, max_size=8), max_size=5), st.text(min_size=0, max_size=30)))
 @settings(deadline=None)
@@ -192,3 +211,24 @@ async def test_property_run_timeout_control(run_timeout: float) -> None:
         result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
         assert result["status"] == "failed"
         assert "timed out" in result["error"]
+
+
+@pytest.mark.asyncio
+@given(trigger=st.text(min_size=1, max_size=20).filter(lambda s: s.strip() != ""))
+@settings(deadline=None)
+async def test_property_langfuse_trace_created(trigger: str) -> None:
+    """Property 19: when Langfuse is enabled, each run creates exactly one trace."""
+    with TemporaryDirectory() as tmp, patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion") as mock_llm:
+        mock_llm.return_value = _make_llm_response("ok")
+        client = _FakeLangfuseClient()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(Path(tmp)),
+            config={"langfuse": {"enabled": True, "client": client}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger=trigger.strip()))
+        assert result["status"] == "completed"
+        assert client.trace_calls == 1
+        assert client.last_trace is not None
+        assert any(update.get("status") == "success" for update in client.last_trace.updates)

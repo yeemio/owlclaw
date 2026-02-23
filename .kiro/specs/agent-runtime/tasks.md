@@ -230,17 +230,17 @@
     - **Property 16: Agent Run 超时控制**
     - **验证：需求 8.8, 8.9**
   
-  - [ ] 8.6 实现 Langfuse tracing 集成
+  - [x] 8.6 实现 Langfuse tracing 集成
     - 在 `run()` 方法中创建 trace
     - 在工具执行中创建 span
     - 记录错误和事件
     - _需求：11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7, 11.8, 11.9, 11.10_
   
-  - [ ]* 8.7 编写属性测试：Langfuse trace 创建
+  - [x]* 8.7 编写属性测试：Langfuse trace 创建
     - **Property 19: Langfuse trace 创建**
     - **验证：需求 11.2, 11.3, 11.4**
   
-  - [ ]* 8.8 编写 AgentRuntime 的单元测试
+  - [x]* 8.8 编写 AgentRuntime 的单元测试
     - 测试初始化和设置
     - 测试 system prompt 构建
     - 测试决策循环

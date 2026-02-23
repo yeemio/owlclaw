@@ -102,6 +102,41 @@ def _make_tool_call_raw(name: str, raw_arguments):
     return tc
 
 
+class _FakeLangfuseObservation:
+    def __init__(self) -> None:
+        self.updates: list[dict[str, object]] = []
+
+    def end(self, **kwargs: object) -> None:
+        self.updates.append(dict(kwargs))
+
+    def update(self, **kwargs: object) -> None:
+        self.updates.append(dict(kwargs))
+
+
+class _FakeLangfuseTrace:
+    def __init__(self) -> None:
+        self.updates: list[dict[str, object]] = []
+        self.spans: list[_FakeLangfuseObservation] = []
+
+    def update(self, **kwargs: object) -> None:
+        self.updates.append(dict(kwargs))
+
+    def span(self, **_: object) -> _FakeLangfuseObservation:
+        span = _FakeLangfuseObservation()
+        self.spans.append(span)
+        return span
+
+
+class _FakeLangfuseClient:
+    def __init__(self) -> None:
+        self.traces: list[_FakeLangfuseTrace] = []
+
+    def trace(self, **_: object) -> _FakeLangfuseTrace:
+        trace = _FakeLangfuseTrace()
+        self.traces.append(trace)
+        return trace
+
+
 # ---------------------------------------------------------------------------
 # AgentRunContext
 # ---------------------------------------------------------------------------
@@ -1064,3 +1099,42 @@ class TestAgentRuntimeRun:
         assert result["reason"] == "heartbeat_no_events"
         mock_check_events.assert_called_once()
         mock_llm.assert_not_called()
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_run_creates_langfuse_trace_when_enabled(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        client = _FakeLangfuseClient()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"langfuse": {"enabled": True, "client": client}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert len(client.traces) == 1
+        assert any(update.get("status") == "success" for update in client.traces[0].updates)
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_execution_emits_langfuse_span(self, mock_llm, tmp_path) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        mock_llm.side_effect = [_make_llm_response(tool_calls=[tc]), _make_llm_response("ok")]
+        client = _FakeLangfuseClient()
+
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [{"name": "market_scan", "description": "scan"}]
+        registry.invoke_handler = AsyncMock(return_value={"price": 1})
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+            config={"langfuse": {"enabled": True, "client": client}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert len(client.traces) == 1
+        assert len(client.traces[0].spans) == 1
+        assert any(update.get("status") == "success" for update in client.traces[0].spans[0].updates)

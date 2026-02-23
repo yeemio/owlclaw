@@ -15,9 +15,12 @@ This MVP implementation omits:
 from __future__ import annotations
 
 import asyncio
+import importlib
+import inspect
 import json
 import logging
 import math
+import os
 import time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
@@ -122,7 +125,114 @@ class AgentRuntime:
 
         self._identity_loader: IdentityLoader | None = None
         self._heartbeat_checker: HeartbeatChecker | None = None
+        self._langfuse_init_error: str | None = None
+        self._langfuse = self._init_langfuse_client()
         self.is_initialized = False
+
+    def _init_langfuse_client(self) -> Any | None:
+        """Initialize optional Langfuse client from runtime config."""
+        cfg = self.config.get("langfuse")
+        if not isinstance(cfg, dict):
+            return None
+        injected = cfg.get("client")
+        if injected is not None:
+            return injected
+        if not cfg.get("enabled", False):
+            return None
+
+        public_key = cfg.get("public_key") or os.environ.get("LANGFUSE_PUBLIC_KEY")
+        secret_key = cfg.get("secret_key") or os.environ.get("LANGFUSE_SECRET_KEY")
+        host = cfg.get("host", "https://cloud.langfuse.com")
+        if not public_key or not secret_key:
+            return None
+        try:
+            module = importlib.import_module("langfuse")
+            langfuse_cls = getattr(module, "Langfuse")
+            try:
+                return langfuse_cls(
+                    public_key=public_key,
+                    secret_key=secret_key,
+                    base_url=host,
+                )
+            except TypeError:
+                return langfuse_cls(
+                    public_key=public_key,
+                    secret_key=secret_key,
+                    host=host,
+                )
+        except Exception as exc:
+            self._langfuse_init_error = str(exc)
+            logger.warning("Langfuse init failed: %s", exc)
+            return None
+
+    def _create_trace(self, context: AgentRunContext) -> Any | None:
+        if self._langfuse is None:
+            return None
+        trace_fn = getattr(self._langfuse, "trace", None)
+        if not callable(trace_fn):
+            return None
+        try:
+            return trace_fn(
+                name="agent_run",
+                metadata={
+                    "agent_id": context.agent_id,
+                    "run_id": context.run_id,
+                    "trigger": context.trigger,
+                    "focus": context.focus,
+                    "tenant_id": context.tenant_id,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Langfuse trace create failed: %s", exc)
+            return None
+
+    @staticmethod
+    def _update_trace(trace: Any | None, **kwargs: Any) -> None:
+        if trace is None:
+            return
+        update_fn = getattr(trace, "update", None)
+        if callable(update_fn):
+            try:
+                update_fn(**kwargs)
+            except Exception:
+                logger.debug("Langfuse trace update failed", exc_info=True)
+
+    @staticmethod
+    def _observe_tool(trace: Any | None, name: str, payload: dict[str, Any]) -> Any | None:
+        if trace is None:
+            return None
+        span_fn = getattr(trace, "span", None)
+        if callable(span_fn):
+            try:
+                return span_fn(name=name, input=payload)
+            except Exception:
+                logger.debug("Langfuse span create failed", exc_info=True)
+        event_fn = getattr(trace, "event", None)
+        if callable(event_fn):
+            try:
+                return event_fn(name=name, input=payload)
+            except Exception:
+                logger.debug("Langfuse event create failed", exc_info=True)
+        return None
+
+    @staticmethod
+    def _finish_observation(observation: Any | None, **kwargs: Any) -> None:
+        if observation is None:
+            return
+        for method_name in ("end", "update"):
+            method = getattr(observation, method_name, None)
+            if callable(method):
+                try:
+                    method(**kwargs)
+                    return
+                except TypeError:
+                    try:
+                        method()
+                        return
+                    except Exception:
+                        logger.debug("Langfuse observation finish failed", exc_info=True)
+                except Exception:
+                    logger.debug("Langfuse observation finish failed", exc_info=True)
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -241,6 +351,8 @@ class AgentRuntime:
                     "reason": "heartbeat_no_events",
                 }
 
+        trace = self._create_trace(context)
+
         run_timeout_raw = self.config.get(
             "run_timeout_seconds", _DEFAULT_RUN_TIMEOUT_SECONDS
         )
@@ -256,8 +368,14 @@ class AgentRuntime:
         if not math.isfinite(run_timeout):
             run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
         try:
+            decision_loop_fn = self._decision_loop
+            decision_loop_params = inspect.signature(decision_loop_fn).parameters
+            if len(decision_loop_params) >= 2:
+                decision_loop_coro = decision_loop_fn(context, trace)
+            else:
+                decision_loop_coro = decision_loop_fn(context)
             result = await asyncio.wait_for(
-                self._decision_loop(context),
+                decision_loop_coro,
                 timeout=run_timeout,
             )
         except asyncio.TimeoutError:
@@ -266,6 +384,11 @@ class AgentRuntime:
                 context.agent_id,
                 context.run_id,
                 run_timeout,
+            )
+            self._update_trace(
+                trace,
+                status="error",
+                output=f"run timed out after {run_timeout:.1f}s",
             )
             return {
                 "status": "failed",
@@ -279,13 +402,14 @@ class AgentRuntime:
             context.run_id,
             result.get("iterations", 0),
         )
+        self._update_trace(trace, status="success", output=result)
         return {"status": "completed", "run_id": context.run_id, **result}
 
     # ------------------------------------------------------------------
     # Decision loop
     # ------------------------------------------------------------------
 
-    async def _decision_loop(self, context: AgentRunContext) -> dict[str, Any]:
+    async def _decision_loop(self, context: AgentRunContext, trace: Any | None = None) -> dict[str, Any]:
         """Core LLM function-calling loop.
 
         1. Build system prompt (identity + skills knowledge)
@@ -384,7 +508,7 @@ class AgentRuntime:
 
             # Execute each tool call and add results
             for idx, tc in enumerate(tool_calls):
-                tool_result = await self._execute_tool(tc, context)
+                tool_result = await self._execute_tool(tc, context, trace=trace)
                 tool_call_id = getattr(tc, "id", None) or f"tool_call_{iteration}_{idx}"
                 messages.append({
                     "role": "tool",
@@ -467,7 +591,7 @@ class AgentRuntime:
     # ------------------------------------------------------------------
 
     async def _execute_tool(
-        self, tool_call: Any, context: AgentRunContext
+        self, tool_call: Any, context: AgentRunContext, *, trace: Any | None = None
     ) -> Any:
         """Dispatch a single LLM tool call to the capability registry.
 
@@ -520,6 +644,11 @@ class AgentRuntime:
             return {"error": f"No capability registry configured for tool '{tool_name}'"}
 
         invoke_arguments = self._normalize_capability_arguments(arguments, context)
+        observation = self._observe_tool(
+            trace,
+            "tool_execution",
+            {"tool": tool_name, "run_id": context.run_id, "arguments": invoke_arguments},
+        )
         start_ns = time.perf_counter_ns()
         try:
             result = await self.registry.invoke_handler(tool_name, **invoke_arguments)
@@ -542,11 +671,17 @@ class AgentRuntime:
                     llm_tokens_input=0,
                     llm_tokens_output=0,
                     estimated_cost=Decimal("0"),
-                    status="success",
-                    error_message=None,
-                )
+                        status="success",
+                        error_message=None,
+                    )
+            self._finish_observation(
+                observation,
+                output=result if isinstance(result, dict) else {"result": result},
+                status="success",
+            )
             return result
         except ValueError:
+            self._finish_observation(observation, status="error", output={"error": "not registered"})
             return {"error": f"Capability '{tool_name}' is not registered"}
         except Exception as exc:
             logger.exception("Tool '%s' failed", tool_name)
@@ -575,6 +710,7 @@ class AgentRuntime:
                     )
                 except Exception as ledger_exc:
                     logger.exception("Ledger record_execution failed: %s", ledger_exc)
+            self._finish_observation(observation, status="error", output={"error": str(exc)})
             return {"error": str(exc)}
 
     def _normalize_capability_arguments(
