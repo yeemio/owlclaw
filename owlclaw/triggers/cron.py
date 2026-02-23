@@ -19,7 +19,7 @@ import uuid
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -757,8 +757,6 @@ class CronTriggerRegistry:
         limits); violations are recorded in governance_checks after the run.
         Without a Ledger, time-based constraints are skipped (fail-open).
         """
-        from owlclaw.governance.ledger import LedgerQueryFilters
-
         checks: dict[str, Any] = {}
         triggered_at = execution.triggered_at
         if triggered_at.tzinfo is None:
@@ -766,16 +764,12 @@ class CronTriggerRegistry:
         execution_day = triggered_at.astimezone(timezone.utc).date()
 
         if ledger is not None and config.cooldown_seconds > 0:
-            records = await ledger.query_records(
-                tenant_id,
-                LedgerQueryFilters(
-                    capability_name=config.event_name,
-                    order_by="created_at DESC",
-                    limit=1,
-                ),
+            last = await self._get_last_successful_execution(
+                ledger=ledger,
+                tenant_id=tenant_id,
+                event_name=config.event_name,
             )
-            if records:
-                last = records[0]
+            if last is not None:
                 last_dt = last.created_at
                 if last_dt.tzinfo is None:
                     last_dt = last_dt.replace(tzinfo=timezone.utc)
@@ -792,15 +786,12 @@ class CronTriggerRegistry:
             checks["cooldown"] = True
 
         if ledger is not None and config.max_daily_runs is not None:
-            records = await ledger.query_records(
-                tenant_id,
-                LedgerQueryFilters(
-                    capability_name=config.event_name,
-                    start_date=execution_day,
-                    end_date=execution_day,
-                ),
+            today_runs = await self._count_today_executions(
+                ledger=ledger,
+                tenant_id=tenant_id,
+                event_name=config.event_name,
+                day=execution_day,
             )
-            today_runs = len(records)
             if today_runs >= config.max_daily_runs:
                 checks["daily_runs"] = False
                 execution.governance_checks = checks
@@ -811,16 +802,11 @@ class CronTriggerRegistry:
             checks["daily_runs"] = True
 
         if ledger is not None and config.max_daily_cost is not None:
-            records = await ledger.query_records(
-                tenant_id,
-                LedgerQueryFilters(
-                    capability_name=config.event_name,
-                    start_date=execution_day,
-                    end_date=execution_day,
-                ),
-            )
-            today_cost = sum(
-                float(r.estimated_cost or 0) for r in records
+            today_cost = await self._sum_today_cost(
+                ledger=ledger,
+                tenant_id=tenant_id,
+                event_name=config.event_name,
+                day=execution_day,
             )
             if today_cost >= config.max_daily_cost:
                 checks["daily_cost"] = False
@@ -833,6 +819,93 @@ class CronTriggerRegistry:
 
         execution.governance_checks = checks
         return True, ""
+
+    async def _get_last_successful_execution(
+        self,
+        *,
+        ledger: Ledger,
+        tenant_id: str,
+        event_name: str,
+    ) -> Any | None:
+        """Return latest successful execution record for an event."""
+        from owlclaw.governance.ledger import LedgerQueryFilters
+
+        records = await ledger.query_records(
+            tenant_id,
+            LedgerQueryFilters(
+                capability_name=event_name,
+                order_by="created_at DESC",
+                limit=20,
+            ),
+        )
+        for record in records:
+            if str(getattr(record, "status", "")).strip().lower() in {"success", "fallback"}:
+                return record
+        return None
+
+    async def _count_today_executions(
+        self,
+        *,
+        ledger: Ledger,
+        tenant_id: str,
+        event_name: str,
+        day: date,
+    ) -> int:
+        """Count today's executions for a trigger."""
+        from owlclaw.governance.ledger import LedgerQueryFilters
+
+        records = await ledger.query_records(
+            tenant_id,
+            LedgerQueryFilters(
+                capability_name=event_name,
+                start_date=day,
+                end_date=day,
+            ),
+        )
+        return len(records)
+
+    async def _sum_today_cost(
+        self,
+        *,
+        ledger: Ledger,
+        tenant_id: str,
+        event_name: str,
+        day: date,
+    ) -> float:
+        """Sum today's estimated cost for a trigger."""
+        from owlclaw.governance.ledger import LedgerQueryFilters
+
+        records = await ledger.query_records(
+            tenant_id,
+            LedgerQueryFilters(
+                capability_name=event_name,
+                start_date=day,
+                end_date=day,
+            ),
+        )
+        return float(sum(float(getattr(record, "estimated_cost", 0) or 0) for record in records))
+
+    async def _get_recent_executions(
+        self,
+        *,
+        ledger: Ledger,
+        tenant_id: str,
+        event_name: str,
+        limit: int = 10,
+    ) -> list[Any]:
+        """Return recent execution records ordered by newest first."""
+        from owlclaw.governance.ledger import LedgerQueryFilters
+
+        safe_limit = max(1, min(int(limit), 100))
+        records = await ledger.query_records(
+            tenant_id,
+            LedgerQueryFilters(
+                capability_name=event_name,
+                order_by="created_at DESC",
+                limit=safe_limit,
+            ),
+        )
+        return list(records)
 
     # ------------------------------------------------------------------
     # Task 3.4 — Agent vs Fallback decision

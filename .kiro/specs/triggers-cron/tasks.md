@@ -212,12 +212,12 @@
     - 熔断器打开时发送告警
     - _需求: FR-6_
   
-  - [ ] 7.5 实现 Ledger 查询辅助方法
-    - 创建 `_get_last_successful_execution` 方法
-    - 创建 `_count_today_executions` 方法
-    - 创建 `_sum_today_cost` 方法
-    - 创建 `_get_recent_executions` 方法
-    - 正确处理时间范围和过滤
+  - [x] 7.5 实现 Ledger 查询辅助方法
+    - [x] 创建 `_get_last_successful_execution` 方法
+    - [x] 创建 `_count_today_executions` 方法
+    - [x] 创建 `_sum_today_cost` 方法
+    - [x] 创建 `_get_recent_executions` 方法
+    - [x] 正确处理时间范围和过滤
     - _需求: FR-7_
   
   - [ ]* 7.6 编写治理的单元测试

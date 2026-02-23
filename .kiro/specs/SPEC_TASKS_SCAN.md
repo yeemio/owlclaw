@@ -95,7 +95,7 @@
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（66/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（65/92） | cron 触发器 |
+| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（71/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
@@ -143,10 +143,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（triggers-cron Focus/Skills 集成补齐） |
-| 批次状态 | **完成**。已补齐 FocusManager 实现与单元测试，并完成 cron 管理能力的近期收口。 |
-| 已完成项 | `owlclaw/triggers/cron.py` 新增 `FocusManager`（`load_skills_for_focus`、`_skill_matches_focus`、`build_agent_prompt`）；`get_trigger_status()` 增加成功率/平均时长指标，`trigger_now()` 增加手动触发 Ledger 审计；新增 `tests/unit/triggers/test_focus_manager.py` 与 `tests/integration/test_triggers_cron_management_integration.py`，并补充 `tests/unit/triggers/test_cron_validation.py`。 |
-| 下一待执行 | 继续收口 `integrations-hatchet` 剩余 7.2.3/7.2.4/11.1.2（需真实 Hatchet 环境），并推进 `triggers-cron` 7/9/10/11/12/13/14/15/16。 |
+| 当前批次 | review 循环（triggers-cron Focus + Ledger 查询辅助方法补齐） |
+| 批次状态 | **完成**。已补齐 FocusManager 与治理层 Ledger 查询 helper。 |
+| 已完成项 | `owlclaw/triggers/cron.py` 新增 `FocusManager`（`load_skills_for_focus`、`_skill_matches_focus`、`build_agent_prompt`），并新增 `_get_last_successful_execution/_count_today_executions/_sum_today_cost/_get_recent_executions` 四个治理查询 helper，`_check_governance` 改为复用 helper；新增 `tests/unit/triggers/test_focus_manager.py`，并在 `tests/unit/triggers/test_cron_execution.py` 补充 helper 单测。 |
+| 下一待执行 | 继续收口 `integrations-hatchet` 剩余 7.2.3/7.2.4/11.1.2（需真实 Hatchet 环境），并推进 `triggers-cron` 7.1/7.2/7.3/7.4/7.6 与 9~16。 |
 | 验收快照 | `poetry run pytest tests/unit/triggers/test_focus_manager.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py tests/integration/test_triggers_cron_management_integration.py -q` 与对应 `ruff/mypy` 均通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
