@@ -53,6 +53,15 @@ class RecallResult:
     score: float = 0.0
 
 
+@dataclass
+class CompactionResult:
+    """Result summary of one memory compaction run."""
+
+    merged_groups: int = 0
+    archived_entries: int = 0
+    created_summaries: int = 0
+
+
 class MemoryConfig(BaseModel):
     """Pydantic model for owlclaw.yaml memory section."""
 
@@ -69,5 +78,12 @@ class MemoryConfig(BaseModel):
     retention_days: int = Field(default=365, gt=0)
     compaction_threshold: int = Field(default=50, gt=0)
     embedding_cache_size: int = Field(default=1000, ge=0)
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection_name: str = "owlclaw_memory"
+    tfidf_dimensions: int = Field(default=256, gt=0)
+    enable_tfidf_fallback: bool = True
+    enable_keyword_fallback: bool = True
+    enable_file_fallback: bool = True
+    file_fallback_path: str = "MEMORY.md"
 
     model_config = ConfigDict(extra="ignore")
