@@ -81,8 +81,12 @@ class AgentRuntime:
         model: str = _DEFAULT_MODEL,
         config: dict[str, Any] | None = None,
     ) -> None:
-        self.agent_id = agent_id
-        self.app_dir = app_dir
+        if not isinstance(agent_id, str) or not agent_id.strip():
+            raise ValueError("agent_id must be a non-empty string")
+        if not isinstance(app_dir, str) or not app_dir.strip():
+            raise ValueError("app_dir must be a non-empty string")
+        self.agent_id = agent_id.strip()
+        self.app_dir = app_dir.strip()
         self.registry = registry
         self.knowledge_injector = knowledge_injector
         self.visibility_filter = visibility_filter

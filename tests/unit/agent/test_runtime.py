@@ -126,6 +126,12 @@ class TestAgentRunContext:
 
 
 class TestAgentRuntimeLifecycle:
+    def test_init_rejects_blank_identity_fields(self, tmp_path) -> None:
+        with pytest.raises(ValueError, match="agent_id must be a non-empty string"):
+            AgentRuntime(agent_id=" ", app_dir=_make_app_dir(tmp_path))
+        with pytest.raises(ValueError, match="app_dir must be a non-empty string"):
+            AgentRuntime(agent_id="bot", app_dir=" ")
+
     async def test_run_before_setup_raises(self, tmp_path) -> None:
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
         ctx = AgentRunContext(agent_id="bot", trigger="cron")
