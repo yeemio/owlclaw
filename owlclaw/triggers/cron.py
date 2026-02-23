@@ -730,6 +730,8 @@ class CronTriggerRegistry:
             focus=config.focus,
             payload=execution.context,
         )
+        if not isinstance(result, dict):
+            raise RuntimeError("agent_runtime.trigger_event must return a dictionary")
         execution.agent_run_id = result.get("run_id")
         execution.llm_calls = result.get("tool_calls_total", 0)
         # Cost tracking requires Langfuse / litellm usage callback (future)

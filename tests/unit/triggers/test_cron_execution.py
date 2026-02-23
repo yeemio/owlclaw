@@ -5,6 +5,8 @@ from __future__ import annotations
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from owlclaw.triggers.cron import (
     CronExecution,
     CronTriggerConfig,
@@ -334,6 +336,24 @@ class TestExecuteAgent:
         await reg._execute_agent(cfg, execution, agent_rt)
         assert execution.agent_run_id == "agent-xyz"
         assert execution.llm_calls == 5
+
+    async def test_agent_result_must_be_dict(self) -> None:
+        import uuid
+        from datetime import datetime, timezone
+
+        reg = _registry()
+        cfg = _config()
+        agent_rt = MagicMock()
+        agent_rt.trigger_event = AsyncMock(return_value="bad")  # type: ignore[assignment]
+        execution = CronExecution(
+            execution_id=str(uuid.uuid4()),
+            event_name="test_job",
+            triggered_at=datetime.now(timezone.utc),
+            status=ExecutionStatus.RUNNING,
+            context={},
+        )
+        with pytest.raises(RuntimeError, match="must return a dictionary"):
+            await reg._execute_agent(cfg, execution, agent_rt)
 
 
 class TestExecuteFallback:
