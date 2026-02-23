@@ -115,22 +115,22 @@
     - 测试危险操作检测
     - _需求：4.1-4.6_
 
-- [ ] 8. 实现 rollback 命令（P1）
-  - [ ] 8.1 实现 db_rollback.py 核心逻辑
+- [x] 8. 实现 rollback 命令（P1）
+  - [x] 8.1 实现 db_rollback.py 核心逻辑
     - 实现 rollback_command 函数：接受参数（target、steps、database-url、dry-run、yes）
     - 验证参数：target 和 steps 不能同时使用
     - 计算目标版本：根据 target 或 steps
     - 获取将要回滚的迁移列表
     - _需求：5.1, 5.2, 5.3_
   
-  - [ ] 8.2 实现 rollback 命令的确认和执行
+  - [x] 8.2 实现 rollback 命令的确认和执行
     - 显示将要回滚的迁移列表
     - 询问用户确认（除非 --yes）
     - 调用 Alembic API：command.downgrade()
     - 显示成功回滚的 Revision 列表
     - _需求：5.1, 5.7_
   
-  - [ ] 8.3 实现 rollback 命令的边缘情况处理
+  - [x] 8.3 实现 rollback 命令的边缘情况处理
     - 处理已是最早版本场景：显示 "Already at base revision"
     - 处理回滚失败：显示失败的 Revision 和错误详情
     - 实现 dry-run 模式

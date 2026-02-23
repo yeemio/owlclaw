@@ -143,12 +143,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：database-core Task 9） |
-| 批次状态 | **完成**。database-core 最终检查点已执行。 |
-| 已完成项 | Task 9：执行 `tests/unit/test_db.py` + `tests/integration/test_db_core_integration.py`；单元测试通过，集成测试在无 Docker 权限环境下跳过。 |
-| 下一待执行 | database-core 可选属性测试任务（2.2/3.2/3.3/3.4/4.4-4.7/6.2）或切换到 cli-db Task 8（rollback）。 |
-| 验收快照 | `poetry run pytest tests/unit/test_db.py tests/integration/test_db_core_integration.py -q` → `7 passed, 4 skipped`。 |
-| 阻塞项 | Docker 守护进程权限受限（Windows named pipe 拒绝访问），导致容器型集成测试在本机跳过。 |
+| 当前批次 | spec 循环（本轮：cli-db Task 8） |
+| 批次状态 | **完成**。cli-db rollback 命令已实现并验收。 |
+| 已完成项 | cli-db Task 8.1/8.2/8.3：db_rollback.py（rollback_command、target/steps 互斥、确认/--yes、dry-run、Already at base、失败详情）；CLI 通过 _dispatch_db_rollback 调度。 |
+| 下一待执行 | cli-db Task 9（Checkpoint P1）或 Task 10（backup）或 database-core 可选任务。 |
+| 验收快照 | `tests/unit/test_cli_db.py` + `test_db.py` 23 passed；`owlclaw db rollback --help` / 无 URL 时 exit 2 验证通过。 |
+| 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

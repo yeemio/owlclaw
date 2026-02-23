@@ -227,13 +227,14 @@ def _print_help_and_exit(argv: list[str]) -> None:
         sys.exit(0)
     if argv == ["db"]:
         print("Usage: owlclaw db [OPTIONS] COMMAND [ARGS]...")
-        print("\n  Database operations: init, migrate, status, revision.\n")
+        print("\n  Database operations: init, migrate, status, revision, rollback.\n")
         print("Commands:")
         print("  init     Create owlclaw (and optionally hatchet) database, role, pgvector")
         print("  migrate  Run Alembic migrations (owlclaw schema)")
         print("  status   Show connection and migration status")
         print("  revision Create new migration script (--empty or autogenerate)")
-        print("\n  owlclaw db init --help | owlclaw db migrate --help | owlclaw db revision --help")
+        print("  rollback Roll back migrations (--target, --steps, or one step)")
+        print("\n  owlclaw db init --help | owlclaw db migrate --help | owlclaw db revision --help | owlclaw db rollback --help")
         sys.exit(0)
     if argv == ["db", "revision"]:
         print("Usage: owlclaw db revision [OPTIONS]")
@@ -242,6 +243,17 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  -m, --message TEXT    Revision message (required for autogenerate)")
         print("  --empty               Create empty migration template")
         print("  --database-url TEXT   Database URL (default: OWLCLAW_DATABASE_URL)")
+        print("  --help                Show this message and exit")
+        sys.exit(0)
+    if argv == ["db", "rollback"]:
+        print("Usage: owlclaw db rollback [OPTIONS]")
+        print("\n  Roll back database migrations (Alembic downgrade).\n")
+        print("Options:")
+        print("  -t, --target TEXT     Revision to downgrade to (e.g. base or revision id)")
+        print("  -s, --steps INTEGER  Number of revisions to downgrade (default: 1 if omitted)")
+        print("  --database-url TEXT  Database URL (default: OWLCLAW_DATABASE_URL)")
+        print("  --dry-run             Show what would be rolled back without executing")
+        print("  -y, --yes             Skip confirmation prompt")
         print("  --help                Show this message and exit")
         sys.exit(0)
     if argv == ["db", "init"]:
@@ -346,6 +358,30 @@ def _dispatch_db_revision(argv: list[str]) -> bool:
     return True
 
 
+def _dispatch_db_rollback(argv: list[str]) -> bool:
+    """Dispatch `owlclaw db rollback` via argparse (Typer optional-option compatibility)."""
+    if len(argv) < 2 or argv[0] != "db" or argv[1] != "rollback":
+        return False
+    if "--help" in argv or "-h" in argv:
+        _print_help_and_exit(["db", "rollback"])
+    parser = argparse.ArgumentParser(prog="owlclaw db rollback")
+    parser.add_argument("-t", "--target", default="", help="Revision to downgrade to")
+    parser.add_argument("-s", "--steps", type=int, default=0, help="Number of revisions to downgrade")
+    parser.add_argument("--database-url", dest="database_url", default="", help="Database URL")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be rolled back")
+    parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation")
+    ns = parser.parse_args(argv[2:])
+    from owlclaw.cli.db_rollback import rollback_command
+    rollback_command(
+        target=ns.target or "",
+        steps=ns.steps or 0,
+        database_url=ns.database_url or "",
+        dry_run=ns.dry_run,
+        yes=ns.yes,
+    )
+    return True
+
+
 def main() -> None:
     """CLI entry point — dispatches to subcommands."""
     if "--help" in sys.argv or "-h" in sys.argv:
@@ -353,6 +389,11 @@ def main() -> None:
         _print_help_and_exit(argv)
     try:
         if _dispatch_db_revision(sys.argv[1:]):
+            return
+    except SystemExit:
+        raise
+    try:
+        if _dispatch_db_rollback(sys.argv[1:]):
             return
     except SystemExit:
         raise
