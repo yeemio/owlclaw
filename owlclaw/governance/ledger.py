@@ -143,12 +143,26 @@ class Ledger:
         error_message: str | None = None,
     ) -> None:
         """Enqueue one execution record (non-blocking)."""
+        def _normalize_non_empty(value: Any, field_name: str) -> str:
+            if not isinstance(value, str):
+                raise ValueError(f"{field_name} must be a non-empty string")
+            normalized = value.strip()
+            if not normalized:
+                raise ValueError(f"{field_name} must be a non-empty string")
+            return normalized
+
+        normalized_tenant_id = _normalize_non_empty(tenant_id, "tenant_id")
+        normalized_agent_id = _normalize_non_empty(agent_id, "agent_id")
+        normalized_run_id = _normalize_non_empty(run_id, "run_id")
+        normalized_capability_name = _normalize_non_empty(capability_name, "capability_name")
+        normalized_task_type = _normalize_non_empty(task_type, "task_type")
+
         record = LedgerRecord(
-            tenant_id=tenant_id,
-            agent_id=agent_id,
-            run_id=run_id,
-            capability_name=capability_name,
-            task_type=task_type,
+            tenant_id=normalized_tenant_id,
+            agent_id=normalized_agent_id,
+            run_id=normalized_run_id,
+            capability_name=normalized_capability_name,
+            task_type=normalized_task_type,
             input_params=input_params,
             output_result=output_result,
             decision_reasoning=decision_reasoning,
