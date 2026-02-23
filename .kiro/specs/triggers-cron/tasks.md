@@ -181,12 +181,12 @@
     - _需求: FR-5_
 
 - [ ] 7. 实现治理集成
-  - [ ] 7.1 创建 CronGovernance 类
+  - [x] 7.1 创建 CronGovernance 类
     - 使用 GovernanceManager 和 Ledger 依赖实现 `__init__`
     - 设置约束检查基础设施
     - _需求: FR-6_
   
-  - [ ] 7.2 实现约束检查方法
+  - [x] 7.2 实现约束检查方法
     - 创建返回 (passed, reason) 的 `check_constraints` 方法
     - 通过 `_get_last_successful_execution` 实现冷却时间检查
     - 通过 `_count_today_executions` 实现每日运行次数检查
@@ -195,7 +195,7 @@
     - 使用结果更新 execution.governance_checks
     - _需求: FR-6_
   
-  - [ ] 7.3 实现 Ledger 记录
+  - [x] 7.3 实现 Ledger 记录
     - 创建 `record_execution` 方法
     - 将 event_type 记录为 "cron_execution"
     - 包含 execution_id、status、duration、cost、llm_calls
@@ -220,7 +220,7 @@
     - [x] 正确处理时间范围和过滤
     - _需求: FR-7_
   
-  - [ ]* 7.6 编写治理的单元测试
+  - [x]* 7.6 编写治理的单元测试
     - 测试冷却约束检查
     - 测试每日运行限制检查
     - 测试每日成本限制检查
@@ -274,7 +274,7 @@
   - 如有问题请询问用户
 
 - [ ] 10. 实现监控和可观测性
-  - [ ] 10.1 使用 Prometheus 指标创建 CronMetrics 类
+  - [x] 10.1 使用 Prometheus 指标创建 CronMetrics 类
     - 定义带标签的 executions_total Counter
     - 定义 execution_duration_seconds Histogram
     - 定义 trigger_delay_seconds Histogram
@@ -284,7 +284,7 @@
     - 定义 circuit_breaker_open Gauge
     - _需求: NFR-6_
   
-  - [ ] 10.2 实现指标记录方法
+  - [x] 10.2 实现指标记录方法
     - 创建 `record_execution` 类方法
     - 按状态和 decision_mode 记录执行次数
     - 记录执行时长
@@ -304,7 +304,7 @@
     - 使用 structlog 进行结构化日志记录
     - _需求: NFR-5_
   
-  - [ ] 10.4 实现健康检查端点
+  - [x] 10.4 实现健康检查端点
     - 创建 CronHealthCheck 类
     - 实现返回状态字典的 `check_health` 方法
     - 检查 Hatchet 连接健康状况
@@ -313,14 +313,14 @@
     - 返回 "healthy"、"degraded" 或 "unhealthy" 状态
     - _需求: NFR-5_
   
-  - [ ]* 10.5 编写监控测试
+  - [x]* 10.5 编写监控测试
     - 测试指标记录
     - 测试结构化日志输出
     - 测试健康检查响应
     - _需求: NFR-5, NFR-6_
 
 - [ ] 11. 实现错误处理和重试逻辑
-  - [ ] 11.1 创建 RetryStrategy 类
+  - [x] 11.1 创建 RetryStrategy 类
     - 实现 `should_retry` 静态方法
     - 检查错误类型（不重试 ValueError、TypeError）
     - 检查重试次数与 max_retries
@@ -328,7 +328,7 @@
     - 返回布尔决策
     - _需求: FR-8_
   
-  - [ ] 11.2 实现重试延迟计算
+  - [x] 11.2 实现重试延迟计算
     - 创建 `calculate_delay` 静态方法
     - 实现指数退避：base_delay * (2 ** retry_count)
     - 限制最大延迟
@@ -349,7 +349,7 @@
     - 支持多个通知渠道（邮件、Slack）
     - _需求: FR-8_
   
-  - [ ]* 11.5 编写错误处理测试
+  - [x]* 11.5 编写错误处理测试
     - 测试重试决策逻辑
     - 测试指数退避计算
     - 测试熔断器状态转换

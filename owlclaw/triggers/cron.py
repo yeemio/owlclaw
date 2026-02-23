@@ -189,6 +189,336 @@ class FocusManager:
         return "\n".join(prompt_parts)
 
 
+class RetryStrategy:
+    """Retry decision and delay helpers for cron execution."""
+
+    @staticmethod
+    def should_retry(
+        *,
+        error: Exception,
+        retry_count: int,
+        max_retries: int,
+        retry_on_failure: bool,
+    ) -> bool:
+        """Return whether a failed execution should be retried."""
+        if not retry_on_failure:
+            return False
+        if retry_count >= max_retries:
+            return False
+        return not isinstance(error, ValueError | TypeError)
+
+    @staticmethod
+    def calculate_delay(
+        retry_count: int,
+        *,
+        base_delay_seconds: int,
+        max_delay_seconds: int = 3600,
+    ) -> int:
+        """Calculate bounded exponential backoff delay in seconds."""
+        delay = max(0, int(base_delay_seconds)) * (2 ** max(0, int(retry_count)))
+        return int(min(delay, max(0, int(max_delay_seconds))))
+
+
+class CircuitBreaker:
+    """In-memory circuit breaker state for trigger-level failure protection."""
+
+    def __init__(self, failure_threshold: float = 0.5, window_size: int = 10) -> None:
+        self.failure_threshold = max(0.0, min(float(failure_threshold), 1.0))
+        self.window_size = max(1, int(window_size))
+        self._open_events: set[str] = set()
+
+    def check(self, event_name: str) -> tuple[bool, str]:
+        """Return whether execution can proceed for the given event."""
+        if event_name in self._open_events:
+            return False, "Circuit breaker is open"
+        return True, ""
+
+    def evaluate(self, event_name: str, records: list[Any]) -> bool:
+        """Update breaker state from recent records and return open/closed."""
+        if not records:
+            self.close(event_name)
+            return False
+        statuses = [str(getattr(record, "status", "")).strip().lower() for record in records[: self.window_size]]
+        if not statuses:
+            self.close(event_name)
+            return False
+        failed = sum(1 for status in statuses if status not in {"success", "fallback"})
+        failure_rate = failed / len(statuses)
+        if len(statuses) >= self.window_size and failure_rate > self.failure_threshold:
+            self.open(event_name)
+            return True
+        self.close(event_name)
+        return False
+
+    def open(self, event_name: str) -> None:
+        """Open the breaker for an event."""
+        self._open_events.add(event_name)
+
+    def close(self, event_name: str) -> None:
+        """Close the breaker for an event."""
+        self._open_events.discard(event_name)
+
+    def is_open(self, event_name: str) -> bool:
+        """Return whether breaker is open for an event."""
+        return event_name in self._open_events
+
+    def open_count(self) -> int:
+        """Return number of currently open event breakers."""
+        return len(self._open_events)
+
+
+class ErrorNotifier:
+    """Failure notification helper with low-noise sampling policy."""
+
+    @staticmethod
+    def _should_notify(failure_count: int) -> bool:
+        return int(failure_count) in {1, 3, 5}
+
+    @staticmethod
+    def _build_message(event_name: str, failure_count: int, error: str) -> str:
+        return (
+            f"Cron trigger '{event_name}' failed {failure_count} times. "
+            f"Latest error: {error}"
+        )
+
+    def notify_failure(self, event_name: str, failure_count: int, error: str) -> None:
+        """Emit a notification log for selected failure counts."""
+        if not self._should_notify(failure_count):
+            return
+        logger.warning(self._build_message(event_name, failure_count, error))
+
+
+class CronMetrics:
+    """Metrics collector with optional Prometheus backend and in-memory fallback."""
+
+    def __init__(self) -> None:
+        self.execution_counts: dict[tuple[str, str, str], int] = {}
+        self.duration_samples: list[float] = []
+        self.delay_samples: list[float] = []
+        self.cost_samples: list[float] = []
+        self.llm_calls_total = 0
+        self.active_tasks = 0
+        self.circuit_breaker_open = 0
+        self._prometheus_available = False
+        self.executions_total: Any | None = None
+        self.execution_duration_seconds: Any | None = None
+        self.trigger_delay_seconds: Any | None = None
+        self.execution_cost_usd: Any | None = None
+        self.llm_calls_total_counter: Any | None = None
+        self.active_tasks_gauge: Any | None = None
+        self.circuit_breaker_open_gauge: Any | None = None
+
+        try:
+            from prometheus_client import Counter, Gauge, Histogram  # type: ignore[import-not-found]
+
+            self.executions_total = Counter(
+                "owlclaw_cron_executions_total",
+                "Total cron executions",
+                ["event_name", "status", "decision_mode"],
+            )
+            self.execution_duration_seconds = Histogram(
+                "owlclaw_cron_execution_duration_seconds",
+                "Cron execution duration in seconds",
+                ["event_name"],
+            )
+            self.trigger_delay_seconds = Histogram(
+                "owlclaw_cron_trigger_delay_seconds",
+                "Delay between scheduled and actual trigger",
+                ["event_name"],
+            )
+            self.execution_cost_usd = Histogram(
+                "owlclaw_cron_execution_cost_usd",
+                "Estimated cron execution cost in USD",
+                ["event_name"],
+            )
+            self.llm_calls_total_counter = Counter(
+                "owlclaw_cron_llm_calls_total",
+                "Total LLM calls made by cron executions",
+                ["event_name"],
+            )
+            self.active_tasks_gauge = Gauge(
+                "owlclaw_cron_active_tasks",
+                "Number of currently active cron tasks",
+            )
+            self.circuit_breaker_open_gauge = Gauge(
+                "owlclaw_cron_circuit_breaker_open",
+                "Number of open cron circuit breakers",
+            )
+            self._prometheus_available = True
+        except Exception:
+            self._prometheus_available = False
+
+    def record_execution(self, event_name: str, execution: CronExecution) -> None:
+        """Record execution counters, durations, costs, and LLM calls."""
+        key = (event_name, execution.status.value, execution.decision_mode)
+        self.execution_counts[key] = self.execution_counts.get(key, 0) + 1
+        if execution.duration_seconds is not None:
+            self.duration_samples.append(execution.duration_seconds)
+        if execution.cost_usd > 0:
+            self.cost_samples.append(execution.cost_usd)
+        self.llm_calls_total += max(0, int(execution.llm_calls))
+
+        if not self._prometheus_available:
+            return
+        if self.executions_total is not None:
+            self.executions_total.labels(event_name, execution.status.value, execution.decision_mode).inc()
+        if execution.duration_seconds is not None and self.execution_duration_seconds is not None:
+            self.execution_duration_seconds.labels(event_name).observe(execution.duration_seconds)
+        if self.execution_cost_usd is not None:
+            self.execution_cost_usd.labels(event_name).observe(execution.cost_usd)
+        if self.llm_calls_total_counter is not None:
+            self.llm_calls_total_counter.labels(event_name).inc(max(0, int(execution.llm_calls)))
+
+    def record_trigger_delay(self, event_name: str, delay_seconds: float) -> None:
+        """Record trigger delay metric sample."""
+        safe_delay = max(0.0, float(delay_seconds))
+        self.delay_samples.append(safe_delay)
+        if self._prometheus_available and self.trigger_delay_seconds is not None:
+            self.trigger_delay_seconds.labels(event_name).observe(safe_delay)
+
+    def set_active_tasks(self, count: int) -> None:
+        """Set active cron task count."""
+        self.active_tasks = max(0, int(count))
+        if self._prometheus_available and self.active_tasks_gauge is not None:
+            self.active_tasks_gauge.set(self.active_tasks)
+
+    def set_circuit_breaker_open(self, count: int) -> None:
+        """Set open circuit breaker count."""
+        self.circuit_breaker_open = max(0, int(count))
+        if self._prometheus_available and self.circuit_breaker_open_gauge is not None:
+            self.circuit_breaker_open_gauge.set(self.circuit_breaker_open)
+
+
+class CronLogger:
+    """Structured-style logging helper based on stdlib logging."""
+
+    def log_registration(self, config: CronTriggerConfig) -> None:
+        logger.info(
+            "cron_registration event_name=%s expression=%s focus=%s",
+            config.event_name,
+            config.expression,
+            config.focus,
+        )
+
+    def log_trigger(self, event_name: str, context: dict[str, Any]) -> None:
+        logger.info("cron_trigger event_name=%s context=%s", event_name, context)
+
+    def log_execution_start(self, event_name: str, execution_id: str, mode: str) -> None:
+        logger.info(
+            "cron_execution_start event_name=%s execution_id=%s mode=%s",
+            event_name,
+            execution_id,
+            mode,
+        )
+
+    def log_execution_complete(self, event_name: str, execution_id: str, status: str, duration: float | None) -> None:
+        logger.info(
+            "cron_execution_complete event_name=%s execution_id=%s status=%s duration_seconds=%s",
+            event_name,
+            execution_id,
+            status,
+            duration,
+        )
+
+    def log_execution_failed(self, event_name: str, execution_id: str, error: str) -> None:
+        logger.error(
+            "cron_execution_failed event_name=%s execution_id=%s error=%s",
+            event_name,
+            execution_id,
+            error,
+        )
+
+    def log_governance_skip(self, event_name: str, reason: str) -> None:
+        logger.warning("cron_governance_skip event_name=%s reason=%s", event_name, reason)
+
+    def log_circuit_breaker_open(self, event_name: str, failure_rate: float) -> None:
+        logger.warning(
+            "cron_circuit_breaker_open event_name=%s failure_rate=%.4f",
+            event_name,
+            failure_rate,
+        )
+
+
+class CronGovernance:
+    """Governance adapter for CronTriggerRegistry."""
+
+    def __init__(self, registry: CronTriggerRegistry) -> None:
+        self.registry = registry
+
+    async def check_constraints(
+        self,
+        config: CronTriggerConfig,
+        execution: CronExecution,
+        ledger: Ledger | None,
+        tenant_id: str,
+    ) -> tuple[bool, str]:
+        return await self.registry._check_constraints_core(config, execution, ledger, tenant_id)
+
+    async def record_execution(
+        self,
+        ledger: Ledger,
+        config: CronTriggerConfig,
+        execution: CronExecution,
+        tenant_id: str,
+        *,
+        agent_id: str,
+    ) -> None:
+        await self.registry._record_to_ledger(ledger, config, execution, tenant_id, agent_id=agent_id)
+
+    async def update_circuit_breaker(
+        self,
+        config: CronTriggerConfig,
+        ledger: Ledger | None,
+        tenant_id: str,
+    ) -> None:
+        if ledger is None:
+            return
+        try:
+            records = await self.registry._get_recent_executions(
+                ledger=ledger,
+                tenant_id=tenant_id,
+                event_name=config.event_name,
+                limit=self.registry._circuit_breaker.window_size,
+            )
+            opened = self.registry._circuit_breaker.evaluate(config.event_name, records)
+            if opened:
+                statuses = [str(getattr(record, "status", "")).strip().lower() for record in records]
+                failed = sum(1 for status in statuses if status not in {"success", "fallback"})
+                failure_rate = failed / len(statuses) if statuses else 0.0
+                self.registry._cron_logger.log_circuit_breaker_open(config.event_name, failure_rate)
+                self.registry._error_notifier.notify_failure(
+                    config.event_name,
+                    failed,
+                    "circuit breaker opened due to high failure rate",
+                )
+            self.registry._metrics.set_circuit_breaker_open(self.registry._circuit_breaker.open_count())
+        except Exception as exc:
+            logger.exception("Failed to update circuit breaker for '%s': %s", config.event_name, exc)
+
+
+class CronHealthCheck:
+    """Health status provider for cron subsystem."""
+
+    def __init__(self, registry: CronTriggerRegistry) -> None:
+        self.registry = registry
+
+    def check_health(self) -> dict[str, Any]:
+        total = len(self.registry._triggers)
+        enabled = sum(1 for config in self.registry._triggers.values() if config.enabled)
+        disabled = total - enabled
+        hatchet_connected = self.registry._hatchet_client is not None
+        open_breakers = self.registry._circuit_breaker.open_count()
+        status = "degraded" if (not hatchet_connected) or (open_breakers > 0) else "healthy"
+        return {
+            "status": status,
+            "hatchet_connected": hatchet_connected,
+            "total_triggers": total,
+            "enabled_triggers": enabled,
+            "disabled_triggers": disabled,
+            "open_circuit_breakers": open_breakers,
+        }
+
+
 # ---------------------------------------------------------------------------
 # CronTriggerRegistry — Task 2
 # ---------------------------------------------------------------------------
@@ -210,6 +540,13 @@ class CronTriggerRegistry:
         self._ledger: Ledger | None = None
         self._tenant_id: str = "default"
         self._recent_executions: dict[str, deque[tuple[str, float | None]]] = {}
+        self._metrics = CronMetrics()
+        self._cron_logger = CronLogger()
+        self._circuit_breaker = CircuitBreaker()
+        self._error_notifier = ErrorNotifier()
+        self._governance = CronGovernance(self)
+        self._health_check = CronHealthCheck(self)
+        self._active_tasks = 0
 
     # ------------------------------------------------------------------
     # Task 2.2 — cron expression validation
@@ -299,6 +636,7 @@ class CronTriggerRegistry:
             **kwargs,
         )
         self._triggers[event_name] = config
+        self._cron_logger.log_registration(config)
 
         logger.info(
             "Registered cron trigger event_name=%s expression=%s focus=%s",
@@ -441,6 +779,10 @@ class CronTriggerRegistry:
             except Exception as exc:
                 logger.exception("Failed to record manual trigger for '%s': %s", event_name, exc)
         return str(run_id)
+
+    def get_health_status(self) -> dict[str, Any]:
+        """Return overall cron subsystem health status."""
+        return self._health_check.check_health()
 
     async def get_execution_history(
         self,
@@ -671,6 +1013,9 @@ class CronTriggerRegistry:
                 "focus": config.focus,
             },
         )
+        self._cron_logger.log_trigger(config.event_name, execution.context)
+        self._active_tasks += 1
+        self._metrics.set_active_tasks(self._active_tasks)
 
         try:
             # Skip if disabled
@@ -686,6 +1031,7 @@ class CronTriggerRegistry:
             if not passed:
                 execution.status = ExecutionStatus.SKIPPED
                 execution.skip_reason = reason
+                self._cron_logger.log_governance_skip(config.event_name, reason)
                 return {"status": execution.status.value, "reason": reason}
 
             # Task 3.4 — Agent vs Fallback decision
@@ -693,6 +1039,11 @@ class CronTriggerRegistry:
             execution.decision_mode = "agent" if use_agent else "fallback"
             execution.status = ExecutionStatus.RUNNING
             execution.started_at = datetime.now(timezone.utc)
+            self._cron_logger.log_execution_start(
+                config.event_name,
+                execution.execution_id,
+                execution.decision_mode,
+            )
 
             if use_agent and agent_runtime is not None:
                 # Task 3.5 — Agent path
@@ -708,30 +1059,47 @@ class CronTriggerRegistry:
             execution.status = ExecutionStatus.FAILED
             execution.error_message = str(exc)
             execution.error_traceback = _traceback.format_exc()
+            self._cron_logger.log_execution_failed(
+                config.event_name,
+                execution.execution_id,
+                execution.error_message,
+            )
             # Task 3.7 — failure handling
             await self._handle_failure(config, execution)
 
         finally:
-            execution.completed_at = datetime.now(timezone.utc)
-            if execution.started_at is not None:
-                execution.duration_seconds = (
-                    execution.completed_at - execution.started_at
-                ).total_seconds()
-            self._record_recent_execution(
-                config.event_name,
-                execution.status.value,
-                execution.duration_seconds,
-            )
-            # Record run-level limit violations for auditing (config fields exist but are not pre-run enforced)
-            if config.max_cost_per_run is not None and (execution.cost_usd or 0) > config.max_cost_per_run:
-                execution.governance_checks["max_cost_per_run_exceeded"] = True
-            if config.max_duration is not None and (execution.duration_seconds or 0) > config.max_duration:
-                execution.governance_checks["max_duration_exceeded"] = True
-            if ledger is not None:
-                agent_id = (self.app.name if self.app else None) or config.event_name
-                await self._record_to_ledger(
-                    ledger, config, execution, tenant_id, agent_id=agent_id
+            try:
+                execution.completed_at = datetime.now(timezone.utc)
+                if execution.started_at is not None:
+                    execution.duration_seconds = (
+                        execution.completed_at - execution.started_at
+                    ).total_seconds()
+                self._record_recent_execution(
+                    config.event_name,
+                    execution.status.value,
+                    execution.duration_seconds,
                 )
+                # Record run-level limit violations for auditing (config fields exist but are not pre-run enforced)
+                if config.max_cost_per_run is not None and (execution.cost_usd or 0) > config.max_cost_per_run:
+                    execution.governance_checks["max_cost_per_run_exceeded"] = True
+                if config.max_duration is not None and (execution.duration_seconds or 0) > config.max_duration:
+                    execution.governance_checks["max_duration_exceeded"] = True
+                self._metrics.record_execution(config.event_name, execution)
+                self._cron_logger.log_execution_complete(
+                    config.event_name,
+                    execution.execution_id,
+                    execution.status.value,
+                    execution.duration_seconds,
+                )
+                if ledger is not None:
+                    agent_id = (self.app.name if self.app else None) or config.event_name
+                    await self._governance.record_execution(
+                        ledger, config, execution, tenant_id, agent_id=agent_id
+                    )
+                    await self._governance.update_circuit_breaker(config, ledger, tenant_id)
+            finally:
+                self._active_tasks = max(0, self._active_tasks - 1)
+                self._metrics.set_active_tasks(self._active_tasks)
 
         return {
             "status": execution.status.value,
@@ -744,6 +1112,16 @@ class CronTriggerRegistry:
     # ------------------------------------------------------------------
 
     async def _check_governance(
+        self,
+        config: CronTriggerConfig,
+        execution: CronExecution,
+        ledger: Ledger | None,
+        tenant_id: str,
+    ) -> tuple[bool, str]:
+        """Delegate governance checks to CronGovernance adapter."""
+        return await self._governance.check_constraints(config, execution, ledger, tenant_id)
+
+    async def _check_constraints_core(
         self,
         config: CronTriggerConfig,
         execution: CronExecution,
@@ -814,8 +1192,14 @@ class CronTriggerRegistry:
                 return (
                     False,
                     f"Daily cost limit reached: ${today_cost:.4f} >= ${config.max_daily_cost}",
-                )
+            )
             checks["daily_cost"] = True
+
+        allowed, cb_reason = self._circuit_breaker.check(config.event_name)
+        checks["circuit_breaker"] = allowed
+        if not allowed:
+            execution.governance_checks = checks
+            return False, cb_reason
 
         execution.governance_checks = checks
         return True, ""
