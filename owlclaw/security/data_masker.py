@@ -26,19 +26,33 @@ class DataMasker:
         re.compile(r"(?i)\b(api[_-]?key|token|secret|password)\s*[:=]\s*([^\s,;]+)"),
     )
 
-    def __init__(self, rules: list[MaskRule] | None = None) -> None:
+    def __init__(
+        self,
+        rules: list[MaskRule] | None = None,
+        audit_log: Any | None = None,
+        audit_source: str = "data_masker",
+    ) -> None:
         self._rules = rules or self._default_rules()
+        self._audit_log = audit_log
+        self._audit_source = audit_source
 
     def mask(self, data: Any) -> Any:
         """Mask text or recursively mask structured data."""
+        masked = self._mask_internal(data)
+        if masked != data:
+            self._audit("mask_applied", data_type=type(data).__name__)
+        return masked
+
+    def _mask_internal(self, data: Any) -> Any:
+        """Mask without emitting duplicate audit events in recursion."""
         if isinstance(data, str):
             return self._mask_text(data)
         if isinstance(data, dict):
             return {key: self._mask_value(key, value) for key, value in data.items()}
         if isinstance(data, list):
-            return [self.mask(item) for item in data]
+            return [self._mask_internal(item) for item in data]
         if isinstance(data, tuple):
-            return tuple(self.mask(item) for item in data)
+            return tuple(self._mask_internal(item) for item in data)
         return data
 
     def _mask_value(self, key: str, value: Any) -> Any:
@@ -47,7 +61,7 @@ class DataMasker:
                 if isinstance(value, str):
                     return self._apply_mask(value, rule)
                 return rule.replacement
-        return self.mask(value)
+        return self._mask_internal(value)
 
     def _mask_text(self, text: str) -> str:
         masked = text
@@ -70,3 +84,10 @@ class DataMasker:
             MaskRule(field_pattern=r"email", mask_type="partial"),
             MaskRule(field_pattern=r"password|token|secret|api[_-]?key", mask_type="full"),
         ]
+
+    def _audit(self, event_type: str, **details: Any) -> None:
+        if self._audit_log is None:
+            return
+        record = getattr(self._audit_log, "record", None)
+        if callable(record):
+            record(event_type=event_type, source=self._audit_source, details=details)

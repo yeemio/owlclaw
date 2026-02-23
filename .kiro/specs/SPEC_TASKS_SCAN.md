@@ -50,7 +50,7 @@
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [ ] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
-- [ ] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
+- [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
 
@@ -100,7 +100,7 @@
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（32/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
-| **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（2/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
+| **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/89） | 消息队列触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：补审 codex-work 剩余提交） |
-| 批次状态 | **进行中**。已吸收 database-core/cli-db 完成态，待完成本轮回归与配置模块缺口修正。 |
-| 已完成项 | 合并 `codex-work` 新增的 cli-db 单元测试/集成测试与任务收口；`database-core`/`cli-db` 状态同步为已完成。 |
-| 下一待执行 | 完成当前回归验证；修正 `configuration` 中 `ConfigManager.load()` 的优先级实现（defaults < yaml < env < overrides）并补测试。 |
-| 验收快照 | 合并冲突已按审校口径消解；待本轮测试完成后回填结果。 |
+| 当前批次 | spec 循环（第 13 轮：configuration Task 10/11/12 收口） |
+| 批次状态 | **完成**。configuration spec 已整体完成（12/12）。 |
+| 已完成项 | 单测覆盖率 `owlclaw.config` 达到 93%；新增集成测试 `tests/integration/test_config_manager_integration.py`；新增文档 `docs/CONFIGURATION.md`；`configuration/tasks.md` 的 Task 10/11/12 已打勾。 |
+| 下一待执行 | 第 14 轮：推进 `security` Task 5.2.2（risk gate / data masking 审计日志补齐）。 |
+| 验收快照 | `poetry run pytest tests/integration/test_config_manager_integration.py tests/unit/test_config_models.py tests/unit/test_config_loader.py tests/unit/test_config_manager.py tests/unit/test_app_configure.py tests/unit/test_config_listeners.py tests/unit/test_cli_init_config.py tests/unit/test_cli_reload_config.py -q` 通过（29 passed）；`--cov=owlclaw.config` 为 93%。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -96,7 +96,8 @@
 
 ### 5.1 安全配置
 - [ ] 5.1.1 在 `owlclaw.yaml` 中添加 `security` 配置节
-- [ ] 5.1.2 实现配置加载和验证
+- [x] 5.1.1 在 `owlclaw.yaml` 中添加 `security` 配置节
+- [x] 5.1.2 实现配置加载和验证
 
 ### 5.2 审计日志
 - [x] 5.2.1 实现 `SecurityAuditLog` 类
