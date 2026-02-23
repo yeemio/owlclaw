@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+import logging
 
 from owlclaw.agent.memory.migration import migrate_store_data
 from owlclaw.agent.memory.models import MemoryEntry
@@ -43,3 +44,17 @@ async def test_migrate_store_data_rejects_blank_tenant() -> None:
     target = InMemoryStore()
     with pytest.raises(ValueError, match="tenant_id must not be empty"):
         await migrate_store_data(source=source, target=target, agent_id="a", tenant_id=" ")
+
+
+@pytest.mark.asyncio
+async def test_migrate_store_data_logs_failures(caplog) -> None:
+    class _FailingTarget(InMemoryStore):
+        async def save(self, entry: MemoryEntry):  # type: ignore[override]
+            raise RuntimeError("write failed")
+
+    source = InMemoryStore()
+    await source.save(MemoryEntry(agent_id="a", tenant_id="t", content="one", embedding=[0.1, 0.2]))
+    caplog.set_level(logging.WARNING)
+    result = await migrate_store_data(source=source, target=_FailingTarget(), agent_id="a", tenant_id="t")
+    assert result.failed == 1
+    assert "memory migration failed for entry_id=" in caplog.text

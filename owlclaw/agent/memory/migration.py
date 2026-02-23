@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 
 from owlclaw.agent.memory.store import MemoryStore
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_scope(agent_id: str, tenant_id: str) -> tuple[str, str]:
@@ -54,4 +57,10 @@ async def migrate_store_data(
                 result.moved += 1
             except Exception:
                 result.failed += 1
+                logger.warning(
+                    "memory migration failed for entry_id=%s agent_id=%s tenant_id=%s",
+                    entry.id,
+                    normalized_agent,
+                    normalized_tenant,
+                )
     return result
