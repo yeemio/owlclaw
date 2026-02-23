@@ -7,8 +7,9 @@ SKILL.md files from application directories following the Agent Skills specifica
 import logging
 import re
 from pathlib import Path
+from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -35,8 +36,8 @@ class Skill:
         name: str,
         description: str,
         file_path: Path,
-        metadata: dict,
-        owlclaw_config: dict | None = None,
+        metadata: dict[str, Any],
+        owlclaw_config: dict[str, Any] | None = None,
         full_content: str | None = None,
     ):
         self.name = name
@@ -50,12 +51,17 @@ class Skill:
     @property
     def task_type(self) -> str | None:
         """Get the task_type for AI routing (OwlClaw extension)."""
-        return self.owlclaw_config.get("task_type")
+        raw = self.owlclaw_config.get("task_type")
+        if not isinstance(raw, str):
+            return None
+        normalized = raw.strip()
+        return normalized or None
 
     @property
-    def constraints(self) -> dict:
+    def constraints(self) -> dict[str, Any]:
         """Get the constraints for governance filtering (OwlClaw extension)."""
-        return self.owlclaw_config.get("constraints", {})
+        raw = self.owlclaw_config.get("constraints", {})
+        return raw if isinstance(raw, dict) else {}
 
     @property
     def trigger(self) -> str | None:
@@ -69,7 +75,7 @@ class Skill:
         if isinstance(raw, str):
             normalized = raw.strip()
             return [normalized] if normalized else []
-        if isinstance(raw, (list, tuple, set)):
+        if isinstance(raw, list | tuple | set):
             out: list[str] = []
             seen: set[str] = set()
             for item in raw:
@@ -130,7 +136,7 @@ class Skill:
             self._full_content = (match.group(2) if match else "") or ""
             self._full_content = self._full_content.strip()
             self._is_loaded = True
-        return self._full_content
+        return self._full_content or ""
 
     @property
     def references_dir(self) -> Path | None:
@@ -158,7 +164,7 @@ class Skill:
         assets_dir = self.file_path.parent / "assets"
         return assets_dir if assets_dir.exists() else None
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize metadata to dict (excludes full content).
 
         Returns:
@@ -258,33 +264,34 @@ class SkillsLoader:
         if not isinstance(frontmatter, dict):
             logger.warning("Skill file %s frontmatter must be a mapping", file_path)
             return None
+        frontmatter_map: dict[str, Any] = frontmatter
 
-        if "name" not in frontmatter or "description" not in frontmatter:
+        if "name" not in frontmatter_map or "description" not in frontmatter_map:
             logger.warning(
                 "Skill file %s missing required fields (name, description)",
                 file_path,
             )
             return None
-        if not isinstance(frontmatter["name"], str) or not frontmatter["name"].strip():
+        if not isinstance(frontmatter_map["name"], str) or not frontmatter_map["name"].strip():
             logger.warning("Skill file %s invalid name field", file_path)
             return None
-        if not _SKILL_NAME_PATTERN.match(frontmatter["name"].strip()):
+        if not _SKILL_NAME_PATTERN.match(frontmatter_map["name"].strip()):
             logger.warning("Skill file %s name must be kebab-case", file_path)
             return None
-        if not isinstance(frontmatter["description"], str) or not frontmatter["description"].strip():
+        if not isinstance(frontmatter_map["description"], str) or not frontmatter_map["description"].strip():
             logger.warning("Skill file %s invalid description field", file_path)
             return None
 
-        metadata = frontmatter.get("metadata", {})
+        metadata = frontmatter_map.get("metadata", {})
         if not isinstance(metadata, dict):
             metadata = {}
-        owlclaw_config = frontmatter.get("owlclaw", {})
+        owlclaw_config = frontmatter_map.get("owlclaw", {})
         if not isinstance(owlclaw_config, dict):
             owlclaw_config = {}
 
         return Skill(
-            name=frontmatter["name"].strip(),
-            description=frontmatter["description"].strip(),
+            name=frontmatter_map["name"].strip(),
+            description=frontmatter_map["description"].strip(),
             file_path=file_path,
             metadata=metadata,
             owlclaw_config=owlclaw_config,

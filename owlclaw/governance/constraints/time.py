@@ -34,10 +34,15 @@ class TimeConstraint:
     def __init__(self, config: dict | None = None) -> None:
         config = config or {}
         th = config.get("trading_hours", {})
+        if not isinstance(th, dict):
+            th = {}
+        self._start_time = _parse_time(th.get("start", "09:30"))
+        self._end_time = _parse_time(th.get("end", "15:00"))
+        self._weekdays = _parse_weekdays(th.get("weekdays"))
         self.trading_hours = {
-            "start": _parse_time(th.get("start", "09:30")),
-            "end": _parse_time(th.get("end", "15:00")),
-            "weekdays": _parse_weekdays(th.get("weekdays")),
+            "start": self._start_time,
+            "end": self._end_time,
+            "weekdays": self._weekdays,
         }
         tz_name = config.get("timezone", "Asia/Shanghai")
         try:
@@ -66,11 +71,11 @@ class TimeConstraint:
         )
         if now.tzinfo is None:
             now = now.replace(tzinfo=self.timezone)
-        if now.weekday() not in self.trading_hours["weekdays"]:
+        if now.weekday() not in self._weekdays:
             return FilterResult(visible=False, reason="Outside trading weekdays")
         current_time = now.time()
-        start = self.trading_hours["start"]
-        end = self.trading_hours["end"]
+        start = self._start_time
+        end = self._end_time
         if not (start <= current_time <= end):
             return FilterResult(
                 visible=False,

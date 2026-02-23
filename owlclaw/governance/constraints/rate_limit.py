@@ -18,6 +18,8 @@ class RateLimitConstraint:
             return None
         if isinstance(value, bool):
             return None
+        if not isinstance(value, int | float | str | bytes | bytearray):
+            return None
         try:
             parsed = int(value)
         except (TypeError, ValueError):
@@ -101,4 +103,9 @@ class RateLimitConstraint:
         )
         if not records:
             return None
-        return records[0].created_at
+        created_at = records[0].created_at
+        if not isinstance(created_at, datetime):
+            return None
+        if created_at.tzinfo is None:
+            return created_at.replace(tzinfo=timezone.utc)
+        return created_at.astimezone(timezone.utc)

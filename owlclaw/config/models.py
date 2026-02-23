@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
+from types import ModuleType
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+_pydantic_settings: ModuleType | None
 try:
-    from pydantic_settings import BaseSettings, SettingsConfigDict
+    import pydantic_settings as _pydantic_settings
 except ImportError:  # pragma: no cover - compatibility fallback
-    class BaseSettings(BaseModel):
-        """Fallback base class when pydantic-settings is unavailable."""
+    _pydantic_settings = None
 
-    def SettingsConfigDict(**kwargs: Any) -> dict[str, Any]:
-        return kwargs
+if _pydantic_settings is None:
+    _RuntimeBaseSettings: Any = BaseModel
+else:
+    _RuntimeBaseSettings = _pydantic_settings.BaseSettings
 
 
 class AgentConfig(BaseModel):
@@ -130,7 +133,7 @@ class MemoryConfig(BaseModel):
     retention_days: int = Field(default=365, ge=1)
 
 
-class OwlClawConfig(BaseSettings):
+class OwlClawConfig(_RuntimeBaseSettings):
     """Root configuration model for OwlClaw."""
 
     agent: AgentConfig = Field(default_factory=AgentConfig)
@@ -140,9 +143,17 @@ class OwlClawConfig(BaseSettings):
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
 
-    model_config = SettingsConfigDict(
-        env_prefix="OWLCLAW_",
-        env_nested_delimiter="__",
-        extra="ignore",
+    model_config: Any = (
+        {
+            "env_prefix": "OWLCLAW_",
+            "env_nested_delimiter": "__",
+            "extra": "ignore",
+        }
+        if _pydantic_settings is None
+        else _pydantic_settings.SettingsConfigDict(
+            env_prefix="OWLCLAW_",
+            env_nested_delimiter="__",
+            extra="ignore",
+        )
     )
 

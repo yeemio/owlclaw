@@ -238,15 +238,15 @@ class VisibilityFilter:
     ) -> FilterResult:
         """Run one evaluator; on exception return visible (fail-open)."""
         try:
-            result = evaluator.evaluate(capability, agent_id, context)
-            if inspect.isawaitable(result):
-                result = await result
-            if isinstance(result, FilterResult):
-                return result
+            raw_result: Any = evaluator.evaluate(capability, agent_id, context)
+            if inspect.isawaitable(raw_result):
+                raw_result = await raw_result
+            if isinstance(raw_result, FilterResult):
+                return raw_result
             logger.warning(
                 "Evaluator %s returned invalid result type %s (fail-open)",
                 type(evaluator).__name__,
-                type(result).__name__,
+                type(raw_result).__name__,
             )
             return FilterResult(visible=True)
         except asyncio.CancelledError:

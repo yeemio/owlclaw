@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：存量未审校盘点 + 定向回归） |
-| 批次状态 | **完成**。已完成高风险存量模块回归并修复 1 个 Python 版本兼容缺陷。 |
-| 已完成项 | 盘点并校准 scan/tasks 一致性；执行 governance/triggers/hatchet/agent-runtime/agent-tools 定向回归（`356 passed`）；修复 `owlclaw/agent/runtime/memory.py` 的 `datetime.UTC`（3.11+）兼容性问题为 `timezone.utc`。 |
-| 下一待执行 | 处理剩余静态审校缺口：`governance/visibility.py` 协程类型、`governance/constraints/time.py` 与 `rate_limit.py` 类型收敛、`capabilities/skills.py` 返回类型、`config/models.py` `no-redef`，以及 `yaml` stubs 方案。 |
-| 验收快照 | `poetry run pytest tests/unit/governance tests/unit/triggers tests/unit/test_hatchet.py tests/unit/test_hatchet_perf.py tests/unit/test_capabilities_acceptance.py tests/unit/agent/test_tools.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py -q` -> `356 passed in 52.11s`；`poetry run pytest tests/unit/agent/test_runtime_memory.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py -q` -> `78 passed in 34.69s`。 |
+| 当前批次 | review 循环（本轮：静态审校缺口收口） |
+| 批次状态 | **完成**。已完成上一轮列出的 6 个类型/兼容性缺口修复并通过验证。 |
+| 已完成项 | 修复 `governance/visibility.py` 协程结果类型；`governance/constraints/time.py` 与 `rate_limit.py` 类型收敛；`capabilities/skills.py` 返回类型与 frontmatter 解析类型；`config/models.py` fallback/no-redef；`config/loader.py` 与 `capabilities/skills.py` 的 yaml 导入类型策略。 |
+| 下一待执行 | 继续常规存量审校（优先 agent-tools/governance/triggers-cron 进行中 spec），并逐步清理全仓历史 lint/type 债务。 |
+| 验收快照 | `poetry run mypy owlclaw/governance/visibility.py owlclaw/governance/constraints/time.py owlclaw/governance/constraints/rate_limit.py owlclaw/capabilities/skills.py owlclaw/config/models.py owlclaw/config/loader.py` -> `Success: no issues found in 6 source files`；`poetry run pytest tests/unit/governance/test_visibility.py tests/unit/governance/test_constraints_time.py tests/unit/governance/test_constraints_rate_limit.py tests/unit/test_capabilities_acceptance.py tests/unit/test_config_models.py tests/unit/test_config_loader.py tests/unit/test_config_manager.py tests/unit/agent/test_runtime_memory.py -q` -> `67 passed in 47.33s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
