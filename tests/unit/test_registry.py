@@ -314,3 +314,18 @@ def test_capability_metadata_includes_focus_and_risk(tmp_path):
     assert meta["focus"] == ["inventory_monitor"]
     assert meta["risk_level"] == "high"
     assert meta["requires_confirmation"] is True
+
+
+def test_get_capability_metadata_trims_name_and_handles_blank(tmp_path):
+    (tmp_path / "x").mkdir()
+    (tmp_path / "x" / "SKILL.md").write_text(
+        "---\nname: x\ndescription: Skill x\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    reg = CapabilityRegistry(loader)
+    reg.register_handler("x", lambda: None)
+
+    assert reg.get_capability_metadata("  x  ") is not None
+    assert reg.get_capability_metadata("   ") is None

@@ -262,11 +262,15 @@ class CapabilityRegistry:
         Returns:
             Capability metadata dict if found, None otherwise
         """
-        skill = self.skills_loader.get_skill(skill_name)
+        try:
+            normalized = self._normalize_name(skill_name, "skill_name")
+        except ValueError:
+            return None
+        skill = self.skills_loader.get_skill(normalized)
         if not skill:
             return None
 
-        handler = self.handlers.get(skill_name)
+        handler = self.handlers.get(normalized)
 
         return {
             "name": skill.name,
