@@ -30,7 +30,17 @@ def _coerce_focus(value: Any) -> list[str]:
         v = value.strip()
         return [v] if v else []
     if isinstance(value, list):
-        return [str(item).strip() for item in value if str(item).strip()]
+        out: list[str] = []
+        seen: set[str] = set()
+        for item in value:
+            if not isinstance(item, str):
+                continue
+            normalized = item.strip()
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            out.append(normalized)
+        return out
     return []
 
 

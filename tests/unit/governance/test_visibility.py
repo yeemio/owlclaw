@@ -130,9 +130,9 @@ def test_capability_view_coerces_string_false_to_false():
 
 def test_capability_view_coerces_focus_to_string_list():
     cap1 = CapabilityView("x", focus="inventory")
-    cap2 = CapabilityView("y", focus=["a", " ", 1])
+    cap2 = CapabilityView("y", focus=["a", " ", 1, "a", "b"])
     assert cap1.focus == ["inventory"]
-    assert cap2.focus == ["a", "1"]
+    assert cap2.focus == ["a", "b"]
 
 
 def test_capability_view_coerces_risk_level():
