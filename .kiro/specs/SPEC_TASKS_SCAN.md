@@ -100,7 +100,7 @@
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（32/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
-| **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
+| **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（2/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/89） | 消息队列触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：合并 codex-work 并继续审校 codex-gpt-work） |
-| 批次状态 | **进行中**。`codex-work` 变更已进入 review-work 合并流程；待继续完成 `codex-gpt-work` 审校与合并。 |
-| 已完成项 | 吸收并审校 `database-core`/`cli-db` 相关 spec 进度与测试补充（含 `test_db_session_properties.py`）。 |
-| 下一待执行 | 完成当前 merge commit 后，审校并合并 `codex-gpt-work`（configuration Task 1/2）。 |
-| 验收快照 | 本轮以 review 流程为主；合并后执行定向单测回归并更新结果。 |
+| 当前批次 | review 循环（本轮：合并 codex-work + codex-gpt-work） |
+| 批次状态 | **进行中**。两条编码分支已完成审校并进入 review-work 合并流程，待回归验证与最终检查点回写。 |
+| 已完成项 | 吸收 `database-core`/`cli-db` 的任务勾选与 `test_db_session_properties.py`；吸收 `configuration` Task 1/2 代码与单测（`test_config_models.py`、`test_config_loader.py`）。 |
+| 下一待执行 | 完成 merge 后执行定向测试回归，并以审校口径更新检查点状态。 |
+| 验收快照 | 当前批次将使用本地可用虚拟环境执行 `db/config` 相关单测后更新结果。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

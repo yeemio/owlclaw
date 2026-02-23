@@ -12,13 +12,13 @@
 
 ### Phase 1：核心配置框架
 
-- [ ] **Task 1**: 创建 `owlclaw/config/` 模块结构
+- [x] **Task 1**: 创建 `owlclaw/config/` 模块结构
   - 创建 `__init__.py`, `models.py`, `manager.py`, `loader.py`
   - 定义所有子配置的 Pydantic 模型（AgentConfig, GovernanceConfig, TriggersConfig, IntegrationsConfig, SecurityConfig, MemoryConfig）
   - 定义根配置 OwlClawConfig（继承 BaseSettings）
   - 所有字段设置合理的默认值、验证规则、Field 描述
 
-- [ ] **Task 2**: 实现 `YAMLConfigLoader`
+- [x] **Task 2**: 实现 `YAMLConfigLoader`
   - YAML 文件查找逻辑（OWLCLAW_CONFIG env → --config CLI → ./owlclaw.yaml）
   - yaml.safe_load + 错误处理（行号、列号）
   - 空文件 / 不存在文件的优雅降级
