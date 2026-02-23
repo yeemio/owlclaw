@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 from pydantic import BaseModel, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def _get_hatchet():
     return Hatchet, ClientConfig
 
 
-def _substitute_env(value: Any) -> Any:
+def _substitute_env(value: str) -> str:
     """Replace ${VAR} and $VAR with environment variable values."""
     if not isinstance(value, str):
         return value
@@ -36,7 +36,7 @@ def _substitute_env(value: Any) -> Any:
     return pattern.sub(repl, value)
 
 
-def _substitute_env_dict(data: dict[str, Any]) -> dict[str, Any]:
+def _substitute_env_dict(data: dict) -> dict:
     """Recursively substitute ${VAR} in string values."""
     out = {}
     for k, v in data.items():
@@ -189,8 +189,7 @@ class HatchetClient:
                 raise RuntimeError("Must call connect() before registering tasks")
             if cron is not None:
                 _validate_cron(cron)
-            raw_task_name = name or getattr(func, "__name__", "anonymous")
-            task_name = str(raw_task_name).strip() or "anonymous"
+            task_name = name or getattr(func, "__name__", "anonymous")
             on_crons = [cron] if cron else None
             from datetime import timedelta
             exec_timeout = timedelta(seconds=timeout) if timeout else timedelta(seconds=60)
@@ -221,8 +220,7 @@ class HatchetClient:
                 raise RuntimeError("Must call connect() before registering tasks")
             if cron is not None:
                 _validate_cron(cron)
-            raw_task_name = name or getattr(func, "__name__", "anonymous")
-            task_name = str(raw_task_name).strip() or "anonymous"
+            task_name = name or getattr(func, "__name__", "anonymous")
             on_crons = [cron] if cron else None
             exec_timeout = timedelta(seconds=timeout) if timeout else timedelta(seconds=60)
             standalone = self._hatchet.durable_task(

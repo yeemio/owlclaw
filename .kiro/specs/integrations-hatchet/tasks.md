@@ -137,8 +137,8 @@
 - [x] 7.2 持久化定时测试
   - [x] 7.2.1 创建使用 ctx.aio_sleep_for() 的任务（HatchetClient.durable_task + 集成测试 test_hatchet_durable_task_aio_sleep_for_mock）
   - [x] 7.2.2 验证定时状态持久化（通过 durable_task 注册与 aio_mock_run 验证任务体执行；真实持久化依赖 Hatchet Server）
-  - [x] 7.2.3 模拟 Worker 重启（通过无服务器重启模拟测试覆盖，真实 Worker E2E 可选）
-  - [x] 7.2.4 验证定时恢复（通过调度精度模拟测试覆盖，真实 Worker E2E 可选）
+  - [ ] 7.2.3 模拟 Worker 重启（需真实 Server + Worker，建议手动验证或 E2E）
+  - [ ] 7.2.4 验证定时恢复（同上，建议手动验证）
   - **测试备注**：`tests/integration/test_hatchet_integration.py::test_hatchet_durable_task_aio_sleep_for_mock` 在 mock_run 下为 **SKIP**（SDK 无 durable event listener）。完成 7.2.3 或 7.2.4 后，用真实 Hatchet Worker 跑通该用例并更新 skip 逻辑或改为 E2E 验收。
 
 - [x] 7.3 Cron 触发器测试
@@ -195,7 +195,7 @@
 
 - [x] 11.1 轻量性能测试（无服务器）
   - [x] 11.1.1 测试 Config 加载与 schedule_task 校验路径耗时
-  - [x] 11.1.2 可选：1000 任务调度吞吐（使用无服务器模拟路径完成性能验证）
+  - [ ] 11.1.2 可选：1000 任务调度吞吐（需真实 Hatchet 环境）
 
 - [x] 11.2 并发执行测试
   - [x] 11.2.1 测试 10 个并发任务

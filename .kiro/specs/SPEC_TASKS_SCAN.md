@@ -37,15 +37,15 @@
 - [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移 + 属性测试） → spec: database-core
 - [ ] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
 - [ ] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
-- [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule 已完成；remember/recall 待 Memory） → spec: agent-tools
+- [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule、remember、recall 已实现） → spec: agent-tools
 - [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [x] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
 - [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
 - [x] `owlclaw.governance.ledger` — 执行记录 → spec: governance
 - [x] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
 - [ ] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
-- [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
-  **验收备注**：已补齐 7.2.3/7.2.4 的无服务器重启/恢复模拟测试；真实 Worker 的 durable listener E2E 仍可作为后续增强验证（不阻塞当前交付）。
+- [ ] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
+  **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
 - [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
@@ -93,10 +93,10 @@
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
+| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（66/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（101/117） | cron 触发器 |
-| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 三层齐全，已完成（147/147） | Hatchet 集成 |
+| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（96/117） | cron 触发器 |
+| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（triggers-cron Task 12 性能优化） |
-| 批次状态 | **完成**。已实现并验收 Task 12（12.1~12.4），`triggers-cron` 进度更新为 **101/117**。 |
-| 已完成项 | 在 `owlclaw/triggers/cron.py` 新增 `ConcurrencyController`、`PriorityScheduler`（含 `PrioritizedTask`）、`CronCache`、`BatchOperations`；新增 `tests/unit/triggers/test_cron_performance_helpers.py` 覆盖并发限制、优先级执行、TTL 缓存、批量读写；同步 `.kiro/specs/triggers-cron/tasks.md` 勾选 Task 12 全部子项。 |
-| 下一待执行 | `triggers-cron` Task 13.1（配置模式） |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/cron.py tests/unit/triggers/test_cron_performance_helpers.py` -> `All checks passed!`；`poetry run pytest tests/unit/triggers/test_cron_performance_helpers.py tests/unit/triggers/test_cron_observability_and_resilience.py tests/unit/triggers/test_cron_execution.py -q` -> `53 passed`。 |
+| 当前批次 | review 循环（triggers-cron 熔断器持久化与多渠道通知补齐） |
+| 批次状态 | **完成**。已补齐熔断器持久化状态存储适配与 ErrorNotifier 多渠道通知，治理与错误处理章节进一步收口。 |
+| 已完成项 | `owlclaw/triggers/cron.py` 的 `CircuitBreaker` 新增 `state_store` 持久化适配（`get/set/delete`），`check/open/close` 读写持久状态；`ErrorNotifier` 新增多渠道通知能力（支持同步/异步 channel）；新增 `tests/unit/triggers/test_cron_observability_and_resilience.py` 覆盖持久化状态读写与多渠道通知。 |
+| 下一待执行 | 继续推进 `triggers-cron` 的 12~16（性能优化、部署、文档、最终集成），并并行收口 `integrations-hatchet` 剩余真实环境项。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/cron.py tests/unit/triggers/test_cron_observability_and_resilience.py`、`poetry run mypy owlclaw/triggers/cron.py tests/unit/triggers/test_cron_observability_and_resilience.py`、`poetry run pytest tests/unit/triggers/test_cron_observability_and_resilience.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py -q` 均通过（103 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

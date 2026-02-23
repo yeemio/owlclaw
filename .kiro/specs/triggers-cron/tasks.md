@@ -356,8 +356,8 @@
     - 测试通知触发
     - _需求: FR-6, FR-8_
 
-- [x] 12. 实现性能优化
-  - [x] 12.1 创建 ConcurrencyController
+- [ ] 12. 实现性能优化
+  - [ ] 12.1 创建 ConcurrencyController
     - 使用 asyncio.Semaphore 实现并发限制
     - 创建 `execute_with_limit` 方法
     - 在字典中跟踪活动任务
@@ -365,7 +365,7 @@
     - 实现用于优雅关闭的 `wait_all` 方法
     - _需求: NFR-2_
   
-  - [x] 12.2 创建 PriorityScheduler
+  - [ ] 12.2 创建 PriorityScheduler
     - 使用 heapq 实现优先级队列
     - 创建 PrioritizedTask 数据类
     - 实现带优先级的 `schedule` 方法
@@ -373,14 +373,14 @@
     - 使用 asyncio.Lock 实现线程安全
     - _需求: NFR-2_
   
-  - [x] 12.3 创建用于性能的 CronCache
+  - [ ] 12.3 创建用于性能的 CronCache
     - 实现执行记录缓存
     - 实现带 TTL 的统计缓存
     - 使用 @lru_cache 进行 next_trigger_time 计算
     - 实现缓存失效逻辑
     - _需求: NFR-1_
   
-  - [x] 12.4 实现批量操作
+  - [ ] 12.4 实现批量操作
     - 创建 BatchOperations 类
     - 实现用于批量 Ledger 写入的 `batch_record_executions`
     - 实现用于高效查询的 `batch_query_executions`
