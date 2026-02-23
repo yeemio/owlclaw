@@ -382,7 +382,7 @@ class CronTriggerRegistry:
                 run = await agent_runtime.trigger_event(
                     event_name=config.event_name,
                     focus=config.focus,
-                    context=execution.context
+                    payload=execution.context
                 )
                 
                 # 记录 Agent 信息

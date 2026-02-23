@@ -143,12 +143,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：cli-db Task 15，仅 cli-db） |
-| 批次状态 | **完成**。cli-db Final Checkpoint 已执行。 |
-| 已完成项 | cli-db Task 15：单元测试 23 个全部通过；owlclaw db 及 8 个子命令 --help 验证通过；属性/集成测试为可选未执行。 |
-| 下一待执行 | 其他 spec（如 database-core、governance、triggers-cron 等）或 cli-db 可选任务（14.1 集成测试、13.1/13.2 属性测试）。 |
-| 验收快照 | `pytest tests/unit/test_cli_db.py tests/unit/test_db.py` → 23 passed。 |
-| 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
+| 当前批次 | spec 循环（本轮：triggers-cron 文档规范化，仅 specs） |
+| 批次状态 | **完成**。triggers-cron 三层文档已完成一致性修复。 |
+| 已完成项 | `triggers-cron/requirements.md` 清理控制字符与坏围栏、修复 `agent_runtime/resume_task/trigger_now` 错误；`triggers-cron/design.md` 对齐 `trigger_event(payload=...)`；`triggers-cron/tasks.md` 统一“`*` 为重点标记非可选”。 |
+| 下一待执行 | 继续 spec 循环，按同口径扫描下一个未规范化 spec（仅 `.kiro/specs/**`）。 |
+| 验收快照 | 文档静态检查通过：requirements 无控制字符；关键 API 术语一致。 |
+| 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
