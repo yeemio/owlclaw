@@ -90,7 +90,7 @@
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
-| database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（19/30） | SQLAlchemy Base、engine、session、异常、Alembic |
+| database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（20/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | 🟡 三层齐全，进行中（17/53） | `owlclaw db` init/migrate/status，已挂载到主入口 |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
@@ -143,12 +143,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：database-core Task 8.1 / 8.2） |
-| 批次状态 | **完成**。database-core 集成测试文件与文档示例已补齐。 |
-| 已完成项 | Task 8.1：新增 `tests/integration/test_db_core_integration.py`（连接、建表查询、pgvector、并发池行为）；Task 8.2：README 增加 database core 使用示例。 |
-| 下一待执行 | database-core Task 9（最终 checkpoint）或 cli-db Task 8（rollback）。 |
-| 验收快照 | `poetry run pytest tests/integration/test_db_core_integration.py -q` → `4 skipped`（Docker 权限受限）；`ruff check` 通过。 |
-| 阻塞项 | Docker 守护进程权限受限（Windows named pipe 拒绝访问），导致集成测试在本机跳过。 |
+| 当前批次 | spec 循环（本轮：database-core Task 9） |
+| 批次状态 | **完成**。database-core 最终检查点已执行。 |
+| 已完成项 | Task 9：执行 `tests/unit/test_db.py` + `tests/integration/test_db_core_integration.py`；单元测试通过，集成测试在无 Docker 权限环境下跳过。 |
+| 下一待执行 | database-core 可选属性测试任务（2.2/3.2/3.3/3.4/4.4-4.7/6.2）或切换到 cli-db Task 8（rollback）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_db.py tests/integration/test_db_core_integration.py -q` → `7 passed, 4 skipped`。 |
+| 阻塞项 | Docker 守护进程权限受限（Windows named pipe 拒绝访问），导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
