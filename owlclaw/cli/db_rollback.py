@@ -2,7 +2,6 @@
 
 import asyncio
 import os
-import sys
 
 import typer
 from alembic import command
@@ -181,6 +180,9 @@ def rollback_command(
             to_roll = rev_list[:1]
 
     if not to_roll:
+        if target:
+            typer.echo(f"Error: target revision '{target}' is not behind current revision '{current_rev}'.", err=True)
+            raise typer.Exit(2)
         typer.echo("Already at base revision.")
         return
 
@@ -190,7 +192,7 @@ def rollback_command(
         doc = getattr(rev, "doc", None) or ""
         typer.echo(f"  - {rev.revision[:12]}{' ' + doc if doc else ''}")
 
-    if dry_run or "--dry-run" in sys.argv:
+    if dry_run:
         typer.echo("--dry-run: run without --dry-run to apply rollback.")
         return
 

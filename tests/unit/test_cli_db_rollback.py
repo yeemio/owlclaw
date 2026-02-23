@@ -55,3 +55,17 @@ def test_rollback_invalid_target_exits_2(monkeypatch) -> None:
     with pytest.raises(Exception) as exc_info:
         rollback_command(target="bad-rev", steps=0, database_url="", dry_run=True, yes=True)
     assert getattr(exc_info.value, "exit_code", None) == 2
+
+
+def test_rollback_target_not_behind_current_exits_2(monkeypatch) -> None:
+    monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
+    monkeypatch.setattr("owlclaw.cli.db_rollback.get_engine", lambda url: _FakeEngine())
+    monkeypatch.setattr("owlclaw.cli.db_rollback._get_current_revision_sync", lambda engine: "abc123")
+    monkeypatch.setattr(
+        "owlclaw.cli.db_rollback.ScriptDirectory.from_config",
+        lambda cfg: _FakeScript([]),
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        rollback_command(target="older-or-unrelated", steps=0, database_url="", dry_run=True, yes=True)
+    assert getattr(exc_info.value, "exit_code", None) == 2
