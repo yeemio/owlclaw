@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 from typer.testing import CliRunner
 
 from owlclaw.cli import app
+from owlclaw.cli.db_migrate import migrate_command
 
 runner = CliRunner()
 
@@ -50,3 +51,13 @@ def test_db_migrate_rejects_blank_target(monkeypatch):
     monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
     result = runner.invoke(app, ["db", "migrate", "--target", "   "])
     assert result.exit_code == 2
+
+
+def test_db_migrate_trims_database_url_before_use(monkeypatch):
+    monkeypatch.setenv("OWLCLAW_DATABASE_URL", "  postgresql://u:p@localhost/owlclaw  ")
+    with patch("owlclaw.cli.db_migrate.command.current") as mock_current, patch(
+        "owlclaw.cli.db_migrate.command.heads"
+    ) as mock_heads:
+        migrate_command(target="head", database_url=None, dry_run=True)
+    assert mock_current.call_count == 1
+    assert mock_heads.call_count == 1

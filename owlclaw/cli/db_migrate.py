@@ -1,6 +1,7 @@
 """owlclaw db migrate — run Alembic upgrade."""
 
 import os
+import sys
 
 import typer
 from alembic import command
@@ -34,10 +35,12 @@ def migrate_command(
     if not url or not url.strip():
         typer.echo("Error: Set OWLCLAW_DATABASE_URL or pass --database-url.", err=True)
         raise typer.Exit(2)
+    url = url.strip()
     if database_url:
         os.environ["OWLCLAW_DATABASE_URL"] = url
     alembic_cfg = Config("alembic.ini")
-    if dry_run:
+    do_dry_run = bool(dry_run) or "--dry-run" in sys.argv
+    if do_dry_run:
         command.current(alembic_cfg)
         command.heads(alembic_cfg)
         typer.echo("--dry-run: run without --dry-run to apply migrations.")
