@@ -98,6 +98,16 @@ def test_memory_security_filter_masks_sensitive_for_mcp() -> None:
     assert "[REDACTED]" in masked.content
 
 
+def test_memory_security_filter_handles_non_string_channel() -> None:
+    filt = MemorySecurityFilter()
+    entry = MemoryEntry(
+        content="email alice@example.com token=secret",
+        security_level=SecurityLevel.CONFIDENTIAL,
+    )
+    original = filt.for_channel(entry, None)  # type: ignore[arg-type]
+    assert original.content == entry.content
+
+
 @pytest.mark.asyncio
 async def test_memory_service_auto_classifies_on_remember() -> None:
     store = _CaptureStore()

@@ -41,8 +41,15 @@ class MemorySecurityFilter:
     def _is_sensitive(level: SecurityLevel) -> bool:
         return level in (SecurityLevel.CONFIDENTIAL, SecurityLevel.RESTRICTED)
 
+    @staticmethod
+    def _normalize_channel(channel: object) -> str:
+        if not isinstance(channel, str):
+            return "internal"
+        normalized = channel.strip().lower()
+        return normalized or "internal"
+
     def for_channel(self, entry: MemoryEntry, channel: str) -> MemoryEntry:
-        ch = channel.strip().lower()
+        ch = self._normalize_channel(channel)
         if ch not in {"mcp", "langfuse"}:
             return entry
         if not self._is_sensitive(entry.security_level):
