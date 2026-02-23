@@ -61,6 +61,13 @@ class TestBuiltInToolsIsBuiltin:
         assert tools.is_builtin(" query_state ") is True
 
 
+class TestBuiltInToolsInitValidation:
+    @pytest.mark.parametrize("timeout_value", [0, -1, float("nan"), float("inf"), True, "bad"])
+    def test_init_rejects_invalid_timeout_seconds(self, timeout_value) -> None:
+        with pytest.raises(ValueError, match="timeout_seconds must be a positive finite number"):
+            BuiltInTools(timeout_seconds=timeout_value)  # type: ignore[arg-type]
+
+
 class TestQueryState:
     @pytest.mark.asyncio
     async def test_query_state_success(self) -> None:

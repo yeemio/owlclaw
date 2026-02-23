@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import re
 import time
 import uuid
@@ -185,7 +186,12 @@ class BuiltInTools:
         self._ledger = ledger
         self._hatchet = hatchet_client
         self._scheduled_run_task = scheduled_run_task_name
-        self._timeout = timeout_seconds
+        if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)):
+            raise ValueError("timeout_seconds must be a positive finite number")
+        timeout_val = float(timeout_seconds)
+        if not math.isfinite(timeout_val) or timeout_val <= 0:
+            raise ValueError("timeout_seconds must be a positive finite number")
+        self._timeout = timeout_val
 
     def get_tool_schemas(self) -> list[dict[str, Any]]:
         """Return OpenAI-style function schemas for all built-in tools."""
