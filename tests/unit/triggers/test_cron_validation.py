@@ -144,6 +144,11 @@ class TestCronRegistration:
         with pytest.raises(ValueError, match="event_name must not be empty"):
             reg.register("   ", "0 * * * *")
 
+    def test_register_rejects_non_string_event_name(self) -> None:
+        reg = self._registry()
+        with pytest.raises(ValueError, match="event_name must be a non-empty string"):
+            reg.register(None, "0 * * * *")  # type: ignore[arg-type]
+
     def test_register_normalizes_focus_whitespace(self) -> None:
         reg = self._registry()
         reg.register("daily", "0 9 * * *", focus="  reporting  ")

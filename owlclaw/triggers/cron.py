@@ -145,6 +145,8 @@ class CronTriggerRegistry:
 
     @staticmethod
     def _normalize_event_name(event_name: str) -> str:
+        if not isinstance(event_name, str):
+            raise ValueError("event_name must be a non-empty string")
         normalized = event_name.strip()
         if not normalized:
             raise ValueError("event_name must not be empty")
