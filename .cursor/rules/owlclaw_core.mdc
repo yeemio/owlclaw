@@ -177,20 +177,26 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 
 2. Merge   — 检查 review-work 是否有待合并内容：
              有 → git merge review-work（在主 worktree 执行）
-             合并后通知各编码 worktree 执行 git merge main
 
-3. Assign  — 检查各编码 worktree 的当前 spec 是否已完成：
+3. Sync    — **main 每次有新 commit 后（无论来自 merge 还是文档更新），必须立即同步所有子 worktree**：
+             cd D:\AI\owlclaw-review    && git merge main
+             cd D:\AI\owlclaw-codex     && git merge main
+             cd D:\AI\owlclaw-codex-gpt && git merge main
+             若有冲突 → 就地解决（通常只有 SPEC_TASKS_SCAN.md），取最新进度版本
+             ⚠️ 跳过此步会导致编码 worktree 读到旧任务分配，继续执行已完成的旧 spec
+
+4. Assign  — 检查各编码 worktree 是否完成当前 spec：
              完成 → 从 WORKTREE_ASSIGNMENTS.md「下一轮待分配」中选下一个 spec
              更新 WORKTREE_ASSIGNMENTS.md 的分配表和分配历史
 
-4. Unblock — 读取 .kiro/specs/SPEC_TASKS_SCAN.md 的 blocked 项：
+5. Unblock — 读取 .kiro/specs/SPEC_TASKS_SCAN.md 的 blocked 项：
              评估是否可人工解锁（补充外部依赖、架构决策、拆解子任务）
              可解锁 → 直接处理或在 SPEC_TASKS_SCAN 中标注解锁方案
 
-5. Commit  — 若本轮有 main 变更（merge 或文档更新）：
+6. Commit  — 若本轮有 main 变更（merge 或文档更新）：
              git add -A && git commit -m "chore(orchestrate): <本轮操作摘要>"
 
-6. Report  — 输出状态总览表：
+7. Report  — 输出状态总览表：
              | Worktree | 分支 | 当前 spec | 进度 | 健康 | 待处理 |
              每行一个 worktree，含 review-work 的审校状态
 ```
