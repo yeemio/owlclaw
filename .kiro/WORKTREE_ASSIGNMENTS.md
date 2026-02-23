@@ -161,9 +161,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| agent-runtime | 70/105 | `owlclaw/agent/runtime/**`, `owlclaw/agent/heartbeat/**`, `tests/unit/agent/test_runtime*.py` |
+| integrations-hatchet | 138/147 | `owlclaw/integrations/hatchet.py`, `owlclaw/agent/runtime/hatchet_bridge.py`, `tests/unit/integrations/test_hatchet*.py` |
 
-**前置条件**：database-core + cli-db 已完成并合并到 main，agent-runtime 可正式启动。
+**前置条件**：agent-runtime 已完成（105/105），hatchet_bridge 已就绪，integrations-hatchet 收尾阶段。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -185,9 +185,10 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| governance | 130/173 | `owlclaw/governance/**`, `tests/unit/governance/**` |
+| capabilities-skills | 107/108 | `owlclaw/capabilities/skills.py`, `owlclaw/capabilities/knowledge.py`, `tests/unit/test_skills*.py` |
+| agent-tools | 46/139 | `owlclaw/agent/tools.py`, `tests/unit/agent/test_tools*.py` |
 
-**前置条件**：security 已完成（44/44），configuration 已完成（12/12），governance 可正式推进。
+**前置条件**：governance 已完成（173/173），capabilities-skills 只差 1 task 可快速收口；agent-tools 接续推进。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -223,6 +224,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-23 | 初始分配 | 建立 4 worktree 并行架构 |
 | 2026-02-23 | codex-work：database-core/cli-db → agent-runtime | database-core/cli-db 已完成并通过审校合并到 main |
 | 2026-02-23 | codex-gpt-work：security/configuration → governance | security(44/44) + configuration(12/12) 已完成，governance 进度最高(130/173)且 security 完成可解锁协调需求 |
+| 2026-02-23 | codex-work：agent-runtime → integrations-hatchet | agent-runtime 已完成(105/105)，hatchet_bridge 已就绪，integrations-hatchet 收尾(138/147) |
+| 2026-02-23 | codex-gpt-work：governance → capabilities-skills + agent-tools | governance 已完成(173/173)，capabilities-skills 只差1 task，agent-tools 接续 |
 
 ---
 
@@ -231,10 +234,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 以下 spec 尚未分配到任何编码 worktree，等当前批次完成后按优先级分配：
 
 **Phase 1 剩余**（优先）：
-- agent-tools (46/139)
 - triggers-cron (39/92)
-- integrations-hatchet (138/147)
-- capabilities-skills (107/108)
 - skill-templates (92/149)
 
 **Phase 2**（次优先）：
