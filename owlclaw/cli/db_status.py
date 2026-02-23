@@ -32,6 +32,7 @@ def status_command(
     if not url or not url.strip():
         typer.echo("Error: Set OWLCLAW_DATABASE_URL or pass --database-url.", err=True)
         raise typer.Exit(2)
+    url = url.strip()
     try:
         get_engine(url)
     except ConfigurationError as e:

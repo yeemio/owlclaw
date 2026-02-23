@@ -61,3 +61,12 @@ def test_db_migrate_trims_database_url_before_use(monkeypatch):
         migrate_command(target="head", database_url=None, dry_run=True)
     assert mock_current.call_count == 1
     assert mock_heads.call_count == 1
+
+
+def test_db_status_trims_database_url_before_engine_check(monkeypatch):
+    from owlclaw.cli.db_status import status_command
+
+    monkeypatch.setenv("OWLCLAW_DATABASE_URL", "  postgresql://u:p@localhost/owlclaw  ")
+    with patch("owlclaw.cli.db_status.get_engine") as mock_get_engine:
+        status_command(database_url=None)
+    mock_get_engine.assert_called_once_with("postgresql://u:p@localhost/owlclaw")
