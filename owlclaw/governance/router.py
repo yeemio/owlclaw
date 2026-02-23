@@ -20,8 +20,14 @@ class Router:
     """Selects LLM model by task_type; supports fallback on failure."""
 
     def __init__(self, config: dict) -> None:
-        self._rules = config.get("rules", [])
-        self._default_model = config.get("default_model", "gpt-4o-mini")
+        cfg = config if isinstance(config, dict) else {}
+        raw_rules = cfg.get("rules", [])
+        self._rules = raw_rules if isinstance(raw_rules, list) else []
+        raw_default_model = cfg.get("default_model", "gpt-4o-mini")
+        if isinstance(raw_default_model, str) and raw_default_model.strip():
+            self._default_model = raw_default_model.strip()
+        else:
+            self._default_model = "gpt-4o-mini"
 
     async def select_model(
         self,
@@ -30,10 +36,24 @@ class Router:
     ) -> ModelSelection:
         """Return model and fallback chain for the given task_type."""
         for rule in self._rules:
+            if not isinstance(rule, dict):
+                continue
             if rule.get("task_type") == task_type:
+                model = rule.get("model", self._default_model)
+                if not isinstance(model, str) or not model.strip():
+                    model = self._default_model
+                raw_fallback = rule.get("fallback", [])
+                if isinstance(raw_fallback, list):
+                    fallback = [
+                        item.strip()
+                        for item in raw_fallback
+                        if isinstance(item, str) and item.strip()
+                    ]
+                else:
+                    fallback = []
                 return ModelSelection(
-                    model=rule.get("model", self._default_model),
-                    fallback=rule.get("fallback", []),
+                    model=model,
+                    fallback=fallback,
                 )
         return ModelSelection(model=self._default_model, fallback=[])
 

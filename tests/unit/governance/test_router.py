@@ -59,3 +59,33 @@ async def test_handle_model_failure_empty_chain_returns_none():
         [],
     )
     assert next_model is None
+
+
+@pytest.mark.asyncio
+async def test_router_handles_non_dict_config() -> None:
+    r = Router(None)  # type: ignore[arg-type]
+    ctx = RunContext(tenant_id="t1")
+    sel = await r.select_model("any", ctx)
+    assert sel.model == "gpt-4o-mini"
+    assert sel.fallback == []
+
+
+@pytest.mark.asyncio
+async def test_router_ignores_invalid_rules_and_normalizes_fallback() -> None:
+    r = Router(
+        {
+            "rules": [
+                "bad-shape",
+                {
+                    "task_type": "trading_decision",
+                    "model": "  ",
+                    "fallback": [" gpt-4o-mini ", "", 123],  # type: ignore[list-item]
+                },
+            ],
+            "default_model": "gpt-4o",
+        }
+    )
+    ctx = RunContext(tenant_id="t1")
+    sel = await r.select_model("trading_decision", ctx)
+    assert sel.model == "gpt-4o"
+    assert sel.fallback == ["gpt-4o-mini"]
