@@ -22,13 +22,50 @@ def _now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _parse_dt(raw: str | None) -> datetime:
+def _parse_dt(raw: Any) -> datetime:
     if not raw:
         return _now_utc()
-    parsed = datetime.fromisoformat(raw)
+    if isinstance(raw, datetime):
+        return raw if raw.tzinfo is not None else raw.replace(tzinfo=timezone.utc)
+    try:
+        parsed = datetime.fromisoformat(str(raw))
+    except (TypeError, ValueError):
+        return _now_utc()
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=timezone.utc)
     return parsed
+
+
+def _parse_int(raw: Any, default: int) -> int:
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _parse_bool(raw: Any, default: bool = False) -> bool:
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, str):
+        normalized = raw.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off", ""}:
+            return False
+    if isinstance(raw, (int, float)):
+        return raw != 0
+    return default
+
+
+def _parse_tags(raw: Any) -> list[str]:
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        normalized = raw.strip()
+        return [normalized] if normalized else []
+    if isinstance(raw, (list, tuple, set)):
+        return [str(tag) for tag in raw if str(tag).strip()]
+    return []
 
 
 def _entry_from_payload(entry_id: UUID, payload: dict[str, Any], vector: list[float] | None) -> MemoryEntry:
@@ -43,13 +80,13 @@ def _entry_from_payload(entry_id: UUID, payload: dict[str, Any], vector: list[fl
         tenant_id=str(payload.get("tenant_id", "default")),
         content=str(payload.get("content", "")),
         embedding=vector,
-        tags=[str(t) for t in payload.get("tags", []) or []],
+        tags=_parse_tags(payload.get("tags")),
         security_level=level,
-        version=int(payload.get("version", 1)),
+        version=_parse_int(payload.get("version", 1), 1),
         created_at=_parse_dt(payload.get("created_at")),
         accessed_at=_parse_dt(payload["accessed_at"]) if payload.get("accessed_at") else None,
-        access_count=int(payload.get("access_count", 0)),
-        archived=bool(payload.get("archived", False)),
+        access_count=_parse_int(payload.get("access_count", 0), 0),
+        archived=_parse_bool(payload.get("archived", False), default=False),
     )
 
 
@@ -257,7 +294,7 @@ class QdrantStore(MemoryStore):
             payload = rec.payload or {}
             if payload.get("agent_id") != agent_id or payload.get("tenant_id") != tenant_id:
                 continue
-            current = int(payload.get("access_count", 0))
+            current = _parse_int(payload.get("access_count", 0), 0)
             await self._client.set_payload(
                 collection_name=self._collection_name,
                 payload={
