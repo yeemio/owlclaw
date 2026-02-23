@@ -86,3 +86,12 @@ def test_db_status_mask_url_without_password_keeps_userinfo():
 
     masked = _mask_url("postgresql://user@localhost/dbname")
     assert masked == "postgresql://user@localhost/dbname"
+
+
+def test_db_init_parse_pg_url_accepts_case_insensitive_schemes():
+    from owlclaw.cli.db_init import _parse_pg_url
+
+    parsed1 = _parse_pg_url("PostgreSQL://u:p@localhost:5432/postgres")
+    parsed2 = _parse_pg_url("PostgreSQL+AsyncPG://u:p@localhost:5432/postgres")
+    assert parsed1["database"] == "postgres"
+    assert parsed2["database"] == "postgres"

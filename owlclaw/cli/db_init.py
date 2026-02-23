@@ -24,9 +24,10 @@ except ImportError:
 def _parse_pg_url(url: str) -> dict:
     """Parse postgresql:// or postgresql+asyncpg:// URL into connection kwargs."""
     u = url.strip()
-    if u.startswith("postgresql+asyncpg://"):
+    lower_u = u.lower()
+    if lower_u.startswith("postgresql+asyncpg://"):
         u = "postgresql://" + u[len("postgresql+asyncpg://"):]
-    elif not u.startswith("postgresql://"):
+    elif not lower_u.startswith("postgresql://"):
         return {}
     parsed = urlparse(u)
     return {
