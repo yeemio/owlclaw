@@ -45,6 +45,20 @@ _DEFAULT_LLM_TIMEOUT_SECONDS = 60.0
 _DEFAULT_RUN_TIMEOUT_SECONDS = 300.0
 
 
+def _coerce_confirmation_flag(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off", ""}:
+            return False
+    return False
+
+
 class AgentRuntime:
     """Core orchestrator for a single Agent.
 
@@ -806,7 +820,7 @@ class AgentRuntime:
             "trigger": context.trigger,
             "focus": context.focus,
             "risk_level": meta.get("risk_level", "low"),
-            "requires_confirmation": bool(meta.get("requires_confirmation", False)),
+            "requires_confirmation": _coerce_confirmation_flag(meta.get("requires_confirmation", False)),
             "confirmed": meta.get("name") in confirmed if meta.get("name") else False,
         }
         return json.dumps(payload, ensure_ascii=False, sort_keys=True)

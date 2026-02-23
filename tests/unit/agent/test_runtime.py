@@ -702,6 +702,17 @@ class TestAgentRuntimeRun:
         assert reasoning["requires_confirmation"] is True
         assert reasoning["confirmed"] is True
 
+    def test_build_tool_decision_reasoning_parses_string_confirmation_flag(self, tmp_path) -> None:
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+        reasoning = json.loads(
+            rt._build_tool_decision_reasoning(
+                {"name": "x", "risk_level": "low", "requires_confirmation": "false"},
+                ctx,
+            )
+        )
+        assert reasoning["requires_confirmation"] is False
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_invalid_llm_response_shape_exits_gracefully(
         self, mock_llm, tmp_path
