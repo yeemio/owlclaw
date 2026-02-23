@@ -96,6 +96,20 @@ async def test_filter_supports_sync_evaluator():
 
 
 @pytest.mark.asyncio
+async def test_filter_fail_open_when_evaluator_returns_invalid_type():
+    class InvalidResultEvaluator:
+        async def evaluate(self, capability, agent_id, context):
+            return {"visible": False}
+
+    vf = VisibilityFilter()
+    vf.register_evaluator(InvalidResultEvaluator())
+    caps = [CapabilityView("only")]
+    ctx = RunContext(tenant_id="t1")
+    out = await vf.filter_capabilities(caps, "agent1", ctx)
+    assert [c.name for c in out] == ["only"]
+
+
+@pytest.mark.asyncio
 async def test_filter_fail_open_on_evaluator_exception():
     """When an evaluator raises, capability remains visible (fail-open)."""
 

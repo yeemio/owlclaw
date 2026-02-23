@@ -218,6 +218,11 @@ class VisibilityFilter:
                 result = await result
             if isinstance(result, FilterResult):
                 return result
+            logger.warning(
+                "Evaluator %s returned invalid result type %s (fail-open)",
+                type(evaluator).__name__,
+                type(result).__name__,
+            )
             return FilterResult(visible=True)
         except asyncio.CancelledError:
             raise
