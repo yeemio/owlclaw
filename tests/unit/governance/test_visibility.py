@@ -1,5 +1,8 @@
 """Unit tests for VisibilityFilter and related types."""
 
+import statistics
+import time
+
 import pytest
 
 from owlclaw.governance.visibility import (
@@ -217,3 +220,24 @@ def test_capability_view_coerces_risk_level():
     cap2 = CapabilityView("y", risk_level="bad")
     assert cap1.risk_level == "high"
     assert cap2.risk_level == "low"
+
+
+@pytest.mark.asyncio
+async def test_visibility_filter_eval_p95_under_10ms():
+    class PassAll:
+        async def evaluate(self, capability, agent_id, context):
+            return FilterResult(visible=True)
+
+    vf = VisibilityFilter()
+    vf.register_evaluator(PassAll())
+    caps = [CapabilityView("cap-a"), CapabilityView("cap-b")]
+    ctx = RunContext(tenant_id="t1")
+
+    latencies_ms: list[float] = []
+    for _ in range(200):
+        start = time.perf_counter()
+        out = await vf.filter_capabilities(caps, "agent1", ctx)
+        latencies_ms.append((time.perf_counter() - start) * 1000.0)
+        assert len(out) == 2
+    p95 = statistics.quantiles(latencies_ms, n=100)[94]
+    assert p95 < 10.0

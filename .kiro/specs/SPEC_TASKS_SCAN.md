@@ -94,7 +94,7 @@
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（40/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
-| governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（151/173） | visibility + ledger + router |
+| governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（167/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：governance Round 4 迁移执行 + 多租户隔离集成验收） |
-| 批次状态 | **完成**。已补齐真实数据库迁移执行与租户隔离集成验证，Phase 5 迁移/隔离任务闭环。 |
-| 已完成项 | 新增 `tests/integration/test_governance_ledger_db_integration.py`：使用 `PostgresContainer` 执行 `alembic upgrade head`，验证 `ledger_records` 表字段/索引/NOT NULL 约束，以及跨 tenant 查询隔离；同步勾选 governance 任务 `5.1.2`、`5.1.3.*`、`5.2.1`、`5.2.3`。 |
-| 下一待执行 | 继续治理 spec 循环，重点推进 5.3 性能测试与 6.x 验收清单量化。 |
-| 验收快照 | `poetry run ruff check tests/integration/test_governance_ledger_db_integration.py tests/unit/test_migration_ledger_records.py && poetry run pytest tests/integration/test_governance_ledger_db_integration.py tests/unit/test_migration_ledger_records.py tests/unit/governance -q` -> `All checks passed; 88 passed in 12.40s`。 |
+| 当前批次 | spec 循环（本轮：governance Round 5 性能验收闭环） |
+| 批次状态 | **完成**。已补齐治理层性能测试并完成覆盖率/集成验收量化。 |
+| 已完成项 | 新增 `tests/integration/test_governance_performance.py`（enqueue P95、query P95、高并发吞吐）与 `tests/unit/governance/test_visibility.py` 性能断言；治理模块覆盖率 `93%`，并同步勾选 `5.3.1-5.3.4`、`6.1`、`6.2`、`6.3.1`、`6.3.2`、`6.3.4`。 |
+| 下一待执行 | 继续治理 spec 循环，仅剩 `5.3.5`、`6.3.3` 与 `6.4` 文档验收项。 |
+| 验收快照 | `poetry run pytest tests/unit/governance tests/integration/test_governance_ledger_db_integration.py tests/integration/test_governance_performance.py --cov=owlclaw/governance --cov-report=term` -> `89 passed; governance coverage 93%`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
