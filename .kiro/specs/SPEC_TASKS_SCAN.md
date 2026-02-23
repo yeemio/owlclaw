@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（Round 2/7：database-core session 属性测试验收） |
-| 批次状态 | **完成**。database-core 6.2 已完成并通过。 |
-| 已完成项 | 新增 `tests/unit/test_db_session_properties.py`，覆盖事务不变式：成功路径 commit 一次、异常路径 rollback 一次。 |
-| 下一待执行 | Round 3/7：收口 database-core 任务 8（父任务勾选与验收同步）。 |
-| 验收快照 | `poetry run pytest tests/unit/test_db_session_properties.py -q` -> `1 passed in 0.69s`。 |
+| 当前批次 | spec 循环（Round 3/7：database-core 父任务一致性收口） |
+| 批次状态 | **完成**。database-core 任务结构已对齐（8.x 子任务完成状态与父任务一致）。 |
+| 已完成项 | 将 `database-core/tasks.md` 中任务 8（集成测试和文档）由未勾选改为勾选，修复父子状态漂移。 |
+| 下一待执行 | Round 4/7：验收并勾选 cli-db 7.4（revision 单元测试）。 |
+| 验收快照 | `rg`/diff 复核确认：任务 8.1、8.2 已为 `[x]`，父任务 8 同步为 `[x]`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
