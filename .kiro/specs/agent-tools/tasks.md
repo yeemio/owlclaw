@@ -171,12 +171,12 @@
 
 ## Task 11: 安全审查
 
-- [ ] 11.1 审查 remember 工具的 content sanitization
-- [ ] 11.2 审查 query_state 工具的状态范围限制
-- [ ] 11.3 审查 schedule_once/schedule_cron 工具的频率限制
-- [ ] 11.4 审查所有工具参数的类型和范围验证
-- [ ] 11.5 审查工具调用的审计日志完整性
-- [ ] 11.6 审查 cancel_schedule 工具的权限验证（Agent 只能取消自己创建的调度）
+- [x] 11.1 审查 remember 工具的 content sanitization（接入 `InputSanitizer`，净化后写入）
+- [x] 11.2 审查 query_state 工具的状态范围限制（新增 state_name 字符白名单校验）
+- [x] 11.3 审查 schedule_once/schedule_cron 工具的频率限制（新增 `max_schedule_calls_per_run`）
+- [x] 11.4 审查所有工具参数的类型和范围验证（补齐并回归校验用例）
+- [x] 11.5 审查工具调用的审计日志完整性（新增 `list_security_events()` 与安全事件记录）
+- [x] 11.6 审查 cancel_schedule 工具的权限验证（新增可选 `enforce_schedule_ownership`）
 
 ## Task 12: 与其他组件的集成验证
 
