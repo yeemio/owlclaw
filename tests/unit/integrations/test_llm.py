@@ -138,6 +138,54 @@ class TestLLMClient:
         assert resp.completion_tokens == 1
 
     @pytest.mark.asyncio
+    async def test_complete_mock_mode_function_calls(self) -> None:
+        c = LLMConfig.default_for_owlclaw()
+        c.mock_mode = True
+        c.mock_responses = {
+            "default": {
+                "function_calls": [
+                    {
+                        "name": "get_price",
+                        "arguments": {"symbol": "AAPL"},
+                    }
+                ]
+            }
+        }
+        client = LLMClient(c)
+        resp = await client.complete(messages=[{"role": "user", "content": "check"}], tools=[{"type": "function"}])
+        assert resp.content is None
+        assert resp.model == "mock"
+        assert len(resp.function_calls) == 1
+        assert resp.function_calls[0]["name"] == "get_price"
+        assert resp.function_calls[0]["arguments"] == {"symbol": "AAPL"}
+        assert resp.function_calls[0]["id"] == "mock_call_1"
+        assert resp.completion_tokens >= 1
+
+    @pytest.mark.asyncio
+    async def test_complete_mock_mode_function_calls_with_json_args_and_content(self) -> None:
+        c = LLMConfig.default_for_owlclaw()
+        c.mock_mode = True
+        c.mock_responses = {
+            "default": {
+                "content": "Need tool execution",
+                "function_calls": [
+                    {
+                        "id": "call_1",
+                        "name": "search_news",
+                        "arguments": "{\"query\":\"AAPL\"}",
+                    }
+                ],
+            }
+        }
+        client = LLMClient(c)
+        resp = await client.complete(messages=[{"role": "user", "content": "news?"}])
+        assert resp.content == "Need tool execution"
+        assert len(resp.function_calls) == 1
+        assert resp.function_calls[0]["id"] == "call_1"
+        assert resp.function_calls[0]["name"] == "search_news"
+        assert resp.function_calls[0]["arguments"] == {"query": "AAPL"}
+
+    @pytest.mark.asyncio
     async def test_complete_delegates_to_acompletion(self) -> None:
         c = LLMConfig.default_for_owlclaw()
         client = LLMClient(c)

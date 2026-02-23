@@ -46,7 +46,7 @@
 - [ ] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
 - [ ] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
   **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
-- [ ] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
+- [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [ ] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
@@ -97,7 +97,7 @@
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
-| integrations-llm | `.kiro/specs/integrations-llm/` | 🟡 三层齐全，进行中（127/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
+| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（32/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：连续 7 轮审校 + spec 路径规范化） |
-| 批次状态 | **完成**。7 轮均已执行；编码分支无待审提交，spec 一致性校验通过，已修复过时路径引用。 |
-| 已完成项 | 修复过时路径：`docs/ARCHITECTURE.md` → `docs/ARCHITECTURE_ANALYSIS.md`（`integrations-langchain`/`integrations-langfuse`/`skill-templates`）；修复 `cli-scan/tasks.md` 中路径 `owlclaw/cli_scan/` → `owlclaw/cli/scan/`。 |
-| 下一待执行 | 继续 Review Loop，等待 `codex-work` / `codex-gpt-work` 新提交并执行分支级审校与合并把关。 |
-| 验收快照 | 已完成 29/29 spec 覆盖校验、进度一致性校验（无 mismatch）；红线扫描未发现 `TODO/FIXME/HACK` 和相对导入；测试命令因 Poetry 虚拟环境初始化超时未完成。 |
+| 当前批次 | review 循环（本轮：连续 7 轮审校 + 合并 codex-work/codex-gpt-work） |
+| 批次状态 | **完成**。已完成双分支审校并合并入 `review-work`；`integrations-llm` 状态已收口为完成。 |
+| 已完成项 | 合并 `codex-work`（新增 DB engine 属性测试）与 `codex-gpt-work`（mock function call 响应实现与测试）；保留并延续审校分支中的 spec 进度校准与路径规范化。 |
+| 下一待执行 | 持续 Review Loop；等待新的编码分支提交并执行审校、合并与回归验证。 |
+| 验收快照 | 分支扫描与 spec 一致性校验通过；`poetry run pytest` 在当前沙箱环境持续卡在虚拟环境初始化，未能完成自动化复验。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
