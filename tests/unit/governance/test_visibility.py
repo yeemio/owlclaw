@@ -29,6 +29,15 @@ def test_run_context_normalizes_confirmed_capabilities():
     assert ctx.confirmed_capabilities == {"cap-a", "cap-b"}
 
 
+def test_run_context_normalizes_and_validates_tenant_id():
+    ctx = RunContext(tenant_id="  t1  ")
+    assert ctx.tenant_id == "t1"
+    with pytest.raises(ValueError, match="tenant_id must be a non-empty string"):
+        RunContext(tenant_id="   ")
+    with pytest.raises(ValueError, match="tenant_id must be a non-empty string"):
+        RunContext(tenant_id=None)  # type: ignore[arg-type]
+
+
 def test_register_evaluator_invalid_raises_type_error():
     vf = VisibilityFilter()
     with pytest.raises(TypeError, match="evaluator must provide"):

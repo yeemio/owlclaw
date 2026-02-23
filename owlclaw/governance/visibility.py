@@ -70,6 +70,9 @@ class RunContext:
     confirmed_capabilities: set[str] | None = None
 
     def __post_init__(self) -> None:
+        if not isinstance(self.tenant_id, str) or not self.tenant_id.strip():
+            raise ValueError("tenant_id must be a non-empty string")
+        self.tenant_id = self.tenant_id.strip()
         if self.confirmed_capabilities is None:
             return
         self.confirmed_capabilities = {
