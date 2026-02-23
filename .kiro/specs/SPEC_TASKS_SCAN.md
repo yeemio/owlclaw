@@ -147,7 +147,7 @@
 | 批次状态 | **完成**。security 输入净化测试扩展并与当前实现对齐。 |
 | 已完成项 | security Task 2.3.1/2.3.2：补齐至少 10 个已知 injection 攻击向量测试与自定义规则测试，更新 tasks 勾选并回填进度。 |
 | 下一待执行 | security 任务 2.2.1-2.2.3（Runtime 集成）与 2.3.3（角色隔离测试），其后推进 3.2.x（Governance 集成）。 |
-| 验收快照 | `poetry run pytest tests/unit/security -q` → 18 passed；`poetry run ruff check owlclaw/security tests/unit/security` 通过。 |
+| 验收快照 | `poetry run pytest tests/unit/security -q` → 19 passed；`poetry run ruff check owlclaw/security tests/unit/security` 通过。 |
 | 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
