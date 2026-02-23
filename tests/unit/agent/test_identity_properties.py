@@ -39,9 +39,14 @@ async def test_property_identity_load_completeness(soul: str, bullet_a: str, bul
         identity = loader.get_identity()
         normalized_bullet_a = bullet_a.strip()
         normalized_bullet_b = bullet_b.strip()
+        summary_items = [
+            line[2:].strip()
+            for line in identity["capabilities_summary"].splitlines()
+            if line.startswith("- ")
+        ]
         assert identity["soul"].strip() == soul.strip()
-        assert f"- {normalized_bullet_a}" in identity["capabilities_summary"]
-        assert f"- {normalized_bullet_b}" in identity["capabilities_summary"]
+        assert normalized_bullet_a in summary_items
+        assert normalized_bullet_b in summary_items
         assert "Constraints" not in identity["capabilities_summary"]
 
 
