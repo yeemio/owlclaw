@@ -161,8 +161,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| database-core | 24/30 | `owlclaw/db/**`, `tests/unit/test_db*.py`, `migrations/` |
-| cli-db | 42/53 | `owlclaw/cli/db*.py`, `tests/unit/test_cli_db*.py` |
+| agent-runtime | 19/105 | `owlclaw/agent/runtime/**`, `owlclaw/agent/heartbeat/**`, `tests/unit/test_agent_runtime*.py` |
+
+**前置条件**：database-core + cli-db 已完成并合并到 main，agent-runtime 可正式启动。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -219,6 +220,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 日期 | 变更 | 原因 |
 |------|------|------|
 | 2026-02-23 | 初始分配 | 建立 4 worktree 并行架构 |
+| 2026-02-23 | codex-work：database-core/cli-db → agent-runtime | database-core/cli-db 已完成并通过审校合并到 main |
 
 ---
 
@@ -227,7 +229,6 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 以下 spec 尚未分配到任何编码 worktree，等当前批次完成后按优先级分配：
 
 **Phase 1 剩余**（优先）：
-- agent-runtime (19/105)
 - agent-tools (46/139)
 - governance (130/173)
 - triggers-cron (39/92)

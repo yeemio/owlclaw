@@ -157,7 +157,53 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 
 ---
 
-## 五、执行承诺
+## 五、统筹循环（触发词：统筹 / orchestrate / 主目录推进 / 管理推进）
+
+> **适用范围**：仅主 worktree（`D:\AI\owlclaw\`，branch `main`）的 Cursor / 人工使用。
+> **目的**：作为技术经理，一键检查所有 worktree 状态、执行 merge、分配新任务、解锁阻塞项，输出总览报告。
+
+**持续推进**：反复发送「统筹」可多轮驱动。每轮结束若仍有待处理事项，在回复末尾提示「**回复「统筹」执行下一轮。**」
+
+### Orchestrator Loop
+
+```
+1. Status  — 运行以下命令获取全局状态：
+             git worktree list
+             git log --oneline main -3
+             git log --oneline main..review-work
+             git log --oneline main..codex-work
+             git log --oneline main..codex-gpt-work
+             读取 .kiro/WORKTREE_ASSIGNMENTS.md 确认各 worktree 当前任务与进度
+
+2. Merge   — 检查 review-work 是否有待合并内容：
+             有 → git merge review-work（在主 worktree 执行）
+             合并后通知各编码 worktree 执行 git merge main
+
+3. Assign  — 检查各编码 worktree 的当前 spec 是否已完成：
+             完成 → 从 WORKTREE_ASSIGNMENTS.md「下一轮待分配」中选下一个 spec
+             更新 WORKTREE_ASSIGNMENTS.md 的分配表和分配历史
+
+4. Unblock — 读取 .kiro/specs/SPEC_TASKS_SCAN.md 的 blocked 项：
+             评估是否可人工解锁（补充外部依赖、架构决策、拆解子任务）
+             可解锁 → 直接处理或在 SPEC_TASKS_SCAN 中标注解锁方案
+
+5. Commit  — 若本轮有 main 变更（merge 或文档更新）：
+             git add -A && git commit -m "chore(orchestrate): <本轮操作摘要>"
+
+6. Report  — 输出状态总览表：
+             | Worktree | 分支 | 当前 spec | 进度 | 健康 | 待处理 |
+             每行一个 worktree，含 review-work 的审校状态
+```
+
+### Exit（以下情况停止）
+
+1. 用户叫停
+2. 所有 worktree 均无待处理任务（review-work 无待审内容，编码 worktree 无未完成 spec）
+3. 遇到需要人工架构决策的阻塞项（明确标注后停止）
+
+---
+
+## 六、执行承诺
 
 - 代码英文，文档中文（语言规范见 `owlclaw_principles.mdc`）
 - AI 决策优先，禁止硬编码业务规则
