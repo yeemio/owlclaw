@@ -4,8 +4,19 @@ import os
 from urllib.parse import urlsplit, urlunsplit
 
 import typer
+from typer.models import OptionInfo
 
 from owlclaw.db import ConfigurationError, get_engine
+
+
+def _normalize_optional_str_option(value: object) -> str | None:
+    if isinstance(value, OptionInfo):
+        return None
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return None
+    return value
 
 
 def _mask_url(url: str) -> str:
@@ -21,7 +32,11 @@ def _mask_url(url: str) -> str:
     host = split.hostname or ""
     if ":" in host and not host.startswith("["):
         host = f"[{host}]"
-    port_suffix = f":{split.port}" if split.port is not None else ""
+    try:
+        parsed_port = split.port
+    except ValueError:
+        return url
+    port_suffix = f":{parsed_port}" if parsed_port is not None else ""
     netloc = f"{userinfo}@{host}{port_suffix}"
     return urlunsplit((split.scheme, netloc, split.path, split.query, split.fragment))
 
@@ -34,6 +49,7 @@ def status_command(
     ),
 ) -> None:
     """Show database connection and migration status."""
+    database_url = _normalize_optional_str_option(database_url)
     url = database_url or os.environ.get("OWLCLAW_DATABASE_URL")
     if not url or not url.strip():
         typer.echo("Error: Set OWLCLAW_DATABASE_URL or pass --database-url.", err=True)

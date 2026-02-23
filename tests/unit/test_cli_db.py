@@ -160,6 +160,13 @@ def test_db_status_mask_url_without_password_keeps_userinfo():
     assert masked == "postgresql://user@localhost/dbname"
 
 
+def test_db_status_mask_url_invalid_port_returns_original():
+    from owlclaw.cli.db_status import _mask_url
+
+    original = "postgresql://user:secret@localhost:bad/dbname"
+    assert _mask_url(original) == original
+
+
 def test_db_init_parse_pg_url_accepts_case_insensitive_schemes():
     from owlclaw.cli.db_init import _parse_pg_url
 
@@ -167,3 +174,12 @@ def test_db_init_parse_pg_url_accepts_case_insensitive_schemes():
     parsed2 = _parse_pg_url("PostgreSQL+AsyncPG://u:p@localhost:5432/postgres")
     assert parsed1["database"] == "postgres"
     assert parsed2["database"] == "postgres"
+
+
+def test_db_status_handles_optioninfo_database_url(monkeypatch):
+    from owlclaw.cli.db_status import status_command
+
+    monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
+    with patch("owlclaw.cli.db_status.get_engine") as mock_get_engine:
+        status_command(database_url=OptionInfo(default=None))  # type: ignore[arg-type]
+    mock_get_engine.assert_called_once_with("postgresql://u:p@localhost/owlclaw")
