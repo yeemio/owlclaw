@@ -15,7 +15,6 @@ This MVP implementation omits:
 from __future__ import annotations
 
 import asyncio
-from collections import deque
 import importlib
 import inspect
 import json
@@ -23,6 +22,7 @@ import logging
 import math
 import os
 import time
+from collections import deque
 from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -178,7 +178,7 @@ class AgentRuntime:
             return None
         try:
             module = importlib.import_module("langfuse")
-            langfuse_cls = getattr(module, "Langfuse")
+            langfuse_cls = module.Langfuse
             try:
                 return langfuse_cls(
                     public_key=public_key,
@@ -452,6 +452,7 @@ class AgentRuntime:
                     context.agent_id,
                     context.run_id,
                 )
+                self._release_skill_content_cache()
                 return {
                     "status": "skipped",
                     "run_id": context.run_id,
@@ -503,6 +504,7 @@ class AgentRuntime:
                 category="timeout_error",
                 message=f"run timed out after {run_timeout:.1f}s",
             )
+            self._release_skill_content_cache()
             return {
                 "status": "failed",
                 "run_id": context.run_id,
@@ -516,6 +518,7 @@ class AgentRuntime:
             result.get("iterations", 0),
         )
         self._update_trace(trace, status="success", output=result)
+        self._release_skill_content_cache()
         return {"status": "completed", "run_id": context.run_id, **result}
 
     # ------------------------------------------------------------------
@@ -1184,6 +1187,25 @@ class AgentRuntime:
         if len(self._skills_context_cache) > 64:
             self._skills_context_cache.pop(next(iter(self._skills_context_cache)))
         return out
+
+    def _release_skill_content_cache(self) -> None:
+        """Release cached full Skill contents and prompt cache after each run."""
+        self._skills_context_cache.clear()
+        if self.registry is None:
+            return
+        loader = getattr(self.registry, "skills_loader", None)
+        if loader is None:
+            return
+        list_fn = getattr(loader, "list_skills", None)
+        if not callable(list_fn):
+            return
+        try:
+            for skill in list_fn():
+                clear_fn = getattr(skill, "clear_full_content_cache", None)
+                if callable(clear_fn):
+                    clear_fn()
+        except Exception:
+            logger.debug("Failed to release Skill content cache", exc_info=True)
 
     def _skill_has_focus(self, skill_name: str, focus: str) -> bool:
         """Return True if the skill declares *focus* in owlclaw.focus.

@@ -29,8 +29,8 @@
 
 ### Phase 1：Agent 核心（MVP）
 
-- [ ] `owlclaw.capabilities.skills` — Skills 挂载（Agent Skills 规范，从应用目录加载 SKILL.md） → spec: capabilities-skills
-- [ ] `owlclaw.capabilities.registry` — 能力注册（@handler + @state 装饰器） → spec: capabilities-skills
+- [x] `owlclaw.capabilities.skills` — Skills 挂载（Agent Skills 规范，从应用目录加载 SKILL.md） → spec: capabilities-skills
+- [x] `owlclaw.capabilities.registry` — 能力注册（@handler + @state 装饰器） → spec: capabilities-skills
 - [x] `docs/DATABASE_ARCHITECTURE.md` — 数据库架构设计（部署模式、数据模型、迁移策略、运维 CLI 设计、灾备） → 架构文档（已完成）
 - [x] `.cursor/rules/owlclaw_database.mdc` — 数据库编码规范（tenant_id、SQLAlchemy、Alembic、pgvector） → 编码规则（已完成）
 - [x] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status/revision/rollback/backup/restore/check` 已实现并通过测试） → spec: cli-db
@@ -89,7 +89,7 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | codex-gpt-work 循环（agent-tools 最终收口） |
-| 批次状态 | **完成**。新增 remember 后台写入模式并完成 9.4 验收，agent-tools 全量任务收口。 |
-| 已完成项 | `owlclaw/agent/tools.py` 新增 `remember_write_background` 可选模式；`tests/unit/agent/test_tools.py` 与 `tests/integration/test_agent_tools_integration.py` 新增非阻塞 remember 验证；`agent-tools/tasks.md` 勾选 7.2/7.3/7.4 父项与 9.4，所有任务已 `[x]`。 |
-| 下一待执行 | 当前分配 spec `agent-tools` 与 `capabilities-skills` 已收口，等待按 `WORKTREE_ASSIGNMENTS.md` 分配下一 spec。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py tests/integration/test_agent_tools_integration.py -q` 通过（106 passed）；`poetry run ruff check owlclaw/agent/tools.py tests/unit/agent/test_tools.py tests/integration/test_agent_tools_integration.py` 通过。 |
+| 当前批次 | codex-gpt-work 循环（capabilities-skills 缓存释放收口） |
+| 批次状态 | **完成**。实现并验证 Run 结束后释放 Skill 完整内容缓存，capabilities-skills 最后 backlog 项收口。 |
+| 已完成项 | `owlclaw/agent/runtime/runtime.py` 在 run 结束/失败/heartbeat 跳过时统一调用 `_release_skill_content_cache()`；新增 `tests/unit/agent/test_runtime.py` 验证 run 完成后 Skill `full_content` 缓存与 runtime skills cache 清空；`capabilities-skills/tasks.md` 勾选 Backlog R4。 |
+| 下一待执行 | 当前分配 spec `agent-tools` 与 `capabilities-skills` 已全部完成，等待按 `WORKTREE_ASSIGNMENTS.md` 分配下一 spec。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_tools.py tests/integration/test_agent_tools_integration.py -q` 通过（178 passed）；`poetry run ruff check owlclaw/agent/runtime/runtime.py owlclaw/agent/tools.py tests/unit/agent/test_runtime.py tests/unit/agent/test_tools.py tests/integration/test_agent_tools_integration.py` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
