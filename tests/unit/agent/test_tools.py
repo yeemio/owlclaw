@@ -20,7 +20,9 @@ class TestBuiltInToolsSchemas:
         assert "schedule_once" in names
         assert "schedule_cron" in names
         assert "cancel_schedule" in names
-        assert len(schemas) == 5
+        assert "remember" in names
+        assert "recall" in names
+        assert len(schemas) == 7
 
     def test_query_state_schema_has_required_state_name(self) -> None:
         tools = BuiltInTools()
@@ -53,7 +55,6 @@ class TestBuiltInToolsIsBuiltin:
 
     def test_unknown_tool_not_builtin(self) -> None:
         tools = BuiltInTools()
-        assert tools.is_builtin("remember") is False
         assert tools.is_builtin("foo") is False
 
     def test_is_builtin_trims_whitespace(self) -> None:
@@ -503,3 +504,76 @@ class TestExecuteUnknownTool:
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
         result = await tools.execute(" query_state ", {"state_name": "x"}, ctx)
         assert result == {"state": {"ok": True}}
+
+
+class TestMemoryTools:
+    @pytest.mark.asyncio
+    async def test_remember_success(self) -> None:
+        memory = AsyncMock()
+        memory.write.return_value = {"memory_id": "m1", "created_at": "2026-01-01T00:00:00Z"}
+        ledger = AsyncMock()
+        tools = BuiltInTools(memory_system=memory, ledger=ledger)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("remember", {"content": "lesson", "tags": ["Ops", "ops"]}, ctx)
+        assert result["memory_id"] == "m1"
+        assert result["tags"] == ["ops"]
+        memory.write.assert_awaited_once_with(content="lesson", tags=["ops"])
+        assert ledger.record_execution.await_count == 1
+        assert ledger.record_execution.call_args.kwargs["capability_name"] == "remember"
+
+    @pytest.mark.asyncio
+    async def test_remember_no_memory_returns_error(self) -> None:
+        tools = BuiltInTools(memory_system=None)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("remember", {"content": "lesson"}, ctx)
+        assert "error" in result
+        assert "memory system" in result["error"].lower()
+
+    @pytest.mark.asyncio
+    async def test_remember_content_validation(self) -> None:
+        tools = BuiltInTools(memory_system=AsyncMock())
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("remember", {"content": "   "}, ctx)
+        assert "error" in result
+        result = await tools.execute("remember", {"content": "x" * 2001}, ctx)
+        assert "error" in result
+        assert "2000" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_recall_success(self) -> None:
+        memory = AsyncMock()
+        memory.search.return_value = [{"content": "lesson a"}, {"content": "lesson b"}]
+        ledger = AsyncMock()
+        tools = BuiltInTools(memory_system=memory, ledger=ledger)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("recall", {"query": "lesson", "limit": 2, "tags": ["Trade"]}, ctx)
+        assert result["count"] == 2
+        assert len(result["memories"]) == 2
+        memory.search.assert_awaited_once_with(query="lesson", limit=2, tags=["trade"])
+        assert ledger.record_execution.await_count == 1
+        assert ledger.record_execution.call_args.kwargs["capability_name"] == "recall"
+
+    @pytest.mark.asyncio
+    async def test_recall_limit_validation(self) -> None:
+        tools = BuiltInTools(memory_system=AsyncMock())
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("recall", {"query": "x", "limit": 0}, ctx)
+        assert "error" in result
+        assert "between 1 and 20" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_recall_no_results_returns_empty_list(self) -> None:
+        memory = AsyncMock()
+        memory.search.return_value = []
+        tools = BuiltInTools(memory_system=memory)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("recall", {"query": "missing"}, ctx)
+        assert result == {"memories": [], "count": 0}
+
+    @pytest.mark.asyncio
+    async def test_recall_no_memory_returns_error(self) -> None:
+        tools = BuiltInTools(memory_system=None)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        result = await tools.execute("recall", {"query": "lesson"}, ctx)
+        assert "error" in result
+        assert "memory system" in result["error"].lower()

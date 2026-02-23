@@ -23,7 +23,7 @@
   - [x] 1.2.3 `execute()` 方法（统一的工具执行入口，包含超时和错误处理）
 - [x] 1.3 实现工具名称到方法的映射逻辑
 - [x] 1.4 实现工具执行的超时机制（默认 30 秒）
-- [ ] 1.5 实现工具执行的 Ledger 记录（成功和失败都记录）（log_decision 已写 Ledger；query_state 不写 Ledger）
+- [x] 1.5 实现工具执行的 Ledger 记录（成功和失败都记录）（log_decision 已写 Ledger；query_state 不写 Ledger）
 
 ## Task 2: 调度工具实现
 
@@ -44,17 +44,17 @@
 
 ## Task 3: 记忆工具实现
 
-- [ ] 3.1 实现 `remember` 工具
-  - [ ] 3.1.1 实现 `_remember_schema()` 方法
-  - [ ] 3.1.2 实现 `remember()` 方法（调用 Memory System write）
-  - [ ] 3.1.3 参数验证（content 非空，最大 2000 字符）
-  - [ ] 3.1.4 支持可选的 tags 参数
-  - [ ] 3.1.5 返回 memory_id 和时间戳
-- [ ] 3.2 实现 `recall` 工具
-  - [ ] 3.2.1 实现 `_recall_schema()` 方法
-  - [ ] 3.2.2 实现 `recall()` 方法（调用 Memory System search）
-  - [ ] 3.2.3 参数验证（limit 范围：1-20，默认 5）
-  - [ ] 3.2.4 返回记忆列表和数量
+- [x] 3.1 实现 `remember` 工具
+  - [x] 3.1.1 实现 `_remember_schema()` 方法
+  - [x] 3.1.2 实现 `remember()` 方法（调用 Memory System write）
+  - [x] 3.1.3 参数验证（content 非空，最大 2000 字符）
+  - [x] 3.1.4 支持可选的 tags 参数
+  - [x] 3.1.5 返回 memory_id 和时间戳
+- [x] 3.2 实现 `recall` 工具
+  - [x] 3.2.1 实现 `_recall_schema()` 方法
+  - [x] 3.2.2 实现 `recall()` 方法（调用 Memory System search）
+  - [x] 3.2.3 参数验证（limit 范围：1-20，默认 5）
+  - [x] 3.2.4 返回记忆列表和数量
 
 ## Task 4: 状态查询和决策记录工具实现
 
@@ -93,14 +93,14 @@
   - [x] 6.2.4 测试 `schedule_cron` cron 表达式验证
   - [x] 6.2.5 测试 `cancel_schedule` 成功场景
   - [x] 6.2.6 测试 `cancel_schedule` 任务不存在场景
-- [ ] 6.3 测试记忆工具
-  - [ ] 6.3.1 测试 `remember` 成功场景
-  - [ ] 6.3.2 测试 `remember` 参数验证（content 为空）
-  - [ ] 6.3.3 测试 `remember` 参数验证（content 超长）
-  - [ ] 6.3.4 测试 `remember` 带 tags 场景
-  - [ ] 6.3.5 测试 `recall` 成功场景
-  - [ ] 6.3.6 测试 `recall` 参数验证（limit 超出范围）
-  - [ ] 6.3.7 测试 `recall` 无结果场景
+- [x] 6.3 测试记忆工具
+  - [x] 6.3.1 测试 `remember` 成功场景
+  - [x] 6.3.2 测试 `remember` 参数验证（content 为空）
+  - [x] 6.3.3 测试 `remember` 参数验证（content 超长）
+  - [x] 6.3.4 测试 `remember` 带 tags 场景
+  - [x] 6.3.5 测试 `recall` 成功场景
+  - [x] 6.3.6 测试 `recall` 参数验证（limit 超出范围）
+  - [x] 6.3.7 测试 `recall` 无结果场景
 - [x] 6.4 测试状态查询和决策记录工具
   - [x] 6.4.1 测试 `query_state` 成功场景
   - [x] 6.4.2 测试 `query_state` state_name 不存在场景
