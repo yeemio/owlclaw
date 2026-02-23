@@ -227,22 +227,12 @@ def _print_help_and_exit(argv: list[str]) -> None:
         sys.exit(0)
     if argv == ["db"]:
         print("Usage: owlclaw db [OPTIONS] COMMAND [ARGS]...")
-        print("\n  Database operations: init, migrate, status, revision.\n")
+        print("\n  Database operations: init, migrate, status.\n")
         print("Commands:")
         print("  init     Create owlclaw (and optionally hatchet) database, role, pgvector")
         print("  migrate  Run Alembic migrations (owlclaw schema)")
         print("  status   Show connection and migration status")
-        print("  revision Create new migration script (--empty or autogenerate)")
-        print("\n  owlclaw db init --help | owlclaw db migrate --help | owlclaw db revision --help")
-        sys.exit(0)
-    if argv == ["db", "revision"]:
-        print("Usage: owlclaw db revision [OPTIONS]")
-        print("\n  Create a new migration script (autogenerate or empty template).\n")
-        print("Options:")
-        print("  -m, --message TEXT    Revision message (required for autogenerate)")
-        print("  --empty               Create empty migration template")
-        print("  --database-url TEXT   Database URL (default: OWLCLAW_DATABASE_URL)")
-        print("  --help                Show this message and exit")
+        print("\n  owlclaw db init --help | owlclaw db migrate --help | owlclaw db status --help")
         sys.exit(0)
     if argv == ["db", "init"]:
         print("Usage: owlclaw db init [OPTIONS]")
@@ -342,7 +332,7 @@ def _dispatch_db_revision(argv: list[str]) -> bool:
     parser.add_argument("--empty", action="store_true", help="Empty migration template")
     parser.add_argument("--database-url", dest="database_url", default="", help="Database URL")
     ns = parser.parse_args(argv[2:])
-    revision_command(message=ns.message, empty_template=ns.empty, database_url=ns.database_url or "")
+    revision_command(message=ns.message, empty_template=ns.empty, database_url=ns.database_url or None)
     return True
 
 
