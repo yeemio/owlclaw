@@ -335,7 +335,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         sys.exit(0)
     # Fallback
     print("Usage: owlclaw [OPTIONS] COMMAND [ARGS]...")
-    print("  db     Database: init, migrate, status")
+    print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
     print("  skill  Create, validate, list Agent Skills (SKILL.md)")
     sys.exit(0)
