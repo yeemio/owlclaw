@@ -84,7 +84,7 @@
 
 ### 4.2 集成
 - [ ] 4.2.1 在 MCP Server 输出层集成 DataMasker
-- [ ] 4.2.2 记忆 `remember()` 工具支持 `sensitivity` 参数
+- [x] 4.2.2 记忆 `remember()` 工具支持 `sensitivity` 参数
 
 ### 4.3 单元测试
 - [x] 4.3.1 测试各类型数据的脱敏正确性

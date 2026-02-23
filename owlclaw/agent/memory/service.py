@@ -182,6 +182,7 @@ class MemoryService:
         tenant_id: str,
         content: str,
         tags: list[str] | None = None,
+        sensitivity: str | None = None,
     ) -> UUID:
         """Store one memory (embed + save). Optionally Ledger can be wired later."""
         normalized_agent, normalized_tenant = self._normalize_scope(agent_id, tenant_id)
@@ -191,7 +192,7 @@ class MemoryService:
         if len(normalized) > 2000:
             raise ValueError("content length must be <= 2000")
         embedding = await self._embed_with_fallback(normalized)
-        security_level = self._classifier.classify(normalized)
+        security_level = self._resolve_security_level(normalized, sensitivity)
         entry = MemoryEntry(
             agent_id=normalized_agent,
             tenant_id=normalized_tenant,
@@ -213,6 +214,20 @@ class MemoryService:
                 tags=entry.tags,
                 security_level=security_level,
             )
+
+    def _resolve_security_level(self, content: str, sensitivity: str | None) -> SecurityLevel:
+        """Resolve memory security level from explicit sensitivity or classifier."""
+        if sensitivity is None:
+            return self._classifier.classify(content)
+        normalized = sensitivity.strip().lower()
+        mapping = {
+            "public": SecurityLevel.PUBLIC,
+            "internal": SecurityLevel.INTERNAL,
+            "confidential": SecurityLevel.CONFIDENTIAL,
+        }
+        if normalized not in mapping:
+            raise ValueError("sensitivity must be one of: public, internal, confidential")
+        return mapping[normalized]
 
     async def recall(
         self,

@@ -118,6 +118,33 @@ async def test_memory_service_auto_classifies_on_remember() -> None:
 
 
 @pytest.mark.asyncio
+async def test_memory_service_remember_accepts_sensitivity_override() -> None:
+    store = _CaptureStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+    await service.remember(
+        "agent-a",
+        "default",
+        "this contains password and token",
+        sensitivity="public",
+    )
+    assert store.last_saved is not None
+    assert store.last_saved.security_level == SecurityLevel.PUBLIC
+
+
+@pytest.mark.asyncio
+async def test_memory_service_remember_rejects_invalid_sensitivity() -> None:
+    store = _CaptureStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+    with pytest.raises(ValueError, match="sensitivity must be one of"):
+        await service.remember(
+            "agent-a",
+            "default",
+            "regular note",
+            sensitivity="restricted",
+        )
+
+
+@pytest.mark.asyncio
 async def test_memory_service_masks_sensitive_on_mcp_channel() -> None:
     store = _CaptureStore()
     service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
