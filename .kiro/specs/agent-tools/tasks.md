@@ -167,7 +167,7 @@
   - [x] 10.2.3 示例：Agent 查询状态后决策
   - [x] 10.2.4 示例：Agent 记录决策理由
 - [x] 10.3 更新 README.md 的内建工具部分
-- [ ] 10.4 编写 API 文档（Sphinx/MkDocs）
+- [x] 10.4 编写 API 文档（新增 `docs/AGENT_TOOLS_API.md`）
 
 ## Task 11: 安全审查
 
@@ -181,7 +181,7 @@
 ## Task 12: 与其他组件的集成验证
 
 - [x] 12.1 验证与 `owlclaw.integrations.hatchet` 的接口契约
-- [ ] 12.2 验证与 `owlclaw.agent.memory` 的接口契约（待实现）
+- [x] 12.2 验证与 `owlclaw.agent.memory` 的接口契约（通过 `MemoryService` 适配器集成测试）
 - [x] 12.3 验证与 `owlclaw.capabilities.registry` 的接口契约
 - [x] 12.4 验证与 `owlclaw.governance.ledger` 的接口契约（待实现）
 - [x] 12.5 验证工具在 Agent Runtime 中的注册和调用流程

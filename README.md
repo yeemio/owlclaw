@@ -74,6 +74,7 @@ All Agents can use built-in tools through function calling:
 Runnable demo:
 
 - [examples/agent_tools_demo.py](examples/agent_tools_demo.py)
+- API reference: [docs/AGENT_TOOLS_API.md](docs/AGENT_TOOLS_API.md)
 
 The demo includes:
 

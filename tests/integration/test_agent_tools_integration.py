@@ -10,6 +10,10 @@ from unittest.mock import AsyncMock
 import pytest
 
 from owlclaw.agent import BuiltInTools, BuiltInToolsContext
+from owlclaw.agent.memory.embedder_random import RandomEmbedder
+from owlclaw.agent.memory.models import MemoryConfig
+from owlclaw.agent.memory.service import MemoryService
+from owlclaw.agent.memory.store_inmemory import InMemoryStore
 from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.runtime import AgentRuntime
 
@@ -42,6 +46,42 @@ class _Memory:
         if query == "lesson":
             return [{"content": "lesson", "tags": tags, "score": 0.9}]
         return []
+
+
+class _MemoryServiceAdapter:
+    """Adapter from MemoryService API to BuiltInTools memory interface."""
+
+    def __init__(self, service: MemoryService, *, agent_id: str, tenant_id: str) -> None:
+        self._service = service
+        self._agent_id = agent_id
+        self._tenant_id = tenant_id
+
+    async def write(self, *, content: str, tags: list[str]) -> dict[str, str]:
+        memory_id = await self._service.remember(
+            agent_id=self._agent_id,
+            tenant_id=self._tenant_id,
+            content=content,
+            tags=tags,
+        )
+        return {"memory_id": str(memory_id), "created_at": "2026-02-23T00:00:00Z"}
+
+    async def search(self, *, query: str, limit: int, tags: list[str]) -> list[dict[str, object]]:
+        results = await self._service.recall(
+            agent_id=self._agent_id,
+            tenant_id=self._tenant_id,
+            query=query,
+            limit=limit,
+            tags=tags,
+        )
+        return [
+            {
+                "memory_id": str(item.entry.id),
+                "content": item.entry.content,
+                "tags": item.entry.tags,
+                "score": item.score,
+            }
+            for item in results
+        ]
 
 
 def _tool_call(name: str, arguments: dict[str, object]) -> object:
@@ -138,3 +178,22 @@ async def test_agent_runtime_dispatches_builtin_tool_calls() -> None:
         context,
     )
     assert result["state"]["is_trading_time"] is False
+
+
+@pytest.mark.asyncio
+async def test_memory_service_adapter_contract_with_builtin_tools() -> None:
+    service = MemoryService(
+        store=InMemoryStore(),
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(vector_backend="inmemory", embedding_dimensions=8),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    remember_result = await tools.execute("remember", {"content": "lesson about retries", "tags": ["ops"]}, ctx)
+    recall_result = await tools.execute("recall", {"query": "lesson", "limit": 3, "tags": ["ops"]}, ctx)
+
+    assert remember_result["memory_id"]
+    assert recall_result["count"] >= 1
+    assert any("lesson about retries" in item["content"] for item in recall_result["memories"])

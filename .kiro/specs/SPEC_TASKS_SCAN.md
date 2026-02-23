@@ -93,7 +93,7 @@
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（100/139） | 内建工具 |
+| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（102/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（96/117） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | codex-gpt-work 循环（agent-tools 集成契约测试） |
-| 批次状态 | **完成**。新增内建工具组件契约集成测试，覆盖 Hatchet/Registry/Ledger/Runtime 路由关键链路。 |
-| 已完成项 | 新增 `tests/integration/test_agent_tools_integration.py`：验证 `schedule_once/schedule_cron/cancel_schedule` Hatchet 调用契约、`query_state` 异步与超时、Ledger 完整上下文记录、Runtime 对内建工具调用分发；`agent-tools/tasks.md` 勾选 7.1.1~7.1.3、7.3.1~7.3.3、7.4.1~7.4.3、12.1、12.3、12.4、12.5。 |
-| 下一待执行 | 推进 `agent-tools` 未完成项：7.1.4、7.2.*、8.*、9.*、10.4、11.*、12.2。 |
-| 验收快照 | `poetry run pytest tests/integration/test_agent_tools_integration.py -q` 通过（4 passed）；`poetry run ruff check tests/integration/test_agent_tools_integration.py` 通过。 |
+| 当前批次 | codex-gpt-work 循环（agent-tools memory 契约 + API 文档） |
+| 批次状态 | **完成**。补齐 `owlclaw.agent.memory` 接口契约验证与内建工具 API 文档。 |
+| 已完成项 | `tests/integration/test_agent_tools_integration.py` 新增 `MemoryService + InMemoryStore` 适配器契约测试（打通 remember/recall）；新增 `docs/AGENT_TOOLS_API.md`；`README.md` 增加 API 文档入口；`agent-tools/tasks.md` 勾选 10.4 与 12.2。 |
+| 下一待执行 | 推进 `agent-tools` 未完成项：7.1.4、7.2.*、8.*、9.*、11.*。 |
+| 验收快照 | `poetry run pytest tests/integration/test_agent_tools_integration.py -q` 通过（5 passed）；`poetry run ruff check tests/integration/test_agent_tools_integration.py` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
