@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（22/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：补审 codex-work 剩余提交） |
-| 批次状态 | **进行中**。已吸收 database-core/cli-db 完成态，待完成本轮回归与配置模块缺口修正。 |
-| 已完成项 | 合并 `codex-work` 新增的 cli-db 单元测试/集成测试与任务收口；`database-core`/`cli-db` 状态同步为已完成。 |
-| 下一待执行 | 完成当前回归验证；修正 `configuration` 中 `ConfigManager.load()` 的优先级实现（defaults < yaml < env < overrides）并补测试。 |
-| 验收快照 | 合并冲突已按审校口径消解；待本轮测试完成后回填结果。 |
+| 当前批次 | spec 循环（agent-runtime Round 1：IdentityLoader 属性测试） |
+| 批次状态 | **完成**。agent-runtime 2.3/2.4/2.6 已补齐并验收通过。 |
+| 已完成项 | 新增 `tests/unit/agent/test_identity_properties.py`，覆盖身份文件加载完整性、缺失文件错误处理、热重载一致性。 |
+| 下一待执行 | agent-runtime Round 2：推进 Task 3（MemorySystem）最小可实现子任务与测试。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py -q` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
