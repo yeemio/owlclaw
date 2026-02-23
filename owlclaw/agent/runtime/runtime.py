@@ -15,7 +15,6 @@ This MVP implementation omits:
 from __future__ import annotations
 
 import asyncio
-from collections import deque
 import importlib
 import inspect
 import json
@@ -23,6 +22,7 @@ import logging
 import math
 import os
 import time
+from collections import deque
 from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -178,7 +178,7 @@ class AgentRuntime:
             return None
         try:
             module = importlib.import_module("langfuse")
-            langfuse_cls = getattr(module, "Langfuse")
+            langfuse_cls = module.Langfuse
             try:
                 return langfuse_cls(
                     public_key=public_key,
@@ -452,6 +452,7 @@ class AgentRuntime:
                     context.agent_id,
                     context.run_id,
                 )
+                self._reset_builtin_tool_budget(context.run_id)
                 return {
                     "status": "skipped",
                     "run_id": context.run_id,
@@ -508,6 +509,8 @@ class AgentRuntime:
                 "run_id": context.run_id,
                 "error": f"run timed out after {run_timeout:.1f}s",
             }
+        finally:
+            self._reset_builtin_tool_budget(context.run_id)
 
         logger.info(
             "Agent run completed agent_id=%s run_id=%s iterations=%s",
@@ -517,6 +520,18 @@ class AgentRuntime:
         )
         self._update_trace(trace, status="success", output=result)
         return {"status": "completed", "run_id": context.run_id, **result}
+
+    def _reset_builtin_tool_budget(self, run_id: str) -> None:
+        """Reset built-in tool run budget after each run to avoid state growth."""
+        if self.builtin_tools is None:
+            return
+        reset_budget = getattr(self.builtin_tools, "reset_run_call_budget", None)
+        if not callable(reset_budget):
+            return
+        try:
+            reset_budget(run_id)
+        except Exception:
+            logger.exception("Failed to reset built-in tool budget run_id=%s", run_id)
 
     # ------------------------------------------------------------------
     # Decision loop
@@ -1031,6 +1046,8 @@ class AgentRuntime:
             return None
         max_calls = security.get("max_tool_calls_per_minute")
         if isinstance(max_calls, bool):
+            return None
+        if not isinstance(max_calls, int | float | str):
             return None
         try:
             limit = int(max_calls)

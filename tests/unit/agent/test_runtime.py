@@ -247,6 +247,41 @@ class TestAgentRuntimeRun:
         result = await rt.run(ctx)
         assert result["iterations"] >= 1
 
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_run_resets_builtin_tool_budget_on_success(
+        self, mock_llm, tmp_path
+    ) -> None:
+        mock_llm.return_value = _make_llm_response("Done.")
+        builtin_tools = MagicMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            builtin_tools=builtin_tools,
+        )
+        await rt.setup()
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+        result = await rt.run(ctx)
+        assert result["status"] == "completed"
+        builtin_tools.reset_run_call_budget.assert_called_once_with(ctx.run_id)
+
+    async def test_run_resets_builtin_tool_budget_on_error(self, tmp_path) -> None:
+        builtin_tools = MagicMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            builtin_tools=builtin_tools,
+        )
+        await rt.setup()
+
+        async def _failing_decision_loop(_: AgentRunContext) -> dict[str, object]:
+            raise RuntimeError("boom")
+
+        rt._decision_loop = _failing_decision_loop  # type: ignore[method-assign]
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+        with pytest.raises(RuntimeError, match="boom"):
+            await rt.run(ctx)
+        builtin_tools.reset_run_call_budget.assert_called_once_with(ctx.run_id)
+
     async def test_run_timeout_returns_failed(self, tmp_path) -> None:
         rt = AgentRuntime(
             agent_id="bot",
