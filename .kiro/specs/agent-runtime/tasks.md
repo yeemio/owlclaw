@@ -55,17 +55,17 @@
     - **验证：需求 1.9**
 
 - [ ] 3. 实现 MemorySystem 类
-  - [ ] 3.1 实现短期记忆管理
+  - [x] 3.1 实现短期记忆管理
     - 实现 `build_short_term_context()` 方法
     - 实现 `add_short_term()` 方法
     - 实现 token 限制和自动压缩
     - _需求：2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
   
-  - [ ]* 3.2 编写属性测试：短期记忆 token 限制
+  - [x]* 3.2 编写属性测试：短期记忆 token 限制
     - **Property 4: 短期记忆 token 限制**
     - **验证：需求 2.6**
   
-  - [ ]* 3.3 编写属性测试：短期记忆自动压缩
+  - [x]* 3.3 编写属性测试：短期记忆自动压缩
     - **Property 5: 短期记忆自动压缩**
     - **验证：需求 2.7**
   
@@ -527,5 +527,6 @@
 - 集成测试需要 Docker Compose 环境（Hatchet + PostgreSQL + pgvector）
 - 端到端测试需要真实的 API keys（LLM、Langfuse）
 - Checkpoint 任务确保增量验证，及时发现问题
+
 
 
