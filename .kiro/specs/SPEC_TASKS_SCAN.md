@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（Round 3/7：database-core 父任务一致性收口） |
-| 批次状态 | **完成**。database-core 任务结构已对齐（8.x 子任务完成状态与父任务一致）。 |
-| 已完成项 | 将 `database-core/tasks.md` 中任务 8（集成测试和文档）由未勾选改为勾选，修复父子状态漂移。 |
-| 下一待执行 | Round 4/7：验收并勾选 cli-db 7.4（revision 单元测试）。 |
-| 验收快照 | `rg`/diff 复核确认：任务 8.1、8.2 已为 `[x]`，父任务 8 同步为 `[x]`。 |
+| 当前批次 | spec 循环（Round 4/7：cli-db revision 单元测试验收） |
+| 批次状态 | **完成**。cli-db 7.4 已通过测试并勾选。 |
+| 已完成项 | 验收 `tests/unit/test_cli_db_revision.py`（3 条用例），并将 `cli-db/tasks.md` 的 7.4 由 `[ ]` 更新为 `[x]`。 |
+| 下一待执行 | Round 5/7：验收并勾选 cli-db 8.4（rollback 单元测试）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_cli_db_revision.py -q` -> `3 passed in 17.49s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
