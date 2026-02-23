@@ -113,6 +113,18 @@ def test_create_agent_runtime_before_mount_skills_raises():
         app.create_agent_runtime(app_dir="/tmp")
 
 
+def test_create_agent_runtime_validates_app_dir_when_provided(tmp_path):
+    (tmp_path / "entry-monitor").mkdir()
+    (tmp_path / "entry-monitor" / "SKILL.md").write_text(
+        "---\nname: entry-monitor\ndescription: Check entry\n---\n",
+        encoding="utf-8",
+    )
+    app = OwlClaw("test-app")
+    app.mount_skills(str(tmp_path))
+    with pytest.raises(ValueError, match="app_dir must be a non-empty string"):
+        app.create_agent_runtime(app_dir="   ")
+
+
 def test_run_raises_until_implemented():
     app = OwlClaw("test-app")
     with pytest.raises(RuntimeError, match="not implemented yet"):

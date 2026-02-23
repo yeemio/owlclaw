@@ -422,7 +422,9 @@ class OwlClaw:
 
         resolved_app_dir: str
         if app_dir is not None:
-            resolved_app_dir = app_dir
+            if not isinstance(app_dir, str) or not app_dir.strip():
+                raise ValueError("app_dir must be a non-empty string when provided")
+            resolved_app_dir = app_dir.strip()
         elif self._skills_path:
             resolved_app_dir = str(Path(self._skills_path).resolve().parent)
         else:
