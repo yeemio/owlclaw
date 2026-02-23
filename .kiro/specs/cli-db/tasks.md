@@ -150,22 +150,22 @@
   - 手动验证 revision、rollback 命令（--help 及无 URL 时 exit 2）
   - 确认所有测试通过
 
-- [ ] 10. 实现 backup 命令（P2）
-  - [ ] 10.1 实现 db_backup.py 核心逻辑
+- [x] 10. 实现 backup 命令（P2）
+  - [x] 10.1 实现 db_backup.py 核心逻辑
     - 实现 backup_command 函数：接受参数（output、format、schema-only、data-only、database-url）
     - 验证参数：schema-only 和 data-only 不能同时使用
     - 验证 format 参数：只支持 plain 和 custom
     - 检查 pg_dump 是否可用
     - _需求：6.1, 6.2, 6.3, 6.4, 6.8_
   
-  - [ ] 10.2 实现 backup 命令的文件处理
+  - [x] 10.2 实现 backup 命令的文件处理
     - 检查输出文件是否已存在：询问是否覆盖
     - 构建 pg_dump 命令
     - 执行 pg_dump：使用 subprocess
     - 处理备份失败：删除不完整的备份文件
     - _需求：6.5, 6.7_
   
-  - [ ] 10.3 实现 backup 命令的成功输出
+  - [x] 10.3 实现 backup 命令的成功输出
     - 显示备份文件路径
     - 显示文件大小
     - _需求：6.6_

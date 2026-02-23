@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：database-core Task 3.2 / 3.3 / 3.4） |
-| 批次状态 | **完成**。database-core Base 属性测试与单元测试已补齐。 |
-| 已完成项 | database-core Task 3.2/3.3/3.4：新增 `tests/unit/test_db_base_properties.py`，覆盖 tenant_id 完整性、metadata 收录、DeclarativeBase 继承关系。 |
-| 下一待执行 | database-core 可选任务 4.4-4.7 / 6.2；cli-db 当前由其他 AI 批次推进，暂不并行改动。 |
-| 验收快照 | `poetry run pytest tests/unit/test_db.py tests/unit/test_db_base_properties.py -q` → 10 passed。 |
+| 当前批次 | spec 循环（本轮：cli-db Task 10，仅 cli-db） |
+| 批次状态 | **完成**。cli-db backup 命令已实现并验收。 |
+| 已完成项 | cli-db Task 10.1/10.2/10.3：db_backup.py（pg_dump、plain/custom、schema-only/data-only、覆盖确认、失败删不完整文件、输出路径与大小）；_dispatch_db_backup 调度。 |
+| 下一待执行 | **仅 cli-db**：Task 11（restore 命令）或可选 Task 10.4 单元测试。 |
+| 验收快照 | `pytest tests/unit/test_cli_db.py tests/unit/test_db.py` 23 passed；`owlclaw db backup --help` / 无 URL 时 exit 2 验证通过。 |
 | 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
