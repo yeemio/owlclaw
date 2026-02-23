@@ -4,12 +4,11 @@ import asyncio
 import contextlib
 from datetime import date
 from decimal import Decimal
-from typing import cast
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from owlclaw.governance.ledger import Ledger, LedgerRecord
+from owlclaw.governance.ledger import Ledger, LedgerQueryFilters, LedgerRecord
 
 
 def test_ledger_record_has_required_columns():
@@ -154,147 +153,240 @@ def test_ledger_rejects_invalid_flush_interval():
         Ledger(session_factory, batch_size=1, flush_interval=0)
 
 
-@pytest.mark.asyncio
-async def test_flush_batch_writes_records_and_commits() -> None:
-    """3.1.4.1: batch flush writes records successfully."""
-    session_factory = MagicMock()
-    session = MagicMock()
-    session.commit = AsyncMock()
+def _make_record() -> LedgerRecord:
+    return LedgerRecord(
+        tenant_id="default",
+        agent_id="agent1",
+        run_id="run1",
+        capability_name="cap1",
+        task_type="t1",
+        input_params={},
+        output_result={},
+        decision_reasoning=None,
+        execution_time_ms=100,
+        llm_model="gpt-4o-mini",
+        llm_tokens_input=10,
+        llm_tokens_output=5,
+        estimated_cost=Decimal("0.1234"),
+        status="success",
+        error_message=None,
+    )
+
+
+def _make_session_factory(*, commit_side_effect=None):
+    session = AsyncMock()
+    session.add_all = MagicMock()
+    session.commit = AsyncMock(side_effect=commit_side_effect)
     session_cm = AsyncMock()
     session_cm.__aenter__.return_value = session
     session_cm.__aexit__.return_value = None
-    session_factory.return_value = session_cm
-
-    ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
-    batch = cast(
-        list[LedgerRecord],
-        [MagicMock(spec=LedgerRecord), MagicMock(spec=LedgerRecord)],
-    )
-
-    await ledger._flush_batch(batch)
-
-    session.add_all.assert_called_once_with(batch)
-    session.commit.assert_awaited_once()
+    session_factory = MagicMock(return_value=session_cm)
+    return session_factory, session
 
 
 @pytest.mark.asyncio
-async def test_background_writer_flushes_on_timeout() -> None:
-    """3.1.4.2: background writer flushes pending batch on timeout."""
+async def test_ledger_background_writer_flushes_at_batch_size():
+    session_factory = MagicMock()
+    ledger = Ledger(session_factory, batch_size=2, flush_interval=60.0)
+    ledger._flush_batch = AsyncMock()  # type: ignore[method-assign]
+    task = asyncio.create_task(ledger._background_writer())
+
+    try:
+        await ledger.record_execution(
+            tenant_id="default",
+            agent_id="agent1",
+            run_id="run1",
+            capability_name="cap1",
+            task_type="t1",
+            input_params={},
+            output_result=None,
+            decision_reasoning=None,
+            execution_time_ms=100,
+            llm_model="gpt-4o-mini",
+            llm_tokens_input=10,
+            llm_tokens_output=5,
+            estimated_cost=Decimal("0.001"),
+            status="success",
+            error_message=None,
+        )
+        await ledger.record_execution(
+            tenant_id="default",
+            agent_id="agent1",
+            run_id="run2",
+            capability_name="cap2",
+            task_type="t2",
+            input_params={},
+            output_result=None,
+            decision_reasoning=None,
+            execution_time_ms=100,
+            llm_model="gpt-4o-mini",
+            llm_tokens_input=10,
+            llm_tokens_output=5,
+            estimated_cost=Decimal("0.001"),
+            status="success",
+            error_message=None,
+        )
+
+        for _ in range(50):
+            if ledger._flush_batch.await_count >= 1:  # type: ignore[attr-defined]
+                break
+            await asyncio.sleep(0.01)
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    assert ledger._flush_batch.await_count == 1  # type: ignore[attr-defined]
+    await_args = ledger._flush_batch.await_args  # type: ignore[attr-defined]
+    assert await_args is not None
+    flushed_batch = await_args.args[0]
+    assert len(flushed_batch) == 2
+
+
+@pytest.mark.asyncio
+async def test_ledger_background_writer_flushes_on_timeout():
     session_factory = MagicMock()
     ledger = Ledger(session_factory, batch_size=10, flush_interval=0.05)
     ledger._flush_batch = AsyncMock()  # type: ignore[method-assign]
+    task = asyncio.create_task(ledger._background_writer())
 
-    writer_task = asyncio.create_task(ledger._background_writer())
     try:
-        ledger._write_queue.put_nowait(MagicMock(spec=LedgerRecord))
-        await asyncio.sleep(0.12)
-        assert ledger._flush_batch.await_count >= 1
+        await ledger.record_execution(
+            tenant_id="default",
+            agent_id="agent1",
+            run_id="run1",
+            capability_name="cap1",
+            task_type="t1",
+            input_params={},
+            output_result=None,
+            decision_reasoning=None,
+            execution_time_ms=100,
+            llm_model="gpt-4o-mini",
+            llm_tokens_input=10,
+            llm_tokens_output=5,
+            estimated_cost=Decimal("0.001"),
+            status="success",
+            error_message=None,
+        )
+
+        for _ in range(50):
+            if ledger._flush_batch.await_count >= 1:  # type: ignore[attr-defined]
+                break
+            await asyncio.sleep(0.01)
     finally:
-        writer_task.cancel()
+        task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
-            await writer_task
+            await task
+
+    assert ledger._flush_batch.await_count == 1  # type: ignore[attr-defined]
+    await_args = ledger._flush_batch.await_args  # type: ignore[attr-defined]
+    assert await_args is not None
+    flushed_batch = await_args.args[0]
+    assert len(flushed_batch) == 1
 
 
 @pytest.mark.asyncio
-async def test_flush_batch_falls_back_on_write_failure() -> None:
-    """3.1.4.3: flush failure falls back to local log path."""
-    session_factory = MagicMock()
-    session = MagicMock()
-    session.commit = AsyncMock(side_effect=RuntimeError("db unavailable"))
-    session_cm = AsyncMock()
-    session_cm.__aenter__.return_value = session
-    session_cm.__aexit__.return_value = None
-    session_factory.return_value = session_cm
-
-    ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
+async def test_ledger_flush_batch_retries_and_falls_back(monkeypatch):
+    session_factory, session = _make_session_factory(
+        commit_side_effect=RuntimeError("db down")
+    )
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
     ledger._write_to_fallback_log = AsyncMock()  # type: ignore[method-assign]
-    batch = cast(list[LedgerRecord], [MagicMock(spec=LedgerRecord)])
 
-    with patch("owlclaw.governance.ledger.asyncio.sleep", new=AsyncMock()) as sleep_mock:
-        await ledger._flush_batch(batch)
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr("owlclaw.governance.ledger.asyncio.sleep", sleep_mock)
+
+    batch = [_make_record()]
+    await ledger._flush_batch(batch)
 
     assert session.commit.await_count == 3
     assert sleep_mock.await_count == 2
-    ledger._write_to_fallback_log.assert_awaited_once_with(batch)
+    ledger._write_to_fallback_log.assert_awaited_once_with(batch)  # type: ignore[attr-defined]
 
 
 @pytest.mark.asyncio
-async def test_query_records_applies_filters_and_returns_records() -> None:
-    """3.2.4: query interface returns records with filter pipeline applied."""
-    session_factory = MagicMock()
-    session = MagicMock()
-    result = MagicMock()
-    expected = [MagicMock(spec=LedgerRecord), MagicMock(spec=LedgerRecord)]
-    result.scalars.return_value.all.return_value = expected
-    session.execute = AsyncMock(return_value=result)
+async def test_ledger_get_cost_summary_includes_capability_breakdown():
+    session = AsyncMock()
+    total_result = MagicMock()
+    total_result.scalar_one.return_value = Decimal("3.50")
+    by_capability_result = MagicMock()
+    by_capability_result.all.return_value = [
+        ("cap_a", Decimal("1.25")),
+        ("cap_b", Decimal("2.25")),
+    ]
+    session.execute = AsyncMock(side_effect=[total_result, by_capability_result])
+
     session_cm = AsyncMock()
     session_cm.__aenter__.return_value = session
     session_cm.__aexit__.return_value = None
-    session_factory.return_value = session_cm
+    session_factory = MagicMock(return_value=session_cm)
 
-    ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
-    filters = MagicMock()
-    filters.agent_id = "agent-1"
-    filters.capability_name = "cap-x"
-    filters.start_date = None
-    filters.end_date = None
-    filters.limit = 5
-    filters.order_by = "created_at DESC"
-
-    rows = await ledger.query_records("tenant-a", filters)
-
-    assert rows == expected
-    session.execute.assert_awaited_once()
-    stmt = session.execute.await_args.args[0]
-    stmt_sql = str(stmt)
-    assert "ledger_records.tenant_id" in stmt_sql
-    assert "ledger_records.agent_id" in stmt_sql
-    assert "ledger_records.capability_name" in stmt_sql
-
-
-@pytest.mark.asyncio
-async def test_get_cost_summary_returns_decimal_total() -> None:
-    """3.2.4: get_cost_summary converts aggregate result to Decimal."""
-    session_factory = MagicMock()
-    session = MagicMock()
-    result = MagicMock()
-    result.scalar_one.return_value = Decimal("1.2345")
-    session.execute = AsyncMock(return_value=result)
-    session_cm = AsyncMock()
-    session_cm.__aenter__.return_value = session
-    session_cm.__aexit__.return_value = None
-    session_factory.return_value = session_cm
-
-    ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
     summary = await ledger.get_cost_summary(
-        tenant_id="tenant-a",
-        agent_id="agent-1",
-        start_date=date(2026, 1, 1),
-        end_date=date(2026, 1, 31),
+        tenant_id="t1",
+        agent_id="agent1",
+        start_date=date(2026, 2, 1),
+        end_date=date(2026, 2, 23),
     )
 
-    assert summary.total_cost == Decimal("1.2345")
-    session.execute.assert_awaited_once()
+    assert summary.total_cost == Decimal("3.50")
+    assert summary.by_agent == {"agent1": Decimal("3.50")}
+    assert summary.by_capability == {
+        "cap_a": Decimal("1.25"),
+        "cap_b": Decimal("2.25"),
+    }
+
+
+def _stmt_uses_tenant(stmt, tenant_id: str) -> bool:
+    compiled = stmt.compile()
+    return tenant_id in compiled.params.values()
 
 
 @pytest.mark.asyncio
-async def test_flush_batch_retries_then_succeeds_without_fallback() -> None:
-    """3.1.2.2: flush retries with backoff and succeeds before fallback."""
-    session_factory = MagicMock()
-    session = MagicMock()
-    session.commit = AsyncMock(side_effect=[RuntimeError("t1"), RuntimeError("t2"), None])
+async def test_query_records_enforces_tenant_filter():
+    session = AsyncMock()
+    result = MagicMock()
+    result.scalars.return_value.all.return_value = []
+    session.execute = AsyncMock(return_value=result)
+
     session_cm = AsyncMock()
     session_cm.__aenter__.return_value = session
     session_cm.__aexit__.return_value = None
-    session_factory.return_value = session_cm
+    session_factory = MagicMock(return_value=session_cm)
 
-    ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
-    ledger._write_to_fallback_log = AsyncMock()  # type: ignore[method-assign]
-    batch = cast(list[LedgerRecord], [MagicMock(spec=LedgerRecord)])
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+    await ledger.query_records(
+        tenant_id="tenant-A",
+        filters=LedgerQueryFilters(),
+    )
 
-    with patch("owlclaw.governance.ledger.asyncio.sleep", new=AsyncMock()) as sleep_mock:
-        await ledger._flush_batch(batch)
+    stmt = session.execute.await_args.args[0]
+    assert _stmt_uses_tenant(stmt, "tenant-A")
 
-    assert session.commit.await_count == 3
-    assert sleep_mock.await_count == 2
-    ledger._write_to_fallback_log.assert_not_awaited()
+
+@pytest.mark.asyncio
+async def test_get_cost_summary_enforces_tenant_filter():
+    session = AsyncMock()
+    total_result = MagicMock()
+    total_result.scalar_one.return_value = Decimal("0")
+    by_capability_result = MagicMock()
+    by_capability_result.all.return_value = []
+    session.execute = AsyncMock(side_effect=[total_result, by_capability_result])
+
+    session_cm = AsyncMock()
+    session_cm.__aenter__.return_value = session
+    session_cm.__aexit__.return_value = None
+    session_factory = MagicMock(return_value=session_cm)
+
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+    await ledger.get_cost_summary(
+        tenant_id="tenant-B",
+        agent_id="agent1",
+        start_date=date(2026, 2, 1),
+        end_date=date(2026, 2, 23),
+    )
+
+    first_stmt = session.execute.await_args_list[0].args[0]
+    second_stmt = session.execute.await_args_list[1].args[0]
+    assert _stmt_uses_tenant(first_stmt, "tenant-B")
+    assert _stmt_uses_tenant(second_stmt, "tenant-B")

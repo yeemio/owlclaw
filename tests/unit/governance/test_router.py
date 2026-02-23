@@ -154,3 +154,23 @@ async def test_router_update_config_invalid_payload_falls_back_to_default() -> N
     sel = await r.select_model("any", ctx)
     assert sel.model == "gpt-4o-mini"
     assert sel.fallback == []
+
+
+@pytest.mark.asyncio
+async def test_router_reload_config_updates_rules_and_default() -> None:
+    r = Router({"default_model": "gpt-4o-mini"})
+    ctx = RunContext(tenant_id="t1")
+    r.reload_config(
+        {
+            "rules": [
+                {
+                    "task_type": "trading_decision",
+                    "model": "gpt-4o",
+                    "fallback": ["gpt-4o-mini"],
+                }
+            ],
+            "default_model": "gpt-4.1-mini",
+        }
+    )
+    sel = await r.select_model("trading_decision", ctx)
+    assert sel.model == "gpt-4o"

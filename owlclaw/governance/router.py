@@ -22,13 +22,10 @@ class Router:
     def __init__(self, config: dict) -> None:
         self._rules: list[dict] = []
         self._default_model = "gpt-4o-mini"
-        self.update_config(config)
+        self.reload_config(config)
 
-    def update_config(self, config: dict) -> None:
-        """Hot-reload routing config safely.
-
-        Invalid config shapes are ignored and replaced with defaults.
-        """
+    def reload_config(self, config: dict) -> None:
+        """Hot-reload router rules and default model from new config."""
         cfg = config if isinstance(config, dict) else {}
         raw_rules = cfg.get("rules", [])
         self._rules = raw_rules if isinstance(raw_rules, list) else []
@@ -37,6 +34,10 @@ class Router:
             self._default_model = raw_default_model.strip()
         else:
             self._default_model = "gpt-4o-mini"
+
+    def update_config(self, config: dict) -> None:
+        """Backward-compatible alias for reload_config()."""
+        self.reload_config(config)
 
     async def select_model(
         self,

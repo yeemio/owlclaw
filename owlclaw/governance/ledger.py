@@ -8,7 +8,7 @@ import asyncio
 import contextlib
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, time, timezone
 from decimal import Decimal
 from typing import Any
@@ -40,6 +40,8 @@ class CostSummary:
     """Aggregated cost over a period."""
 
     total_cost: Decimal
+    by_agent: dict[str, Decimal] = field(default_factory=dict)
+    by_capability: dict[str, Decimal] = field(default_factory=dict)
 
 
 class LedgerRecord(Base):
@@ -226,20 +228,41 @@ class Ledger:
         from sqlalchemy import func as sql_func
 
         async with self._session_factory() as session:
-            stmt = (
+            start_dt = datetime.combine(start_date, time.min, tzinfo=timezone.utc)
+            end_dt = datetime.combine(end_date, time.max, tzinfo=timezone.utc)
+            total_stmt = (
                 select(sql_func.coalesce(sql_func.sum(LedgerRecord.estimated_cost), 0))
                 .where(LedgerRecord.tenant_id == tenant_id)
                 .where(LedgerRecord.agent_id == agent_id)
-                .where(LedgerRecord.created_at >= datetime.combine(
-                    start_date, time.min, tzinfo=timezone.utc
-                ))
-                .where(LedgerRecord.created_at <= datetime.combine(
-                    end_date, time.max, tzinfo=timezone.utc
-                ))
+                .where(LedgerRecord.created_at >= start_dt)
+                .where(LedgerRecord.created_at <= end_dt)
             )
-            result = await session.execute(stmt)
-            total = result.scalar_one()
-            return CostSummary(total_cost=Decimal(str(total)) if total is not None else Decimal("0"))
+            total_result = await session.execute(total_stmt)
+            total = total_result.scalar_one()
+
+            by_capability_stmt = (
+                select(
+                    LedgerRecord.capability_name,
+                    sql_func.coalesce(sql_func.sum(LedgerRecord.estimated_cost), 0),
+                )
+                .where(LedgerRecord.tenant_id == tenant_id)
+                .where(LedgerRecord.agent_id == agent_id)
+                .where(LedgerRecord.created_at >= start_dt)
+                .where(LedgerRecord.created_at <= end_dt)
+                .group_by(LedgerRecord.capability_name)
+            )
+            by_capability_result = await session.execute(by_capability_stmt)
+            by_capability = {
+                str(capability): Decimal(str(cost)) if cost is not None else Decimal("0")
+                for capability, cost in by_capability_result.all()
+            }
+
+            total_decimal = Decimal(str(total)) if total is not None else Decimal("0")
+            return CostSummary(
+                total_cost=total_decimal,
+                by_agent={agent_id: total_decimal},
+                by_capability=by_capability,
+            )
 
     async def _background_writer(self) -> None:
         """Consume queue and flush batches to the database."""
@@ -251,6 +274,10 @@ class Ledger:
                     timeout=self._flush_interval,
                 )
                 batch.append(record)
+                # Drain immediately available queue items to improve throughput
+                # under burst traffic while keeping timeout-based flush behavior.
+                while len(batch) < self._batch_size and not self._write_queue.empty():
+                    batch.append(self._write_queue.get_nowait())
                 if len(batch) >= self._batch_size:
                     await self._flush_batch(batch)
                     batch = []

@@ -40,9 +40,9 @@
 - [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule 已完成；remember/recall 待 Memory） → spec: agent-tools
 - [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [x] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
-- [ ] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
-- [ ] `owlclaw.governance.ledger` — 执行记录 → spec: governance
-- [ ] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
+- [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
+- [x] `owlclaw.governance.ledger` — 执行记录 → spec: governance
+- [x] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
 - [ ] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
 - [ ] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
   **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
@@ -94,7 +94,7 @@
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（47/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
-| governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（137/173） | visibility + ledger + router |
+| governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：agent-runtime KnowledgeInjector 补强） |
-| 批次状态 | **完成**。已补齐 KnowledgeInjector 的 metadata/select/token budget/reload 能力并完成回归。 |
-| 已完成项 | `owlclaw.capabilities.knowledge.KnowledgeInjector` 新增 `load_skills_metadata()`、`select_skills()`（token 限制）与 `reload_skills()`；`Skill` 新增缓存清理方法；补充 `tests/unit/test_knowledge.py` 的功能与属性测试；同步回填 `agent-runtime/tasks.md` 的 Task 4.1-4.6。 |
-| 下一待执行 | 继续对进行中 spec 做存量审校（优先 `agent-runtime` Task 8.6+ 与 `governance` 剩余验收项），并分批清理全仓历史 lint/type 债务。 |
-| 验收快照 | `poetry run pytest tests/unit/test_knowledge.py tests/unit/test_skills.py tests/unit/test_app.py tests/unit/agent/test_runtime.py tests/unit/test_capabilities_acceptance.py -q` -> `117 passed`；`poetry run mypy owlclaw/capabilities/knowledge.py owlclaw/capabilities/skills.py tests/unit/test_knowledge.py` -> `Success: no issues found in 3 source files`。 |
+| 当前批次 | review 循环（本轮：合并 governance 收尾 + agent-runtime KnowledgeInjector 补强） |
+| 批次状态 | **完成**。governance 全量任务已完成（173/173），并已在审校分支吸收 agent-runtime 的知识注入补强。 |
+| 已完成项 | governance：补齐 `docs/GOVERNANCE_GUIDE.md`、性能/迁移/租户隔离测试与任务收口；agent-runtime：`KnowledgeInjector` 增加 metadata/select/token budget/reload 与对应测试，回填 Task 4.1-4.6。 |
+| 下一待执行 | 持续审校 `agent-runtime` 剩余任务与编码分支待审变更，分批清理 lint/type 债务。 |
+| 验收快照 | governance 分支自带验收快照 `89 passed`；本分支 knowledge 批次验收为 `117 passed` + mypy 成功。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
