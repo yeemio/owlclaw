@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：连续 7 轮审校 + 合并 codex-work/codex-gpt-work） |
-| 批次状态 | **完成**。已完成双分支审校并合并入 `review-work`；`integrations-llm` 状态已收口为完成。 |
-| 已完成项 | 合并 `codex-work`（新增 DB engine 属性测试）与 `codex-gpt-work`（mock function call 响应实现与测试）；保留并延续审校分支中的 spec 进度校准与路径规范化。 |
-| 下一待执行 | 持续 Review Loop；等待新的编码分支提交并执行审校、合并与回归验证。 |
-| 验收快照 | 分支扫描与 spec 一致性校验通过；`poetry run pytest` 在当前沙箱环境持续卡在虚拟环境初始化，未能完成自动化复验。 |
+| 当前批次 | review 循环（本轮：7 轮节奏复审，确认已合并提交与回归状态） |
+| 批次状态 | **完成**。`codex-work`/`codex-gpt-work` 相对 `main` 的提交已被 `review-work` 吸收，无新增未审提交。 |
+| 已完成项 | 完成 7 轮复审：分支吸收校验、spec 进度一致性校验、路径漂移校验、红线扫描、回归测试。 |
+| 下一待执行 | 按 7 轮节奏继续 Review Loop；若出现新的编码提交，执行审校结论与合并把关。 |
+| 验收快照 | 使用 `D:\\AI\\owlclaw\\.venv\\Scripts\\python.exe` 执行 `pytest tests/unit/integrations/test_llm.py tests/unit/test_db_engine_properties.py -q`，结果 `44 passed`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
