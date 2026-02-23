@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 def _coerce_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
+    if isinstance(value, int):
+        return value != 0
     if isinstance(value, str):
         normalized = value.strip().lower()
         if normalized in {"1", "true", "yes", "on"}:

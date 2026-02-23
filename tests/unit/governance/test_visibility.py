@@ -128,6 +128,11 @@ def test_capability_view_coerces_string_false_to_false():
     assert cap.requires_confirmation is False
 
 
+def test_capability_view_coerces_integer_confirmation_flag():
+    cap = CapabilityView("x", requires_confirmation=1)
+    assert cap.requires_confirmation is True
+
+
 def test_capability_view_coerces_focus_to_string_list():
     cap1 = CapabilityView("x", focus="inventory")
     cap2 = CapabilityView("y", focus=["a", " ", 1, "a", "b"])
