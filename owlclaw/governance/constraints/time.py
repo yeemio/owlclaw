@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from datetime import datetime, time
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from owlclaw.governance.visibility import CapabilityView, FilterResult, RunContext
 
@@ -40,7 +40,10 @@ class TimeConstraint:
             "weekdays": _parse_weekdays(th.get("weekdays")),
         }
         tz_name = config.get("timezone", "Asia/Shanghai")
-        self.timezone = ZoneInfo(tz_name)
+        try:
+            self.timezone = ZoneInfo(tz_name)
+        except ZoneInfoNotFoundError:
+            self.timezone = ZoneInfo("UTC")
         self._now_cb: Callable[[], datetime] | None = None  # for tests
 
     async def evaluate(

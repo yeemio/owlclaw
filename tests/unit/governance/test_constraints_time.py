@@ -80,3 +80,8 @@ async def test_time_trading_hours_only_outside_time():
     r = await c.evaluate(cap, "agent1", ctx)
     assert r.visible is False
     assert "hours" in r.reason.lower() or "trading" in r.reason.lower()
+
+
+def test_time_constraint_invalid_timezone_falls_back_to_utc():
+    c = TimeConstraint({"timezone": "Invalid/Timezone"})
+    assert c.timezone == ZoneInfo("UTC")
