@@ -114,13 +114,15 @@ class MemoryService:
         path = Path(self._config.file_fallback_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         memory_id = uuid4()
+        sanitized_content = content.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
+        safe_tags = [tag.replace(",", "_").strip() for tag in tags if tag.strip()]
         line = (
             f"- id: {memory_id}\n"
             f"  tenant_id: {tenant_id}\n"
             f"  agent_id: {agent_id}\n"
             f"  security_level: {security_level.value}\n"
-            f"  tags: [{', '.join(tags)}]\n"
-            f"  content: {content}\n"
+            f"  tags: [{', '.join(safe_tags)}]\n"
+            f"  content: {sanitized_content}\n"
         )
         path.write_text(path.read_text(encoding="utf-8") + line if path.exists() else line, encoding="utf-8")
         await self._record_degradation("store_fallback_file", {"path": str(path)})

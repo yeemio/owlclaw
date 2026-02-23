@@ -78,6 +78,56 @@ class _FailingSearchStore(MemoryStore):
         return await self._delegate.get_expired_entry_ids(agent_id, tenant_id, before, max_access_count)
 
 
+class _FailingSaveStore(MemoryStore):
+    async def save(self, entry: MemoryEntry) -> UUID:
+        raise RuntimeError("store unavailable")
+
+    async def search(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        query_embedding: list[float] | None,
+        limit: int = 5,
+        tags: list[str] | None = None,
+        include_archived: bool = False,
+    ) -> list[tuple[MemoryEntry, float]]:
+        return []
+
+    async def get_recent(self, agent_id: str, tenant_id: str, hours: int = 24, limit: int = 5) -> list[MemoryEntry]:
+        return []
+
+    async def archive(self, entry_ids: list[UUID]) -> int:
+        return 0
+
+    async def delete(self, entry_ids: list[UUID]) -> int:
+        return 0
+
+    async def count(self, agent_id: str, tenant_id: str) -> int:
+        return 0
+
+    async def update_access(self, agent_id: str, tenant_id: str, entry_ids: list[UUID]) -> None:
+        return None
+
+    async def list_entries(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        order_created_asc: bool,
+        limit: int,
+        include_archived: bool = False,
+    ) -> list[MemoryEntry]:
+        return []
+
+    async def get_expired_entry_ids(
+        self,
+        agent_id: str,
+        tenant_id: str,
+        before: datetime,
+        max_access_count: int = 0,
+    ) -> list[UUID]:
+        return []
+
+
 @pytest.mark.asyncio
 async def test_recall_uses_keyword_fallback_when_search_fails() -> None:
     store = _FailingSearchStore()
@@ -134,3 +184,29 @@ async def test_compact_merges_same_tag_group() -> None:
 
     entries = await store.list_entries("a", "t", order_created_asc=False, limit=20, include_archived=True)
     assert any("compaction:trading" in e.content for e in entries)
+
+
+@pytest.mark.asyncio
+async def test_remember_file_fallback_sanitizes_multiline_content(tmp_path) -> None:
+    cfg = MemoryConfig(
+        enable_file_fallback=True,
+        enable_tfidf_fallback=False,
+        file_fallback_path=str(tmp_path / "MEMORY.md"),
+    )
+
+    class _StaticEmbedder:
+        async def embed(self, text: str) -> list[float]:
+            return [0.1, 0.2]
+
+        async def embed_batch(self, texts: list[str]) -> list[list[float]]:
+            return [[0.1, 0.2] for _ in texts]
+
+        @property
+        def dimensions(self) -> int:
+            return 2
+
+    service = MemoryService(store=_FailingSaveStore(), embedder=_StaticEmbedder(), config=cfg)
+    await service.remember("agent-a", "default", "line1\nline2", tags=["a,b", " c "])
+    text = (tmp_path / "MEMORY.md").read_text(encoding="utf-8")
+    assert "content: line1\\nline2" in text
+    assert "tags: [a_b, c]" in text
