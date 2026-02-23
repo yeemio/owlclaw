@@ -164,6 +164,16 @@ class MemoryService:
             out.append(normalized)
         return out
 
+    @staticmethod
+    def _normalize_scope(agent_id: str, tenant_id: str) -> tuple[str, str]:
+        normalized_agent = agent_id.strip()
+        if not normalized_agent:
+            raise ValueError("agent_id must not be empty")
+        normalized_tenant = tenant_id.strip()
+        if not normalized_tenant:
+            raise ValueError("tenant_id must not be empty")
+        return normalized_agent, normalized_tenant
+
     async def remember(
         self,
         agent_id: str,
@@ -172,6 +182,7 @@ class MemoryService:
         tags: list[str] | None = None,
     ) -> UUID:
         """Store one memory (embed + save). Optionally Ledger can be wired later."""
+        normalized_agent, normalized_tenant = self._normalize_scope(agent_id, tenant_id)
         normalized = content.strip()
         if not normalized:
             raise ValueError("content must not be empty")
@@ -180,8 +191,8 @@ class MemoryService:
         embedding = await self._embed_with_fallback(normalized)
         security_level = self._classifier.classify(normalized)
         entry = MemoryEntry(
-            agent_id=agent_id,
-            tenant_id=tenant_id,
+            agent_id=normalized_agent,
+            tenant_id=normalized_tenant,
             content=normalized,
             embedding=embedding,
             tags=self._normalize_tags(tags),
@@ -194,8 +205,8 @@ class MemoryService:
                 raise
             logger.warning("memory store save failed; writing fallback file")
             return await self._append_file_fallback(
-                agent_id=agent_id,
-                tenant_id=tenant_id,
+                agent_id=normalized_agent,
+                tenant_id=normalized_tenant,
                 content=normalized,
                 tags=entry.tags,
                 security_level=security_level,
@@ -211,6 +222,7 @@ class MemoryService:
         channel: str = "internal",
     ) -> list[RecallResult]:
         """Search memories by query (embed + search + update access). Returns list of RecallResult."""
+        normalized_agent, normalized_tenant = self._normalize_scope(agent_id, tenant_id)
         normalized_query = query.strip()
         if not normalized_query:
             raise ValueError("query must not be empty")
@@ -219,8 +231,8 @@ class MemoryService:
         normalized_tags = self._normalize_tags(tags)
         try:
             pairs = await self._store.search(
-                agent_id,
-                tenant_id,
+                normalized_agent,
+                normalized_tenant,
                 query_embedding,
                 limit=safe_limit,
                 tags=normalized_tags,
@@ -230,12 +242,12 @@ class MemoryService:
                 raise
             await self._record_degradation(
                 "vector_search_keyword_fallback",
-                {"agent_id": agent_id, "tenant_id": tenant_id},
+                {"agent_id": normalized_agent, "tenant_id": normalized_tenant},
             )
             logger.warning("memory vector search failed; using keyword fallback")
             return await self._keyword_recall_fallback(
-                agent_id=agent_id,
-                tenant_id=tenant_id,
+                agent_id=normalized_agent,
+                tenant_id=normalized_tenant,
                 query=normalized_query,
                 limit=safe_limit,
                 tags=normalized_tags,
@@ -244,7 +256,7 @@ class MemoryService:
         if not pairs:
             return []
         entry_ids = [entry.id for entry, _ in pairs]
-        await self._store.update_access(agent_id, tenant_id, entry_ids)
+        await self._store.update_access(normalized_agent, normalized_tenant, entry_ids)
         out: list[RecallResult] = []
         for entry, score in pairs:
             filtered = self._security_filter.for_channel(entry, channel=channel)
@@ -265,10 +277,11 @@ class MemoryService:
         tenant_id: str,
     ) -> CompactionResult:
         """Merge large same-tag memory groups into summary entries."""
+        normalized_agent, normalized_tenant = self._normalize_scope(agent_id, tenant_id)
         threshold = self._config.compaction_threshold
         entries = await self._store.list_entries(
-            agent_id=agent_id,
-            tenant_id=tenant_id,
+            agent_id=normalized_agent,
+            tenant_id=normalized_tenant,
             order_created_asc=True,
             limit=100000,
             include_archived=False,
@@ -285,8 +298,8 @@ class MemoryService:
             summary_text = self._summary_fallback(group)
             summary_embedding = await self._embed_with_fallback(summary_text)
             summary = MemoryEntry(
-                agent_id=agent_id,
-                tenant_id=tenant_id,
+                agent_id=normalized_agent,
+                tenant_id=normalized_tenant,
                 content=f"[compaction:{tag}] {summary_text}",
                 embedding=summary_embedding,
                 tags=[tag, "compacted"],
@@ -311,9 +324,10 @@ class MemoryService:
         focus: str | None = None,
     ) -> MemorySnapshot:
         """Build LTM snapshot for Run start."""
+        normalized_agent, normalized_tenant = self._normalize_scope(agent_id, tenant_id)
         return await self._snapshot_builder.build(
-            agent_id,
-            tenant_id,
+            normalized_agent,
+            normalized_tenant,
             trigger_event,
             focus,
             max_tokens=self._config.snapshot_max_tokens,

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from uuid import uuid4
 
 import pytest
 
 pytest.importorskip("qdrant_client")
 
 from owlclaw.agent.memory.models import MemoryEntry
-from owlclaw.agent.memory.store_qdrant import QdrantStore
+from owlclaw.agent.memory.store_qdrant import QdrantStore, _entry_from_payload
 
 
 @dataclass
@@ -83,3 +84,22 @@ async def test_qdrant_store_save_search_archive_delete() -> None:
 
     deleted = await store.delete([entry.id])
     assert deleted == 1
+
+
+def test_entry_from_payload_tolerates_invalid_types() -> None:
+    entry = _entry_from_payload(
+        uuid4(),
+        {
+            "agent_id": "a",
+            "tenant_id": "t",
+            "content": "hello",
+            "version": "not-an-int",
+            "created_at": "bad-datetime",
+            "access_count": object(),
+            "archived": "false",
+        },
+        vector=[0.1, 0.2],
+    )
+    assert entry.version == 1
+    assert entry.access_count == 0
+    assert entry.archived is False

@@ -184,3 +184,29 @@ async def test_recall_normalizes_tags_before_search() -> None:
     )
 
     assert store.last_search_tags == ["x", "y"]
+
+
+@pytest.mark.asyncio
+async def test_remember_rejects_blank_agent_id() -> None:
+    store = _CaptureLimitStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+
+    with pytest.raises(ValueError, match="agent_id must not be empty"):
+        await service.remember(
+            agent_id=" ",
+            tenant_id="default",
+            content="hello",
+        )
+
+
+@pytest.mark.asyncio
+async def test_recall_rejects_blank_tenant_id() -> None:
+    store = _CaptureLimitStore()
+    service = MemoryService(store=store, embedder=_DummyEmbedder(), config=MemoryConfig())
+
+    with pytest.raises(ValueError, match="tenant_id must not be empty"):
+        await service.recall(
+            agent_id="a",
+            tenant_id="  ",
+            query="hello",
+        )
