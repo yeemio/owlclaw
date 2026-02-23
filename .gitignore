@@ -24,6 +24,7 @@ poetry.lock
 
 # Testing
 .pytest_cache/
+.hypothesis/
 htmlcov/
 .coverage
 coverage.xml
