@@ -283,8 +283,12 @@ def test_filter_by_task_type(tmp_path):
     reg.register_handler("c", lambda: None)
     t1 = reg.filter_by_task_type("t1")
     assert set(t1) == {"a", "b"}
+    t1_spaced = reg.filter_by_task_type("  t1  ")
+    assert set(t1_spaced) == {"a", "b"}
     t2 = reg.filter_by_task_type("t2")
     assert t2 == ["c"]
+    assert reg.filter_by_task_type("   ") == []
+    assert reg.filter_by_task_type(None) == []  # type: ignore[arg-type]
 
 
 def test_capability_metadata_includes_focus_and_risk(tmp_path):

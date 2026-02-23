@@ -292,11 +292,16 @@ class CapabilityRegistry:
         Returns:
             List of Skill names matching the task_type
         """
+        if not isinstance(task_type, str):
+            return []
+        normalized_task_type = task_type.strip()
+        if not normalized_task_type:
+            return []
         matching = []
 
         for skill_name in self.handlers:
             skill = self.skills_loader.get_skill(skill_name)
-            if skill and skill.task_type == task_type:
+            if skill and skill.task_type == normalized_task_type:
                 matching.append(skill_name)
 
         return matching
