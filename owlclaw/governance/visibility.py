@@ -6,6 +6,7 @@ run in parallel; failures are fail-open (capability remains visible).
 """
 
 import asyncio
+import inspect
 import logging
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -212,7 +213,12 @@ class VisibilityFilter:
     ) -> FilterResult:
         """Run one evaluator; on exception return visible (fail-open)."""
         try:
-            return await evaluator.evaluate(capability, agent_id, context)
+            result = evaluator.evaluate(capability, agent_id, context)
+            if inspect.isawaitable(result):
+                result = await result
+            if isinstance(result, FilterResult):
+                return result
+            return FilterResult(visible=True)
         except asyncio.CancelledError:
             raise
         except Exception as e:

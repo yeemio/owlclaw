@@ -82,6 +82,20 @@ async def test_filter_one_evaluator_hides_when_not_visible():
 
 
 @pytest.mark.asyncio
+async def test_filter_supports_sync_evaluator():
+    class SyncHideB:
+        def evaluate(self, capability, agent_id, context):
+            return FilterResult(visible=capability.name != "b")
+
+    vf = VisibilityFilter()
+    vf.register_evaluator(SyncHideB())
+    caps = [CapabilityView("a"), CapabilityView("b")]
+    ctx = RunContext(tenant_id="t1")
+    out = await vf.filter_capabilities(caps, "agent1", ctx)
+    assert [c.name for c in out] == ["a"]
+
+
+@pytest.mark.asyncio
 async def test_filter_fail_open_on_evaluator_exception():
     """When an evaluator raises, capability remains visible (fail-open)."""
 
