@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from owlclaw.security.risk_gate import RiskDecision, RiskGate
+from owlclaw.security.audit import SecurityAuditLog
 
 
 def test_risk_gate_execute_low_risk() -> None:
@@ -76,3 +77,15 @@ def test_risk_gate_timeout_expiration() -> None:
     assert gate.pending_count() == 0
     assert gate.confirm(op) is False
     assert gate.reject(op) is False
+
+
+def test_risk_gate_writes_audit_events() -> None:
+    audit = SecurityAuditLog()
+    gate = RiskGate(audit_log=audit)
+    decision, op = gate.evaluate("trade.execute", risk_level="critical")
+    assert decision == RiskDecision.PAUSE
+    assert op is not None
+    assert gate.confirm(op) is True
+    event_types = [e.event_type for e in audit.list_events()]
+    assert "risk_paused" in event_types
+    assert "risk_confirmed" in event_types

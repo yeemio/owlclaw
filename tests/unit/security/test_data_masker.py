@@ -1,5 +1,6 @@
 """Unit tests for DataMasker."""
 
+from owlclaw.security.audit import SecurityAuditLog
 from owlclaw.security.data_masker import DataMasker
 
 
@@ -29,3 +30,12 @@ def test_data_masker_masks_nested_dict_fields() -> None:
     assert masked["profile"]["email"] != payload["profile"]["email"]
     assert masked["profile"]["api_key"] == "[REDACTED]"
     assert masked["history"][0]["bank_card"] != payload["history"][0]["bank_card"]
+
+
+def test_data_masker_writes_audit_event_when_mask_applied() -> None:
+    audit = SecurityAuditLog()
+    masker = DataMasker(audit_log=audit)
+    masked = masker.mask("email: user@example.com")
+    assert "[REDACTED]" in masked
+    event_types = [e.event_type for e in audit.list_events()]
+    assert "mask_applied" in event_types
