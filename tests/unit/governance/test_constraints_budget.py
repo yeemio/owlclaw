@@ -72,3 +72,35 @@ async def test_budget_exhausted_low_cost_visible():
     ctx = RunContext(tenant_id="t1")
     r = await c.evaluate(cap, "agent1", ctx)
     assert r.visible is True
+
+
+@pytest.mark.asyncio
+async def test_budget_invalid_budget_limit_does_not_crash():
+    ledger = AsyncMock(spec=Ledger)
+    ledger.get_cost_summary = AsyncMock(
+        return_value=CostSummary(total_cost=Decimal("1"))
+    )
+    c = BudgetConstraint(
+        ledger,
+        {"budget_limits": {"agent1": "bad-limit"}, "high_cost_threshold": "0.1"},
+    )
+    cap = CapabilityView("x", constraints={"estimated_cost": "0.2"})
+    ctx = RunContext(tenant_id="t1")
+    r = await c.evaluate(cap, "agent1", ctx)
+    assert r.visible is False
+
+
+@pytest.mark.asyncio
+async def test_budget_invalid_estimated_cost_uses_default():
+    ledger = AsyncMock(spec=Ledger)
+    ledger.get_cost_summary = AsyncMock(
+        return_value=CostSummary(total_cost=Decimal("100"))
+    )
+    c = BudgetConstraint(
+        ledger,
+        {"budget_limits": {"agent1": "100"}, "high_cost_threshold": "bad-threshold"},
+    )
+    cap = CapabilityView("x", constraints={"estimated_cost": "not-a-number"})
+    ctx = RunContext(tenant_id="t1")
+    r = await c.evaluate(cap, "agent1", ctx)
+    assert r.visible is True
