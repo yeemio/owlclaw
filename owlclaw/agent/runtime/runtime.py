@@ -159,10 +159,16 @@ class AgentRuntime:
             focus = focus.strip() or None
         elif focus is not None:
             focus = None
+        if payload is None:
+            normalized_payload: dict[str, Any] = {}
+        elif not isinstance(payload, dict):
+            raise ValueError("payload must be a dictionary")
+        else:
+            normalized_payload = dict(payload)
         context = AgentRunContext(
             agent_id=self.agent_id,
             trigger=normalized_event_name,
-            payload=payload or {},
+            payload=normalized_payload,
             focus=focus,
             tenant_id=normalized_tenant_id,
         )

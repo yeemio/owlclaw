@@ -287,6 +287,14 @@ class TestAgentRuntimeRun:
         assert "Focus:" not in user_msg["content"]
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_trigger_event_rejects_non_dict_payload(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response()
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        await rt.setup()
+        with pytest.raises(ValueError, match="payload must be a dictionary"):
+            await rt.trigger_event("check", payload=["bad"])  # type: ignore[arg-type]
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_user_payload_is_sanitized_and_role_isolated(self, mock_llm, tmp_path) -> None:
         """Untrusted payload should be sanitized and stay in user role only."""
         mock_llm.return_value = _make_llm_response()
