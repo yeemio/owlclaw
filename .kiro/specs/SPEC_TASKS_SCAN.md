@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（65/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（70/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（agent-runtime Round 9：错误处理与降级） |
-| 批次状态 | **完成**。agent-runtime 11.1~11.6 已实现并通过。 |
-| 已完成项 | 扩展 `owlclaw/agent/runtime/runtime.py`：setup/运行时错误分类、可选 `error_notifier` 告警回调、LLM/工具错误通知；扩展 `owlclaw/agent/runtime/memory.py`：向量索引失败自动降级并标记 `vector_index_degraded`；补齐 `tests/unit/agent/test_runtime.py` 与 `tests/unit/agent/test_runtime_memory.py` 的单测和属性测试。 |
-| 下一待执行 | agent-runtime Round 10：推进 Task 12.1~12.5（配置加载、验证、热重载与测试）。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py tests/unit/agent/test_runtime_hatchet.py tests/unit/agent/test_runtime_hatchet_properties.py -q` -> `124 passed in 34.35s`。 |
+| 当前批次 | spec 循环（agent-runtime Round 10：配置加载与热重载） |
+| 批次状态 | **完成**。agent-runtime 12.1~12.5 已实现并通过。 |
+| 已完成项 | 新增 `owlclaw/agent/runtime/config.py`：runtime 配置加载、默认值合并、字段验证；扩展 `AgentRuntime` 的 `load_config_file()`/`reload_config()`；补齐 `tests/unit/agent/test_runtime_config.py` 的单测与属性测试，并修复 `tests/unit/agent/test_identity_properties.py` 中 NBSP 边界导致的属性测试不稳定。 |
+| 下一待执行 | agent-runtime Round 11：推进 Task 13.1~13.7（输入 sanitization、路径限制、参数验证、审计与权限限制）。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py tests/unit/agent/test_runtime_hatchet.py tests/unit/agent/test_runtime_hatchet_properties.py tests/unit/agent/test_runtime_config.py -q` -> `130 passed in 32.43s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

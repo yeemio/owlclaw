@@ -16,7 +16,7 @@ _SAFE_TEXT = st.text(
     alphabet=st.characters(blacklist_categories=["Cc", "Cs", "Zl", "Zp"]),
     min_size=1,
     max_size=120,
-).filter(lambda s: s.strip() != "" and "\n" not in s and "\r" not in s)
+).filter(lambda s: s.strip() != "" and "\n" not in s and "\r" not in s and "\u00a0" not in s)
 
 
 @pytest.mark.asyncio

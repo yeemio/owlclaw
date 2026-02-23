@@ -25,6 +25,11 @@ import time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from owlclaw.agent.runtime.config import (
+    DEFAULT_RUNTIME_CONFIG,
+    load_runtime_config,
+    merge_runtime_config,
+)
 from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.heartbeat import HeartbeatChecker
 from owlclaw.agent.runtime.identity import IdentityLoader
@@ -106,6 +111,7 @@ class AgentRuntime:
         ledger: Ledger | None = None,
         model: str = _DEFAULT_MODEL,
         config: dict[str, Any] | None = None,
+        config_path: str | None = None,
     ) -> None:
         if not isinstance(agent_id, str) or not agent_id.strip():
             raise ValueError("agent_id must be a non-empty string")
@@ -120,7 +126,19 @@ class AgentRuntime:
         self._router = router
         self._ledger = ledger
         self.model = model
-        self.config: dict[str, Any] = config or {}
+        base_config = dict(DEFAULT_RUNTIME_CONFIG)
+        user_config = dict(config or {})
+        self.config = merge_runtime_config(base_config, user_config)
+        if config_path:
+            file_config = load_runtime_config(config_path)
+            self.config = merge_runtime_config(self.config, file_config)
+            loaded_model = file_config.get("model")
+            if isinstance(loaded_model, str) and loaded_model.strip():
+                self.model = loaded_model.strip()
+        self._config_path = config_path
+        user_model = user_config.get("model")
+        if isinstance(user_model, str) and user_model.strip():
+            self.model = user_model.strip()
         self._input_sanitizer = InputSanitizer()
         self._security_audit = SecurityAuditLog()
 
@@ -302,6 +320,20 @@ class AgentRuntime:
                 message=str(exc),
             )
             raise
+
+    def load_config_file(self, path: str) -> dict[str, Any]:
+        """Load runtime config from YAML and apply it."""
+        loaded = load_runtime_config(path)
+        self.config = merge_runtime_config(self.config, loaded)
+        self._config_path = path
+        self.model = str(self.config.get("model", self.model))
+        return dict(self.config)
+
+    def reload_config(self) -> dict[str, Any]:
+        """Reload runtime config from the last loaded config file."""
+        if not self._config_path:
+            raise RuntimeError("config path is not set")
+        return self.load_config_file(self._config_path)
 
     # ------------------------------------------------------------------
     # Public trigger entry point
