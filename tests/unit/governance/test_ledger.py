@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from owlclaw.governance.ledger import Ledger, LedgerRecord
+from owlclaw.governance.ledger import Ledger, LedgerQueryFilters, LedgerRecord
 
 
 def test_ledger_record_has_required_columns():
@@ -331,3 +331,58 @@ async def test_ledger_get_cost_summary_includes_capability_breakdown():
         "cap_a": Decimal("1.25"),
         "cap_b": Decimal("2.25"),
     }
+
+
+def _stmt_uses_tenant(stmt, tenant_id: str) -> bool:
+    compiled = stmt.compile()
+    return tenant_id in compiled.params.values()
+
+
+@pytest.mark.asyncio
+async def test_query_records_enforces_tenant_filter():
+    session = AsyncMock()
+    result = MagicMock()
+    result.scalars.return_value.all.return_value = []
+    session.execute = AsyncMock(return_value=result)
+
+    session_cm = AsyncMock()
+    session_cm.__aenter__.return_value = session
+    session_cm.__aexit__.return_value = None
+    session_factory = MagicMock(return_value=session_cm)
+
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+    await ledger.query_records(
+        tenant_id="tenant-A",
+        filters=LedgerQueryFilters(),
+    )
+
+    stmt = session.execute.await_args.args[0]
+    assert _stmt_uses_tenant(stmt, "tenant-A")
+
+
+@pytest.mark.asyncio
+async def test_get_cost_summary_enforces_tenant_filter():
+    session = AsyncMock()
+    total_result = MagicMock()
+    total_result.scalar_one.return_value = Decimal("0")
+    by_capability_result = MagicMock()
+    by_capability_result.all.return_value = []
+    session.execute = AsyncMock(side_effect=[total_result, by_capability_result])
+
+    session_cm = AsyncMock()
+    session_cm.__aenter__.return_value = session
+    session_cm.__aexit__.return_value = None
+    session_factory = MagicMock(return_value=session_cm)
+
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+    await ledger.get_cost_summary(
+        tenant_id="tenant-B",
+        agent_id="agent1",
+        start_date=date(2026, 2, 1),
+        end_date=date(2026, 2, 23),
+    )
+
+    first_stmt = session.execute.await_args_list[0].args[0]
+    second_stmt = session.execute.await_args_list[1].args[0]
+    assert _stmt_uses_tenant(first_stmt, "tenant-B")
+    assert _stmt_uses_tenant(second_stmt, "tenant-B")

@@ -94,7 +94,7 @@
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（40/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
-| governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（138/173） | visibility + ledger + router |
+| governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（140/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：governance Round 1 Ledger/Router 完整化） |
-| 批次状态 | **完成**。已完成 governance Phase 3 关键缺口：Ledger 重试与能力维度成本统计、Router 配置热重载及单测补齐。 |
-| 已完成项 | `owlclaw/governance/ledger.py`：`_flush_batch` 增加 3 次指数退避重试、`get_cost_summary` 增加 `by_capability` 聚合；`owlclaw/governance/router.py`：新增 `reload_config` 热重载；补齐 `tests/unit/governance/test_ledger.py`、`tests/unit/governance/test_router.py`。 |
-| 下一待执行 | 继续治理 spec 循环，优先推进 Phase 5（迁移、租户隔离、性能验证）或转入下一个已分配 spec。 |
-| 验收快照 | `poetry run ruff check owlclaw/governance/ledger.py owlclaw/governance/router.py tests/unit/governance/test_ledger.py tests/unit/governance/test_router.py && poetry run pytest tests/unit/governance -q` -> `All checks passed; 81 passed in 1.07s`。 |
+| 当前批次 | spec 循环（本轮：governance Round 2 tenant_id 隔离测试补齐） |
+| 批次状态 | **完成**。已补齐 tenant 查询隔离关键测试并更新任务进度。 |
+| 已完成项 | `tests/unit/governance/test_ledger.py` 新增 `query_records` 与 `get_cost_summary` 的 tenant 强制过滤断言，覆盖 Phase 5 的租户隔离测试入口。 |
+| 下一待执行 | 继续治理 spec 循环，优先推进 5.1.2/5.1.3（真实迁移验证）与 5.2.1/5.2.3（多租户数据隔离集成验证）。 |
+| 验收快照 | `poetry run ruff check tests/unit/governance/test_ledger.py && poetry run pytest tests/unit/governance -q` -> `All checks passed; 83 passed in 0.92s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
