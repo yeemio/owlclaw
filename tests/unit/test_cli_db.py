@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, patch
 
 from typer.testing import CliRunner
+from typer.models import OptionInfo
 
 from owlclaw.cli import app
 from owlclaw.cli.db_migrate import migrate_command
@@ -104,6 +105,17 @@ def test_db_init_honors_explicit_skip_hatchet_argument(monkeypatch):
         dry_run=True,
     )
     assert captured.get("skip_hatchet") is True
+
+
+def test_db_migrate_handles_optioninfo_defaults_without_crashing(monkeypatch):
+    monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
+    with patch("owlclaw.cli.db_migrate.command.upgrade") as mock_upgrade:
+        migrate_command(
+            target=OptionInfo(default="head"),  # type: ignore[arg-type]
+            database_url=OptionInfo(default=None),  # type: ignore[arg-type]
+            dry_run=OptionInfo(default=False),  # type: ignore[arg-type]
+        )
+    assert mock_upgrade.call_count == 1
 
 
 def test_db_migrate_rejects_blank_target(monkeypatch):

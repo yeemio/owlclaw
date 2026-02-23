@@ -6,6 +6,41 @@ import sys
 import typer
 from alembic import command
 from alembic.config import Config
+from typer.models import OptionInfo
+
+
+def _normalize_str_option(value: object, default: str) -> str:
+    if isinstance(value, OptionInfo):
+        return default
+    if not isinstance(value, str):
+        return default
+    return value
+
+
+def _normalize_optional_str_option(value: object) -> str | None:
+    if isinstance(value, OptionInfo):
+        return None
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return None
+    return value
+
+
+def _normalize_bool_option(value: object, default: bool) -> bool:
+    if isinstance(value, OptionInfo):
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off", ""}:
+            return False
+    return default
 
 
 def migrate_command(
@@ -27,6 +62,9 @@ def migrate_command(
     ),
 ) -> None:
     """Run schema migrations (Alembic upgrade)."""
+    target = _normalize_str_option(target, "head")
+    database_url = _normalize_optional_str_option(database_url)
+    dry_run = _normalize_bool_option(dry_run, False)
     normalized_target = target.strip()
     if not normalized_target:
         typer.echo("Error: --target must be a non-empty revision string.", err=True)
