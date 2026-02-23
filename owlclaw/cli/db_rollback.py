@@ -126,6 +126,9 @@ def rollback_command(
 
     try:
         current_rev = _get_current_revision_sync(engine)
+    except Exception as e:
+        typer.echo(f"Error: failed to read current migration revision: {e}", err=True)
+        raise typer.Exit(1) from e
     finally:
         try:
             engine.sync_engine.dispose()
