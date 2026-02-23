@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from owlclaw.security.risk_gate import RiskDecision, RiskGate
 
 
@@ -25,6 +27,34 @@ def test_risk_gate_pause_for_critical_or_high_budget() -> None:
     assert op2 is not None
 
 
+@pytest.mark.parametrize(
+    ("risk_level", "budget_ratio", "requires_confirmation", "expected"),
+    [
+        ("low", 0.0, False, RiskDecision.EXECUTE),
+        ("medium", 0.2, False, RiskDecision.EXECUTE),
+        ("high", 0.5, False, RiskDecision.EXECUTE),
+        ("high", 0.8, False, RiskDecision.PAUSE),
+        ("critical", 0.0, False, RiskDecision.PAUSE),
+        ("low", 0.0, True, RiskDecision.PAUSE),
+        ("unknown", 0.0, False, RiskDecision.REJECT),
+    ],
+)
+def test_risk_gate_decision_matrix(
+    risk_level: str,
+    budget_ratio: float,
+    requires_confirmation: bool,
+    expected: RiskDecision,
+) -> None:
+    gate = RiskGate()
+    decision, _ = gate.evaluate(
+        "trade.execute",
+        risk_level=risk_level,
+        budget_ratio=budget_ratio,
+        requires_confirmation=requires_confirmation,
+    )
+    assert decision == expected
+
+
 def test_risk_gate_confirm_and_reject() -> None:
     gate = RiskGate()
     _, op = gate.evaluate("trade.execute", risk_level="critical")
@@ -35,6 +65,7 @@ def test_risk_gate_confirm_and_reject() -> None:
     _, op2 = gate.evaluate("trade.execute", risk_level="critical")
     assert op2 is not None
     assert gate.reject(op2) is True
+    assert gate.reject(op2) is False
 
 
 def test_risk_gate_timeout_expiration() -> None:
@@ -43,3 +74,5 @@ def test_risk_gate_timeout_expiration() -> None:
     assert op is not None
     gate._pending[op].created_at = datetime.now(timezone.utc) - timedelta(seconds=5)  # type: ignore[misc]
     assert gate.pending_count() == 0
+    assert gate.confirm(op) is False
+    assert gate.reject(op) is False
