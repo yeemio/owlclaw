@@ -18,6 +18,30 @@
 
 ## 当前分配
 
+### owlclaw（主 worktree — 统筹 + 编码）
+
+| 字段 | 值 |
+|------|---|
+| 目录 | `D:\AI\owlclaw\` |
+| 分支 | `main` |
+| 角色 | **统筹指挥 + 复杂编码**（Cursor + 人工） |
+
+**统筹职责**：
+- 更新本文件（`WORKTREE_ASSIGNMENTS.md`），分配和调整各 worktree 的任务
+- 将 `review-work` 合并到 `main`（`git merge review-work`）
+- 解决合并冲突
+- 与人工讨论架构决策和 spec 设计
+- 监控各 worktree 进度，动态调整负载
+
+**编码职责**：
+- 跨模块架构级重构（涉及多个 spec 交叉的改动）
+- 需要人工参与决策的关键路径实现
+- 紧急 hotfix
+
+**当前编码任务**：按需，无固定 spec 分配。
+
+---
+
 ### owlclaw-review（审校 — 技术经理角色）
 
 | 字段 | 值 |
@@ -72,14 +96,56 @@
    - 通知各编码 worktree 同步：git merge main
 ```
 
+**Review 检查清单**（每次审核编码分支时逐项检查）：
+
+代码质量：
+- [ ] 类型注解完整（函数签名、返回值、关键变量）
+- [ ] 错误处理充分（异常捕获、边界条件、降级策略）
+- [ ] 命名规范（snake_case 函数/模块、PascalCase 类、UPPER_SNAKE_CASE 常量）
+- [ ] 绝对导入（`from owlclaw.xxx import ...`，无相对导入）
+- [ ] 无 TODO/FIXME/HACK 占位符
+- [ ] 无硬编码业务规则（AI 决策优先原则）
+- [ ] 无假数据/硬编码备用数据
+- [ ] 日志使用 structlog，关键操作有日志
+
+Spec 一致性：
+- [ ] 实现与 design.md 的架构设计一致（组件结构、数据流、接口定义）
+- [ ] tasks.md 中的勾选与实际代码实现匹配
+- [ ] 新增/修改的接口与 requirements.md 的功能需求对应
+
+测试覆盖：
+- [ ] 新代码有对应的单元测试
+- [ ] 测试文件命名正确（`test_*.py`）
+- [ ] `poetry run pytest` 在 review worktree 中通过
+- [ ] 关键路径覆盖率 >= 75%
+
+架构合规：
+- [ ] 包边界正确（不跨越 `owlclaw_architecture.mdc` 定义的模块边界）
+- [ ] 集成组件隔离（Hatchet 调用在 `integrations/hatchet.py`，litellm 在 `integrations/llm/`）
+- [ ] 数据库规范（tenant_id、UUID 主键、TIMESTAMPTZ、Alembic 迁移）
+- [ ] 无跨 database 访问（owlclaw / hatchet 各自独立 database）
+
+跨 Spec 影响：
+- [ ] 检查变更是否影响其他 spec 的接口或数据模型
+- [ ] 若有影响，更新本文件「跨 Spec 依赖提示」表
+
 **常规审校任务**（无编码分支变更时执行）：
 
 - [ ] Spec 规范化审计：检查进行中 spec 的 requirements/design/tasks 与架构文档、代码实现的一致性
 - [ ] SPEC_TASKS_SCAN 状态校准：核实各 spec 的 (checked/total) 是否与 tasks.md 实际勾选一致
-- [ ] 代码质量审查：检查已实现模块的类型注解、错误处理、测试覆盖
+- [ ] 代码质量全局扫描：`poetry run ruff check .` + `poetry run mypy owlclaw/`
 - [ ] 架构漂移检测：代码实现是否偏离 docs/ARCHITECTURE_ANALYSIS.md
 
 **权限**：全仓库读 + 轻量修正（文档、注释、类型注解、测试补全）。不做功能实现。可以在 review-work 分支上直接修复审校发现的轻量问题。
+
+**审校输出格式**（每次 Review 后 commit message 中记录）：
+
+```
+review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
+
+检查项：代码质量 ✅ | Spec 一致性 ✅ | 测试覆盖 ✅ | 架构合规 ✅
+问题：<无 / 具体问题列表>
+```
 
 ---
 

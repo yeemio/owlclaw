@@ -71,6 +71,35 @@ D:/AI/owlclaw-codex-gpt  <hash> [codex-gpt-work]
 
 ## 三、工作规则
 
+### 3.0 环境准备与启动
+
+**虚拟环境**：每个 worktree 需要独立的 `.venv`。新建 worktree 后必须执行：
+
+```bash
+cd D:\AI\owlclaw-<name>
+poetry install
+```
+
+Poetry 有依赖缓存，重复安装很快（几秒到一分钟）。
+
+**Codex CLI 启动**：在 Windows 上使用 **PowerShell**（不要用 CMD）。全局配置已设置 `approval_mode = "full-auto"`（`~/.codex/config.toml`），Codex CLI 启动后自动执行，无需逐条确认。
+
+```powershell
+# 审校
+cd D:\AI\owlclaw-review
+codex
+
+# 编码 1
+cd D:\AI\owlclaw-codex
+codex
+
+# 编码 2
+cd D:\AI\owlclaw-codex-gpt
+codex
+```
+
+**Cursor**：在 `D:\AI\owlclaw\` 中正常使用，无需额外配置。
+
 ### 3.1 通用规则（所有 worktree 都适用）
 
 - **启动时必须读取 `.kiro/WORKTREE_ASSIGNMENTS.md`**，确认自己的任务分配和禁止触碰的路径
@@ -80,10 +109,20 @@ D:/AI/owlclaw-codex-gpt  <hash> [codex-gpt-work]
 - **规则文件不变**：`.cursor/rules/*.mdc` 的所有规范继续生效
 - **合并由人工决定**：完成一批工作后，由人工（或 Cursor 辅助）决定何时合并
 
-### 3.2 主 Worktree（`D:\AI\owlclaw\`，main 分支）
+### 3.2 主 Worktree（`D:\AI\owlclaw\`，main 分支）— 统筹 + 编码
 
 - **使用者**：Cursor、人工
-- **适合的工作**：交互式开发、复杂重构、设计讨论、合并操作
+- **角色**：统筹指挥 + 复杂编码
+- **统筹职责**：
+  - 任务分配：更新 `.kiro/WORKTREE_ASSIGNMENTS.md`，决定哪个 spec 分给哪个 worktree
+  - 合并操作：将 `review-work` 合并到 `main`，通知各 worktree 同步
+  - 冲突解决：处理合并时的文件冲突
+  - 设计讨论：与人工交互讨论架构决策、spec 设计
+  - 分配调整：根据进度和负载动态调整 worktree 任务
+- **编码职责**：
+  - 复杂重构：跨模块的架构级变更（多个 spec 交叉的改动）
+  - 关键路径实现：需要人工参与决策的核心功能
+  - 紧急修复：不适合等 Codex 循环的 hotfix
 - **分支策略**：直接在 `main` 上工作，或按需创建 feature 分支
 
 ### 3.3 审校 Worktree（`D:\AI\owlclaw-review\`，review-work 分支）
@@ -246,10 +285,20 @@ Review Loop 的完整定义见 `.kiro/WORKTREE_ASSIGNMENTS.md` 中审校部分�
 当前批次完成、审校无积压、合并顺畅时，可以增加 worktree：
 
 ```bash
+# 1. 创建 worktree
 git worktree add -b <branch-name> D:\AI\owlclaw-<name> main
-```
 
-然后在 `.kiro/WORKTREE_ASSIGNMENTS.md` 中添加分配，commit 到 main，通知各 worktree 同步。
+# 2. 安装虚拟环境
+cd D:\AI\owlclaw-<name>
+poetry install
+
+# 3. 在主 worktree 中更新分配文件
+# 编辑 .kiro/WORKTREE_ASSIGNMENTS.md，添加新 worktree 的分配
+# git add && git commit
+
+# 4. 同步所有 worktree
+# 各 worktree 执行 git merge main
+```
 
 ---
 
