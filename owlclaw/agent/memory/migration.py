@@ -7,6 +7,16 @@ from dataclasses import dataclass
 from owlclaw.agent.memory.store import MemoryStore
 
 
+def _normalize_scope(agent_id: str, tenant_id: str) -> tuple[str, str]:
+    normalized_agent = agent_id.strip()
+    if not normalized_agent:
+        raise ValueError("agent_id must not be empty")
+    normalized_tenant = tenant_id.strip()
+    if not normalized_tenant:
+        raise ValueError("tenant_id must not be empty")
+    return normalized_agent, normalized_tenant
+
+
 @dataclass
 class MemoryMigrationResult:
     """Migration counters for one agent/tenant scope."""
@@ -24,13 +34,14 @@ async def migrate_store_data(
     include_archived: bool = True,
 ) -> MemoryMigrationResult:
     """Copy entries from source store to target store in created_at order."""
+    normalized_agent, normalized_tenant = _normalize_scope(agent_id, tenant_id)
     if batch_size <= 0:
         raise ValueError("batch_size must be > 0")
 
     result = MemoryMigrationResult()
     entries = await source.list_entries(
-        agent_id=agent_id,
-        tenant_id=tenant_id,
+        agent_id=normalized_agent,
+        tenant_id=normalized_tenant,
         order_created_asc=True,
         limit=1_000_000,
         include_archived=include_archived,

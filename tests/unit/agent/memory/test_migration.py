@@ -27,3 +27,19 @@ async def test_migrate_store_data_copies_entries() -> None:
     assert result.moved == 2
     assert result.failed == 0
     assert await target.count("a", "t") == 2
+
+
+@pytest.mark.asyncio
+async def test_migrate_store_data_rejects_blank_agent() -> None:
+    source = InMemoryStore()
+    target = InMemoryStore()
+    with pytest.raises(ValueError, match="agent_id must not be empty"):
+        await migrate_store_data(source=source, target=target, agent_id=" ", tenant_id="t")
+
+
+@pytest.mark.asyncio
+async def test_migrate_store_data_rejects_blank_tenant() -> None:
+    source = InMemoryStore()
+    target = InMemoryStore()
+    with pytest.raises(ValueError, match="tenant_id must not be empty"):
+        await migrate_store_data(source=source, target=target, agent_id="a", tenant_id=" ")
