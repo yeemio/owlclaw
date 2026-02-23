@@ -49,7 +49,9 @@ class OwlClaw:
     """
 
     def __init__(self, name: str) -> None:
-        self.name = name
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("name must be a non-empty string")
+        self.name = name.strip()
         self._handlers: dict[str, Callable[..., Any]] = {}
         self._states: dict[str, Callable[..., Any]] = {}
         self._skills_path: str | None = None

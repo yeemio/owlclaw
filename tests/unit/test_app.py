@@ -14,6 +14,13 @@ def test_app_creation():
     assert app.name == "test-app"
 
 
+def test_app_creation_validates_name():
+    with pytest.raises(ValueError, match="non-empty string"):
+        OwlClaw("   ")
+    with pytest.raises(ValueError, match="non-empty string"):
+        OwlClaw(None)  # type: ignore[arg-type]
+
+
 def test_mount_skills_and_decorators(tmp_path):
     """mount_skills() scans directory; @handler and @state register with registry."""
     (tmp_path / "entry-monitor").mkdir()
