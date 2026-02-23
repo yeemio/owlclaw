@@ -97,6 +97,16 @@ async def test_filter_fail_open_on_evaluator_exception():
 
 
 @pytest.mark.asyncio
+async def test_filter_skips_invalid_capability_entries():
+    vf = VisibilityFilter()
+    caps = [CapabilityView("only"), object()]  # type: ignore[list-item]
+    ctx = RunContext(tenant_id="t1")
+    out = await vf.filter_capabilities(caps, "agent1", ctx)
+    assert len(out) == 1
+    assert out[0].name == "only"
+
+
+@pytest.mark.asyncio
 async def test_filter_propagates_cancellation():
     """Cancellation must propagate instead of being swallowed as fail-open."""
 

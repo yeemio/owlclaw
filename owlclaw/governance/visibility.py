@@ -167,11 +167,17 @@ class VisibilityFilter:
         For each capability, evaluators run in parallel. If any evaluator
         raises, that capability is treated as visible (fail-open).
         """
+        valid_capabilities: list[CapabilityView] = []
+        for cap in capabilities:
+            if isinstance(cap, CapabilityView):
+                valid_capabilities.append(cap)
+            else:
+                logger.warning("Skipping invalid capability entry of type %s", type(cap).__name__)
         if not self._evaluators:
-            return list(capabilities)
+            return list(valid_capabilities)
 
         filtered: list[CapabilityView] = []
-        for cap in capabilities:
+        for cap in valid_capabilities:
             results = await asyncio.gather(
                 *(
                     self._safe_evaluate(eval_fn, cap, agent_id, context)
