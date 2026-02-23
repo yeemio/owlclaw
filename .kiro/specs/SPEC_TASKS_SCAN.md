@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：完成 codex-work + codex-gpt-work 审校合并） |
-| 批次状态 | **完成**。两条编码分支变更均已合并到 `review-work`，并完成定向回归验证。 |
-| 已完成项 | 合并并验收 `database-core`/`cli-db` 进度与 `test_db_session_properties.py`；合并并验收 `configuration` Task 1/2（`owlclaw/config/*` + `test_config_models.py` + `test_config_loader.py`）。 |
-| 下一待执行 | 继续 Review Loop，等待编码分支下一批提交；按 7 轮节奏执行审校与 checkpoint 更新。 |
-| 验收快照 | `D:\\AI\\owlclaw\\.venv\\Scripts\\python.exe -m pytest tests/unit/test_db_engine_properties.py tests/unit/test_db_session_properties.py tests/unit/test_config_models.py tests/unit/test_config_loader.py -q` -> `14 passed in 3.54s`。 |
+| 当前批次 | review 循环（本轮：7 轮常规审校与回归） |
+| 批次状态 | **完成**。无新的编码分支提交需要审校；spec 一致性与红线检查均通过。 |
+| 已完成项 | 完成 7 轮：分支差异扫描、`SPEC_TASKS_SCAN` 一致性校验、路径/红线扫描、定向回归测试。 |
+| 下一待执行 | 当前无待审任务；等待 `codex-work` / `codex-gpt-work` 新提交后进入下一组 7 轮。 |
+| 验收快照 | `D:\\AI\\owlclaw\\.venv\\Scripts\\python.exe -m pytest tests/unit/test_db_engine_properties.py tests/unit/test_db_session_properties.py tests/unit/test_config_models.py tests/unit/test_config_loader.py tests/unit/integrations/test_llm.py -q` -> `54 passed in 12.46s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
