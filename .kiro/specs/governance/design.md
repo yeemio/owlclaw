@@ -731,7 +731,7 @@ class LedgerRecord(Base):
     __tablename__ = 'ledger_records'
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    tenant_id = Column(String(64), nullable=False, index=True)
     agent_id = Column(String(255), nullable=False, index=True)
     run_id = Column(String(255), nullable=False, index=True)
     capability_name = Column(String(255), nullable=False, index=True)
@@ -2277,7 +2277,7 @@ def upgrade():
     op.create_table(
         'ledger_records',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', postgresql.UUID(as_uuid=True), nullable=False, index=True),
+        sa.Column('tenant_id', sa.String(64), nullable=False, index=True),
         sa.Column('agent_id', sa.String(255), nullable=False, index=True),
         sa.Column('run_id', sa.String(255), nullable=False, index=True),
         sa.Column('capability_name', sa.String(255), nullable=False, index=True),
