@@ -22,7 +22,7 @@
 为与 OwlClaw 主仓保持一致，E2E 验证系统遵循以下约束：
 
 1. 核心实现语言统一为 Python（测试框架为 pytest，属性测试为 hypothesis）。
-2. 文档中的接口代码块用于表达领域契约，视为语言无关伪代码；实际实现以 Python typing/dataclass/Pydantic 为准。
+2. 文档中的接口代码块用于表达 Python 契约草案；实际实现以 Python typing/dataclass/Pydantic 为准。
 3. 不引入独立的 Node/TypeScript 测试运行时作为核心依赖。
 
 ## 架构例外声明（实现阶段需固化）

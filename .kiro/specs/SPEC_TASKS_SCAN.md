@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：跨 spec 统一 tasks 星标口径，仅 specs） |
-| 批次状态 | **完成**。4 个 spec 的 tasks 文档口径已统一。 |
-| 已完成项 | 统一以下文档中“`*` 任务可选可跳过”的表述为“测试重点标记，不代表可跳过”：`integrations-langfuse/tasks.md`、`integrations-langchain/tasks.md`、`skill-templates/tasks.md`、`triggers-queue/tasks.md`。 |
-| 下一待执行 | 继续按架构一致性口径扫描其余 specs（接口命名、DB 约束、边界声明、任务状态一致性）。 |
-| 验收快照 | `rg` 全库扫描确认同类“可选跳过”口径已清零。 |
+| 当前批次 | spec 循环（本轮：e2e/database/ci 规范化，仅 specs） |
+| 批次状态 | **完成**。e2e/database/ci 三个 spec 口径已对齐。 |
+| 已完成项 | `e2e-validation/design.md` 将“语言无关伪代码”改为“Python 契约草案”；`database-core/tasks.md`、`e2e-validation/tasks.md`、`ci-setup/tasks.md` 统一星标任务口径为“重点标记非可跳过”。 |
+| 下一待执行 | 继续 specs 循环；`cli-db/tasks.md` 仍有旧口径，按协作约定暂不改动（该方向由其他 agent 处理）。 |
+| 验收快照 | `rg` 复扫仅剩 `cli-db/tasks.md` 一处“可选跳过”口径，其余 specs 已清理。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
