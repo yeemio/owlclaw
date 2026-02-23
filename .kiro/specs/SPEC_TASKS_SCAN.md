@@ -50,7 +50,7 @@
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [ ] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
-- [ ] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
+- [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
 
@@ -100,7 +100,7 @@
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
-| **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（3/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
+| **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/89） | 消息队列触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：安全审计补强 + agent-runtime 属性测试补审） |
-| 批次状态 | **完成**。已吸收并修正 `codex-work` 的 identity 属性测试增量；已拆分吸收 `codex-gpt-work` 中可独立验证的 security 审计增强。 |
-| 已完成项 | `DataMasker`/`RiskGate` 增加审计事件写入与单测；`agent-runtime` Task 2.3/2.4/2.6 属性测试落地并修复边界断言。 |
-| 下一待执行 | 继续审校 `codex-gpt-work` 的 `256b295`（configuration/CLI 工作流）并按可验证粒度拆分吸收。 |
-| 验收快照 | `poetry run pytest tests/unit/security/test_data_masker.py tests/unit/security/test_risk_gate.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py -q` -> `30 passed in 6.81s`。 |
+| 当前批次 | review 循环（本轮：configuration/CLI 工作流收口 + 回归修复） |
+| 批次状态 | **完成**。已吸收 `codex-gpt-work` 的 configuration/CLI 增量并修复 Typer 参数声明回归。 |
+| 已完成项 | configuration Task 4-12 完成（env 映射、`app.configure`、`owlclaw init/reload`、listeners、模板、测试与文档）；新增 `docs/CONFIGURATION.md` 与 `docs/SECURITY_CONFIGURATION.md`。 |
+| 下一待执行 | 继续审校剩余未合并提交（含流程编排规则文档变更），并保持 scan 与 tasks 一致。 |
+| 验收快照 | `poetry run pytest tests/unit/test_cli_db.py tests/unit/test_cli_main.py tests/unit/test_cli_skill.py tests/unit/test_cli_memory.py tests/unit/test_config_models.py tests/unit/test_config_loader.py tests/unit/test_config_manager.py tests/unit/test_config_listeners.py tests/unit/test_app_configure.py tests/unit/test_cli_init_config.py tests/unit/test_cli_reload_config.py tests/integration/test_config_manager_integration.py tests/unit/security/test_security_config.py tests/unit/security/test_data_masker.py tests/unit/security/test_risk_gate.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py -q` -> `61 passed, 2 skipped`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

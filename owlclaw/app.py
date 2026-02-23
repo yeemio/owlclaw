@@ -12,6 +12,7 @@ from owlclaw.agent import AgentRuntime
 from owlclaw.capabilities.knowledge import KnowledgeInjector
 from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.capabilities.skills import SkillsLoader
+from owlclaw.config import ConfigManager
 from owlclaw.governance.visibility import CapabilityView
 from owlclaw.triggers.cron import CronTriggerRegistry
 
@@ -218,9 +219,64 @@ class OwlClaw:
 
         Accepts: soul, identity, heartbeat_interval_minutes, governance (dict), and other Agent config.
         """
-        self._config.update(kwargs)
-        if "governance" in kwargs:
-            self._governance_config = kwargs["governance"]
+        nested_overrides = self._to_nested_overrides(kwargs)
+        manager = ConfigManager.load(overrides=nested_overrides)
+        self._config = manager.get().model_dump(mode="python")
+        governance_cfg = nested_overrides.get("governance")
+        if isinstance(governance_cfg, dict):
+            self._governance_config = governance_cfg
+
+    @staticmethod
+    def _to_nested_overrides(kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Convert flat app.configure kwargs into nested config overrides."""
+        shortcut_paths = {
+            "soul": ("agent", "soul"),
+            "identity": ("agent", "identity"),
+            "heartbeat_interval_minutes": ("agent", "heartbeat_interval_minutes"),
+            "max_iterations": ("agent", "max_iterations"),
+            "model": ("integrations", "llm", "model"),
+            "temperature": ("integrations", "llm", "temperature"),
+            "fallback_models": ("integrations", "llm", "fallback_models"),
+        }
+        top_level_sections = {
+            "agent",
+            "governance",
+            "triggers",
+            "integrations",
+            "security",
+            "memory",
+        }
+
+        nested: dict[str, Any] = {}
+        for key, value in kwargs.items():
+            if key in top_level_sections and isinstance(value, dict):
+                current = nested.get(key, {})
+                if isinstance(current, dict):
+                    current.update(value)
+                    nested[key] = current
+                else:
+                    nested[key] = value
+                continue
+
+            path: tuple[str, ...]
+            if key in shortcut_paths:
+                path = shortcut_paths[key]
+            elif "__" in key:
+                path = tuple(part.strip().lower() for part in key.split("__") if part.strip())
+                if not path:
+                    continue
+            else:
+                path = ("agent", key)
+
+            cursor = nested
+            for part in path[:-1]:
+                existing = cursor.get(part)
+                if not isinstance(existing, dict):
+                    existing = {}
+                    cursor[part] = existing
+                cursor = existing
+            cursor[path[-1]] = value
+        return nested
 
     def _ensure_governance(self) -> None:
         """Create VisibilityFilter, Router, Ledger from _governance_config if not yet created."""

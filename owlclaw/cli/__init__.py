@@ -7,7 +7,9 @@ import typer
 from click.exceptions import Exit as ClickExit
 
 from owlclaw.cli.db import db_app
+from owlclaw.cli.init_config import init_config_command
 from owlclaw.cli.memory import memory_app
+from owlclaw.cli.reload_config import reload_config_command
 from owlclaw.cli.skill import skill_app
 
 app = typer.Typer(
@@ -17,6 +19,23 @@ app = typer.Typer(
 app.add_typer(db_app, name="db")
 app.add_typer(memory_app, name="memory")
 app.add_typer(skill_app, name="skill")
+
+
+@app.command("init")
+def init_command(
+    path: str = typer.Option(".", "--path", help="Output directory"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing owlclaw.yaml"),
+) -> None:
+    """Generate default owlclaw.yaml in target directory."""
+    init_config_command(path=path, force=force)
+
+
+@app.command("reload")
+def reload_command(
+    config: str = typer.Option("", "--config", help="Optional config file path"),
+) -> None:
+    """Reload configuration and print applied/skipped changes."""
+    reload_config_command(config=config or None)
 
 
 def _dispatch_skill_command(argv: list[str]) -> bool:
@@ -317,6 +336,21 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  list      List skills in a directory")
         print("  templates List templates from the template library")
         print("\n  owlclaw skill init --help | owlclaw skill templates --help")
+        sys.exit(0)
+    if argv == ["init"]:
+        print("Usage: owlclaw init [OPTIONS]")
+        print("\n  Generate default owlclaw.yaml in target directory.")
+        print("Options:")
+        print("  --path TEXT   Output directory (default: current directory)")
+        print("  --force       Overwrite existing owlclaw.yaml")
+        print("  --help        Show this message and exit")
+        sys.exit(0)
+    if argv == ["reload"]:
+        print("Usage: owlclaw reload [OPTIONS]")
+        print("\n  Reload configuration and display applied/skipped changes.")
+        print("Options:")
+        print("  --config TEXT  Optional config file path")
+        print("  --help         Show this message and exit")
         sys.exit(0)
     if argv == ["memory"]:
         print("Usage: owlclaw memory [OPTIONS] COMMAND [ARGS]...")
