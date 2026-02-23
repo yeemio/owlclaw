@@ -12,6 +12,8 @@ def test_memory_config_accepts_defaults() -> None:
     config = MemoryConfig()
     assert config.embedding_dimensions == 1536
     assert config.snapshot_recent_hours == 24
+    assert config.qdrant_collection_name == "owlclaw_memory"
+    assert config.tfidf_dimensions == 256
 
 
 @pytest.mark.parametrize(
@@ -28,6 +30,7 @@ def test_memory_config_accepts_defaults() -> None:
         ("compaction_threshold", 0),
         ("embedding_cache_size", -1),
         ("snapshot_recent_hours", -1),
+        ("tfidf_dimensions", 0),
     ],
 )
 def test_memory_config_rejects_invalid_numeric_ranges(field: str, value: int | float) -> None:
