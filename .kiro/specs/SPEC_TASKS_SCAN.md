@@ -49,7 +49,7 @@
 - [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
-- [x] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
+- [ ] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
 - [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（40/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（第 15 轮：security 全量收口） |
-| 批次状态 | **完成**。security spec 已整体完成（44/44）。 |
-| 已完成项 | `security/tasks.md` 全部勾选；新增 `docs/SECURITY_CONFIGURATION.md`；MCP 通道脱敏证据归档到 memory security 流程测试；security 单测覆盖率 96%。 |
-| 下一待执行 | 第 16 轮：继续当前 worktree 分配范围内未完成 spec（若保持原分配，转向新分配前需人工更新 `WORKTREE_ASSIGNMENTS`）。 |
-| 验收快照 | `poetry run pytest tests/unit/security tests/unit/test_config_models.py tests/unit/test_config_loader.py tests/unit/test_config_manager.py tests/unit/test_config_listeners.py tests/unit/test_app_configure.py tests/unit/test_cli_init_config.py tests/unit/test_cli_reload_config.py tests/integration/test_config_manager_integration.py -q` 通过（59 passed）。 |
+| 当前批次 | review 循环（本轮：agent-runtime Round 4 长期记忆与归档） |
+| 批次状态 | **完成**。已吸收并验收 agent-runtime Task 3.4-3.10（长期记忆写入/检索/归档 + 测试）。 |
+| 已完成项 | 扩展 `owlclaw/agent/runtime/memory.py`：长期记忆写入、召回搜索、时间衰减、`MEMORY.md` 大小限制与自动归档；补齐 `tests/unit/agent/test_runtime_memory.py` 属性测试。 |
+| 下一待执行 | 继续审校剩余未合并提交，并对 scan/tasks 做一致性校准。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py -q` -> `106 passed in 39.45s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

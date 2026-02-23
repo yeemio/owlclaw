@@ -6,8 +6,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from owlclaw.security.risk_gate import RiskDecision, RiskGate
 from owlclaw.security.audit import SecurityAuditLog
+from owlclaw.security.risk_gate import RiskDecision, RiskGate
 
 
 def test_risk_gate_execute_low_risk() -> None:

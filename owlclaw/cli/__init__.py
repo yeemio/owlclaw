@@ -23,8 +23,8 @@ app.add_typer(skill_app, name="skill")
 
 @app.command("init")
 def init_command(
-    path: str = ".",
-    force: bool = False,
+    path: str = typer.Option(".", "--path", help="Output directory"),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing owlclaw.yaml"),
 ) -> None:
     """Generate default owlclaw.yaml in target directory."""
     init_config_command(path=path, force=force)
@@ -32,7 +32,7 @@ def init_command(
 
 @app.command("reload")
 def reload_command(
-    config: str = "",
+    config: str = typer.Option("", "--config", help="Optional config file path"),
 ) -> None:
     """Reload configuration and print applied/skipped changes."""
     reload_config_command(config=config or None)
