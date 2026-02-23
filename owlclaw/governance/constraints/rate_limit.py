@@ -12,6 +12,20 @@ class RateLimitConstraint:
     def __init__(self, ledger: Ledger) -> None:
         self.ledger = ledger
 
+    @staticmethod
+    def _parse_non_negative_int(value: object) -> int | None:
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return None
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return None
+        if parsed < 0:
+            return None
+        return parsed
+
     async def evaluate(
         self,
         capability: CapabilityView,
@@ -22,8 +36,8 @@ class RateLimitConstraint:
         constraints = capability.metadata.get("owlclaw", {}).get(
             "constraints", {}
         )
-        max_daily_calls = constraints.get("max_daily_calls")
-        cooldown_seconds = constraints.get("cooldown_seconds")
+        max_daily_calls = self._parse_non_negative_int(constraints.get("max_daily_calls"))
+        cooldown_seconds = self._parse_non_negative_int(constraints.get("cooldown_seconds"))
 
         if max_daily_calls is None and cooldown_seconds is None:
             return FilterResult(visible=True)

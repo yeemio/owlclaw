@@ -87,3 +87,25 @@ async def test_rate_limit_cooldown_active_hidden():
     r = await c.evaluate(cap, "agent1", ctx)
     assert r.visible is False
     assert "Cooldown" in r.reason or "remaining" in r.reason
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_parses_numeric_string_constraints():
+    ledger = AsyncMock(spec=Ledger)
+    ledger.query_records = AsyncMock(return_value=[1, 2, 3, 4, 5])
+    c = RateLimitConstraint(ledger)
+    cap = CapabilityView("x", constraints={"max_daily_calls": "5"})
+    ctx = RunContext(tenant_id="t1")
+    r = await c.evaluate(cap, "agent1", ctx)
+    assert r.visible is False
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_ignores_invalid_constraint_values():
+    ledger = AsyncMock(spec=Ledger)
+    ledger.query_records = AsyncMock(return_value=[1, 2, 3, 4, 5])
+    c = RateLimitConstraint(ledger)
+    cap = CapabilityView("x", constraints={"max_daily_calls": "bad", "cooldown_seconds": -1})
+    ctx = RunContext(tenant_id="t1")
+    r = await c.evaluate(cap, "agent1", ctx)
+    assert r.visible is True
