@@ -33,8 +33,8 @@
 - [ ] `owlclaw.capabilities.registry` — 能力注册（@handler + @state 装饰器） → spec: capabilities-skills
 - [x] `docs/DATABASE_ARCHITECTURE.md` — 数据库架构设计（部署模式、数据模型、迁移策略、运维 CLI 设计、灾备） → 架构文档（已完成）
 - [x] `.cursor/rules/owlclaw_database.mdc` — 数据库编码规范（tenant_id、SQLAlchemy、Alembic、pgvector） → 编码规则（已完成）
-- [ ] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status` P0 已实现并集成） → spec: cli-db
-- [ ] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移） → spec: database-core
+- [x] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status/revision/rollback/backup/restore/check` 已实现并通过测试） → spec: cli-db
+- [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移 + 属性测试） → spec: database-core
 - [ ] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
 - [ ] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
 - [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule 已完成；remember/recall 待 Memory） → spec: agent-tools
@@ -90,8 +90,8 @@
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
-| database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（24/30） | SQLAlchemy Base、engine、session、异常、Alembic |
-| cli-db | `.kiro/specs/cli-db/` | 🟡 三层齐全，进行中（42/53） | `owlclaw db` init/migrate/status，已挂载到主入口 |
+| database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
+| cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：7 轮常规审校与回归） |
-| 批次状态 | **完成**。无新的编码分支提交需要审校；spec 一致性与红线检查均通过。 |
-| 已完成项 | 完成 7 轮：分支差异扫描、`SPEC_TASKS_SCAN` 一致性校验、路径/红线扫描、定向回归测试。 |
-| 下一待执行 | 当前无待审任务；等待 `codex-work` / `codex-gpt-work` 新提交后进入下一组 7 轮。 |
-| 验收快照 | `D:\\AI\\owlclaw\\.venv\\Scripts\\python.exe -m pytest tests/unit/test_db_engine_properties.py tests/unit/test_db_session_properties.py tests/unit/test_config_models.py tests/unit/test_config_loader.py tests/unit/integrations/test_llm.py -q` -> `54 passed in 12.46s`。 |
+| 当前批次 | review 循环（本轮：补审 codex-work 剩余提交） |
+| 批次状态 | **进行中**。已吸收 database-core/cli-db 完成态，待完成本轮回归与配置模块缺口修正。 |
+| 已完成项 | 合并 `codex-work` 新增的 cli-db 单元测试/集成测试与任务收口；`database-core`/`cli-db` 状态同步为已完成。 |
+| 下一待执行 | 完成当前回归验证；修正 `configuration` 中 `ConfigManager.load()` 的优先级实现（defaults < yaml < env < overrides）并补测试。 |
+| 验收快照 | 合并冲突已按审校口径消解；待本轮测试完成后回填结果。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
