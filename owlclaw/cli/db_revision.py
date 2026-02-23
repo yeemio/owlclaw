@@ -57,7 +57,7 @@ def _find_newest_revision_file(cfg: Config, revision_id: str | None) -> Path | N
                 content = p.read_text(encoding="utf-8", errors="ignore")
             except OSError:
                 content = ""
-            if f'"{revision_id}"' in content:
+            if f'"{revision_id}"' in content or f"'{revision_id}'" in content:
                 return p
         try:
             mtime = p.stat().st_mtime
