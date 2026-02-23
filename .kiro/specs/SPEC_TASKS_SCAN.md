@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：database-core Task 2.2） |
-| 批次状态 | **完成**。database-core 异常类单元测试已补齐并通过。 |
-| 已完成项 | Task 2.2：新增 `tests/unit/test_db_exceptions.py`，覆盖 `DatabaseConnectionError`、`AuthenticationError`、`PoolTimeoutError` 消息与敏感信息约束。 |
-| 下一待执行 | database-core 可选任务 3.2 / 3.3 / 3.4 / 4.4-4.7 / 6.2，继续避开被其他 AI 占用的 cli-db。 |
-| 验收快照 | `poetry run pytest tests/unit/test_db.py tests/unit/test_db_exceptions.py -q` → `10 passed`。 |
+| 当前批次 | spec 循环（本轮：cli-db Task 9，仅 cli-db） |
+| 批次状态 | **完成**。P1 命令 Checkpoint 验收通过。 |
+| 已完成项 | cli-db Task 9：test_cli_db.py + test_db.py 共 23 个用例全部通过；revision/rollback --help 及无 URL 行为验证通过。 |
+| 下一待执行 | **仅 cli-db**：Task 10（backup 命令）或可选 Task 7.4/8.4 单元测试。 |
+| 验收快照 | `pytest tests/unit/test_cli_db.py tests/unit/test_db.py` → 23 passed。 |
 | 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

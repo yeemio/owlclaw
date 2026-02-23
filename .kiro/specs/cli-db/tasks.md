@@ -145,10 +145,10 @@
     - 测试已是最早版本场景
     - _需求：5.1-5.7_
 
-- [ ] 9. Checkpoint - 确保 P1 命令测试通过
-  - 运行所有 P1 命令的测试
-  - 手动测试 revision、rollback 命令
-  - 确认所有测试通过，询问用户是否有问题
+- [x] 9. Checkpoint - 确保 P1 命令测试通过
+  - 运行所有 P1 命令的测试（test_cli_db.py + test_db.py 共 23 个，全部通过）
+  - 手动验证 revision、rollback 命令（--help 及无 URL 时 exit 2）
+  - 确认所有测试通过
 
 - [ ] 10. 实现 backup 命令（P2）
   - [ ] 10.1 实现 db_backup.py 核心逻辑
