@@ -106,33 +106,33 @@
     - _需求：2.1-2.9, 3.1-3.11_
 
 
-- [ ] 4. 实现 KnowledgeInjector 类
-  - [ ] 4.1 实现 Skills metadata 加载
+- [x] 4. 实现 KnowledgeInjector 类
+  - [x] 4.1 实现 Skills metadata 加载
     - 实现 `load_skills_metadata()` 方法
     - 实现 SKILL.md frontmatter 解析（YAML）
     - 实现 Agent Skills 规范验证
     - _需求：4.1, 4.2, 4.3, 4.11_
   
-  - [ ]* 4.2 编写属性测试：Skills 格式验证
+  - [x]* 4.2 编写属性测试：Skills 格式验证
     - **Property 9: Skills 格式验证**
     - **验证：需求 4.1, 4.11**
   
-  - [ ] 4.3 实现 Skills 选择和注入
+  - [x] 4.3 实现 Skills 选择和注入
     - 实现 `select_skills()` 方法
     - 实现渐进式加载（metadata → full content）
     - 实现 token 限制
     - _需求：4.4, 4.5, 4.6, 4.7, 4.8, 4.9_
   
-  - [ ]* 4.4 编写属性测试：Skills token 限制
+  - [x]* 4.4 编写属性测试：Skills token 限制
     - **Property 10: Skills token 限制**
     - **验证：需求 4.8**
   
-  - [ ] 4.5 实现 Skills 热重载
+  - [x] 4.5 实现 Skills 热重载
     - 实现 `reload_skills()` 方法
     - 清理内容缓存
     - _需求：4.10_
   
-  - [ ]* 4.6 编写 KnowledgeInjector 的单元测试
+  - [x]* 4.6 编写 KnowledgeInjector 的单元测试
     - 测试 metadata 加载
     - 测试 Skills 选择逻辑
     - 测试 token 限制

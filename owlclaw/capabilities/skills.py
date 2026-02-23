@@ -138,6 +138,11 @@ class Skill:
             self._is_loaded = True
         return self._full_content or ""
 
+    def clear_full_content_cache(self) -> None:
+        """Drop cached full content so subsequent reads re-load from file."""
+        self._full_content = None
+        self._is_loaded = False
+
     @property
     def references_dir(self) -> Path | None:
         """Path to references/ directory if it exists.

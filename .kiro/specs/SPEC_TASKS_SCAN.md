@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（40/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（47/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（137/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：governance Router 热更新补齐） |
-| 批次状态 | **完成**。已实现 Router 配置热重载并通过单测与集成回归。 |
-| 已完成项 | `owlclaw.governance.router.Router` 新增 `update_config()`；补充 `tests/unit/governance/test_router.py` 热重载与无效配置回退测试；同步回填 `governance/tasks.md` 的 3.3.2。 |
-| 下一待执行 | 继续对进行中 spec 做存量审校（优先 `agent-runtime` Task 4+ 与 `governance` 3.2.3.3），并分批清理全仓历史 lint/type 债务。 |
-| 验收快照 | `poetry run pytest tests/unit/governance/test_router.py tests/unit/governance/test_visibility_integration.py tests/unit/governance/test_app_governance_integration.py -q` -> `21 passed`；`poetry run mypy owlclaw/governance/router.py tests/unit/governance/test_router.py` -> `Success: no issues found in 2 source files`。 |
+| 当前批次 | review 循环（本轮：agent-runtime KnowledgeInjector 补强） |
+| 批次状态 | **完成**。已补齐 KnowledgeInjector 的 metadata/select/token budget/reload 能力并完成回归。 |
+| 已完成项 | `owlclaw.capabilities.knowledge.KnowledgeInjector` 新增 `load_skills_metadata()`、`select_skills()`（token 限制）与 `reload_skills()`；`Skill` 新增缓存清理方法；补充 `tests/unit/test_knowledge.py` 的功能与属性测试；同步回填 `agent-runtime/tasks.md` 的 Task 4.1-4.6。 |
+| 下一待执行 | 继续对进行中 spec 做存量审校（优先 `agent-runtime` Task 8.6+ 与 `governance` 剩余验收项），并分批清理全仓历史 lint/type 债务。 |
+| 验收快照 | `poetry run pytest tests/unit/test_knowledge.py tests/unit/test_skills.py tests/unit/test_app.py tests/unit/agent/test_runtime.py tests/unit/test_capabilities_acceptance.py -q` -> `117 passed`；`poetry run mypy owlclaw/capabilities/knowledge.py owlclaw/capabilities/skills.py tests/unit/test_knowledge.py` -> `Success: no issues found in 3 source files`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

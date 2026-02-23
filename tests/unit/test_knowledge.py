@@ -1,6 +1,10 @@
 """Unit tests for Knowledge Injector (Skills knowledge formatting for prompts)."""
 
+from pathlib import Path
+
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from owlclaw.capabilities.knowledge import KnowledgeInjector
 from owlclaw.capabilities.skills import Skill, SkillsLoader
@@ -109,10 +113,56 @@ def test_get_all_skills_summary_sorted_by_name():
     class _Loader:
         def list_skills(self):  # type: ignore[no-untyped-def]
             return [
-                Skill("z-skill", "Z", file_path="z/SKILL.md", metadata={}),
-                Skill("a-skill", "A", file_path="a/SKILL.md", metadata={}),
+                Skill("z-skill", "Z", file_path=Path("z/SKILL.md"), metadata={}),
+                Skill("a-skill", "A", file_path=Path("a/SKILL.md"), metadata={}),
             ]
 
     injector = KnowledgeInjector(_Loader())  # type: ignore[arg-type]
     result = injector.get_all_skills_summary()
     assert result.index("**a-skill**") < result.index("**z-skill**")
+
+
+def test_load_skills_metadata_returns_normalized_fields(injector):
+    rows = injector.load_skills_metadata()
+    assert len(rows) == 2
+    assert rows[0]["name"] == "skill-a"
+    assert "description" in rows[0]
+    assert "risk_level" in rows[0]
+
+
+def test_get_skills_knowledge_respects_max_tokens(injector):
+    result = injector.get_skills_knowledge(["skill-a", "skill-b"], max_tokens=3)
+    assert result.count("## Skill:") <= 1
+
+
+def test_reload_skills_picks_up_updated_content(tmp_path):
+    skill_dir = tmp_path / "skill-a"
+    skill_dir.mkdir()
+    skill_file = skill_dir / "SKILL.md"
+    skill_file.write_text(
+        "---\nname: skill-a\ndescription: Desc\n---\n\nOld content",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    injector = KnowledgeInjector(loader)
+    first = injector.get_skills_knowledge(["skill-a"])
+    assert "Old content" in first
+
+    skill_file.write_text(
+        "---\nname: skill-a\ndescription: Desc\n---\n\nNew content",
+        encoding="utf-8",
+    )
+    injector.reload_skills()
+    second = injector.get_skills_knowledge(["skill-a"])
+    assert "New content" in second
+    assert "Old content" not in second
+
+
+@given(limit=st.integers(min_value=1, max_value=40))
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_selected_skills_respect_token_budget(skills_loader_with_two, limit):
+    injector = KnowledgeInjector(skills_loader_with_two)
+    selected = injector.select_skills(["skill-a", "skill-b"], max_tokens=limit)
+    total = sum(injector._estimate_tokens(s.load_full_content()) for s in selected)
+    assert total <= limit

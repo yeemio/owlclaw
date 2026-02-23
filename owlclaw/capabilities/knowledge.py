@@ -5,6 +5,7 @@ Skills knowledge and injects it into Agent system prompts.
 """
 
 from collections.abc import Callable
+from typing import Any
 
 from owlclaw.capabilities.skills import Skill, SkillsLoader
 
@@ -27,11 +28,77 @@ class KnowledgeInjector:
             skills_loader: SkillsLoader instance for accessing Skills
         """
         self.skills_loader = skills_loader
+        self._default_max_tokens: int | None = None
+
+    @staticmethod
+    def _estimate_tokens(text: str) -> int:
+        """Estimate token usage with a lightweight word-count heuristic."""
+        if not text:
+            return 0
+        return len(text.split())
+
+    def load_skills_metadata(self) -> list[dict[str, Any]]:
+        """Load and return normalized metadata for all scanned skills."""
+        metadata: list[dict[str, Any]] = []
+        for skill in sorted(self.skills_loader.list_skills(), key=lambda s: s.name):
+            metadata.append(
+                {
+                    "name": skill.name,
+                    "description": skill.description,
+                    "task_type": skill.task_type,
+                    "constraints": skill.constraints,
+                    "trigger": skill.trigger,
+                    "focus": skill.focus,
+                    "risk_level": skill.risk_level,
+                    "requires_confirmation": skill.requires_confirmation,
+                }
+            )
+        return metadata
+
+    def select_skills(
+        self,
+        skill_names: list[str],
+        context_filter: Callable[[Skill], bool] | None = None,
+        max_tokens: int | None = None,
+    ) -> list[Skill]:
+        """Select skills in order with optional filter and token budget."""
+        selected: list[Skill] = []
+        seen: set[str] = set()
+        budget = max_tokens if isinstance(max_tokens, int) and max_tokens > 0 else self._default_max_tokens
+        used_tokens = 0
+
+        for skill_name in skill_names:
+            if not isinstance(skill_name, str):
+                continue
+            normalized_name = skill_name.strip().lower()
+            if not normalized_name or normalized_name in seen:
+                continue
+            seen.add(normalized_name)
+            skill = self.skills_loader.get_skill(normalized_name)
+            if skill is None:
+                continue
+            if context_filter is not None and not context_filter(skill):
+                continue
+
+            if budget is not None:
+                estimated = self._estimate_tokens(skill.load_full_content())
+                if used_tokens + estimated > budget:
+                    continue
+                used_tokens += estimated
+            selected.append(skill)
+        return selected
+
+    def reload_skills(self) -> list[Skill]:
+        """Reload skills from disk and clear prior cached full contents."""
+        for skill in self.skills_loader.list_skills():
+            skill.clear_full_content_cache()
+        return self.skills_loader.scan()
 
     def get_skills_knowledge(
         self,
         skill_names: list[str],
-        context_filter: Callable[[Skill], bool] | None = None
+        context_filter: Callable[[Skill], bool] | None = None,
+        max_tokens: int | None = None,
     ) -> str:
         """Retrieve and format Skills knowledge for specified Skills.
 
@@ -47,25 +114,14 @@ class KnowledgeInjector:
         Returns:
             Formatted Markdown string with Skills knowledge
         """
-        knowledge_parts = []
-        seen: set[str] = set()
+        knowledge_parts: list[str] = []
+        selected_skills = self.select_skills(
+            skill_names,
+            context_filter=context_filter,
+            max_tokens=max_tokens,
+        )
 
-        for skill_name in skill_names:
-            if not isinstance(skill_name, str):
-                continue
-            normalized_name = skill_name.strip().lower()
-            if not normalized_name or normalized_name in seen:
-                continue
-            seen.add(normalized_name)
-            skill = self.skills_loader.get_skill(normalized_name)
-            if not skill:
-                continue
-
-            # Apply context filter if provided
-            if context_filter and not context_filter(skill):
-                continue
-
-            # Load full content (lazy loading)
+        for skill in selected_skills:
             full_content = skill.load_full_content()
 
             # Format as Markdown section
