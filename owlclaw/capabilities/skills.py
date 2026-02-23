@@ -275,6 +275,8 @@ class SkillsLoader:
 
     def get_skill(self, name: str) -> Skill | None:
         """Retrieve a Skill by name."""
+        if not isinstance(name, str):
+            return None
         normalized = name.strip()
         if not normalized:
             return None

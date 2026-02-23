@@ -53,6 +53,7 @@ def test_skills_loader_get_skill(tmp_path):
     assert skill.name == "morning-decision"
     assert loader.get_skill("  morning-decision  ") is not None
     assert loader.get_skill("   ") is None
+    assert loader.get_skill(None) is None  # type: ignore[arg-type]
     assert loader.get_skill("nonexistent") is None
 
 
