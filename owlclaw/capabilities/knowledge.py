@@ -53,7 +53,7 @@ class KnowledgeInjector:
         for skill_name in skill_names:
             if not isinstance(skill_name, str):
                 continue
-            normalized_name = skill_name.strip()
+            normalized_name = skill_name.strip().lower()
             if not normalized_name or normalized_name in seen:
                 continue
             seen.add(normalized_name)

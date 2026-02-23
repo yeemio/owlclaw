@@ -78,6 +78,12 @@ def test_get_skills_knowledge_normalizes_and_filters_invalid_names(injector):
     assert result.count("## Skill: skill-b") == 1
 
 
+def test_get_skills_knowledge_normalizes_case(injector):
+    result = injector.get_skills_knowledge(["SKILL-A", "Skill-B"])
+    assert result.count("## Skill: skill-a") == 1
+    assert result.count("## Skill: skill-b") == 1
+
+
 def test_get_all_skills_summary(injector):
     """get_all_skills_summary() returns summary with name and description only."""
     result = injector.get_all_skills_summary()
