@@ -338,8 +338,8 @@ def init_command(
     if not url or not url.strip():
         typer.echo("Error: Set --admin-url or OWLCLAW_ADMIN_URL.", err=True)
         raise typer.Exit(2)
-    # Rely on argv: Typer/Click bool flag can be wrong when not invoked with explicit --dry-run
-    do_dry_run = "--dry-run" in sys.argv
+    # Keep argv fallback for Typer/Click bool edge cases, but honor explicit call args too.
+    do_dry_run = bool(dry_run) or "--dry-run" in sys.argv
     pw_owl = (owlclaw_password or secrets.token_urlsafe(16)) if not do_dry_run else None
     pw_hatchet = (hatchet_password or secrets.token_urlsafe(16)) if not do_dry_run else None
     try:
