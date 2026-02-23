@@ -239,6 +239,11 @@ class BuiltInTools:
     Optional dependencies: capability_registry (query_state), ledger (log_decision),
     hatchet_client (schedule_once, cancel_schedule). If a dependency is None,
     the corresponding tool returns an error message.
+
+    Error behavior:
+    - ``raise_errors=False`` (default): return ``{"error": "<message>"}`` payloads.
+    - ``raise_errors=True``: convert tool error payloads into typed exceptions
+      (``ValueError``/``RuntimeError``/``TimeoutError``) for strict callers.
     """
 
     def __init__(

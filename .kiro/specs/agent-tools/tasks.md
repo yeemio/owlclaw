@@ -81,7 +81,7 @@
 
 ## Task 6: 单元测试
 
-- [ ] 6.1 测试 `BuiltInTools` 类基础功能
+- [x] 6.1 测试 `BuiltInTools` 类基础功能
   - [x] 6.1.1 测试 `get_tool_schemas()` 返回所有工具的 schema
   - [x] 6.1.2 测试 `execute()` 方法的工具路由逻辑
   - [x] 6.1.3 测试 `execute()` 方法的超时机制
@@ -160,13 +160,13 @@
 
 ## Task 10: 文档和示例
 
-- [ ] 10.1 编写 `owlclaw/agent/tools.py` 的 docstrings
-- [ ] 10.2 编写使用示例（examples/agent_tools_demo.py）
-  - [ ] 10.2.1 示例：Agent 自我调度
-  - [ ] 10.2.2 示例：Agent 记住并回忆经验
-  - [ ] 10.2.3 示例：Agent 查询状态后决策
-  - [ ] 10.2.4 示例：Agent 记录决策理由
-- [ ] 10.3 更新 README.md 的内建工具部分
+- [x] 10.1 编写 `owlclaw/agent/tools.py` 的 docstrings
+- [x] 10.2 编写使用示例（examples/agent_tools_demo.py）
+  - [x] 10.2.1 示例：Agent 自我调度
+  - [x] 10.2.2 示例：Agent 记住并回忆经验
+  - [x] 10.2.3 示例：Agent 查询状态后决策
+  - [x] 10.2.4 示例：Agent 记录决策理由
+- [x] 10.3 更新 README.md 的内建工具部分
 - [ ] 10.4 编写 API 文档（Sphinx/MkDocs）
 
 ## Task 11: 安全审查

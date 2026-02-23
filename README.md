@@ -62,6 +62,26 @@ app.run()
 
 See [examples/basic_usage.py](examples/basic_usage.py) and [examples/capabilities/](examples/capabilities/) for a minimal runnable example and sample SKILL.md files.
 
+### Built-in tools (Agent self-management)
+
+All Agents can use built-in tools through function calling:
+
+- `schedule_once` / `schedule_cron` / `cancel_schedule` for self-scheduling
+- `remember` / `recall` for long-term memory operations
+- `query_state` for reading business state providers
+- `log_decision` for governance/audit decision logs
+
+Runnable demo:
+
+- [examples/agent_tools_demo.py](examples/agent_tools_demo.py)
+
+The demo includes:
+
+- self-scheduling follow-up work (`schedule_once`)
+- writing and recalling experience (`remember` + `recall`)
+- querying state then taking `no_action` (`query_state` + `log_decision`)
+- explicit decision reasoning records (`log_decision`)
+
 ### Hatchet integration (durable execution and cron)
 
 OwlClaw uses [Hatchet](https://hatchet.run/) (MIT) for durable task execution, cron triggers, and self-scheduling. All Hatchet usage is isolated in `owlclaw.integrations.hatchet`.

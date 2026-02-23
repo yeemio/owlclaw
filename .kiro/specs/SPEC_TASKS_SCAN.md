@@ -93,7 +93,7 @@
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（79/139） | 内建工具 |
+| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（87/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（96/117） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | codex-gpt-work 循环（agent-tools 统一错误语义） |
-| 批次状态 | **完成**。`BuiltInTools` 增加可选严格错误模式（`raise_errors=True`）实现 ValueError/RuntimeError/TimeoutError 统一语义，默认行为保持兼容。 |
-| 已完成项 | `owlclaw/agent/tools.py` 新增 `raise_errors` 配置与 `_coerce_error_result()`；`tests/unit/agent/test_tools.py` 新增错误类型映射测试（validation/runtime/timeout）与构造参数校验；`agent-tools/tasks.md` 勾选 Task 5.1/5.2/5.3。 |
-| 下一待执行 | 推进 `agent-tools` Task 7（Hatchet/Memory/Registry/Ledger 集成测试）并补齐 Task 10 文档示例。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py -q` 通过（73 passed）。 |
+| 当前批次 | codex-gpt-work 循环（agent-tools 文档与示例） |
+| 批次状态 | **完成**。补齐内建工具示例与 README 文档，完善 BuiltInTools docstring，Task 10 主体收口。 |
+| 已完成项 | 新增 `examples/agent_tools_demo.py`，覆盖自调度、记忆写入与回忆、状态查询后 no_action 决策、决策日志记录；`README.md` 新增 Built-in tools 章节与示例链接；`owlclaw/agent/tools.py` 补充错误模式 docstring；`agent-tools/tasks.md` 勾选 6.1、10.1、10.2.1~10.2.4、10.3。 |
+| 下一待执行 | 推进 `agent-tools` Task 7（Hatchet/Memory/Registry/Ledger 集成测试）与 Task 10.4（API 文档）。 |
+| 验收快照 | `poetry run ruff check owlclaw/agent/tools.py tests/unit/agent/test_tools.py examples/agent_tools_demo.py` 通过；`poetry run python examples/agent_tools_demo.py` 运行通过（4 个场景输出正常）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
