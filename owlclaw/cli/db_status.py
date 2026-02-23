@@ -161,8 +161,8 @@ def _print_status_table(info: dict) -> None:
 
 
 def status_command(
-    database_url: str | None = typer.Option(
-        None,
+    database_url: str = typer.Option(
+        "",
         "--database-url",
         help="Database URL (default: OWLCLAW_DATABASE_URL).",
     ),

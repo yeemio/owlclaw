@@ -110,3 +110,21 @@ async def test_lifecycle_archive_prioritizes_low_access_entries() -> None:
     remaining_contents = {entry.content for entry in remaining}
     assert "old-high" in remaining_contents
     assert "old-low" not in remaining_contents
+
+
+@pytest.mark.asyncio
+async def test_lifecycle_rejects_blank_agent_scope() -> None:
+    store = InMemoryStore()
+    config = MemoryConfig(max_entries=10, retention_days=365)
+    manager = MemoryLifecycleManager(store, config)
+    result = await manager.run_maintenance(" ", "default")
+    assert result.error == "agent_id must not be empty"
+
+
+@pytest.mark.asyncio
+async def test_lifecycle_rejects_blank_tenant_scope() -> None:
+    store = InMemoryStore()
+    config = MemoryConfig(max_entries=10, retention_days=365)
+    manager = MemoryLifecycleManager(store, config)
+    result = await manager.run_maintenance("agent-a", " ")
+    assert result.error == "tenant_id must not be empty"

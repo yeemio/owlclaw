@@ -332,18 +332,18 @@ def _try_sync_fallback(
 
 
 def init_command(
-    admin_url: str | None = typer.Option(
-        None,
+    admin_url: str = typer.Option(
+        "",
         "--admin-url",
         help="PostgreSQL superuser URL (default: OWLCLAW_ADMIN_URL).",
     ),
-    owlclaw_password: str | None = typer.Option(
-        None,
+    owlclaw_password: str = typer.Option(
+        "",
         "--owlclaw-password",
         help="Password for role owlclaw (default: random).",
     ),
-    hatchet_password: str | None = typer.Option(
-        None,
+    hatchet_password: str = typer.Option(
+        "",
         "--hatchet-password",
         help="Password for role hatchet (default: random).",
     ),
@@ -361,9 +361,9 @@ def init_command(
 ) -> None:
     """Create owlclaw (and optionally hatchet) database, role, and pgvector."""
     import sys
-    admin_url = _normalize_optional_str_option(admin_url)
-    owlclaw_password = _normalize_optional_str_option(owlclaw_password)
-    hatchet_password = _normalize_optional_str_option(hatchet_password)
+    admin_url = (_normalize_optional_str_option(admin_url) or "").strip() or None
+    owlclaw_password = (_normalize_optional_str_option(owlclaw_password) or "").strip() or None
+    hatchet_password = (_normalize_optional_str_option(hatchet_password) or "").strip() or None
     dry_run = _normalize_bool_option(dry_run, False)
     skip_hatchet = _normalize_bool_option(skip_hatchet, False)
     url = admin_url or os.environ.get("OWLCLAW_ADMIN_URL")

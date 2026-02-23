@@ -50,8 +50,8 @@ def migrate_command(
         "-t",
         help="Revision to upgrade to (default: head).",
     ),
-    database_url: str | None = typer.Option(
-        None,
+    database_url: str = typer.Option(
+        "",
         "--database-url",
         help="Database URL (default: OWLCLAW_DATABASE_URL).",
     ),

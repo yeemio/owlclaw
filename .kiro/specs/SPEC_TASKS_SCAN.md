@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.1（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-22
+> **最后更新**: 2026-02-23
 
 ---
 
@@ -39,7 +39,7 @@
 - [ ] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
 - [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule 已完成；remember/recall 待 Memory） → spec: agent-tools
 - [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
-- [ ] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
+- [x] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
 - [ ] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
 - [ ] `owlclaw.governance.ledger` — 执行记录 → spec: governance
 - [ ] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
@@ -99,7 +99,7 @@
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | 🟡 三层齐全，进行中（127/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（0/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
-| **agent-memory** | `.kiro/specs/agent-memory/` | 🟡 三层齐全，进行中（12/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
+| **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：cli-db Task 5.2，跳过 agent-memory） |
-| 批次状态 | **完成**。cli-db Task 5.2 已实现：status 命令查询版本/扩展/表统计/磁盘/迁移版本，Rich 表格输出。 |
-| 已完成项 | `owlclaw/cli/db_status.py` P1 增强：`_collect_status_info` + `_print_status_table`，单元测试 23 passed。 |
-| 下一待执行 | cli-db Task 7（revision 命令）或 database-core / 其他 spec 下一未勾 task；agent-memory 按用户要求跳过。 |
-| 验收快照 | cli-db tasks 5.2 [x]；test_cli_db + test_db 23 passed。 |
+| 当前批次 | spec 循环（本轮：cli-db Task 7） |
+| 批次状态 | **完成**。cli-db revision 命令已实现并验收。 |
+| 已完成项 | cli-db Task 7.1/7.2/7.3：db_revision.py（revision_command、危险操作检测、边缘情况）；CLI 通过 argparse 调度；Typer 兼容性修复（db Option 空串 + memory include_archived 单标志）。 |
+| 下一待执行 | cli-db Task 8（rollback）或 database-core。 |
+| 验收快照 | `tests/unit/test_cli_db.py` + `test_db.py` 23 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -89,21 +89,21 @@
   - owlclaw_database.mdc 规范已更新至 v1.1.0，加入已实现模块的使用指引
   - **验收日期**：2026-02-10
 
-- [ ] 7. 实现 revision 命令（P1）
-  - [ ] 7.1 实现 db_revision.py 核心逻辑
+- [x] 7. 实现 revision 命令（P1）
+  - [x] 7.1 实现 db_revision.py 核心逻辑
     - 实现 revision_command 函数：接受参数（message、empty、database-url）
     - 调用 Alembic API：command.revision() 或 autogenerate
     - 获取生成的迁移文件路径和 Revision ID
     - 显示成功消息
     - _需求：4.1, 4.2, 4.3_
   
-  - [ ] 7.2 实现 revision 命令的危险操作检测
+  - [x] 7.2 实现 revision 命令的危险操作检测
     - 检查生成的迁移脚本内容
     - 检测 DROP TABLE、DROP COLUMN 操作
     - 显示警告提示
     - _需求：4.5_
   
-  - [ ] 7.3 实现 revision 命令的边缘情况处理
+  - [x] 7.3 实现 revision 命令的边缘情况处理
     - 处理无模型变化场景：显示 "No changes detected"
     - 处理配置缺失场景
     - _需求：4.4, 4.6_
