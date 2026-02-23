@@ -24,6 +24,13 @@ Agent 通过 LLM function calling 自主决定何时使用哪些能力，而不�
 4. **决策系统** — LLM function calling 从可见工具中选择动作
 5. **Heartbeat 机制** — 无事不调 LLM，节省成本
 
+## 技术栈统一与架构边界
+
+1. 核心运行时统一 Python 实现；Node/TypeScript 仅作为外部接入层，不进入 runtime 核心模块。
+2. 第三方能力必须通过集成层隔离：LLM 走 `owlclaw.integrations.llm`，调度走 `owlclaw.integrations.hatchet`，追踪走 `owlclaw.integrations.langfuse`。
+3. 治理和审计统一复用 `owlclaw.governance.*`，禁止 runtime 内部重复实现平行治理逻辑。
+4. 对外协议（工具 schema、运行上下文）保持语言无关纯数据表示，避免泄露 Python 专有语义。
+
 ## 架构例外声明（实现阶段需固化）
 
 本 spec 当前未引入业务层面的数据库铁律例外。实现阶段遵循以下约束：

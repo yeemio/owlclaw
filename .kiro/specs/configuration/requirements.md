@@ -53,7 +53,7 @@
 ```
 
 **验收标准**：
-- [ ] 环境变量格式：`OWLCLAW_<SECTION>_<KEY>`（如 `OWLCLAW_AGENT_HEARTBEAT_INTERVAL=30`）
+- [ ] 环境变量格式：`OWLCLAW_<SECTION>__<KEY>`（嵌套字段使用双下划线，如 `OWLCLAW_AGENT__HEARTBEAT_INTERVAL_MINUTES=30`）
 - [ ] 环境变量优先级高于配置文件
 - [ ] 支持嵌套配置的环境变量映射
 
