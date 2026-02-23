@@ -18,7 +18,7 @@
   - 定义根配置 OwlClawConfig（继承 BaseSettings）
   - 所有字段设置合理的默认值、验证规则、Field 描述
 
-- [ ] **Task 2**: 实现 `YAMLConfigLoader`
+- [x] **Task 2**: 实现 `YAMLConfigLoader`
   - YAML 文件查找逻辑（OWLCLAW_CONFIG env → --config CLI → ./owlclaw.yaml）
   - yaml.safe_load + 错误处理（行号、列号）
   - 空文件 / 不存在文件的优雅降级
