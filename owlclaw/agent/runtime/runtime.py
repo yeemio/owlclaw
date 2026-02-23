@@ -692,7 +692,11 @@ class AgentRuntime:
         """
         if self.registry is None:
             return False
-        skill = self.registry.skills_loader.get_skill(skill_name)
+        try:
+            skill = self.registry.skills_loader.get_skill(skill_name)
+        except Exception as exc:
+            logger.warning("Failed to resolve skill focus metadata for %s: %s", skill_name, exc)
+            return False
         if skill is None:
             return False
         target = focus.strip().lower()

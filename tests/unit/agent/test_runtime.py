@@ -360,6 +360,12 @@ class TestAgentRuntimeRun:
         rt.registry.skills_loader.get_skill.return_value = skill
         assert rt._skill_has_focus("x", "inventory_monitor") is False
 
+    def test_skill_focus_lookup_failure_returns_false(self, tmp_path) -> None:
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        rt.registry = MagicMock()
+        rt.registry.skills_loader.get_skill.side_effect = RuntimeError("boom")
+        assert rt._skill_has_focus("x", "inventory_monitor") is False
+
     def test_build_skills_context_empty_when_focus_has_no_match(self, tmp_path) -> None:
         """When focus is set and no skill matches, no skill knowledge should be injected."""
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
