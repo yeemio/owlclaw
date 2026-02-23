@@ -133,6 +133,7 @@ class TestCronRegistration:
             priority=5,
         )
         config = reg.get_trigger("weekly_report")
+        assert config is not None
         assert config.focus == "reporting"
         assert config.fallback_handler is fallback
         assert config.description == "Weekly report"
@@ -184,11 +185,17 @@ class TestTaskManagement:
     def test_pause_resume_toggle_enabled(self) -> None:
         reg = self._registry()
         reg.register("job", "0 * * * *")
-        assert reg.get_trigger("job").enabled is True
+        first = reg.get_trigger("job")
+        assert first is not None
+        assert first.enabled is True
         reg.pause_trigger(" job ")
-        assert reg.get_trigger("job").enabled is False
+        paused = reg.get_trigger("job")
+        assert paused is not None
+        assert paused.enabled is False
         reg.resume_trigger(" job ")
-        assert reg.get_trigger("job").enabled is True
+        resumed = reg.get_trigger("job")
+        assert resumed is not None
+        assert resumed.enabled is True
 
     def test_pause_missing_raises(self) -> None:
         reg = self._registry()
@@ -279,6 +286,25 @@ class TestTaskManagement:
         reg.start(hatchet, agent_runtime=None, ledger=None, tenant_id="  tenant-a  ")
         await reg.trigger_now("job")
         hatchet.run_task_now.assert_awaited_once_with("cron_job", tenant_id="tenant-a")
+
+    @pytest.mark.asyncio
+    async def test_trigger_now_records_manual_trigger_to_ledger(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.run_task_now = AsyncMock(return_value="run-123")
+        ledger = MagicMock()
+        ledger.record_execution = AsyncMock()
+        reg.start(hatchet, agent_runtime=None, ledger=ledger, tenant_id="tenant-a")
+
+        await reg.trigger_now("job", foo="bar")
+
+        ledger.record_execution.assert_awaited_once()
+        call = ledger.record_execution.call_args.kwargs
+        assert call["tenant_id"] == "tenant-a"
+        assert call["capability_name"] == "job"
+        assert call["task_type"] == "cron_manual_trigger"
+        assert call["input_params"]["trigger_type"] == "manual"
 
     @pytest.mark.asyncio
     async def test_trigger_now_without_start_raises(self) -> None:

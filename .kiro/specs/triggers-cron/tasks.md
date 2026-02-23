@@ -237,12 +237,12 @@
     - [ ] 将暂停/恢复操作记录到 Ledger
     - _需求: FR-11_
   
-  - [x] 8.2 实现手动触发功能
-    - [x] 创建 `trigger_now(event_name, **kwargs)` 方法
-    - [x] 直接执行 workflow（调用 Hatchet run_task_now）
-    - [x] 支持通过 kwargs 传递额外上下文
-    - [ ] 将手动触发记录到 Ledger（由 _run_cron 统一记录）
-    - _需求: FR-12_
+- [x] 8.2 实现手动触发功能
+  - [x] 创建 `trigger_now(event_name, **kwargs)` 方法
+  - [x] 直接执行 workflow（调用 Hatchet run_task_now）
+  - [x] 支持通过 kwargs 传递额外上下文
+  - [x] 将手动触发记录到 Ledger
+  - _需求: FR-12_
   
   - [x] 8.3 实现状态查询方法
     - [x] 创建 `get_trigger_status(event_name)` 方法

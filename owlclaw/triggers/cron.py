@@ -325,6 +325,27 @@ class CronTriggerRegistry:
         else:
             kwargs["tenant_id"] = self._normalize_tenant_id(kwargs["tenant_id"])
         run_id = await run_task_now(task_name, **kwargs)
+        if self._ledger is not None:
+            try:
+                await self._ledger.record_execution(
+                    tenant_id=kwargs["tenant_id"],
+                    agent_id=(self.app.name if self.app else "") or event_name,
+                    run_id=str(run_id),
+                    capability_name=event_name,
+                    task_type="cron_manual_trigger",
+                    input_params={"trigger_type": "manual", "kwargs": dict(kwargs)},
+                    output_result={"run_id": str(run_id)},
+                    decision_reasoning="manual_trigger",
+                    execution_time_ms=0,
+                    llm_model="",
+                    llm_tokens_input=0,
+                    llm_tokens_output=0,
+                    estimated_cost=Decimal("0"),
+                    status="success",
+                    error_message=None,
+                )
+            except Exception as exc:
+                logger.exception("Failed to record manual trigger for '%s': %s", event_name, exc)
         return str(run_id)
 
     async def get_execution_history(
