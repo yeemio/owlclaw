@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from owlclaw.cli.db_rollback import rollback_command
+from owlclaw.cli.db_rollback import _get_current_revision_sync, rollback_command
 
 
 class _FakeEngine:
@@ -30,6 +30,25 @@ class _FakeScript:
         return self._revisions
 
 
+class _FakeConnContext:
+    def __init__(self, revision: str) -> None:
+        self._revision = revision
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):  # type: ignore[no-untyped-def]
+        return False
+
+
+class _FakeSyncEngineWithConnect:
+    def __init__(self, revision: str) -> None:
+        self._revision = revision
+
+    def connect(self) -> _FakeConnContext:
+        return _FakeConnContext(self._revision)
+
+
 def test_rollback_returns_when_already_at_target(monkeypatch, capsys) -> None:
     monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
     monkeypatch.setattr("owlclaw.cli.db_rollback.get_engine", lambda url: _FakeEngine())
@@ -41,6 +60,21 @@ def test_rollback_returns_when_already_at_target(monkeypatch, capsys) -> None:
 
     rollback_command(target="abc123", steps=0, database_url="", dry_run=True, yes=True)
     assert "Already at target revision." in capsys.readouterr().out
+
+
+def test_get_current_revision_sync_uses_sync_engine(monkeypatch) -> None:
+    engine = _FakeEngine()
+    engine.sync_engine = _FakeSyncEngineWithConnect("abc123")
+
+    class _FakeContext:
+        def get_current_revision(self) -> str:
+            return "abc123"
+
+    monkeypatch.setattr(
+        "owlclaw.cli.db_rollback.MigrationContext.configure",
+        lambda conn: _FakeContext(),
+    )
+    assert _get_current_revision_sync(engine) == "abc123"
 
 
 def test_rollback_invalid_target_exits_2(monkeypatch) -> None:

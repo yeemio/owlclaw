@@ -1,6 +1,5 @@
 """owlclaw db rollback — downgrade Alembic migrations (one step, --steps N, or --target)."""
 
-import asyncio
 import os
 
 import typer
@@ -16,17 +15,9 @@ from owlclaw.db import ConfigurationError, get_engine
 
 def _get_current_revision_sync(engine: AsyncEngine) -> str | None:
     """Get current Alembic revision from DB (run in async context)."""
-
-    async def _run() -> str | None:
-        async with engine.connect() as conn:
-
-            def _get_current(sync_conn):
-                ctx = MigrationContext.configure(sync_conn)
-                return ctx.get_current_revision()
-
-            return await conn.run_sync(_get_current)
-
-    return asyncio.run(_run())
+    with engine.sync_engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        return ctx.get_current_revision()
 
 
 def _normalize_optional_str_option(value: object) -> str:
