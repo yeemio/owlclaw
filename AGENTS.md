@@ -27,6 +27,7 @@
 
 ## Multi-Agent Coordination (Git Worktree)
 - **Must-read**: `docs/WORKTREE_GUIDE.md` — full coordination guide for all AI agents.
+- **Task assignments**: `.kiro/WORKTREE_ASSIGNMENTS.md` — which specs/modules are assigned to which worktree. Read before starting work.
 - Isolation model: each AI tool works in its own Git worktree (physically separate directory, shared `.git`).
   - `D:\AI\owlclaw\` (branch `main`): Cursor / human — interactive dev, merge operations.
   - `D:\AI\owlclaw-review\` (branch `review-work`): Codex-CLI — spec audit, code review, doc fixes.

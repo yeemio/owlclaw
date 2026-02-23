@@ -71,9 +71,10 @@ D:/AI/owlclaw-codex-gpt  <hash> [codex-gpt-work]
 
 ## 三、工作规则
 
-### 3.1 通用规则（两个 worktree 都适用）
+### 3.1 通用规则（所有 worktree 都适用）
 
-- **只在自己的 worktree 中编辑文件**，不要跨目录操作
+- **启动时必须读取 `.kiro/WORKTREE_ASSIGNMENTS.md`**，确认自己的任务分配和禁止触碰的路径
+- **只做分配给自己的 spec/模块**，不越界；只在自己的 worktree 中编辑文件
 - **正常 commit 到自己的分支**，commit 规范不变（见 `AGENTS.md`）
 - **Spec 体系不变**：三层文档结构、SPEC_TASKS_SCAN、Spec 循环流程全部照旧
 - **规则文件不变**：`.cursor/rules/*.mdc` 的所有规范继续生效
