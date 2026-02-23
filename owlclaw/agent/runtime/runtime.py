@@ -166,6 +166,44 @@ class AgentRuntime:
             logger.warning("Langfuse init failed: %s", exc)
             return None
 
+    @staticmethod
+    def _classify_error(exc: Exception) -> str:
+        if isinstance(exc, FileNotFoundError):
+            return "initialization_error"
+        if isinstance(exc, asyncio.TimeoutError):
+            return "timeout_error"
+        if isinstance(exc, ValueError):
+            return "validation_error"
+        if isinstance(exc, ConnectionError | OSError):
+            return "dependency_error"
+        return "runtime_error"
+
+    async def _notify_error(
+        self,
+        *,
+        context: AgentRunContext | None,
+        stage: str,
+        category: str,
+        message: str,
+    ) -> None:
+        notifier = self.config.get("error_notifier")
+        if not callable(notifier):
+            return
+        payload = {
+            "agent_id": self.agent_id,
+            "run_id": context.run_id if context else None,
+            "trigger": context.trigger if context else None,
+            "stage": stage,
+            "category": category,
+            "message": message,
+        }
+        try:
+            maybe_awaitable = notifier(payload)
+            if inspect.isawaitable(maybe_awaitable):
+                await maybe_awaitable
+        except Exception as exc:
+            logger.warning("error_notifier failed: %s", exc)
+
     def _create_trace(self, context: AgentRunContext) -> Any | None:
         if self._langfuse is None:
             return None
@@ -247,13 +285,23 @@ class AgentRuntime:
         Raises:
             FileNotFoundError: If SOUL.md is missing from *app_dir*.
         """
-        self._identity_loader = IdentityLoader(self.app_dir)
-        await self._identity_loader.load()
-        hb_config = self.config.get("heartbeat", {})
-        if hb_config.get("enabled", True):
-            self._heartbeat_checker = HeartbeatChecker(self.agent_id, hb_config)
-        self.is_initialized = True
-        logger.info("AgentRuntime '%s' initialized", self.agent_id)
+        try:
+            self._identity_loader = IdentityLoader(self.app_dir)
+            await self._identity_loader.load()
+            hb_config = self.config.get("heartbeat", {})
+            if hb_config.get("enabled", True):
+                self._heartbeat_checker = HeartbeatChecker(self.agent_id, hb_config)
+            self.is_initialized = True
+            logger.info("AgentRuntime '%s' initialized", self.agent_id)
+        except Exception as exc:
+            category = self._classify_error(exc)
+            await self._notify_error(
+                context=None,
+                stage="setup",
+                category=category,
+                message=str(exc),
+            )
+            raise
 
     # ------------------------------------------------------------------
     # Public trigger entry point
@@ -391,6 +439,12 @@ class AgentRuntime:
                 status="error",
                 output=f"run timed out after {run_timeout:.1f}s",
             )
+            await self._notify_error(
+                context=context,
+                stage="run",
+                category="timeout_error",
+                message=f"run timed out after {run_timeout:.1f}s",
+            )
             return {
                 "status": "failed",
                 "run_id": context.run_id,
@@ -517,6 +571,12 @@ class AgentRuntime:
                     error_message=str(exc),
                 )
                 logger.error("LLM call failed agent_id=%s run_id=%s error=%s", context.agent_id, context.run_id, exc)
+                await self._notify_error(
+                    context=context,
+                    stage="llm_call",
+                    category=self._classify_error(exc),
+                    message=str(exc),
+                )
                 messages.append(
                     {
                         "role": "assistant",
@@ -832,6 +892,12 @@ class AgentRuntime:
             return {"error": f"Capability '{tool_name}' is not registered"}
         except Exception as exc:
             logger.exception("Tool '%s' failed", tool_name)
+            await self._notify_error(
+                context=context,
+                stage="tool_execution",
+                category=self._classify_error(exc),
+                message=f"{tool_name}: {exc}",
+            )
             if self._ledger is not None:
                 execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
                 meta = self.registry.get_capability_metadata(tool_name)

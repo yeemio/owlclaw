@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（59/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（65/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（agent-runtime Round 8：LLM 重试降级与 token 记录） |
-| 批次状态 | **完成**。agent-runtime 10.1~10.5 已实现并通过。 |
-| 已完成项 | 扩展 `owlclaw/agent/runtime/runtime.py`：统一 LLM 调用封装 `_call_llm_completion()`，支持 `llm_retry_attempts` 与 `llm_fallback_models`；增加 LLM usage 提取与 `_record_llm_usage()`，将 token 使用量写入 Ledger；补齐 `tests/unit/agent/test_runtime.py` 与 `tests/unit/agent/test_runtime_properties.py` 的重试/降级/token 记录单测与属性测试。 |
-| 下一待执行 | agent-runtime Round 9：推进 Task 11.1~11.6（初始化/运行时错误处理与降级验证）。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_hatchet.py tests/unit/agent/test_runtime_hatchet_properties.py tests/unit/agent/test_runtime_memory.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py -q` -> `121 passed in 35.01s`。 |
+| 当前批次 | spec 循环（agent-runtime Round 9：错误处理与降级） |
+| 批次状态 | **完成**。agent-runtime 11.1~11.6 已实现并通过。 |
+| 已完成项 | 扩展 `owlclaw/agent/runtime/runtime.py`：setup/运行时错误分类、可选 `error_notifier` 告警回调、LLM/工具错误通知；扩展 `owlclaw/agent/runtime/memory.py`：向量索引失败自动降级并标记 `vector_index_degraded`；补齐 `tests/unit/agent/test_runtime.py` 与 `tests/unit/agent/test_runtime_memory.py` 的单测和属性测试。 |
+| 下一待执行 | agent-runtime Round 10：推进 Task 12.1~12.5（配置加载、验证、热重载与测试）。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py tests/unit/agent/test_runtime_hatchet.py tests/unit/agent/test_runtime_hatchet_properties.py -q` -> `124 passed in 34.35s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

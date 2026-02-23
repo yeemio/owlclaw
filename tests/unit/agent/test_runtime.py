@@ -1192,3 +1192,27 @@ class TestAgentRuntimeRun:
         assert len(client.traces) == 1
         assert len(client.traces[0].spans) == 1
         assert any(update.get("status") == "success" for update in client.traces[0].spans[0].updates)
+
+    async def test_setup_calls_error_notifier_on_failure(self, tmp_path) -> None:
+        notified: list[dict[str, object]] = []
+
+        async def _notifier(payload: dict[str, object]) -> None:
+            notified.append(payload)
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=str(tmp_path),
+            config={"error_notifier": _notifier},
+        )
+        with pytest.raises(FileNotFoundError):
+            await rt.setup()
+        assert notified
+        assert notified[0]["stage"] == "setup"
+        assert notified[0]["category"] == "initialization_error"
+
+    def test_classify_error_returns_expected_categories(self, tmp_path) -> None:
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        assert rt._classify_error(FileNotFoundError("x")) == "initialization_error"
+        assert rt._classify_error(asyncio.TimeoutError()) == "timeout_error"
+        assert rt._classify_error(ValueError("x")) == "validation_error"
+        assert rt._classify_error(ConnectionError("x")) == "dependency_error"
