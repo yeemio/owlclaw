@@ -16,12 +16,10 @@
 
 ## 架构例外声明（实现阶段需固化）
 
-为保证设计与实现的一致性，以下例外在本 spec 中显式声明，并要求在实现落地时完成口径收敛：
+本 spec 当前未引入业务层面的数据库铁律例外。实现阶段遵循以下约束：
 
-1. 当前文档中的部分接口与示例使用 `tenant_id: UUID`，与数据库核心规范（`tenant_id VARCHAR(64)`）存在类型口径差异。
-   - 原因：早期治理设计以强类型租户标识表达隔离语义，后续数据库规范统一为字符串主键方案。
-   - 收敛要求：实现阶段统一采用 `str` 口径；若存在历史 UUID 数据，需在迁移脚本中明确转换策略与兼容窗口。
-2. `alembic_version` 属于 Alembic 系统表，不适用业务表的 `tenant_id/UUID` 约束。
+1. 治理层所有持久化与查询路径统一采用 `tenant_id: str`（对应数据库 `VARCHAR(64)`）。
+2. `alembic_version` 属于 Alembic 系统表，不适用业务表约束。
 
 除上述显式例外外，治理层业务表与查询路径仍严格遵循数据库五条铁律（`tenant_id` 前缀索引、`TIMESTAMPTZ`、Alembic 管理等）。
 
@@ -197,7 +195,7 @@ class Ledger:
     
     async def record_execution(
         self,
-        tenant_id: UUID,
+        tenant_id: str,
         agent_id: str,
         run_id: str,
         capability_name: str,
@@ -236,7 +234,7 @@ class Ledger:
 
     async def query_records(
         self,
-        tenant_id: UUID,
+        tenant_id: str,
         filters: LedgerQueryFilters
     ) -> List[LedgerRecord]:
         """查询执行记录"""
@@ -266,7 +264,7 @@ class Ledger:
     
     async def get_cost_summary(
         self,
-        tenant_id: UUID,
+        tenant_id: str,
         agent_id: str,
         start_date: date,
         end_date: date
@@ -581,7 +579,7 @@ class RateLimitConstraint:
         return FilterResult(visible=True)
     
     async def _get_daily_call_count(
-        self, tenant_id: UUID, agent_id: str, capability_name: str
+        self, tenant_id: str, agent_id: str, capability_name: str
     ) -> int:
         """获取今日调用次数（带缓存）"""
         today = date.today()
@@ -597,7 +595,7 @@ class RateLimitConstraint:
         return len(records)
     
     async def _get_last_call_time(
-        self, tenant_id: UUID, agent_id: str, capability_name: str
+        self, tenant_id: str, agent_id: str, capability_name: str
     ) -> Optional[datetime]:
         """获取上次调用时间"""
         records = await self.ledger.query_records(
@@ -679,7 +677,7 @@ class CircuitBreakerConstraint:
         return FilterResult(visible=True)
     
     async def _get_recent_failures(
-        self, tenant_id: UUID, agent_id: str, capability_name: str
+        self, tenant_id: str, agent_id: str, capability_name: str
     ) -> int:
         """获取最近的连续失败次数"""
         records = await self.ledger.query_records(
@@ -1470,7 +1468,7 @@ class RateLimitConstraint:
         self.cache = TTLCache(maxsize=1000, ttl=60)  # 1 分钟 TTL
     
     async def _get_daily_call_count(
-        self, tenant_id: UUID, agent_id: str, capability_name: str
+        self, tenant_id: str, agent_id: str, capability_name: str
     ) -> int:
         cache_key = f"{tenant_id}:{agent_id}:{capability_name}:{date.today()}"
         
@@ -1567,7 +1565,7 @@ class Ledger:
     
     async def get_cost_summary(
         self,
-        tenant_id: UUID,
+        tenant_id: str,
         agent_id: str,
         start_date: date,
         end_date: date
@@ -1600,7 +1598,7 @@ class Ledger:
 ```python
 async def query_records(
     self,
-    tenant_id: UUID,
+    tenant_id: str,
     filters: LedgerQueryFilters
 ) -> List[LedgerRecord]:
     """查询执行记录"""
@@ -1640,7 +1638,7 @@ class Ledger:
     
     async def record_execution(
         self,
-        tenant_id: UUID,
+        tenant_id: str,
         agent_id: str,
         run_id: str,
         capability_name: str,
@@ -1806,7 +1804,7 @@ class LedgerStorage(ABC):
     
     @abstractmethod
     async def query_records(
-        self, tenant_id: UUID, filters: LedgerQueryFilters
+        self, tenant_id: str, filters: LedgerQueryFilters
     ) -> List[LedgerRecord]:
         """查询记录"""
         pass
@@ -1823,7 +1821,7 @@ class PostgresLedgerStorage(LedgerStorage):
             await session.commit()
     
     async def query_records(
-        self, tenant_id: UUID, filters: LedgerQueryFilters
+        self, tenant_id: str, filters: LedgerQueryFilters
     ) -> List[LedgerRecord]:
         # PostgreSQL 查询实现
         pass
@@ -1840,7 +1838,7 @@ class S3LedgerStorage(LedgerStorage):
         pass
     
     async def query_records(
-        self, tenant_id: UUID, filters: LedgerQueryFilters
+        self, tenant_id: str, filters: LedgerQueryFilters
     ) -> List[LedgerRecord]:
         # 从 S3 查询
         pass
@@ -1913,7 +1911,7 @@ async def test_ledger_batch_write():
     # 写入 5 条记录
     for i in range(5):
         await ledger.record_execution(
-            tenant_id=uuid.uuid4(),
+            tenant_id="default",
             agent_id='agent_001',
             run_id=f'run_{i}',
             # ... 其他参数
@@ -2012,7 +2010,7 @@ async def test_agent_run_with_governance():
     result = await runtime.run_agent(
         agent_id='agent_001',
         task='执行交易决策',
-        context=RunContext(tenant_id=uuid.uuid4(), run_id='run_001')
+        context=RunContext(tenant_id="default", run_id='run_001')
     )
     
     # 验证 Ledger 记录
@@ -2445,7 +2443,7 @@ class CostOptimizer:
         self.ledger = ledger
     
     async def analyze_cost_by_capability(
-        self, tenant_id: UUID, agent_id: str, days: int = 30
+        self, tenant_id: str, agent_id: str, days: int = 30
     ) -> List[CostAnalysis]:
         """分析各能力的成本"""
         start_date = date.today() - timedelta(days=days)
@@ -2494,7 +2492,7 @@ class BudgetPredictor:
         self.ledger = ledger
     
     async def predict_monthly_cost(
-        self, tenant_id: UUID, agent_id: str
+        self, tenant_id: str, agent_id: str
     ) -> Decimal:
         """预测月度成本"""
         # 获取过去 7 天的成本
@@ -2516,7 +2514,7 @@ class BudgetPredictor:
         return predicted_cost
     
     async def suggest_budget_limit(
-        self, tenant_id: UUID, agent_id: str, buffer: float = 1.2
+        self, tenant_id: str, agent_id: str, buffer: float = 1.2
     ) -> Decimal:
         """建议预算上限"""
         predicted_cost = await self.predict_monthly_cost(tenant_id, agent_id)
@@ -2535,8 +2533,8 @@ class CostAllocation:
         self.ledger = ledger
     
     async def allocate_shared_costs(
-        self, tenant_ids: List[UUID], shared_cost: Decimal, month: date
-    ) -> Dict[UUID, Decimal]:
+        self, tenant_ids: List[str], shared_cost: Decimal, month: date
+    ) -> Dict[str, Decimal]:
         """按使用量分摊共享成本"""
         # 获取各租户的使用量
         usage_by_tenant = {}
@@ -2578,3 +2576,4 @@ class CostAllocation:
 **维护者**：OwlClaw 开发团队  
 **最后更新**：2026-02-22  
 **版本**：1.0.0
+
