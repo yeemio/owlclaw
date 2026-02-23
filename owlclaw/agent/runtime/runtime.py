@@ -59,6 +59,14 @@ def _coerce_confirmation_flag(value: Any) -> bool:
     return False
 
 
+def _normalize_risk_level(value: Any) -> str:
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"low", "medium", "high", "critical"}:
+            return normalized
+    return "low"
+
+
 class AgentRuntime:
     """Core orchestrator for a single Agent.
 
@@ -819,7 +827,7 @@ class AgentRuntime:
             "source": "runtime_tool_execution",
             "trigger": context.trigger,
             "focus": context.focus,
-            "risk_level": meta.get("risk_level", "low"),
+            "risk_level": _normalize_risk_level(meta.get("risk_level", "low")),
             "requires_confirmation": _coerce_confirmation_flag(meta.get("requires_confirmation", False)),
             "confirmed": meta.get("name") in confirmed if meta.get("name") else False,
         }
