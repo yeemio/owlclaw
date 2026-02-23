@@ -9,8 +9,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from hypothesis import given
-from hypothesis import settings
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from owlclaw.agent.runtime.context import AgentRunContext

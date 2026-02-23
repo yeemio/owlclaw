@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Lock
-from typing import Any, Callable, ClassVar
+from typing import Any, ClassVar
 
 from owlclaw.config.loader import YAMLConfigLoader
 from owlclaw.config.models import OwlClawConfig

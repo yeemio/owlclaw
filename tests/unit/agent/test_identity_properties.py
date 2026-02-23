@@ -6,8 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from hypothesis import given
-from hypothesis import settings
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from owlclaw.agent.runtime.identity import IdentityLoader
