@@ -36,6 +36,25 @@ async def test_router_rule_match():
 
 
 @pytest.mark.asyncio
+async def test_router_rule_match_with_trimmed_task_type():
+    r = Router(
+        {
+            "rules": [
+                {
+                    "task_type": " trading_decision ",
+                    "model": "gpt-4o",
+                    "fallback": [],
+                },
+            ],
+            "default_model": "gpt-4o-mini",
+        }
+    )
+    ctx = RunContext(tenant_id="t1")
+    sel = await r.select_model(" trading_decision ", ctx)
+    assert sel.model == "gpt-4o"
+
+
+@pytest.mark.asyncio
 async def test_handle_model_failure_returns_next():
     """handle_model_failure returns first fallback model."""
     r = Router({})

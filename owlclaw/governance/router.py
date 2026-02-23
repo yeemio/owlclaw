@@ -35,10 +35,14 @@ class Router:
         context: RunContext,
     ) -> ModelSelection:
         """Return model and fallback chain for the given task_type."""
+        normalized_task_type = task_type.strip() if isinstance(task_type, str) else ""
         for rule in self._rules:
             if not isinstance(rule, dict):
                 continue
-            if rule.get("task_type") == task_type:
+            rule_task_type = rule.get("task_type")
+            if isinstance(rule_task_type, str):
+                rule_task_type = rule_task_type.strip()
+            if rule_task_type == normalized_task_type:
                 model = rule.get("model", self._default_model)
                 if not isinstance(model, str) or not model.strip():
                     model = self._default_model
