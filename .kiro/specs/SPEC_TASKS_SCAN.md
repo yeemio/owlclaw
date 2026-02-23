@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：triggers-cron 文档规范化，仅 specs） |
-| 批次状态 | **完成**。triggers-cron 三层文档已完成一致性修复。 |
-| 已完成项 | `triggers-cron/requirements.md` 清理控制字符与坏围栏、修复 `agent_runtime/resume_task/trigger_now` 错误；`triggers-cron/design.md` 对齐 `trigger_event(payload=...)`；`triggers-cron/tasks.md` 统一“`*` 为重点标记非可选”。 |
-| 下一待执行 | 继续 spec 循环，按同口径扫描下一个未规范化 spec（仅 `.kiro/specs/**`）。 |
-| 验收快照 | 文档静态检查通过：requirements 无控制字符；关键 API 术语一致。 |
+| 当前批次 | spec 循环（本轮：跨 spec 统一 tasks 星标口径，仅 specs） |
+| 批次状态 | **完成**。4 个 spec 的 tasks 文档口径已统一。 |
+| 已完成项 | 统一以下文档中“`*` 任务可选可跳过”的表述为“测试重点标记，不代表可跳过”：`integrations-langfuse/tasks.md`、`integrations-langchain/tasks.md`、`skill-templates/tasks.md`、`triggers-queue/tasks.md`。 |
+| 下一待执行 | 继续按架构一致性口径扫描其余 specs（接口命名、DB 约束、边界声明、任务状态一致性）。 |
+| 验收快照 | `rg` 全库扫描确认同类“可选跳过”口径已清零。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
