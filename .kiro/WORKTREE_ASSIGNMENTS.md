@@ -165,7 +165,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：agent-runtime 已完成（105/105），hatchet_bridge 已就绪，integrations-hatchet 收尾阶段。
 
-**下一任务（当前完成后）**：integrations-hatchet 收口后 → **triggers-cron** (39/92)。
+**下一任务（当前完成后）**：integrations-hatchet 收口后 → **triggers-cron** (96/117)。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -236,7 +236,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 以下 spec 尚未分配到任何编码 worktree，等当前批次完成后按优先级分配：
 
 **Phase 1 剩余**（优先）：
-- triggers-cron (39/92)
+- triggers-cron (96/117)
 - skill-templates (92/149)
 
 **Phase 2**（次优先）：
