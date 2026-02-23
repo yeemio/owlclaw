@@ -32,7 +32,9 @@ class HeartbeatChecker:
     """
 
     def __init__(self, agent_id: str, config: dict[str, Any] | None = None) -> None:
-        self.agent_id = agent_id
+        if not isinstance(agent_id, str) or not agent_id.strip():
+            raise ValueError("agent_id must be a non-empty string")
+        self.agent_id = agent_id.strip()
         cfg = config or {}
         self._enabled = self._normalize_enabled(cfg.get("enabled", True))
         self._event_sources = self._normalize_event_sources(

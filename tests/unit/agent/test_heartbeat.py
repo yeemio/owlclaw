@@ -17,6 +17,12 @@ class TestHeartbeatCheckerNoEvents:
         result = await checker.check_events()
         assert result is False
 
+    def test_init_trims_agent_id_and_rejects_blank(self) -> None:
+        checker = HeartbeatChecker(agent_id="  bot  ")
+        assert checker.agent_id == "bot"
+        with pytest.raises(ValueError, match="agent_id must be a non-empty string"):
+            HeartbeatChecker(agent_id="   ")
+
     @pytest.mark.asyncio
     async def test_check_events_disabled_returns_false(self) -> None:
         """When disabled, always returns False (no events)."""
