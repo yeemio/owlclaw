@@ -94,7 +94,7 @@
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（40/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
-| governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
+| governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（135/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：agent-runtime 存量类型收口） |
-| 批次状态 | **完成**。已修复 runtime/heartbeat 的静态类型缺口并通过回归。 |
-| 已完成项 | 修复 `owlclaw/agent/runtime/runtime.py` 的 tool call 参数空值路径与 registry 空指针类型问题；修复 `owlclaw/agent/runtime/heartbeat.py` 的 `UP038` 规则项。 |
-| 下一待执行 | 继续对进行中 spec 做存量审校（优先 `agent-runtime` Task 4+ 与 `governance` 剩余任务），并分批清理全仓历史 lint/type 债务。 |
-| 验收快照 | `poetry run mypy owlclaw/agent/runtime/runtime.py owlclaw/agent/runtime/heartbeat.py` -> `Success: no issues found in 2 source files`；`poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_heartbeat.py -q` -> `81 passed in 10.23s`。 |
+| 当前批次 | review 循环（本轮：governance Ledger 测试补齐 + runtime 复扫） |
+| 批次状态 | **完成**。已补齐 Ledger 关键单测并完成 runtime/governance/triggers 的静态复扫。 |
+| 已完成项 | 为 `owlclaw.governance.ledger` 补充批量写入、超时刷新、写失败降级、查询与成本汇总单测；修复 `owlclaw/agent/runtime/runtime.py` 与 `heartbeat.py` 的类型/风格缺口。 |
+| 下一待执行 | 继续对进行中 spec 做存量审校（优先 `agent-runtime` Task 4+ 与 `governance` 3.1.2.2 / 3.2.3.3 / 3.3.2），并分批清理全仓历史 lint/type 债务。 |
+| 验收快照 | `poetry run mypy owlclaw/agent/runtime owlclaw/agent/tools.py owlclaw/governance owlclaw/triggers/cron.py owlclaw/config owlclaw/capabilities/skills.py` -> `Success: no issues found in 24 source files`；`poetry run pytest tests/unit/governance -q` -> `80 passed`；`poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_heartbeat.py -q` -> `81 passed`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
