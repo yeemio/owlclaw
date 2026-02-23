@@ -175,6 +175,32 @@ class TestCronRegistration:
         assert config is not None
         assert config.migration_weight == 0.5
 
+    def test_apply_settings_sets_registration_defaults(self) -> None:
+        reg = self._registry()
+        reg.apply_settings(
+            {
+                "cron": {"enabled": True},
+                "governance": {"max_daily_runs": 7, "cooldown_seconds": 10},
+                "retry": {"retry_on_failure": False, "max_retries": 1},
+                "notifications": {"enabled": True, "channels": ["slack", "email"]},
+            }
+        )
+        reg.register("configured_job", "0 * * * *")
+        config = reg.get_trigger("configured_job")
+        assert config is not None
+        assert config.max_daily_runs == 7
+        assert config.cooldown_seconds == 10
+        assert config.retry_on_failure is False
+        assert config.max_retries == 1
+
+    def test_apply_settings_can_disable_new_triggers(self) -> None:
+        reg = self._registry()
+        reg.apply_settings({"cron": {"enabled": False}})
+        reg.register("disabled_by_default", "0 * * * *")
+        config = reg.get_trigger("disabled_by_default")
+        assert config is not None
+        assert config.enabled is False
+
 
 class TestTaskManagement:
     """Tests for pause_trigger, resume_trigger, get_trigger_status, trigger_now (Task 8)."""

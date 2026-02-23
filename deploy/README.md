@@ -122,6 +122,7 @@ docker compose -f deploy/docker-compose.lite.yml up -d
 | `docker-compose.lite.hatchet-only.yml` | **推荐**。仅 Hatchet Lite，连本机已建好的 hatchet 库 | 本机 Postgres + 已执行步骤 1 |
 | `docker-compose.lite.yml` | 可选。Postgres + Hatchet Lite 均由 Docker 提供 | 无（需能拉取 postgres 镜像） |
 | `docker-compose.prod.yml` | 生产：Postgres + Hatchet Engine | 见文件内说明 |
+| `docker-compose.cron.yml` | Cron 一体化：OwlClaw + Hatchet + Postgres + Prometheus | Docker 构建环境 |
 
 ---
 

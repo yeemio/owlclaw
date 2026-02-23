@@ -148,3 +148,35 @@ async def test_e2e_skill_load_and_invoke(tmp_path):
 
     result = await app.registry.invoke_handler("entry-monitor", session={"ticker": "AAPL"})
     assert result == {"signal": "AAPL"}
+
+
+@pytest.mark.asyncio
+async def test_start_registers_cron_and_exposes_health(tmp_path):
+    (tmp_path / "entry-monitor").mkdir()
+    (tmp_path / "entry-monitor" / "SKILL.md").write_text(
+        "---\nname: entry-monitor\ndescription: Check entry\n---\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "SOUL.md").write_text("# Soul\nYou are a test agent.", encoding="utf-8")
+    (tmp_path / "IDENTITY.md").write_text("# Identity\nTest identity.", encoding="utf-8")
+    app = OwlClaw("test-app")
+    app.mount_skills(str(tmp_path / "entry-monitor"))
+
+    @app.cron("0 * * * *", event_name="hourly_job")
+    async def hourly_job():
+        return {"ok": True}
+
+    from unittest.mock import MagicMock
+
+    hatchet = MagicMock()
+    hatchet.task = MagicMock(return_value=lambda fn: fn)
+
+    runtime = await app.start(app_dir=str(tmp_path), hatchet_client=hatchet)
+    assert runtime.is_initialized is True
+    assert hatchet.task.call_count >= 1
+
+    health = app.health_status()
+    assert health["runtime_initialized"] is True
+    assert health["cron"]["total_triggers"] >= 1
+
+    await app.stop()

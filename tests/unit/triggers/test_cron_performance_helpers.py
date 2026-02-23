@@ -13,6 +13,7 @@ from owlclaw.triggers.cron import (
     BatchOperations,
     ConcurrencyController,
     CronCache,
+    CronTriggerRegistry,
     PriorityScheduler,
 )
 
@@ -167,3 +168,17 @@ async def test_batch_operations_query_preserves_order() -> None:
     )
     assert out == [["a"], ["b"], ["c"]]
     assert ledger.query_records.await_count == 3
+
+
+@pytest.mark.asyncio
+async def test_registry_wait_for_all_tasks_returns_after_activity_clears() -> None:
+    reg = CronTriggerRegistry(app=None)
+    reg._active_tasks = 1
+
+    async def _clear() -> None:
+        await asyncio.sleep(0.05)
+        reg._active_tasks = 0
+
+    waiter = asyncio.create_task(reg.wait_for_all_tasks(timeout_seconds=1.0))
+    await _clear()
+    await waiter

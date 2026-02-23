@@ -71,6 +71,7 @@ class OwlClaw:
 
         # Cron triggers (Task 4.3)
         self.cron_registry: CronTriggerRegistry = CronTriggerRegistry(self)
+        self._runtime: AgentRuntime | None = None
 
     def mount_skills(self, path: str) -> None:
         """Mount Skills from a business application directory.
@@ -222,6 +223,9 @@ class OwlClaw:
         nested_overrides = self._to_nested_overrides(kwargs)
         manager = ConfigManager.load(overrides=nested_overrides)
         self._config = manager.get().model_dump(mode="python")
+        triggers_cfg = self._config.get("triggers")
+        if isinstance(triggers_cfg, dict):
+            self.cron_registry.apply_settings(triggers_cfg)
         governance_cfg = nested_overrides.get("governance")
         if isinstance(governance_cfg, dict):
             self._governance_config = governance_cfg
@@ -504,6 +508,46 @@ class OwlClaw:
             router=self._router,
             ledger=self._ledger,
         )
+
+    async def start(
+        self,
+        *,
+        app_dir: str | None = None,
+        hatchet_client: Any = None,
+        tenant_id: str = "default",
+    ) -> AgentRuntime:
+        """Start runtime + governance + cron registration.
+
+        This method keeps `run()` intentionally unimplemented while providing
+        an explicit startup path for tests and production bootstrapping.
+        """
+        runtime = self.create_agent_runtime(app_dir=app_dir, hatchet_client=hatchet_client)
+        await runtime.setup()
+        await self.start_governance()
+        if hatchet_client is not None:
+            self.cron_registry.start(
+                hatchet_client,
+                agent_runtime=runtime,
+                ledger=self._ledger,
+                tenant_id=tenant_id,
+            )
+        self._runtime = runtime
+        return runtime
+
+    async def stop(self) -> None:
+        """Stop governance and wait for cron in-flight tasks."""
+        await self.stop_governance()
+        await self.cron_registry.wait_for_all_tasks()
+        self._runtime = None
+
+    def health_status(self) -> dict[str, Any]:
+        """Return app-level health summary."""
+        return {
+            "app": self.name,
+            "runtime_initialized": bool(self._runtime and self._runtime.is_initialized),
+            "cron": self.cron_registry.get_health_status(),
+            "governance_enabled": self._ledger is not None,
+        }
 
     def run(self) -> None:
         """Start the OwlClaw application.

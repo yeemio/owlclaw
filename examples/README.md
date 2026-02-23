@@ -9,6 +9,7 @@
 | `mionyee-trading/` | 股票交易系统接入 OwlClaw | 高 |
 | `simple-cron/` | 简单 cron 任务替代 | 低 |
 | `webhook-ticketing/` | Webhook 驱动的工单处理 | 中 |
+| `cron/` | Cron 触发器完整示例（focus/治理/重试） | 中 |
 
 ## 快速开始
 
