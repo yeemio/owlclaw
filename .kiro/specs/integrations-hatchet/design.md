@@ -12,6 +12,14 @@
 
 本文档描述 OwlClaw 与 Hatchet 的集成设计。Hatchet 为 OwlClaw 提供持久化任务执行、Cron 调度和自我调度能力。集成采用隔离设计，所有 Hatchet 相关代码集中在 `owlclaw/integrations/hatchet.py` 中，便于未来替换或支持其他持久执行引擎（如 Temporal）。
 
+## 架构例外声明（实现阶段需固化）
+
+为保证设计与实现一致性，以下例外在本 spec 中显式声明：
+
+1. Hatchet 使用独立 database（`hatchet`）且由 Hatchet Server 自管迁移；该部分不纳入 OwlClaw 业务表铁律校验范围。
+2. OwlClaw 业务表仍在 `owlclaw` database 中受五条铁律约束，集成层不得直接跨库操作 Hatchet 内部表。
+3. `alembic_version` 属于 Alembic 系统表，不适用业务表约束。
+
 ## 架构概览
 
 ```

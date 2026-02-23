@@ -12,6 +12,14 @@
 
 本文档描述 OwlClaw 与 litellm 的集成设计。litellm 为 OwlClaw 提供统一的 LLM 调用接口，支持 100+ 模型提供商。集成采用隔离设计，所有 litellm 相关代码集中在 `owlclaw/integrations/llm.py` 中。
 
+## 架构例外声明（实现阶段需固化）
+
+为保证设计与实现一致性，以下例外在本 spec 中显式声明：
+
+1. litellm 为集成层依赖，不属于核心运行时强耦合；不可用时必须提供降级路径并保持核心链路可运行。
+2. 模型供应商差异在 `owlclaw/integrations/llm.py` 适配层收敛，不得泄漏到 runtime/governance 核心模块。
+3. `alembic_version` 属于 Alembic 系统表，不适用业务表约束。
+
 ## 架构概览
 
 ```

@@ -44,6 +44,14 @@ mcp-server 是 OwlClaw 的 Model Context Protocol (MCP) 服务器实现,负责�
 
 ---
 
+## 架构例外声明（实现阶段需固化）
+
+为保证设计与实现一致性，以下例外在本 spec 中显式声明：
+
+1. MCP 传输层（stdio / HTTP/SSE）属于协议适配层，禁止反向侵入 OwlClaw 核心模块。
+2. 协议能力边界以 MCP 标准为准，未实现能力（Prompts/Sampling）需保持显式 non-goal 状态。
+3. `alembic_version` 属于 Alembic 系统表，不适用业务表约束。
+
 ## 2. Architecture
 
 ### 2.1 整体架构

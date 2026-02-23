@@ -11,6 +11,14 @@
 
 Signal 触发器提供人工介入通道，支持通过 CLI / API / MCP 三种入口对运行中的 Agent 执行 pause、resume、trigger、instruct 四种操作。所有操作经过权限验证并记录到 Ledger。
 
+## 架构例外声明（实现阶段需固化）
+
+本 spec 当前未引入业务层面的数据库铁律例外。实现阶段遵循以下约束：
+
+1. `pending_instructions` 业务表遵循 `tenant_id`、`TIMESTAMPTZ` 与索引前缀规范。
+2. 人工介入命令链路（CLI/API/MCP）必须通过治理层与 Ledger，禁止绕过审计写入。
+3. `alembic_version` 属于 Alembic 系统表，不适用业务表约束。
+
 ## 架构概览
 
 ```

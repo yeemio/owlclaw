@@ -24,6 +24,14 @@ Agent 通过 LLM function calling 自主决定何时使用哪些能力，而不�
 4. **决策系统** — LLM function calling 从可见工具中选择动作
 5. **Heartbeat 机制** — 无事不调 LLM，节省成本
 
+## 架构例外声明（实现阶段需固化）
+
+本 spec 当前未引入业务层面的数据库铁律例外。实现阶段遵循以下约束：
+
+1. 运行时上下文中的 `tenant_id` 统一采用字符串口径，与 database-core 一致。
+2. 接口示例可使用 Python 协议表达，但对外契约必须保持语言无关（JSON Schema / 纯数据）。
+3. `alembic_version` 属于 Alembic 系统表，不适用业务表约束。
+
 ## 架构概览
 
 ```
