@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（49/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（54/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（agent-runtime Round 6：Langfuse tracing） |
-| 批次状态 | **完成**。agent-runtime 8.6~8.8 已实现并通过。 |
-| 已完成项 | 扩展 `owlclaw/agent/runtime/runtime.py`：可选 Langfuse trace 初始化与 run 级 trace、工具执行 span/event 观察、trace 完成/失败状态更新；补齐 `tests/unit/agent/test_runtime.py` 与 `tests/unit/agent/test_runtime_properties.py` 的 tracing 单测与属性测试。 |
-| 下一待执行 | agent-runtime Round 7：推进 Task 9.1~9.5（Hatchet 集成最小可测闭环）。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py tests/unit/test_knowledge.py tests/unit/test_knowledge_properties.py tests/unit/test_skills.py -q` -> `147 passed in 36.98s`。 |
+| 当前批次 | spec 循环（agent-runtime Round 7：Hatchet 任务桥接） |
+| 批次状态 | **完成**。agent-runtime 9.1~9.5 已实现并通过。 |
+| 已完成项 | 新增 `owlclaw/agent/runtime/hatchet_bridge.py`：AgentRuntime 作为 Hatchet task 注册、payload 解析、schedule/run_now/schedule_cron/send_signal 代理、重试参数透传、并发信号量控制；补齐 `tests/unit/agent/test_runtime_hatchet.py` 与 `tests/unit/agent/test_runtime_hatchet_properties.py` 的单测与属性测试。 |
+| 下一待执行 | agent-runtime Round 8：推进 Task 10.1~10.5（runtime 侧 litellm 客户端封装与测试对齐）。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_hatchet.py tests/unit/agent/test_runtime_hatchet_properties.py -q` -> `79 passed in 8.69s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

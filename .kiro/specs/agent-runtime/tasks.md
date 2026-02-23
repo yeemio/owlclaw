@@ -249,31 +249,31 @@
     - _需求：所有核心需求_
 
 
-- [ ] 9. 实现与 Hatchet 的集成
-  - [ ] 9.1 实现 Agent Run 作为 Hatchet task
+- [x] 9. 实现与 Hatchet 的集成
+  - [x] 9.1 实现 Agent Run 作为 Hatchet task
     - 注册 Agent Run 为 Hatchet task
     - 实现 task handler
     - 实现 payload 解析
     - _需求：9.1, 9.2_
   
-  - [ ] 9.2 实现 Hatchet 高级功能集成
+  - [x] 9.2 实现 Hatchet 高级功能集成
     - 实现持久化 sleep 支持
     - 实现任务调度支持
     - 实现 cron 触发器支持
     - 实现 Signal 机制支持
     - _需求：9.3, 9.4, 9.5, 9.6_
   
-  - [ ] 9.3 实现 Hatchet 重试和并发控制
+  - [x] 9.3 实现 Hatchet 重试和并发控制
     - 配置重试策略
     - 配置并发控制（同一 Agent 串行）
     - 同步 run 状态到 Hatchet Dashboard
     - _需求：9.7, 9.8, 9.9_
   
-  - [ ]* 9.4 编写属性测试：Hatchet 任务重试
+  - [x]* 9.4 编写属性测试：Hatchet 任务重试
     - **Property 17: Hatchet 任务重试**
     - **验证：需求 9.7**
   
-  - [ ]* 9.5 编写 Hatchet 集成的单元测试
+  - [x]* 9.5 编写 Hatchet 集成的单元测试
     - 测试 task 注册
     - 测试 payload 解析
     - 测试重试策略
