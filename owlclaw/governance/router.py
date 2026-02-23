@@ -20,6 +20,15 @@ class Router:
     """Selects LLM model by task_type; supports fallback on failure."""
 
     def __init__(self, config: dict) -> None:
+        self._rules: list[dict] = []
+        self._default_model = "gpt-4o-mini"
+        self.update_config(config)
+
+    def update_config(self, config: dict) -> None:
+        """Hot-reload routing config safely.
+
+        Invalid config shapes are ignored and replaced with defaults.
+        """
         cfg = config if isinstance(config, dict) else {}
         raw_rules = cfg.get("rules", [])
         self._rules = raw_rules if isinstance(raw_rules, list) else []
