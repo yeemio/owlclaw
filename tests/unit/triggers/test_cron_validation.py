@@ -221,6 +221,20 @@ class TestTaskManagement:
         assert status["expression"] == "0 9 * * *"
         assert status["focus"] == "morning"
         assert "next_run" in status
+        assert status["success_rate"] is None
+        assert status["average_duration_seconds"] is None
+        assert status["sample_size"] == 0
+
+    def test_get_trigger_status_computes_success_rate_and_avg_duration(self) -> None:
+        reg = self._registry()
+        reg.register("daily", "0 9 * * *", focus="morning")
+        reg._record_recent_execution("daily", "success", 1.0)
+        reg._record_recent_execution("daily", "failed", 2.0)
+        reg._record_recent_execution("daily", "fallback", 3.0)
+        status = reg.get_trigger_status("daily")
+        assert status["sample_size"] == 3
+        assert status["success_rate"] == pytest.approx(2 / 3)
+        assert status["average_duration_seconds"] == pytest.approx(2.0)
 
     def test_get_trigger_status_missing_raises(self) -> None:
         reg = self._registry()

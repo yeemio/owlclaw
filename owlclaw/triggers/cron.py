@@ -16,6 +16,7 @@ import logging
 import random
 import traceback as _traceback
 import uuid
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -130,6 +131,7 @@ class CronTriggerRegistry:
         self._hatchet_client: HatchetClient | None = None
         self._ledger: Ledger | None = None
         self._tenant_id: str = "default"
+        self._recent_executions: dict[str, deque[tuple[str, float | None]]] = {}
 
     # ------------------------------------------------------------------
     # Task 2.2 — cron expression validation
@@ -243,6 +245,19 @@ class CronTriggerRegistry:
         """Return all registered trigger configurations."""
         return list(self._triggers.values())
 
+    def _record_recent_execution(
+        self,
+        event_name: str,
+        status: str,
+        duration_seconds: float | None,
+    ) -> None:
+        """Store lightweight recent execution stats for status reporting."""
+        key = event_name.strip()
+        if not key:
+            return
+        bucket = self._recent_executions.setdefault(key, deque(maxlen=50))
+        bucket.append((status, duration_seconds))
+
     # ------------------------------------------------------------------
     # Management helpers (Task 8 pause/resume)
     # ------------------------------------------------------------------
@@ -325,6 +340,7 @@ class CronTriggerRegistry:
         else:
             kwargs["tenant_id"] = self._normalize_tenant_id(kwargs["tenant_id"])
         run_id = await run_task_now(task_name, **kwargs)
+        self._record_recent_execution(event_name, "success", 0.0)
         if self._ledger is not None:
             try:
                 await self._ledger.record_execution(
@@ -442,12 +458,23 @@ class CronTriggerRegistry:
                 config.expression,
                 exc,
             )
+        samples = list(self._recent_executions.get(event_name, ()))
+        sample_size = len(samples)
+        success_statuses = {"success", "fallback"}
+        success_count = sum(1 for status, _ in samples if status in success_statuses)
+        durations = [value for _, value in samples if isinstance(value, int | float) and value >= 0]
+        success_rate = (success_count / sample_size) if sample_size > 0 else None
+        avg_duration = (sum(durations) / len(durations)) if durations else None
+
         return {
             "event_name": event_name,
             "enabled": config.enabled,
             "expression": config.expression,
             "focus": config.focus,
             "next_run": next_run,
+            "success_rate": success_rate,
+            "average_duration_seconds": avg_duration,
+            "sample_size": sample_size,
         }
 
     # ------------------------------------------------------------------
@@ -612,6 +639,11 @@ class CronTriggerRegistry:
                 execution.duration_seconds = (
                     execution.completed_at - execution.started_at
                 ).total_seconds()
+            self._record_recent_execution(
+                config.event_name,
+                execution.status.value,
+                execution.duration_seconds,
+            )
             # Record run-level limit violations for auditing (config fields exist but are not pre-run enforced)
             if config.max_cost_per_run is not None and (execution.cost_usd or 0) > config.max_cost_per_run:
                 execution.governance_checks["max_cost_per_run_exceeded"] = True

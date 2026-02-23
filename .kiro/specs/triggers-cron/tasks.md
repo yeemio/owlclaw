@@ -244,12 +244,12 @@
   - [x] 将手动触发记录到 Ledger
   - _需求: FR-12_
   
-  - [x] 8.3 实现状态查询方法
-    - [x] 创建 `get_trigger_status(event_name)` 方法
-    - [x] 返回触发器配置、启用状态、下次执行时间（croniter）
-    - [ ] 从最近执行计算成功率
-    - [ ] 计算平均执行时长
-    - _需求: FR-10_
+- [x] 8.3 实现状态查询方法
+  - [x] 创建 `get_trigger_status(event_name)` 方法
+  - [x] 返回触发器配置、启用状态、下次执行时间（croniter）
+  - [x] 从最近执行计算成功率
+  - [x] 计算平均执行时长
+  - _需求: FR-10_
   
   - [x] 8.4 实现执行历史查询
     - [x] 创建 `get_execution_history(event_name, limit, tenant_id)` 方法
