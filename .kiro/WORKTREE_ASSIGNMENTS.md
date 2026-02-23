@@ -185,8 +185,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
 | security | 32/44 | `owlclaw/security/**`, `tests/unit/security/**` |
-| integrations-llm | 127/128 | `owlclaw/integrations/llm/**`, `tests/unit/integrations/llm/**` |
-| configuration | 0/12 | `owlclaw/config/**`, `tests/unit/test_config*.py` |
+| integrations-llm | 128/128 | `owlclaw/integrations/llm/**`, `tests/unit/integrations/llm/**` |
+| configuration | 2/12 | `owlclaw/config/**`, `tests/unit/test_config*.py` |
 
 **禁止触碰**（分配给编码 1 的路径）：
 
