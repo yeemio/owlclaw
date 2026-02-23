@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：审校扫描 + spec 进度数字对齐） |
-| 批次状态 | **完成**。`main`、`codex-work`、`codex-gpt-work` 均无待审提交；已校准清单中的偏差进度。 |
-| 已完成项 | 复核并对齐 Spec 索引进度：`cli-db` 由 `17/53` 更正为 `42/53`，`security` 由 `27/44` 更正为 `32/44`。 |
-| 下一待执行 | 等待编码 worktree 新提交进入 Review Loop；期间持续执行 spec 一致性与路径漂移审计。 |
-| 验收快照 | `git log main..codex-work`、`git log main..codex-gpt-work` 为空；基于 `tasks.md` 全量勾选统计完成对齐。 |
+| 当前批次 | review 循环（本轮：连续 7 轮审校 + spec 路径规范化） |
+| 批次状态 | **完成**。7 轮均已执行；编码分支无待审提交，spec 一致性校验通过，已修复过时路径引用。 |
+| 已完成项 | 修复过时路径：`docs/ARCHITECTURE.md` → `docs/ARCHITECTURE_ANALYSIS.md`（`integrations-langchain`/`integrations-langfuse`/`skill-templates`）；修复 `cli-scan/tasks.md` 中路径 `owlclaw/cli_scan/` → `owlclaw/cli/scan/`。 |
+| 下一待执行 | 继续 Review Loop，等待 `codex-work` / `codex-gpt-work` 新提交并执行分支级审校与合并把关。 |
+| 验收快照 | 已完成 29/29 spec 覆盖校验、进度一致性校验（无 mismatch）；红线扫描未发现 `TODO/FIXME/HACK` 和相对导入；测试命令因 Poetry 虚拟环境初始化超时未完成。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -577,7 +577,7 @@
 
 
   - [x] 23.4 编写架构文档
-    - 更新 docs/ARCHITECTURE.md 添加模板库说明
+    - 更新 docs/ARCHITECTURE_ANALYSIS.md 添加模板库说明
     - 包含设计决策说明
     - 包含组件架构图
     - 包含数据流图

@@ -17,7 +17,7 @@ The implementation follows a bottom-up approach: core data models → parser com
 ## Tasks
 
 - [ ] 1. Set up project structure and core data models
-  - Create `owlclaw/cli_scan/` package structure
+  - Create `owlclaw/cli/scan/` package structure
   - Define core data models (FunctionSignature, Parameter, ParsedDocstring, ComplexityScore, ScanResult, etc.)
   - Define enums (ParameterKind, DocstringStyle, ComplexityLevel, ImportType, Confidence, TypeSource)
   - Set up logging configuration

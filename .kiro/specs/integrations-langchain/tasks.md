@@ -316,7 +316,7 @@
     - _需求：FR-22_
   
   - [ ] 21.3 编写架构文档
-    - 更新 `docs/ARCHITECTURE.md` 添加 LangChain 集成说明
+    - 更新 `docs/ARCHITECTURE_ANALYSIS.md` 添加 LangChain 集成说明
     - 包含设计决策说明
     - 包含数据流图
     - 包含错误处理策略
