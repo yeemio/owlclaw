@@ -271,22 +271,36 @@ class Ledger:
     ) -> CostSummary:
         """统计成本摘要"""
         async with self.session_factory() as session:
-            query = select(
-                func.sum(LedgerRecord.estimated_cost).label('total_cost'),
-                func.count(LedgerRecord.id).label('total_calls')
+            total_query = select(
+                func.coalesce(func.sum(LedgerRecord.estimated_cost), 0)
             ).where(
                 LedgerRecord.tenant_id == tenant_id,
                 LedgerRecord.agent_id == agent_id,
                 LedgerRecord.created_at >= start_date,
                 LedgerRecord.created_at <= end_date
             )
-            
-            result = await session.execute(query)
-            row = result.first()
-            
+
+            by_capability_query = select(
+                LedgerRecord.capability_name,
+                func.coalesce(func.sum(LedgerRecord.estimated_cost), 0)
+            ).where(
+                LedgerRecord.tenant_id == tenant_id,
+                LedgerRecord.agent_id == agent_id,
+                LedgerRecord.created_at >= start_date,
+                LedgerRecord.created_at <= end_date
+            ).group_by(LedgerRecord.capability_name)
+
+            total_result = await session.execute(total_query)
+            by_capability_result = await session.execute(by_capability_query)
+            total_cost = Decimal(str(total_result.scalar_one()))
+
             return CostSummary(
-                total_cost=row.total_cost or Decimal('0'),
-                total_calls=row.total_calls or 0
+                total_cost=total_cost,
+                by_agent={agent_id: total_cost},
+                by_capability={
+                    capability: Decimal(str(cost))
+                    for capability, cost in by_capability_result.all()
+                },
             )
 ```
 
@@ -790,7 +804,8 @@ class LedgerQueryFilters:
 @dataclass
 class CostSummary:
     total_cost: Decimal
-    total_calls: int
+    by_agent: dict[str, Decimal]
+    by_capability: dict[str, Decimal]
 ```
 
 
@@ -844,10 +859,10 @@ class Ledger:
     
     async def _flush_batch(self, batch: List[LedgerRecord]):
         """批量写入数据库"""
-        max_retries = 3
-        retry_delay = 1
-        
-        for attempt in range(max_retries):
+        max_retries = self._flush_max_retries
+        base_delay = self._flush_backoff_base_seconds
+
+        for attempt in range(1, max_retries + 1):
             try:
                 async with self.session_factory() as session:
                     session.add_all(batch)
@@ -856,13 +871,13 @@ class Ledger:
                     return
             
             except Exception as e:
-                logger.warning(f"Ledger write attempt {attempt + 1} failed: {e}")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(retry_delay * (attempt + 1))
-                else:
+                if attempt >= max_retries:
                     logger.error(f"Ledger write failed after {max_retries} attempts")
-                    # 写入失败时记录到本地日志文件
                     await self._write_to_fallback_log(batch)
+                    return
+                delay = base_delay * (2 ** (attempt - 1))
+                logger.warning(f"Ledger write attempt {attempt}/{max_retries} failed: {e}")
+                await asyncio.sleep(delay)
     
     async def _write_to_fallback_log(self, batch: List[LedgerRecord]):
         """写入失败时的降级方案"""
