@@ -95,7 +95,7 @@
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（66/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（42/92） | cron 触发器 |
+| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（47/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（agent-tools + hatchet 性能 + cron 状态指标补齐） |
-| 批次状态 | **完成**。已补齐记忆工具、Hatchet 性能测试，及 cron 状态成功率/平均时长指标。 |
-| 已完成项 | `owlclaw/agent/tools.py` 新增 `remember/recall` schema 与执行逻辑（含参数校验、Memory 调用、Ledger 记录）；`tests/unit/agent/test_tools.py` 增加记忆工具成功/失败/无结果用例；`tests/unit/test_hatchet_perf.py` 新增 10 并发任务与 schedule 精度测试；`owlclaw/triggers/cron.py` 的 `trigger_now()` 新增 manual trigger Ledger 审计，并在 `get_trigger_status()` 增加 `success_rate/average_duration_seconds/sample_size`；`tests/unit/triggers/test_cron_validation.py` 补测。 |
-| 下一待执行 | 继续收口 `integrations-hatchet` 剩余 7.2.3/7.2.4/11.1.2（需真实 Hatchet 环境），并推进 `triggers-cron` 6~16 的 Focus/治理/监控任务。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py tests/unit/test_app.py -q` -> `71 passed`；`poetry run pytest tests/unit/test_hatchet_perf.py -q` -> `4 passed`；`poetry run pytest tests/unit/triggers/test_cron_validation.py -q` + 对应 `ruff/mypy` 均通过。 |
+| 当前批次 | review 循环（agent-tools + hatchet 性能 + cron 管理测试补齐） |
+| 批次状态 | **完成**。已补齐记忆工具、Hatchet 性能测试、cron 状态指标与任务管理集成测试。 |
+| 已完成项 | `owlclaw/agent/tools.py` 新增 `remember/recall` schema 与执行逻辑（含参数校验、Memory 调用、Ledger 记录）；`tests/unit/agent/test_tools.py` 增加记忆工具成功/失败/无结果用例；`tests/unit/test_hatchet_perf.py` 新增 10 并发任务与 schedule 精度测试；`owlclaw/triggers/cron.py` 的 `trigger_now()` 新增 manual trigger Ledger 审计并在 `get_trigger_status()` 增加 `success_rate/average_duration_seconds/sample_size`；新增 `tests/integration/test_triggers_cron_management_integration.py` 覆盖暂停/恢复、手动触发、状态指标、历史查询。 |
+| 下一待执行 | 继续收口 `integrations-hatchet` 剩余 7.2.3/7.2.4/11.1.2（需真实 Hatchet 环境），并推进 `triggers-cron` 6/7/10/11/12/13/14/15/16。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py tests/unit/test_app.py -q` -> `71 passed`；`poetry run pytest tests/unit/test_hatchet_perf.py -q` -> `4 passed`；`poetry run pytest tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py tests/integration/test_triggers_cron_management_integration.py -q` + 对应 `ruff/mypy` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
