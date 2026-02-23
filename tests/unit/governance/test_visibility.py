@@ -21,7 +21,9 @@ async def test_filter_result_default_reason():
 def test_run_context_is_confirmed_helper():
     ctx = RunContext(tenant_id="t1", confirmed_capabilities={"cap-a"})
     assert ctx.is_confirmed("cap-a") is True
+    assert ctx.is_confirmed("  cap-a  ") is True
     assert ctx.is_confirmed("cap-b") is False
+    assert ctx.is_confirmed("   ") is False
 
 
 def test_run_context_normalizes_confirmed_capabilities():

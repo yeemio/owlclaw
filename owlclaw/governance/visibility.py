@@ -84,7 +84,12 @@ class RunContext:
     def is_confirmed(self, capability_name: str) -> bool:
         if not self.confirmed_capabilities:
             return False
-        return capability_name in self.confirmed_capabilities
+        if not isinstance(capability_name, str):
+            return False
+        normalized = capability_name.strip()
+        if not normalized:
+            return False
+        return normalized in self.confirmed_capabilities
 
 
 class CapabilityView:
