@@ -31,3 +31,21 @@ class AgentRunContext:
     focus: str | None = None
     tenant_id: str = "default"
     run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+
+    def __post_init__(self) -> None:
+        for field_name in ("agent_id", "trigger", "tenant_id", "run_id"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{field_name} must be a non-empty string")
+            setattr(self, field_name, value.strip())
+        if self.focus is not None:
+            if not isinstance(self.focus, str):
+                self.focus = None
+            else:
+                self.focus = self.focus.strip() or None
+        if self.payload is None:
+            self.payload = {}
+        elif not isinstance(self.payload, dict):
+            raise ValueError("payload must be a dictionary")
+        else:
+            self.payload = dict(self.payload)

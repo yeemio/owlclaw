@@ -119,6 +119,33 @@ class TestAgentRunContext:
         ctx = AgentRunContext(agent_id="bot", trigger="cron", run_id="my-id")
         assert ctx.run_id == "my-id"
 
+    def test_context_normalizes_fields(self) -> None:
+        ctx = AgentRunContext(
+            agent_id="  bot  ",
+            trigger="  cron  ",
+            tenant_id="  default  ",
+            run_id="  run-1  ",
+            focus="  ops  ",
+            payload={"x": 1},
+        )
+        assert ctx.agent_id == "bot"
+        assert ctx.trigger == "cron"
+        assert ctx.tenant_id == "default"
+        assert ctx.run_id == "run-1"
+        assert ctx.focus == "ops"
+
+    def test_context_validates_required_string_fields(self) -> None:
+        with pytest.raises(ValueError, match="agent_id must be a non-empty string"):
+            AgentRunContext(agent_id=" ", trigger="cron")
+        with pytest.raises(ValueError, match="trigger must be a non-empty string"):
+            AgentRunContext(agent_id="bot", trigger=" ")
+        with pytest.raises(ValueError, match="tenant_id must be a non-empty string"):
+            AgentRunContext(agent_id="bot", trigger="cron", tenant_id=" ")
+
+    def test_context_rejects_non_dict_payload(self) -> None:
+        with pytest.raises(ValueError, match="payload must be a dictionary"):
+            AgentRunContext(agent_id="bot", trigger="cron", payload=["bad"])  # type: ignore[arg-type]
+
 
 # ---------------------------------------------------------------------------
 # AgentRuntime — lifecycle
