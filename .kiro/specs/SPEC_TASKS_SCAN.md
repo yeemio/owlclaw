@@ -98,7 +98,7 @@
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | 🟡 三层齐全，进行中（127/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
-| **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（0/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
+| **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（17/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：cli-db Task 10，仅 cli-db） |
-| 批次状态 | **完成**。cli-db backup 命令已实现并验收。 |
-| 已完成项 | cli-db Task 10.1/10.2/10.3：db_backup.py（pg_dump、plain/custom、schema-only/data-only、覆盖确认、失败删不完整文件、输出路径与大小）；_dispatch_db_backup 调度。 |
-| 下一待执行 | **仅 cli-db**：Task 11（restore 命令）或可选 Task 10.4 单元测试。 |
-| 验收快照 | `pytest tests/unit/test_cli_db.py tests/unit/test_db.py` 23 passed；`owlclaw db backup --help` / 无 URL 时 exit 2 验证通过。 |
+| 当前批次 | spec 循环（本轮：security 基础设施 + 数据脱敏链路） |
+| 批次状态 | **完成**。security 模块基础组件与核心单测已落地。 |
+| 已完成项 | security Task 1.1.1-1.1.6、2.1.1-2.1.5、3.1.1-3.1.4、4.1.1-4.1.3、4.3.1-4.3.2、5.2.1；新增 `sanitizer/risk_gate/audit/rules` 和 `tests/unit/security/*`。 |
+| 下一待执行 | security 任务 2.2.x / 2.3.x（Runtime 集成与注入向量测试）与 3.2.x（Governance 集成）。 |
+| 验收快照 | `poetry run pytest tests/unit/security -q` → 9 passed；`poetry run ruff check owlclaw/security tests/unit/security` 通过。 |
 | 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -1,4 +1,4 @@
-"""owlclaw db — init, migrate, status, revision, rollback, backup (database CLI)."""
+"""owlclaw db — init, migrate, status, revision, rollback, backup, restore (database CLI)."""
 
 import typer
 
@@ -8,10 +8,10 @@ from owlclaw.cli.db_status import status_command
 
 db_app = typer.Typer(
     name="db",
-    help="Database operations: init, migrate, status, revision, rollback, backup.",
+    help="Database operations: init, migrate, status, revision, rollback, backup, restore.",
 )
 
 db_app.command("init")(init_command)
 db_app.command("migrate")(migrate_command)
 db_app.command("status")(status_command)
-# revision, rollback, backup are dispatched via argparse in __init__.py (Typer Option compatibility)
+# revision, rollback, backup, restore are dispatched via argparse in __init__.py (Typer Option compatibility)

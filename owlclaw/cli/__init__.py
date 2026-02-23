@@ -235,7 +235,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  revision Create new migration script (--empty or autogenerate)")
         print("  rollback Roll back migrations (--target, --steps, or one step)")
         print("  backup   Create database backup (pg_dump)")
-        print("\n  owlclaw db init --help | owlclaw db backup --help")
+        print("  restore  Restore database from backup (psql/pg_restore)")
+        print("\n  owlclaw db init --help | owlclaw db backup --help | owlclaw db restore --help")
         sys.exit(0)
     if argv == ["db", "revision"]:
         print("Usage: owlclaw db revision [OPTIONS]")
@@ -266,6 +267,16 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  --schema-only         Dump schema only")
         print("  --data-only           Dump data only")
         print("  --database-url TEXT  Database URL (default: OWLCLAW_DATABASE_URL)")
+        print("  --help                Show this message and exit")
+        sys.exit(0)
+    if argv == ["db", "restore"]:
+        print("Usage: owlclaw db restore [OPTIONS]")
+        print("\n  Restore database from backup file (SQL or pg_dump custom).\n")
+        print("Options:")
+        print("  -i, --input PATH      Input backup file (required)")
+        print("  --clean               Drop existing objects before restore (pg_restore only)")
+        print("  --database-url TEXT  Database URL (default: OWLCLAW_DATABASE_URL)")
+        print("  -y, --yes             Skip confirmation prompt")
         print("  --help                Show this message and exit")
         sys.exit(0)
     if argv == ["db", "init"]:
@@ -418,6 +429,28 @@ def _dispatch_db_backup(argv: list[str]) -> bool:
     return True
 
 
+def _dispatch_db_restore(argv: list[str]) -> bool:
+    """Dispatch `owlclaw db restore` via argparse."""
+    if len(argv) < 2 or argv[0] != "db" or argv[1] != "restore":
+        return False
+    if "--help" in argv or "-h" in argv:
+        _print_help_and_exit(["db", "restore"])
+    parser = argparse.ArgumentParser(prog="owlclaw db restore")
+    parser.add_argument("-i", "--input", required=True, help="Input backup file path")
+    parser.add_argument("--clean", action="store_true", help="Drop objects before restore (pg_restore)")
+    parser.add_argument("--database-url", dest="database_url", default="", help="Database URL")
+    parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation")
+    ns = parser.parse_args(argv[2:])
+    from owlclaw.cli.db_restore import restore_command
+    restore_command(
+        input_path=ns.input,
+        clean=ns.clean,
+        database_url=ns.database_url or "",
+        yes=ns.yes,
+    )
+    return True
+
+
 def main() -> None:
     """CLI entry point — dispatches to subcommands."""
     if "--help" in sys.argv or "-h" in sys.argv:
@@ -437,6 +470,13 @@ def main() -> None:
         raise
     try:
         if _dispatch_db_backup(sys.argv[1:]):
+            return
+    except SystemExit:
+        raise
+    except Exception:
+        raise
+    try:
+        if _dispatch_db_restore(sys.argv[1:]):
             return
     except SystemExit:
         raise
