@@ -113,7 +113,14 @@ class MemoryLifecycleManager:
 
             result.duration_ms = int((time.perf_counter() - start) * 1000)
             if self._ledger is not None:
-                await self._record_maintenance(normalized_agent, normalized_tenant, result)
+                try:
+                    await self._record_maintenance(normalized_agent, normalized_tenant, result)
+                except Exception:
+                    logger.exception(
+                        "memory maintenance ledger record failed agent_id=%s tenant_id=%s",
+                        normalized_agent,
+                        normalized_tenant,
+                    )
         except Exception as e:
             result.error = str(e)
             result.duration_ms = int((time.perf_counter() - start) * 1000)

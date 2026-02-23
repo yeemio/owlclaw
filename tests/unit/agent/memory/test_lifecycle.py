@@ -128,3 +128,17 @@ async def test_lifecycle_rejects_blank_tenant_scope() -> None:
     manager = MemoryLifecycleManager(store, config)
     result = await manager.run_maintenance("agent-a", " ")
     assert result.error == "tenant_id must not be empty"
+
+
+class _FailingLedger:
+    async def record_execution(self, **kwargs):  # type: ignore[no-untyped-def]
+        raise RuntimeError("ledger unavailable")
+
+
+@pytest.mark.asyncio
+async def test_lifecycle_ledger_failure_does_not_fail_maintenance() -> None:
+    store = InMemoryStore()
+    config = MemoryConfig(max_entries=10, retention_days=365)
+    manager = MemoryLifecycleManager(store, config, ledger=_FailingLedger())
+    result = await manager.run_maintenance("agent-a", "default")
+    assert result.error is None
