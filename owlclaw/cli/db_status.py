@@ -1,10 +1,15 @@
-"""owlclaw db status — show connection, version, extensions, table count."""
+"""owlclaw db status — show connection, version, extensions, table count, disk usage."""
 
+import asyncio
 import os
 from urllib.parse import urlsplit, urlunsplit
 
 import typer
 from typer.models import OptionInfo
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine
+from rich.console import Console
+from rich.table import Table
 
 from owlclaw.db import ConfigurationError, get_engine
 
@@ -41,6 +46,120 @@ def _mask_url(url: str) -> str:
     return urlunsplit((split.scheme, netloc, split.path, split.query, split.fragment))
 
 
+def _format_size(size_bytes: int) -> str:
+    """Format byte count as human-readable size."""
+    if size_bytes is None or size_bytes < 0:
+        return "—"
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if size_bytes < 1024:
+            return f"{size_bytes:.1f} {unit}"
+        size_bytes /= 1024
+    return f"{size_bytes:.1f} PB"
+
+
+async def _collect_status_info(engine: AsyncEngine, url: str) -> dict:
+    """Collect DB version, extensions, table stats, disk usage, migration revision."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    from alembic.runtime.migration import MigrationContext
+
+    info: dict = {
+        "connection": _mask_url(url),
+        "server_version": "—",
+        "extensions": [],
+        "current_migration": "—",
+        "pending_migrations": 0,
+        "table_count": 0,
+        "total_rows": 0,
+        "disk_usage_bytes": 0,
+    }
+    async with engine.connect() as conn:
+        # Server version (first line of version())
+        try:
+            r = await conn.execute(text("SELECT version()"))
+            v = r.scalar()
+            info["server_version"] = (v.split(",")[0].strip() if v else "—")
+        except Exception:
+            info["server_version"] = "—"
+
+        # Extensions (name + version)
+        try:
+            r = await conn.execute(
+                text("SELECT extname, extversion FROM pg_extension ORDER BY extname")
+            )
+            info["extensions"] = [f"{row[0]} {row[1]}" for row in r]
+        except Exception:
+            pass
+
+        # Table count, total rows, disk usage
+        try:
+            r = await conn.execute(
+                text("""
+                    SELECT
+                        COUNT(*) AS table_count,
+                        COALESCE(SUM(n_live_tup), 0)::bigint AS total_rows
+                    FROM pg_stat_user_tables
+                """)
+            )
+            row = r.fetchone()
+            if row:
+                info["table_count"] = int(row[0]) if row[0] is not None else 0
+                info["total_rows"] = int(row[1]) if row[1] is not None else 0
+        except Exception:
+            pass
+        try:
+            r = await conn.execute(text("SELECT pg_database_size(current_database())"))
+            info["disk_usage_bytes"] = int(r.scalar() or 0)
+        except Exception:
+            pass
+
+        # Current migration revision (sync call on connection)
+        def _get_current_rev(sync_conn):
+            ctx = MigrationContext.configure(sync_conn)
+            return ctx.get_current_revision()
+
+        try:
+            current_rev = await conn.run_sync(_get_current_rev)
+        except Exception:
+            current_rev = None
+
+    # Pending migrations (Alembic script)
+    try:
+        alembic_cfg = Config("alembic.ini")
+        script = ScriptDirectory.from_config(alembic_cfg)
+        if current_rev:
+            rev_obj = script.get_revision(current_rev)
+            doc = getattr(rev_obj, "doc", None) if rev_obj else None
+            info["current_migration"] = f"{current_rev[:8]} ({doc})" if doc else (current_rev[:8] if current_rev else "—")
+            pending = list(script.iterate_revisions("head", current_rev))
+            info["pending_migrations"] = len(pending)
+        else:
+            info["current_migration"] = "none (run: owlclaw db migrate)"
+            info["pending_migrations"] = len(list(script.iterate_revisions("head", None)))
+    except Exception:
+        info["current_migration"] = "—"
+        info["pending_migrations"] = 0
+
+    return info
+
+
+def _print_status_table(info: dict) -> None:
+    """Print status info as a Rich table."""
+    console = Console()
+    table = Table(title="OwlClaw Database Status", show_header=True, header_style="bold")
+    table.add_column("Item", style="dim")
+    table.add_column("Value")
+    table.add_row("Connection", info["connection"])
+    table.add_row("Server version", info["server_version"])
+    table.add_row("Extensions", ", ".join(info["extensions"]) if info["extensions"] else "—")
+    table.add_row("Migration", info["current_migration"])
+    table.add_row("Pending migrations", str(info["pending_migrations"]))
+    table.add_row("Tables", str(info["table_count"]))
+    table.add_row("Total rows", f"{info['total_rows']:,}")
+    table.add_row("Disk usage", _format_size(info["disk_usage_bytes"]))
+    console.print(table)
+
+
 def status_command(
     database_url: str | None = typer.Option(
         None,
@@ -48,7 +167,7 @@ def status_command(
         help="Database URL (default: OWLCLAW_DATABASE_URL).",
     ),
 ) -> None:
-    """Show database connection and migration status."""
+    """Show database connection, version, extensions, table stats, and migration status."""
     database_url = _normalize_optional_str_option(database_url)
     url = database_url or os.environ.get("OWLCLAW_DATABASE_URL")
     if not url or not url.strip():
@@ -56,14 +175,9 @@ def status_command(
         raise typer.Exit(2)
     url = url.strip()
     try:
-        get_engine(url)
+        engine = get_engine(url)
     except ConfigurationError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(2) from e
-    typer.echo("OwlClaw Database Status")
-    typer.echo("=" * 40)
-    typer.echo("Connection: " + _mask_url(url))
-    # Minimal status: we'd need to run async queries for version/extensions.
-    # For MVP we just show connection and that we got an engine.
-    typer.echo("Engine: OK (async)")
-    typer.echo("Set OWLCLAW_DATABASE_URL and run migrations with: owlclaw db migrate")
+    info = asyncio.run(_collect_status_info(engine, url))
+    _print_status_table(info)

@@ -99,7 +99,7 @@
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | 🟡 三层齐全，进行中（127/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（0/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
-| **agent-memory** | `.kiro/specs/agent-memory/` | 🟡 三层齐全，进行中（10/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
+| **agent-memory** | `.kiro/specs/agent-memory/` | 🟡 三层齐全，进行中（12/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（0/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
@@ -143,12 +143,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：agent-memory Task 9 验收） |
-| 批次状态 | **完成**。Task 9 已在本轮验收通过：迁移 003 修复（Boolean/JSONB server_default）+ 集成测试 fixture 改为 function-scoped store，5 个用例全部通过。 |
-| 已完成项 | `agent-memory Task 9` 已勾选；`migrations/versions/003_memory_entries.py` 修复；`tests/integration/test_pgvector_store.py` 5/5 通过。 |
-| 下一待执行 | `agent-memory Task 12`（安全分类）或 database-core / cli-db 下一未勾 task。 |
-| 验收快照 | agent-memory tasks 10/18；PgVectorStore 集成测试 5/5；单元测试 602 passed。 |
-| 阻塞项 | 无（Task 9 阻塞已解除：本轮修复后集成测试通过）。 |
+| 当前批次 | spec 循环（本轮：cli-db Task 5.2，跳过 agent-memory） |
+| 批次状态 | **完成**。cli-db Task 5.2 已实现：status 命令查询版本/扩展/表统计/磁盘/迁移版本，Rich 表格输出。 |
+| 已完成项 | `owlclaw/cli/db_status.py` P1 增强：`_collect_status_info` + `_print_status_table`，单元测试 23 passed。 |
+| 下一待执行 | cli-db Task 7（revision 命令）或 database-core / 其他 spec 下一未勾 task；agent-memory 按用户要求跳过。 |
+| 验收快照 | cli-db tasks 5.2 [x]；test_cli_db + test_db 23 passed。 |
+| 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
