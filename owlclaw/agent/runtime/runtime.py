@@ -46,6 +46,7 @@ _DEFAULT_MODEL = "gpt-4o-mini"
 _DEFAULT_MAX_ITERATIONS = 50
 _DEFAULT_LLM_TIMEOUT_SECONDS = 60.0
 _DEFAULT_RUN_TIMEOUT_SECONDS = 300.0
+_DEFAULT_LLM_RETRY_ATTEMPTS = 1
 
 
 def _coerce_confirmation_flag(value: Any) -> bool:
@@ -467,9 +468,20 @@ class AgentRuntime:
                 call_kwargs["tool_choice"] = "auto"
 
             try:
-                response = await asyncio.wait_for(
-                    llm_integration.acompletion(**call_kwargs),
+                llm_started_ns = time.perf_counter_ns()
+                response, model_used, llm_tokens_input, llm_tokens_output = await self._call_llm_completion(
+                    call_kwargs,
                     timeout=llm_timeout,
+                )
+                llm_elapsed_ms = (time.perf_counter_ns() - llm_started_ns) // 1_000_000
+                await self._record_llm_usage(
+                    context=context,
+                    model=model_used,
+                    llm_tokens_input=llm_tokens_input,
+                    llm_tokens_output=llm_tokens_output,
+                    execution_time_ms=llm_elapsed_ms,
+                    status="success",
+                    error_message=None,
                 )
             except asyncio.TimeoutError:
                 logger.error(
@@ -478,10 +490,37 @@ class AgentRuntime:
                     context.run_id,
                     llm_timeout,
                 )
+                await self._record_llm_usage(
+                    context=context,
+                    model=model_used,
+                    llm_tokens_input=0,
+                    llm_tokens_output=0,
+                    execution_time_ms=int(llm_timeout * 1000),
+                    status="timeout",
+                    error_message=f"LLM call timed out after {llm_timeout:.1f}s",
+                )
                 messages.append(
                     {
                         "role": "assistant",
                         "content": f"LLM call timed out after {llm_timeout:.1f}s.",
+                    }
+                )
+                break
+            except Exception as exc:
+                await self._record_llm_usage(
+                    context=context,
+                    model=model_used,
+                    llm_tokens_input=0,
+                    llm_tokens_output=0,
+                    execution_time_ms=0,
+                    status="error",
+                    error_message=str(exc),
+                )
+                logger.error("LLM call failed agent_id=%s run_id=%s error=%s", context.agent_id, context.run_id, exc)
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"LLM call failed: {exc}",
                     }
                 )
                 break
@@ -529,6 +568,114 @@ class AgentRuntime:
                 if m.get("role") == "tool"
             ),
         }
+
+    @staticmethod
+    def _extract_usage_tokens(response: Any) -> tuple[int, int]:
+        usage = (
+            response.get("usage")
+            if isinstance(response, dict)
+            else getattr(response, "usage", None)
+        )
+        if usage is None:
+            return 0, 0
+        if isinstance(usage, dict):
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+        else:
+            prompt_tokens = getattr(usage, "prompt_tokens", 0)
+            completion_tokens = getattr(usage, "completion_tokens", 0)
+        try:
+            prompt = int(prompt_tokens)
+        except (TypeError, ValueError):
+            prompt = 0
+        try:
+            completion = int(completion_tokens)
+        except (TypeError, ValueError):
+            completion = 0
+        return max(0, prompt), max(0, completion)
+
+    async def _call_llm_completion(
+        self,
+        call_kwargs: dict[str, Any],
+        *,
+        timeout: float,
+    ) -> tuple[Any, str, int, int]:
+        """Call LLM facade with retry and fallback model support."""
+        retries_raw = self.config.get("llm_retry_attempts", _DEFAULT_LLM_RETRY_ATTEMPTS)
+        if isinstance(retries_raw, bool):
+            retries = _DEFAULT_LLM_RETRY_ATTEMPTS
+        else:
+            try:
+                retries = max(1, int(retries_raw))
+            except (TypeError, ValueError):
+                retries = _DEFAULT_LLM_RETRY_ATTEMPTS
+
+        fallback_raw = self.config.get("llm_fallback_models", [])
+        fallback_models: list[str] = []
+        if isinstance(fallback_raw, list):
+            for item in fallback_raw:
+                if isinstance(item, str) and item.strip():
+                    fallback_models.append(item.strip())
+
+        primary_model = str(call_kwargs.get("model", self.model))
+        model_chain = [primary_model] + [m for m in fallback_models if m != primary_model]
+        last_error: Exception | None = None
+
+        for model_name in model_chain:
+            kwargs = dict(call_kwargs)
+            kwargs["model"] = model_name
+            for _ in range(retries):
+                try:
+                    response = await asyncio.wait_for(
+                        llm_integration.acompletion(**kwargs),
+                        timeout=timeout,
+                    )
+                    prompt_tokens, completion_tokens = self._extract_usage_tokens(response)
+                    return response, model_name, prompt_tokens, completion_tokens
+                except asyncio.TimeoutError:
+                    raise
+                except Exception as exc:
+                    last_error = exc
+                    continue
+
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("LLM call failed without an explicit error")
+
+    async def _record_llm_usage(
+        self,
+        *,
+        context: AgentRunContext,
+        model: str,
+        llm_tokens_input: int,
+        llm_tokens_output: int,
+        execution_time_ms: int,
+        status: str,
+        error_message: str | None,
+    ) -> None:
+        if self._ledger is None:
+            return
+        task_type = context.payload.get("task_type") or self.config.get("default_task_type") or "default"
+        try:
+            await self._ledger.record_execution(
+                tenant_id=context.tenant_id,
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                capability_name="llm_completion",
+                task_type=str(task_type),
+                input_params={"trigger": context.trigger, "focus": context.focus},
+                output_result={"status": status},
+                decision_reasoning="runtime_llm_call",
+                execution_time_ms=max(0, int(execution_time_ms)),
+                llm_model=model or "",
+                llm_tokens_input=max(0, int(llm_tokens_input)),
+                llm_tokens_output=max(0, int(llm_tokens_output)),
+                estimated_cost=Decimal("0"),
+                status=status,
+                error_message=error_message,
+            )
+        except Exception as exc:
+            logger.warning("Failed to record LLM usage in ledger: %s", exc)
 
     @staticmethod
     def _assistant_message_to_dict(message: Any) -> dict[str, Any]:

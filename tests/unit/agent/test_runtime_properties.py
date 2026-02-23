@@ -31,7 +31,13 @@ def _make_tool_call(name: str, arguments: dict[str, object]) -> MagicMock:
     return tc
 
 
-def _make_llm_response(content: str = "Done.", tool_calls: list[MagicMock] | None = None) -> MagicMock:
+def _make_llm_response(
+    content: str = "Done.",
+    tool_calls: list[MagicMock] | None = None,
+    *,
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+) -> MagicMock:
     message = MagicMock()
     message.content = content
     message.tool_calls = tool_calls or []
@@ -40,6 +46,10 @@ def _make_llm_response(content: str = "Done.", tool_calls: list[MagicMock] | Non
     choice.message = message
     response = MagicMock()
     response.choices = [choice]
+    usage = MagicMock()
+    usage.prompt_tokens = prompt_tokens
+    usage.completion_tokens = completion_tokens
+    response.usage = usage
     return response
 
 
@@ -232,3 +242,36 @@ async def test_property_langfuse_trace_created(trigger: str) -> None:
         assert client.trace_calls == 1
         assert client.last_trace is not None
         assert any(update.get("status") == "success" for update in client.last_trace.updates)
+
+
+@pytest.mark.asyncio
+@given(
+    prompt_tokens=st.integers(min_value=0, max_value=200),
+    completion_tokens=st.integers(min_value=0, max_value=200),
+)
+@settings(deadline=None)
+async def test_property_token_usage_recorded_to_ledger(prompt_tokens: int, completion_tokens: int) -> None:
+    """Property 18: LLM token usage is recorded to Ledger."""
+    with TemporaryDirectory() as tmp, patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion") as mock_llm:
+        mock_llm.return_value = _make_llm_response(
+            "ok",
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+        )
+        ledger = AsyncMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(Path(tmp)),
+            ledger=ledger,
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        calls = [
+            call.kwargs
+            for call in ledger.record_execution.await_args_list
+            if call.kwargs.get("capability_name") == "llm_completion"
+        ]
+        assert calls
+        assert calls[0]["llm_tokens_input"] == prompt_tokens
+        assert calls[0]["llm_tokens_output"] == completion_tokens

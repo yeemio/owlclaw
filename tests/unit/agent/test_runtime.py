@@ -28,7 +28,7 @@ def _make_app_dir(tmp_path):
     return str(tmp_path)
 
 
-def _make_llm_response(content="Done.", tool_calls=None):
+def _make_llm_response(content="Done.", tool_calls=None, *, prompt_tokens=0, completion_tokens=0):
     """Build a fake litellm response object."""
     message = MagicMock()
     message.content = content
@@ -42,6 +42,10 @@ def _make_llm_response(content="Done.", tool_calls=None):
     choice.message = message
     response = MagicMock()
     response.choices = [choice]
+    usage = MagicMock()
+    usage.prompt_tokens = prompt_tokens
+    usage.completion_tokens = completion_tokens
+    response.usage = usage
     return response
 
 
@@ -846,6 +850,56 @@ class TestAgentRuntimeRun:
         result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
         assert result["status"] == "completed"
         assert result["final_response"] == "ok"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_llm_retries_on_failure(self, mock_llm, tmp_path) -> None:
+        mock_llm.side_effect = [RuntimeError("transient"), _make_llm_response("ok")]
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"llm_retry_attempts": 2},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert result["final_response"] == "ok"
+        assert mock_llm.call_count == 2
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_llm_fallback_model_used_after_primary_failure(self, mock_llm, tmp_path) -> None:
+        mock_llm.side_effect = [RuntimeError("primary down"), _make_llm_response("ok")]
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            model="primary-model",
+            config={"llm_retry_attempts": 1, "llm_fallback_models": ["fallback-model"]},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert mock_llm.call_args_list[0].kwargs["model"] == "primary-model"
+        assert mock_llm.call_args_list[1].kwargs["model"] == "fallback-model"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_records_llm_token_usage_to_ledger(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response("ok", prompt_tokens=11, completion_tokens=7)
+        ledger = AsyncMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            ledger=ledger,
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        llm_records = [
+            call.kwargs
+            for call in ledger.record_execution.await_args_list
+            if call.kwargs.get("capability_name") == "llm_completion"
+        ]
+        assert llm_records
+        assert llm_records[0]["llm_tokens_input"] == 11
+        assert llm_records[0]["llm_tokens_output"] == 7
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_non_finite_llm_timeout_config_falls_back_to_default(
