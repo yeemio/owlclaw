@@ -145,14 +145,22 @@ class AgentRuntime:
         Returns:
             Run result dict (see :meth:`run`).
         """
+        if not isinstance(event_name, str) or not event_name.strip():
+            raise ValueError("event_name must be a non-empty string")
+        if not isinstance(tenant_id, str) or not tenant_id.strip():
+            raise ValueError("tenant_id must be a non-empty string")
+        normalized_event_name = event_name.strip()
+        normalized_tenant_id = tenant_id.strip()
         if isinstance(focus, str):
             focus = focus.strip() or None
+        elif focus is not None:
+            focus = None
         context = AgentRunContext(
             agent_id=self.agent_id,
-            trigger=event_name,
+            trigger=normalized_event_name,
             payload=payload or {},
             focus=focus,
-            tenant_id=tenant_id,
+            tenant_id=normalized_tenant_id,
         )
         return await self.run(context)
 
