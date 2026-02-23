@@ -20,6 +20,23 @@ from owlclaw.db.exceptions import ConfigurationError
 memory_app = typer.Typer(help="Agent memory operations (list, prune, reset, stats).")
 
 
+def _normalize_scope(agent: str, tenant: str) -> tuple[str, str]:
+    normalized_agent = agent.strip()
+    if not normalized_agent:
+        raise typer.BadParameter("agent must not be empty.")
+    normalized_tenant = tenant.strip()
+    if not normalized_tenant:
+        raise typer.BadParameter("tenant must not be empty.")
+    return normalized_agent, normalized_tenant
+
+
+def _normalize_backend(backend: str) -> str:
+    normalized = backend.strip().lower()
+    if normalized not in {"pgvector", "inmemory", "qdrant"}:
+        raise typer.BadParameter("backend must be one of: pgvector, inmemory, qdrant.")
+    return normalized
+
+
 def _parse_tags(tags: str) -> list[str]:
     if not tags.strip():
         return []
@@ -61,10 +78,11 @@ def _matches_tags(entry: MemoryEntry, wanted: list[str]) -> bool:
 
 
 def _create_store(backend: str) -> MemoryStore:
-    config = MemoryConfig(vector_backend=backend)
-    if backend == "inmemory":
+    normalized_backend = _normalize_backend(backend)
+    config = MemoryConfig(vector_backend=normalized_backend)
+    if normalized_backend == "inmemory":
         return InMemoryStore(time_decay_half_life_hours=config.time_decay_half_life_hours)
-    if backend == "pgvector":
+    if normalized_backend == "pgvector":
         db_url = os.environ.get("OWLCLAW_DATABASE_URL", "").strip()
         if not db_url:
             raise ConfigurationError("OWLCLAW_DATABASE_URL is required when memory backend is pgvector.")
@@ -75,7 +93,7 @@ def _create_store(backend: str) -> MemoryStore:
             embedding_dimensions=config.embedding_dimensions,
             time_decay_half_life_hours=config.time_decay_half_life_hours,
         )
-    if backend == "qdrant":
+    if normalized_backend == "qdrant":
         qdrant_url = os.environ.get("OWLCLAW_QDRANT_URL", config.qdrant_url).strip()
         qdrant_collection = os.environ.get("OWLCLAW_QDRANT_COLLECTION", config.qdrant_collection_name).strip()
         return QdrantStore(
@@ -84,7 +102,7 @@ def _create_store(backend: str) -> MemoryStore:
             embedding_dimensions=config.embedding_dimensions,
             time_decay_half_life_hours=config.time_decay_half_life_hours,
         )
-    raise ConfigurationError(f"Unsupported memory backend: {backend}")
+    raise ConfigurationError(f"Unsupported memory backend: {normalized_backend}")
 
 
 async def _list_entries_impl(
@@ -198,15 +216,16 @@ def list_command(
     page: int = typer.Option(1, "--page", min=1, help="Page number (1-based)."),
     page_size: int = typer.Option(20, "--page-size", min=1, max=200, help="Page size."),
     include_archived: bool = typer.Option(False, "--include-archived", help="Include archived entries."),
-    backend: str = typer.Option("pgvector", "--backend", help="Memory backend: pgvector|inmemory."),
+    backend: str = typer.Option("pgvector", "--backend", help="Memory backend: pgvector|inmemory|qdrant."),
 ) -> None:
-    store = _create_store(backend.strip())
+    normalized_agent, normalized_tenant = _normalize_scope(agent, tenant)
+    store = _create_store(_normalize_backend(backend))
     parsed_tags = _parse_tags(tags)
     rows = asyncio.run(
         _list_entries_impl(
             store=store,
-            agent=agent.strip(),
-            tenant=tenant.strip(),
+            agent=normalized_agent,
+            tenant=normalized_tenant,
             tags=parsed_tags,
             page=page,
             page_size=page_size,
@@ -234,14 +253,15 @@ def prune_command(
     tenant: str = typer.Option("default", "--tenant", help="Tenant id."),
     before: str = typer.Option("", "--before", help="Delete entries before this ISO datetime."),
     tags: str = typer.Option("", "--tags", help="Comma separated tags filter."),
-    backend: str = typer.Option("pgvector", "--backend", help="Memory backend: pgvector|inmemory."),
+    backend: str = typer.Option("pgvector", "--backend", help="Memory backend: pgvector|inmemory|qdrant."),
 ) -> None:
-    store = _create_store(backend.strip())
+    normalized_agent, normalized_tenant = _normalize_scope(agent, tenant)
+    store = _create_store(_normalize_backend(backend))
     deleted = asyncio.run(
         _prune_impl(
             store=store,
-            agent=agent.strip(),
-            tenant=tenant.strip(),
+            agent=normalized_agent,
+            tenant=normalized_tenant,
             before=_parse_before(before),
             tags=_parse_tags(tags),
         )
@@ -254,12 +274,13 @@ def reset_command(
     agent: str = typer.Option(..., "--agent", help="Agent id."),
     tenant: str = typer.Option("default", "--tenant", help="Tenant id."),
     confirm: bool = typer.Option(False, "--confirm", help="Required confirmation flag."),
-    backend: str = typer.Option("pgvector", "--backend", help="Memory backend: pgvector|inmemory."),
+    backend: str = typer.Option("pgvector", "--backend", help="Memory backend: pgvector|inmemory|qdrant."),
 ) -> None:
     if not confirm:
         raise typer.BadParameter("--confirm is required for reset.")
-    store = _create_store(backend.strip())
-    deleted = asyncio.run(_reset_impl(store=store, agent=agent.strip(), tenant=tenant.strip()))
+    normalized_agent, normalized_tenant = _normalize_scope(agent, tenant)
+    store = _create_store(_normalize_backend(backend))
+    deleted = asyncio.run(_reset_impl(store=store, agent=normalized_agent, tenant=normalized_tenant))
     typer.echo(f"Reset completed. Deleted {deleted} entries.")
 
 
@@ -267,10 +288,11 @@ def reset_command(
 def stats_command(
     agent: str = typer.Option(..., "--agent", help="Agent id."),
     tenant: str = typer.Option("default", "--tenant", help="Tenant id."),
-    backend: str = typer.Option("pgvector", "--backend", help="Memory backend: pgvector|inmemory."),
+    backend: str = typer.Option("pgvector", "--backend", help="Memory backend: pgvector|inmemory|qdrant."),
 ) -> None:
-    store = _create_store(backend.strip())
-    stats = asyncio.run(_stats_impl(store=store, agent=agent.strip(), tenant=tenant.strip()))
+    normalized_agent, normalized_tenant = _normalize_scope(agent, tenant)
+    store = _create_store(_normalize_backend(backend))
+    stats = asyncio.run(_stats_impl(store=store, agent=normalized_agent, tenant=normalized_tenant))
     typer.echo(f"total_entries: {stats['total_entries']}")
     typer.echo(f"archived_entries: {stats['archived_entries']}")
     typer.echo(f"storage_size_bytes: {stats['storage_size_bytes']}")
@@ -290,18 +312,21 @@ def migrate_backend_command(
     source_backend: str = typer.Option(..., "--source-backend", help="Source backend: pgvector|qdrant|inmemory."),
     target_backend: str = typer.Option(..., "--target-backend", help="Target backend: pgvector|qdrant|inmemory."),
     batch_size: int = typer.Option(200, "--batch-size", min=1, max=5000, help="Migration batch size."),
-    include_archived: bool = typer.Option(True, "--include-archived/--exclude-archived", help="Include archived entries."),
+    include_archived: bool = typer.Option(True, "--include-archived", help="Include archived entries (use --no-include-archived to exclude)."),
 ) -> None:
-    if source_backend == target_backend:
+    normalized_agent, normalized_tenant = _normalize_scope(agent, tenant)
+    normalized_source = _normalize_backend(source_backend)
+    normalized_target = _normalize_backend(target_backend)
+    if normalized_source == normalized_target:
         raise typer.BadParameter("source and target backend must be different.")
-    source = _create_store(source_backend.strip())
-    target = _create_store(target_backend.strip())
+    source = _create_store(normalized_source)
+    target = _create_store(normalized_target)
     moved, failed = asyncio.run(
         _migrate_impl(
             source=source,
             target=target,
-            agent=agent.strip(),
-            tenant=tenant.strip(),
+            agent=normalized_agent,
+            tenant=normalized_tenant,
             batch_size=batch_size,
             include_archived=include_archived,
         )
