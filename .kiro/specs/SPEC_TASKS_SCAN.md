@@ -143,10 +143,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：cli-db Task 13.3，仅 cli-db） |
-| 批次状态 | **完成**。通用用户体验功能已实现。 |
-| 已完成项 | cli-db Task 13.3：progress_after(2s) 用于 backup/restore；main() 捕获 KeyboardInterrupt 并 exit 130；backup/restore/check 支持 --verbose/-v。 |
-| 下一待执行 | **仅 cli-db**：Task 14（集成测试与文档）或 Task 15（Final Checkpoint）或可选 13.1/13.2 属性测试。 |
+| 当前批次 | spec 循环（本轮：cli-db Task 14.2，仅 cli-db） |
+| 批次状态 | **完成**。项目文档已更新。 |
+| 已完成项 | cli-db Task 14.2：README 增加 Database CLI 表格与环境变量、链接 db-commands.md；新增 docs/cli/db-commands.md（命令参考 + 常见问题与故障排除）。 |
+| 下一待执行 | **仅 cli-db**：Task 15（Final Checkpoint）或可选 14.1 集成测试 / 13.1/13.2 属性测试。 |
 | 验收快照 | `pytest tests/unit/test_cli_db.py tests/unit/test_db.py` 23 passed。 |
 | 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |

@@ -128,7 +128,32 @@ Memory documentation:
 - [docs/memory/backend-selection.md](docs/memory/backend-selection.md)
 - [docs/memory/lifecycle-best-practices.md](docs/memory/lifecycle-best-practices.md)
 
-### Database core usage
+### Database CLI (owlclaw db)
+
+All database lifecycle and operations go through `owlclaw db`:
+
+| Command | Description |
+|---------|-------------|
+| `owlclaw db init` | Create owlclaw (and optional hatchet) database, role, pgvector |
+| `owlclaw db migrate` | Run Alembic migrations |
+| `owlclaw db status` | Connection, version, extensions, table stats, migration status |
+| `owlclaw db revision` | Generate new migration (autogenerate or empty) |
+| `owlclaw db rollback` | Roll back migrations (one step, `--steps N`, or `--target`) |
+| `owlclaw db backup` | Backup with pg_dump (plain or custom format) |
+| `owlclaw db restore` | Restore from backup (psql or pg_restore) |
+| `owlclaw db check` | Health check (connection, migration, pgvector, pool, disk, slow queries) |
+
+**Environment**: `OWLCLAW_DATABASE_URL` for most commands; `OWLCLAW_ADMIN_URL` for `init` only.
+
+```bash
+export OWLCLAW_DATABASE_URL="postgresql://user:pass@localhost:5432/owlclaw"
+owlclaw db status
+owlclaw db migrate
+```
+
+Full reference and troubleshooting: [docs/cli/db-commands.md](docs/cli/db-commands.md).
+
+### Database core usage (Python API)
 
 OwlClaw database infrastructure provides a shared async engine and session helpers:
 
@@ -143,8 +168,6 @@ async with get_session(engine) as session:
     value = await session.scalar(text("SELECT 1"))
     assert value == 1
 ```
-
-Use `owlclaw db` commands for schema lifecycle (`init/migrate/status/revision`).
 
 ## Installation
 

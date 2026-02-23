@@ -257,10 +257,10 @@
     - 测试完整的 backup → restore 流程
     - 测试完整的 revision → migrate → rollback 流程
   
-  - [ ] 14.2 更新项目文档
-    - 更新 README.md：添加 CLI 使用说明
-    - 创建 CLI 命令参考文档
-    - 添加常见问题和故障排除指南
+  - [x] 14.2 更新项目文档
+    - 更新 README.md：添加 CLI 使用说明（Database CLI 表格与环境变量、链接 db-commands.md）
+    - 创建 CLI 命令参考文档（docs/cli/db-commands.md：命令概览、各命令用法与选项、示例）
+    - 添加常见问题和故障排除指南（db-commands.md 末节：URL、pg_dump、确认、Ctrl+C、pgvector/慢查询 N/A、迁移）
 
 - [ ] 15. Final Checkpoint - 确保所有测试通过
   - 运行所有单元测试
