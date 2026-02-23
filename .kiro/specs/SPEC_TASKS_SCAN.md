@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（Round 1/7：database-core engine 属性测试验收） |
-| 批次状态 | **完成**。database-core 4.4~4.7 属性测试已新增并通过。 |
-| 已完成项 | 新增 `tests/unit/test_db_engine_properties.py`，覆盖 URL 格式校验、引擎复用、方言拒绝、连接池参数透传；`poetry run pytest tests/unit/test_db_engine_properties.py -q` 通过（4 passed）。 |
-| 下一待执行 | Round 2/7：完成 database-core 6.2（session 属性测试）并验收。 |
-| 验收快照 | `poetry run pytest tests/unit/test_db_engine_properties.py -q` -> `4 passed in 19.97s`。 |
+| 当前批次 | spec 循环（Round 2/7：database-core session 属性测试验收） |
+| 批次状态 | **完成**。database-core 6.2 已完成并通过。 |
+| 已完成项 | 新增 `tests/unit/test_db_session_properties.py`，覆盖事务不变式：成功路径 commit 一次、异常路径 rollback 一次。 |
+| 下一待执行 | Round 3/7：收口 database-core 任务 8（父任务勾选与验收同步）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_db_session_properties.py -q` -> `1 passed in 0.69s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
