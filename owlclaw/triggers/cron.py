@@ -732,8 +732,16 @@ class CronTriggerRegistry:
         )
         if not isinstance(result, dict):
             raise RuntimeError("agent_runtime.trigger_event must return a dictionary")
-        execution.agent_run_id = result.get("run_id")
-        execution.llm_calls = result.get("tool_calls_total", 0)
+        run_id = result.get("run_id")
+        execution.agent_run_id = run_id.strip() if isinstance(run_id, str) and run_id.strip() else None
+        raw_calls = result.get("tool_calls_total", 0)
+        if isinstance(raw_calls, bool):
+            execution.llm_calls = 0
+        else:
+            try:
+                execution.llm_calls = max(0, int(raw_calls))
+            except (TypeError, ValueError):
+                execution.llm_calls = 0
         # Cost tracking requires Langfuse / litellm usage callback (future)
 
     # ------------------------------------------------------------------

@@ -355,6 +355,30 @@ class TestExecuteAgent:
         with pytest.raises(RuntimeError, match="must return a dictionary"):
             await reg._execute_agent(cfg, execution, agent_rt)
 
+    async def test_agent_result_normalizes_run_id_and_tool_calls(self) -> None:
+        import uuid
+        from datetime import datetime, timezone
+
+        reg = _registry()
+        cfg = _config()
+        agent_rt = MagicMock()
+        agent_rt.trigger_event = AsyncMock(
+            return_value={
+                "run_id": "  run-xyz  ",
+                "tool_calls_total": "7",
+            }
+        )
+        execution = CronExecution(
+            execution_id=str(uuid.uuid4()),
+            event_name="test_job",
+            triggered_at=datetime.now(timezone.utc),
+            status=ExecutionStatus.RUNNING,
+            context={},
+        )
+        await reg._execute_agent(cfg, execution, agent_rt)
+        assert execution.agent_run_id == "run-xyz"
+        assert execution.llm_calls == 7
+
 
 class TestExecuteFallback:
     async def test_async_fallback_called(self) -> None:
