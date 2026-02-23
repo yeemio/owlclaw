@@ -55,27 +55,26 @@ def pg_container():
 
 
 @pytest.fixture(scope="module")
-def async_engine_and_store(pg_container):
-    """Run migrations, create async engine and PgVectorStore (module scope)."""
+def _migrated_async_url(pg_container):
+    """Run migrations once per module; return async URL for engine creation."""
     project_root = Path(__file__).resolve().parents[2]
     sync_url = pg_container.get_connection_url()
     _run_migrations(sync_url, project_root)
-    async_url = _sync_url_to_async(sync_url)
-    engine = create_async_engine(async_url, pool_pre_ping=True)
+    return _sync_url_to_async(sync_url)
+
+
+@pytest.fixture
+def store(_migrated_async_url):
+    """PgVectorStore instance per test (fresh engine/session, avoids event loop reuse issues)."""
+    engine = create_async_engine(_migrated_async_url, pool_pre_ping=True)
     factory = create_session_factory(engine)
     store = PgVectorStore(
         session_factory=factory,
         embedding_dimensions=1536,
         time_decay_half_life_hours=168.0,
     )
-    yield engine, store
-    # Container stop will close connections; explicit dispose optional
-
-
-@pytest.fixture
-def store(async_engine_and_store):
-    """PgVectorStore instance for tests."""
-    return async_engine_and_store[1]
+    yield store
+    engine.sync_engine.dispose()
 
 
 pytestmark = pytest.mark.integration

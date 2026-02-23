@@ -68,7 +68,7 @@
   - `test_memory_service.py`: Façade 的集成逻辑
   - 目标覆盖率：> 90%
 
-- [ ] **Task 9**: 集成测试（Phase 1）
+- [x] **Task 9**: 集成测试（Phase 1）
   - `test_pgvector_store.py`: 使用 testcontainers 启动 PostgreSQL + pgvector
   - 测试 save → search 完整流程
   - 测试时间衰减排序
@@ -84,7 +84,7 @@
   - 集成 Hatchet cron（每日凌晨运行）：由应用层 @app.cron(\"0 0 * * *\", focus=\"memory_maintenance\") 调用 run_maintenance_for_agents
   - 记录归档/清理事件到 Ledger（可选）
 
-- [ ] **Task 11**: 实现 CLI 命令
+- [x] **Task 11**: 实现 CLI 命令
   - `owlclaw memory list --agent <name>`: 列出记忆（分页、标签过滤）
   - `owlclaw memory prune --agent <name> --before <date> --tags <tags>`: 按条件清理
   - `owlclaw memory reset --agent <name> --confirm`: 重置所有记忆

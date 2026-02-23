@@ -34,7 +34,7 @@ def upgrade() -> None:
         ),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("embedding", Vector(1536), nullable=True),
-        sa.Column("tags", JSONB, nullable=False, server_default="'[]'::jsonb"),
+        sa.Column("tags", JSONB, nullable=False, server_default=sa.text("'[]'::jsonb")),
         sa.Column(
             "security_level",
             sa.String(20),
@@ -50,9 +50,9 @@ def upgrade() -> None:
         ),
         sa.Column("accessed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("access_count", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("archived", sa.Boolean(), nullable=False, server_default="false"),
-        comment="Agent long-term memory entries (vector + metadata).",
+        sa.Column("archived", sa.Boolean(), nullable=False, server_default=sa.text("false")),
     )
+    op.execute("COMMENT ON TABLE memory_entries IS 'Agent long-term memory entries (vector + metadata).'")
     op.create_check_constraint(
         "ck_memory_entries_content_length",
         "memory_entries",
