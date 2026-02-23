@@ -236,7 +236,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  rollback Roll back migrations (--target, --steps, or one step)")
         print("  backup   Create database backup (pg_dump)")
         print("  restore  Restore database from backup (psql/pg_restore)")
-        print("\n  owlclaw db init --help | owlclaw db backup --help | owlclaw db restore --help")
+        print("  check    Run database health checks")
+        print("\n  owlclaw db init --help | owlclaw db backup --help | owlclaw db check --help")
         sys.exit(0)
     if argv == ["db", "revision"]:
         print("Usage: owlclaw db revision [OPTIONS]")
@@ -298,6 +299,13 @@ def _print_help_and_exit(argv: list[str]) -> None:
     if argv == ["db", "status"]:
         print("Usage: owlclaw db status")
         print("\n  Show database connection and migration status.")
+        sys.exit(0)
+    if argv == ["db", "check"]:
+        print("Usage: owlclaw db check [OPTIONS]")
+        print("\n  Run database health checks (connection, migration, pgvector, pool, disk, slow queries).\n")
+        print("Options:")
+        print("  --database-url TEXT  Database URL (default: OWLCLAW_DATABASE_URL)")
+        print("  --help               Show this message and exit")
         sys.exit(0)
     if argv == ["skill"]:
         print("Usage: owlclaw skill [OPTIONS] COMMAND [ARGS]...")

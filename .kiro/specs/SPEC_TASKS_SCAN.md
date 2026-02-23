@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：security 注入向量测试补齐） |
-| 批次状态 | **完成**。security 输入净化测试扩展并与当前实现对齐。 |
-| 已完成项 | security Task 2.3.1/2.3.2：补齐至少 10 个已知 injection 攻击向量测试与自定义规则测试，更新 tasks 勾选并回填进度。 |
-| 下一待执行 | security 任务 2.2.1-2.2.3（Runtime 集成）与 2.3.3（角色隔离测试），其后推进 3.2.x（Governance 集成）。 |
-| 验收快照 | `poetry run pytest tests/unit/security -q` → 19 passed；`poetry run ruff check owlclaw/security tests/unit/security` 通过。 |
+| 当前批次 | spec 循环（本轮：cli-db Task 12，仅 cli-db） |
+| 批次状态 | **完成**。cli-db check 命令已实现并验收。 |
+| 已完成项 | cli-db Task 12.1/12.2/12.3：db_check.py（connection/migration/pgvector/pool/disk/slow queries、OK/WARN/ERROR、Overall HEALTHY/UNHEALTHY、exit 1 on ERROR）；db_app 注册 check。 |
+| 下一待执行 | **仅 cli-db**：Task 13（通用功能与属性测试）或 Task 14（集成测试与文档）或可选 12.4 单元测试。 |
+| 验收快照 | `pytest tests/unit/test_cli_db.py tests/unit/test_db.py` 23 passed；`owlclaw db check --help` / 无 URL 时 exit 2 验证通过。 |
 | 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
