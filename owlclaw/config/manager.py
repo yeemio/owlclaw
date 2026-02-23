@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import os
 from threading import Lock
 from typing import Any, Callable, ClassVar
+
+import yaml
 
 from owlclaw.config.loader import YAMLConfigLoader
 from owlclaw.config.models import OwlClawConfig
@@ -22,6 +25,33 @@ def _deep_merge(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]
             merged[key] = _deep_merge(merged[key], value)
         else:
             merged[key] = value
+    return merged
+
+
+def _build_nested_dict(path: list[str], value: Any) -> dict[str, Any]:
+    current: dict[str, Any] = value
+    for key in reversed(path):
+        current = {key: current}
+    return current
+
+
+def _collect_env_overrides(prefix: str = "OWLCLAW_") -> dict[str, Any]:
+    """Collect OWLCLAW_ env vars into nested dict overrides."""
+    merged: dict[str, Any] = {}
+    for key, raw_value in os.environ.items():
+        if not key.startswith(prefix):
+            continue
+        suffix = key[len(prefix) :]
+        if not suffix:
+            continue
+        path = [segment.strip().lower() for segment in suffix.split("__") if segment.strip()]
+        if not path:
+            continue
+        try:
+            parsed_value = yaml.safe_load(raw_value)
+        except yaml.YAMLError:
+            parsed_value = raw_value
+        merged = _deep_merge(merged, _build_nested_dict(path, parsed_value))
     return merged
 
 
@@ -52,10 +82,14 @@ class ConfigManager:
         config_path: str | None = None,
         overrides: dict[str, Any] | None = None,
     ) -> ConfigManager:
-        """Load configuration from defaults + YAML + runtime overrides."""
+        """Load config by precedence: defaults < YAML < env vars < runtime overrides."""
         manager = cls.instance()
+        defaults = OwlClawConfig.model_construct().model_dump(mode="python")
         yaml_data = YAMLConfigLoader.load_dict(config_path)
-        merged = _deep_merge(yaml_data, overrides or {})
+        env_data = _collect_env_overrides()
+        merged = _deep_merge(defaults, yaml_data)
+        merged = _deep_merge(merged, env_data)
+        merged = _deep_merge(merged, overrides or {})
         new_config = OwlClawConfig.model_validate(merged)
         with manager._lock:
             old = manager._config

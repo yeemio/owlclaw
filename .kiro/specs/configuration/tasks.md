@@ -23,7 +23,7 @@
   - yaml.safe_load + 错误处理（行号、列号）
   - 空文件 / 不存在文件的优雅降级
 
-- [ ] **Task 3**: 实现 `ConfigManager` 单例
+- [x] **Task 3**: 实现 `ConfigManager` 单例
   - `load()`: 合并 defaults → YAML → env vars → overrides
   - `get()`: 返回当前配置
   - `on_change()`: 注册变更监听器
