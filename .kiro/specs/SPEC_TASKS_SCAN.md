@@ -37,7 +37,7 @@
 - [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移 + 属性测试） → spec: database-core
 - [ ] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
 - [ ] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
-- [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule 已完成；remember/recall 待 Memory） → spec: agent-tools
+- [ ] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule、remember、recall 已实现） → spec: agent-tools
 - [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [x] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
 - [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
@@ -93,7 +93,7 @@
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
+| agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（66/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（agent-runtime Round 13：Checkpoint + Integration/E2E + Docs） |
-| 批次状态 | **完成**。agent-runtime Task 15~19 已实现并通过，spec 全部完成（105/105）。 |
-| 已完成项 | 修复 `InMemoryStore` 性能瓶颈（norm 预计算 + Top-K + 查询缓存）以通过 `test_memory_performance`；新增 `tests/integration/test_agent_runtime_integration.py`（Hatchet/litellm/vector/langfuse）与 `tests/integration/test_agent_runtime_e2e.py`（完整流程、Heartbeat、热重载、记忆、错误恢复）；补充 `docs/AGENT_RUNTIME_API.md`、`docs/AGENT_RUNTIME_USAGE.md`、`examples/agent_runtime_flow.py`。 |
-| 下一待执行 | 无（agent-runtime 已完成）。 |
-| 验收快照 | `poetry run pytest -q` -> `878 passed, 9 skipped in 82.46s`；`poetry run pytest ... --cov=owlclaw/agent/runtime --cov-report=term-missing -q` -> runtime 总覆盖率 `84%`。 |
+| 当前批次 | review 循环（agent-tools：remember/recall 实现与单测补齐） |
+| 批次状态 | **完成**。已补齐 BuiltInTools 记忆工具实现与对应单测，并回填 tasks 进度。 |
+| 已完成项 | `owlclaw/agent/tools.py` 新增 `remember/recall` schema 与执行逻辑（含参数校验、Memory 调用、Ledger 记录）；`tests/unit/agent/test_tools.py` 新增记忆工具成功/失败/无结果用例；`.kiro/specs/agent-tools/tasks.md` 勾选 Task 1.5、3.1、3.2、6.3 全部子项。 |
+| 下一待执行 | 继续审校 `agent-tools` 的错误处理统一化、集成测试与性能测试任务；并行推进 `triggers-cron` 剩余任务。 |
+| 验收快照 | `poetry run pytest tests/unit/agent/test_tools.py tests/unit/test_app.py -q` -> `70 passed`；`poetry run ruff check owlclaw/agent/tools.py tests/unit/agent/test_tools.py` 与 `poetry run mypy owlclaw/agent/tools.py tests/unit/agent/test_tools.py` 均通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
