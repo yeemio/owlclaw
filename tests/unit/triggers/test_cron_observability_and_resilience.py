@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -11,6 +12,7 @@ import pytest
 from owlclaw.triggers.cron import (
     CircuitBreaker,
     CronExecution,
+    CronLogger,
     CronMetrics,
     CronTriggerConfig,
     CronTriggerRegistry,
@@ -160,3 +162,28 @@ def test_health_check_reports_degraded_without_hatchet() -> None:
     assert status["total_triggers"] == 1
     assert status["enabled_triggers"] == 0
     assert status["disabled_triggers"] == 1
+
+
+def test_health_check_reports_unhealthy_without_any_trigger() -> None:
+    reg = CronTriggerRegistry(app=None)
+    status = reg.get_health_status()
+    assert status["status"] == "unhealthy"
+    assert status["total_triggers"] == 0
+
+
+def test_cron_logger_emits_structured_style_messages(caplog: pytest.LogCaptureFixture) -> None:
+    logger_helper = CronLogger()
+    cfg = _config(event_name="job", focus="ops")
+    with caplog.at_level(logging.INFO):
+        logger_helper.log_registration(cfg)
+        logger_helper.log_trigger("job", {"trigger_type": "cron"})
+        logger_helper.log_execution_start("job", "e-1", "agent")
+        logger_helper.log_execution_complete("job", "e-1", "success", 1.2)
+        logger_helper.log_governance_skip("job", "cooldown")
+
+    joined = " | ".join(record.message for record in caplog.records)
+    assert "cron_registration event_name=job" in joined
+    assert "cron_trigger event_name=job" in joined
+    assert "cron_execution_start event_name=job" in joined
+    assert "cron_execution_complete event_name=job" in joined
+    assert "cron_governance_skip event_name=job" in joined

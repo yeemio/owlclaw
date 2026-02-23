@@ -95,7 +95,7 @@
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（66/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（89/117） | cron 触发器 |
+| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（91/117） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（triggers-cron 治理/监控/重试 + 任务管理审计补齐） |
-| 批次状态 | **完成**。已补齐治理适配层、指标与健康检查、重试/熔断/通知基础类，并完成 pause/resume 的 Hatchet 联动与 Ledger 审计记录。 |
-| 已完成项 | `owlclaw/triggers/cron.py` 新增 `CronGovernance`、`CronMetrics`、`CronLogger`、`CronHealthCheck`、`RetryStrategy`、`CircuitBreaker`、`ErrorNotifier`，并将 `_check_governance` 委托到治理适配层、在执行路径接入指标/结构化日志/熔断器更新；`pause_trigger/resume_trigger` 新增 `pause_task/resume_task` 联动与 `cron_management` Ledger 记录；新增 `tests/unit/triggers/test_cron_observability_and_resilience.py`，并在 `tests/unit/triggers/test_cron_validation.py` 增加管理审计测试。 |
-| 下一待执行 | 继续推进 `triggers-cron` 的 7.4（熔断器持久化）、10.3（结构化日志验收）、11.3/11.4（持久化熔断器与多渠道通知）；并并行收口 `integrations-hatchet` 剩余真实环境项。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/cron.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_observability_and_resilience.py`、`poetry run mypy owlclaw/triggers/cron.py tests/unit/triggers/test_cron_validation.py`、`poetry run pytest tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_observability_and_resilience.py tests/unit/triggers/test_cron_execution.py -q` 均通过（99 passed）。 |
+| 当前批次 | review 循环（triggers-cron 结构化日志与健康检查分支补齐） |
+| 批次状态 | **完成**。已补齐结构化日志输出验收与健康检查 `unhealthy` 状态分支，监控章节形成可验收闭环。 |
+| 已完成项 | `owlclaw/triggers/cron.py` 的 `CronHealthCheck.check_health` 新增无触发器时 `unhealthy` 状态；`tests/unit/triggers/test_cron_observability_and_resilience.py` 新增 `CronLogger` 输出断言与 `unhealthy/degraded` 健康检查测试，监控与可观测性任务（10.x）收口。 |
+| 下一待执行 | 继续推进 `triggers-cron` 的 7.4（熔断器持久化）与 11.3/11.4（持久化熔断器、多渠道通知）；并并行收口 `integrations-hatchet` 剩余真实环境项。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/cron.py tests/unit/triggers/test_cron_observability_and_resilience.py`、`poetry run mypy owlclaw/triggers/cron.py tests/unit/triggers/test_cron_observability_and_resilience.py`、`poetry run pytest tests/unit/triggers/test_cron_observability_and_resilience.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_execution.py -q` 均通过（101 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -273,7 +273,7 @@
   - 验证执行历史被记录
   - 如有问题请询问用户
 
-- [ ] 10. 实现监控和可观测性
+- [x] 10. 实现监控和可观测性
   - [x] 10.1 使用 Prometheus 指标创建 CronMetrics 类
     - 定义带标签的 executions_total Counter
     - 定义 execution_duration_seconds Histogram
@@ -293,7 +293,7 @@
     - 创建用于延迟跟踪的 `record_trigger_delay` 方法
     - _需求: NFR-6_
   
-  - [ ] 10.3 创建用于结构化日志的 CronLogger
+  - [x] 10.3 创建用于结构化日志的 CronLogger
     - 实现触发器注册的 `log_registration`
     - 实现 cron 触发事件的 `log_trigger`
     - 实现执行开始的 `log_execution_start`

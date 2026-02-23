@@ -509,7 +509,12 @@ class CronHealthCheck:
         disabled = total - enabled
         hatchet_connected = self.registry._hatchet_client is not None
         open_breakers = self.registry._circuit_breaker.open_count()
-        status = "degraded" if (not hatchet_connected) or (open_breakers > 0) else "healthy"
+        if total == 0:
+            status = "unhealthy"
+        elif (not hatchet_connected) or (open_breakers > 0):
+            status = "degraded"
+        else:
+            status = "healthy"
         return {
             "status": status,
             "hatchet_connected": hatchet_connected,
