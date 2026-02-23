@@ -32,7 +32,7 @@ def _coerce_focus(value: Any) -> list[str]:
     if isinstance(value, str):
         v = value.strip()
         return [v] if v else []
-    if isinstance(value, list):
+    if isinstance(value, (list, tuple, set)):
         out: list[str] = []
         seen: set[str] = set()
         for item in value:

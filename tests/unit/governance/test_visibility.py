@@ -185,8 +185,10 @@ def test_capability_view_coerces_integer_confirmation_flag():
 def test_capability_view_coerces_focus_to_string_list():
     cap1 = CapabilityView("x", focus="inventory")
     cap2 = CapabilityView("y", focus=["a", " ", 1, "a", "b"])
+    cap3 = CapabilityView("z", focus=("x", "x", "y"))
     assert cap1.focus == ["inventory"]
     assert cap2.focus == ["a", "b"]
+    assert cap3.focus == ["x", "y"]
 
 
 def test_capability_view_coerces_risk_level():
