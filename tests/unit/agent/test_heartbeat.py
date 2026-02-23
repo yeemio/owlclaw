@@ -85,6 +85,13 @@ class TestHeartbeatCheckerNoEvents:
             "external_api",
         ]
 
+    def test_normalize_event_sources_supports_set_input(self) -> None:
+        checker = HeartbeatChecker(
+            agent_id="bot",
+            config={"event_sources": {"WEBHOOK", "queue", "unknown"}},
+        )
+        assert set(checker._event_sources) == {"webhook", "queue"}
+
 
 class TestHeartbeatCheckerWithEvents:
     """Test has-events scenario via subclass override."""
