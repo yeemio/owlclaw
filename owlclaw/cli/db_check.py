@@ -26,6 +26,22 @@ def _normalize_optional_str_option(value: object) -> str | None:
     return value
 
 
+def _normalize_bool_option(value: object, default: bool) -> bool:
+    if isinstance(value, OptionInfo):
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off", ""}:
+            return False
+    return default
+
+
 def _mask_url(url: str) -> str:
     """Hide password in URL."""
     if "://" not in url:
@@ -172,15 +188,20 @@ async def _check_slow_queries(engine: AsyncEngine) -> dict:
         return {"name": "Slow queries", "status": "OK", "message": "N/A (pg_stat_statements not enabled)"}
 
 
-async def _run_health_checks(engine: AsyncEngine) -> list[dict]:
+async def _run_health_checks(engine: AsyncEngine, verbose: bool = False) -> list[dict]:
     """Run all health checks and return list of {name, status, message}."""
     checks = []
-    checks.append(await _check_connection(engine))
-    checks.append(await _check_migration(engine))
-    checks.append(await _check_pgvector(engine))
-    checks.append(await _check_connection_pool(engine))
-    checks.append(await _check_disk_usage(engine))
-    checks.append(await _check_slow_queries(engine))
+    for name, check_fn in [
+        ("Connection", _check_connection),
+        ("Migration", _check_migration),
+        ("pgvector", _check_pgvector),
+        ("Connection pool", _check_connection_pool),
+        ("Disk usage", _check_disk_usage),
+        ("Slow queries", _check_slow_queries),
+    ]:
+        if verbose:
+            typer.echo(f"  Checking {name}...")
+        checks.append(await check_fn(engine))
     return checks
 
 
@@ -220,9 +241,16 @@ def check_command(
         "--database-url",
         help="Database URL (default: OWLCLAW_DATABASE_URL).",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed progress.",
+    ),
 ) -> None:
     """Run database health checks (connection, migration, pgvector, pool, disk, slow queries)."""
     database_url = _normalize_optional_str_option(database_url)
+    verbose = _normalize_bool_option(verbose, False)
     url = (database_url or os.environ.get("OWLCLAW_DATABASE_URL") or "").strip()
     if not url:
         typer.echo("Error: Set OWLCLAW_DATABASE_URL or pass --database-url.", err=True)
@@ -233,7 +261,7 @@ def check_command(
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(2) from e
     try:
-        checks = asyncio.run(_run_health_checks(engine))
+        checks = asyncio.run(_run_health_checks(engine, verbose=verbose))
         _print_health_report(checks, _mask_url(url))
         if any(c["status"] == "ERROR" for c in checks):
             raise typer.Exit(1)

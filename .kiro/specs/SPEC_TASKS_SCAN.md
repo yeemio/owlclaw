@@ -143,12 +143,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：security Runtime 集成与角色隔离测试） |
-| 批次状态 | **完成**。InputSanitizer 已集成到 Runtime 消息构建链路，system/user 角色分离通过测试验证。 |
-| 已完成项 | security Task 2.2.1-2.2.3、2.3.3：新增 `_build_messages()` 强制角色隔离；`_build_user_message()` 接入净化与审计；新增 runtime 单测覆盖角色隔离与审计事件。 |
-| 下一待执行 | security 任务 3.2.x（Governance 集成）与 3.3.x（RiskGate 决策测试收口），随后推进 4.2.x（MCP/remember 集成）。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_runtime.py -k "focus_used_in_user_message or trigger_event_normalizes_blank_focus or user_payload_is_sanitized_and_role_isolated or sanitization_writes_security_audit_event" -q` → 4 passed；`poetry run pytest tests/unit/security -q` → 19 passed；`poetry run ruff check owlclaw/agent/runtime/runtime.py owlclaw/security/rules.py tests/unit/agent/test_runtime.py tests/unit/security` 通过。 |
-| 阻塞项 | 与其他 agent 的实现文件存在并行修改风险，本轮仅处理 `.kiro/specs/**`。 |
+| 当前批次 | spec 循环（本轮：cli-db Task 13.3，仅 cli-db） |
+| 批次状态 | **完成**。通用用户体验功能已实现。 |
+| 已完成项 | cli-db Task 13.3：progress_after(2s) 用于 backup/restore；main() 捕获 KeyboardInterrupt 并 exit 130；backup/restore/check 支持 --verbose/-v。 |
+| 下一待执行 | **仅 cli-db**：Task 14（集成测试与文档）或 Task 15（Final Checkpoint）或可选 13.1/13.2 属性测试。 |
+| 验收快照 | `pytest tests/unit/test_cli_db.py tests/unit/test_db.py` 23 passed。 |
+| 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

@@ -305,6 +305,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("\n  Run database health checks (connection, migration, pgvector, pool, disk, slow queries).\n")
         print("Options:")
         print("  --database-url TEXT  Database URL (default: OWLCLAW_DATABASE_URL)")
+        print("  -v, --verbose        Show detailed progress")
         print("  --help               Show this message and exit")
         sys.exit(0)
     if argv == ["skill"]:
@@ -425,6 +426,7 @@ def _dispatch_db_backup(argv: list[str]) -> bool:
     parser.add_argument("--schema-only", action="store_true", help="Schema only")
     parser.add_argument("--data-only", action="store_true", help="Data only")
     parser.add_argument("--database-url", dest="database_url", default="", help="Database URL")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed progress")
     ns = parser.parse_args(argv[2:])
     from owlclaw.cli.db_backup import backup_command
     backup_command(
@@ -433,6 +435,7 @@ def _dispatch_db_backup(argv: list[str]) -> bool:
         schema_only=ns.schema_only,
         data_only=ns.data_only,
         database_url=ns.database_url or "",
+        verbose=ns.verbose,
     )
     return True
 
@@ -448,6 +451,7 @@ def _dispatch_db_restore(argv: list[str]) -> bool:
     parser.add_argument("--clean", action="store_true", help="Drop objects before restore (pg_restore)")
     parser.add_argument("--database-url", dest="database_url", default="", help="Database URL")
     parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed progress")
     ns = parser.parse_args(argv[2:])
     from owlclaw.cli.db_restore import restore_command
     restore_command(
@@ -455,6 +459,7 @@ def _dispatch_db_restore(argv: list[str]) -> bool:
         clean=ns.clean,
         database_url=ns.database_url or "",
         yes=ns.yes,
+        verbose=ns.verbose,
     )
     return True
 
@@ -464,6 +469,14 @@ def main() -> None:
     if "--help" in sys.argv or "-h" in sys.argv:
         argv = [a for a in sys.argv[1:] if a not in ("--help", "-h")]
         _print_help_and_exit(argv)
+    try:
+        _main_impl()
+    except KeyboardInterrupt:
+        sys.exit(130)
+
+
+def _main_impl() -> None:
+    """Inner main; KeyboardInterrupt is handled in main()."""
     try:
         if _dispatch_db_revision(sys.argv[1:]):
             return

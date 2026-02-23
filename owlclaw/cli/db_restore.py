@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 import typer
 from typer.models import OptionInfo
 from sqlalchemy import text
+
+from owlclaw.cli.progress import progress_after
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 
 
@@ -177,6 +179,12 @@ def restore_command(
         "-y",
         help="Skip confirmation prompt.",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed progress.",
+    ),
 ) -> None:
     """Restore database from a backup file (psql or pg_restore)."""
     input_path = _normalize_optional_str_option(input_path).strip()
@@ -184,6 +192,7 @@ def restore_command(
     database_url = _normalize_optional_str_option(database_url)
     database_url = (database_url or os.environ.get("OWLCLAW_DATABASE_URL") or "").strip()
     yes = _normalize_bool_option(yes, False)
+    verbose = _normalize_bool_option(verbose, False)
 
     if not input_path:
         typer.echo("Error: --input is required.", err=True)
@@ -228,11 +237,14 @@ def restore_command(
             typer.echo("Aborted.")
             return
 
+    if verbose:
+        typer.echo(f"Detected format: {backup_format}. Restoring...")
     try:
-        if backup_format == "sql":
-            _restore_from_sql(conn_str, path, clean, env)
-        else:
-            _restore_from_custom(conn_str, path, clean, env)
+        with progress_after(2.0, "Restoring..."):
+            if backup_format == "sql":
+                _restore_from_sql(conn_str, path, clean, env)
+            else:
+                _restore_from_custom(conn_str, path, clean, env)
     except subprocess.TimeoutExpired:
         typer.echo("Error: restore timed out.", err=True)
         typer.echo("Consider restoring from a backup or re-running migrations.", err=True)

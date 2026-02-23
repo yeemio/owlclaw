@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 import typer
 from typer.models import OptionInfo
 
+from owlclaw.cli.progress import progress_after
+
 
 def _normalize_optional_str_option(value: object) -> str:
     if isinstance(value, OptionInfo) or value is None:
@@ -127,12 +129,19 @@ def backup_command(
         "--database-url",
         help="Database URL (default: OWLCLAW_DATABASE_URL).",
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed progress.",
+    ),
 ) -> None:
     """Create a database backup using pg_dump."""
     output = _normalize_optional_str_option(output).strip()
     format_name = (_normalize_optional_str_option(format_name) or "plain").strip().lower()
     schema_only = _normalize_bool_option(schema_only, False)
     data_only = _normalize_bool_option(data_only, False)
+    verbose = _normalize_bool_option(verbose, False)
     database_url = _normalize_optional_str_option(database_url)
     database_url = (database_url or os.environ.get("OWLCLAW_DATABASE_URL") or "").strip()
 
@@ -185,14 +194,17 @@ def backup_command(
     )
     env = _build_pg_dump_env(_connection_string_for_pg_dump(database_url))
 
+    if verbose:
+        typer.echo("Running pg_dump...")
     try:
-        result = subprocess.run(
-            args,
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=3600,
-        )
+        with progress_after(2.0, "Backing up..."):
+            result = subprocess.run(
+                args,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=3600,
+            )
     except subprocess.TimeoutExpired:
         if output_path.exists():
             try:
