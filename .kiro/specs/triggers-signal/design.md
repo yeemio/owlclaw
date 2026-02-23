@@ -11,6 +11,13 @@
 
 Signal 触发器提供人工介入通道，支持通过 CLI / API / MCP 三种入口对运行中的 Agent 执行 pause、resume、trigger、instruct 四种操作。所有操作经过权限验证并记录到 Ledger。
 
+## 技术栈统一与架构对齐
+
+1. 核心实现统一 Python；CLI/API/MCP 只是入口适配层，不进入核心状态机逻辑。
+2. Signal 分发与 Agent 执行边界清晰：分发在 `owlclaw.triggers.signal`，执行统一走 `AgentRuntime`。
+3. 审计统一走 `owlclaw.governance.ledger`，禁止自建平行审计通道。
+4. 指令注入通过 runtime 的标准上下文注入点完成，禁止拼接/污染 system prompt 原始身份段。
+
 ## 架构例外声明（实现阶段需固化）
 
 本 spec 当前未引入业务层面的数据库铁律例外。实现阶段遵循以下约束：
@@ -118,13 +125,25 @@ class SignalRouter:
         result = await handler.handle(signal)
 
         # 3. 记录到 Ledger
-        self.ledger.record(
-            event_type="signal",
-            signal_type=signal.type.value,
-            source=signal.source.value,
-            operator=signal.operator,
+        await self.ledger.record_execution(
+            tenant_id=signal.tenant_id,
             agent_id=signal.agent_id,
-            result=result.status,
+            run_id=f"signal-{signal.id}",
+            capability_name=f"signal.{signal.type.value}",
+            task_type="signal",
+            input_params={
+                "source": signal.source.value,
+                "operator": signal.operator,
+            },
+            output_result={"status": result.status},
+            decision_reasoning="manual_signal_operation",
+            execution_time_ms=0,
+            llm_model="",
+            llm_tokens_input=0,
+            llm_tokens_output=0,
+            estimated_cost=Decimal("0"),
+            status="success",
+            error_message=None,
         )
         return result
 ```
@@ -170,16 +189,16 @@ class TriggerHandler:
     async def handle(self, signal: Signal) -> SignalResult:
         # 强制触发不受 paused 状态影响
         # 但仍需经过治理检查（预算/限流）
-        if not await self.governance.check("signal_manual"):
+        if not await self.governance_gate.allow_trigger("signal_manual"):
             return SignalResult(status="governance_blocked")
 
-        run_id = await self.agent_runner.trigger(
+        run_result = await self.agent_runtime.trigger_event(
             event_name="signal_manual",
-            trigger_type="signal_manual",
             payload={"message": signal.message},
             focus=signal.focus,
+            tenant_id=signal.tenant_id,
         )
-        return SignalResult(status="triggered", run_id=run_id)
+        return SignalResult(status="triggered", run_id=run_result["run_id"])
 ```
 
 ### 6. InstructHandler
@@ -267,7 +286,7 @@ CREATE TABLE pending_instructions (
 
 CREATE INDEX idx_instructions_pending
     ON pending_instructions (tenant_id, agent_id, expires_at)
-    WHERE NOT consumed AND expires_at > now();
+    WHERE consumed = FALSE;
 
 CREATE INDEX idx_instructions_tenant_created
     ON pending_instructions (tenant_id, created_at DESC);
@@ -310,6 +329,12 @@ triggers:
     require_auth_for_cli: false     # CLI 默认信任本地操作
     require_auth_for_api: true
 ```
+
+## 实施约束（禁止项）
+
+1. 禁止通过直接 SQL 更新 `paused` 绕过 `AgentStateManager`。
+2. 禁止将 operator 指令直接写入 Identity（`SOUL.md/IDENTITY.md`）；仅作为临时上下文注入并可审计。
+3. 所有状态持久化表必须满足数据库五条铁律（`tenant_id`、`TIMESTAMPTZ`、Alembic、tenant 前缀索引）。
 
 ## 测试策略
 

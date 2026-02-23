@@ -12,6 +12,15 @@
 
 API 触发器通过内置轻量 HTTP 服务暴露 REST 端点，外部系统通过 HTTP 请求触发 Agent Run。支持同步（等待 Agent 决策结果）和异步（立即返回 run_id）两种响应模式。
 
+## 技术栈统一与架构对齐
+
+为避免核心链路双栈维护和重复造轮子，API 触发器遵循以下规则：
+
+1. 核心实现统一 Python（与 `owlclaw` 主栈一致），不引入 TypeScript/Node 核心实现。
+2. 触发器仅负责接入与上下文组装，Agent 执行必须通过 `owlclaw.agent.runtime.AgentRuntime`。
+3. 治理、审计、调度分别复用现有组件：`owlclaw.governance.visibility` / `owlclaw.governance.ledger` / `owlclaw.integrations.hatchet`。
+4. 任何代码示例仅表达契约，不得绕过上述真实组件边界。
+
 ## 架构例外声明（实现阶段需固化）
 
 本 spec 当前未引入业务层面的数据库铁律例外。实现阶段遵循以下约束：
@@ -79,7 +88,7 @@ class APITriggerConfig(BaseModel):
     sync_timeout_seconds: int = 60      # 同步模式超时
     focus: str | None = None
     auth_required: bool = True
-    fallback: Callable | None = None    # 装饰器风格的 fallback handler
+    fallback: Callable | None = None    # 可选：迁移期 fallback（migration_weight < 1.0）
 ```
 
 ### 2. APITriggerServer（HTTP 服务）
@@ -118,10 +127,13 @@ class APITriggerServer:
             # 2. 解析 + sanitize 请求体
             body = await self._parse_body(request)
             if self.sanitizer:
-                body = self.sanitizer.sanitize(body)
+                sanitize_result = self.sanitizer.sanitize(json.dumps(body, ensure_ascii=False), source="api")
+                body = self._parse_sanitized_payload(sanitize_result.sanitized)
+                if sanitize_result.changed:
+                    self._record_security_audit("sanitization", sanitize_result)
 
             # 3. 治理检查
-            if not await self.governance.check(config.event_name):
+            if not await self.governance_gate.allow_request(config.event_name):
                 return self._rate_limited_response(config)
 
             # 4. 分发
@@ -155,29 +167,25 @@ class BearerTokenAuthProvider(AuthProvider):
 class APITriggerServer:
     async def _handle_sync(self, config, body, request):
         """同步模式：等待 Agent Run 完成"""
-        run_id = await self.agent_runner.trigger(
+        result = await self.agent_runtime.trigger_event(
             event_name=config.event_name,
-            trigger_type="api_call",
-            payload=body,
             focus=config.focus,
+            payload=body,
+            tenant_id=self._tenant_id_from_request(request),
         )
         try:
-            result = await asyncio.wait_for(
-                self.agent_runner.wait_for_result(run_id),
-                timeout=config.sync_timeout_seconds,
-            )
-            return JSONResponse({"run_id": str(run_id), "result": result})
+            return JSONResponse(result)
         except asyncio.TimeoutError:
             return JSONResponse(
-                {"run_id": str(run_id), "status": "timeout"},
+                {"status": "timeout"},
                 status_code=408,
             )
 
     async def _handle_async(self, config, body, request):
         """异步模式：立即返回 run_id"""
-        run_id = await self.agent_runner.trigger(
+        run_id = await self._dispatch_async_run(
             event_name=config.event_name,
-            trigger_type="api_call",
+            tenant_id=self._tenant_id_from_request(request),
             payload=body,
             focus=config.focus,
         )
@@ -264,6 +272,13 @@ triggers:
 | 用途 | 主动查询/分析请求 | 被动接收事件通知 |
 
 两者共享 HTTP 服务基础设施（Starlette），但路由和处理逻辑独立。
+
+## 实施约束（禁止项）
+
+1. 禁止在 `triggers/api` 直接调用第三方 LLM SDK，必须走 `owlclaw.integrations.llm`。
+2. 禁止在 `triggers/api` 直接 import `hatchet_sdk`，必须走 `owlclaw.integrations.hatchet`。
+3. 禁止绕过 `Ledger` 写自定义审计存储。
+4. 任何新增持久化表必须满足：`tenant_id`、`TIMESTAMPTZ`、tenant 前缀索引、Alembic 迁移。
 
 ## 测试策略
 

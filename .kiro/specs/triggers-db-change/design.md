@@ -12,6 +12,13 @@
 
 数据库变更触发器通过 PostgreSQL NOTIFY/LISTEN 机制监听数据变更事件，经过事件聚合（debounce/batch）后触发 Agent Run。采用适配器模式预留 CDC 扩展接口。
 
+## 技术栈统一与架构对齐
+
+1. 核心实现统一 Python，不引入 TypeScript/Node 双栈实现。
+2. `db_change` 只负责事件接入与聚合，实际执行统一调用 `AgentRuntime.trigger_event(...)`。
+3. 对外部系统的调用边界保持隔离：调度走 `owlclaw.integrations.hatchet`，治理/审计走 `owlclaw.governance.*`。
+4. CDC 只作为适配层扩展点，核心触发器层保持供应商无关。
+
 ## 架构例外声明（实现阶段需固化）
 
 本 spec 当前未引入业务层面的数据库铁律例外。实现阶段遵循以下约束：
@@ -72,7 +79,7 @@ from dataclasses import dataclass
 class DBChangeEvent:
     channel: str
     payload: dict
-    timestamp: datetime
+    timestamp: datetime  # timezone-aware UTC
     source: str  # "notify" | "cdc"
 
 class DBChangeAdapter(ABC):
@@ -108,7 +115,7 @@ class PostgresNotifyAdapter(DBChangeAdapter):
         event = DBChangeEvent(
             channel=channel,
             payload=json.loads(payload) if payload else {},
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             source="notify",
         )
         for cb in self._callbacks:
@@ -195,21 +202,36 @@ class DBChangeTriggerManager:
         self._triggers[config.channel] = (config, aggregator)
 
     async def _on_aggregated(self, config: DBChangeTriggerConfig, events: list[DBChangeEvent]):
-        if not await self.governance.check(config.event_name):
-            self.ledger.record(event_name=config.event_name, status="GOVERNANCE_BLOCKED")
+        if not await self.governance_gate.allow_trigger(config.event_name):
+            await self.ledger.record_execution(
+                tenant_id=config.tenant_id,
+                agent_id=config.agent_id,
+                run_id="db-change-blocked",
+                capability_name="db_change_trigger",
+                task_type="trigger",
+                input_params={"channel": config.channel, "event_count": len(events)},
+                output_result=None,
+                decision_reasoning="governance_blocked",
+                execution_time_ms=0,
+                llm_model="",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="blocked",
+                error_message=None,
+            )
             return
 
-        await self.agent_runner.trigger(
+        await self.agent_runtime.trigger_event(
             event_name=config.event_name,
-            trigger_type="db_change",
             payload={
                 "channel": config.channel,
                 "events": [e.payload for e in events],
                 "event_count": len(events),
             },
             focus=config.focus,
+            tenant_id=config.tenant_id,
         )
-        self.ledger.record(event_name=config.event_name, status="TRIGGERED", event_count=len(events))
 ```
 
 ### 5. API 集成（装饰器 + 函数调用双模式）
@@ -279,6 +301,12 @@ triggers:
     default_debounce_seconds: 5
     default_batch_size: null  # null = 不批量
 ```
+
+## 实施约束（禁止项）
+
+1. 禁止在触发器核心层直接依赖 Debezium/MySQL SDK；只能通过 `DBChangeAdapter` 扩展。
+2. 禁止直接写第三方表保存触发审计；统一写入 `Ledger`。
+3. 新增触发表（若需要持久化）必须遵循数据库五条铁律：`tenant_id`、`UUID` 主键、`TIMESTAMPTZ`、tenant 前缀索引、Alembic。
 
 ## 测试策略
 
