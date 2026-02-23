@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：agent-runtime Round 4 长期记忆与归档） |
-| 批次状态 | **完成**。已吸收并验收 agent-runtime Task 3.4-3.10（长期记忆写入/检索/归档 + 测试）。 |
-| 已完成项 | 扩展 `owlclaw/agent/runtime/memory.py`：长期记忆写入、召回搜索、时间衰减、`MEMORY.md` 大小限制与自动归档；补齐 `tests/unit/agent/test_runtime_memory.py` 属性测试。 |
-| 下一待执行 | 继续审校剩余未合并提交，并对 scan/tasks 做一致性校准。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py -q` -> `106 passed in 39.45s`。 |
+| 当前批次 | review 循环（本轮：存量未审校盘点 + 定向回归） |
+| 批次状态 | **完成**。已完成高风险存量模块回归并修复 1 个 Python 版本兼容缺陷。 |
+| 已完成项 | 盘点并校准 scan/tasks 一致性；执行 governance/triggers/hatchet/agent-runtime/agent-tools 定向回归（`356 passed`）；修复 `owlclaw/agent/runtime/memory.py` 的 `datetime.UTC`（3.11+）兼容性问题为 `timezone.utc`。 |
+| 下一待执行 | 处理剩余静态审校缺口：`governance/visibility.py` 协程类型、`governance/constraints/time.py` 与 `rate_limit.py` 类型收敛、`capabilities/skills.py` 返回类型、`config/models.py` `no-redef`，以及 `yaml` stubs 方案。 |
+| 验收快照 | `poetry run pytest tests/unit/governance tests/unit/triggers tests/unit/test_hatchet.py tests/unit/test_hatchet_perf.py tests/unit/test_capabilities_acceptance.py tests/unit/agent/test_tools.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py -q` -> `356 passed in 52.11s`；`poetry run pytest tests/unit/agent/test_runtime_memory.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py -q` -> `78 passed in 34.69s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

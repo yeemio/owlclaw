@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -76,7 +76,7 @@ class MemorySystem:
         if not normalized_content:
             raise ValueError("content must be a non-empty string")
         normalized_tags = self._normalize_tags(tags)
-        created_at = datetime.now(UTC)
+        created_at = datetime.now(timezone.utc)
         embedding = self._embed(normalized_content)
         entry = _LongTermEntry(
             content=normalized_content,
@@ -109,7 +109,7 @@ class MemorySystem:
         tag_filter = set(self._normalize_tags(tags))
         query_embedding = self._embed(normalized_query)
         query_tokens = {token for token in normalized_query.lower().split() if token}
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         scored: list[tuple[float, _LongTermEntry]] = []
         for entry in self._long_term_entries:
             if tag_filter and not (set(entry.tags) & tag_filter):
@@ -227,7 +227,9 @@ class MemorySystem:
         size = self.memory_file.stat().st_size
         if size <= self.memory_file_size_limit_bytes:
             return
-        archive_name = f"{self.memory_file.stem}.{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}.archive.md"
+        archive_name = (
+            f"{self.memory_file.stem}.{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.archive.md"
+        )
         archive_path = self.memory_file.with_name(archive_name)
         self.memory_file.replace(archive_path)
         self.memory_file.write_text("# MEMORY (rotated)\n", encoding="utf-8")
