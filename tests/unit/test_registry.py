@@ -355,3 +355,21 @@ def test_get_capability_metadata_trims_name_and_handles_blank(tmp_path):
 
     assert reg.get_capability_metadata("  x  ") is not None
     assert reg.get_capability_metadata("   ") is None
+
+
+def test_register_handler_tolerates_skill_lookup_failure(tmp_path):
+    (tmp_path / "x").mkdir()
+    (tmp_path / "x" / "SKILL.md").write_text(
+        "---\nname: x\ndescription: Skill x\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    reg = CapabilityRegistry(loader)
+
+    def _boom(name):  # type: ignore[no-untyped-def]
+        raise RuntimeError("lookup failure")
+
+    reg.skills_loader.get_skill = _boom  # type: ignore[method-assign]
+    reg.register_handler("x", lambda: None)
+    assert "x" in reg.handlers

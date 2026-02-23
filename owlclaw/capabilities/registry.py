@@ -72,7 +72,15 @@ class CapabilityRegistry:
         skill_name = self._normalize_name(skill_name, "skill_name")
 
         # Validate Skill exists (warning only, not blocking)
-        skill = self.skills_loader.get_skill(skill_name)
+        try:
+            skill = self.skills_loader.get_skill(skill_name)
+        except Exception as e:
+            logger.warning(
+                "Skill metadata lookup failed for '%s': %s",
+                skill_name,
+                e,
+            )
+            skill = None
         if not skill:
             logger.warning(
                 "Registering handler for non-existent Skill '%s'", skill_name
