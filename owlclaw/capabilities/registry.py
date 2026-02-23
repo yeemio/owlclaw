@@ -40,6 +40,8 @@ class CapabilityRegistry:
 
     @staticmethod
     def _normalize_name(value: str, field: str) -> str:
+        if not isinstance(value, str):
+            raise ValueError(f"{field} must be a non-empty string")
         normalized = value.strip()
         if not normalized:
             raise ValueError(f"{field} must be a non-empty string")

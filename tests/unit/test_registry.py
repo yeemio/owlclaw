@@ -68,6 +68,14 @@ def test_register_handler_trims_skill_name(registry):
     assert "entry-monitor" in registry.handlers
 
 
+def test_register_handler_rejects_non_string_skill_name(registry):
+    def my_handler():
+        return {}
+
+    with pytest.raises(ValueError, match="skill_name must be a non-empty string"):
+        registry.register_handler(None, my_handler)  # type: ignore[arg-type]
+
+
 def test_register_handler_callable_object_metadata_name(registry):
     class CallableHandler:
         def __call__(self, session):
@@ -113,6 +121,12 @@ async def test_invoke_handler_not_found_raises(registry):
 async def test_invoke_handler_blank_name_raises(registry):
     with pytest.raises(ValueError, match="skill_name must be a non-empty string"):
         await registry.invoke_handler("   ")
+
+
+@pytest.mark.asyncio
+async def test_invoke_handler_non_string_name_raises(registry):
+    with pytest.raises(ValueError, match="skill_name must be a non-empty string"):
+        await registry.invoke_handler(None)  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio
@@ -193,6 +207,14 @@ def test_register_state_rejects_blank_name(registry):
         registry.register_state("   ", provider)
 
 
+def test_register_state_rejects_non_string_name(registry):
+    def provider():
+        return {}
+
+    with pytest.raises(ValueError, match="state_name must be a non-empty string"):
+        registry.register_state(123, provider)  # type: ignore[arg-type]
+
+
 @pytest.mark.asyncio
 async def test_get_state_success_sync(registry):
     """get_state() returns dict from sync provider."""
@@ -226,6 +248,12 @@ async def test_get_state_not_found_raises(registry):
 async def test_get_state_blank_name_raises(registry):
     with pytest.raises(ValueError, match="state_name must be a non-empty string"):
         await registry.get_state("   ")
+
+
+@pytest.mark.asyncio
+async def test_get_state_non_string_name_raises(registry):
+    with pytest.raises(ValueError, match="state_name must be a non-empty string"):
+        await registry.get_state(None)  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio
