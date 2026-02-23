@@ -92,13 +92,13 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（22/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（138/147） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
-| **security** | `.kiro/specs/security/` | 🟡 三层齐全，进行中（32/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
+| **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | 🟡 三层齐全，进行中（3/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | review 循环（本轮：补审历史遗漏 + configuration 优先级修复） |
-| 批次状态 | **完成**。已吸收 `codex-work` 剩余提交并完成回归；`codex-gpt-work` 的 `29a8c02` 审校结论为 **FIX_NEEDED**（暂不合并）。 |
-| 已完成项 | 合并并收口 `database-core`/`cli-db`（30/30, 53/53）；修复 `ConfigManager.load()` 为 defaults < yaml < env < overrides；新增 `tests/unit/test_config_manager.py`。 |
-| 下一待执行 | 等待 `codex-gpt-work` 将 `29a8c02` 拆分为可审粒度后，重新进入合并流程。 |
-| 验收快照 | `python -m pytest tests/unit/test_config_manager.py tests/unit/test_config_loader.py tests/unit/test_config_models.py tests/unit/test_cli_db_backup.py tests/unit/test_cli_db_restore.py tests/unit/test_cli_db_check.py tests/unit/test_cli_db_properties.py tests/integration/test_cli_db_workflows.py -q` -> `30 passed in 5.12s`。 |
+| 当前批次 | review 循环（本轮：安全审计补强 + agent-runtime 属性测试补审） |
+| 批次状态 | **完成**。已吸收并修正 `codex-work` 的 identity 属性测试增量；已拆分吸收 `codex-gpt-work` 中可独立验证的 security 审计增强。 |
+| 已完成项 | `DataMasker`/`RiskGate` 增加审计事件写入与单测；`agent-runtime` Task 2.3/2.4/2.6 属性测试落地并修复边界断言。 |
+| 下一待执行 | 继续审校 `codex-gpt-work` 的 `256b295`（configuration/CLI 工作流）并按可验证粒度拆分吸收。 |
+| 验收快照 | `poetry run pytest tests/unit/security/test_data_masker.py tests/unit/security/test_risk_gate.py tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py -q` -> `30 passed in 6.81s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
