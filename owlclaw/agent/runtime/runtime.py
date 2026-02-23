@@ -15,6 +15,7 @@ This MVP implementation omits:
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 import importlib
 import inspect
 import json
@@ -23,6 +24,7 @@ import math
 import os
 import time
 from decimal import Decimal
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from owlclaw.agent.runtime.config import (
@@ -146,6 +148,16 @@ class AgentRuntime:
         self._heartbeat_checker: HeartbeatChecker | None = None
         self._langfuse_init_error: str | None = None
         self._langfuse = self._init_langfuse_client()
+        self._tool_call_timestamps: deque[float] = deque()
+        self._skills_context_cache: dict[tuple[str | None, tuple[str, ...]], str] = {}
+        self._visible_tools_cache: dict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = {}
+        self._perf_metrics: dict[str, float] = {
+            "llm_calls": 0.0,
+            "tool_calls": 0.0,
+            "skills_cache_hits": 0.0,
+            "tools_cache_hits": 0.0,
+            "llm_time_ms_total": 0.0,
+        }
         self.is_initialized = False
 
     def _init_langfuse_client(self) -> Any | None:
@@ -323,6 +335,7 @@ class AgentRuntime:
 
     def load_config_file(self, path: str) -> dict[str, Any]:
         """Load runtime config from YAML and apply it."""
+        self._validate_path_within_app_dir(path)
         loaded = load_runtime_config(path)
         self.config = merge_runtime_config(self.config, loaded)
         self._config_path = path
@@ -334,6 +347,19 @@ class AgentRuntime:
         if not self._config_path:
             raise RuntimeError("config path is not set")
         return self.load_config_file(self._config_path)
+
+    def get_performance_metrics(self) -> dict[str, float]:
+        """Get in-memory runtime performance counters."""
+        return dict(self._perf_metrics)
+
+    def _validate_path_within_app_dir(self, path: str | Path) -> Path:
+        candidate = Path(path).expanduser().resolve()
+        app_root = Path(self.app_dir).resolve()
+        if candidate == app_root:
+            return candidate
+        if app_root not in candidate.parents:
+            raise ValueError("path must stay within app_dir")
+        return candidate
 
     # ------------------------------------------------------------------
     # Public trigger entry point
@@ -560,6 +586,8 @@ class AgentRuntime:
                     timeout=llm_timeout,
                 )
                 llm_elapsed_ms = (time.perf_counter_ns() - llm_started_ns) // 1_000_000
+                self._perf_metrics["llm_calls"] += 1
+                self._perf_metrics["llm_time_ms_total"] += float(llm_elapsed_ms)
                 await self._record_llm_usage(
                     context=context,
                     model=model_used,
@@ -841,6 +869,7 @@ class AgentRuntime:
         tool_name = getattr(function, "name", None)
         if not isinstance(tool_name, str) or not tool_name.strip():
             return {"error": "Invalid tool call: missing function name"}
+        tool_name = tool_name.strip()
         invalid_arguments = False
         invalid_reason = ""
         try:
@@ -865,6 +894,24 @@ class AgentRuntime:
                 "error": f"Invalid arguments for tool '{tool_name}': {invalid_reason}",
             }
 
+        permission_error = self._enforce_tool_permissions(tool_name)
+        if permission_error is not None:
+            self._security_audit.record(
+                event_type="tool_permission_denied",
+                source="runtime",
+                details={"tool_name": tool_name, "run_id": context.run_id, "reason": permission_error},
+            )
+            return {"error": permission_error}
+
+        rate_limit_error = self._enforce_rate_limit(tool_name)
+        if rate_limit_error is not None:
+            self._security_audit.record(
+                event_type="tool_rate_limited",
+                source="runtime",
+                details={"tool_name": tool_name, "run_id": context.run_id, "reason": rate_limit_error},
+            )
+            return {"error": rate_limit_error}
+
         if self.builtin_tools is not None and self.builtin_tools.is_builtin(tool_name):
             from owlclaw.agent.tools import BuiltInToolsContext
 
@@ -883,6 +930,7 @@ class AgentRuntime:
             return {"error": f"No capability registry configured for tool '{tool_name}'"}
 
         invoke_arguments = self._normalize_capability_arguments(arguments, context)
+        self._perf_metrics["tool_calls"] += 1
         observation = self._observe_tool(
             trace,
             "tool_execution",
@@ -957,6 +1005,45 @@ class AgentRuntime:
                     logger.exception("Ledger record_execution failed: %s", ledger_exc)
             self._finish_observation(observation, status="error", output={"error": str(exc)})
             return {"error": str(exc)}
+
+    def _enforce_tool_permissions(self, tool_name: str) -> str | None:
+        security = self.config.get("security")
+        if not isinstance(security, dict):
+            return None
+        allow = security.get("allow_tools")
+        deny = security.get("deny_tools")
+        normalized = tool_name.strip()
+        if isinstance(allow, list):
+            allow_set = {str(item).strip() for item in allow if str(item).strip()}
+            if allow_set and normalized not in allow_set:
+                return f"Tool '{normalized}' is not permitted"
+        if isinstance(deny, list):
+            deny_set = {str(item).strip() for item in deny if str(item).strip()}
+            if normalized in deny_set:
+                return f"Tool '{normalized}' is denied by policy"
+        return None
+
+    def _enforce_rate_limit(self, tool_name: str) -> str | None:
+        security = self.config.get("security")
+        if not isinstance(security, dict):
+            return None
+        max_calls = security.get("max_tool_calls_per_minute")
+        if isinstance(max_calls, bool):
+            return None
+        try:
+            limit = int(max_calls)
+        except (TypeError, ValueError):
+            return None
+        if limit < 1:
+            return None
+        now = time.monotonic()
+        cutoff = now - 60.0
+        while self._tool_call_timestamps and self._tool_call_timestamps[0] < cutoff:
+            self._tool_call_timestamps.popleft()
+        if len(self._tool_call_timestamps) >= limit:
+            return f"Rate limit exceeded for tool '{tool_name}'"
+        self._tool_call_timestamps.append(now)
+        return None
 
     def _normalize_capability_arguments(
         self, arguments: dict[str, Any], context: AgentRunContext
@@ -1073,6 +1160,10 @@ class AgentRuntime:
         all_skill_names = list(self.registry.handlers.keys())
         if not all_skill_names:
             return ""
+        cache_key = (context.focus, tuple(sorted(all_skill_names)))
+        if cache_key in self._skills_context_cache:
+            self._perf_metrics["skills_cache_hits"] += 1
+            return self._skills_context_cache[cache_key]
 
         # Focus filter: if focus is set, prefer skills whose tag list includes it
         if context.focus:
@@ -1086,7 +1177,11 @@ class AgentRuntime:
         else:
             skill_names = all_skill_names
 
-        return self.knowledge_injector.get_skills_knowledge(skill_names)
+        out = self.knowledge_injector.get_skills_knowledge(skill_names)
+        self._skills_context_cache[cache_key] = out
+        if len(self._skills_context_cache) > 64:
+            self._skills_context_cache.pop(next(iter(self._skills_context_cache)))
+        return out
 
     def _skill_has_focus(self, skill_name: str, focus: str) -> bool:
         """Return True if the skill declares *focus* in owlclaw.focus.
@@ -1130,6 +1225,12 @@ class AgentRuntime:
         self, context: AgentRunContext
     ) -> list[dict[str, Any]]:
         """Build the governance-filtered OpenAI-style function schema list."""
+        confirmed = self._extract_confirmed_capabilities(context.payload)
+        cache_key = (context.agent_id, context.tenant_id, tuple(sorted(confirmed)))
+        if cache_key in self._visible_tools_cache:
+            self._perf_metrics["tools_cache_hits"] += 1
+            return list(self._visible_tools_cache[cache_key])
+
         all_schemas: list[dict[str, Any]] = []
 
         if self.builtin_tools is not None:
@@ -1139,7 +1240,11 @@ class AgentRuntime:
             all_schemas.extend(self._capability_schemas())
 
         if self.visibility_filter is None:
-            return all_schemas
+            out = self._apply_tool_resource_limits(all_schemas)
+            self._visible_tools_cache[cache_key] = list(out)
+            if len(self._visible_tools_cache) > 64:
+                self._visible_tools_cache.pop(next(iter(self._visible_tools_cache)))
+            return out
 
         builtin_names = {s["function"]["name"] for s in all_schemas if self.builtin_tools and self.builtin_tools.is_builtin(s["function"]["name"])}
         cap_schemas = [s for s in all_schemas if s["function"]["name"] not in builtin_names]
@@ -1163,7 +1268,6 @@ class AgentRuntime:
             )
             for s in cap_schemas
         ]
-        confirmed = self._extract_confirmed_capabilities(context.payload)
         run_ctx = RunContext(
             tenant_id=context.tenant_id,
             confirmed_capabilities=confirmed or None,
@@ -1173,7 +1277,23 @@ class AgentRuntime:
         )
         visible_names = {cap.name for cap in visible_caps}
         filtered_caps = [s for s in cap_schemas if s["function"]["name"] in visible_names]
-        return all_schemas[: len(all_schemas) - len(cap_schemas)] + filtered_caps
+        out = all_schemas[: len(all_schemas) - len(cap_schemas)] + filtered_caps
+        out = self._apply_tool_resource_limits(out)
+        self._visible_tools_cache[cache_key] = list(out)
+        if len(self._visible_tools_cache) > 64:
+            self._visible_tools_cache.pop(next(iter(self._visible_tools_cache)))
+        return out
+
+    def _apply_tool_resource_limits(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        perf_cfg = self.config.get("performance")
+        if not isinstance(perf_cfg, dict):
+            return tools
+        max_visible_tools = perf_cfg.get("max_visible_tools")
+        if isinstance(max_visible_tools, bool):
+            return tools
+        if isinstance(max_visible_tools, int) and max_visible_tools >= 1:
+            return tools[:max_visible_tools]
+        return tools
 
     @staticmethod
     def _extract_confirmed_capabilities(payload: dict[str, Any]) -> set[str]:

@@ -1216,3 +1216,59 @@ class TestAgentRuntimeRun:
         assert rt._classify_error(asyncio.TimeoutError()) == "timeout_error"
         assert rt._classify_error(ValueError("x")) == "validation_error"
         assert rt._classify_error(ConnectionError("x")) == "dependency_error"
+
+    async def test_load_config_rejects_path_outside_app_dir(self, tmp_path) -> None:
+        app_dir = tmp_path / "app"
+        app_dir.mkdir()
+        _make_app_dir(app_dir)
+        outside = tmp_path / "runtime.yaml"
+        outside.write_text("runtime:\n  model: gpt-4o-mini\n", encoding="utf-8")
+        rt = AgentRuntime(agent_id="bot", app_dir=str(app_dir))
+        with pytest.raises(ValueError, match="within app_dir"):
+            rt.load_config_file(str(outside))
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_permission_denied_blocks_execution(self, mock_llm, tmp_path) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        mock_llm.side_effect = [_make_llm_response(tool_calls=[tc]), _make_llm_response("done")]
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [{"name": "market_scan", "description": "scan"}]
+        registry.invoke_handler = AsyncMock(return_value={"ok": True})
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+            config={"security": {"allow_tools": ["other_tool"]}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        registry.invoke_handler.assert_not_called()
+        events = rt._security_audit.list_events()
+        assert any(e.event_type == "tool_permission_denied" for e in events)
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_tool_rate_limit_blocks_excess_calls(self, mock_llm, tmp_path) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        mock_llm.side_effect = [
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response(tool_calls=[tc]),
+            _make_llm_response("done"),
+        ]
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [{"name": "market_scan", "description": "scan"}]
+        registry.invoke_handler = AsyncMock(return_value={"ok": True})
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+            config={"security": {"max_tool_calls_per_minute": 1}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert registry.invoke_handler.await_count == 1
+        events = rt._security_audit.list_events()
+        assert any(e.event_type == "tool_rate_limited" for e in events)

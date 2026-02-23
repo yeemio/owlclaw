@@ -47,7 +47,7 @@ def test_validate_runtime_config_rejects_invalid_values() -> None:
 
 def test_runtime_load_and_reload_config(tmp_path: Path) -> None:
     app_dir = _make_app_dir(tmp_path / "app")
-    cfg_path = tmp_path / "runtime.yaml"
+    cfg_path = Path(app_dir) / "runtime.yaml"
     cfg_path.write_text("runtime:\n  model: gpt-4o-mini\n  max_function_calls: 2\n", encoding="utf-8")
     rt = AgentRuntime(agent_id="bot", app_dir=app_dir)
     loaded = rt.load_config_file(str(cfg_path))
