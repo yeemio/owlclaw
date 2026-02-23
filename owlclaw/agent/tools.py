@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from owlclaw.security.audit import SecurityAuditLog
+from owlclaw.security.sanitizer import InputSanitizer
 from owlclaw.triggers.cron import CronTriggerRegistry
 
 if TYPE_CHECKING:
@@ -35,6 +37,7 @@ _BUILTIN_TOOL_NAMES = frozenset(
     }
 )
 _SAFE_NAME_PATTERN = re.compile(r"[^a-zA-Z0-9_-]+")
+_STATE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_:-]{1,128}$")
 
 
 @dataclass
@@ -256,7 +259,10 @@ class BuiltInTools:
         scheduled_run_task_name: str = _SCHEDULED_RUN_TASK,
         timeout_seconds: float = 30,
         max_calls_per_run: int = 50,
+        max_schedule_calls_per_run: int = 20,
         raise_errors: bool = False,
+        enforce_schedule_ownership: bool = False,
+        remember_write_background: bool = False,
     ) -> None:
         self._registry = capability_registry
         self._ledger = ledger
@@ -277,9 +283,27 @@ class BuiltInTools:
         self._max_calls_per_run = max_calls_per_run
         self._run_call_counts: dict[str, int] = {}
         self._run_call_locks: dict[str, asyncio.Lock] = {}
+        if (
+            isinstance(max_schedule_calls_per_run, bool)
+            or not isinstance(max_schedule_calls_per_run, int)
+            or max_schedule_calls_per_run < 1
+        ):
+            raise ValueError("max_schedule_calls_per_run must be a positive integer")
+        self._max_schedule_calls_per_run = max_schedule_calls_per_run
+        self._run_schedule_call_counts: dict[str, int] = {}
+        self._schedule_owners: dict[str, str] = {}
         if not isinstance(raise_errors, bool):
             raise ValueError("raise_errors must be a boolean")
         self._raise_errors = raise_errors
+        if not isinstance(enforce_schedule_ownership, bool):
+            raise ValueError("enforce_schedule_ownership must be a boolean")
+        self._enforce_schedule_ownership = enforce_schedule_ownership
+        if not isinstance(remember_write_background, bool):
+            raise ValueError("remember_write_background must be a boolean")
+        self._remember_write_background = remember_write_background
+        self._background_tasks: set[asyncio.Task[Any]] = set()
+        self._sanitizer = InputSanitizer()
+        self._security_audit = SecurityAuditLog()
 
     def get_tool_schemas(self) -> list[dict[str, Any]]:
         """Return OpenAI-style function schemas for all built-in tools."""
@@ -410,6 +434,11 @@ class BuiltInTools:
             raise ValueError("run_id must be a non-empty string")
         self._run_call_counts.pop(normalized_run_id, None)
         self._run_call_locks.pop(normalized_run_id, None)
+        self._run_schedule_call_counts.pop(normalized_run_id, None)
+
+    def list_security_events(self) -> list[Any]:
+        """Return security audit events captured by built-in tools."""
+        return self._security_audit.list_events()
 
     async def _consume_run_call_budget(
         self,
@@ -435,6 +464,45 @@ class BuiltInTools:
                 )
                 return error
             self._run_call_counts[run_id] = next_count
+        return None
+
+    async def _consume_schedule_call_budget(
+        self,
+        *,
+        run_id: str,
+        context: BuiltInToolsContext,
+        tool_name: str,
+    ) -> str | None:
+        lock = self._run_call_locks.setdefault(run_id, asyncio.Lock())
+        async with lock:
+            current_count = self._run_schedule_call_counts.get(run_id, 0)
+            next_count = current_count + 1
+            if next_count > self._max_schedule_calls_per_run:
+                error = (
+                    f"Schedule frequency limit exceeded for run '{run_id}': "
+                    f"max_schedule_calls_per_run={self._max_schedule_calls_per_run}"
+                )
+                self._security_audit.record(
+                    event_type="schedule_rate_limited",
+                    source=tool_name,
+                    details={
+                        "agent_id": context.agent_id,
+                        "run_id": run_id,
+                        "tenant_id": context.tenant_id,
+                        "limit": self._max_schedule_calls_per_run,
+                    },
+                )
+                await self._record_validation_failure(
+                    tool_name=tool_name,
+                    context=context,
+                    input_params={
+                        "run_id": run_id,
+                        "max_schedule_calls_per_run": self._max_schedule_calls_per_run,
+                    },
+                    error_message=error,
+                )
+                return error
+            self._run_schedule_call_counts[run_id] = next_count
         return None
 
     @staticmethod
@@ -474,6 +542,20 @@ class BuiltInTools:
                 context=context,
                 input_params={"state_name": arguments.get("state_name")},
                 error_message=error,
+            )
+            return {"error": error}
+        if _STATE_NAME_PATTERN.fullmatch(state_name) is None:
+            error = "state_name contains invalid characters"
+            await self._record_validation_failure(
+                tool_name="query_state",
+                context=context,
+                input_params={"state_name": state_name},
+                error_message=error,
+            )
+            self._security_audit.record(
+                event_type="query_state_invalid_name",
+                source="query_state",
+                details={"agent_id": context.agent_id, "run_id": context.run_id, "state_name": state_name},
             )
             return {"error": error}
 
@@ -629,6 +711,13 @@ class BuiltInTools:
                 error_message=error,
             )
             return {"error": error}
+        schedule_limit_error = await self._consume_schedule_call_budget(
+            run_id=context.run_id,
+            context=context,
+            tool_name="schedule_once",
+        )
+        if schedule_limit_error is not None:
+            return {"error": schedule_limit_error}
         start_ns = time.perf_counter_ns()
         try:
             schedule_id = await asyncio.wait_for(
@@ -648,6 +737,8 @@ class BuiltInTools:
                 "scheduled_at": f"in {delay} seconds",
                 "focus": focus,
             }
+            if isinstance(schedule_id, str) and schedule_id.strip():
+                self._schedule_owners[schedule_id] = context.agent_id
             await self._record_tool_execution(
                 tool_name="schedule_once",
                 context=context,
@@ -730,6 +821,13 @@ class BuiltInTools:
                 error_message=error,
             )
             return {"error": error}
+        schedule_limit_error = await self._consume_schedule_call_budget(
+            run_id=context.run_id,
+            context=context,
+            tool_name="schedule_cron",
+        )
+        if schedule_limit_error is not None:
+            return {"error": schedule_limit_error}
         safe_agent_id = self._safe_name(context.agent_id)
         cron_name = f"agent_cron_{safe_agent_id}_{uuid.uuid4().hex[:12]}"
         input_data = {
@@ -756,6 +854,8 @@ class BuiltInTools:
                 "cron_expression": cron_expr,
                 "focus": focus,
             }
+            if isinstance(schedule_id, str) and schedule_id.strip():
+                self._schedule_owners[schedule_id] = context.agent_id
             await self._record_tool_execution(
                 tool_name="schedule_cron",
                 context=context,
@@ -815,6 +915,26 @@ class BuiltInTools:
                 error_message=error,
             )
             return {"error": error}
+        owner = self._schedule_owners.get(schedule_id)
+        if self._enforce_schedule_ownership and owner is not None and owner != context.agent_id:
+            error = "permission denied: schedule_id does not belong to current agent"
+            self._security_audit.record(
+                event_type="schedule_ownership_denied",
+                source="cancel_schedule",
+                details={
+                    "agent_id": context.agent_id,
+                    "run_id": context.run_id,
+                    "schedule_id": schedule_id,
+                    "owner": owner,
+                },
+            )
+            await self._record_validation_failure(
+                tool_name="cancel_schedule",
+                context=context,
+                input_params={"schedule_id": schedule_id, "owner": owner},
+                error_message=error,
+            )
+            return {"error": error}
         start_ns = time.perf_counter_ns()
         try:
             ok = await asyncio.wait_for(
@@ -828,6 +948,8 @@ class BuiltInTools:
                 )
             ok = bool(ok)
             out = {"cancelled": ok, "schedule_id": schedule_id}
+            if ok:
+                self._schedule_owners.pop(schedule_id, None)
             await self._record_tool_execution(
                 tool_name="cancel_schedule",
                 context=context,
@@ -887,6 +1009,28 @@ class BuiltInTools:
                 error_message=error,
             )
             return {"error": error}
+        sanitized = self._sanitizer.sanitize(content, source="remember")
+        if sanitized.changed:
+            self._security_audit.record(
+                event_type="remember_content_sanitized",
+                source="remember",
+                details={
+                    "agent_id": context.agent_id,
+                    "run_id": context.run_id,
+                    "tenant_id": context.tenant_id,
+                    "modifications": sanitized.modifications,
+                },
+            )
+            content = sanitized.sanitized.strip()
+            if not content:
+                error = "content was fully removed by sanitization"
+                await self._record_validation_failure(
+                    tool_name="remember",
+                    context=context,
+                    input_params={"modifications": sanitized.modifications},
+                    error_message=error,
+                )
+                return {"error": error}
         tags = self._normalize_tags(arguments.get("tags"))
         if tags is None:
             error = "tags must be an array of strings"
@@ -909,9 +1053,27 @@ class BuiltInTools:
 
         start_ns = time.perf_counter_ns()
         try:
+            if self._remember_write_background:
+                queued_memory_id = f"memory-{uuid.uuid4().hex}"
+                out = {"memory_id": queued_memory_id, "created_at": "", "tags": tags, "queued": True}
+                task = asyncio.create_task(
+                    self._call_memory_method("write", content=content, tags=tags)
+                )
+                self._background_tasks.add(task)
+                task.add_done_callback(lambda t: self._background_tasks.discard(t))
+                await self._record_tool_execution(
+                    tool_name="remember",
+                    context=context,
+                    input_params={"content_length": len(content), "tags": tags, "queued": True},
+                    output_result=out,
+                    start_ns=start_ns,
+                    status="success",
+                    error_message=None,
+                )
+                return out
             payload = await self._call_memory_method("write", content=content, tags=tags)
-            memory_id = None
-            created_at = None
+            memory_id: str | None = None
+            created_at: str | None = None
             if isinstance(payload, dict):
                 raw_memory_id = payload.get("memory_id")
                 raw_created_at = payload.get("created_at")

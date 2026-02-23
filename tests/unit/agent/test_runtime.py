@@ -10,6 +10,9 @@ import pytest
 
 from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.runtime import AgentRuntime
+from owlclaw.capabilities.knowledge import KnowledgeInjector
+from owlclaw.capabilities.registry import CapabilityRegistry
+from owlclaw.capabilities.skills import SkillsLoader
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
@@ -246,6 +249,45 @@ class TestAgentRuntimeRun:
         ctx = AgentRunContext(agent_id="bot", trigger="cron")
         result = await rt.run(ctx)
         assert result["iterations"] >= 1
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_run_releases_full_skill_content_cache_after_completion(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response("Done.")
+        app_dir = tmp_path / "app"
+        app_dir.mkdir()
+        _make_app_dir(app_dir)
+        cap_dir = app_dir / "capabilities" / "entry-monitor"
+        cap_dir.mkdir(parents=True)
+        (cap_dir / "SKILL.md").write_text(
+            """---
+name: entry-monitor
+description: monitor entries
+metadata:
+  tags: [trading]
+---
+# Guide
+Check entries.
+""",
+            encoding="utf-8",
+        )
+        loader = SkillsLoader(app_dir / "capabilities")
+        loader.scan()
+        registry = CapabilityRegistry(loader)
+        registry.register_handler("entry-monitor", lambda **kwargs: kwargs)
+        injector = KnowledgeInjector(loader)
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=str(app_dir),
+            registry=registry,
+            knowledge_injector=injector,
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        skill = loader.get_skill("entry-monitor")
+        assert skill is not None
+        assert skill._is_loaded is False  # noqa: SLF001
+        assert rt._skills_context_cache == {}  # noqa: SLF001
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_run_resets_builtin_tool_budget_on_success(

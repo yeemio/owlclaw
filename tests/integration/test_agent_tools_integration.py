@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -82,6 +84,35 @@ class _MemoryServiceAdapter:
             }
             for item in results
         ]
+
+
+class _FailingStore(InMemoryStore):
+    async def save(self, entry):  # type: ignore[override]
+        raise RuntimeError("forced save failure")
+
+
+class _SlowMemory:
+    def __init__(self, delay_seconds: float = 0.05) -> None:
+        self.delay_seconds = delay_seconds
+        self.writes = 0
+
+    async def write(self, *, content: str, tags: list[str]) -> dict[str, str]:
+        _ = (content, tags)
+        self.writes += 1
+        await asyncio.sleep(self.delay_seconds)
+        return {"memory_id": "m-slow", "created_at": "2026-02-23T00:00:00Z"}
+
+    async def search(self, *, query: str, limit: int, tags: list[str]) -> list[dict[str, object]]:
+        _ = (query, limit, tags)
+        return []
+
+
+def _p95_ms(values: list[float]) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    idx = max(0, min(len(ordered) - 1, int(0.95 * (len(ordered) - 1))))
+    return ordered[idx]
 
 
 def _tool_call(name: str, arguments: dict[str, object]) -> object:
@@ -188,7 +219,7 @@ async def test_memory_service_adapter_contract_with_builtin_tools() -> None:
         config=MemoryConfig(vector_backend="inmemory", embedding_dimensions=8),
     )
     memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
-    tools = BuiltInTools(memory_system=memory)
+    tools = BuiltInTools(memory_system=memory, max_calls_per_run=1000)
     ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
 
     remember_result = await tools.execute("remember", {"content": "lesson about retries", "tags": ["ops"]}, ctx)
@@ -197,3 +228,247 @@ async def test_memory_service_adapter_contract_with_builtin_tools() -> None:
     assert remember_result["memory_id"]
     assert recall_result["count"] >= 1
     assert any("lesson about retries" in item["content"] for item in recall_result["memories"])
+
+
+@pytest.mark.asyncio
+async def test_remember_writes_memory_md_when_store_fallback_enabled(tmp_path) -> None:
+    memory_file = tmp_path / "MEMORY.md"
+    service = MemoryService(
+        store=_FailingStore(),
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(
+            vector_backend="inmemory",
+            embedding_dimensions=8,
+            enable_file_fallback=True,
+            file_fallback_path=str(memory_file),
+        ),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    result = await tools.execute("remember", {"content": "memory fallback lesson", "tags": ["ops"]}, ctx)
+
+    assert result["memory_id"]
+    assert memory_file.exists()
+    content = memory_file.read_text(encoding="utf-8")
+    assert "memory fallback lesson" in content
+
+
+@pytest.mark.asyncio
+async def test_recall_uses_vector_search_results_from_memory_service() -> None:
+    store = InMemoryStore()
+    service = MemoryService(
+        store=store,
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(vector_backend="inmemory", embedding_dimensions=8),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    await tools.execute("remember", {"content": "entry timing lesson", "tags": ["trading"]}, ctx)
+    await tools.execute("remember", {"content": "portfolio rebalance checklist", "tags": ["ops"]}, ctx)
+    result = await tools.execute("recall", {"query": "entry timing", "limit": 5, "tags": ["trading"]}, ctx)
+
+    assert result["count"] >= 1
+    assert any("entry timing lesson" in item["content"] for item in result["memories"])
+
+
+@pytest.mark.asyncio
+async def test_recall_applies_time_decay_prefer_recent_memories() -> None:
+    store = InMemoryStore(time_decay_half_life_hours=1.0)
+    service = MemoryService(
+        store=store,
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(
+            vector_backend="inmemory",
+            embedding_dimensions=8,
+            time_decay_half_life_hours=1.0,
+        ),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    first = await tools.execute("remember", {"content": "volatility lesson", "tags": ["trading"]}, ctx)
+    second = await tools.execute("remember", {"content": "volatility lesson", "tags": ["trading"]}, ctx)
+    old_id = first["memory_id"]
+    new_id = second["memory_id"]
+
+    # Force the first entry to become stale so decay lowers its score.
+    for entry in store._store.values():  # noqa: SLF001
+        entry_id = str(entry.id)
+        if entry_id == old_id:
+            entry.created_at = entry.created_at - timedelta(hours=48)
+            break
+
+    recalled = await tools.execute("recall", {"query": "volatility", "limit": 2, "tags": ["trading"]}, ctx)
+    assert recalled["count"] >= 1
+    top_memory_id = recalled["memories"][0]["memory_id"]
+    assert top_memory_id == new_id
+
+
+@pytest.mark.asyncio
+async def test_e2e_agent_self_scheduling_flow() -> None:
+    hatchet = AsyncMock()
+    hatchet.schedule_task.return_value = "scheduled-300"
+    tools = BuiltInTools(hatchet_client=hatchet)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    result = await tools.execute(
+        "schedule_once",
+        {"delay_seconds": 300, "focus": "check entry"},
+        ctx,
+    )
+
+    assert result["schedule_id"] == "scheduled-300"
+    call = hatchet.schedule_task.await_args
+    assert call.kwargs["focus"] == "check entry"
+    assert call.kwargs["trigger"] == "schedule_once"
+    simulated_next_run = AgentRunContext(
+        agent_id="agent-a",
+        trigger="schedule_once",
+        focus=call.kwargs["focus"],
+        payload={"scheduled_by_run_id": call.kwargs["scheduled_by_run_id"]},
+    )
+    assert simulated_next_run.focus == "check entry"
+
+
+@pytest.mark.asyncio
+async def test_e2e_agent_remember_then_recall_lesson() -> None:
+    service = MemoryService(
+        store=InMemoryStore(),
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(vector_backend="inmemory", embedding_dimensions=8),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    remember_result = await tools.execute(
+        "remember",
+        {"content": "lesson content", "tags": ["trading"]},
+        ctx,
+    )
+    recall_result = await tools.execute(
+        "recall",
+        {"query": "lesson", "limit": 5, "tags": ["trading"]},
+        ctx,
+    )
+
+    assert remember_result["memory_id"]
+    assert recall_result["count"] >= 1
+    assert any("lesson content" in item["content"] for item in recall_result["memories"])
+
+
+@pytest.mark.asyncio
+async def test_e2e_agent_query_state_then_log_no_action_decision() -> None:
+    registry = _Registry()
+    ledger = AsyncMock()
+    tools = BuiltInTools(capability_registry=registry, ledger=ledger)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    state = await tools.execute("query_state", {"state_name": "market_state"}, ctx)
+    assert state["state"]["is_trading_time"] is False
+    decision = await tools.execute(
+        "log_decision",
+        {"reasoning": "Non-trading hours, skipping", "decision_type": "no_action"},
+        ctx,
+    )
+    assert decision["logged"] is True
+    assert ledger.record_execution.await_count >= 2
+
+
+@pytest.mark.asyncio
+async def test_e2e_agent_schedule_and_cancel_in_same_run() -> None:
+    hatchet = AsyncMock()
+    hatchet.schedule_task.return_value = "scheduled-1"
+    hatchet.cancel_task.return_value = True
+    tools = BuiltInTools(hatchet_client=hatchet)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+
+    scheduled = await tools.execute(
+        "schedule_once",
+        {"delay_seconds": 120, "focus": "check entry"},
+        ctx,
+    )
+    cancelled = await tools.execute(
+        "cancel_schedule",
+        {"schedule_id": scheduled["schedule_id"]},
+        ctx,
+    )
+    assert cancelled["cancelled"] is True
+    hatchet.cancel_task.assert_awaited_once_with("scheduled-1")
+
+
+@pytest.mark.asyncio
+async def test_performance_tool_call_latency_p95_under_500ms() -> None:
+    registry = _Registry()
+    tools = BuiltInTools(capability_registry=registry)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a")
+    latencies_ms: list[float] = []
+
+    for _ in range(50):
+        start = time.perf_counter()
+        await tools.execute("query_state", {"state_name": "market_state"}, ctx)
+        latencies_ms.append((time.perf_counter() - start) * 1000.0)
+
+    assert _p95_ms(latencies_ms) < 500.0
+
+
+@pytest.mark.asyncio
+async def test_performance_recall_latency_p95_under_200ms() -> None:
+    service = MemoryService(
+        store=InMemoryStore(),
+        embedder=RandomEmbedder(dimensions=8),
+        config=MemoryConfig(vector_backend="inmemory", embedding_dimensions=8),
+    )
+    memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
+    tools = BuiltInTools(memory_system=memory)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a", tenant_id="tenant-a")
+    await tools.execute("remember", {"content": "entry timing signal", "tags": ["trading"]}, ctx)
+
+    latencies_ms: list[float] = []
+    for _ in range(50):
+        start = time.perf_counter()
+        await tools.execute("recall", {"query": "entry", "limit": 5, "tags": ["trading"]}, ctx)
+        latencies_ms.append((time.perf_counter() - start) * 1000.0)
+
+    assert _p95_ms(latencies_ms) < 200.0
+
+
+@pytest.mark.asyncio
+async def test_performance_high_concurrency_query_state_over_10_qps() -> None:
+    registry = _Registry()
+    tools = BuiltInTools(capability_registry=registry, max_calls_per_run=1000)
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a")
+
+    total_calls = 100
+    start = time.perf_counter()
+    await asyncio.gather(
+        *[tools.execute("query_state", {"state_name": "market_state"}, ctx) for _ in range(total_calls)]
+    )
+    elapsed = max(1e-6, time.perf_counter() - start)
+    qps = total_calls / elapsed
+    assert qps >= 10.0
+
+
+@pytest.mark.asyncio
+async def test_performance_remember_background_write_does_not_block_agent_run() -> None:
+    memory = _SlowMemory(delay_seconds=0.05)
+    tools = BuiltInTools(
+        memory_system=memory,
+        remember_write_background=True,
+        max_calls_per_run=1000,
+    )
+    ctx = BuiltInToolsContext(agent_id="agent-a", run_id="run-a")
+
+    start = time.perf_counter()
+    result = await tools.execute("remember", {"content": "lesson", "tags": ["ops"]}, ctx)
+    elapsed_ms = (time.perf_counter() - start) * 1000.0
+
+    assert result["queued"] is True
+    assert elapsed_ms < 30.0
+    await asyncio.sleep(0.06)
+    assert memory.writes == 1

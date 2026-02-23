@@ -453,6 +453,7 @@ class AgentRuntime:
                     context.run_id,
                 )
                 self._reset_builtin_tool_budget(context.run_id)
+                self._release_skill_content_cache()
                 return {
                     "status": "skipped",
                     "run_id": context.run_id,
@@ -511,6 +512,7 @@ class AgentRuntime:
             }
         finally:
             self._reset_builtin_tool_budget(context.run_id)
+            self._release_skill_content_cache()
 
         logger.info(
             "Agent run completed agent_id=%s run_id=%s iterations=%s",
@@ -1201,6 +1203,25 @@ class AgentRuntime:
         if len(self._skills_context_cache) > 64:
             self._skills_context_cache.pop(next(iter(self._skills_context_cache)))
         return out
+
+    def _release_skill_content_cache(self) -> None:
+        """Release cached full Skill contents and prompt cache after each run."""
+        self._skills_context_cache.clear()
+        if self.registry is None:
+            return
+        loader = getattr(self.registry, "skills_loader", None)
+        if loader is None:
+            return
+        list_fn = getattr(loader, "list_skills", None)
+        if not callable(list_fn):
+            return
+        try:
+            for skill in list_fn():
+                clear_fn = getattr(skill, "clear_full_content_cache", None)
+                if callable(clear_fn):
+                    clear_fn()
+        except Exception:
+            logger.debug("Failed to release Skill content cache", exc_info=True)
 
     def _skill_has_focus(self, skill_name: str, focus: str) -> bool:
         """Return True if the skill declares *focus* in owlclaw.focus.
