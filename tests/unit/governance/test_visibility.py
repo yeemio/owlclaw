@@ -61,6 +61,27 @@ async def test_filter_empty_evaluators_returns_all():
 
 
 @pytest.mark.asyncio
+async def test_filter_risk_gate_hides_unconfirmed_high_risk_without_evaluators():
+    vf = VisibilityFilter()
+    caps = [
+        CapabilityView("safe-read", risk_level="low", requires_confirmation=False),
+        CapabilityView("place-order", risk_level="high", requires_confirmation=True),
+    ]
+    ctx = RunContext(tenant_id="t1")
+    out = await vf.filter_capabilities(caps, "agent1", ctx)
+    assert [c.name for c in out] == ["safe-read"]
+
+
+@pytest.mark.asyncio
+async def test_filter_risk_gate_allows_confirmed_high_risk():
+    vf = VisibilityFilter()
+    caps = [CapabilityView("place-order", risk_level="high", requires_confirmation=True)]
+    ctx = RunContext(tenant_id="t1", confirmed_capabilities={"place-order"})
+    out = await vf.filter_capabilities(caps, "agent1", ctx)
+    assert [c.name for c in out] == ["place-order"]
+
+
+@pytest.mark.asyncio
 async def test_filter_one_evaluator_hides_when_not_visible():
     """Single evaluator that hides one capability."""
 

@@ -11,6 +11,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from owlclaw.security.risk_gate import RiskDecision, RiskGate
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,7 +34,7 @@ def _coerce_focus(value: Any) -> list[str]:
     if isinstance(value, str):
         v = value.strip()
         return [v] if v else []
-    if isinstance(value, (list, tuple, set)):
+    if isinstance(value, list | tuple | set):
         out: list[str] = []
         seen: set[str] = set()
         for item in value:
@@ -155,6 +157,7 @@ class VisibilityFilter:
 
     def __init__(self) -> None:
         self._evaluators: list[ConstraintEvaluator] = []
+        self._risk_gate = RiskGate()
 
     def register_evaluator(self, evaluator: ConstraintEvaluator) -> None:
         """Register a constraint evaluator."""
@@ -179,11 +182,13 @@ class VisibilityFilter:
                 valid_capabilities.append(cap)
             else:
                 logger.warning("Skipping invalid capability entry of type %s", type(cap).__name__)
-        if not self._evaluators:
-            return list(valid_capabilities)
 
         filtered: list[CapabilityView] = []
         for cap in valid_capabilities:
+            risk_block_reason = self._evaluate_risk_gate(cap, agent_id, context)
+            if risk_block_reason is not None:
+                logger.info("Capability %s filtered: %s", cap.name, risk_block_reason)
+                continue
             results = await asyncio.gather(
                 *(
                     self._safe_evaluate(eval_fn, cap, agent_id, context)
@@ -203,6 +208,26 @@ class VisibilityFilter:
                 continue
             filtered.append(cap)
         return filtered
+
+    def _evaluate_risk_gate(
+        self,
+        capability: CapabilityView,
+        agent_id: str,  # noqa: ARG002
+        context: RunContext,
+    ) -> str | None:
+        """Run security risk gate before constraint evaluators."""
+        if context.is_confirmed(capability.name):
+            return None
+        decision, _ = self._risk_gate.evaluate(
+            capability.name,
+            risk_level=capability.risk_level,
+            requires_confirmation=capability.requires_confirmation,
+        )
+        if decision == RiskDecision.EXECUTE:
+            return None
+        if decision == RiskDecision.PAUSE:
+            return "requires_confirmation"
+        return "risk_rejected"
 
     async def _safe_evaluate(
         self,

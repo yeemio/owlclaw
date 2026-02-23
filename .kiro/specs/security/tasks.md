@@ -66,8 +66,8 @@
 - [x] 3.1.4 实现确认超时自动取消逻辑
 
 ### 3.2 Governance 集成
-- [ ] 3.2.1 在 `governance/visibility.py` 执行 function call 前调用 RiskGate
-- [ ] 3.2.2 从 SKILL.md frontmatter 读取 `risk_level` 和 `requires_confirmation`
+- [x] 3.2.1 在 `governance/visibility.py` 执行 function call 前调用 RiskGate
+- [x] 3.2.2 从 SKILL.md frontmatter 读取 `risk_level` 和 `requires_confirmation`
 
 ### 3.3 单元测试
 - [x] 3.3.1 测试各风险等级的决策正确性
