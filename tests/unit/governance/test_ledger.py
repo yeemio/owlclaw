@@ -4,7 +4,8 @@ import asyncio
 import contextlib
 from datetime import date
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock
+from typing import cast
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -165,7 +166,10 @@ async def test_flush_batch_writes_records_and_commits() -> None:
     session_factory.return_value = session_cm
 
     ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
-    batch = [MagicMock(spec=LedgerRecord), MagicMock(spec=LedgerRecord)]
+    batch = cast(
+        list[LedgerRecord],
+        [MagicMock(spec=LedgerRecord), MagicMock(spec=LedgerRecord)],
+    )
 
     await ledger._flush_batch(batch)
 
@@ -196,8 +200,7 @@ async def test_flush_batch_falls_back_on_write_failure() -> None:
     """3.1.4.3: flush failure falls back to local log path."""
     session_factory = MagicMock()
     session = MagicMock()
-    session.commit = AsyncMock()
-    session.add_all.side_effect = RuntimeError("db unavailable")
+    session.commit = AsyncMock(side_effect=RuntimeError("db unavailable"))
     session_cm = AsyncMock()
     session_cm.__aenter__.return_value = session
     session_cm.__aexit__.return_value = None
@@ -205,10 +208,13 @@ async def test_flush_batch_falls_back_on_write_failure() -> None:
 
     ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
     ledger._write_to_fallback_log = AsyncMock()  # type: ignore[method-assign]
-    batch = [MagicMock(spec=LedgerRecord)]
+    batch = cast(list[LedgerRecord], [MagicMock(spec=LedgerRecord)])
 
-    await ledger._flush_batch(batch)
+    with patch("owlclaw.governance.ledger.asyncio.sleep", new=AsyncMock()) as sleep_mock:
+        await ledger._flush_batch(batch)
 
+    assert session.commit.await_count == 3
+    assert sleep_mock.await_count == 2
     ledger._write_to_fallback_log.assert_awaited_once_with(batch)
 
 
@@ -269,3 +275,26 @@ async def test_get_cost_summary_returns_decimal_total() -> None:
 
     assert summary.total_cost == Decimal("1.2345")
     session.execute.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_flush_batch_retries_then_succeeds_without_fallback() -> None:
+    """3.1.2.2: flush retries with backoff and succeeds before fallback."""
+    session_factory = MagicMock()
+    session = MagicMock()
+    session.commit = AsyncMock(side_effect=[RuntimeError("t1"), RuntimeError("t2"), None])
+    session_cm = AsyncMock()
+    session_cm.__aenter__.return_value = session
+    session_cm.__aexit__.return_value = None
+    session_factory.return_value = session_cm
+
+    ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
+    ledger._write_to_fallback_log = AsyncMock()  # type: ignore[method-assign]
+    batch = cast(list[LedgerRecord], [MagicMock(spec=LedgerRecord)])
+
+    with patch("owlclaw.governance.ledger.asyncio.sleep", new=AsyncMock()) as sleep_mock:
+        await ledger._flush_batch(batch)
+
+    assert session.commit.await_count == 3
+    assert sleep_mock.await_count == 2
+    ledger._write_to_fallback_log.assert_not_awaited()

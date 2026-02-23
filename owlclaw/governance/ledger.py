@@ -106,6 +106,8 @@ class Ledger:
         self._session_factory = session_factory
         self._batch_size = batch_size
         self._flush_interval = flush_interval_value
+        self._flush_max_retries = 3
+        self._flush_backoff_base_seconds = 0.1
         self._write_queue: asyncio.Queue[LedgerRecord] = asyncio.Queue()
         self._writer_task: asyncio.Task[None] | None = None
 
@@ -265,14 +267,27 @@ class Ledger:
 
     async def _flush_batch(self, batch: list[LedgerRecord]) -> None:
         """Write a batch of records to the database."""
-        try:
-            async with self._session_factory() as session:
-                session.add_all(batch)
-                await session.commit()
-            logger.debug("Flushed %d ledger records", len(batch))
-        except Exception as e:
-            logger.exception("Failed to flush ledger batch: %s", e)
-            await self._write_to_fallback_log(batch)
+        for attempt in range(1, self._flush_max_retries + 1):
+            try:
+                async with self._session_factory() as session:
+                    session.add_all(batch)
+                    await session.commit()
+                logger.debug("Flushed %d ledger records", len(batch))
+                return
+            except Exception as e:
+                if attempt >= self._flush_max_retries:
+                    logger.exception("Failed to flush ledger batch after %d attempts: %s", attempt, e)
+                    await self._write_to_fallback_log(batch)
+                    return
+                delay = self._flush_backoff_base_seconds * (2 ** (attempt - 1))
+                logger.warning(
+                    "Ledger batch flush failed (attempt %d/%d), retrying in %.2fs: %s",
+                    attempt,
+                    self._flush_max_retries,
+                    delay,
+                    e,
+                )
+                await asyncio.sleep(delay)
 
     async def _write_to_fallback_log(self, batch: list[LedgerRecord]) -> None:
         """On DB failure, append records to a local fallback log."""
