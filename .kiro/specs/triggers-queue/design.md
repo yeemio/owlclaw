@@ -19,6 +19,13 @@
 - **治理集成**：与 Governance Layer 和 Ledger 无缝集成
 - **本地验证**：支持 Mock 模式，无需外部依赖即可测试
 
+## 技术栈统一与架构对齐
+
+1. 核心实现统一 Python，不引入 Node/TypeScript 双栈核心逻辑。
+2. 队列触发器只负责接入、解析、路由与可靠消费；Agent 执行统一调用 `AgentRuntime.trigger_event(...)`。
+3. 治理与审计统一走现有组件：`owlclaw.governance.visibility` 与 `owlclaw.governance.ledger`。
+4. 队列 SDK 必须通过 `owlclaw.integrations.*` 隔离层接入，禁止在触发器核心散落第三方 SDK 直连代码。
+
 ## 架构
 
 系统采用分层架构，主要包含以下层次：
@@ -90,7 +97,7 @@
 负责与具体消息队列交互的适配层。
 
 ```python
-from typing import AsyncIterator, Protocol
+from typing import Any, AsyncIterator, Protocol
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -101,7 +108,7 @@ class RawMessage:
     body: bytes
     headers: dict[str, str]
     timestamp: datetime
-    metadata: dict[str, any]  # 队列特定的元数据
+    metadata: dict[str, Any]  # 队列特定的元数据
 
 class QueueAdapter(Protocol):
     """队列适配器接口"""
@@ -280,6 +287,7 @@ class BinaryParser(MessageParser):
 负责消息消费、处理和 Agent 触发的核心组件。
 
 ```python
+from decimal import Decimal
 from typing import Optional
 from dataclasses import dataclass
 import asyncio
@@ -309,7 +317,7 @@ class QueueTrigger:
         config: QueueTriggerConfig,
         adapter: QueueAdapter,
         agent_runtime: 'AgentRuntime',
-        governance: 'GovernanceLayer',
+        governance: 'VisibilityFilter',
         ledger: 'Ledger',
         idempotency_store: 'IdempotencyStore',
     ):
@@ -449,7 +457,7 @@ class QueueTrigger:
                     "source": "queue_trigger",
                     "queue": self.config.queue_name,
                     "message_id": envelope.message_id,
-                    "tenant_id": envelope.tenant_id,
+                    "tenant_id": envelope.tenant_id or "default",
                 }
             )
             
@@ -478,16 +486,28 @@ class QueueTrigger:
             
             # 7. 记录到 Ledger
             duration = asyncio.get_event_loop().time() - start_time
-            await self.ledger.record({
-                "trace_id": trace_id,
-                "message_id": envelope.message_id,
-                "queue": self.config.queue_name,
-                "event_name": envelope.event_name,
-                "tenant_id": envelope.tenant_id,
-                "status": "success",
-                "duration_ms": duration * 1000,
-                "agent_run_id": result.get("run_id"),
-            })
+            await self.ledger.record_execution(
+                tenant_id=envelope.tenant_id or "default",
+                agent_id=self.agent_runtime.agent_id,
+                run_id=result.get("run_id", ""),
+                capability_name="queue_trigger",
+                task_type="trigger",
+                input_params={
+                    "message_id": envelope.message_id,
+                    "queue": self.config.queue_name,
+                    "event_name": envelope.event_name,
+                    "trace_id": trace_id,
+                },
+                output_result={"status": "success"},
+                decision_reasoning="queue_trigger_execution",
+                execution_time_ms=int(duration * 1000),
+                llm_model="",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="success",
+                error_message=None,
+            )
             
             self.logger.info(f"Successfully processed message {envelope.message_id}")
             
@@ -522,7 +542,7 @@ class QueueTrigger:
             try:
                 result = await self.agent_runtime.trigger_event(
                     event_name=envelope.event_name or "queue_message",
-                    context={
+                    payload={
                         "message": envelope.payload,
                         "headers": envelope.headers,
                         "source": envelope.source,
@@ -664,6 +684,13 @@ class RedisIdempotencyStore(IdempotencyStore):
         value = await self.redis.get(f"idempotency:{key}")
         return json.loads(value) if value else None
 ```
+
+## 实施约束（禁止项）
+
+1. 禁止在 `triggers/queue` 内直接引入 Kafka/RabbitMQ/SQS SDK；统一通过集成层。
+2. 禁止绕过 `Ledger` 写平行审计日志。
+3. 幂等与事件存储若落库，必须遵循数据库五条铁律（`tenant_id`、`TIMESTAMPTZ`、tenant 前缀索引、Alembic）。
+4. 禁止在 Heartbeat 检查路径执行队列 I/O。
 
 
 ### 6. MockQueueAdapter（Mock 适配器）

@@ -24,8 +24,16 @@ Webhook 触发器系统是 OwlClaw Agent 平台的关键组件，负责接收外
 为避免核心链路出现双栈维护成本，Webhook 触发器采用以下实现策略：
 
 1. **核心实现语言统一为 Python**（与 `owlclaw` 主栈一致）。
-2. 本文档中的接口代码块用于表达领域模型与契约，属于**语言无关伪代码**；落地实现以 Python `dataclass` / `Protocol` / Pydantic 模型为准。
+2. 本文档代码块是 **Python 契约草案**（并非 TypeScript/Node 实现），落地实现使用 Python `dataclass` / `Protocol` / Pydantic，并统一 `snake_case` 命名。
 3. 多语言（Node/TypeScript）仅作为外部系统适配层存在，通过 HTTP/Queue 调用 OwlClaw 暴露的标准入口，不进入核心触发器模块。
+
+## 架构边界对齐（强约束）
+
+1. 触发执行入口统一为 `AgentRuntime.trigger_event(...)`，禁止自建平行执行入口。
+2. 权限与策略检查统一走治理层（`owlclaw.governance.visibility`）。
+3. 审计与执行记录统一写入 `owlclaw.governance.ledger`。
+4. 输入安全处理统一复用 `owlclaw.security`（sanitizer/risk/masking），不得重复实现同类安全引擎。
+5. 外部依赖（HTTP server、队列、调度）必须经 `owlclaw.integrations.*` 隔离，不在触发器核心直接耦合第三方 SDK。
 
 ## 架构例外声明（实现阶段需固化）
 
@@ -103,12 +111,21 @@ Webhook 触发器系统是 OwlClaw Agent 平台的关键组件，负责接收外
 4. **插件化转换**：支持自定义转换规则，适应不同的外部系统格式
 5. **治理集成**：所有执行请求都经过治理层验证，确保合规性
 
+## 实施约束（禁止项）
+
+1. 禁止在 `triggers/webhook` 直接调用第三方 LLM SDK；统一走 `owlclaw.integrations.llm`。
+2. 禁止在核心链路散落 `hatchet_sdk` 直连；统一走 `owlclaw.integrations.hatchet`。
+3. 禁止绕过 `Ledger` 写平行执行日志。
+4. 新增持久化表必须遵循数据库五条铁律：`tenant_id`、`TIMESTAMPTZ`、tenant 前缀索引、Alembic。
+
 ## 组件和接口
 
 ```python
 from typing import Any, Optional, Literal, Protocol
 from datetime import datetime
 ```
+
+> 命名对齐说明：下文历史字段中出现的 `camelCase`（如 `targetAgentId`、`executionMode`）在实现阶段统一映射为 Python `snake_case`（`target_agent_id`、`execution_mode`），以仓库编码规范为准。
 
 ### 1. WebhookEndpointManager
 
