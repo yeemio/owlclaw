@@ -340,6 +340,7 @@ def init_command(
         raise typer.Exit(2)
     # Keep argv fallback for Typer/Click bool edge cases, but honor explicit call args too.
     do_dry_run = bool(dry_run) or "--dry-run" in sys.argv
+    do_skip_hatchet = bool(skip_hatchet) or "--skip-hatchet" in sys.argv
     pw_owl = (owlclaw_password or secrets.token_urlsafe(16)) if not do_dry_run else None
     pw_hatchet = (hatchet_password or secrets.token_urlsafe(16)) if not do_dry_run else None
     try:
@@ -348,17 +349,17 @@ def init_command(
                 admin_url=url,
                 owlclaw_password=owlclaw_password,
                 hatchet_password=hatchet_password,
-                skip_hatchet=skip_hatchet,
+                skip_hatchet=do_skip_hatchet,
                 dry_run=do_dry_run,
                 pw_owl=pw_owl,
                 pw_hatchet=pw_hatchet,
             )
         )
     except (ConnectionResetError, OSError) as e:
-        _try_sync_fallback(e, url, pw_owl, pw_hatchet, skip_hatchet, do_dry_run, owlclaw_password)
+        _try_sync_fallback(e, url, pw_owl, pw_hatchet, do_skip_hatchet, do_dry_run, owlclaw_password)
     except Exception as e:
         # asyncpg.ConnectionDoesNotExistError etc. on Windows after connection reset
         if "connection was closed" in str(e).lower() or "64" in str(e) or getattr(e, "winerror", None) == 64:
-            _try_sync_fallback(e, url, pw_owl, pw_hatchet, skip_hatchet, do_dry_run, owlclaw_password)
+            _try_sync_fallback(e, url, pw_owl, pw_hatchet, do_skip_hatchet, do_dry_run, owlclaw_password)
         else:
             raise
