@@ -342,6 +342,11 @@ def _stmt_uses_tenant(stmt, tenant_id: str) -> bool:
     return tenant_id in compiled.params.values()
 
 
+def _stmt_uses_value(stmt, value: str | int) -> bool:
+    compiled = stmt.compile()
+    return value in compiled.params.values()
+
+
 @pytest.mark.asyncio
 async def test_query_records_enforces_tenant_filter():
     session = AsyncMock()
@@ -362,6 +367,36 @@ async def test_query_records_enforces_tenant_filter():
 
     stmt = session.execute.await_args.args[0]
     assert _stmt_uses_tenant(stmt, "tenant-A")
+
+
+@pytest.mark.asyncio
+async def test_query_records_applies_status_and_offset_filters():
+    session = AsyncMock()
+    result = MagicMock()
+    result.scalars.return_value.all.return_value = []
+    session.execute = AsyncMock(return_value=result)
+
+    session_cm = AsyncMock()
+    session_cm.__aenter__.return_value = session
+    session_cm.__aexit__.return_value = None
+    session_factory = MagicMock(return_value=session_cm)
+
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+    await ledger.query_records(
+        tenant_id="tenant-A",
+        filters=LedgerQueryFilters(
+            status="success",
+            offset=5,
+            limit=10,
+            order_by="created_at DESC",
+        ),
+    )
+
+    stmt = session.execute.await_args.args[0]
+    assert _stmt_uses_tenant(stmt, "tenant-A")
+    assert _stmt_uses_value(stmt, "success")
+    assert _stmt_uses_value(stmt, 5)
+    assert _stmt_uses_value(stmt, 10)
 
 
 @pytest.mark.asyncio

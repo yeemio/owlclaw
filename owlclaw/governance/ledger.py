@@ -29,9 +29,11 @@ class LedgerQueryFilters:
 
     agent_id: str | None = None
     capability_name: str | None = None
+    status: str | None = None
     start_date: date | None = None
     end_date: date | None = None
     limit: int | None = None
+    offset: int | None = None
     order_by: str | None = None
 
 
@@ -198,6 +200,8 @@ class Ledger:
                 stmt = stmt.where(
                     LedgerRecord.capability_name == filters.capability_name
                 )
+            if filters.status is not None:
+                stmt = stmt.where(LedgerRecord.status == filters.status)
             if filters.start_date is not None:
                 start_dt = datetime.combine(
                     filters.start_date, time.min, tzinfo=timezone.utc
@@ -212,6 +216,8 @@ class Ledger:
                 stmt = stmt.order_by(LedgerRecord.created_at.desc())
             elif filters.order_by == "created_at ASC":
                 stmt = stmt.order_by(LedgerRecord.created_at.asc())
+            if filters.offset is not None:
+                stmt = stmt.offset(filters.offset)
             if filters.limit is not None:
                 stmt = stmt.limit(filters.limit)
             result = await session.execute(stmt)
