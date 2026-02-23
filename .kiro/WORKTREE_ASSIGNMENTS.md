@@ -161,7 +161,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| integrations-hatchet | 138/147 | `owlclaw/integrations/hatchet.py`, `owlclaw/agent/runtime/hatchet_bridge.py`, `tests/unit/integrations/test_hatchet*.py` |
+| integrations-hatchet | 144/147 | `owlclaw/integrations/hatchet.py`, `owlclaw/agent/runtime/hatchet_bridge.py`, `tests/unit/integrations/test_hatchet*.py` |
 
 **前置条件**：agent-runtime 已完成（105/105），hatchet_bridge 已就绪，integrations-hatchet 收尾阶段。
 
@@ -186,7 +186,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
 | capabilities-skills | 107/108 | `owlclaw/capabilities/skills.py`, `owlclaw/capabilities/knowledge.py`, `tests/unit/test_skills*.py` |
-| agent-tools | 46/139 | `owlclaw/agent/tools.py`, `tests/unit/agent/test_tools*.py` |
+| agent-tools | 66/139 | `owlclaw/agent/tools.py`, `tests/unit/agent/test_tools*.py` |
 
 **前置条件**：governance 已完成（173/173），capabilities-skills 只差 1 task 可快速收口；agent-tools 接续推进。
 
