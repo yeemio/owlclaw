@@ -223,7 +223,37 @@ Review Loop 的完整定义见 `.kiro/WORKTREE_ASSIGNMENTS.md` 中审校部分�
 
 ---
 
-## 六、常用命令速查
+## 六、并发控制
+
+### 6.1 并发上限
+
+建议同时运行的 Agent 数量不超过 **4-5 个**（含 Cursor）。超过此数量后：
+- 人工审核和合并成为瓶颈，变更堆积
+- 跨 spec 依赖的协调复杂度急剧上升
+- 认知负荷过高，容易遗漏问题
+
+### 6.2 降级策略
+
+出现以下情况时，应减少并行 Agent 数量：
+
+- **合并冲突频繁**：两个编码 worktree 反复在同一文件上冲突 → 合并为一个编码 worktree，或重新划分 spec 边界
+- **审校积压**：审校 worktree 来不及审核编码分支的变更 → 暂停一个编码 worktree，让审校追上
+- **跨 spec 依赖密集**：多个 spec 之间依赖频繁变动 → 将相关 spec 合并分配给同一个编码 worktree 串行处理
+- **测试频繁失败**：合并后测试通过率低 → 减速，确保每个编码 worktree 在提交前本地测试通过
+
+### 6.3 扩容策略
+
+当前批次完成、审校无积压、合并顺畅时，可以增加 worktree：
+
+```bash
+git worktree add -b <branch-name> D:\AI\owlclaw-<name> main
+```
+
+然后在 `.kiro/WORKTREE_ASSIGNMENTS.md` 中添加分配，commit 到 main，通知各 worktree 同步。
+
+---
+
+## 七、常用命令速查
 
 ```bash
 # 查看所有 worktree
@@ -253,7 +283,7 @@ git worktree add -b review-work D:\AI\owlclaw-review main
 
 ---
 
-## 七、故障排除
+## 八、故障排除
 
 ### Q: Git 报错 "fatal: '<branch>' is already checked out at '<path>'"
 **A**: 不能在两个 worktree 中同时 checkout 同一个分支。每个 worktree 必须在不同分支上。

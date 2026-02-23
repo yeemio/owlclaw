@@ -130,6 +130,24 @@
 
 ---
 
+## 跨 Spec 依赖提示
+
+> 由审校 worktree 在 Review Loop 中检测并更新。编码 worktree 开始新一轮工作前应检查本节。
+
+| 源 Spec（变更方） | 影响 Spec（被影响方） | 影响内容 | 状态 |
+|-------------------|---------------------|---------|------|
+| database-core | configuration | `owlclaw.db.engine` 的连接参数可能影响配置系统的 DB 配置项定义 | 待关注 |
+| database-core | governance | Ledger 持久化依赖 `owlclaw.db` 的 Base/session，database-core 接口变更需同步 | 阻塞中（governance 未分配） |
+| integrations-llm | agent-runtime | runtime 的 function calling 循环依赖 `litellm.acompletion`，接口变更需同步 | 待关注 |
+| security | governance | 数据脱敏可能需要与 visibility 过滤协调 | 待关注 |
+
+**规则**：
+- 审校 worktree 在每轮 Review Loop 中检查编码分支的变更是否影响其他 spec，有则更新本表
+- 编码 worktree 若发现自己的改动影响了其他 spec，在 commit message 中标注 `cross-dep: <affected-spec>`
+- 被影响的编码 worktree 在下次 Sync 时读取本表，评估是否需要适配
+
+---
+
 ## 分配历史
 
 | 日期 | 变更 | 原因 |
