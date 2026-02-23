@@ -92,7 +92,7 @@
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（40/105） | runtime + heartbeat + function calling |
+| agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（46/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
 | governance | `.kiro/specs/governance/` | 🟡 三层齐全，进行中（130/173） | visibility + ledger + router |
 | triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（39/92） | cron 触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（agent-runtime Round 4：MemorySystem 长期记忆与归档） |
-| 批次状态 | **完成**。agent-runtime 3.4~3.10 已实现并通过。 |
-| 已完成项 | 扩展 `owlclaw/agent/runtime/memory.py`：长期记忆写入、向量索引回调、搜索/召回、时间衰减、MEMORY.md 大小限制与自动归档；补齐 `tests/unit/agent/test_runtime_memory.py` 的单测与属性测试。 |
-| 下一待执行 | agent-runtime Round 5：推进 Task 4（KnowledgeInjector）最小实现与测试。 |
-| 验收快照 | `poetry run pytest tests/unit/agent/test_identity.py tests/unit/agent/test_identity_properties.py tests/unit/agent/test_heartbeat.py tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_properties.py tests/unit/agent/test_runtime_memory.py -q` -> `106 passed in 42.54s`。 |
+| 当前批次 | spec 循环（agent-runtime Round 5：KnowledgeInjector） |
+| 批次状态 | **完成**。agent-runtime 4.1~4.6 已实现并通过。 |
+| 已完成项 | 扩展 `owlclaw/capabilities/knowledge.py`：metadata 加载、focus/tokens 选择、token 预算控制、skills 热重载；补齐 `tests/unit/test_knowledge.py` 与 `tests/unit/test_knowledge_properties.py` 的单测和属性测试，并修复 YAML frontmatter 字符串生成稳定性。 |
+| 下一待执行 | agent-runtime Round 6：推进 Task 8.6~8.8（Langfuse tracing 与 AgentRuntime 单元测试补齐）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_knowledge.py tests/unit/test_knowledge_properties.py tests/unit/test_skills.py -q` -> `38 passed in 10.76s`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

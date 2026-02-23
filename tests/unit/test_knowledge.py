@@ -116,3 +116,52 @@ def test_get_all_skills_summary_sorted_by_name():
     injector = KnowledgeInjector(_Loader())  # type: ignore[arg-type]
     result = injector.get_all_skills_summary()
     assert result.index("**a-skill**") < result.index("**z-skill**")
+
+
+def test_load_skills_metadata_returns_serializable_dicts(injector):
+    metadata = injector.load_skills_metadata()
+    assert len(metadata) == 2
+    assert all("name" in item and "description" in item for item in metadata)
+
+
+def test_select_skills_respects_focus_and_token_budget(skills_loader_with_two):
+    injector = KnowledgeInjector(skills_loader_with_two, token_limit=3)
+    selected = injector.select_skills(["skill-a", "skill-b"], focus=None)
+    assert selected  # at least one survives
+    # With tiny budget only one skill should be selected.
+    assert len(selected) == 1
+
+
+def test_select_skills_focus_match_via_metadata_tags(tmp_path):
+    skill_dir = tmp_path / "skill-focus"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: skill-focus
+description: focus skill
+metadata:
+  tags: [inventory_monitor]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    injector = KnowledgeInjector(loader)
+    selected = injector.select_skills(["skill-focus"], focus="inventory_monitor")
+    assert selected == ["skill-focus"]
+
+
+def test_reload_skills_rescans_files(tmp_path):
+    loader = SkillsLoader(tmp_path)
+    injector = KnowledgeInjector(loader)
+    assert injector.reload_skills() == []
+    skill_dir = tmp_path / "x"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: x\ndescription: X\n---\n",
+        encoding="utf-8",
+    )
+    refreshed = injector.reload_skills()
+    assert len(refreshed) == 1
