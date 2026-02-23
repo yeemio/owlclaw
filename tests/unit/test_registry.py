@@ -249,6 +249,17 @@ async def test_get_state_success_async(registry):
 
 
 @pytest.mark.asyncio
+async def test_get_state_success_async_callable_object(registry):
+    class AsyncStateProvider:
+        async def __call__(self):
+            return {"async_obj": True}
+
+    registry.register_state("market_state", AsyncStateProvider())
+    result = await registry.get_state("market_state")
+    assert result == {"async_obj": True}
+
+
+@pytest.mark.asyncio
 async def test_get_state_not_found_raises(registry):
     """get_state() for unregistered state raises ValueError."""
     with pytest.raises(ValueError, match="No state provider registered"):

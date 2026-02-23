@@ -212,10 +212,9 @@ class CapabilityRegistry:
             )
 
         try:
-            if inspect.iscoroutinefunction(provider):
-                result = await provider()
-            else:
-                result = provider()
+            result = provider()
+            if inspect.isawaitable(result):
+                result = await result
 
             if not isinstance(result, dict):
                 raise TypeError(
