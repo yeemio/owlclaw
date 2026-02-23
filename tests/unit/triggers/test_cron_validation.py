@@ -251,6 +251,26 @@ class TestTaskManagement:
         hatchet.run_task_now.assert_awaited_once_with("cron_job", tenant_id="tenant-b")
 
     @pytest.mark.asyncio
+    async def test_trigger_now_normalizes_explicit_tenant_id(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.run_task_now = AsyncMock(return_value="run-123")
+        reg.start(hatchet, agent_runtime=None, ledger=None, tenant_id="tenant-a")
+        await reg.trigger_now("job", tenant_id="  tenant-b  ")
+        hatchet.run_task_now.assert_awaited_once_with("cron_job", tenant_id="tenant-b")
+
+    @pytest.mark.asyncio
+    async def test_trigger_now_rejects_blank_explicit_tenant_id(self) -> None:
+        reg = self._registry()
+        reg.register("job", "0 * * * *")
+        hatchet = MagicMock()
+        hatchet.run_task_now = AsyncMock(return_value="run-123")
+        reg.start(hatchet, agent_runtime=None, ledger=None, tenant_id="tenant-a")
+        with pytest.raises(ValueError, match="tenant_id must be a non-empty string"):
+            await reg.trigger_now("job", tenant_id="   ")
+
+    @pytest.mark.asyncio
     async def test_trigger_now_uses_trimmed_start_tenant_id(self) -> None:
         reg = self._registry()
         reg.register("job", "0 * * * *")
