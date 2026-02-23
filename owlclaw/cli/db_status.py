@@ -1,6 +1,7 @@
 """owlclaw db status — show connection, version, extensions, table count."""
 
 import os
+from urllib.parse import urlsplit, urlunsplit
 
 import typer
 
@@ -9,15 +10,20 @@ from owlclaw.db import ConfigurationError, get_engine
 
 def _mask_url(url: str) -> str:
     """Hide password in URL."""
-    if "://" not in url or "@" not in url:
+    if "://" not in url:
         return url
-    pre, rest = url.split("://", 1)
-    if ":" in rest and "@" in rest:
-        user, after = rest.split("@", 1)
-        if ":" in user:
-            user = user.split(":", 1)[0] + ":***"
-        rest = user + "@" + after
-    return pre + "://" + rest
+    split = urlsplit(url)
+    if split.username is None:
+        return url
+    userinfo = split.username
+    if split.password is not None:
+        userinfo = f"{userinfo}:***"
+    host = split.hostname or ""
+    if ":" in host and not host.startswith("["):
+        host = f"[{host}]"
+    port_suffix = f":{split.port}" if split.port is not None else ""
+    netloc = f"{userinfo}@{host}{port_suffix}"
+    return urlunsplit((split.scheme, netloc, split.path, split.query, split.fragment))
 
 
 def status_command(

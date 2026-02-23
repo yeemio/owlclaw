@@ -70,3 +70,19 @@ def test_db_status_trims_database_url_before_engine_check(monkeypatch):
     with patch("owlclaw.cli.db_status.get_engine") as mock_get_engine:
         status_command(database_url=None)
     mock_get_engine.assert_called_once_with("postgresql://u:p@localhost/owlclaw")
+
+
+def test_db_status_mask_url_hides_password_and_keeps_query():
+    from owlclaw.cli.db_status import _mask_url
+
+    masked = _mask_url("postgresql://user:secret@localhost:5432/dbname?sslmode=require")
+    assert "secret" not in masked
+    assert "user:***@" in masked
+    assert "?sslmode=require" in masked
+
+
+def test_db_status_mask_url_without_password_keeps_userinfo():
+    from owlclaw.cli.db_status import _mask_url
+
+    masked = _mask_url("postgresql://user@localhost/dbname")
+    assert masked == "postgresql://user@localhost/dbname"
