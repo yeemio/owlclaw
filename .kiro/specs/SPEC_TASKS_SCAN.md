@@ -90,7 +90,7 @@
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（107/108） | skills + registry |
-| database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（21/30） | SQLAlchemy Base、engine、session、异常、Alembic |
+| database-core | `.kiro/specs/database-core/` | 🟡 三层齐全，进行中（24/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | 🟡 三层齐全，进行中（17/53） | `owlclaw db` init/migrate/status，已挂载到主入口 |
 | agent-runtime | `.kiro/specs/agent-runtime/` | 🟡 三层齐全，进行中（19/105） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | 🟡 三层齐全，进行中（46/139） | 内建工具 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（本轮：cli-db Task 9，仅 cli-db） |
-| 批次状态 | **完成**。P1 命令 Checkpoint 验收通过。 |
-| 已完成项 | cli-db Task 9：test_cli_db.py + test_db.py 共 23 个用例全部通过；revision/rollback --help 及无 URL 行为验证通过。 |
-| 下一待执行 | **仅 cli-db**：Task 10（backup 命令）或可选 Task 7.4/8.4 单元测试。 |
-| 验收快照 | `pytest tests/unit/test_cli_db.py tests/unit/test_db.py` → 23 passed。 |
+| 当前批次 | spec 循环（本轮：database-core Task 3.2 / 3.3 / 3.4） |
+| 批次状态 | **完成**。database-core Base 属性测试与单元测试已补齐。 |
+| 已完成项 | database-core Task 3.2/3.3/3.4：新增 `tests/unit/test_db_base_properties.py`，覆盖 tenant_id 完整性、metadata 收录、DeclarativeBase 继承关系。 |
+| 下一待执行 | database-core 可选任务 4.4-4.7 / 6.2；cli-db 当前由其他 AI 批次推进，暂不并行改动。 |
+| 验收快照 | `poetry run pytest tests/unit/test_db.py tests/unit/test_db_base_properties.py -q` → 10 passed。 |
 | 阻塞项 | Docker 守护进程权限受限（Windows）导致容器型集成测试在本机跳过。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
