@@ -62,6 +62,18 @@ async def test_handle_model_failure_empty_chain_returns_none():
 
 
 @pytest.mark.asyncio
+async def test_handle_model_failure_skips_invalid_fallback_entries():
+    r = Router({})
+    next_model = await r.handle_model_failure(
+        "gpt-4o",
+        "trading_decision",
+        Exception("rate limit"),
+        ["", "  ", "gpt-4o-mini", 123],  # type: ignore[list-item]
+    )
+    assert next_model == "gpt-4o-mini"
+
+
+@pytest.mark.asyncio
 async def test_router_handles_non_dict_config() -> None:
     r = Router(None)  # type: ignore[arg-type]
     ctx = RunContext(tenant_id="t1")

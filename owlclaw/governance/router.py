@@ -67,7 +67,16 @@ class Router:
         """Return next model from fallback chain, or None if exhausted."""
         if not fallback_chain:
             return None
-        next_model = fallback_chain[0]
+        next_model = next(
+            (
+                model.strip()
+                for model in fallback_chain
+                if isinstance(model, str) and model.strip()
+            ),
+            None,
+        )
+        if next_model is None:
+            return None
         logger.warning(
             "Model %s failed for task_type %s, falling back to %s: %s",
             failed_model,
