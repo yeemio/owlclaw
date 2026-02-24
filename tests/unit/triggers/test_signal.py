@@ -93,14 +93,33 @@ async def test_signal_state_pause_resume_and_instruction_flow() -> None:
 @pytest.mark.asyncio
 async def test_signal_router_and_handlers() -> None:
     state = AgentStateManager(max_pending_instructions=4)
-    handlers = default_handlers(state=state, runtime=_Runtime(), governance=_Governance(True))
+    paused_calls = 0
+    resumed_calls = 0
+
+    async def _on_pause(signal: Signal) -> None:  # noqa: ARG001
+        nonlocal paused_calls
+        paused_calls += 1
+
+    async def _on_resume(signal: Signal) -> None:  # noqa: ARG001
+        nonlocal resumed_calls
+        resumed_calls += 1
+
+    handlers = default_handlers(
+        state=state,
+        runtime=_Runtime(),
+        governance=_Governance(True),
+        on_pause=_on_pause,
+        on_resume=_on_resume,
+    )
     router = SignalRouter(handlers=handlers)
 
     paused = await router.dispatch(_signal(SignalType.PAUSE))
     assert paused.status == "paused"
+    assert paused_calls == 1
 
     resumed = await router.dispatch(_signal(SignalType.RESUME))
     assert resumed.status == "resumed"
+    assert resumed_calls == 1
 
     triggered = await router.dispatch(
         Signal(

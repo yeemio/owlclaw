@@ -29,26 +29,44 @@ class BaseSignalHandler:
 
 
 class PauseHandler(BaseSignalHandler):
-    def __init__(self, state: AgentStateManager) -> None:
+    def __init__(
+        self,
+        state: AgentStateManager,
+        on_pause: Callable[[Signal], Awaitable[None] | None] | None = None,
+    ) -> None:
         self._state = state
+        self._on_pause = on_pause
 
     async def handle(self, signal: Signal) -> SignalResult:
         current = await self._state.get(signal.agent_id, signal.tenant_id)
         if current.paused:
             return SignalResult(status="already_paused")
         await self._state.set_paused(signal.agent_id, signal.tenant_id, True)
+        if self._on_pause is not None:
+            maybe = self._on_pause(signal)
+            if isinstance(maybe, Awaitable):
+                await maybe
         return SignalResult(status="paused")
 
 
 class ResumeHandler(BaseSignalHandler):
-    def __init__(self, state: AgentStateManager) -> None:
+    def __init__(
+        self,
+        state: AgentStateManager,
+        on_resume: Callable[[Signal], Awaitable[None] | None] | None = None,
+    ) -> None:
         self._state = state
+        self._on_resume = on_resume
 
     async def handle(self, signal: Signal) -> SignalResult:
         current = await self._state.get(signal.agent_id, signal.tenant_id)
         if not current.paused:
             return SignalResult(status="already_running")
         await self._state.set_paused(signal.agent_id, signal.tenant_id, False)
+        if self._on_resume is not None:
+            maybe = self._on_resume(signal)
+            if isinstance(maybe, Awaitable):
+                await maybe
         return SignalResult(status="resumed")
 
 
@@ -94,10 +112,12 @@ def default_handlers(
     state: AgentStateManager,
     runtime: AgentRuntimeProtocol,
     governance: GovernanceProtocol | None = None,
+    on_pause: Callable[[Signal], Awaitable[None] | None] | None = None,
+    on_resume: Callable[[Signal], Awaitable[None] | None] | None = None,
     default_ttl_seconds: int = 3600,
 ) -> dict[SignalType, Callable[[Signal], Awaitable[SignalResult]]]:
-    pause = PauseHandler(state)
-    resume = ResumeHandler(state)
+    pause = PauseHandler(state, on_pause=on_pause)
+    resume = ResumeHandler(state, on_resume=on_resume)
     trigger = TriggerHandler(runtime, governance=governance)
     instruct = InstructHandler(state, default_ttl_seconds=default_ttl_seconds)
     return {

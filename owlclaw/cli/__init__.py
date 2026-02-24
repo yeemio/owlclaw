@@ -232,6 +232,94 @@ def _dispatch_memory_command(argv: list[str]) -> bool:
     raise SystemExit(2)
 
 
+def _dispatch_agent_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw agent ...` signal operations via argparse."""
+    if not argv or argv[0] != "agent":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["agent"])
+
+    sub = argv[1]
+    sub_argv = argv[2:]
+    if "--help" in sub_argv or "-h" in sub_argv:
+        _print_help_and_exit(["agent", sub])
+
+    from owlclaw.cli.agent_signal import (
+        instruct_command,
+        pause_command,
+        resume_command,
+        status_command,
+        trigger_command,
+    )
+
+    if sub == "pause":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw agent pause")
+        parser.add_argument("--agent", "--agent-id", dest="agent", required=True)
+        parser.add_argument("--tenant", default="default")
+        parser.add_argument("--operator", default="cli")
+        ns = parser.parse_args(sub_argv)
+        print(pause_command(agent=ns.agent, tenant=ns.tenant, operator=ns.operator))
+        return True
+
+    if sub == "resume":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw agent resume")
+        parser.add_argument("--agent", "--agent-id", dest="agent", required=True)
+        parser.add_argument("--tenant", default="default")
+        parser.add_argument("--operator", default="cli")
+        ns = parser.parse_args(sub_argv)
+        print(resume_command(agent=ns.agent, tenant=ns.tenant, operator=ns.operator))
+        return True
+
+    if sub == "trigger":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw agent trigger")
+        parser.add_argument("--agent", "--agent-id", dest="agent", required=True)
+        parser.add_argument("--tenant", default="default")
+        parser.add_argument("--operator", default="cli")
+        parser.add_argument("--focus", default="")
+        parser.add_argument("--message", default="")
+        ns = parser.parse_args(sub_argv)
+        print(
+            trigger_command(
+                agent=ns.agent,
+                tenant=ns.tenant,
+                operator=ns.operator,
+                message=ns.message,
+                focus=ns.focus or None,
+            )
+        )
+        return True
+
+    if sub == "instruct":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw agent instruct")
+        parser.add_argument("--agent", "--agent-id", dest="agent", required=True)
+        parser.add_argument("--tenant", default="default")
+        parser.add_argument("--operator", default="cli")
+        parser.add_argument("--message", required=True)
+        parser.add_argument("--ttl", type=int, default=3600)
+        ns = parser.parse_args(sub_argv)
+        print(
+            instruct_command(
+                agent=ns.agent,
+                tenant=ns.tenant,
+                operator=ns.operator,
+                message=ns.message,
+                ttl_seconds=ns.ttl,
+            )
+        )
+        return True
+
+    if sub == "status":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw agent status")
+        parser.add_argument("--agent", "--agent-id", dest="agent", required=True)
+        parser.add_argument("--tenant", default="default")
+        ns = parser.parse_args(sub_argv)
+        print(status_command(agent=ns.agent, tenant=ns.tenant))
+        return True
+
+    print(f"Error: unknown agent subcommand: {sub}", file=sys.stderr)
+    raise SystemExit(2)
+
+
 def _dispatch_trigger_command(argv: list[str]) -> bool:
     """Dispatch `owlclaw trigger ...` using argparse for command-specific templates."""
     if not argv or argv[0] != "trigger":
@@ -288,6 +376,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Commands:")
         print("  db     Database: init, migrate, status")
         print("  memory Agent memory: list, prune, reset, stats")
+        print("  agent  Manual control via signal (pause/resume/trigger/instruct/status)")
         print("  skill  Create, validate, list Agent Skills (SKILL.md)")
         print("  trigger Trigger templates (db-change)")
         print("\n  owlclaw db --help   owlclaw skill --help")
@@ -431,6 +520,37 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw memory migrate-backend --agent <name> --source-backend <x> --target-backend <y> [OPTIONS]")
         print("\n  Migrate memory entries between storage backends.")
         sys.exit(0)
+    if argv == ["agent"]:
+        print("Usage: owlclaw agent [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Manual signal operations for an agent.")
+        print("Commands:")
+        print("  pause    Pause autonomous scheduling")
+        print("  resume   Resume autonomous scheduling")
+        print("  trigger  Trigger one manual run")
+        print("  instruct Inject operator instruction")
+        print("  status   Show pause/instruction status")
+        print("\n  owlclaw agent pause --help | owlclaw agent status --help")
+        sys.exit(0)
+    if argv == ["agent", "pause"]:
+        print("Usage: owlclaw agent pause --agent-id <id> [OPTIONS]")
+        print("\n  Pause an agent via signal router.")
+        sys.exit(0)
+    if argv == ["agent", "resume"]:
+        print("Usage: owlclaw agent resume --agent-id <id> [OPTIONS]")
+        print("\n  Resume an agent via signal router.")
+        sys.exit(0)
+    if argv == ["agent", "trigger"]:
+        print("Usage: owlclaw agent trigger --agent-id <id> [OPTIONS]")
+        print("\n  Force trigger one run via signal router.")
+        sys.exit(0)
+    if argv == ["agent", "instruct"]:
+        print("Usage: owlclaw agent instruct --agent-id <id> --message <text> [OPTIONS]")
+        print("\n  Queue one operator instruction with TTL.")
+        sys.exit(0)
+    if argv == ["agent", "status"]:
+        print("Usage: owlclaw agent status --agent-id <id> [OPTIONS]")
+        print("\n  Show agent paused state and pending instructions.")
+        sys.exit(0)
     if argv == ["trigger"]:
         print("Usage: owlclaw trigger [OPTIONS] COMMAND [ARGS]...")
         print("\n  Trigger tooling commands.")
@@ -477,6 +597,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("Usage: owlclaw [OPTIONS] COMMAND [ARGS]...")
     print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
+    print("  agent  Manual control via signal (pause, resume, trigger, instruct, status)")
     print("  skill  Create, validate, list Agent Skills (SKILL.md)")
     print("  trigger Trigger templates (db-change)")
     sys.exit(0)
@@ -615,6 +736,11 @@ def _main_impl() -> None:
         raise
     try:
         if _dispatch_memory_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_agent_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None

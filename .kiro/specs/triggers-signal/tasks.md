@@ -37,7 +37,7 @@
   - Ledger 记录所有 Signal 操作
   - 错误处理（Agent 不存在、权限不足等）
 
-- [ ] **Task 4**: 实现 `PauseHandler` + `ResumeHandler`
+- [x] **Task 4**: 实现 `PauseHandler` + `ResumeHandler`
   - PauseHandler: 设置 paused=True + 暂停 Hatchet cron
   - ResumeHandler: 设置 paused=False + 恢复 Hatchet cron
   - 幂等处理（已暂停再暂停 → already_paused）
@@ -56,7 +56,7 @@
 
 ### Phase 2：多入口集成
 
-- [ ] **Task 7**: 实现 CLI 命令
+- [x] **Task 7**: 实现 CLI 命令
   - `owlclaw agent pause [--agent-id <id>]`
   - `owlclaw agent resume [--agent-id <id>]`
   - `owlclaw agent trigger --focus <focus> --message <msg>`
