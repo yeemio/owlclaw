@@ -19,6 +19,10 @@ class AgentRuntimeProtocol(Protocol):
     ) -> Any: ...
 
 
+class GovernanceProtocol(Protocol):
+    async def allow_trigger(self, event_name: str, tenant_id: str) -> bool: ...
+
+
 class BaseSignalHandler:
     async def handle(self, signal: Signal) -> SignalResult:
         raise RuntimeError("signal handler not configured")
@@ -49,10 +53,15 @@ class ResumeHandler(BaseSignalHandler):
 
 
 class TriggerHandler(BaseSignalHandler):
-    def __init__(self, runtime: AgentRuntimeProtocol) -> None:
+    def __init__(self, runtime: AgentRuntimeProtocol, governance: GovernanceProtocol | None = None) -> None:
         self._runtime = runtime
+        self._governance = governance
 
     async def handle(self, signal: Signal) -> SignalResult:
+        if self._governance is not None:
+            allowed = await self._governance.allow_trigger("signal_manual", signal.tenant_id)
+            if not allowed:
+                return SignalResult(status="error", error_code="rate_limited", message="governance_blocked")
         result = await self._runtime.trigger_event(
             event_name="signal_manual",
             payload={"message": signal.message, "source": signal.source.value},
@@ -84,11 +93,12 @@ def default_handlers(
     *,
     state: AgentStateManager,
     runtime: AgentRuntimeProtocol,
+    governance: GovernanceProtocol | None = None,
     default_ttl_seconds: int = 3600,
 ) -> dict[SignalType, Callable[[Signal], Awaitable[SignalResult]]]:
     pause = PauseHandler(state)
     resume = ResumeHandler(state)
-    trigger = TriggerHandler(runtime)
+    trigger = TriggerHandler(runtime, governance=governance)
     instruct = InstructHandler(state, default_ttl_seconds=default_ttl_seconds)
     return {
         SignalType.PAUSE: pause.handle,

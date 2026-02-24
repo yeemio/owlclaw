@@ -24,7 +24,7 @@
   - 定义 `Signal`, `SignalType`, `SignalSource`, `SignalResult` 数据模型
   - 定义 `PendingInstruction` 数据模型
 
-- [ ] **Task 2**: 实现 `AgentStateManager`
+- [x] **Task 2**: 实现 `AgentStateManager`
   - 创建 Alembic migration：agents 表增加 `paused` 列 + `pending_instructions` 表
   - 实现 `get()` / `set_paused()` Agent 状态读写
   - 实现 `add_instruction()` / `consume_instructions()` 指令管理
@@ -43,13 +43,13 @@
   - 幂等处理（已暂停再暂停 → already_paused）
   - 状态持久化（进程重启后保持）
 
-- [ ] **Task 5**: 实现 `TriggerHandler`
+- [x] **Task 5**: 实现 `TriggerHandler`
   - 强制触发 Agent Run（不受 paused 影响）
   - 支持 focus 和 message 参数
   - 治理检查（预算/限流）
   - 返回 run_id
 
-- [ ] **Task 6**: 实现 `InstructHandler`
+- [x] **Task 6**: 实现 `InstructHandler`
   - 写入 pending_instructions 表
   - TTL 支持（默认 1 小时）
   - 最大待处理指令数限制（防止堆积）

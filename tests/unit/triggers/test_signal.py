@@ -23,6 +23,14 @@ class _Runtime:
         return {"run_id": "run-1"}
 
 
+class _Governance:
+    def __init__(self, allowed: bool) -> None:
+        self.allowed = allowed
+
+    async def allow_trigger(self, event_name: str, tenant_id: str) -> bool:  # noqa: ARG002
+        return self.allowed
+
+
 class _Authorizer:
     def __init__(self, allowed: bool) -> None:
         self.allowed = allowed
@@ -85,7 +93,7 @@ async def test_signal_state_pause_resume_and_instruction_flow() -> None:
 @pytest.mark.asyncio
 async def test_signal_router_and_handlers() -> None:
     state = AgentStateManager(max_pending_instructions=4)
-    handlers = default_handlers(state=state, runtime=_Runtime())
+    handlers = default_handlers(state=state, runtime=_Runtime(), governance=_Governance(True))
     router = SignalRouter(handlers=handlers)
 
     paused = await router.dispatch(_signal(SignalType.PAUSE))
@@ -106,6 +114,25 @@ async def test_signal_router_and_handlers() -> None:
     )
     assert triggered.status == "triggered"
     assert triggered.run_id == "run-1"
+
+
+@pytest.mark.asyncio
+async def test_trigger_handler_governance_blocked() -> None:
+    state = AgentStateManager(max_pending_instructions=4)
+    handlers = default_handlers(state=state, runtime=_Runtime(), governance=_Governance(False))
+    router = SignalRouter(handlers=handlers)
+    blocked = await router.dispatch(
+        Signal(
+            type=SignalType.TRIGGER,
+            source=SignalSource.CLI,
+            agent_id="a1",
+            tenant_id="t1",
+            operator="op",
+            message="run now",
+        )
+    )
+    assert blocked.status == "error"
+    assert blocked.error_code == "rate_limited"
 
 
 def test_pending_instruction_expiry() -> None:
