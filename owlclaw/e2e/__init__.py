@@ -12,7 +12,11 @@ from owlclaw.e2e.models import (
     TestScenario,
     ValidationConfig,
 )
+from owlclaw.e2e.orchestrator import TestOrchestrator
+from owlclaw.e2e.performance_benchmark import PerformanceBenchmarkManager, Threshold
+from owlclaw.e2e.report_generator import ReportGenerator
 from owlclaw.e2e.scenario_manager import TestScenarioManager
+from owlclaw.e2e.test_isolation import IsolationContext, TestEnvironmentIsolation
 
 __all__ = [
     "ExecutionEvent",
@@ -22,10 +26,16 @@ __all__ = [
     "DataCollector",
     "ComparisonEngine",
     "ExecutionEngine",
+    "PerformanceBenchmarkManager",
+    "TestOrchestrator",
+    "ReportGenerator",
     "ScenarioExecutionEngine",
     "ScenarioType",
     "TestScenario",
     "TestScenarioManager",
     "TestScenarioRepository",
     "ValidationConfig",
+    "Threshold",
+    "IsolationContext",
+    "TestEnvironmentIsolation",
 ]

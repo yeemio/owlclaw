@@ -81,6 +81,29 @@ class DataCollector:
         self._require_started()
         self._resource_usage[key] = float(value)
 
+    def collect_performance_metrics(
+        self,
+        *,
+        response_time_ms: float,
+        throughput_qps: float,
+        cpu_usage: float,
+        memory_usage: float,
+        network_io: float,
+        disk_io: float,
+    ) -> None:
+        """Collect canonical performance metrics for one execution sample."""
+        self._require_started()
+        self.record_metric("response_time_ms", response_time_ms)
+        self.record_metric("throughput_qps", throughput_qps)
+        self.record_metric("cpu_usage", cpu_usage)
+        self.record_metric("memory_usage", memory_usage)
+        self.record_metric("network_io", network_io)
+        self.record_metric("disk_io", disk_io)
+        self.record_resource_usage("cpu", cpu_usage)
+        self.record_resource_usage("memory", memory_usage)
+        self.record_resource_usage("network", network_io)
+        self.record_resource_usage("disk", disk_io)
+
     def stop_collection(self) -> CollectedData:
         """Finish collection and return a snapshot."""
         self._require_started()

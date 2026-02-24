@@ -59,3 +59,22 @@ class TestDataCollector:
         assert snapshot.events == []
         assert snapshot.metrics == {}
         assert snapshot.errors == []
+
+    def test_collect_performance_metrics_records_all_required_fields(self) -> None:
+        collector = DataCollector()
+        collector.start_collection("run-perf")
+        collector.collect_performance_metrics(
+            response_time_ms=120.0,
+            throughput_qps=12.0,
+            cpu_usage=25.0,
+            memory_usage=40.0,
+            network_io=5.0,
+            disk_io=2.0,
+        )
+        snapshot = collector.stop_collection()
+        assert snapshot.metrics["response_time_ms"] == 120.0
+        assert snapshot.metrics["throughput_qps"] == 12.0
+        assert snapshot.metrics["cpu_usage"] == 25.0
+        assert snapshot.metrics["memory_usage"] == 40.0
+        assert snapshot.metrics["network_io"] == 5.0
+        assert snapshot.metrics["disk_io"] == 2.0
