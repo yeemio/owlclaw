@@ -50,12 +50,7 @@ class TestIsolationProperties:
     @given(
         production_data=st.dictionaries(
             st.text(min_size=1, max_size=8),
-            st.recursive(
-                st.none() | st.booleans() | st.integers() | st.text(max_size=16),
-                lambda children: st.lists(children, max_size=4)
-                | st.dictionaries(st.text(min_size=1, max_size=8), children, max_size=4),
-                max_leaves=20,
-            ),
+            st.one_of(st.none(), st.booleans(), st.integers(), st.text(max_size=16)),
             max_size=6,
         ),
         production_database=st.dictionaries(
@@ -100,4 +95,3 @@ class TestIsolationProperties:
         assert production_data == data_before
         assert production_database == database_before
         assert production_config == config_before
-

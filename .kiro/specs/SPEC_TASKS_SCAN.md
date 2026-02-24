@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（80/85） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（84/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（59/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（merge codex-work + codex-gpt-work） |
-| 批次状态 | **已完成**。两个编码分支已审校通过并合并到 `review-work`，回归验收通过。 |
-| 已完成项 | 1) 合并 `codex-work`：`triggers-queue` Task 12~16（重试、Ack 策略、Ledger/指标、多租户透传）；2) 合并 `codex-gpt-work`：`e2e-validation` Task 16.4~16.5、17.1~17.4（ReplayComparator/ReplayReport/Shadow Mode）。 |
-| 下一待执行 | `codex-work` 继续 `triggers-webhook` Task 2（数据模型与持久化层）；`codex-gpt-work` 继续 `e2e-validation` Task 18（ABTestRunner 与自动权重调整）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/queue/trigger.py owlclaw/triggers/queue/__init__.py tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py owlclaw/e2e tests/e2e`（All checks passed）；`poetry run pytest tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py tests/e2e/test_replay_engine.py tests/e2e/test_report_generator.py tests/e2e/test_shadow_mode.py -q`（43 passed）。 |
+| 当前批次 | review loop（审校 codex-gpt-work：e2e-validation Task 18） |
+| 批次状态 | **已完成**。`codex-gpt-work` Task 18 审校通过并合并，回归验收通过。 |
+| 已完成项 | 1) 合并 `codex-gpt-work` Task 18.1~18.3（A/B 测试、显著性检验、自动权重调整）；2) 同步回填 `e2e-validation/tasks.md` 勾选；3) 修正 `ab_test.py` 的 Python 3.10 兼容性。 |
+| 下一待执行 | `codex-gpt-work` 继续 `e2e-validation` Task 19（最终检查点：完整测试套件与覆盖率验收）；`codex-work` 继续 `triggers-webhook` Task 2。 |
+| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e`（All checks passed）；`poetry run pytest tests/e2e/test_ab_test.py tests/e2e/test_shadow_mode.py tests/e2e/test_replay_engine.py tests/e2e/test_report_generator.py tests/e2e/test_test_isolation.py -q`（21 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

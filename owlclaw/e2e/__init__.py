@@ -1,5 +1,6 @@
 """E2E validation package exports."""
 
+from owlclaw.e2e.ab_test import ABOutcome, ABTestResult, ABTestRunner
 from owlclaw.e2e.comparison_engine import ComparisonEngine
 from owlclaw.e2e.configuration import E2EConfig, load_e2e_config
 from owlclaw.e2e.data_collector import CollectedData, DataCollector
@@ -73,4 +74,7 @@ __all__ = [
     "ShadowModeInterceptor",
     "ShadowComparator",
     "MigrationWeightController",
+    "ABOutcome",
+    "ABTestResult",
+    "ABTestRunner",
 ]
