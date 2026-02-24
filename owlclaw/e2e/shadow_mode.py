@@ -176,4 +176,3 @@ class MigrationWeightController:
         elif metrics.consistency_rate < 0.70:
             self.current_weight = 0.0
         return self.current_weight
-
