@@ -8,7 +8,7 @@ from typing import Any, Protocol
 
 from owlclaw.capabilities.bindings.credential import CredentialResolver
 from owlclaw.capabilities.bindings.executor import BindingExecutor
-from owlclaw.capabilities.bindings.schema import QueueBindingConfig
+from owlclaw.capabilities.bindings.schema import BindingConfig, QueueBindingConfig
 from owlclaw.integrations.queue_adapters import KafkaQueueAdapter
 
 
@@ -40,7 +40,9 @@ class QueueBindingExecutor(BindingExecutor):
         self._credential_resolver = credential_resolver or CredentialResolver()
         self._adapter_factory = adapter_factory or _default_adapter_factory
 
-    async def execute(self, config: QueueBindingConfig, parameters: dict[str, Any]) -> dict[str, Any]:
+    async def execute(self, config: BindingConfig, parameters: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(config, QueueBindingConfig):
+            raise TypeError("QueueBindingExecutor requires QueueBindingConfig")
         connection = self._credential_resolver.resolve(config.connection)
         headers = self._render_headers_mapping(config.headers_mapping, parameters)
         payload = json.dumps(parameters, ensure_ascii=False, default=str).encode("utf-8")
