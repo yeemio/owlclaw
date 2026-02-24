@@ -82,3 +82,27 @@ class UpdateStateRequest(BaseModel):
     """Request body for version state updates."""
 
     state: str
+
+
+class RejectRequest(BaseModel):
+    """Request body for review rejection."""
+
+    reason: str
+
+
+class AppealRequest(BaseModel):
+    """Request body for review appeal."""
+
+    reason: str
+
+
+class ReviewRecordResponse(BaseModel):
+    """Review record payload used by review endpoints."""
+
+    review_id: str
+    skill_name: str
+    version: str
+    publisher: str
+    status: str
+    comments: str
+    reviewed_at: datetime

@@ -19,6 +19,7 @@ from owlclaw.owlhub.api.auth import (
     enforce_write_auth,
     get_current_principal,
 )
+from owlclaw.owlhub.api.routes.reviews import router as reviews_router
 from owlclaw.owlhub.api.routes.skills import router as skills_router
 from owlclaw.owlhub.api.routes.statistics import router as statistics_router
 from owlclaw.owlhub.review import ReviewSystem
@@ -70,6 +71,7 @@ def create_app() -> FastAPI:
 
     app.include_router(create_auth_router(app.state.auth_manager))
     app.include_router(skills_router)
+    app.include_router(reviews_router)
     app.include_router(statistics_router)
     app.include_router(create_audit_router(app.state.audit_logger))
 

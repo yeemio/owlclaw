@@ -533,8 +533,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Export statistics, verify completeness and schema compliance
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 25. Implement full Review System with human workflow
-  - [ ] 25.1 Enhance ReviewSystem for Phase 3
+- [x] 25. Implement full Review System with human workflow
+  - [x] 25.1 Enhance ReviewSystem for Phase 3
     - Update to use database for review records
     - Implement `approve()` and `reject()` methods
     - Implement `appeal()` for rejected skills
@@ -542,7 +542,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Send notifications on review status changes
     - _Requirements: 7.1, 7.4, 7.5_
 
-  - [ ] 25.2 Create review API endpoints
+  - [x] 25.2 Create review API endpoints
     - Implement `GET /api/v1/reviews/pending` for reviewers
     - Implement `POST /api/v1/reviews/{id}/approve` for approval
     - Implement `POST /api/v1/reviews/{id}/reject` with reason
@@ -550,14 +550,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Restrict endpoints to reviewer/admin roles
     - _Requirements: 7.1, 7.4, 7.5_
 
-  - [ ]* 25.3 Write unit tests for Review System Phase 3
+  - [x]* 25.3 Write unit tests for Review System Phase 3
     - Test review record creation in database
     - Test approve/reject workflows
     - Test appeal submission and tracking
     - Test reviewer permissions
     - _Requirements: 7.1, 7.4, 7.5_
 
-  - [ ]* 25.4 Write property tests for review workflow
+  - [x]* 25.4 Write property tests for review workflow
     - **Property 20: 审核状态转换** (database version)
     - **Validates: Requirements 7.1, 7.4**
     - Test state transitions with database persistence

@@ -9,7 +9,10 @@ from pydantic import ValidationError
 
 from owlclaw.owlhub.api import create_app
 from owlclaw.owlhub.api.schemas import (
+    AppealRequest,
     PublishRequest,
+    RejectRequest,
+    ReviewRecordResponse,
     SkillDetail,
     SkillSearchItem,
     SkillSearchResponse,
@@ -52,12 +55,26 @@ def test_schema_validation_with_valid_data() -> None:
         version="1.0.0",
         metadata={"license": "MIT"},
     )
+    reject = RejectRequest(reason="policy violation")
+    appeal = AppealRequest(reason="please review again")
+    review = ReviewRecordResponse(
+        review_id="acme-entry-monitor-1.0.0",
+        skill_name="entry-monitor",
+        version="1.0.0",
+        publisher="acme",
+        status="pending",
+        comments="ok",
+        reviewed_at=datetime.now(timezone.utc),
+    )
     update_state = UpdateStateRequest(state="released")
     assert response.total == 1
     assert detail.versions[0].version == "1.0.0"
     assert publish.publisher == "acme"
     assert update_state.state == "released"
     assert stats_response.skill_name == "entry-monitor"
+    assert reject.reason
+    assert appeal.reason
+    assert review.review_id
 
 
 def test_schema_validation_with_invalid_data() -> None:

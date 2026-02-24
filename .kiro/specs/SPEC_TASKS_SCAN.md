@@ -118,7 +118,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/73） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（83/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -150,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（架构决策 4.12 Declarative Binding 落地；新建 spec；功能清单更新） |
-| 批次状态 | **已完成**。架构决策 4.12 落地；`declarative-binding` spec 三层文档已创建；功能清单已更新。 |
-| 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.12（Declarative Binding：声明式工具绑定），文档版本升至 v4.3；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加 Declarative Binding 强制约束；3) 新建 `.kiro/specs/declarative-binding/` 三层文档（requirements/design/tasks，共 73 个子任务）；4) 功能清单新增 Phase 1.5 声明式工具绑定条目；5) Spec 索引新增 declarative-binding 条目。 |
-| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐 → Task 1 Schema → Task 2 CredentialResolver → Task 3 Executor 注册表 → Task 4 HTTPBinding → Task 5 BindingTool → Task 6 Skills Loader 扩展 → Task 7 CLI validate 扩展。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.3（含 §4.12 完整 binding schema 设计、业界参考、集成架构图、里程碑）；`.cursor` 架构规则已加入 Declarative Binding 强制条款；`declarative-binding` spec 三层齐全（requirements 8 个需求 + design 8 个组件 + tasks 14 个 task + backlog）。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 25.1~25.4） |
+| 批次状态 | **已完成**。ReviewSystem 人工审核流（分配/审批/驳回/申诉）与 review API 已落地并通过测试。 |
+| 已完成项 | 1) 更新 `owlclaw/owlhub/review/system.py`：新增 `AppealRecord`、`list_pending_records()`、`assign_reviewer()`、`appeal()`、`list_appeals()`、通知记录与 appeals 持久化；2) 更新 `owlclaw/owlhub/review/__init__.py`：导出 `AppealRecord`；3) 新增 `owlclaw/owlhub/api/routes/reviews.py`：实现 `GET /api/v1/reviews/pending`、`POST /api/v1/reviews/{id}/approve`、`POST /api/v1/reviews/{id}/reject`、`POST /api/v1/reviews/{id}/appeal`，并加入 reviewer/admin/publisher 权限约束；4) 更新 `owlclaw/owlhub/api/app.py`：挂载 reviews router；5) 更新 `owlclaw/owlhub/api/schemas.py`：新增 `RejectRequest`、`AppealRequest`、`ReviewRecordResponse`；6) 新增 `tests/unit/test_owlhub_api_reviews.py`：覆盖审核接口权限/状态流/申诉持久化 + Property 20/23（API 版）；7) 回填 `owlhub/tasks.md` 的 Task 25、25.1、25.2、25.3、25.4。 |
+| 下一待执行 | `owlhub` Task 26（blacklist and moderation features）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/review/system.py owlclaw/owlhub/review/__init__.py owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/reviews.py owlclaw/owlhub/api/schemas.py tests/unit/test_owlhub_api_reviews.py tests/unit/test_owlhub_api_schemas.py --fix` -> all checks passed；`poetry run mypy owlclaw/owlhub/review/system.py owlclaw/owlhub/api/routes/reviews.py owlclaw/owlhub/api/app.py` -> success；`poetry run pytest tests/unit/test_owlhub_api_reviews.py tests/unit/test_owlhub_review_system.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_publish.py tests/unit/test_owlhub_api_auth.py -q` -> 23 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
