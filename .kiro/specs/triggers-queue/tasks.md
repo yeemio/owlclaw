@@ -83,29 +83,29 @@
   - 确保所有测试通过，如有问题请询问用户。
 
 
-- [ ] 6. 实现 IdempotencyStore
-  - [ ] 6.1 定义 IdempotencyStore 抽象基类
+- [x] 6. 实现 IdempotencyStore
+  - [x] 6.1 定义 IdempotencyStore 抽象基类
     - 定义 exists、set、get 方法签名
     - 添加类型注解和文档字符串
     - _需求：6.1_
   
-  - [ ] 6.2 实现 RedisIdempotencyStore
+  - [x] 6.2 实现 RedisIdempotencyStore
     - 实现基于 Redis 的幂等性存储
     - 实现 TTL 过期机制
     - 实现键前缀（idempotency:）
     - _需求：6.1, 6.5_
   
-  - [ ] 6.3 实现 MockIdempotencyStore
+  - [x] 6.3 实现 MockIdempotencyStore
     - 实现基于内存字典的 Mock 存储
     - 实现 TTL 模拟（使用时间戳）
     - _需求：10.1_
   
-  - [ ]* 6.4 为幂等性存储编写属性测试
+  - [x]* 6.4 为幂等性存储编写属性测试
     - **属性 15：幂等性保证**
     - **属性 16：幂等性窗口期**
     - **验证需求：6.1, 6.2, 6.3, 6.5**
   
-  - [ ]* 6.5 为幂等性存储编写单元测试
+  - [x]* 6.5 为幂等性存储编写单元测试
     - 测试键存在性检查
     - 测试 TTL 过期
     - 测试并发访问
