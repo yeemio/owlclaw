@@ -36,6 +36,7 @@ from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.heartbeat import HeartbeatChecker
 from owlclaw.agent.runtime.identity import IdentityLoader
 from owlclaw.integrations import llm as llm_integration
+from owlclaw.integrations.langfuse import TraceContext
 from owlclaw.security.audit import SecurityAuditLog
 from owlclaw.security.sanitizer import InputSanitizer
 
@@ -461,6 +462,19 @@ class AgentRuntime:
                 }
 
         trace = self._create_trace(context)
+        previous_trace_ctx = TraceContext.get_current()
+        trace_id = getattr(trace, "id", None)
+        if isinstance(trace_id, str) and trace_id:
+            TraceContext.set_current(
+                TraceContext(
+                    trace_id=trace_id,
+                    metadata={
+                        "agent_id": context.agent_id,
+                        "run_id": context.run_id,
+                        "langfuse_trace": trace,
+                    },
+                )
+            )
 
         run_timeout_raw = self.config.get(
             "run_timeout_seconds", _DEFAULT_RUN_TIMEOUT_SECONDS
@@ -513,6 +527,7 @@ class AgentRuntime:
         finally:
             self._reset_builtin_tool_budget(context.run_id)
             self._release_skill_content_cache()
+            TraceContext.set_current(previous_trace_ctx)
 
         logger.info(
             "Agent run completed agent_id=%s run_id=%s iterations=%s",
@@ -939,10 +954,23 @@ class AgentRuntime:
                 run_id=context.run_id,
                 tenant_id=context.tenant_id,
             )
+            self._perf_metrics["tool_calls"] += 1
+            observation = self._observe_tool(
+                trace,
+                "tool_execution",
+                {"tool": tool_name, "run_id": context.run_id, "arguments": arguments},
+            )
             try:
-                return await self.builtin_tools.execute(tool_name, arguments, ctx)
+                result = await self.builtin_tools.execute(tool_name, arguments, ctx)
+                self._finish_observation(
+                    observation,
+                    output=result if isinstance(result, dict) else {"result": result},
+                    status="success",
+                )
+                return result
             except Exception as exc:
                 logger.exception("Built-in tool '%s' failed", tool_name)
+                self._finish_observation(observation, status="error", output={"error": str(exc)})
                 return {"error": str(exc)}
 
         if self.registry is None:

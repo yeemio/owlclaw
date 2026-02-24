@@ -53,6 +53,13 @@ owlclaw skill validate capabilities/
 - `--verbose`, `-v`: 显示详细信息
 - `--json`: JSON 输出
 
+## 最佳实践
+
+- 先执行 `owlclaw skill templates --show <template_id>` 确认必需参数
+- `skill_name` 保持 kebab-case，避免后续校验失败
+- 将复杂参数放到 `--params-file`（JSON/YAML）便于复用
+- 生成后立即执行 `owlclaw skill validate <path>`，在提交前使用 `--strict`
+
 ## 故障排查
 
 - **模板未找到**：确认 template ID 格式为 `category/name`（如 `monitoring/health-check`）

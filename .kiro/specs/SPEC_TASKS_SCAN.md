@@ -47,7 +47,7 @@
 - [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet
 - [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
-- [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
+- [x] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [x] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
 - [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
@@ -106,10 +106,10 @@
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
-| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（0/20） | Langfuse tracing |
+| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（11/20） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（16/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（25/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
+| skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/37） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（0/12） | owlclaw-mcp |
@@ -142,10 +142,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（合并 codex-work：integrations-langchain） |
-| 批次状态 | **进行中**。已完成 `codex-work` 合并冲突解决与 spec 进度回填，正在执行审校验收。 |
-| 已完成项 | 1) 将 `triggers-cron` 状态更新为完成（19/19）；2) 合并并记录 `integrations-langchain` 当前进度（16/50）；3) 保持 SPEC_TASKS_SCAN 与本地 `tasks.md` 统计口径一致。 |
-| 下一待执行 | 完成 `codex-work` 审校测试并提交合并；随后审校 `codex-gpt-work`（integrations-langfuse/skill-templates）。 |
+| 当前批次 | review loop（合并 codex-gpt-work：integrations-langfuse + skill-templates） |
+| 批次状态 | **进行中**。已完成冲突解决与 spec 进度回填，正在执行审校验收。 |
+| 已完成项 | 1) `skill-templates` 进度更新为完成（56/56）；2) `integrations-langfuse` 进度更新为（11/20）；3) 保持 `SPEC_TASKS_SCAN` 与本地 `tasks.md` 统计口径一致。 |
+| 下一待执行 | 完成 `codex-gpt-work` 审校测试并提交合并；随后做一次全仓回归。 |
 | 验收快照 | 统计命令：`Get-ChildItem .kiro/specs -Directory ... Select-String '^- \\[( |x|X)\\]'`；冲突复核：`rg -n \"^<<<<<<<|^=======|^>>>>>>>\" .kiro/specs/SPEC_TASKS_SCAN.md`。 |
 | 阻塞项 | 无（当前为常规合并审校流程）。 |
 | 健康状态 | 正常 |

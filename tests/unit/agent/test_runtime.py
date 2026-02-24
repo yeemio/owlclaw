@@ -13,6 +13,7 @@ from owlclaw.agent.runtime.runtime import AgentRuntime
 from owlclaw.capabilities.knowledge import KnowledgeInjector
 from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.capabilities.skills import SkillsLoader
+from owlclaw.integrations.langfuse import TraceContext
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
@@ -122,6 +123,7 @@ class _FakeLangfuseObservation:
 
 class _FakeLangfuseTrace:
     def __init__(self) -> None:
+        self.id = "trace_fake"
         self.updates: list[dict[str, object]] = []
         self.spans: list[_FakeLangfuseObservation] = []
 
@@ -1245,6 +1247,28 @@ Check entries.
         assert result["status"] == "completed"
         assert len(client.traces) == 1
         assert any(update.get("status") == "success" for update in client.traces[0].updates)
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_run_sets_and_clears_trace_context(self, mock_llm, tmp_path) -> None:
+        previous = TraceContext.get_current()
+
+        async def _fake_completion(**kwargs):
+            current = TraceContext.get_current()
+            assert current is not None
+            assert current.trace_id.startswith("trace_")
+            return _make_llm_response("ok")
+
+        mock_llm.side_effect = _fake_completion
+        client = _FakeLangfuseClient()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"langfuse": {"enabled": True, "client": client}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert TraceContext.get_current() == previous
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_tool_execution_emits_langfuse_span(self, mock_llm, tmp_path) -> None:

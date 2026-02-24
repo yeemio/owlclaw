@@ -16,12 +16,15 @@ import json
 import logging
 import os
 import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field
+
+from owlclaw.integrations.langfuse import TokenCalculator, TraceContext
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +45,59 @@ async def acompletion(**kwargs: Any) -> Any:
     """
     import litellm
 
-    return await litellm.acompletion(**kwargs)
+    trace_ctx = TraceContext.get_current()
+    trace = trace_ctx.metadata.get("langfuse_trace") if trace_ctx and trace_ctx.metadata else None
+    model_name = str(kwargs.get("model", ""))
+    started = time.perf_counter()
+    try:
+        response = await litellm.acompletion(**kwargs)
+        if trace is not None and hasattr(trace, "generation"):
+            prompt_tokens, completion_tokens, total_tokens = TokenCalculator.extract_tokens_from_response(response)
+            cost = TokenCalculator.calculate_cost(model_name, prompt_tokens, completion_tokens)
+            output_payload: Any = None
+            try:
+                first_choice = response.choices[0]
+                message = first_choice.message
+                output_payload = getattr(message, "content", None)
+                if output_payload is None:
+                    output_payload = getattr(message, "tool_calls", None)
+            except Exception:
+                output_payload = None
+            with contextlib.suppress(Exception):
+                trace.generation(
+                    name="llm_completion",
+                    model=model_name,
+                    input=kwargs.get("messages"),
+                    output=output_payload,
+                    usage={
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": total_tokens,
+                    },
+                    metadata={
+                        "cost_usd": cost,
+                        "latency_ms": round((time.perf_counter() - started) * 1000, 3),
+                        "status": "success",
+                    },
+                )
+        return response
+    except Exception as exc:
+        if trace is not None and hasattr(trace, "generation"):
+            with contextlib.suppress(Exception):
+                trace.generation(
+                    name="llm_completion",
+                    model=model_name,
+                    input=kwargs.get("messages"),
+                    output=None,
+                    usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                    metadata={
+                        "cost_usd": 0.0,
+                        "latency_ms": round((time.perf_counter() - started) * 1000, 3),
+                        "status": "error",
+                        "error_message": str(exc),
+                    },
+                )
+        raise
 
 
 # ---------------------------------------------------------------------------

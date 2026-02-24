@@ -142,6 +142,34 @@ def test_skill_init_from_template_creates_valid_skill_md(tmp_path):
     assert "/health,/ready" in text
 
 
+def test_generated_skill_from_template_can_be_loaded_by_skills_loader(tmp_path):
+    """Rendered SKILL.md from template should be discoverable by SkillsLoader."""
+    from owlclaw.capabilities.skills import SkillsLoader
+    from owlclaw.templates.skills import (
+        TemplateRegistry,
+        TemplateRenderer,
+        get_default_templates_dir,
+    )
+
+    registry = TemplateRegistry(get_default_templates_dir())
+    renderer = TemplateRenderer(registry)
+    content = renderer.render(
+        "monitoring/health-check",
+        {
+            "skill_name": "loader-monitor",
+            "skill_description": "Load test skill",
+            "endpoints": "/health,/ready",
+        },
+    )
+    skill_dir = tmp_path / "loader-monitor"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(content, encoding="utf-8")
+
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert any(skill.name == "loader-monitor" for skill in skills)
+
+
 def test_skill_templates_list(tmp_path):
     """templates subcommand lists templates from library."""
     result = runner.invoke(skill_app, ["templates"])

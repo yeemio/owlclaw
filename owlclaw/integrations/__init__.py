@@ -1,6 +1,19 @@
 """External integrations — Hatchet, litellm, Langfuse (isolated layer)."""
 
 from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
+from owlclaw.integrations.langfuse import (
+    LangfuseClient,
+    LangfuseConfig,
+    LLMSpanData,
+    PrivacyMasker,
+    SpanType,
+    TokenCalculator,
+    ToolSpanData,
+    TraceContext,
+    TraceMetadata,
+    load_langfuse_config,
+    validate_config,
+)
 from owlclaw.integrations.llm import (
     AuthenticationError,
     ContextWindowExceededError,
@@ -18,6 +31,17 @@ from owlclaw.integrations.llm import (
 __all__ = [
     "HatchetClient",
     "HatchetConfig",
+    "LLMSpanData",
+    "LangfuseClient",
+    "LangfuseConfig",
+    "PrivacyMasker",
+    "SpanType",
+    "TokenCalculator",
+    "ToolSpanData",
+    "TraceContext",
+    "TraceMetadata",
+    "load_langfuse_config",
+    "validate_config",
     "acompletion",
     "AuthenticationError",
     "ContextWindowExceededError",
