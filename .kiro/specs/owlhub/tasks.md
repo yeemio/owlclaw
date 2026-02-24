@@ -411,21 +411,21 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test serialization/deserialization
     - _Requirements: 2.1, 2.3_
 
-- [ ] 21. Implement Registry API endpoints
-  - [ ] 21.1 Create `owlhub/api/routes/skills.py` with search endpoint
+- [x] 21. Implement Registry API endpoints
+  - [x] 21.1 Create `owlhub/api/routes/skills.py` with search endpoint
     - Implement `GET /api/v1/skills` with query, tags, sort_by, pagination
     - Support sorting by downloads, updated_at, name
     - Implement efficient database queries with joins
     - Add response caching for common queries
     - _Requirements: 2.1, 2.2, 2.4_
 
-  - [ ] 21.2 Implement skill detail and version endpoints
+  - [x] 21.2 Implement skill detail and version endpoints
     - Implement `GET /api/v1/skills/{publisher}/{name}` for skill details
     - Implement `GET /api/v1/skills/{publisher}/{name}/versions` for version list
     - Include statistics and dependency information
     - _Requirements: 2.3_
 
-  - [ ]* 21.3 Write unit tests for read-only API endpoints
+  - [x]* 21.3 Write unit tests for read-only API endpoints
     - Test search with various query parameters
     - Test pagination edge cases (empty results, last page)
     - Test sorting by different fields
@@ -433,7 +433,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test version listing
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ]* 21.4 Write property tests for API search and pagination
+  - [x]* 21.4 Write property tests for API search and pagination
     - **Property 6: 多维度搜索** (API version)
     - **Validates: Requirements 2.1, 2.2**
     - Test search results match query and are correctly sorted

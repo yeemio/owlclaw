@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from owlclaw.owlhub.api.schemas import SkillSearchResponse
+from owlclaw.owlhub.api.routes.skills import router as skills_router
 
 
 def create_app() -> FastAPI:
@@ -28,8 +28,6 @@ def create_app() -> FastAPI:
     def health() -> dict[str, str]:
         return {"status": "ok"}
 
-    @app.get("/api/v1/skills", response_model=SkillSearchResponse)
-    def list_skills(page: int = 1, page_size: int = 20) -> SkillSearchResponse:
-        return SkillSearchResponse(total=0, page=page, page_size=page_size, items=[])
+    app.include_router(skills_router)
 
     return app
