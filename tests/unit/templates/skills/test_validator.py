@@ -1,6 +1,10 @@
 """Unit tests for owlclaw.templates.skills.validator (skill-templates Task 5)."""
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 from owlclaw.templates.skills import TemplateValidator
 
@@ -296,3 +300,114 @@ class TestTemplateValidator:
         for p in templates:
             errs = v.validate_template(p)
             assert errs == [], f"{p.relative_to(base)}: {[e.message for e in errs]}"
+
+    @settings(max_examples=100, deadline=None)
+    @given(var_name=st.from_regex(r"[a-z_][a-z0-9_]{0,12}", fullmatch=True))
+    def test_property_template_jinja2_syntax_valid(self, var_name: str) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            tpl = Path(tmp_dir) / "x.md.j2"
+            tpl.write_text(
+                f"{{#\nname: X\ndescription: Y\ntags: []\nparameters: []\n#}}\n---\nname: x\n---\n# {{{{ {var_name} }}}}\n",
+                encoding="utf-8",
+            )
+            errs = TemplateValidator().validate_template(tpl)
+            assert not any(e.field == "syntax" for e in errs)
+
+    @settings(max_examples=100, deadline=None)
+    @given(body=st.text(min_size=0, max_size=120))
+    def test_property_template_requires_metadata_comment_block(self, body: str) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            tpl = Path(tmp_dir) / "x.md.j2"
+            tpl.write_text(f"---\nname: x\n---\n{body}\n", encoding="utf-8")
+            errs = TemplateValidator().validate_template(tpl)
+            assert any(e.field == "metadata" and "comment block" in e.message for e in errs)
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        name=st.from_regex(r"[a-z0-9]+(?:-[a-z0-9]+)*", fullmatch=True),
+        description=st.text(min_size=1, max_size=80).filter(lambda x: bool(x.strip())),
+    )
+    def test_property_frontmatter_validity(self, name: str, description: str) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            skill = Path(tmp_dir) / "SKILL.md"
+            skill.write_text(
+                f"---\nname: {name}\ndescription: {description!r}\n---\n# Title\n\nBody\n",
+                encoding="utf-8",
+            )
+            errs = TemplateValidator().validate_skill_file(skill)
+            assert not any(e.field == "frontmatter" for e in errs)
+
+    @settings(max_examples=100, deadline=None)
+    @given(valid_name=st.from_regex(r"[a-z0-9]+(?:-[a-z0-9]+)*", fullmatch=True))
+    def test_property_name_format_valid_kebab_case(self, valid_name: str) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            skill = Path(tmp_dir) / "SKILL.md"
+            skill.write_text(
+                f"---\nname: {valid_name!r}\ndescription: ok\n---\n# Title\n",
+                encoding="utf-8",
+            )
+            errs = TemplateValidator().validate_skill_file(skill)
+            assert not any(e.field == "name" and "kebab-case" in e.message for e in errs)
+
+    @settings(max_examples=100, deadline=None)
+    @given(invalid_name=st.text(min_size=1, max_size=30))
+    def test_property_name_format_invalid_non_kebab_case(self, invalid_name: str) -> None:
+        assume(invalid_name != invalid_name.lower() or " " in invalid_name or "_" in invalid_name)
+        with TemporaryDirectory() as tmp_dir:
+            skill = Path(tmp_dir) / "SKILL.md"
+            skill.write_text(
+                f"---\nname: {invalid_name!r}\ndescription: ok\n---\n# Title\n",
+                encoding="utf-8",
+            )
+            errs = TemplateValidator().validate_skill_file(skill)
+            assert any(e.field == "name" and "kebab-case" in e.message for e in errs)
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        trigger=st.one_of(
+            st.sampled_from(
+                [
+                    'cron("*/5 * * * *")',
+                    'cron("0 * * * *")',
+                    'cron("0 0 * * *")',
+                ]
+            ),
+            st.from_regex(r'webhook\("/[A-Za-z0-9/_-]{1,40}"\)', fullmatch=True),
+            st.from_regex(r'queue\("[A-Za-z0-9][A-Za-z0-9_-]{0,20}"\)', fullmatch=True),
+        )
+    )
+    def test_property_trigger_syntax_valid(self, trigger: str) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            skill = Path(tmp_dir) / "SKILL.md"
+            skill.write_text(
+                f"---\nname: my-skill\ndescription: ok\nowlclaw:\n  trigger: {trigger!r}\n---\n# Title\n",
+                encoding="utf-8",
+            )
+            errs = TemplateValidator().validate_skill_file(skill)
+            assert not any(e.field == "owlclaw.trigger" and "Invalid trigger syntax" in e.message for e in errs)
+
+    @settings(max_examples=100, deadline=None)
+    @given(body=st.text(min_size=1, max_size=120))
+    def test_property_body_non_empty_with_heading(self, body: str) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            skill = Path(tmp_dir) / "SKILL.md"
+            skill.write_text(
+                f"---\nname: my-skill\ndescription: ok\n---\n# Heading\n\n{body}\n",
+                encoding="utf-8",
+            )
+            errs = TemplateValidator().validate_skill_file(skill)
+            assert not any(e.field == "body" and "Body is empty" in e.message for e in errs)
+
+    @settings(max_examples=100, deadline=None)
+    @given(name=st.text(min_size=1, max_size=40))
+    def test_property_validation_error_messages_are_non_empty(self, name: str) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            skill = Path(tmp_dir) / "SKILL.md"
+            skill.write_text(
+                f"---\nname: {name!r}\n---\n\n",
+                encoding="utf-8",
+            )
+            errs = TemplateValidator().validate_skill_file(skill)
+            assert errs
+            assert all(e.field.strip() for e in errs)
+            assert all(e.message.strip() for e in errs)

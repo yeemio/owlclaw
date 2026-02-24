@@ -110,7 +110,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（0/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（0/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（105/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
+| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（117/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（0/12） | owlclaw-mcp |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（skill-templates Task 3.8/3.9/3.11/3.12 属性测试 + case 过滤修正） |
-| 批次状态 | **已完成**。完成 `TemplateRenderer` 渲染与过滤器相关 4 项属性测试并通过验收，`skill-templates` 进度更新为 **105/149**。 |
-| 已完成项 | 1) 模板渲染幂等性属性测试（3.8）；2) 参数替换完整性属性测试（3.9）；3) kebab-case 属性测试（3.11）；4) snake-case 属性测试（3.12）；5) 修正 `TemplateRenderer` 过滤器为严格 ASCII 输出。 |
-| 下一待执行 | 继续 `skill-templates` 未完成属性测试（优先 5.2/5.3/5.5/5.6：TemplateValidator 相关属性测试）。 |
-| 验收快照 | `poetry run pytest tests/unit/templates/skills/test_registry.py tests/unit/templates/skills/test_renderer.py -q` -> `44 passed`；`poetry run ruff check owlclaw/templates/skills/renderer.py tests/unit/templates/skills/test_registry.py tests/unit/templates/skills/test_renderer.py` -> `All checks passed!`。 |
+| 当前批次 | spec 循环（skill-templates Task 5.x + 6.x 属性测试） |
+| 批次状态 | **已完成**。完成 `TemplateValidator` 与 `TemplateSearcher` 12 项属性测试并通过验收，`skill-templates` 进度更新为 **117/149**。 |
+| 已完成项 | 1) TemplateValidator 属性测试：5.2/5.3/5.5/5.6/5.7/5.8/5.10；2) TemplateSearcher 属性测试：6.2/6.3/6.5/6.6/6.7。 |
+| 下一待执行 | 继续 `skill-templates` 收口（优先 19.3 性能测试与任务末尾验收清单同步）。 |
+| 验收快照 | `poetry run pytest tests/unit/templates/skills/test_validator.py tests/unit/templates/skills/test_searcher.py -q` -> `52 passed`；`poetry run ruff check tests/unit/templates/skills/test_validator.py tests/unit/templates/skills/test_searcher.py` -> `All checks passed!`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
