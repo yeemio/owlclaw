@@ -162,11 +162,11 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
 | integrations-hatchet | 144/147 | `owlclaw/integrations/hatchet.py`, `owlclaw/agent/runtime/hatchet_bridge.py`, `tests/unit/integrations/test_hatchet*.py` |
-| triggers-cron | 116/117 | `owlclaw/triggers/cron.py`, `tests/unit/triggers/**`, `tests/integration/test_triggers_cron*.py` |
+| integrations-langchain | 0/101 | `owlclaw/integrations/langchain/**`, `tests/unit/integrations/test_langchain*.py` |
 
-**备注**：triggers-cron 仅剩 1 个外部 Hatchet E2E task（需真实 Hatchet 环境），可标记 blocked 等外部依赖。
+**备注**：triggers-cron 已完成（117/117 ✅），等待 review-work 审校后合并。integrations-hatchet 仍有 3 个 task 进行中。
 
-**下一任务（当前完成后）**：integrations-hatchet + triggers-cron 收口后 → **integrations-langchain** (0/101)。
+**下一任务（当前完成后）**：integrations-hatchet + integrations-langchain 收口后 → **triggers-webhook** (0/69)。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -232,6 +232,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-23 | codex-gpt-work：governance → capabilities-skills + agent-tools | governance 已完成(173/173)，capabilities-skills 只差1 task，agent-tools 接续 |
 | 2026-02-23 | codex-gpt-work：capabilities-skills+agent-tools → skill-templates | capabilities-skills(108/108) + agent-tools(139/139) 已完成 |
 | 2026-02-23 | codex-work：integrations-hatchet 追加 triggers-cron | triggers-cron 116/117 接近完成，hatchet 同步收尾 |
+| 2026-02-23 | codex-work：追加 integrations-langchain | triggers-cron(117/117) 已完成，等待审校；提前分配 Phase 2 任务 |
 
 ---
 
@@ -244,7 +245,6 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 2 待分配**（次优先）：
 - integrations-langfuse (0/66)
-- integrations-langchain (0/101)
 - triggers-webhook (0/69)、triggers-queue (0/89)、triggers-db-change (0/11)、triggers-api (0/10)、triggers-signal (0/14)
 
 **Phase 2**（次优先）：
