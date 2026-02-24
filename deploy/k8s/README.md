@@ -35,3 +35,27 @@ For OwlHub API, you can apply the included secret template directly or replace v
 ```bash
 kubectl apply -f deploy/k8s/owlhub-api-secret.yaml
 ```
+
+## CI/CD
+
+OwlHub API deployment workflow:
+
+- `.github/workflows/owlhub-api-deploy.yml`
+
+Required GitHub Environments/Secrets/Variables:
+
+- Environment `owlhub-staging`
+  - Secret: `KUBE_CONFIG_STAGING_B64`
+  - Variable: `OWLHUB_K8S_NAMESPACE_STAGING`
+  - Variable: `OWLHUB_API_BASE_URL_STAGING`
+- Environment `owlhub-production`
+  - Secret: `KUBE_CONFIG_PRODUCTION_B64`
+  - Variable: `OWLHUB_K8S_NAMESPACE_PRODUCTION`
+  - Variable: `OWLHUB_API_BASE_URL_PRODUCTION`
+
+The workflow runs:
+
+1. Build and push API image to GHCR.
+2. Apply Kubernetes manifests and roll out new image.
+3. Run `alembic upgrade head` in running API pod.
+4. Execute post-deploy smoke checks (`/health`, `/metrics`).
