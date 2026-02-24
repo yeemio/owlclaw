@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from statistics import mean
 from typing import Any
 
@@ -55,7 +55,7 @@ class ABTestRunner:
                 agent_id=agent_id,
                 group=group,
                 metrics=normalized,
-                timestamp=datetime.now(UTC),
+                timestamp=datetime.now(timezone.utc),
             )
         )
 
