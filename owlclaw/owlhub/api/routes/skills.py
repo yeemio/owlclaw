@@ -19,6 +19,7 @@ from owlclaw.owlhub.api.schemas import (
     SkillDetail,
     SkillSearchItem,
     SkillSearchResponse,
+    SkillStatisticsResponse,
     UpdateStateRequest,
     VersionInfo,
 )
@@ -150,6 +151,31 @@ def get_skill_versions(publisher: str, name: str) -> list[VersionInfo]:
         )
         for entry in entries
     ]
+
+
+@router.get("/{publisher}/{name}/statistics", response_model=SkillStatisticsResponse)
+def get_skill_statistics(publisher: str, name: str, request: Request) -> SkillStatisticsResponse:
+    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name)]
+    if not entries:
+        raise HTTPException(status_code=404, detail="skill not found")
+    entries.sort(key=lambda entry: str(entry.get("manifest", {}).get("version", "")))
+    latest = entries[-1]
+    manifest = latest.get("manifest", {})
+    tracker = request.app.state.statistics_tracker
+    stats = tracker.get_statistics(
+        skill_name=name,
+        publisher=publisher,
+        repository=str(manifest.get("repository", "")).strip() or None,
+    )
+    return SkillStatisticsResponse(
+        skill_name=stats.skill_name,
+        publisher=stats.publisher,
+        total_downloads=stats.total_downloads,
+        downloads_last_30d=stats.downloads_last_30d,
+        total_installs=stats.total_installs,
+        active_installs=stats.active_installs,
+        last_updated=stats.last_updated,
+    )
 
 
 @router.post("", response_model=PublishResponse)

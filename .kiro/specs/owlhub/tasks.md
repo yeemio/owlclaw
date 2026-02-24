@@ -502,29 +502,29 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Execute publish operations, verify audit logs contain complete information
     - _Requirements: 1.1, 5.2_
 
-- [ ] 24. Implement real-time Statistics Service
-  - [ ] 24.1 Update StatisticsTracker for database-backed tracking
+- [x] 24. Implement real-time Statistics Service
+  - [x] 24.1 Update StatisticsTracker for database-backed tracking
     - Implement `record_download()` to write to skill_statistics table
     - Implement `record_install()` with user_id tracking
     - Implement aggregation queries for total and time-windowed stats
     - Add background job for daily statistics aggregation
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ] 24.2 Create statistics API endpoints
+  - [x] 24.2 Create statistics API endpoints
     - Implement `GET /api/v1/skills/{publisher}/{name}/statistics`
     - Implement `GET /api/v1/statistics/export` with format parameter
     - Support JSON and CSV export formats
     - Add admin-only endpoint for full statistics dump
     - _Requirements: 6.3, 6.4, 6.5_
 
-  - [ ]* 24.3 Write unit tests for Statistics Service
+  - [x]* 24.3 Write unit tests for Statistics Service
     - Test download/install event recording
     - Test statistics aggregation
     - Test concurrent event handling
     - Test export format generation
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ]* 24.4 Write property tests for statistics
+  - [x]* 24.4 Write property tests for statistics
     - **Property 18: 统计计数准确性** (database version)
     - **Validates: Requirements 6.1, 6.2, 6.3**
     - Execute N operations, verify counts are accurate

@@ -29,6 +29,18 @@ class SkillDetail(BaseModel):
     statistics: dict[str, Any] = Field(default_factory=dict)
 
 
+class SkillStatisticsResponse(BaseModel):
+    """Aggregated statistics payload for one skill."""
+
+    skill_name: str
+    publisher: str
+    total_downloads: int
+    downloads_last_30d: int
+    total_installs: int
+    active_installs: int
+    last_updated: datetime
+
+
 class SkillSearchItem(BaseModel):
     """One skill row in search results."""
 

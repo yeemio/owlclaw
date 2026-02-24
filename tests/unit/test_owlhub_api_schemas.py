@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
@@ -11,6 +13,7 @@ from owlclaw.owlhub.api.schemas import (
     SkillDetail,
     SkillSearchItem,
     SkillSearchResponse,
+    SkillStatisticsResponse,
     UpdateStateRequest,
     VersionInfo,
 )
@@ -34,6 +37,15 @@ def test_schema_validation_with_valid_data() -> None:
         versions=[version],
         statistics={"total_downloads": 10},
     )
+    stats_response = SkillStatisticsResponse(
+        skill_name="entry-monitor",
+        publisher="acme",
+        total_downloads=10,
+        downloads_last_30d=5,
+        total_installs=8,
+        active_installs=3,
+        last_updated=datetime.now(timezone.utc),
+    )
     publish = PublishRequest(
         publisher="acme",
         skill_name="entry-monitor",
@@ -45,6 +57,7 @@ def test_schema_validation_with_valid_data() -> None:
     assert detail.versions[0].version == "1.0.0"
     assert publish.publisher == "acme"
     assert update_state.state == "released"
+    assert stats_response.skill_name == "entry-monitor"
 
 
 def test_schema_validation_with_invalid_data() -> None:
