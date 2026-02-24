@@ -28,7 +28,7 @@
   - 定义核心类型和接口（TestScenario、ExecutionResult、ValidationConfig 等）
   - _需求: 1.1, 2.1, 3.1_
 
-- [ ] 2. 实现测试场景管理器
+- [x] 2. 实现测试场景管理器
   - [x] 2.1 实现 TestScenarioManager 类
     - 实现 createScenario、getScenario、updateScenario、deleteScenario 方法
     - 实现场景配置验证逻辑
@@ -43,12 +43,12 @@
     - **属性 12: 场景配置验证**
     - **验证需求: 4.2**
   
-  - [ ] 2.4 实现场景导入导出功能
+  - [x] 2.4 实现场景导入导出功能
     - 实现 exportScenarios 和 importScenarios 方法
     - 支持 JSON 格式的序列化和反序列化
     - _需求: 4.5_
   
-  - [ ]* 2.5 编写导入导出的属性测试
+  - [x]* 2.5 编写导入导出的属性测试
     - **属性 15: 场景导入导出往返**
     - **验证需求: 4.5**
 
