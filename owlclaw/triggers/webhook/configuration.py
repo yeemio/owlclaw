@@ -10,7 +10,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import Any, Literal, cast
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from owlclaw.triggers.webhook.types import WebhookGlobalConfig, WebhookSystemConfig
 

@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any, cast
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +266,7 @@ class ScanResult:
         return cls.from_dict(data)
 
     def to_yaml(self) -> str:
-        return yaml.safe_dump(self.to_dict(), allow_unicode=True, sort_keys=True)
+        return cast(str, yaml.safe_dump(self.to_dict(), allow_unicode=True, sort_keys=True))
 
     @classmethod
     def from_yaml(cls, payload: str) -> ScanResult:

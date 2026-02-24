@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, cast
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from owlclaw.cli.scan.models import ScanResult
 
@@ -34,7 +34,7 @@ class YAMLSerializer(ResultSerializer):
     """Serialize ScanResult to YAML."""
 
     def serialize(self, result: ScanResult) -> str:
-        return yaml.safe_dump(result.to_dict(), allow_unicode=True, sort_keys=True)
+        return cast(str, yaml.safe_dump(result.to_dict(), allow_unicode=True, sort_keys=True))
 
 
 class SchemaValidator:

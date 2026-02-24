@@ -6,19 +6,29 @@ import sys
 import typer
 from click.exceptions import Exit as ClickExit
 
-from owlclaw.cli.db import db_app
 from owlclaw.cli.init_config import init_config_command
-from owlclaw.cli.memory import memory_app
 from owlclaw.cli.reload_config import reload_config_command
-from owlclaw.cli.skill import skill_app
 
 app = typer.Typer(
     name="owlclaw",
     help="OwlClaw — Agent base for business applications.",
 )
-app.add_typer(db_app, name="db")
-app.add_typer(memory_app, name="memory")
-app.add_typer(skill_app, name="skill")
+
+_SUBAPPS_REGISTERED = False
+
+
+def _register_subapps() -> None:
+    global _SUBAPPS_REGISTERED
+    if _SUBAPPS_REGISTERED:
+        return
+    from owlclaw.cli.db import db_app
+    from owlclaw.cli.memory import memory_app
+    from owlclaw.cli.skill import skill_app
+
+    app.add_typer(db_app, name="db")
+    app.add_typer(memory_app, name="memory")
+    app.add_typer(skill_app, name="skill")
+    _SUBAPPS_REGISTERED = True
 
 
 @app.command("init")
@@ -895,6 +905,7 @@ def main() -> None:
 
 def _main_impl() -> None:
     """Inner main; KeyboardInterrupt is handled in main()."""
+    _register_subapps()
     try:
         if _dispatch_db_revision(sys.argv[1:]):
             return

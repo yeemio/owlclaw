@@ -11,51 +11,51 @@
 
 ### Phase 0：契约与文档
 
-- [ ] **Task 0**: 契约与文档对齐
-  - [ ] 0.1 确认 requirements.md 完整且与架构文档 §4.12 一致
-  - [ ] 0.2 确认 design.md 完整且包含所有组件设计
-  - [ ] 0.3 确认 tasks.md 覆盖所有需求的实现
-  - [ ] 0.4 定义 Binding Schema 的 JSON Schema（语言无关契约，供跨语言验证）
-  - [ ] 0.5 定义 `tools` 简化声明语法（YAML 内联，降低 JSON Schema 书写门槛）
-  - [ ] 0.6 定义 `prerequisites` 字段规范（env/bins/config/python_packages/os）
+- [x] **Task 0**: 契约与文档对齐
+  - [x] 0.1 确认 requirements.md 完整且与架构文档 §4.12 一致
+  - [x] 0.2 确认 design.md 完整且包含所有组件设计
+  - [x] 0.3 确认 tasks.md 覆盖所有需求的实现
+  - [x] 0.4 定义 Binding Schema 的 JSON Schema（语言无关契约，供跨语言验证）
+  - [x] 0.5 定义 `tools` 简化声明语法（YAML 内联，降低 JSON Schema 书写门槛）
+  - [x] 0.6 定义 `prerequisites` 字段规范（env/bins/config/python_packages/os）
 
 ### Phase 1：核心基础设施（MVP — P0）
 
-- [ ] **Task 1**: Binding Schema 与数据模型
-  - [ ] 1.1 创建 `owlclaw/capabilities/bindings/` 包结构
-  - [ ] 1.2 实现 `schema.py`：BindingConfig、RetryConfig 基类
-  - [ ] 1.3 实现 HTTPBindingConfig（method、url、headers、body_template、response_mapping）
-  - [ ] 1.4 实现 QueueBindingConfig（provider、connection、topic、format、headers_mapping）
-  - [ ] 1.5 实现 SQLBindingConfig（connection、query、read_only、parameter_mapping、max_rows）
-  - [ ] 1.6 实现 `parse_binding_config()` 工厂函数（dict → typed config）
-  - [ ] 1.7 实现 schema 验证函数（必填字段、类型检查、credential 引用格式）
-  - [ ] 1.8 单元测试：schema 解析、验证、round-trip 序列化
+- [x] **Task 1**: Binding Schema 与数据模型
+  - [x] 1.1 创建 `owlclaw/capabilities/bindings/` 包结构
+  - [x] 1.2 实现 `schema.py`：BindingConfig、RetryConfig 基类
+  - [x] 1.3 实现 HTTPBindingConfig（method、url、headers、body_template、response_mapping）
+  - [x] 1.4 实现 QueueBindingConfig（provider、connection、topic、format、headers_mapping）
+  - [x] 1.5 实现 SQLBindingConfig（connection、query、read_only、parameter_mapping、max_rows）
+  - [x] 1.6 实现 `parse_binding_config()` 工厂函数（dict → typed config）
+  - [x] 1.7 实现 schema 验证函数（必填字段、类型检查、credential 引用格式）
+  - [x] 1.8 单元测试：schema 解析、验证、round-trip 序列化
 
-- [ ] **Task 2**: CredentialResolver
-  - [ ] 2.1 实现 `credential.py`：CredentialResolver 类
-  - [ ] 2.2 实现 `resolve()` 方法（`${ENV_VAR}` → 实际值）
-  - [ ] 2.3 实现 `resolve_dict()` 方法（递归解析嵌套 dict）
-  - [ ] 2.4 实现 `contains_potential_secret()` 静态方法（启发式检测明文密钥）
-  - [ ] 2.5 支持多来源：os.environ → .env 文件 → owlclaw.yaml secrets
-  - [ ] 2.6 缺失变量时抛出 ValueError（明确错误信息）
-  - [ ] 2.7 单元测试：正常解析、缺失变量、嵌套 dict、secret 检测
+- [x] **Task 2**: CredentialResolver
+  - [x] 2.1 实现 `credential.py`：CredentialResolver 类
+  - [x] 2.2 实现 `resolve()` 方法（`${ENV_VAR}` → 实际值）
+  - [x] 2.3 实现 `resolve_dict()` 方法（递归解析嵌套 dict）
+  - [x] 2.4 实现 `contains_potential_secret()` 静态方法（启发式检测明文密钥）
+  - [x] 2.5 支持多来源：os.environ → .env 文件 → owlclaw.yaml secrets
+  - [x] 2.6 缺失变量时抛出 ValueError（明确错误信息）
+  - [x] 2.7 单元测试：正常解析、缺失变量、嵌套 dict、secret 检测
 
-- [ ] **Task 3**: Binding Executor 抽象与注册表
-  - [ ] 3.1 实现 `executor.py`：BindingExecutor ABC（execute、validate_config、supported_modes）
-  - [ ] 3.2 实现 BindingExecutorRegistry（register、get、list_types）
-  - [ ] 3.3 未知类型时抛出 ValueError（含可用类型列表）
-  - [ ] 3.4 单元测试：注册、获取、未知类型错误
+- [x] **Task 3**: Binding Executor 抽象与注册表
+  - [x] 3.1 实现 `executor.py`：BindingExecutor ABC（execute、validate_config、supported_modes）
+  - [x] 3.2 实现 BindingExecutorRegistry（register、get、list_types）
+  - [x] 3.3 未知类型时抛出 ValueError（含可用类型列表）
+  - [x] 3.4 单元测试：注册、获取、未知类型错误
 
-- [ ] **Task 4**: HTTPBinding Executor（MVP 核心）
-  - [ ] 4.1 实现 `http_executor.py`：HTTPBindingExecutor 类
-  - [ ] 4.2 实现 URL 路径参数模板解析（`{param}` → 实际值）
-  - [ ] 4.3 实现 headers 的 credential 解析
-  - [ ] 4.4 实现 body_template 参数替换
-  - [ ] 4.5 实现 response_mapping（JSONPath 提取、status_codes 映射）
-  - [ ] 4.6 实现 active 模式：正常 HTTP 调用 + 超时 + 重试（指数退避）
-  - [ ] 4.7 实现 shadow 模式：GET 正常执行，写操作只记录不发送
-  - [ ] 4.8 单元测试：active GET/POST、shadow 拦截、超时重试、response mapping
-  - [ ] 4.9 集成测试：使用 httpx mock 的完整调用链路
+- [x] **Task 4**: HTTPBinding Executor（MVP 核心）
+  - [x] 4.1 实现 `http_executor.py`：HTTPBindingExecutor 类
+  - [x] 4.2 实现 URL 路径参数模板解析（`{param}` → 实际值）
+  - [x] 4.3 实现 headers 的 credential 解析
+  - [x] 4.4 实现 body_template 参数替换
+  - [x] 4.5 实现 response_mapping（JSONPath 提取、status_codes 映射）
+  - [x] 4.6 实现 active 模式：正常 HTTP 调用 + 超时 + 重试（指数退避）
+  - [x] 4.7 实现 shadow 模式：GET 正常执行，写操作只记录不发送
+  - [x] 4.8 单元测试：active GET/POST、shadow 拦截、超时重试、response mapping
+  - [x] 4.9 集成测试：使用 httpx mock 的完整调用链路
 
 - [ ] **Task 5**: BindingTool 与 Ledger 集成
   - [ ] 5.1 实现 `tool.py`：BindingTool 类

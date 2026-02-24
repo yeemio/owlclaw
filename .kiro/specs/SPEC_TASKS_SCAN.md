@@ -70,7 +70,7 @@
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
-- [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
+- [x] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
 - [ ] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
 - [ ] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
 - [x] `owlclaw-mcp` — MCP Server（OpenClaw 通道，只读查询为主） → spec: mcp-server  
@@ -117,10 +117,10 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（5/26） | 声明式工具绑定（Task 0~4 已完成：契约/schema + Resolver/Registry + HTTP Executor） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（33/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（71/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11/12/12.1~12.3/13/13.1~13.4/14/14.1~14.4/15/16/16.1~16.5/17/17.1~17.5 已完成） |
+| cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -152,10 +152,10 @@
 |------|---|
 | 最后更新 | 2026-02-24 |
 | 当前批次 | review-work（持续合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
-| 批次状态 | **进行中（本批）**。已合并 `cli-scan` Task 17 与 `owlhub` Task 32.3，并完成定向质量门。 |
-| 已完成项 | 1) 合并 `codex-work` 新增批次（并行执行、增量扫描、配置管理、序列化与 schema 校验、`scan_cli` 命令接口）；2) 审校中修复 `serialization.py` 的 mypy/ruff 类型问题并提交补丁；3) 回归通过：`ruff` + `mypy` + `pytest tests/unit/cli_scan -q`（40 passed）；4) 合并 `codex-gpt-work` owlhub Task 32.3（API deploy workflow、迁移与 smoke tests、README 与部署配置测试扩展）；5) 同步事实进度：`cli-scan` 71/143，`owlhub` 33/42。 |
-| 下一待执行 | 1) 推进 `cli-scan` Task 18/19（错误恢复与端到端集成）；2) 推进 `owlhub` Task 33（Phase 3 综合集成测试）；3) 继续保持 `review-work` 与两条开发分支差异归零。 |
-| 验收快照 | 当前：`cli-scan` 🟡(71/143)，`owlhub` 🟡(33/42)，`triggers-signal` ✅(15/15)。 |
+| 批次状态 | **进行中（本批）**。已推进 `declarative-binding` Task 4、`cli-scan` 全量收口以及 `owlhub` Task 32.3。 |
+| 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）与 `cli-scan` 收口（Task 1~20 完成，80/80）；2) 保持并修复 `serialization.py` 的 mypy/ruff 兼容写法，避免类型回退；3) 合并 `codex-gpt-work` owlhub Task 32.3（API deploy workflow、迁移/健康检查、README 与部署配置测试扩展）；4) 定向回归通过：`ruff` + `mypy` + `pytest`（`cli_scan`、`bindings http executor`、`owlhub deployment`）。 |
+| 下一待执行 | 1) 推进 `declarative-binding` Task 5（BindingTool + Ledger 集成）；2) 推进 `owlhub` Task 33（Phase 3 综合集成测试）；3) 继续保持 `review-work` 与两条开发分支差异归零。 |
+| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(5/26)，`owlhub` 🟡(33/42)，`triggers-signal` ✅(15/15)。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

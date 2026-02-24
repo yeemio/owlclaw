@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://owlclaw.ai/specs/declarative-binding/binding.schema.json",
+  "title": "OwlClaw Declarative Binding",
+  "description": "Language-agnostic binding contract for SKILL metadata tools_schema.*.binding",
+  "type": "object",
+  "required": ["type"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["http", "queue", "sql", "grpc"]
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["active", "shadow"],
+      "default": "active"
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 5000
+    },
+    "retry": {
+      "type": "object",
+      "properties": {
+        "max_attempts": { "type": "integer", "minimum": 1, "default": 3 },
+        "backoff_ms": { "type": "integer", "minimum": 1, "default": 1000 },
+        "backoff_multiplier": { "type": "number", "minimum": 1.0, "default": 2.0 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "http" } } },
+      "then": {
+        "required": ["method", "url"],
+        "properties": {
+          "method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+          "url": { "type": "string", "minLength": 1 },
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "body_template": { "type": "object" },
+          "response_mapping": { "type": "object" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "queue" } } },
+      "then": {
+        "required": ["provider", "connection", "topic"],
+        "properties": {
+          "provider": { "type": "string", "enum": ["kafka", "rabbitmq", "redis"] },
+          "connection": { "type": "string", "pattern": "^\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}$" },
+          "topic": { "type": "string", "minLength": 1 },
+          "format": { "type": "string", "enum": ["json", "avro", "protobuf"], "default": "json" },
+          "headers_mapping": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "sql" } } },
+      "then": {
+        "required": ["connection", "query"],
+        "properties": {
+          "connection": { "type": "string", "pattern": "^\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}$" },
+          "query": { "type": "string", "minLength": 1 },
+          "read_only": { "type": "boolean", "default": true },
+          "parameter_mapping": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "max_rows": { "type": "integer", "minimum": 1, "default": 1000 }
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}
+

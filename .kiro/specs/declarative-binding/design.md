@@ -152,6 +152,60 @@ class SQLBindingConfig(BindingConfig):
     max_rows: int = 1000
 ```
 
+#### 1.5 JSON Schema Contract
+
+Language-agnostic binding contract is published at:
+
+- `.kiro/specs/declarative-binding/binding.schema.json`
+
+Any non-Python runtime can validate `tools_schema.<tool>.binding` with this file.
+
+#### 1.6 Simplified `tools` Declaration
+
+`tools` supports a minimal YAML declaration and runtime expansion:
+
+```yaml
+tools:
+  check_stock:
+    warehouse_id: string
+    sku: { type: string, description: "SKU code" }
+```
+
+Expanded to JSON Schema equivalent before registration:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "warehouse_id": { "type": "string" },
+    "sku": { "type": "string", "description": "SKU code" }
+  },
+  "required": ["warehouse_id", "sku"]
+}
+```
+
+#### 1.7 `prerequisites` Field Specification
+
+`owlclaw.prerequisites` structure:
+
+```yaml
+owlclaw:
+  prerequisites:
+    env: ["API_TOKEN", "READ_DB_DSN"]
+    bins: ["curl", "psql"]
+    config: ["integrations.langfuse.public_key"]
+    python_packages: ["httpx>=0.27", "sqlalchemy>=2.0"]
+    os: ["linux", "darwin", "windows"]
+```
+
+Semantics:
+
+- `env`: all listed variables must exist at load/validate time.
+- `bins`: all binaries must be resolvable in `PATH`.
+- `config`: dotted-path key must exist in effective `owlclaw.yaml`.
+- `python_packages`: package import/version check at load/validate time.
+- `os`: if present, current OS must match one of allowed values.
+
 ### 2. CredentialResolver
 
 **职责：** 解析 binding 配置中的 `${ENV_VAR}` 引用。

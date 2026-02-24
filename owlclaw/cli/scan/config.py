@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from owlclaw.cli.scan.scanner import ScanConfig
 
@@ -71,7 +71,7 @@ class ConfigManager:
         return ScanConfig(project_path=project_path, **validated)
 
     def dump_yaml(self, config: ScanConfig) -> str:
-        return yaml.safe_dump(self.to_dict(config), allow_unicode=True, sort_keys=True)
+        return cast(str, yaml.safe_dump(self.to_dict(config), allow_unicode=True, sort_keys=True))
 
     def load_yaml(self, project_path: Path, payload: str) -> ScanConfig:
         data = yaml.safe_load(payload) or {}

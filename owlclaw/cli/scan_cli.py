@@ -97,7 +97,7 @@ def _run_incremental_scan(scanner: ProjectScanner, project_path: Path) -> ScanRe
 
 
 def _load_yaml(path: Path) -> dict:
-    import yaml
+    import yaml  # type: ignore[import-untyped]
 
     payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     if not isinstance(payload, dict):
