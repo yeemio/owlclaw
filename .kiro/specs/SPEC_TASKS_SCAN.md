@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（3/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（6/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-work langchain 文档收口） |
-| 批次状态 | **已完成**。`integrations-langchain` 任务清单达到 **50/50** 并完成审校合并。 |
-| 已完成项 | 1) 合并 `codex-work` 的 langchain tasks 收口提交；2) 更新 Phase 2 中 langchain 模块勾选状态；3) 回填 Spec 索引进度到 `50/50`。 |
-| 下一待执行 | 继续 `e2e-validation` Task 4.3/4.4（完整流程属性与轨迹完整性），并同步回填进度。 |
-| 验收快照 | 一致性核对：`Get-ChildItem .kiro/specs -Directory ...` -> `integrations-langchain: 50/50`；文档复核：`rg -n \"integrations-langchain|Phase 2|Checkpoint\" .kiro/specs/SPEC_TASKS_SCAN.md`。 |
+| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 6.3/6.4/6.5） |
+| 批次状态 | **已完成**。`ComparisonEngine` 属性测试已扩展到指标完整性、差异计算和异常检测，Task 6 全部收口。 |
+| 已完成项 | 1) 新增属性 5（决策指标完整性）；2) 新增属性 6（差异计算公式正确性）；3) 新增属性 8（阈值异常检测）；4) Task 6.3/6.4/6.5 与 Task 6 顶层任务回填为已完成。 |
+| 下一待执行 | `e2e-validation` Task 7.1（ReportGenerator 最小实现）和 Task 7.4（验证报告属性测试）。 |
+| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 31 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
