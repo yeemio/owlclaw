@@ -128,13 +128,13 @@
   - [x] 13.4 运行时自动将简化声明展开为完整 JSON Schema
   - [x] 13.5 编写 SKILL.md 书写指南（面向非技术用户，含最佳实践和常见模式）
 
-- [ ] **Task 14**: Reference Implementation
-  - [ ] 14.1 创建 `examples/binding-http/` 示例（HTTP binding 调用 REST API）
-  - [ ] 14.2 创建示例的 SKILL.md（含 binding 声明 + 简化 tools 语法）
-  - [ ] 14.3 创建 mock HTTP server 用于示例运行
-  - [ ] 14.4 创建 shadow 模式对比示例
-  - [ ] 14.5 创建"无 binding 无 handler"示例（body 含 curl 命令，Agent 通过 shell 工具执行）
-  - [ ] 14.6 编写 README 说明三种 skill 模式（binding / @handler / shell 指令）
+- [x] **Task 14**: Reference Implementation
+  - [x] 14.1 创建 `examples/binding-http/` 示例（HTTP binding 调用 REST API）
+  - [x] 14.2 创建示例的 SKILL.md（含 binding 声明 + 简化 tools 语法）
+  - [x] 14.3 创建 mock HTTP server 用于示例运行
+  - [x] 14.4 创建 shadow 模式对比示例
+  - [x] 14.5 创建"无 binding 无 handler"示例（body 含 curl 命令，Agent 通过 shell 工具执行）
+  - [x] 14.6 编写 README 说明三种 skill 模式（binding / @handler / shell 指令）
 
 - [ ] **Task 15**: 文档更新
   - [ ] 15.1 更新 `examples/` 索引 README 包含 binding 示例
