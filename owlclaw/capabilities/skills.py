@@ -384,6 +384,8 @@ def auto_register_binding_tools(
                 binding_config=config,
                 executor_registry=executor_registry,
                 ledger=ledger,
+                risk_level=skill.risk_level,
+                requires_confirmation=skill.requires_confirmation,
             )
             registry.register_handler(tool_name, tool)
             registered.append(tool_name)

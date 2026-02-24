@@ -6,11 +6,13 @@ import json
 import logging
 import time
 import uuid
+from collections.abc import Mapping
 from decimal import Decimal
 from typing import Any, Protocol
 
 from owlclaw.capabilities.bindings.executor import BindingExecutorRegistry
-from owlclaw.capabilities.bindings.schema import BindingConfig
+from owlclaw.capabilities.bindings.schema import BindingConfig, SQLBindingConfig
+from owlclaw.security import DataMasker, InputSanitizer, RiskDecision, RiskGate
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,11 @@ class BindingTool:
         *,
         tenant_id: str = "default",
         agent_id: str = "binding-tool",
+        risk_level: str = "low",
+        requires_confirmation: bool = False,
+        sanitizer: InputSanitizer | None = None,
+        masker: DataMasker | None = None,
+        risk_gate: RiskGate | None = None,
     ) -> None:
         self.name = name
         self.description = description
@@ -62,19 +69,27 @@ class BindingTool:
         self.ledger = ledger
         self.tenant_id = tenant_id
         self.agent_id = agent_id
+        self.risk_level = risk_level
+        self.requires_confirmation = requires_confirmation
+        self._sanitizer = sanitizer or InputSanitizer()
+        self._masker = masker or DataMasker()
+        self._risk_gate = risk_gate or RiskGate()
 
     async def __call__(self, **kwargs: Any) -> dict[str, Any]:
         """Execute binding with timing and optional ledger recording."""
         start = time.monotonic()
         executor = self.executor_registry.get(self.binding_config.type)
         run_id = str(uuid.uuid4())
+        sanitized_parameters = self._sanitize_parameters(kwargs)
         try:
-            result = await executor.execute(self.binding_config, kwargs)
+            self._enforce_risk_policy()
+            result = await executor.execute(self.binding_config, sanitized_parameters)
+            result = self._mask_result(result)
             elapsed_ms = int((time.monotonic() - start) * 1000)
             status = self._derive_status(result)
             await self._record_ledger(
                 run_id=run_id,
-                parameters=kwargs,
+                parameters=sanitized_parameters,
                 result_summary=self._summarize(result),
                 elapsed_ms=elapsed_ms,
                 status=status,
@@ -85,7 +100,7 @@ class BindingTool:
             elapsed_ms = int((time.monotonic() - start) * 1000)
             await self._record_ledger(
                 run_id=run_id,
-                parameters=kwargs,
+                parameters=sanitized_parameters,
                 result_summary=self._summarize({"error": str(exc)}),
                 elapsed_ms=elapsed_ms,
                 status="error",
@@ -151,3 +166,39 @@ class BindingTool:
         if isinstance(raw, str) and raw.strip().lower() == "shadow":
             return "shadow"
         return "success"
+
+    def _sanitize_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
+        return {key: self._sanitize_value(value) for key, value in parameters.items()}
+
+    def _sanitize_value(self, value: Any) -> Any:
+        if isinstance(value, str):
+            return self._sanitizer.sanitize(value, source=f"binding:{self.name}").sanitized
+        if isinstance(value, list):
+            return [self._sanitize_value(item) for item in value]
+        if isinstance(value, tuple):
+            return tuple(self._sanitize_value(item) for item in value)
+        if isinstance(value, Mapping):
+            return {str(k): self._sanitize_value(v) for k, v in value.items()}
+        return value
+
+    def _mask_result(self, result: dict[str, Any]) -> dict[str, Any]:
+        masked = self._masker.mask(result)
+        return masked if isinstance(masked, dict) else {"value": masked}
+
+    def _enforce_risk_policy(self) -> None:
+        requires_confirmation = self.requires_confirmation
+        if isinstance(self.binding_config, SQLBindingConfig) and self._is_sql_write(self.binding_config.query):
+            if self.risk_level not in {"high", "critical"}:
+                raise PermissionError("SQL write bindings require risk_level high or critical")
+            requires_confirmation = True
+        decision, _op_id = self._risk_gate.evaluate(
+            self.name,
+            risk_level=self.risk_level,
+            requires_confirmation=requires_confirmation,
+        )
+        if decision != RiskDecision.EXECUTE:
+            raise PermissionError(f"Binding execution blocked by risk policy: {decision.value}")
+
+    @staticmethod
+    def _is_sql_write(query: str) -> bool:
+        return not query.lstrip().lower().startswith("select")
