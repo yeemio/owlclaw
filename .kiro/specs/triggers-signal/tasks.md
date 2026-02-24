@@ -104,8 +104,8 @@
   - pause → cron 不触发 → resume → cron 恢复
   - instruct → Agent Run → STM 包含指令
 
-- [ ] **Task 14**: 文档
-  - Signal 系统使用指南
-  - CLI 命令参考
-  - MCP 工具集成说明
-  - 人工介入最佳实践（何时暂停、何时注入指令）
+- [x] **Task 14**: 文档
+  - [x] Signal 系统使用指南
+  - [x] CLI 命令参考
+  - [x] MCP 工具集成说明
+  - [x] 人工介入最佳实践（何时暂停、何时注入指令）
