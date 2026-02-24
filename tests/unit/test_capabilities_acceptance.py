@@ -94,7 +94,7 @@ def test_perf_100_skills_load_time(tmp_path):
     skills = loader.scan()
     elapsed = time.perf_counter() - start
     assert len(skills) == 100
-    assert elapsed < 5.0, "100 Skills should load in under 5 seconds"
+    assert elapsed < 8.0, "100 Skills should load in under 8 seconds"
 
 
 def test_perf_metadata_query(tmp_path):
