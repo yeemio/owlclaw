@@ -3,16 +3,13 @@
 import asyncio
 from pathlib import Path
 
-from owlclaw.integrations.llm import LLMConfig, LLMClient, PromptBuilder
+from owlclaw.integrations.llm import LLMClient, LLMConfig, PromptBuilder
 
 
 async def main() -> None:
     # 方式一：从 YAML 加载（示例配置在 docs/llm/）
     config_path = Path(__file__).resolve().parent.parent.parent / "docs" / "llm" / "owlclaw.llm.example.yaml"
-    if config_path.exists():
-        config = LLMConfig.from_yaml(config_path)
-    else:
-        config = LLMConfig.default_for_owlclaw()
+    config = LLMConfig.from_yaml(config_path) if config_path.exists() else LLMConfig.default_for_owlclaw()
     # Mock 模式：不发起真实请求，返回预定义内容
     config.mock_mode = True
     config.mock_responses = {"default": "Hello from mock. This is a basic completion."}

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from alembic.config import Config
 
 from owlclaw.cli.db_revision import _find_newest_revision_file

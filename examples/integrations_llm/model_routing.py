@@ -3,7 +3,7 @@
 import asyncio
 from pathlib import Path
 
-from owlclaw.integrations.llm import LLMConfig, LLMClient, PromptBuilder
+from owlclaw.integrations.llm import LLMClient, LLMConfig, PromptBuilder
 
 
 async def main() -> None:

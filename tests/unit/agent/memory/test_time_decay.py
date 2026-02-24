@@ -1,6 +1,7 @@
 """Unit tests for time_decay function (mathematical correctness)."""
 
 import math
+
 import pytest
 
 from owlclaw.agent.memory.store_pgvector import time_decay

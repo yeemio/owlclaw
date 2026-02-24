@@ -114,7 +114,7 @@ async def test_pgvector_time_decay_ordering(store: PgVectorStore) -> None:
     agent_id, tenant_id = "decay-agent", "default"
     emb = [0.5] * 1536
 
-    for i, content in enumerate(["Old", "Newer", "Newest"]):
+    for content in ["Old", "Newer", "Newest"]:
         entry = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content=content, embedding=emb)
         await store.save(entry)
 
