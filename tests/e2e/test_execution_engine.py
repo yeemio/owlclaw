@@ -121,6 +121,50 @@ class TestExecutionEngine:
         output = result.metadata["output"]
         assert output["status"] == "error"
         assert "cron failed" in output["error"]
+        assert output["failed_component"] == "cron_trigger"
+        assert output["error_type"] == "component_failure"
+        assert output["recovered"] is False
+
+    @pytest.mark.asyncio
+    async def test_inject_error_for_component(self) -> None:
+        engine = ExecutionEngine()
+        engine.inject_error("cron_trigger", "timeout")
+        scenario = E2ETestScenario(
+            scenario_id="m3",
+            name="mionyee task with injected error",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+        )
+
+        result = await engine.execute_scenario(scenario)
+        assert result.status == ExecutionStatus.ERROR
+        output = result.metadata["output"]
+        assert output["status"] == "error"
+        assert output["failed_component"] == "cron_trigger"
+        assert output["error_type"] == "timeout"
+        assert output["error_propagation"] == []
+        assert output["recovery_time_ms"] >= 0.0
+
+    @pytest.mark.asyncio
+    async def test_cleanup_removes_error_injection(self) -> None:
+        engine = ExecutionEngine()
+        engine.inject_error("agent_runtime", "network_failure")
+        engine.cleanup()
+        scenario = E2ETestScenario(
+            scenario_id="m4",
+            name="mionyee task after cleanup",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+        )
+
+        result = await engine.execute_scenario(scenario)
+        assert result.status == ExecutionStatus.PASSED
+        assert result.metadata["output"]["status"] == "passed"
+
+    def test_inject_error_rejects_unknown_inputs(self) -> None:
+        engine = ExecutionEngine()
+        with pytest.raises(ValueError):
+            engine.inject_error("unknown_component", "timeout")
+        with pytest.raises(ValueError):
+            engine.inject_error("cron_trigger", "unknown_error")
 
 
 class TestExecutionEngineProperties:
@@ -198,3 +242,90 @@ class TestExecutionEngineProperties:
         for trace in traces:
             assert "input" in trace
             assert "output" in trace
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        component=st.sampled_from(
+            ["cron_trigger", "agent_runtime", "skills_system", "governance_layer", "hatchet_integration"]
+        ),
+        error_type=st.sampled_from(["timeout", "network_failure", "resource_exhausted"]),
+    )
+    @pytest.mark.asyncio
+    async def test_property_error_injection_supported_for_all_components(
+        self,
+        component: str,
+        error_type: str,
+    ) -> None:
+        """Property 24: all supported error types are injectable for all components."""
+        scenario = E2ETestScenario(
+            scenario_id="error-inject",
+            name="error injection",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+        )
+        engine = ExecutionEngine()
+        engine.inject_error(component, error_type)
+        result = await engine.execute_scenario(scenario)
+
+        assert result.status == ExecutionStatus.ERROR
+        output = result.metadata["output"]
+        assert output["status"] == "error"
+        assert output["failed_component"] == component
+        assert output["error_type"] == error_type
+        assert output["recovery_time_ms"] >= 0.0
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        component=st.sampled_from(
+            ["cron_trigger", "agent_runtime", "skills_system", "governance_layer", "hatchet_integration"]
+        ),
+        params=st.dictionaries(st.text(min_size=1, max_size=10), st.integers(), max_size=5),
+    )
+    @pytest.mark.asyncio
+    async def test_property_error_handling_records_propagation_and_recovery(
+        self,
+        component: str,
+        params: dict[str, int],
+    ) -> None:
+        """Property 25: error handling records propagation path and recovery timing."""
+        scenario = E2ETestScenario(
+            scenario_id="error-handling",
+            name="error handling",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+            input_data={"payload": params},
+        )
+        engine = ExecutionEngine()
+        engine.inject_error(component, "network_failure")
+        result = await engine.execute_scenario(scenario)
+
+        assert result.status == ExecutionStatus.ERROR
+        output = result.metadata["output"]
+        assert output["recovered"] is False
+        assert isinstance(output["error_propagation"], list)
+        assert output["recovery_time_ms"] >= 0.0
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        component=st.sampled_from(
+            ["cron_trigger", "agent_runtime", "skills_system", "governance_layer", "hatchet_integration"]
+        ),
+        error_type=st.sampled_from(["timeout", "network_failure", "resource_exhausted"]),
+    )
+    @pytest.mark.asyncio
+    async def test_property_cleanup_clears_test_data_and_temp_resources(
+        self,
+        component: str,
+        error_type: str,
+    ) -> None:
+        """Property 14: cleanup removes injected faults and restores executable state."""
+        scenario = E2ETestScenario(
+            scenario_id="cleanup",
+            name="cleanup",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+        )
+        engine = ExecutionEngine()
+        engine.inject_error(component, error_type)
+        engine.cleanup()
+        result = await engine.execute_scenario(scenario)
+
+        assert result.status == ExecutionStatus.PASSED
+        assert result.metadata["output"]["status"] == "passed"
