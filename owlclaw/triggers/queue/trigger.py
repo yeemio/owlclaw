@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -34,6 +35,92 @@ class GovernanceDecision:
     allowed: bool
     reason: str = ""
     policies: dict[str, Any] | None = None
+
+
+class QueueTriggerMetrics:
+    """In-process metrics recorder with optional Prometheus counters/histogram."""
+
+    def __init__(self) -> None:
+        self.processed_total = 0
+        self.failed_total = 0
+        self.retries_total = 0
+        self.dedup_hits_total = 0
+        self._latency_sum_ms = 0.0
+        self._latency_count = 0
+
+        self._prometheus_available = False
+        self._processed_counter: Any | None = None
+        self._failed_counter: Any | None = None
+        self._retry_counter: Any | None = None
+        self._dedup_counter: Any | None = None
+        self._latency_histogram: Any | None = None
+        try:
+            from prometheus_client import Counter, Histogram  # type: ignore[import-not-found]
+
+            self._processed_counter = Counter(
+                "owlclaw_queue_processed_total",
+                "Total successfully processed queue messages",
+            )
+            self._failed_counter = Counter(
+                "owlclaw_queue_failed_total",
+                "Total failed queue messages",
+            )
+            self._retry_counter = Counter(
+                "owlclaw_queue_retries_total",
+                "Total queue message retry attempts",
+            )
+            self._dedup_counter = Counter(
+                "owlclaw_queue_dedup_hits_total",
+                "Total deduplicated queue messages",
+            )
+            self._latency_histogram = Histogram(
+                "owlclaw_queue_processing_latency_ms",
+                "Queue message processing latency in milliseconds",
+            )
+            self._prometheus_available = True
+        except Exception:
+            self._prometheus_available = False
+
+    def record_success(self, duration_ms: float) -> None:
+        self.processed_total += 1
+        self._latency_sum_ms += duration_ms
+        self._latency_count += 1
+        if self._prometheus_available:
+            assert self._processed_counter is not None
+            assert self._latency_histogram is not None
+            self._processed_counter.inc()
+            self._latency_histogram.observe(duration_ms)
+
+    def record_failure(self) -> None:
+        self.failed_total += 1
+        if self._prometheus_available:
+            assert self._failed_counter is not None
+            self._failed_counter.inc()
+
+    def record_retry(self) -> None:
+        self.retries_total += 1
+        if self._prometheus_available:
+            assert self._retry_counter is not None
+            self._retry_counter.inc()
+
+    def record_dedup_hit(self) -> None:
+        self.dedup_hits_total += 1
+        if self._prometheus_available:
+            assert self._dedup_counter is not None
+            self._dedup_counter.inc()
+
+    def snapshot(self) -> dict[str, float | int]:
+        average_latency_ms = 0.0
+        if self._latency_count > 0:
+            average_latency_ms = self._latency_sum_ms / self._latency_count
+        return {
+            "processed_total": self.processed_total,
+            "failed_total": self.failed_total,
+            "retries_total": self.retries_total,
+            "dedup_hits_total": self.dedup_hits_total,
+            "latency_count": self._latency_count,
+            "latency_avg_ms": average_latency_ms,
+        }
 
 
 class QueueTrigger:
@@ -67,6 +154,7 @@ class QueueTrigger:
         self._processed_count = 0
         self._failed_count = 0
         self._dedup_hits = 0
+        self._metrics = QueueTriggerMetrics()
         self._parser = self._create_parser(config.parser_type)
 
     @staticmethod
@@ -120,6 +208,7 @@ class QueueTrigger:
             "processed_count": self._processed_count,
             "failed_count": self._failed_count,
             "dedup_hits": self._dedup_hits,
+            "metrics": self._metrics.snapshot(),
         }
 
     async def _consume_loop(self, worker_id: int) -> None:
@@ -137,11 +226,12 @@ class QueueTrigger:
                     await self._process_message(raw_message)
                 except Exception:
                     self._failed_count += 1
+                    self._metrics.record_failure()
                     logger.exception("Queue worker %s failed to process message", worker_id)
-                # Yield to event loop to avoid starvation when handlers are immediate.
                 await asyncio.sleep(0)
         except Exception:
             self._failed_count += 1
+            self._metrics.record_failure()
             logger.exception("Queue worker %s consume loop crashed", worker_id)
         finally:
             logger.debug("Queue worker %s stopped", worker_id)
@@ -149,6 +239,7 @@ class QueueTrigger:
     async def _process_message(self, raw_message: RawMessage) -> ProcessResult:
         """Parse and process one message; parse errors are routed to DLQ."""
         trace_id = f"queue-{raw_message.message_id}"
+        started = time.perf_counter()
         try:
             envelope = MessageEnvelope.from_raw_message(
                 raw_message,
@@ -157,7 +248,9 @@ class QueueTrigger:
             )
         except ParseError as exc:
             self._failed_count += 1
+            self._metrics.record_failure()
             await self.adapter.send_to_dlq(raw_message, reason=str(exc))
+            logger.warning("Queue parse error message_id=%s trace_id=%s error=%s", raw_message.message_id, trace_id, exc)
             return ProcessResult(
                 message_id=raw_message.message_id,
                 status="parse_error",
@@ -165,11 +258,28 @@ class QueueTrigger:
                 detail=str(exc),
             )
 
-        await self._process_envelope(raw_message, envelope, trace_id)
-        self._processed_count += 1
+        status, agent_run_id = await self._process_envelope(raw_message, envelope, trace_id)
+        if status == "processed":
+            duration_ms = (time.perf_counter() - started) * 1000
+            await self._record_success_execution(envelope, trace_id, duration_ms, agent_run_id)
+            self._processed_count += 1
+            self._metrics.record_success(duration_ms)
+            logger.info(
+                "Queue processed message_id=%s trace_id=%s queue=%s tenant_id=%s duration_ms=%.3f",
+                envelope.message_id,
+                trace_id,
+                self.config.queue_name,
+                envelope.tenant_id or "default",
+                duration_ms,
+            )
+            return ProcessResult(
+                message_id=raw_message.message_id,
+                status="processed",
+                trace_id=trace_id,
+            )
         return ProcessResult(
             message_id=raw_message.message_id,
-            status="processed",
+            status=status,
             trace_id=trace_id,
         )
 
@@ -178,12 +288,12 @@ class QueueTrigger:
         raw_message: RawMessage,
         envelope: MessageEnvelope,
         trace_id: str,
-    ) -> None:
-        """Process a parsed envelope and apply basic ack policy behavior."""
+    ) -> tuple[str, str | None]:
+        """Process a parsed envelope and apply ack policy behavior."""
         governance_decision = await self._check_governance(envelope)
         if not governance_decision.allowed:
             await self._handle_governance_rejection(raw_message, envelope, governance_decision, trace_id)
-            return
+            return ("governance_rejected", None)
 
         if self.config.enable_dedup and self.idempotency_store is not None:
             dedup_key = envelope.dedup_key or envelope.message_id
@@ -194,15 +304,18 @@ class QueueTrigger:
                 logger.exception("Idempotency check failed for key %s", dedup_key)
             if exists:
                 self._dedup_hits += 1
+                self._metrics.record_dedup_hit()
                 await self.adapter.ack(raw_message)
-                return
+                return ("deduplicated", None)
 
+        trigger_result: Any | None = None
         try:
-            await self._trigger_agent(envelope, trace_id)
+            trigger_result = await self._trigger_agent_with_retry(envelope, trace_id)
         except Exception as exc:
             self._failed_count += 1
+            self._metrics.record_failure()
             await self._handle_processing_error(raw_message, exc)
-            return
+            return ("processing_error", None)
 
         if self.config.enable_dedup and self.idempotency_store is not None:
             dedup_key = envelope.dedup_key or envelope.message_id
@@ -216,6 +329,7 @@ class QueueTrigger:
                 logger.exception("Idempotency write failed for key %s", dedup_key)
 
         await self.adapter.ack(raw_message)
+        return ("processed", self._extract_agent_run_id(trigger_result))
 
     async def _check_governance(self, envelope: MessageEnvelope) -> GovernanceDecision:
         """Run governance permission check when governance hook is provided."""
@@ -262,6 +376,7 @@ class QueueTrigger:
     ) -> None:
         """Handle governance rejection with ledger audit and ack policy behavior."""
         self._failed_count += 1
+        self._metrics.record_failure()
         await self._record_governance_rejection(envelope, decision, trace_id)
 
         reason = decision.reason or "governance_rejected"
@@ -314,13 +429,13 @@ class QueueTrigger:
         except Exception:
             logger.exception("Failed to record governance rejection for message %s", envelope.message_id)
 
-    async def _trigger_agent(self, envelope: MessageEnvelope, trace_id: str) -> None:
-        """Trigger AgentRuntime if configured; otherwise no-op."""
+    async def _trigger_agent_with_retry(self, envelope: MessageEnvelope, trace_id: str) -> Any | None:
+        """Trigger AgentRuntime with retry and exponential backoff."""
         if self.agent_runtime is None:
-            return
+            return None
         trigger_event = getattr(self.agent_runtime, "trigger_event", None)
         if not callable(trigger_event):
-            return
+            return None
         payload = {
             "message": envelope.payload,
             "headers": envelope.headers,
@@ -329,16 +444,44 @@ class QueueTrigger:
             "received_at": envelope.received_at.isoformat(),
             "trace_id": trace_id,
         }
-        await trigger_event(
-            event_name=envelope.event_name or "queue_message",
-            payload=payload,
-            focus=self.config.focus,
-            tenant_id=envelope.tenant_id or "default",
-        )
+        last_error: Exception | None = None
+        max_attempts = self.config.max_retries + 1
+        for attempt in range(max_attempts):
+            try:
+                return await trigger_event(
+                    event_name=envelope.event_name or "queue_message",
+                    payload=payload,
+                    focus=self.config.focus,
+                    tenant_id=envelope.tenant_id or "default",
+                )
+            except Exception as exc:
+                last_error = exc
+                if attempt >= self.config.max_retries:
+                    break
+                backoff_seconds = self._compute_backoff_seconds(attempt)
+                self._metrics.record_retry()
+                logger.warning(
+                    "Queue message %s trace_id=%s trigger retry %s/%s after %.3fs: %s",
+                    envelope.message_id,
+                    trace_id,
+                    attempt + 1,
+                    self.config.max_retries,
+                    backoff_seconds,
+                    exc,
+                )
+                await asyncio.sleep(backoff_seconds)
+        if last_error is not None:
+            raise last_error
+        return None
+
+    def _compute_backoff_seconds(self, attempt: int) -> float:
+        """Compute exponential backoff delay for retry attempt."""
+        return self.config.retry_backoff_base * (self.config.retry_backoff_multiplier**attempt)
 
     async def _handle_processing_error(self, raw_message: RawMessage, error: Exception) -> None:
         """Handle runtime processing failures by configured ack policy."""
-        logger.warning("Queue message %s failed: %s", raw_message.message_id, error)
+        trace_id = f"queue-{raw_message.message_id}"
+        logger.warning("Queue message %s trace_id=%s failed: %s", raw_message.message_id, trace_id, error)
         policy = self.config.ack_policy
         if policy == "ack":
             await self.adapter.ack(raw_message)
@@ -350,3 +493,59 @@ class QueueTrigger:
             await self.adapter.nack(raw_message, requeue=True)
             return
         await self.adapter.send_to_dlq(raw_message, reason=str(error))
+
+    @staticmethod
+    def _extract_agent_run_id(trigger_result: Any | None) -> str | None:
+        """Extract agent run id from trigger_event response."""
+        if trigger_result is None:
+            return None
+        if isinstance(trigger_result, dict):
+            run_id = trigger_result.get("run_id") or trigger_result.get("agent_run_id")
+            return str(run_id) if run_id is not None else None
+        run_id = getattr(trigger_result, "run_id", None) or getattr(trigger_result, "agent_run_id", None)
+        return str(run_id) if run_id is not None else None
+
+    async def _record_success_execution(
+        self,
+        envelope: MessageEnvelope,
+        trace_id: str,
+        duration_ms: float,
+        agent_run_id: str | None,
+    ) -> None:
+        """Record successful processing when ledger is available."""
+        if self.ledger is None:
+            return
+        record_execution = getattr(self.ledger, "record_execution", None)
+        if not callable(record_execution):
+            return
+        tenant_id = envelope.tenant_id or "default"
+        try:
+            await record_execution(
+                tenant_id=tenant_id,
+                agent_id="queue-trigger",
+                run_id=trace_id,
+                capability_name="queue_trigger",
+                task_type="queue_trigger",
+                input_params={
+                    "trace_id": trace_id,
+                    "message_id": envelope.message_id,
+                    "queue": self.config.queue_name,
+                    "event_name": envelope.event_name or "queue_message",
+                    "tenant_id": tenant_id,
+                },
+                output_result={
+                    "status": "success",
+                    "duration_ms": int(duration_ms),
+                    "agent_run_id": agent_run_id,
+                },
+                decision_reasoning="queue_trigger_execution",
+                execution_time_ms=max(0, int(duration_ms)),
+                llm_model="none",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="success",
+                error_message=None,
+            )
+        except Exception:
+            logger.exception("Failed to record successful execution for message %s", envelope.message_id)
