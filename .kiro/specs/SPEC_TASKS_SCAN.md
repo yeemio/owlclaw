@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（4/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（3/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（e2e-validation Task 4.3/4.4 属性测试） |
-| 批次状态 | **进行中**。完成属性 1（Mionyee 完整执行链）与属性 2（轨迹完整性），`e2e-validation` 维持 **4/19**（顶层任务 4 仍有 4.5~4.8 未收口）。 |
-| 已完成项 | 1) `ExecutionEngine` 组件 trace 补齐输入/输出字段；2) `tests/e2e/test_execution_engine.py` 新增属性 1/2（Hypothesis 各 100 例）验证组件链和 trace 完整性；3) `e2e-validation/tasks.md` 勾选 4.3、4.4。 |
-| 下一待执行 | 继续 `e2e-validation` Task 4.5/4.6（错误注入能力与属性测试）。 |
-| 验收快照 | `poetry run pytest tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py -q` -> `19 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 6 source files`。 |
+| 当前批次 | review loop（审校 codex-gpt-work e2e execution engine） |
+| 批次状态 | **已完成**。完成 e2e execution engine 增量审校并通过验收；`e2e-validation` 进度对齐为 **3/19**。 |
+| 已完成项 | 1) 合并 `codex-gpt-work` 的 `ExecutionEngine`/`DataCollector` 增量；2) 验证 Mionyee 组件链路与失败降级；3) 修正 `SPEC_TASKS_SCAN` 进度口径与 `tasks.md` 一致。 |
+| 下一待执行 | 继续 `e2e-validation` Task 4.3/4.4（完整流程属性与轨迹完整性），并同步回填进度。 |
+| 验收快照 | `poetry run pytest tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py -q` -> `17 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 6 source files`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
