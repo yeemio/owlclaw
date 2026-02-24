@@ -737,7 +737,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Configure environment variables properly
     - _Requirements: 8.3_
 
-  - [ ] 32.2 Create Kubernetes deployment manifests
+  - [x] 32.2 Create Kubernetes deployment manifests
     - Create deployment.yaml for API service
     - Create service.yaml for load balancing
     - Create configmap.yaml for configuration
