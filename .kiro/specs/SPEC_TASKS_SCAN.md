@@ -110,7 +110,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（0/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（0/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（97/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
+| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（101/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（0/12） | owlclaw-mcp |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（skill-templates Task 2.2/2.3/2.4/2.6/2.7 属性测试） |
-| 批次状态 | **已完成**。完成 `TemplateRegistry` 的 5 项属性测试并通过验收，`skill-templates` 进度更新为 **97/149**。 |
-| 已完成项 | 1) 新增属性测试：模板注册完整性（2.2）；2) 模板元数据完整性（2.3）；3) 模板分类正确性（2.4）；4) 模板列表完整性（2.6）；5) 模板参数定义完整性（2.7）。 |
-| 下一待执行 | 继续 `skill-templates` 未完成属性测试（优先 3.3~3.6：参数验证相关属性测试）。 |
-| 验收快照 | `poetry run pytest tests/unit/templates/skills/test_registry.py -q` -> `20 passed`；`poetry run ruff check tests/unit/templates/skills/test_registry.py` -> `All checks passed!`。 |
+| 当前批次 | spec 循环（skill-templates Task 3.3/3.4/3.5/3.6 属性测试） |
+| 批次状态 | **已完成**。完成 `TemplateRenderer` 参数验证相关 4 项属性测试并通过验收，`skill-templates` 进度更新为 **101/149**。 |
+| 已完成项 | 1) 必需参数验证属性测试（3.3）；2) 默认参数应用属性测试（3.4）；3) 参数类型验证属性测试（3.5）；4) 参数选项验证属性测试（3.6）。 |
+| 下一待执行 | 继续 `skill-templates` 未完成属性测试（优先 3.8/3.9 与 3.11/3.12：渲染幂等性与 case 转换）。 |
+| 验收快照 | `poetry run pytest tests/unit/templates/skills/test_renderer.py -q` -> `20 passed`；`poetry run ruff check tests/unit/templates/skills/test_renderer.py` -> `All checks passed!`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
