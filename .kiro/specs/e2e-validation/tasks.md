@@ -310,14 +310,14 @@
     - 创建错误注入的示例场景
 
 - [ ] 16. 实现历史回放测试引擎（需求 9）
-  - [ ] 16.1 实现 EventImporter
+  - [x] 16.1 实现 EventImporter
     - 支持 CSV/JSON 格式导入历史事件序列
     - 事件验证（时间戳格式、必填字段、payload 结构）
     - 按时间戳排序 + 时间范围过滤
-  - [ ] 16.2 实现 ReplayScheduler
+  - [x] 16.2 实现 ReplayScheduler
     - 加速模式：忽略事件间时间间隔，顺序执行
     - 实时模式：模拟真实时间间隔（asyncio.sleep）
-  - [ ] 16.3 实现 ReplayEngine
+  - [x] 16.3 实现 ReplayEngine
     - 串联 EventImporter → ReplayScheduler → Agent/Cron 执行
     - 分别在 V3 Agent 和 Original Cron 上回放
     - 记录每个事件的 Agent 决策（capability 选择、参数、结果）

@@ -15,6 +15,7 @@ from owlclaw.e2e.models import (
 )
 from owlclaw.e2e.orchestrator import TestOrchestrator
 from owlclaw.e2e.performance_benchmark import PerformanceBenchmarkManager, Threshold
+from owlclaw.e2e.replay import EventImporter, HistoricalEvent, ReplayEngine, ReplayResult, ReplayScheduler
 from owlclaw.e2e.report_generator import ReportGenerator
 from owlclaw.e2e.scenario_manager import TestScenarioManager
 from owlclaw.e2e.test_isolation import IsolationContext, TestEnvironmentIsolation
@@ -41,4 +42,9 @@ __all__ = [
     "TestEnvironmentIsolation",
     "E2EConfig",
     "load_e2e_config",
+    "HistoricalEvent",
+    "ReplayResult",
+    "EventImporter",
+    "ReplayScheduler",
+    "ReplayEngine",
 ]

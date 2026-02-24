@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 15.1~15.3） |
-| 批次状态 | **已完成**。README、API 文档与示例场景已交付，Task 15 全部收口。 |
-| 已完成项 | 1) 新增 `docs/e2e/README.md`；2) 新增 `docs/e2e/API.md`；3) 新增 `config/e2e/scenarios/mionyee-tasks.json`、`decision-comparison.json`、`error-injection.json`；4) 回填 Task 15.1~15.3 与顶层 Task 15。 |
-| 下一待执行 | `e2e-validation` Task 16.1（EventImporter）~16.5（ReplayReport）。 |
-| 验收快照 | `poetry run pytest tests/e2e -q` -> 62 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 16.1~16.3） |
+| 批次状态 | **已完成**。历史回放链路前半段（导入/调度/执行引擎）已落地并通过测试。 |
+| 已完成项 | 1) 新增 `owlclaw/e2e/replay.py`：`EventImporter`、`ReplayScheduler`、`ReplayEngine`；2) 新增 `tests/e2e/test_replay_engine.py` 覆盖 JSON 导入、调度与回放记录；3) 回填 Task 16.1~16.3 为已完成。 |
+| 下一待执行 | `e2e-validation` Task 16.4（ReplayComparator）与 Task 16.5（ReplayReport）。 |
+| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 65 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
