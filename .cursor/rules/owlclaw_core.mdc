@@ -124,6 +124,7 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 - **禁止中途汇报**：未达 Exit 前不得输出「本轮收口」「无可执行」并等待用户；若已写「下一执行批次」须取至少一项实现+验收+打勾。
 - **多 AI 协作（Worktree 隔离）**：多 AI 协作采用 Git Worktree 物理隔离（详见 `docs/WORKTREE_GUIDE.md`）。每个 AI Agent 在自己的 worktree 中独立工作，无需检查文件是否被其他 Agent 修改，Spec 循环正常推进不跳过任何 task。任务分配见 `.kiro/WORKTREE_ASSIGNMENTS.md`。
 - **每轮提交**：每一轮 spec 循环结束后（Doc/Checkpoint 更新完成后），必须对当前变更执行一次 **git commit**，提交信息应包含本轮完成的 task 或批次标识（例如 `spec: cli-db Task N` 或 `spec loop: batch Y`），便于协作与回溯。
+- **资源释放（防死机）**：每轮 spec 循环的 **Observe/Verify 步骤**执行测试后，必须确保 Python 子进程已退出：① 优先使用 `poetry run pytest ... --timeout=30` 加超时限制；② 禁止在后台 `&` 启动测试进程后不等待；③ 若使用 `subprocess` 启动进程，必须调用 `.wait()` 或 `with` 上下文管理器确保退出；④ 每批次测试结束后执行 `taskkill /F /IM python.exe /T`（Windows）或 `pkill -f pytest`（WSL）清理残留进程，再进行下一批次。**违反此规则会导致内存耗尽死机。**
 - **审校把关**：编码 worktree 的变更需经过审校 worktree（owlclaw-review）的 Review Loop 审核后才能合并到 main。审校 worktree 承担技术经理角色，负责 spec 一致性、代码质量、测试覆盖、架构合规的终审。详见 `.kiro/WORKTREE_ASSIGNMENTS.md` 中审校循环定义。
 
 ### Loop
