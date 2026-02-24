@@ -97,6 +97,34 @@ def test_main_skill_without_subcommand_uses_plain_help(monkeypatch, capsys) -> N
     assert exc_info.value.code == 0
     out = capsys.readouterr().out
     assert "Usage: owlclaw skill [OPTIONS] COMMAND [ARGS]..." in out
+    assert "search" in out
+    assert "Examples:" in out
+
+
+def test_main_skill_search_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "search", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill search [OPTIONS]" in out
+    assert "--quiet" in out
+
+
+def test_main_dispatches_skill_install_verbose_and_quiet(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_install_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.skill_hub.install_command", _fake_install_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "install", "demo", "--verbose", "--quiet"])
+    cli_main.main()
+    assert captured["name"] == "demo"
+    assert captured["verbose"] is True
+    assert captured["quiet"] is True
 
 
 def test_main_skill_unknown_subcommand_exits_2(monkeypatch, capsys) -> None:

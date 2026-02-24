@@ -140,6 +140,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--include-draft", action="store_true", default=False)
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
+        parser.add_argument("--verbose", "-v", action="store_true", default=False)
+        parser.add_argument("--quiet", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         search_command(
             query=ns.query,
@@ -153,6 +155,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             include_draft=ns.include_draft,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
+            verbose=ns.verbose,
+            quiet=ns.quiet,
         )
         return True
 
@@ -171,6 +175,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
+        parser.add_argument("--verbose", "-v", action="store_true", default=False)
+        parser.add_argument("--quiet", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         install_command(
             name=ns.name,
@@ -184,6 +190,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             index_url=ns.index_url,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
+            verbose=ns.verbose,
+            quiet=ns.quiet,
         )
         return True
 
@@ -198,6 +206,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
+        parser.add_argument("--verbose", "-v", action="store_true", default=False)
+        parser.add_argument("--quiet", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         installed_command(
             mode=ns.mode,
@@ -207,6 +217,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             index_url=ns.index_url,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
+            verbose=ns.verbose,
+            quiet=ns.quiet,
         )
         return True
 
@@ -222,6 +234,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
+        parser.add_argument("--verbose", "-v", action="store_true", default=False)
+        parser.add_argument("--quiet", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         update_command(
             name=ns.name,
@@ -232,6 +246,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             index_url=ns.index_url,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
+            verbose=ns.verbose,
+            quiet=ns.quiet,
         )
         return True
 
@@ -247,6 +263,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
+        parser.add_argument("--verbose", "-v", action="store_true", default=False)
+        parser.add_argument("--quiet", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         publish_command(
             path=ns.path,
@@ -257,6 +275,8 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             index_url=ns.index_url,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
+            verbose=ns.verbose,
+            quiet=ns.quiet,
         )
         return True
 
@@ -667,9 +687,50 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  validate  Validate SKILL.md in current dir")
         print("  list      List skills in a directory")
         print("  templates List templates from the template library")
+        print("  search    Search skills from OwlHub")
+        print("  install   Install a skill from OwlHub")
+        print("  installed List installed OwlHub skills")
+        print("  update    Update installed OwlHub skills")
         print("  publish   Publish a local skill to OwlHub API")
         print("  cache-clear  Clear local OwlHub cache")
-        print("\n  owlclaw skill init --help | owlclaw skill templates --help")
+        print("\nExamples:")
+        print("  owlclaw skill search --query monitor --tags trading --tag-mode or")
+        print("  owlclaw skill install entry-monitor --verbose")
+        print("  owlclaw skill publish ./my-skill --api-base-url http://localhost:8000 --api-token <token>")
+        print("\n  owlclaw skill init --help | owlclaw skill search --help | owlclaw skill publish --help")
+        sys.exit(0)
+    if argv == ["skill", "search"]:
+        print("Usage: owlclaw skill search [OPTIONS]")
+        print("\n  Search skills in OwlHub index/API.")
+        print("Options:")
+        print("  -q, --query TEXT      Search query")
+        print("  --tags TEXT           Comma-separated tags")
+        print("  --tag-mode TEXT       and|or")
+        print("  --include-draft       Include draft skills")
+        print("  -v, --verbose         Show detailed progress")
+        print("  --quiet               Suppress non-error output")
+        print("  --help                Show this message and exit")
+        sys.exit(0)
+    if argv == ["skill", "install"]:
+        print("Usage: owlclaw skill install <name> [OPTIONS]")
+        print("\n  Install one skill and optional dependencies from OwlHub.")
+        print("Options:")
+        print("  --version TEXT        Exact version")
+        print("  --no-deps             Skip dependency install")
+        print("  --force               Ignore moderation/checksum constraints")
+        print("  -v, --verbose         Show detailed progress")
+        print("  --quiet               Suppress non-error output")
+        print("  --help                Show this message and exit")
+        sys.exit(0)
+    if argv == ["skill", "publish"]:
+        print("Usage: owlclaw skill publish [path] [OPTIONS]")
+        print("\n  Publish one local skill package to OwlHub API.")
+        print("Options:")
+        print("  --api-base-url TEXT   OwlHub API base URL")
+        print("  --api-token TEXT      OwlHub API token")
+        print("  -v, --verbose         Show detailed progress")
+        print("  --quiet               Suppress non-error output")
+        print("  --help                Show this message and exit")
         sys.exit(0)
     if argv == ["init"]:
         print("Usage: owlclaw init [OPTIONS]")

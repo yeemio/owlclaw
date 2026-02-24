@@ -58,3 +58,29 @@ def test_publish_rejects_unsafe_skill_identifier() -> None:
     )
     assert response.status_code == 422
     assert "invalid skill name format" in response.text
+
+
+def test_publish_rejects_sql_injection_like_identifier() -> None:
+    client = TestClient(create_app())
+    token = _issue_token(client)
+    response = client.post(
+        "/api/v1/skills",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "publisher": "acme1111",
+            "skill_name": "skill' OR 1=1 --",
+            "version": "1.0.0",
+            "metadata": {"description": "bad", "license": "MIT"},
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_auth_bypass_with_forged_bearer_token_is_rejected() -> None:
+    client = TestClient(create_app())
+    response = client.post(
+        "/api/v1/skills/publish-probe",
+        headers={"Authorization": "Bearer not-a-valid-jwt"},
+        json={"name": "demo"},
+    )
+    assert response.status_code == 401

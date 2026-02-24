@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -127,7 +128,7 @@ class SiteGenerator:
         skills_dir = output_dir / "skills"
         skills_dir.mkdir(parents=True, exist_ok=True)
         for item in normalized_skills:
-            slug = f"{item['publisher']}-{item['name']}-{item['version']}".replace("/", "-")
+            slug = _safe_file_stem(f"{item['publisher']}-{item['name']}-{item['version']}")
             file_name = f"{slug}.html"
             detail_path = skills_dir / file_name
             detail_path.write_text(detail_template.render(skill=item, generated_at=generated_at), encoding="utf-8")
@@ -229,3 +230,12 @@ class SiteGenerator:
 
 def _slugify(value: str) -> str:
     return "-".join(value.strip().lower().split())
+
+
+_SAFE_FILE_STEM_PATTERN = re.compile(r"[^A-Za-z0-9._-]+")
+
+
+def _safe_file_stem(value: str) -> str:
+    cleaned = _SAFE_FILE_STEM_PATTERN.sub("-", value.strip())
+    cleaned = cleaned.strip(".-")
+    return cleaned or "skill"

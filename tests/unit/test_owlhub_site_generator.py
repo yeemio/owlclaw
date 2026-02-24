@@ -10,6 +10,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from owlclaw.owlhub.site import SiteGenerator
+from owlclaw.owlhub.site.generator import _safe_file_stem
 
 
 def _sample_index() -> dict:
@@ -86,6 +87,18 @@ def test_generated_rss_sitemap_and_search_index(tmp_path: Path) -> None:
     assert search_index[0]["id"] == "acme/entry-monitor@1.0.0"
 
 
+def test_generated_html_escapes_script_content(tmp_path: Path) -> None:
+    index = _sample_index()
+    index["skills"][0]["manifest"]["name"] = "<script>alert(1)</script>"
+    index["skills"][0]["manifest"]["description"] = "<img src=x onerror=alert(1)>"
+    generator = SiteGenerator()
+    generator.generate(index_data=index, output_dir=tmp_path)
+    html = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert "<script>alert(1)</script>" not in html
+    assert "<img src=x onerror=alert(1)>" not in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+
+
 @settings(max_examples=50, deadline=None)
 @given(
     name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-", min_size=1, max_size=12),
@@ -128,7 +141,8 @@ def test_property_7_skill_detail_contains_required_fields(
     with tempfile.TemporaryDirectory() as workdir:
         output_dir = Path(workdir) / f"case-{publisher}-{name}-{version}"
         generator.generate(index_data=index, output_dir=output_dir)
-        detail = (output_dir / "skills" / f"{publisher}-{name}-{version}.html").read_text(encoding="utf-8")
+        slug = _safe_file_stem(f"{publisher}-{name}-{version}")
+        detail = (output_dir / "skills" / f"{slug}.html").read_text(encoding="utf-8")
         assert name in detail
         assert publisher in detail
         assert version in detail

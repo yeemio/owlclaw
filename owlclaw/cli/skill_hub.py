@@ -23,6 +23,18 @@ def _create_index_client(index_url: str, install_dir: str, lock_file: str, *, no
     )
 
 
+def _echo(
+    message: str,
+    *,
+    quiet: bool = False,
+    color: str | None = None,
+    err: bool = False,
+) -> None:
+    if quiet is True and not err:
+        return
+    typer.secho(message, fg=color, err=err)
+
+
 def search_command(
     query: str = typer.Option("", "--query", "-q", help="Search query.", is_flag=False),
     index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json.", is_flag=False),
@@ -37,6 +49,8 @@ def search_command(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
     ),
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed progress and diagnostics."),
+    quiet: bool = typer.Option(False, "--quiet", help="Suppress non-error output."),
 ) -> None:
     """Search skills in OwlHub index."""
     index_client = _create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file, no_cache=no_cache)
@@ -47,14 +61,23 @@ def search_command(
         mode=mode,
         no_cache=no_cache,
     )
+    if verbose:
+        _echo(
+            f"Search context: mode={mode} api_base_url={api_base_url or '-'} index_url={index_url}",
+            quiet=quiet,
+            color="blue",
+        )
     tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
     results = client.search(query=query, tags=tag_list, tag_mode=tag_mode, include_draft=include_draft)
     if not results:
-        typer.echo("No skills found.")
+        _echo("No skills found.", quiet=quiet, color="yellow")
         return
     for item in results:
         rendered_tags = ",".join(item.tags) if item.tags else "-"
-        typer.echo(f"{item.name}@{item.version} [{item.version_state}] ({item.publisher}) [{rendered_tags}] - {item.description}")
+        _echo(
+            f"{item.name}@{item.version} [{item.version_state}] ({item.publisher}) [{rendered_tags}] - {item.description}",
+            quiet=quiet,
+        )
 
 
 def install_command(
@@ -71,6 +94,8 @@ def install_command(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
     ),
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed progress and diagnostics."),
+    quiet: bool = typer.Option(False, "--quiet", help="Suppress non-error output."),
 ) -> None:
     """Install one skill from OwlHub index."""
     index_client = _create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file, no_cache=no_cache)
@@ -81,15 +106,19 @@ def install_command(
         mode=mode,
         no_cache=no_cache,
     )
+    if verbose:
+        _echo(f"Step 1/3: resolving package {name}@{version or 'latest'}", quiet=quiet, color="blue")
     if not no_deps:
         candidates = index_client.search(query=name, include_draft=True)
         selected = [item for item in candidates if item.name == name and (not version or item.version == version)]
         if selected:
             dependencies = selected[-1].dependencies
             if dependencies:
-                typer.echo("Dependencies:")
+                _echo("Dependencies:", quiet=quiet, color="blue")
                 for dep_name, constraint in sorted(dependencies.items()):
-                    typer.echo(f"  - {dep_name} ({constraint})")
+                    _echo(f"  - {dep_name} ({constraint})", quiet=quiet)
+    if verbose:
+        _echo("Step 2/3: downloading and verifying package checksum", quiet=quiet, color="blue")
     try:
         installed_path = client.install(name=name, version=version or None, no_deps=no_deps, force=force)
     except Exception as exc:
@@ -97,7 +126,11 @@ def install_command(
             "Skill install failed: %s",
             json.dumps({"event": "skill_install_error", "name": name, "version": version or "latest"}, ensure_ascii=False),
         )
-        typer.echo(f"Error: {exc}", err=True)
+        _echo(
+            f"Error: install failed for {name}@{version or 'latest'} ({exc}). Try --verbose for details.",
+            err=True,
+            color="red",
+        )
         raise typer.Exit(1) from exc
     logger.info(
         "%s",
@@ -114,8 +147,10 @@ def install_command(
         ),
     )
     if client.last_install_warning:
-        typer.echo(f"Warning: {client.last_install_warning}")
-    typer.echo(f"Installed: {name} -> {installed_path}")
+        _echo(f"Warning: {client.last_install_warning}", quiet=quiet, color="yellow")
+    if verbose:
+        _echo("Step 3/3: finalizing lock file and installation metadata", quiet=quiet, color="blue")
+    _echo(f"Installed: {name} -> {installed_path}", quiet=quiet, color="green")
 
 
 def installed_command(
@@ -128,6 +163,8 @@ def installed_command(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
     ),
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed progress and diagnostics."),
+    quiet: bool = typer.Option(False, "--quiet", help="Suppress non-error output."),
 ) -> None:
     """List installed skills from lock file."""
     client = SkillHubApiClient(
@@ -139,11 +176,13 @@ def installed_command(
     )
     installed = client.list_installed()
     if not installed:
-        typer.echo("No installed skills.")
+        _echo("No installed skills.", quiet=quiet, color="yellow")
         return
+    if verbose:
+        _echo(f"Loaded {len(installed)} installed skill entries from {lock_file}", quiet=quiet, color="blue")
     for item in installed:
         state = item.get("version_state", "released")
-        typer.echo(f"{item.get('name')}@{item.get('version')} [{state}] ({item.get('publisher')})")
+        _echo(f"{item.get('name')}@{item.get('version')} [{state}] ({item.get('publisher')})", quiet=quiet)
 
 
 def update_command(
@@ -157,6 +196,8 @@ def update_command(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
     ),
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed progress and diagnostics."),
+    quiet: bool = typer.Option(False, "--quiet", help="Suppress non-error output."),
 ) -> None:
     """Update one skill or all installed skills."""
     client = SkillHubApiClient(
@@ -166,12 +207,14 @@ def update_command(
         mode=mode,
         no_cache=no_cache,
     )
+    if verbose:
+        _echo(f"Checking updates for {name or 'all installed skills'}", quiet=quiet, color="blue")
     changes = client.update(name=name or None)
     if not changes:
-        typer.echo("No updates available.")
+        _echo("No updates available.", quiet=quiet, color="yellow")
         return
     for change in changes:
-        typer.echo(f"Updated: {change['name']} {change['from_version']} -> {change['to_version']}")
+        _echo(f"Updated: {change['name']} {change['from_version']} -> {change['to_version']}", quiet=quiet, color="green")
 
 
 def publish_command(
@@ -185,6 +228,8 @@ def publish_command(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
     ),
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed progress and diagnostics."),
+    quiet: bool = typer.Option(False, "--quiet", help="Suppress non-error output."),
 ) -> None:
     """Publish one local skill to OwlHub API."""
     client = SkillHubApiClient(
@@ -194,6 +239,8 @@ def publish_command(
         mode=mode,
         no_cache=no_cache,
     )
+    if verbose:
+        _echo(f"Publishing skill package from {Path(path).resolve()}", quiet=quiet, color="blue")
     try:
         result = client.publish(skill_path=Path(path).resolve())
     except Exception as exc:
@@ -201,7 +248,11 @@ def publish_command(
             "Skill publish failed: %s",
             json.dumps({"event": "skill_publish_error", "path": str(Path(path).resolve()), "mode": mode}, ensure_ascii=False),
         )
-        typer.echo(f"Error: {exc}", err=True)
+        _echo(
+            f"Error: publish failed for {Path(path).resolve()} ({exc}). Check API credentials and package structure.",
+            err=True,
+            color="red",
+        )
         raise typer.Exit(1) from exc
     logger.info(
         "%s",
@@ -217,7 +268,11 @@ def publish_command(
             sort_keys=True,
         ),
     )
-    typer.echo(f"Published: review_id={result.get('review_id', '')} status={result.get('status', '')}")
+    _echo(
+        f"Published: review_id={result.get('review_id', '')} status={result.get('status', '')}",
+        quiet=quiet,
+        color="green",
+    )
 
 
 def cache_clear_command(
