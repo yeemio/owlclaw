@@ -25,6 +25,16 @@ from owlclaw.e2e.replay import (
 )
 from owlclaw.e2e.report_generator import ReportGenerator
 from owlclaw.e2e.scenario_manager import TestScenarioManager
+from owlclaw.e2e.shadow_mode import (
+    ComparisonEntry,
+    CronExecutionLog,
+    InterceptResult,
+    MigrationWeightController,
+    ShadowComparator,
+    ShadowDashboardMetrics,
+    ShadowDecisionLog,
+    ShadowModeInterceptor,
+)
 from owlclaw.e2e.test_isolation import IsolationContext, TestEnvironmentIsolation
 
 __all__ = [
@@ -55,4 +65,12 @@ __all__ = [
     "ReplayScheduler",
     "ReplayComparator",
     "ReplayEngine",
+    "ShadowDecisionLog",
+    "CronExecutionLog",
+    "InterceptResult",
+    "ComparisonEntry",
+    "ShadowDashboardMetrics",
+    "ShadowModeInterceptor",
+    "ShadowComparator",
+    "MigrationWeightController",
 ]
