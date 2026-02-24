@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -29,6 +30,7 @@ from owlclaw.owlhub.schema import VersionState
 
 router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
 current_principal_type = Annotated[Principal, Depends(get_current_principal)]
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -277,6 +279,21 @@ def publish_skill(
             "review_id": review.review_id,
         },
     )
+    logger.info(
+        "%s",
+        json.dumps(
+            {
+                "event": "skill_publish",
+                "publisher": publisher,
+                "skill_name": skill_name,
+                "version": version,
+                "review_id": review.review_id,
+                "principal": principal.user_id,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+    )
     return PublishResponse(accepted=True, review_id=review.review_id, status=review.status.value)
 
 
@@ -335,6 +352,22 @@ def update_skill_state(
             "to_state": state,
         },
     )
+    logger.info(
+        "%s",
+        json.dumps(
+            {
+                "event": "skill_state_update",
+                "publisher": publisher,
+                "skill_name": name,
+                "version": version,
+                "from_state": old_state,
+                "to_state": state,
+                "principal": principal.user_id,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+    )
     return {"updated": True, "publisher": publisher, "skill_name": name, "version": version, "state": state}
 
 
@@ -374,6 +407,20 @@ def takedown_skill(
         event_type="takedown",
         principal=principal,
         details={"publisher": publisher, "skill_name": name, "reason": request_payload.reason.strip()},
+    )
+    logger.info(
+        "%s",
+        json.dumps(
+            {
+                "event": "skill_takedown",
+                "publisher": publisher,
+                "skill_name": name,
+                "reason": request_payload.reason.strip(),
+                "principal": principal.user_id,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
     )
     return {"takedown": True, "publisher": publisher, "skill_name": name, "reason": request_payload.reason.strip()}
 
