@@ -17,6 +17,7 @@ class MockQueueAdapter:
         self._acked: list[str] = []
         self._nacked: list[tuple[str, bool]] = []
         self._dlq: list[tuple[str, str]] = []
+        self._published: list[dict[str, object]] = []
         self._connected = False
         self._closed = False
 
@@ -61,6 +62,18 @@ class MockQueueAdapter:
 
     def get_dlq(self) -> list[tuple[str, str]]:
         return list(self._dlq)
+
+    async def publish(self, topic: str, message: bytes, headers: dict[str, str] | None = None) -> None:
+        self._published.append(
+            {
+                "topic": topic,
+                "message": message,
+                "headers": dict(headers or {}),
+            }
+        )
+
+    def get_published(self) -> list[dict[str, object]]:
+        return list(self._published)
 
     def pending_count(self) -> int:
         return len(self._queue)
