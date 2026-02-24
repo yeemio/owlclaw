@@ -143,8 +143,8 @@ class ExecutionEngine:
                 "output": output,
                 "traces": snapshot.traces,
                 "resource_usage": snapshot.resource_usage,
-                },
-            )
+            },
+        )
 
     async def execute_mionyee_task(
         self,
@@ -194,7 +194,11 @@ class ExecutionEngine:
         fn: ComponentFn | None,
         payload: dict[str, Any],
     ) -> dict[str, Any]:
-        self._collector.record_event(event_type=f"{name}.start", data={"task_id": payload.get("task_id")})
+        component_input = dict(payload)
+        self._collector.record_event(
+            event_type=f"{name}.start",
+            data={"task_id": payload.get("task_id"), "input": component_input},
+        )
         if fn is None:
             result: dict[str, Any] = {"status": "simulated"}
         else:
@@ -203,6 +207,15 @@ class ExecutionEngine:
             if not isinstance(invoked, dict):
                 raise TypeError(f"{name} must return dict")
             result = dict(invoked)
-        self._collector.record_event(event_type=f"{name}.complete", data={"result": result})
-        self._collector.record_trace({"phase": name, "result": result})
+        self._collector.record_event(
+            event_type=f"{name}.complete",
+            data={"task_id": payload.get("task_id"), "output": result},
+        )
+        self._collector.record_trace(
+            {
+                "phase": name,
+                "input": component_input,
+                "output": result,
+            }
+        )
         return result

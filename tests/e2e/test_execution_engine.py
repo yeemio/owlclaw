@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from owlclaw.e2e.execution_engine import ExecutionEngine
 from owlclaw.e2e.models import ExecutionStatus, ScenarioType
@@ -119,3 +121,80 @@ class TestExecutionEngine:
         output = result.metadata["output"]
         assert output["status"] == "error"
         assert "cron failed" in output["error"]
+
+
+class TestExecutionEngineProperties:
+    @settings(max_examples=100, deadline=None)
+    @given(
+        task_id=st.sampled_from(["1", "2", "3"]),
+        params=st.recursive(
+            st.none() | st.booleans() | st.integers() | st.text(max_size=20),
+            lambda children: st.lists(children, max_size=5)
+            | st.dictionaries(st.text(min_size=1, max_size=10), children, max_size=5),
+            max_leaves=20,
+        ),
+    )
+    @pytest.mark.asyncio
+    async def test_property_mionyee_flow_contains_all_components(
+        self,
+        task_id: str,
+        params: object,
+    ) -> None:
+        """Property 1: flow includes cron->agent->skills->governance->hatchet."""
+        scenario = E2ETestScenario(
+            scenario_id=task_id,
+            name=f"task-{task_id}",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+            input_data={"payload": params},
+        )
+        engine = ExecutionEngine()
+        result = await engine.execute_scenario(scenario)
+        assert result.status == ExecutionStatus.PASSED
+
+        traces = result.metadata["traces"]
+        phases = {trace.get("phase") for trace in traces}
+        assert "cron_trigger" in phases
+        assert "agent_runtime" in phases
+        assert "skills_system" in phases
+        assert "governance_layer" in phases
+        assert "hatchet_integration" in phases
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        task_id=st.sampled_from(["1", "2", "3"]),
+        params=st.recursive(
+            st.none() | st.booleans() | st.integers() | st.text(max_size=20),
+            lambda children: st.lists(children, max_size=5)
+            | st.dictionaries(st.text(min_size=1, max_size=10), children, max_size=5),
+            max_leaves=20,
+        ),
+    )
+    @pytest.mark.asyncio
+    async def test_property_execution_trace_contains_input_and_output(
+        self,
+        task_id: str,
+        params: object,
+    ) -> None:
+        """Property 2: each component trace includes input and output."""
+        scenario = E2ETestScenario(
+            scenario_id=task_id,
+            name=f"task-{task_id}",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+            input_data={"payload": params},
+        )
+        engine = ExecutionEngine()
+        result = await engine.execute_scenario(scenario)
+        assert result.status == ExecutionStatus.PASSED
+
+        component_phases = {
+            "cron_trigger",
+            "agent_runtime",
+            "skills_system",
+            "governance_layer",
+            "hatchet_integration",
+        }
+        traces = [trace for trace in result.metadata["traces"] if trace.get("phase") in component_phases]
+        assert len(traces) == 5
+        for trace in traces:
+            assert "input" in trace
+            assert "output" in trace
