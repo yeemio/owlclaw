@@ -24,6 +24,7 @@ from owlclaw.cli.scan.models import (
     ScanResult,
     TypeSource,
 )
+from owlclaw.cli.scan.parallel import ParallelExecutor, ParallelTaskResult
 from owlclaw.cli.scan.parser import ASTParser
 from owlclaw.cli.scan.scanner import ProjectScanner, ScanConfig
 from owlclaw.cli.scan.type_inference import TypeInferencer
@@ -50,6 +51,8 @@ __all__ = [
     "InferredType",
     "Parameter",
     "ParameterKind",
+    "ParallelExecutor",
+    "ParallelTaskResult",
     "ParsedDocstring",
     "ScanMetadata",
     "ScanResult",

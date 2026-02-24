@@ -223,8 +223,8 @@ The implementation follows a bottom-up approach: core data models → parser com
 - [x] 11. Checkpoint - Ensure scanner core tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Implement parallel processing
-  - [ ] 12.1 Implement ParallelExecutor class
+- [x] 12. Implement parallel processing
+  - [x] 12.1 Implement ParallelExecutor class
     - Use `multiprocessing.Pool` for parallel file scanning
     - Auto-detect CPU count with `os.cpu_count()`
     - Use `functools.partial` to pass config to workers
@@ -232,11 +232,11 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Ensure deterministic output ordering
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.6_
   
-  - [ ]* 12.2 Write property test for parallel scan determinism
+  - [x]* 12.2 Write property test for parallel scan determinism
     - **Property 15: Parallel Scan Determinism**
     - **Validates: Requirements 8.4**
   
-  - [ ]* 12.3 Write property test for parallel error handling
+  - [x]* 12.3 Write property test for parallel error handling
     - **Property 16: Parallel Error Handling**
     - **Validates: Requirements 8.6**
 
