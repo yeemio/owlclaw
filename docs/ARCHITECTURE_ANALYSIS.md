@@ -1124,6 +1124,39 @@ Skills 生态不改变 OwlClaw 的核心架构——它是在现有的 `@app.han
 3. **私有 Skills 不经过 OwlHub**——企业的业务 Skills 包含商业机密，永远不应上传到公开仓库。私有 Skills 就是项目目录里的 SKILL.md 文件
 4. **模板是引爆的关键**——`owlclaw skill init --template monitoring my-alert` 必须能在 30 秒内生成一个可用的 SKILL.md 骨架，让业务开发者只需填写业务规则
 
+### 4.11 决策11：Protocol-first（协议优先于语言 SDK）
+
+**OwlClaw 面向所有业务系统，而不是仅面向 Python 业务系统。实现顺序必须遵循 Protocol-first：先协议契约，后语言封装。**
+
+#### 背景
+
+决策7已经明确“接入协议语言无关”，但执行过程中仍然容易滑向 “Python SDK-first”：
+
+- 设计先出现 `@app.handler` / `@app.state` 语义，再补协议映射
+- 对外样例主要是 Python，非 Python 接入路径（HTTP/gRPC/MCP）示例不足
+- 新模块验收常以 Python 单测为主，缺少协议层契约测试
+
+这会导致“定位是全语言，落地像 Python 专用框架”的认知偏差。
+
+#### 决策内容
+
+1. **协议层是产品面，不是实现细节**：HTTP/gRPC/MCP 的请求/响应 schema、错误码、版本策略是第一公民。
+2. **Python SDK 是第一方封装，不是唯一入口**：装饰器 API 必须可映射为协议调用，不可反向定义协议。
+3. **新能力按“契约 -> 适配器 -> SDK 语法糖”顺序交付**：禁止跳过契约直接做 Python API。
+
+#### 强制约束（对开发与评审）
+
+1. **契约先行**：任何新入口或能力（trigger/tool/capability 注册）必须先提交协议 schema（JSON Schema 或等价契约）和错误码表，再实现 Python 封装。
+2. **契约测试必需**：验收至少包含一类“非 Python SDK 路径”测试（例如 HTTP/MCP 调用或协议层序列化/反序列化测试）。
+3. **边界清晰**：协议层禁止泄漏 Python 特有语义（`Callable`、装饰器元数据、`inspect` 结构）；协议只传纯数据和 endpoint 元信息。
+4. **文档双轨**：每个核心功能文档必须同时给出 Python SDK 示例 + 协议调用示例（curl/MCP JSON-RPC 至少一种）。
+
+#### 里程碑调整（执行优先级）
+
+1. **P1**：优先收口 `triggers-webhook` / `triggers-api` / `triggers-signal` 的协议化入口与契约测试。
+2. **P2**：补齐跨语言示例（至少 TS/Java 中一种）与 SDK 无关的端到端样例。
+3. **P3**：在协议稳定后扩展 Java/.NET/Go/TS SDK，避免 SDK 反向锁定协议。
+
 ---
 
 ## 五、OwlClaw 架构设计（v3 — Agent 自驱动）
@@ -2317,9 +2350,9 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 
 ---
 
-> **文档版本**: v4.1（v4.0 + §5.3.2 触发器 API 双模式决策 + §4.3 SKILL.md focus/risk_level 扩展 + §8.9 Spec 洞察反哺架构 6 项）
+> **文档版本**: v4.2（v4.1 + §4.11 Protocol-first：协议优先于语言 SDK）
 > **创建时间**: 2026-02-10
-> **最后更新**: 2026-02-22
+> **最后更新**: 2026-02-24
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`
 > **文档维护**: 本文档应随架构决策变化持续更新。
 

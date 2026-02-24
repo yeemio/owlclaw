@@ -14,6 +14,11 @@
 
 ## 任务
 
+- [x] 0. **[Protocol-first]** 协议契约先行（决策 4.11）
+  - [x] 0.1 定义 Webhook 端点注册的 JSON Schema（endpoint_config schema、payload schema、错误码表）
+  - [x] 0.2 确认协议层不泄漏 Python 特有语义（无 Callable/装饰器元数据）
+  - _说明：Task 1 的 Python 类型定义必须从本 schema 派生，不得反向定义协议_
+
 - [x] 1. 设置项目结构和核心类型定义
   - 创建项目目录结构（`owlclaw/triggers/webhook/`, `owlclaw/triggers/webhook/http/`, `owlclaw/triggers/webhook/persistence/`）
   - 定义核心 Python 类型和模型（WebhookEndpoint, EndpointConfig, ValidationResult, ParsedPayload, AgentInput, ExecutionResult 等）
