@@ -117,6 +117,7 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 
 - **验收标准**：仅当实现+验收通过可打勾；不得以 deferred/按需代替；未实现保留 `[ ]` 记 design/backlog。写入 spec 的 task = 必须完成（不做的放 backlog/单独 spec）；功能清单须 ⊇ 各 spec tasks，缺则补。
 - **批次控制**：单次循环最多完成 3 个 task（或 1 个复杂 spec）；建议每轮 1～3 项，不必凑满。完成后必须更新文档、检查点，然后评估是否继续。避免单次循环过长导致上下文溢出。
+- **Context 管理（/compact）**：每完成一个完整 spec（所有 task `[x]`）后，或累计执行超过 5 轮后，必须执行 `/compact` 压缩当前对话上下文，再继续下一 spec。这可以显著减少 token 消耗和幻觉风险。
 - **失败处理**：验收失败时必须分析原因 → 若设计问题回退到 design.md 修正；若实现问题回滚代码重新实现；若依赖问题标记 blocked 并记录依赖。同一 task 连续失败 3 次自动标记 blocked。
 - **持续推进**：SPEC_TASKS_SCAN 或 tasks.md 有 `[ ]` → 必须执行下一可执行项或产出可执行项（拆解/新增 spec）；不得以无可执行、内部依赖未就绪为由停；仅**外部不可控依赖**可写明后收口。
 - **占位处理**：剩余均为占位/可选时须产出可执行下一步（拆解子动作 / 新增 spec / 纳入当前批次），不得只写阻塞即停。
@@ -162,6 +163,23 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 
 > **适用范围**：仅主 worktree（`D:\AI\owlclaw\`，branch `main`）的 Cursor / 人工使用。
 > **目的**：作为技术经理，一键检查所有 worktree 状态、执行 merge、分配新任务、解锁阻塞项，输出总览报告。
+
+### Codex-CLI 启动规范
+
+各 worktree 均有独立的 `.codex/config.toml`（覆盖全局配置），**必须在对应目录下启动 Codex**，配置才会生效：
+
+```powershell
+# 审校 worktree
+cd D:\AI\owlclaw-review && codex
+
+# 编码 worktree 1
+cd D:\AI\owlclaw-codex && codex
+
+# 编码 worktree 2
+cd D:\AI\owlclaw-codex-gpt && codex
+```
+
+所有 worktree 统一使用 `gpt-5.3-codex` + `approval_policy = "never"` + `sandbox_mode = "danger-full-access"`。决策权在 spec 文档层，不在运行时确认。
 
 **持续推进**：反复发送「统筹」可多轮驱动。每轮结束若仍有待处理事项，在回复末尾提示「**回复「统筹」执行下一轮。**」
 
