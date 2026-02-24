@@ -120,8 +120,8 @@ The implementation follows a bottom-up approach: core data models → parser com
     - **Property 9: Type Inference Fallback**
     - **Validates: Requirements 4.5**
 
-- [ ] 6. Implement complexity calculator
-  - [ ] 6.1 Implement ComplexityCalculator class
+- [x] 6. Implement complexity calculator
+  - [x] 6.1 Implement ComplexityCalculator class
     - Write `cyclomatic_complexity()` method (count decision points)
     - Write `cognitive_complexity()` method (account for nesting)
     - Calculate LOC and SLOC (exclude blank lines and comments)
@@ -130,18 +130,18 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Assign complexity level (SIMPLE/MEDIUM/COMPLEX)
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
   
-  - [ ]* 6.2 Write property test for complexity metrics completeness
+  - [x]* 6.2 Write property test for complexity metrics completeness
     - **Property 13: Complexity Metrics Completeness**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.6**
   
-  - [ ]* 6.3 Write unit tests for complexity calculation
+  - [x]* 6.3 Write unit tests for complexity calculation
     - Test simple linear function (expected: cyclomatic=1)
     - Test function with nested if statements
     - Test function with multiple loops
     - Test complexity level assignment
     - _Requirements: 6.1, 6.2, 6.5_
 
-- [ ] 7. Checkpoint - Ensure analyzer tests pass
+- [x] 7. Checkpoint - Ensure analyzer tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 8. Implement dependency analyzer

@@ -1,5 +1,6 @@
 """Core models for cli-scan."""
 
+from owlclaw.cli.scan.complexity import ComplexityCalculator
 from owlclaw.cli.scan.docstring import DocstringParser
 from owlclaw.cli.scan.extractor import SignatureExtractor
 from owlclaw.cli.scan.models import (
@@ -26,6 +27,7 @@ from owlclaw.cli.scan.type_inference import TypeInferencer
 
 __all__ = [
     "ASTParser",
+    "ComplexityCalculator",
     "ComplexityLevel",
     "ComplexityScore",
     "Confidence",
