@@ -9,6 +9,7 @@ from typing import Any
 
 from owlclaw.integrations.langchain.config import LangChainConfig
 from owlclaw.integrations.langchain.errors import ErrorHandler
+from owlclaw.integrations.langchain.retry import RetryPolicy, calculate_backoff_delay, should_retry
 from owlclaw.integrations.langchain.schema import SchemaBridge
 from owlclaw.integrations.langchain.trace import TraceManager
 
@@ -90,26 +91,47 @@ class LangChainAdapter:
                 context=context if isinstance(context, dict) else None,
             )
 
+        retry_policy = self._build_retry_policy(config.retry_policy)
+        last_error: Exception | None = None
         try:
             self._schema_bridge.validate_input(input_data, config.input_schema)
             transformed_input = self._schema_bridge.transform_input(input_data, config.input_transformer)
-            result = await self._execute_with_timeout(runnable, transformed_input, config.timeout_seconds)
-            transformed_output = self._schema_bridge.transform_output(result, config.output_transformer)
-            if span is not None:
-                span.end(output=transformed_output)
-            return transformed_output
+
+            for attempt in range(1, retry_policy.max_attempts + 1):
+                try:
+                    result = await self._execute_with_timeout(runnable, transformed_input, config.timeout_seconds)
+                    transformed_output = self._schema_bridge.transform_output(result, config.output_transformer)
+                    if span is not None:
+                        span.end(output=transformed_output)
+                    return transformed_output
+                except Exception as exc:
+                    last_error = exc
+                    if should_retry(exc, attempt=attempt, policy=retry_policy):
+                        delay_seconds = calculate_backoff_delay(attempt, retry_policy)
+                        if delay_seconds > 0:
+                            await asyncio.sleep(delay_seconds)
+                        logger.warning(
+                            "Retrying runnable=%s attempt=%d/%d after error=%s",
+                            config.name,
+                            attempt,
+                            retry_policy.max_attempts,
+                            type(exc).__name__,
+                        )
+                        continue
+                    raise
         except Exception as exc:
+            effective_error = last_error or exc
             if span is not None:
-                span.record_error(exc)
-                span.end(output={"error": str(exc)})
+                span.record_error(effective_error)
+                span.end(output={"error": str(effective_error)})
             if config.fallback:
                 return await self._error_handler.handle_fallback(
                     config.fallback,
                     input_data,
                     context,
-                    exc,
+                    effective_error,
                 )
-            return self._error_handler.map_exception(exc)
+            return self._error_handler.map_exception(effective_error)
 
     async def _execute_with_timeout(self, runnable: Any, input_data: Any, timeout_seconds: int | None) -> Any:
         """Execute runnable with async preference and timeout support."""
@@ -154,4 +176,16 @@ class LangChainAdapter:
         raise RuntimeError(
             "App does not expose capability registry. "
             "Expected app.registry.register_handler(...) or app.register_capability(...)."
+        )
+
+    @staticmethod
+    def _build_retry_policy(raw_policy: dict[str, Any] | None) -> RetryPolicy:
+        if raw_policy is None:
+            return RetryPolicy(max_attempts=1, retryable_errors=[])
+        return RetryPolicy(
+            max_attempts=int(raw_policy.get("max_attempts", 1)),
+            initial_delay_ms=int(raw_policy.get("initial_delay_ms", 0)),
+            max_delay_ms=int(raw_policy.get("max_delay_ms", 0)),
+            backoff_multiplier=float(raw_policy.get("backoff_multiplier", 2.0)),
+            retryable_errors=list(raw_policy.get("retryable_errors", [])),
         )
