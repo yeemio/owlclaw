@@ -22,8 +22,8 @@
 ### Phase 0：仓库初始化
 
 - [x] 清理 OwlClaw 仓库
-- [ ] 建立包结构（owlclaw / owlclaw-mcp）  
-  说明：`owlclaw` 已存在；`owlclaw-mcp` 目录当前未落地，待 mcp-server 实现时一并补齐并回填为 `[x]`。
+- [x] 建立包结构（owlclaw / owlclaw-mcp）  
+  说明：`owlclaw` 已存在；`owlclaw/mcp/` 已随 mcp-server spec 完成实现（12/12 ✅）。
 - [x] pyproject.toml + MIT LICENSE + README
 - [ ] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
 
@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（3/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（常规审校：无待审分支增量） |
-| 批次状态 | **已完成**。`codex-work` 与 `codex-gpt-work` 均无新提交，常规质量扫描通过。 |
-| 已完成项 | 1) 审批并合并 `codex-work` Task 22（日志安全）；2) 审批并合并 `codex-work` Task 23（配置模板与文档）；3) 分支增量扫描确认两条编码分支均已追平。 |
-| 下一待执行 | `codex-work` 继续 `triggers-queue` Task 24（Mock 验证脚本）→ Task 25（最终检查点）；`codex-gpt-work` 继续 `owlhub` Task 1。 |
-| 验收快照 | `poetry run ruff check .`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 133 source files）。 |
+| 当前批次 | orchestrate（合并 review-work → main；同步各 worktree；更新进度） |
+| 批次状态 | **已完成**。review-work fast-forward 合并（27 文件，2022 行新增）；所有 worktree 已同步。 |
+| 已完成项 | 1) 合并 triggers-queue Task 18~23（Kafka 适配器、依赖检查、e2e 场景、日志安全、配置模板）；2) mcp-server 12/12 ✅ 完成；3) owlhub Task 1~3 启动（schema/validator/indexer bootstrap）；4) Phase 0 包结构打勾；5) 功能清单 mcp-server 打勾。 |
+| 下一待执行 | `codex-work`：`triggers-queue` Task 24（Mock 验证脚本）→ Task 25（最终检查点）→ `triggers-webhook` Task 2+；`codex-gpt-work`：`owlhub` Task 4（CLI Client）→ Task 5+。 |
+| 验收快照 | review-work 合并前：`ruff check .` All checks passed；`mypy owlclaw/` no issues in 133 source files。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
