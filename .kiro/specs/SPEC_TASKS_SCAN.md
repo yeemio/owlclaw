@@ -61,10 +61,10 @@
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
-- [x] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
+- [ ] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
 - [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
-- [x] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
-- [x] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
+- [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
+- [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
@@ -95,7 +95,7 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108） | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108），backlog +7 运行时增强 | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -108,15 +108,15 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（2/72） | webhook 触发器（Task 0 Protocol-first 已勾，+3 subtasks） |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
-| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（5/17） | Signal 触发器（Task 0/1/3 已完成） |
+| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/73） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/87） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
@@ -150,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-signal Task 3） |
-| 批次状态 | **进行中（本批）**。`triggers-signal` 已完成 Task 0/1/3，当前 5/17。 |
-| 已完成项 | 1) 完成 Signal 协议契约（request/response schema + 协议说明）；2) 完成 `owlclaw/triggers/signal/` 核心模块骨架（models/config/state/handlers/router）；3) `SignalRouter` 已接入权限验证、错误处理与 Ledger 审计；4) 新增单元测试覆盖模型、状态管理、路由授权与审计。 |
-| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 2（AgentStateManager 持久化 + Alembic 迁移）→ Task 4/5/6（pause/resume/trigger/instruct handlers 完整化）→ Task 7（CLI 命令）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/signal tests/unit/triggers/test_signal.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_signal.py -q`（7 passed）。 |
+| 当前批次 | orchestrate（OpenClaw 对标分析 → DX 降门槛 + 运行时增强补充） |
+| 批次状态 | **已完成**。OpenClaw 深度对标完成；SKILL.md 书写门槛问题已识别并补充到 spec；运行时增强 7 项已加入 capabilities-skills backlog。 |
+| 已完成项 | 1) OpenClaw 深度对标分析（SKILL.md 模型、ClawHub 生态、Lobster 工作流、50+ 内置 Skills）；2) `ARCHITECTURE_ANALYSIS` 更新至 v4.4（§4.12 补充 OpenClaw 对标：书写门槛、Prerequisites、简化语法、三种执行模式、Session Snapshot）；3) `declarative-binding` requirements 新增 R9/R10/R11（Prerequisites + 简化 Tools 语法 + 最小可用规范）；4) `declarative-binding` tasks 新增 Task 0.5/0.6、Task 7.5/7.6/7.7、Task 13（DX 降门槛）、Task 14/15 重组（共 87 子任务）；5) `capabilities-skills` backlog 新增 7 项运行时增强（Prerequisites/Session Snapshot/Token Budget/优先级覆盖/Enable-Disable/环境变量注入/热重载）。 |
+| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐（含简化语法 + prerequisites 规范）→ Task 1-7。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
+| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.4（含 OpenClaw 对标补充）；`declarative-binding` spec 三层齐全（requirements 11 个需求 + design 8 个组件 + tasks 15 个 task + backlog）；`capabilities-skills` backlog 新增 7 项运行时增强。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
