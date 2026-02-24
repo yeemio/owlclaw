@@ -264,3 +264,20 @@ class AlertRecord:
     message: str
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     tags: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class WebhookGlobalConfig:
+    """Global webhook runtime settings."""
+
+    timeout_seconds: float = 30.0
+    max_retries: int = 3
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+
+@dataclass(slots=True)
+class WebhookSystemConfig:
+    """Webhook system config including endpoint-level overrides."""
+
+    global_config: WebhookGlobalConfig = field(default_factory=WebhookGlobalConfig)
+    endpoints: dict[str, dict[str, Any]] = field(default_factory=dict)
