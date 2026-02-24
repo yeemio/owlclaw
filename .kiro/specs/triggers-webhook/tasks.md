@@ -14,7 +14,7 @@
 
 ## 任务
 
-- [ ] 1. 设置项目结构和核心类型定义
+- [x] 1. 设置项目结构和核心类型定义
   - 创建项目目录结构（`owlclaw/triggers/webhook/`, `owlclaw/triggers/webhook/http/`, `owlclaw/triggers/webhook/persistence/`）
   - 定义核心 Python 类型和模型（WebhookEndpoint, EndpointConfig, ValidationResult, ParsedPayload, AgentInput, ExecutionResult 等）
   - 配置静态检查与格式规范（ruff / mypy）

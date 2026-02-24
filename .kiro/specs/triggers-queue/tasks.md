@@ -16,7 +16,7 @@
 
 ## 任务
 
-- [ ] 1. 设置项目结构和核心类型定义
+- [x] 1. 设置项目结构和核心类型定义
   - 创建项目目录结构（owlclaw/triggers/queue/, owlclaw/integrations/queue_adapters/）
   - 定义核心数据类（RawMessage, MessageEnvelope, QueueTriggerConfig）
   - 定义队列适配器协议接口（QueueAdapter Protocol）
@@ -26,7 +26,7 @@
   - _需求：所有需求的基础_
 
 - [ ] 2. 实现消息解析器
-  - [ ] 2.1 实现 MessageParser 基类和具体解析器
+  - [x] 2.1 实现 MessageParser 基类和具体解析器
     - 实现 JSONParser（JSON 消息解析）
     - 实现 TextParser（文本消息解析）
     - 实现 BinaryParser（二进制消息解析）
@@ -37,14 +37,14 @@
     - **属性 3：多格式消息解析**
     - **验证需求：3.3**
   
-  - [ ]* 2.3 为解析失败编写单元测试
+  - [x]* 2.3 为解析失败编写单元测试
     - 测试无效 JSON 格式
     - 测试编码错误
     - 测试空消息体
     - _需求：3.4_
 
 - [ ] 3. 实现 MessageEnvelope 和消息封装
-  - [ ] 3.1 实现 MessageEnvelope 数据类
+  - [x] 3.1 实现 MessageEnvelope 数据类
     - 定义所有必需字段（message_id、payload、headers、received_at、source）
     - 定义可选字段（dedup_key、event_name、tenant_id）
     - 实现 from_raw_message 类方法
@@ -54,32 +54,32 @@
     - **属性 2：消息封装完整性**
     - **验证需求：3.1, 3.2**
   
-  - [ ]* 3.3 为消息封装编写单元测试
+  - [x]* 3.3 为消息封装编写单元测试
     - 测试字段映射正确性
     - 测试可选字段处理
     - 测试时间戳格式
     - _需求：3.1, 3.2_
 
-- [ ] 4. 实现 QueueAdapter 接口和 MockQueueAdapter
-  - [ ] 4.1 定义 QueueAdapter Protocol
+- [x] 4. 实现 QueueAdapter 接口和 MockQueueAdapter
+  - [x] 4.1 定义 QueueAdapter Protocol
     - 定义 connect、consume、ack、nack、send_to_dlq、close、health_check 方法签名
     - 添加完整的类型注解和文档字符串
     - _需求：1.1, 1.2_
   
-  - [ ] 4.2 实现 MockQueueAdapter
+  - [x] 4.2 实现 MockQueueAdapter
     - 实现所有 QueueAdapter 方法
     - 实现内存队列（使用 deque）
     - 实现测试辅助方法（enqueue、get_acked、get_nacked、get_dlq）
     - _需求：10.1, 10.4_
   
-  - [ ]* 4.3 为 MockQueueAdapter 编写单元测试
+  - [x]* 4.3 为 MockQueueAdapter 编写单元测试
     - 测试消息入队和出队
     - 测试 ack/nack 记录
     - 测试死信队列
     - 测试健康检查
     - _需求：10.1_
 
-- [ ] 5. 检查点 - 确保基础组件测试通过
+- [x] 5. 检查点 - 确保基础组件测试通过
   - 确保所有测试通过，如有问题请询问用户。
 
 

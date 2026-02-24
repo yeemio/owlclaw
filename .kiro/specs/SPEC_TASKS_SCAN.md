@@ -101,8 +101,8 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（3/19） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/17） | webhook 触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（3/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-work langchain 文档收口） |
-| 批次状态 | **已完成**。`integrations-langchain` 任务清单达到 **50/50** 并完成审校合并。 |
-| 已完成项 | 1) 合并 `codex-work` 的 langchain tasks 收口提交；2) 更新 Phase 2 中 langchain 模块勾选状态；3) 回填 Spec 索引进度到 `50/50`。 |
-| 下一待执行 | 继续 `e2e-validation` Task 4.3/4.4（完整流程属性与轨迹完整性），并同步回填进度。 |
-| 验收快照 | 一致性核对：`Get-ChildItem .kiro/specs -Directory ...` -> `integrations-langchain: 50/50`；文档复核：`rg -n \"integrations-langchain|Phase 2|Checkpoint\" .kiro/specs/SPEC_TASKS_SCAN.md`。 |
+| 当前批次 | coding loop（codex-work: triggers-webhook + triggers-queue foundation） |
+| 批次状态 | **已完成（本批）**。完成 Webhook/Queue 基础结构与核心类型落地，并通过针对性单测。 |
+| 已完成项 | 1) `triggers-webhook` Task 1；2) `triggers-queue` Task 1、Task 4、Task 5；3) `triggers-queue` Task 2.1/2.3 与 Task 3.1/3.3。 |
+| 下一待执行 | `triggers-webhook` Task 2（数据模型与持久化层）；`triggers-queue` Task 2.2 与 Task 3.2（Hypothesis 属性测试）后继续 Task 6。 |
+| 验收快照 | `poetry run pytest tests/unit/triggers/test_webhook_types.py tests/unit/triggers/test_queue_parsers.py tests/unit/triggers/test_queue_models.py tests/unit/triggers/test_queue_mock_adapter.py`（8 passed）；`poetry run ruff check ...`（All checks passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
