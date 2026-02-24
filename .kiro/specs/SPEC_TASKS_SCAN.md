@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（15/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（16/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 16.1~16.3） |
-| 批次状态 | **已完成**。历史回放链路前半段（导入/调度/执行引擎）已落地并通过测试。 |
-| 已完成项 | 1) 新增 `owlclaw/e2e/replay.py`：`EventImporter`、`ReplayScheduler`、`ReplayEngine`；2) 新增 `tests/e2e/test_replay_engine.py` 覆盖 JSON 导入、调度与回放记录；3) 回填 Task 16.1~16.3 为已完成。 |
-| 下一待执行 | `e2e-validation` Task 16.4（ReplayComparator）与 Task 16.5（ReplayReport）。 |
-| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 65 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 16.4~16.5） |
+| 批次状态 | **已完成**。ReplayComparator 与 ReplayReport 已落地，Task 16 全部收口。 |
+| 已完成项 | 1) 新增 `ReplayComparator` 并接入 `ReplayEngine`；2) 在 `ReportGenerator` 中新增 `generate_replay_report`；3) 补充 `tests/e2e/test_replay_engine.py` 与 `tests/e2e/test_report_generator.py` 断言；4) 回填 Task 16.4、16.5 与顶层 Task 16。 |
+| 下一待执行 | `e2e-validation` Task 17.1（ShadowModeInterceptor）~17.4（migration_weight 协同）。 |
+| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 67 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

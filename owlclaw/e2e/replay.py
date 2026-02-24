@@ -36,6 +36,40 @@ class ReplayResult:
     memory_growth: list[int]
 
 
+class ReplayComparator:
+    """Compute replay comparison metrics for historical event sequences."""
+
+    def compare(
+        self,
+        events: list[HistoricalEvent],
+        agent_decisions: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Calculate consistency, deviation distribution, quality trend, and memory growth."""
+        matched = 0
+        total = len(events)
+        distribution = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+        quality_trend: list[float] = []
+        memory_growth: list[int] = []
+
+        for index, event in enumerate(events, start=1):
+            decision = agent_decisions[index - 1]["decision"]
+            if decision == event.actual_decision:
+                matched += 1
+                distribution["low"] += 1
+            else:
+                distribution["medium"] += 1
+            quality_trend.append(matched / index)
+            memory_growth.append(index)
+
+        consistency_rate = (matched / total) if total else 0.0
+        return {
+            "consistency_rate": consistency_rate,
+            "deviation_distribution": distribution,
+            "quality_trend": quality_trend,
+            "memory_growth": memory_growth,
+        }
+
+
 class EventImporter:
     """Import and validate historical events from JSON/CSV."""
 
@@ -139,9 +173,11 @@ class ReplayEngine:
         *,
         importer: EventImporter | None = None,
         scheduler: ReplayScheduler | None = None,
+        comparator: ReplayComparator | None = None,
     ) -> None:
         self._importer = importer or EventImporter()
         self._scheduler = scheduler or ReplayScheduler()
+        self._comparator = comparator or ReplayComparator()
 
     async def import_events(self, source: str, *, format: str = "json") -> list[HistoricalEvent]:
         """Import historical events using EventImporter."""
@@ -163,36 +199,21 @@ class ReplayEngine:
 
         agent_decisions: list[dict[str, Any]] = []
         cron_decisions: list[dict[str, Any]] = []
-        matched = 0
-        memory_growth: list[int] = []
-        quality_trend: list[float] = []
-        distribution = {"low": 0, "medium": 0, "high": 0, "critical": 0}
-
-        for index, event in enumerate(scheduled, start=1):
+        for event in scheduled:
             agent_decision = self._run_agent_decision(event)
             cron_decision = self._run_cron_decision(event)
             agent_decisions.append(agent_decision)
             cron_decisions.append(cron_decision)
 
-            if agent_decision["decision"] == event.actual_decision:
-                matched += 1
-            deviation = 0 if agent_decision["decision"] == event.actual_decision else 1
-            severity = "low" if deviation == 0 else "medium"
-            distribution[severity] += 1
-
-            memory_growth.append(index)
-            quality_trend.append(matched / index)
-
-        total = len(scheduled)
-        consistency_rate = (matched / total) if total else 0.0
+        compared = self._comparator.compare(scheduled, agent_decisions)
         return ReplayResult(
-            total_events=total,
+            total_events=len(scheduled),
             agent_decisions=agent_decisions,
             cron_decisions=cron_decisions,
-            consistency_rate=consistency_rate,
-            deviation_distribution=distribution,
-            quality_trend=quality_trend,
-            memory_growth=memory_growth,
+            consistency_rate=float(compared["consistency_rate"]),
+            deviation_distribution=dict(compared["deviation_distribution"]),
+            quality_trend=list(compared["quality_trend"]),
+            memory_growth=list(compared["memory_growth"]),
         )
 
     def _run_agent_decision(self, event: HistoricalEvent) -> dict[str, Any]:

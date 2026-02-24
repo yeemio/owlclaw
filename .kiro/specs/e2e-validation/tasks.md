@@ -309,7 +309,7 @@
     - 创建决策对比的示例场景
     - 创建错误注入的示例场景
 
-- [ ] 16. 实现历史回放测试引擎（需求 9）
+- [x] 16. 实现历史回放测试引擎（需求 9）
   - [x] 16.1 实现 EventImporter
     - 支持 CSV/JSON 格式导入历史事件序列
     - 事件验证（时间戳格式、必填字段、payload 结构）
@@ -321,12 +321,12 @@
     - 串联 EventImporter → ReplayScheduler → Agent/Cron 执行
     - 分别在 V3 Agent 和 Original Cron 上回放
     - 记录每个事件的 Agent 决策（capability 选择、参数、结果）
-  - [ ] 16.4 实现 ReplayComparator
+  - [x] 16.4 实现 ReplayComparator
     - 计算决策一致率（Agent vs 历史实际决策）
     - 计算决策偏差分布（按 low/medium/high/critical 分类）
     - 计算时间序列决策质量趋势
     - 记录 Agent 记忆增长曲线（评估学习效果）
-  - [ ] 16.5 实现 ReplayReport
+  - [x] 16.5 实现 ReplayReport
     - 生成回放对比报告（含可视化图表）
     - 高亮关键偏差事件
     - _需求: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7_
