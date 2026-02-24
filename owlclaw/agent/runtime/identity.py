@@ -110,6 +110,11 @@ class IdentityLoader:
             if in_section:
                 if stripped.startswith("##"):
                     break
-                result.append(stripped)
+                normalized = stripped.strip()
+                if normalized.startswith("-"):
+                    item = normalized[1:].strip()
+                    result.append(f"- {item}" if item else "-")
+                else:
+                    result.append(stripped)
 
         return "\n".join(result).strip()

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -48,7 +48,7 @@ def _load_json_config(config_path: str) -> dict[str, Any]:
 
 
 def _load_env_overrides(environ: Mapping[str, str]) -> dict[str, Any]:
-    mapping = {
+    mapping: dict[str, tuple[str, Callable[[str], Any]]] = {
         "OWLCLAW_E2E_MODE": ("mode", str),
         "OWLCLAW_E2E_SCENARIO_FILE": ("scenario_file", str),
         "OWLCLAW_E2E_TASK_ID": ("task_id", str),

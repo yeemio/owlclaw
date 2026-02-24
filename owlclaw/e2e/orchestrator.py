@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from owlclaw.e2e.comparison_engine import ComparisonEngine
@@ -41,7 +41,7 @@ class TestOrchestrator:
     ) -> dict[str, Any]:
         """Run full validation and return aggregated execution + report payload."""
         self._run_state = "running"
-        self._run_started_at = datetime.now(UTC)
+        self._run_started_at = datetime.now(timezone.utc)
         results: list[ExecutionResult] = []
         try:
             for scenario in scenarios:
@@ -95,7 +95,7 @@ class TestOrchestrator:
     def start_validation(self) -> None:
         """Mark orchestrator state as running."""
         self._run_state = "running"
-        self._run_started_at = datetime.now(UTC)
+        self._run_started_at = datetime.now(timezone.utc)
 
     def stop_validation(self) -> None:
         """Stop current orchestration lifecycle."""
@@ -109,8 +109,7 @@ class TestOrchestrator:
         }
 
     async def _execute_with_timeout(self, scenario: TestScenario, *, timeout_seconds: int) -> ExecutionResult:
-        async with asyncio.timeout(timeout_seconds):
-            return await self._primary_engine.execute_scenario(scenario)
+        return await asyncio.wait_for(self._primary_engine.execute_scenario(scenario), timeout=timeout_seconds)
 
     def _aggregate_results(self, results: list[ExecutionResult]) -> dict[str, Any]:
         report = self._report_generator.generate_validation_report(results)

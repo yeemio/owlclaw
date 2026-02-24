@@ -6,7 +6,7 @@ import asyncio
 import csv
 import json
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -237,5 +237,5 @@ def _parse_timestamp(value: str) -> datetime:
         normalized = normalized[:-1] + "+00:00"
     parsed = datetime.fromisoformat(normalized)
     if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=UTC)
+        return parsed.replace(tzinfo=timezone.utc)
     return parsed

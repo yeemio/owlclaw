@@ -15,7 +15,9 @@ os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 import subprocess
 from pathlib import Path
 
+import docker
 import pytest
+from docker.errors import DockerException
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.postgres import PostgresContainer
 
@@ -50,6 +52,11 @@ def _run_migrations(sync_url: str, project_root: Path) -> None:
 @pytest.fixture(scope="module")
 def pg_container():
     """Start PostgreSQL with pgvector for the module."""
+    try:
+        docker.from_env().ping()
+    except DockerException as exc:
+        pytest.skip(f"Docker unavailable for pgvector integration tests: {exc}")
+
     with PostgresContainer("pgvector/pgvector:pg16") as postgres:
         yield postgres
 

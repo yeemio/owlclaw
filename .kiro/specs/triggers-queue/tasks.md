@@ -16,7 +16,7 @@
 
 ## 任务
 
-- [ ] 1. 设置项目结构和核心类型定义
+- [x] 1. 设置项目结构和核心类型定义
   - 创建项目目录结构（owlclaw/triggers/queue/, owlclaw/integrations/queue_adapters/）
   - 定义核心数据类（RawMessage, MessageEnvelope, QueueTriggerConfig）
   - 定义队列适配器协议接口（QueueAdapter Protocol）
@@ -25,100 +25,100 @@
   - 设置测试框架（pytest）和属性测试库（hypothesis）
   - _需求：所有需求的基础_
 
-- [ ] 2. 实现消息解析器
-  - [ ] 2.1 实现 MessageParser 基类和具体解析器
+- [x] 2. 实现消息解析器
+  - [x] 2.1 实现 MessageParser 基类和具体解析器
     - 实现 JSONParser（JSON 消息解析）
     - 实现 TextParser（文本消息解析）
     - 实现 BinaryParser（二进制消息解析）
     - 实现 ParseError 异常类
     - _需求：3.3_
   
-  - [ ]* 2.2 为消息解析编写属性测试
+  - [x]* 2.2 为消息解析编写属性测试
     - **属性 3：多格式消息解析**
     - **验证需求：3.3**
   
-  - [ ]* 2.3 为解析失败编写单元测试
+  - [x]* 2.3 为解析失败编写单元测试
     - 测试无效 JSON 格式
     - 测试编码错误
     - 测试空消息体
     - _需求：3.4_
 
-- [ ] 3. 实现 MessageEnvelope 和消息封装
-  - [ ] 3.1 实现 MessageEnvelope 数据类
+- [x] 3. 实现 MessageEnvelope 和消息封装
+  - [x] 3.1 实现 MessageEnvelope 数据类
     - 定义所有必需字段（message_id、payload、headers、received_at、source）
     - 定义可选字段（dedup_key、event_name、tenant_id）
     - 实现 from_raw_message 类方法
     - _需求：3.1, 3.2_
   
-  - [ ]* 3.2 为消息封装编写属性测试
+  - [x]* 3.2 为消息封装编写属性测试
     - **属性 2：消息封装完整性**
     - **验证需求：3.1, 3.2**
   
-  - [ ]* 3.3 为消息封装编写单元测试
+  - [x]* 3.3 为消息封装编写单元测试
     - 测试字段映射正确性
     - 测试可选字段处理
     - 测试时间戳格式
     - _需求：3.1, 3.2_
 
-- [ ] 4. 实现 QueueAdapter 接口和 MockQueueAdapter
-  - [ ] 4.1 定义 QueueAdapter Protocol
+- [x] 4. 实现 QueueAdapter 接口和 MockQueueAdapter
+  - [x] 4.1 定义 QueueAdapter Protocol
     - 定义 connect、consume、ack、nack、send_to_dlq、close、health_check 方法签名
     - 添加完整的类型注解和文档字符串
     - _需求：1.1, 1.2_
   
-  - [ ] 4.2 实现 MockQueueAdapter
+  - [x] 4.2 实现 MockQueueAdapter
     - 实现所有 QueueAdapter 方法
     - 实现内存队列（使用 deque）
     - 实现测试辅助方法（enqueue、get_acked、get_nacked、get_dlq）
     - _需求：10.1, 10.4_
   
-  - [ ]* 4.3 为 MockQueueAdapter 编写单元测试
+  - [x]* 4.3 为 MockQueueAdapter 编写单元测试
     - 测试消息入队和出队
     - 测试 ack/nack 记录
     - 测试死信队列
     - 测试健康检查
     - _需求：10.1_
 
-- [ ] 5. 检查点 - 确保基础组件测试通过
+- [x] 5. 检查点 - 确保基础组件测试通过
   - 确保所有测试通过，如有问题请询问用户。
 
 
-- [ ] 6. 实现 IdempotencyStore
-  - [ ] 6.1 定义 IdempotencyStore 抽象基类
+- [x] 6. 实现 IdempotencyStore
+  - [x] 6.1 定义 IdempotencyStore 抽象基类
     - 定义 exists、set、get 方法签名
     - 添加类型注解和文档字符串
     - _需求：6.1_
   
-  - [ ] 6.2 实现 RedisIdempotencyStore
+  - [x] 6.2 实现 RedisIdempotencyStore
     - 实现基于 Redis 的幂等性存储
     - 实现 TTL 过期机制
     - 实现键前缀（idempotency:）
     - _需求：6.1, 6.5_
   
-  - [ ] 6.3 实现 MockIdempotencyStore
+  - [x] 6.3 实现 MockIdempotencyStore
     - 实现基于内存字典的 Mock 存储
     - 实现 TTL 模拟（使用时间戳）
     - _需求：10.1_
   
-  - [ ]* 6.4 为幂等性存储编写属性测试
+  - [x]* 6.4 为幂等性存储编写属性测试
     - **属性 15：幂等性保证**
     - **属性 16：幂等性窗口期**
     - **验证需求：6.1, 6.2, 6.3, 6.5**
   
-  - [ ]* 6.5 为幂等性存储编写单元测试
+  - [x]* 6.5 为幂等性存储编写单元测试
     - 测试键存在性检查
     - 测试 TTL 过期
     - 测试并发访问
     - _需求：6.1, 6.5_
 
-- [ ] 7. 实现 QueueTrigger 核心类
-  - [ ] 7.1 实现 QueueTrigger 初始化和配置
+- [x] 7. 实现 QueueTrigger 核心类
+  - [x] 7.1 实现 QueueTrigger 初始化和配置
     - 实现 __init__ 方法（接收配置和依赖）
     - 实现 _create_parser 方法（根据配置创建解析器）
     - 实现配置验证
     - _需求：2.1_
   
-  - [ ] 7.2 实现生命周期管理方法
+  - [x] 7.2 实现生命周期管理方法
     - 实现 start 方法（启动并发消费任务）
     - 实现 stop 方法（优雅关闭）
     - 实现 pause 方法（暂停消费）
@@ -126,38 +126,38 @@
     - 实现 health_check 方法（健康检查）
     - _需求：2.2, 2.3, 2.4_
   
-  - [ ]* 7.3 为生命周期管理编写属性测试
+  - [x]* 7.3 为生命周期管理编写属性测试
     - **属性 6：生命周期状态转换**
     - **属性 22：健康检查准确性**
     - **属性 24：优雅关闭**
     - **验证需求：2.2, 2.3, 2.4**
   
-  - [ ]* 7.4 为生命周期管理编写单元测试
+  - [x]* 7.4 为生命周期管理编写单元测试
     - 测试启动和停止
     - 测试暂停和恢复
     - 测试健康检查状态
     - 测试优雅关闭超时
     - _需求：2.2, 2.3, 2.4_
 
-- [ ] 8. 实现消息消费循环
-  - [ ] 8.1 实现 _consume_loop 方法
+- [x] 8. 实现消息消费循环
+  - [x] 8.1 实现 _consume_loop 方法
     - 实现异步消息消费循环
     - 实现错误捕获和继续处理
     - 实现工作线程日志
     - _需求：2.5_
   
-  - [ ] 8.2 实现 _process_message 方法（基础版本）
+  - [x] 8.2 实现 _process_message 方法（基础版本）
     - 实现消息解析（调用 MessageEnvelope.from_raw_message）
     - 实现解析失败处理（发送到死信队列）
     - 实现 trace_id 生成
     - _需求：3.1, 3.4_
   
-  - [ ]* 8.3 为消息消费编写属性测试
+  - [x]* 8.3 为消息消费编写属性测试
     - **属性 4：解析失败路由到死信**
     - **属性 7：错误恢复与继续处理**
     - **验证需求：2.5, 3.4**
   
-  - [ ]* 8.4 为消息消费编写单元测试
+  - [x]* 8.4 为消息消费编写单元测试
     - 测试并发消费
     - 测试消费循环异常处理
     - 测试工作线程停止
@@ -166,47 +166,47 @@
 - [ ] 9. 检查点 - 确保核心消费流程测试通过
   - 确保所有测试通过，如有问题请询问用户。
 
-- [ ] 10. 实现幂等性检查
-  - [ ] 10.1 在 _process_message 中添加幂等性检查
+- [x] 10. 实现幂等性检查
+  - [x] 10.1 在 _process_message 中添加幂等性检查
     - 实现 dedup_key 提取（优先使用 envelope.dedup_key，否则使用 message_id）
     - 实现幂等性存储查询
     - 实现重复消息跳过和 ack
     - 实现去重计数器
     - _需求：6.1, 6.2, 6.3, 6.4_
   
-  - [ ] 10.2 在 _process_message 中添加幂等性记录
+  - [x] 10.2 在 _process_message 中添加幂等性记录
     - 实现成功处理后记录幂等性键
     - 实现 TTL 配置应用
     - _需求：6.1, 6.5_
   
-  - [ ]* 10.3 为幂等性检查编写属性测试
+  - [x]* 10.3 为幂等性检查编写属性测试
     - **属性 15：幂等性保证**
     - **属性 17：去重计数准确性**
     - **验证需求：6.1, 6.2, 6.3, 6.4**
   
-  - [ ]* 10.4 为幂等性检查编写单元测试
+  - [x]* 10.4 为幂等性检查编写单元测试
     - 测试重复消息跳过
     - 测试幂等性键生成
     - 测试幂等性存储失败降级
     - _需求：6.1, 6.2, 6.3_
 
-- [ ] 11. 实现治理层集成
-  - [ ] 11.1 在 _process_message 中添加治理层校验
+- [x] 11. 实现治理层集成
+  - [x] 11.1 在 _process_message 中添加治理层校验
     - 实现 governance.check_permission 调用
     - 实现执行上下文构建（source、queue、message_id、tenant_id）
     - 实现治理拒绝处理（_handle_governance_rejection）
     - _需求：7.1, 7.4, 4.5_
   
-  - [ ] 11.2 实现 _handle_governance_rejection 方法
+  - [x] 11.2 实现 _handle_governance_rejection 方法
     - 实现拒绝原因记录到 Ledger
     - 实现根据 ack_policy 处理消息（ack 或 dlq）
     - _需求：4.5, 7.4_
   
-  - [ ]* 11.3 为治理层集成编写属性测试
+  - [x]* 11.3 为治理层集成编写属性测试
     - **属性 10：治理层集成与拒绝处理**
     - **验证需求：4.5, 7.1, 7.4**
   
-  - [ ]* 11.4 为治理层集成编写单元测试
+  - [x]* 11.4 为治理层集成编写单元测试
     - 测试治理层允许执行
     - 测试治理层拒绝执行
     - 测试治理层不可用降级

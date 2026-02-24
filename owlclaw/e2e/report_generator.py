@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from owlclaw.e2e.models import ExecutionResult
@@ -53,9 +53,9 @@ class ReportGenerator:
             },
         ]
         report = {
-            "id": f"validation-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}",
+            "id": f"validation-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             "title": "E2E Validation Report",
-            "generated_at": datetime.now(UTC).isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "summary": {
                 "total_tests": total_tests,
                 "passed_tests": passed_tests,
@@ -88,9 +88,9 @@ class ReportGenerator:
         performance_diff = comparison.get("performance_diff", {})
         anomalies = comparison.get("anomalies", [])
         report = {
-            "id": f"comparison-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}",
+            "id": f"comparison-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             "title": "E2E Decision Comparison Report",
-            "generated_at": datetime.now(UTC).isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "summary": {
                 "scenario_id": comparison.get("scenario_id", "unknown"),
                 "anomaly_count": len(anomalies) if isinstance(anomalies, list) else 0,
@@ -150,9 +150,9 @@ class ReportGenerator:
         response_times = [float(item.get("response_time", 0.0)) for item in metrics]
         throughputs = [float(item.get("throughput", 0.0)) for item in metrics]
         report = {
-            "id": f"performance-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}",
+            "id": f"performance-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             "title": "E2E Performance Report",
-            "generated_at": datetime.now(UTC).isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "summary": {
                 "samples": len(metrics),
                 "avg_response_time": (sum(response_times) / len(response_times)) if response_times else 0.0,
