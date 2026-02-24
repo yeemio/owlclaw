@@ -22,8 +22,8 @@
 ### Phase 0：仓库初始化
 
 - [x] 清理 OwlClaw 仓库
-- [ ] 建立包结构（owlclaw / owlclaw-mcp）  
-  说明：`owlclaw` 已存在；`owlclaw-mcp` 目录当前未落地，待 mcp-server 实现时一并补齐并回填为 `[x]`。
+- [x] 建立包结构（owlclaw / owlclaw-mcp）  
+  说明：`owlclaw` 已存在；`owlclaw/mcp/` 已随 mcp-server spec 完成实现（12/12 ✅）。
 - [x] pyproject.toml + MIT LICENSE + README
 - [ ] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
 
@@ -101,9 +101,9 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（63/89） | 消息队列触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（84/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（10/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 3.1~3.4） |
-| 批次状态 | **已完成**。Index Builder/Crawler 与单元/属性测试已落地。 |
-| 已完成项 | 1) 新增 `owlclaw/owlhub/indexer/crawler.py`（仓库扫描与 SKILL frontmatter 解析）；2) 新增 `owlclaw/owlhub/indexer/builder.py`（index 生成、checksum、仓库聚合）；3) 新增 `tests/unit/test_owlhub_index_builder.py` 覆盖 Task 3.3 与属性 1/3/16；4) 回填 `owlhub/tasks.md` 的 Task 3、3.1、3.2、3.3、3.4。 |
-| 下一待执行 | `owlhub` Task 4（CLI Client：search/install/list/validate）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py -q` -> 14 passed。 |
+| 当前批次 | review loop（sync main 后继续审批编码分支增量） |
+| 批次状态 | **进行中**。已完成主干同步与历史口径统一，待审批 `codex-work` Task 24~25 增量。 |
+| 已完成项 | 1) 合并 main 到 review-work；2) 修正历史进度口径漂移：`e2e-validation`=`85/85`、`triggers-queue`=`84/89`、`owlhub`=`11/143`；3) `codex-gpt-work` owlhub Task 3.1~3.4 代码与测试已在 review-work 可见。 |
+| 下一待执行 | 审批 `codex-work`：`triggers-queue` Task 24（Mock 验证脚本）→ Task 25（最终检查点）；随后复扫 `codex-gpt-work` 是否有 Task 4 增量。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py`（All checks passed）；`poetry run pytest tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py -q`（14 passed）；`poetry run mypy owlclaw/owlhub`（Success: no issues found in 8 source files）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
