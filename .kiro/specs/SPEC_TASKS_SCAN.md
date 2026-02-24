@@ -119,13 +119,8 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-<<<<<<< HEAD
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（31/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/37） | AST 扫描器 |
-=======
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（107/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
->>>>>>> codex-gpt-work
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（3/37） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -156,19 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-<<<<<<< HEAD
 | 当前批次 | review-work（合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
 | 批次状态 | **已完成（可放行）**。两条开发分支均已合并到 `review-work` 并通过质量门。 |
-| 已完成项 | 1) 合并 `codex-work`（signal 持久化状态、admin API、CLI 信号流）；2) 修复合并后类型问题（`result.rowcount` 与 `uvicorn` 可选依赖导入）；3) 验证通过：`ruff` + `mypy` + `pytest`（signal 相关 25 passed, 1 skipped）；4) 合并 `codex-gpt-work`（owlhub moderation、CLI API 模式、依赖解析/安装图）；5) 验证通过：`ruff` + `mypy` + `pytest`（新增 owlhub/cli 相关 32 passed）；6) 补齐 `triggers-signal` Task 9（MCP 工具：pause/resume/trigger/instruct）并新增单测；7) 补齐 `triggers-signal` Task 10/11（runtime paused guard + 指令注入 + ledger 记录）并新增单测；8) 新增 Signal 使用文档（CLI/MCP/最佳实践）并完成 Task 14；9) 完成 `triggers-signal` Task 13 集成流（CLI/API/paused guard/instruction injection）；10) 完成 `triggers-signal` Task 12（单测补齐 DB 分支，模块覆盖率 94%）；11) 合并 `codex-gpt-work` 最新批次（owlhub 缓存控制、cache clear、安装重试恢复），回归通过；12) 更新 SPEC_TASKS_SCAN 为事实进度（signal 15/15、owlhub 31/42 等）。 |
-| 下一待执行 | 1) 推进 `declarative-binding` Phase 1（Task 0-7）；2) 推进 `owlhub` 剩余任务（31/42 → 完成）；3) 准备 `review-work -> main` 汇总合并说明。 |
-| 验收快照 | 本轮审校后：`triggers-webhook` ✅、`triggers-api` ✅、`triggers-db-change` ✅、`triggers-signal` ✅(15/15)、`owlhub` 🟡(31/42)。 |
-=======
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 31.2） |
-| 批次状态 | **已完成（部分）**。完成指标与健康检查能力（`/metrics` Prometheus 输出 + `/health` 依赖检查详情）并接入请求级指标采集。 |
-| 已完成项 | 1) 新增 `owlclaw/owlhub/api/metrics.py`：实现内存指标采集与 Prometheus 文本导出（请求总量、错误总量、错误率、分路由计数、延迟 sum/count、skill download/install 指标、DB pool 指标）；2) 更新 `owlclaw/owlhub/api/app.py`：中间件接入指标记录，新增 `/metrics` 端点，增强 `/health` 返回依赖检查详情（index/review/statistics/blacklist）；3) 更新 `tests/unit/test_owlhub_api_schemas.py`：新增 `/metrics` 与 health checks 字段断言；4) 更新 `tests/unit/test_owlhub_api_statistics.py`：新增 skill download/install 指标输出断言；5) 回填 `owlhub/tasks.md` 的 Task 31.2。 |
-| 下一待执行 | `owlhub` Task 31.3（tests for observability）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/api/metrics.py owlclaw/owlhub/api/app.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_statistics.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/api/metrics.py owlclaw/owlhub/api/app.py` -> success；`poetry run pytest tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_statistics.py tests/unit/test_owlhub_api_auth.py tests/unit/test_owlhub_api_publish.py -q` -> 20 passed。 |
->>>>>>> codex-gpt-work
+| 已完成项 | 1) 合并 `codex-work`（signal 持久化状态、admin API、CLI 信号流）；2) 修复合并后类型问题（`result.rowcount` 与 `uvicorn` 可选依赖导入）；3) 验证通过：`ruff` + `mypy` + `pytest`（signal 相关 25 passed, 1 skipped）；4) 合并 `codex-gpt-work`（owlhub moderation、CLI API 模式、依赖解析/安装图）；5) 验证通过：`ruff` + `mypy` + `pytest`（新增 owlhub/cli 相关 32 passed）；6) 补齐 `triggers-signal` Task 9（MCP 工具：pause/resume/trigger/instruct）并新增单测；7) 补齐 `triggers-signal` Task 10/11（runtime paused guard + 指令注入 + ledger 记录）并新增单测；8) 新增 Signal 使用文档（CLI/MCP/最佳实践）并完成 Task 14；9) 完成 `triggers-signal` Task 13 集成流（CLI/API/paused guard/instruction injection）；10) 完成 `triggers-signal` Task 12（单测补齐 DB 分支，模块覆盖率 94%）；11) 合并 `codex-gpt-work` 最新批次（owlhub 缓存控制、cache clear、安装重试恢复、metrics/health），回归通过；12) 合并 `codex-work` 最新批次（cli-scan Task 1 模型与序列化测试）；13) 更新 SPEC_TASKS_SCAN 为事实进度（signal 15/15、owlhub 31/42、cli-scan 3/37）。 |
+| 下一待执行 | 1) 推进 `declarative-binding` Phase 1（Task 0-7）；2) 推进 `owlhub` 剩余任务（31/42 → 完成）；3) 推进 `cli-scan` 剩余任务（3/37 → 完成）；4) 准备 `review-work -> main` 汇总合并说明。 |
+| 验收快照 | 本轮审校后：`triggers-webhook` ✅、`triggers-api` ✅、`triggers-db-change` ✅、`triggers-signal` ✅(15/15)、`owlhub` 🟡(31/42)、`cli-scan` 🟡(3/37)。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -16,18 +16,18 @@ The implementation follows a bottom-up approach: core data models → parser com
 
 ## Tasks
 
-- [ ] 1. Set up project structure and core data models
+- [x] 1. Set up project structure and core data models
   - Create `owlclaw/cli/scan/` package structure
   - Define core data models (FunctionSignature, Parameter, ParsedDocstring, ComplexityScore, ScanResult, etc.)
   - Define enums (ParameterKind, DocstringStyle, ComplexityLevel, ImportType, Confidence, TypeSource)
   - Set up logging configuration
   - _Requirements: 1.1, 2.1, 3.1, 6.1, 9.5, 11.2_
 
-- [ ]* 1.1 Write property test for data model serialization
+- [x]* 1.1 Write property test for data model serialization
   - **Property 17: JSON Serialization Round-Trip**
   - **Validates: Requirements 9.1, 14.4**
 
-- [ ]* 1.2 Write property test for YAML serialization
+- [x]* 1.2 Write property test for YAML serialization
   - **Property 18: YAML Serialization Round-Trip**
   - **Validates: Requirements 9.2, 14.4**
 
