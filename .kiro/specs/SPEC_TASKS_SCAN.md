@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（52/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（54/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 16） |
-| 批次状态 | **已完成**。Phase 2 端到端集成验证已落地并通过。 |
-| 已完成项 | 1) 新增 `tests/integration/test_owlhub_phase2_flow.py`；2) 覆盖完整链路：增强索引（statistics/search_index）→ 站点生成（index/dashboard/sitemap/search-index）→ CLI 客户端兼容读取与安装；3) 验证 Phase 2 索引格式对客户端保持兼容（Property 26 场景）；4) 回填 `owlhub/tasks.md` 的 Task 16。 |
-| 下一待执行 | `owlhub` Task 17（Phase 2 documentation update）。 |
-| 验收快照 | `poetry run ruff check tests/integration/test_owlhub_phase2_flow.py` -> all checks passed；`poetry run pytest tests/integration/test_owlhub_phase2_flow.py -q` -> 1 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 17~18） |
+| 批次状态 | **已完成**。Phase 2 文档与检查点已收口。 |
+| 已完成项 | 1) 新增 `docs/owlhub/phase2.md`，覆盖站点功能、统计面板、标签检索、Review System、workflow、架构图；2) 完成 Phase 2 checkpoint 验收：站点可生成、统计可展示、CLI 对 Phase 2 索引兼容；3) 回填 `owlhub/tasks.md` 的 Task 17、18。 |
+| 下一待执行 | `owlhub` Task 19（Phase 3 数据库基础设施）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_owlhub_site_generator.py tests/unit/test_owlhub_review_system.py tests/unit/test_owlhub_cli_client.py tests/integration/test_owlhub_phase2_flow.py -q` -> 26 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
