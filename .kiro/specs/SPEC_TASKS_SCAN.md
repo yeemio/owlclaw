@@ -56,7 +56,7 @@
 ### Phase 2：扩展 + 可观测 + 生态接入
 
 - [ ] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
-- [ ] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
+- [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
 - [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
@@ -103,7 +103,7 @@
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（84/89） | 消息队列触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（合并 review-work → main；同步各 worktree；更新进度） |
-| 批次状态 | **已完成**。review-work fast-forward 合并（27 文件，2022 行新增）；所有 worktree 已同步。 |
-| 已完成项 | 1) 合并 triggers-queue Task 18~23（Kafka 适配器、依赖检查、e2e 场景、日志安全、配置模板）；2) mcp-server 12/12 ✅ 完成；3) owlhub Task 1~3 启动（schema/validator/indexer bootstrap）；4) Phase 0 包结构打勾；5) 功能清单 mcp-server 打勾。 |
-| 下一待执行 | `codex-work`：`triggers-queue` Task 24（Mock 验证脚本）→ Task 25（最终检查点）→ `triggers-webhook` Task 2+；`codex-gpt-work`：`owlhub` Task 4（CLI Client）→ Task 5+。 |
-| 验收快照 | review-work 合并前：`ruff check .` All checks passed；`mypy owlclaw/` no issues in 133 source files。 |
+| 当前批次 | coding loop（codex-work: triggers-queue final closeout） |
+| 批次状态 | **已完成并收口**。`triggers-queue` 全部任务 `89/89` 完成。 |
+| 已完成项 | 1) Task 24.1：新增 `scripts/test_queue_trigger.py`（MockQueueAdapter 全流程验证）；2) Task 24.2：新增 `docs/triggers/queue_validation.md`（步骤/预期/排查）；3) Task 25：完成 queue 单元/属性/集成测试、覆盖率检查、mypy、ruff 校验；4) Task 9 核心消费流程检查点补齐。 |
+| 下一待执行 | `codex-work`：切换 `triggers-webhook` Task 2（数据模型与持久化层）→ `triggers-db-change` / `triggers-api` / `triggers-signal`。 |
+| 验收快照 | `poetry run python scripts/test_queue_trigger.py`（PASSED）；`poetry run pytest tests/unit/triggers -k queue tests/integration/test_queue_trigger_e2e.py tests/integration/test_queue_kafka_adapter_integration.py --cov=owlclaw.triggers.queue --cov=owlclaw.integrations.queue_adapters --cov-report=term-missing -q`（74 passed, 1 skipped，TOTAL 89%）；`poetry run mypy owlclaw/`（Success: no issues found in 133 source files）；`poetry run ruff check .`（All checks passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
