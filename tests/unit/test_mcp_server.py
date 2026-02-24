@@ -10,6 +10,7 @@ import pytest
 
 from owlclaw import OwlClaw
 from owlclaw.mcp import McpProtocolServer
+from owlclaw.triggers.signal import SignalResult
 
 
 def _create_test_app(tmp_path: Path) -> OwlClaw:
@@ -190,3 +191,54 @@ def test_build_input_schema_ignores_session_and_varargs(tmp_path: Path) -> None:
     schema = server._build_input_schema(handler)
     assert "session" not in schema["properties"]
     assert "name" in schema["properties"]
+
+
+@pytest.mark.asyncio
+async def test_mcp_tools_list_includes_signal_tools_when_router_present(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+
+    class _Router:
+        async def dispatch(self, signal: Any) -> SignalResult:  # noqa: ARG002
+            return SignalResult(status="paused")
+
+    server = McpProtocolServer.from_app(app)
+    server.signal_router = _Router()  # type: ignore[assignment]
+
+    tools_response = await server.handle_message({"jsonrpc": "2.0", "id": 10, "method": "tools/list"})
+    tool_names = {item["name"] for item in tools_response["result"]["tools"]}
+    assert "owlclaw_pause" in tool_names
+    assert "owlclaw_resume" in tool_names
+    assert "owlclaw_trigger" in tool_names
+    assert "owlclaw_instruct" in tool_names
+
+
+@pytest.mark.asyncio
+async def test_mcp_signal_tool_dispatches_to_signal_router(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+    captured: dict[str, Any] = {}
+
+    class _Router:
+        async def dispatch(self, signal: Any) -> SignalResult:
+            captured["signal"] = signal
+            return SignalResult(status="triggered", run_id="run-1")
+
+    server = McpProtocolServer.from_app(app)
+    server.signal_router = _Router()  # type: ignore[assignment]
+
+    response = await server.handle_message(
+        {
+            "jsonrpc": "2.0",
+            "id": 11,
+            "method": "tools/call",
+            "params": {
+                "name": "owlclaw_trigger",
+                "arguments": {"agent_id": "a1", "tenant_id": "t1", "operator": "op", "focus": "f", "message": "m"},
+            },
+        }
+    )
+
+    payload = json.loads(response["result"]["content"][0]["text"])
+    assert payload["status"] == "triggered"
+    assert payload["run_id"] == "run-1"
+    assert captured["signal"].agent_id == "a1"
+    assert captured["signal"].tenant_id == "t1"
