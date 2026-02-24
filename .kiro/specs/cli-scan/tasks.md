@@ -265,30 +265,30 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Test scan → add file → incremental scan
     - _Requirements: 7.1, 7.4, 7.5_
 
-- [ ] 14. Implement configuration management
-  - [ ] 14.1 Implement configuration file parser
+- [x] 14. Implement configuration management
+  - [x] 14.1 Implement configuration file parser
     - Parse `.owlclaw-scan.yaml` using PyYAML
     - Define configuration schema
     - Validate configuration fields (types, ranges)
     - Apply default values for missing fields
     - _Requirements: 10.1, 10.2, 10.3, 10.5, 10.6, 15.1, 15.2, 15.3_
   
-  - [ ]* 14.2 Write property test for configuration round-trip
+  - [x]* 14.2 Write property test for configuration round-trip
     - **Property 23: Configuration Round-Trip**
     - **Validates: Requirements 15.4**
   
-  - [ ]* 14.3 Write property test for configuration validation
+  - [x]* 14.3 Write property test for configuration validation
     - **Property 24: Configuration Validation**
     - **Validates: Requirements 15.2, 15.3**
   
-  - [ ]* 14.4 Write unit tests for configuration
+  - [x]* 14.4 Write unit tests for configuration
     - Test loading valid configuration file
     - Test rejecting invalid field types
     - Test applying default values
     - Test glob pattern validation
     - _Requirements: 10.1, 10.6, 15.1, 15.2_
 
-- [ ] 15. Checkpoint - Ensure configuration and incremental tests pass
+- [x] 15. Checkpoint - Ensure configuration and incremental tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 16. Implement serialization and output

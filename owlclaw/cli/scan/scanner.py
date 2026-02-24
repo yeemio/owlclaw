@@ -32,6 +32,8 @@ class ScanConfig:
     project_path: Path
     include_patterns: list[str] = field(default_factory=lambda: ["*.py"])
     exclude_patterns: list[str] = field(default_factory=list)
+    incremental: bool = False
+    workers: int = 1
     extract_docstrings: bool = True
     calculate_complexity: bool = True
     analyze_dependencies: bool = True
