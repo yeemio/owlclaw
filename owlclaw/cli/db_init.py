@@ -10,13 +10,13 @@ import typer
 from typer.models import OptionInfo
 
 try:
-    import asyncpg
+    import asyncpg  # type: ignore[import-untyped]
 except ImportError:
     asyncpg = None
 
 try:
-    import psycopg2
-    from psycopg2 import errors as psycopg2_errors
+    import psycopg2  # type: ignore[import-untyped]
+    from psycopg2 import errors as psycopg2_errors  # type: ignore[import-untyped]
 except ImportError:
     psycopg2 = None
     psycopg2_errors = None
@@ -361,26 +361,26 @@ def init_command(
 ) -> None:
     """Create owlclaw (and optionally hatchet) database, role, and pgvector."""
     import sys
-    admin_url = (_normalize_optional_str_option(admin_url) or "").strip() or None
-    owlclaw_password = (_normalize_optional_str_option(owlclaw_password) or "").strip() or None
-    hatchet_password = (_normalize_optional_str_option(hatchet_password) or "").strip() or None
-    dry_run = _normalize_bool_option(dry_run, False)
-    skip_hatchet = _normalize_bool_option(skip_hatchet, False)
-    url = admin_url or os.environ.get("OWLCLAW_ADMIN_URL")
+    normalized_admin_url = (_normalize_optional_str_option(admin_url) or "").strip() or None
+    normalized_owlclaw_password = (_normalize_optional_str_option(owlclaw_password) or "").strip() or None
+    normalized_hatchet_password = (_normalize_optional_str_option(hatchet_password) or "").strip() or None
+    normalized_dry_run = _normalize_bool_option(dry_run, False)
+    normalized_skip_hatchet = _normalize_bool_option(skip_hatchet, False)
+    url = normalized_admin_url or os.environ.get("OWLCLAW_ADMIN_URL")
     if not url or not url.strip():
         typer.echo("Error: Set --admin-url or OWLCLAW_ADMIN_URL.", err=True)
         raise typer.Exit(2)
     # Keep argv fallback for Typer/Click bool edge cases, but honor explicit call args too.
-    do_dry_run = bool(dry_run) or "--dry-run" in sys.argv
-    do_skip_hatchet = bool(skip_hatchet) or "--skip-hatchet" in sys.argv
-    pw_owl = (owlclaw_password or secrets.token_urlsafe(16)) if not do_dry_run else None
-    pw_hatchet = (hatchet_password or secrets.token_urlsafe(16)) if not do_dry_run else None
+    do_dry_run = bool(normalized_dry_run) or "--dry-run" in sys.argv
+    do_skip_hatchet = bool(normalized_skip_hatchet) or "--skip-hatchet" in sys.argv
+    pw_owl = (normalized_owlclaw_password or secrets.token_urlsafe(16)) if not do_dry_run else None
+    pw_hatchet = (normalized_hatchet_password or secrets.token_urlsafe(16)) if not do_dry_run else None
     try:
         asyncio.run(
             _init_impl(
                 admin_url=url,
-                owlclaw_password=owlclaw_password,
-                hatchet_password=hatchet_password,
+                owlclaw_password=normalized_owlclaw_password,
+                hatchet_password=normalized_hatchet_password,
                 skip_hatchet=do_skip_hatchet,
                 dry_run=do_dry_run,
                 pw_owl=pw_owl,
@@ -388,10 +388,10 @@ def init_command(
             )
         )
     except (ConnectionResetError, OSError) as e:
-        _try_sync_fallback(e, url, pw_owl, pw_hatchet, do_skip_hatchet, do_dry_run, owlclaw_password)
+        _try_sync_fallback(e, url, pw_owl, pw_hatchet, do_skip_hatchet, do_dry_run, normalized_owlclaw_password)
     except Exception as e:
         # asyncpg.ConnectionDoesNotExistError etc. on Windows after connection reset
         if "connection was closed" in str(e).lower() or "64" in str(e) or getattr(e, "winerror", None) == 64:
-            _try_sync_fallback(e, url, pw_owl, pw_hatchet, do_skip_hatchet, do_dry_run, owlclaw_password)
+            _try_sync_fallback(e, url, pw_owl, pw_hatchet, do_skip_hatchet, do_dry_run, normalized_owlclaw_password)
         else:
             raise

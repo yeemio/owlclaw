@@ -2,8 +2,8 @@
 
 from unittest.mock import AsyncMock, patch
 
-from typer.testing import CliRunner
 from typer.models import OptionInfo
+from typer.testing import CliRunner
 
 from owlclaw.cli import app
 from owlclaw.cli.db_migrate import migrate_command

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
 import logging
+
+import pytest
 
 from owlclaw.agent.memory.migration import migrate_store_data
 from owlclaw.agent.memory.models import MemoryEntry

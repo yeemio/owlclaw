@@ -367,6 +367,7 @@ class MemoryService:
         from owlclaw.agent.memory.store_pgvector import PgVectorStore
         from owlclaw.agent.memory.store_qdrant import QdrantStore
 
+        embedder: EmbeddingProvider
         if config.vector_backend == "inmemory":
             store: MemoryStore = InMemoryStore(
                 time_decay_half_life_hours=config.time_decay_half_life_hours,

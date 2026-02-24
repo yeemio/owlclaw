@@ -6,7 +6,7 @@ import math
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
-from pgvector.sqlalchemy import Vector
+from pgvector.sqlalchemy import Vector  # type: ignore[import-untyped]
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, and_, delete, func, select, update
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -213,7 +213,7 @@ class PgVectorStore(MemoryStore):
                 update(MemoryEntryORM).where(MemoryEntryORM.id.in_(entry_ids)).values(archived=True)
             )
             await session.commit()
-            return r.rowcount or 0
+            return int(getattr(r, "rowcount", 0) or 0)
 
     async def delete(self, entry_ids: list[UUID]) -> int:
         if not entry_ids:
@@ -221,7 +221,7 @@ class PgVectorStore(MemoryStore):
         async with self._session_factory() as session:
             r = await session.execute(delete(MemoryEntryORM).where(MemoryEntryORM.id.in_(entry_ids)))
             await session.commit()
-            return r.rowcount or 0
+            return int(getattr(r, "rowcount", 0) or 0)
 
     async def count(self, agent_id: str, tenant_id: str) -> int:
         async with self._session_factory() as session:

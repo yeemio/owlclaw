@@ -109,7 +109,12 @@ def _list_templates(
     if json_output:
         rows = []
         for t in templates:
-            row = {"id": t.id, "name": t.name, "category": t.category.value, "description": t.description}
+            row: dict[str, object] = {
+                "id": t.id,
+                "name": t.name,
+                "category": t.category.value,
+                "description": t.description,
+            }
             if verbose:
                 row["tags"] = t.tags
                 row["parameters"] = [p.name for p in t.parameters]

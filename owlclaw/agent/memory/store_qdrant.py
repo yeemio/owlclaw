@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from owlclaw.agent.memory.models import MemoryEntry, SecurityLevel
@@ -14,7 +14,7 @@ try:  # pragma: no cover - import availability depends on environment
     from qdrant_client import AsyncQdrantClient
     from qdrant_client.http import models as qmodels
 except ImportError:  # pragma: no cover
-    AsyncQdrantClient = None  # type: ignore[assignment]
+    AsyncQdrantClient = None  # type: ignore[misc,assignment]
     qmodels = None  # type: ignore[assignment]
 
 
@@ -52,7 +52,7 @@ def _parse_bool(raw: Any, default: bool = False) -> bool:
             return True
         if normalized in {"0", "false", "no", "off", ""}:
             return False
-    if isinstance(raw, (int, float)):
+    if isinstance(raw, int | float):
         return raw != 0
     return default
 
@@ -63,7 +63,7 @@ def _parse_tags(raw: Any) -> list[str]:
     if isinstance(raw, str):
         normalized = raw.strip()
         return [normalized] if normalized else []
-    if isinstance(raw, (list, tuple, set)):
+    if isinstance(raw, list | tuple | set):
         return [str(tag) for tag in raw if str(tag).strip()]
     return []
 
@@ -90,6 +90,12 @@ def _entry_from_payload(entry_id: UUID, payload: dict[str, Any], vector: list[fl
     )
 
 
+def _coerce_vector(raw: Any) -> list[float] | None:
+    if isinstance(raw, list) and all(isinstance(item, int | float) for item in raw):
+        return [float(item) for item in raw]
+    return None
+
+
 class QdrantStore(MemoryStore):
     """Qdrant implementation with the same contract as PgVectorStore."""
 
@@ -105,7 +111,7 @@ class QdrantStore(MemoryStore):
             raise ValueError("embedding_dimensions must be > 0")
         if client is None and AsyncQdrantClient is None:
             raise RuntimeError("QdrantStore requires qdrant-client. Install with `poetry add qdrant-client`.")
-        self._client = client or AsyncQdrantClient(url=url)
+        self._client: Any = client or AsyncQdrantClient(url=url)
         self._collection_name = collection_name
         self._embedding_dimensions = embedding_dimensions
         self._time_decay_half_life_hours = time_decay_half_life_hours
@@ -139,7 +145,7 @@ class QdrantStore(MemoryStore):
         if tags:
             for tag in tags:
                 must.append(qmodels.FieldCondition(key="tags", match=qmodels.MatchValue(value=tag)))
-        return qmodels.Filter(must=must)
+        return qmodels.Filter(must=cast(Any, must))
 
     async def save(self, entry: MemoryEntry) -> UUID:
         await self._ensure_collection()
@@ -192,7 +198,7 @@ class QdrantStore(MemoryStore):
             )
             entries = []
             for rec in records:
-                entry = _entry_from_payload(UUID(str(rec.id)), rec.payload or {}, rec.vector if rec.vector else None)
+                entry = _entry_from_payload(UUID(str(rec.id)), rec.payload or {}, _coerce_vector(rec.vector))
                 entries.append(entry)
             entries.sort(key=lambda e: e.created_at, reverse=True)
             return [(e, 1.0) for e in entries[:limit]]
@@ -210,7 +216,7 @@ class QdrantStore(MemoryStore):
             entry = _entry_from_payload(
                 UUID(str(point.id)),
                 point.payload or {},
-                point.vector if point.vector else None,
+                _coerce_vector(point.vector),
             )
             age_hours = (now - entry.created_at).total_seconds() / 3600.0
             score = float(point.score) * time_decay(age_hours, self._time_decay_half_life_hours)
@@ -236,7 +242,7 @@ class QdrantStore(MemoryStore):
         cutoff = _now_utc() - timedelta(hours=hours) if hours > 0 else None
         entries: list[MemoryEntry] = []
         for rec in records:
-            entry = _entry_from_payload(UUID(str(rec.id)), rec.payload or {}, rec.vector if rec.vector else None)
+            entry = _entry_from_payload(UUID(str(rec.id)), rec.payload or {}, _coerce_vector(rec.vector))
             if cutoff is not None and entry.created_at < cutoff:
                 continue
             if entry.archived:
@@ -254,7 +260,7 @@ class QdrantStore(MemoryStore):
         await self._client.set_payload(
             collection_name=self._collection_name,
             payload={"archived": True},
-            points=points,
+            points=cast(Any, points),
         )
         return len(points)
 
@@ -266,7 +272,7 @@ class QdrantStore(MemoryStore):
         points = [str(uid) for uid in entry_ids]
         await self._client.delete(
             collection_name=self._collection_name,
-            points_selector=qmodels.PointIdsList(points=points),
+            points_selector=qmodels.PointIdsList(points=cast(Any, points)),
         )
         return len(points)
 
@@ -321,7 +327,7 @@ class QdrantStore(MemoryStore):
             with_vectors=True,
         )
         entries = [
-            _entry_from_payload(UUID(str(rec.id)), rec.payload or {}, rec.vector if rec.vector else None)
+            _entry_from_payload(UUID(str(rec.id)), rec.payload or {}, _coerce_vector(rec.vector))
             for rec in records
         ]
         entries.sort(key=lambda e: e.created_at, reverse=not order_created_asc)
