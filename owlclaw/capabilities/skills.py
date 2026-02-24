@@ -7,13 +7,17 @@ SKILL.md files from application directories following the Agent Skills specifica
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _FRONTMATTER_PATTERN = re.compile(r"^---\r?\n(.*?)\r?\n---(?:\r?\n(.*))?$", re.DOTALL)
+
+if TYPE_CHECKING:
+    from owlclaw.capabilities.registry import CapabilityRegistry
+    from owlclaw.governance.ledger import Ledger
 
 
 class Skill:
@@ -290,6 +294,11 @@ class SkillsLoader:
         metadata = frontmatter_map.get("metadata", {})
         if not isinstance(metadata, dict):
             metadata = {}
+        tools_schema = metadata.get("tools_schema")
+        if tools_schema is not None and not isinstance(tools_schema, dict):
+            logger.warning("Skill file %s metadata.tools_schema must be a mapping", file_path)
+            metadata = dict(metadata)
+            metadata["tools_schema"] = {}
         owlclaw_config = frontmatter_map.get("owlclaw", {})
         if not isinstance(owlclaw_config, dict):
             owlclaw_config = {}
@@ -327,3 +336,55 @@ class SkillsLoader:
             skill.clear_full_content_cache()
             cleared += 1
         return cleared
+
+
+def auto_register_binding_tools(
+    skills_loader: SkillsLoader,
+    registry: "CapabilityRegistry",
+    ledger: "Ledger | None" = None,
+) -> list[str]:
+    """Auto-register binding-declared tools from Skill metadata."""
+    from owlclaw.capabilities.bindings import (
+        BindingExecutorRegistry,
+        BindingTool,
+        HTTPBindingExecutor,
+        parse_binding_config,
+    )
+
+    executor_registry = BindingExecutorRegistry()
+    executor_registry.register("http", HTTPBindingExecutor())
+
+    registered: list[str] = []
+    for skill in skills_loader.list_skills():
+        tools_schema = skill.metadata.get("tools_schema", {})
+        if not isinstance(tools_schema, dict):
+            continue
+        for tool_name, tool_def in tools_schema.items():
+            if not isinstance(tool_name, str) or not tool_name.strip() or not isinstance(tool_def, dict):
+                continue
+            binding_data = tool_def.get("binding")
+            if not isinstance(binding_data, dict):
+                continue
+            if tool_name in registry.handlers:
+                continue
+            try:
+                config = parse_binding_config(binding_data)
+            except ValueError as exc:
+                logger.warning(
+                    "Skip binding tool '%s' in skill '%s': %s",
+                    tool_name,
+                    skill.name,
+                    exc,
+                )
+                continue
+            tool = BindingTool(
+                name=tool_name,
+                description=str(tool_def.get("description", "")),
+                parameters_schema=tool_def.get("parameters", {}) if isinstance(tool_def.get("parameters"), dict) else {},
+                binding_config=config,
+                executor_registry=executor_registry,
+                ledger=ledger,
+            )
+            registry.register_handler(tool_name, tool)
+            registered.append(tool_name)
+    return registered

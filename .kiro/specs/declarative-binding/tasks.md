@@ -57,29 +57,29 @@
   - [x] 4.8 单元测试：active GET/POST、shadow 拦截、超时重试、response mapping
   - [x] 4.9 集成测试：使用 httpx mock 的完整调用链路
 
-- [ ] **Task 5**: BindingTool 与 Ledger 集成
-  - [ ] 5.1 实现 `tool.py`：BindingTool 类
-  - [ ] 5.2 实现 `__call__()` 方法（executor 分发 + 计时）
-  - [ ] 5.3 实现 Ledger 记录（tool_name、binding_type、mode、parameters、result_summary、elapsed_ms、status）
-  - [ ] 5.4 实现 `_summarize()` 结果摘要（截断长响应）
-  - [ ] 5.5 错误处理：executor 异常时记录 Ledger 并重新抛出
-  - [ ] 5.6 单元测试：正常调用、错误记录、Ledger 集成
+- [x] **Task 5**: BindingTool 与 Ledger 集成
+  - [x] 5.1 实现 `tool.py`：BindingTool 类
+  - [x] 5.2 实现 `__call__()` 方法（executor 分发 + 计时）
+  - [x] 5.3 实现 Ledger 记录（tool_name、binding_type、mode、parameters、result_summary、elapsed_ms、status）
+  - [x] 5.4 实现 `_summarize()` 结果摘要（截断长响应）
+  - [x] 5.5 错误处理：executor 异常时记录 Ledger 并重新抛出
+  - [x] 5.6 单元测试：正常调用、错误记录、Ledger 集成
 
-- [ ] **Task 6**: Skills Loader 扩展 — binding 检测与自动注册
-  - [ ] 6.1 扩展 `SkillsLoader._parse_skill_file()` 检测 tools_schema 中的 binding 字段
-  - [ ] 6.2 实现 `auto_register_binding_tools()` 函数
-  - [ ] 6.3 @handler 优先级：已有 @handler 的工具不被 binding 覆盖
-  - [ ] 6.4 扩展 `OwlClaw.mount_skills()` 调用 auto_register_binding_tools
-  - [ ] 6.5 集成测试：Skills 加载 → binding 检测 → BindingTool 注册 → 调用
+- [x] **Task 6**: Skills Loader 扩展 — binding 检测与自动注册
+  - [x] 6.1 扩展 `SkillsLoader._parse_skill_file()` 检测 tools_schema 中的 binding 字段
+  - [x] 6.2 实现 `auto_register_binding_tools()` 函数
+  - [x] 6.3 @handler 优先级：已有 @handler 的工具不被 binding 覆盖
+  - [x] 6.4 扩展 `OwlClaw.mount_skills()` 调用 auto_register_binding_tools
+  - [x] 6.5 集成测试：Skills 加载 → binding 检测 → BindingTool 注册 → 调用
 
-- [ ] **Task 7**: `owlclaw skill validate` 扩展 — binding 验证 + 安全审计
-  - [ ] 7.1 扩展 validate 命令检测 binding schema 格式
-  - [ ] 7.2 验证必填字段（url for HTTP、topic for Queue、query for SQL）
-  - [ ] 7.3 验证 credential 引用格式（`${ENV_VAR}` 而非明文）
-  - [ ] 7.4 启发式检测明文密钥并发出警告
-  - [ ] 7.5 验证 prerequisites 字段（env 变量是否存在、bins 是否在 PATH 中）
-  - [ ] 7.6 binding 声明 vs 实际一致性检查（声明的 ${ENV_VAR} 是否在 prerequisites.env 中）
-  - [ ] 7.7 单元测试：有效/无效 binding 验证、prerequisites 检查、一致性审计
+- [x] **Task 7**: `owlclaw skill validate` 扩展 — binding 验证 + 安全审计
+  - [x] 7.1 扩展 validate 命令检测 binding schema 格式
+  - [x] 7.2 验证必填字段（url for HTTP、topic for Queue、query for SQL）
+  - [x] 7.3 验证 credential 引用格式（`${ENV_VAR}` 而非明文）
+  - [x] 7.4 启发式检测明文密钥并发出警告
+  - [x] 7.5 验证 prerequisites 字段（env 变量是否存在、bins 是否在 PATH 中）
+  - [x] 7.6 binding 声明 vs 实际一致性检查（声明的 ${ENV_VAR} 是否在 prerequisites.env 中）
+  - [x] 7.7 单元测试：有效/无效 binding 验证、prerequisites 检查、一致性审计
 
 ### Phase 2：扩展执行器（P1）
 

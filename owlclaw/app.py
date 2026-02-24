@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 from owlclaw.agent import AgentRuntime
+from owlclaw.capabilities.bindings import BindingTool
 from owlclaw.capabilities.knowledge import KnowledgeInjector
 from owlclaw.capabilities.registry import CapabilityRegistry
-from owlclaw.capabilities.skills import SkillsLoader
+from owlclaw.capabilities.skills import SkillsLoader, auto_register_binding_tools
 from owlclaw.config import ConfigManager
 from owlclaw.governance.visibility import CapabilityView
 from owlclaw.security.sanitizer import InputSanitizer
@@ -168,8 +169,15 @@ class OwlClaw:
         # Initialize Registry and Knowledge Injector
         self.registry = CapabilityRegistry(self.skills_loader)
         self.knowledge_injector = KnowledgeInjector(self.skills_loader)
+        registered_binding_tools = auto_register_binding_tools(
+            self.skills_loader,
+            self.registry,
+            self._ledger,
+        )
 
         logger.info("Loaded %d Skills from %s", len(skills), normalized_path)
+        if registered_binding_tools:
+            logger.info("Auto-registered %d binding tools", len(registered_binding_tools))
 
     def handler(
         self,
@@ -225,7 +233,9 @@ class OwlClaw:
                 raise RuntimeError(
                     "Must call mount_skills() before registering handlers"
                 )
-
+            existing = self.registry.handlers.get(skill_name)
+            if isinstance(existing, BindingTool):
+                self.registry.handlers.pop(skill_name, None)
             self.registry.register_handler(skill_name, fn)
             self._handlers[skill_name] = fn
             return fn
