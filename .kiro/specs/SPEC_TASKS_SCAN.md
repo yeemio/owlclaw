@@ -1,6 +1,6 @@
 # SPEC_TASKS_SCAN — OwlClaw 功能清单总览
 
-> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.3（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding）+ `docs/DATABASE_ARCHITECTURE.md`
+> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.5（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
 > **最后更新**: 2026-02-24
 
@@ -58,6 +58,7 @@
 - [ ] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
 - [ ] `owlclaw.capabilities.skills` 扩展 — Skills Loader binding 检测与 BindingTool 自动注册 → spec: declarative-binding Task 6
 - [ ] `owlclaw.cli.skill` 扩展 — `owlclaw skill validate` binding schema 验证 → spec: declarative-binding Task 7
+- [ ] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
@@ -116,13 +117,13 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/87） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
-| cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
+| cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（0/41） | GitHub Actions CI（lint + test） |
 
@@ -150,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（OpenClaw 对标分析 → DX 降门槛 + 运行时增强补充） |
-| 批次状态 | **已完成**。OpenClaw 深度对标完成；SKILL.md 书写门槛问题已识别并补充到 spec；运行时增强 7 项已加入 capabilities-skills backlog。 |
-| 已完成项 | 1) OpenClaw 深度对标分析（SKILL.md 模型、ClawHub 生态、Lobster 工作流、50+ 内置 Skills）；2) `ARCHITECTURE_ANALYSIS` 更新至 v4.4（§4.12 补充 OpenClaw 对标：书写门槛、Prerequisites、简化语法、三种执行模式、Session Snapshot）；3) `declarative-binding` requirements 新增 R9/R10/R11（Prerequisites + 简化 Tools 语法 + 最小可用规范）；4) `declarative-binding` tasks 新增 Task 0.5/0.6、Task 7.5/7.6/7.7、Task 13（DX 降门槛）、Task 14/15 重组（共 87 子任务）；5) `capabilities-skills` backlog 新增 7 项运行时增强（Prerequisites/Session Snapshot/Token Budget/优先级覆盖/Enable-Disable/环境变量注入/热重载）。 |
-| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐（含简化语法 + prerequisites 规范）→ Task 1-7。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.4（含 OpenClaw 对标补充）；`declarative-binding` spec 三层齐全（requirements 11 个需求 + design 8 个组件 + tasks 15 个 task + backlog）；`capabilities-skills` backlog 新增 7 项运行时增强。 |
+| 当前批次 | orchestrate（cli-migrate 与 declarative-binding 打通 + 文档全面更新） |
+| 批次状态 | **已完成**。核心洞察：cli-migrate 的 Scanner 模块（OpenAPIScanner/ORMScanner/CronScanner）已具备自动发现存量系统能力，不需要新增 connections 概念或 Skill Pack 层。关键变化：cli-migrate 输出从仅 @handler 代码扩展为同时支持 binding SKILL.md 生成。 |
+| 已完成项 | 1) `ARCHITECTURE_ANALYSIS` 更新至 v4.5（§4.12 补充：cli-migrate 作为 Binding 自动生成路径，取代 connections 概念和 Skill Pack 方案；完整链路：IT 运行命令 → 自动生成 binding SKILL.md → 业务用户填写自然语言 → Agent 调用）；2) `declarative-binding` spec 更新（requirements +R12/R13，design +BindingGenerator 组件，tasks +Phase 5 共 4 个 Task/18 个子任务，总计 105 子任务）；3) `cli-migrate` spec 更新（requirements +R16/R17 binding 输出模式，design +BindingGenerator 数据流，tasks +§4 binding 输出模式 12 个子任务，总计 24 子任务）；4) `owlclaw_architecture.mdc` 更新（cli-migrate 与 binding 联动规则）；5) `owlclaw_core.mdc` 更新（关键规则速查增加 cli-migrate 自动生成）；6) SPEC_TASKS_SCAN 功能清单、Spec 索引、Checkpoint 全部同步。 |
+| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐 → Task 1-7。Phase 5（cli-migrate 联动）依赖 Phase 1 完成后启动。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
+| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.5；`declarative-binding` spec（13 个需求 + 9 个组件 + 19 个 task + backlog）；`cli-migrate` spec（17 个需求 + 8 个组件 + 9 个任务组）；`owlclaw_architecture.mdc` 和 `owlclaw_core.mdc` 规则已同步。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

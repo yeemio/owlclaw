@@ -11,7 +11,7 @@ alwaysApply: false
 # OwlClaw 架构规范
 
 > **版本**: v1.0.0 (2026-02-10)
-> **架构真源**: `docs/ARCHITECTURE_ANALYSIS.md`（v4.0）；数据库架构: `docs/DATABASE_ARCHITECTURE.md`
+> **架构真源**: `docs/ARCHITECTURE_ANALYSIS.md`（v4.5）；数据库架构: `docs/DATABASE_ARCHITECTURE.md`
 
 ---
 
@@ -28,7 +28,8 @@ owlclaw/
 │   │   └── knowledge.py    # Skills 知识注入（渐进式加载）
 │   ├── capabilities/       # 能力注册 + Skills 挂载
 │   │   ├── registry.py     # @handler + @state 装饰器
-│   │   └── skills.py       # Agent Skills 规范加载（SKILL.md）
+│   │   ├── skills.py       # Agent Skills 规范加载（SKILL.md）
+│   │   └── bindings/       # Declarative Binding 执行器（HTTP/Queue/SQL）
 │   ├── governance/         # 治理层
 │   │   ├── visibility.py   # 能力可见性过滤（约束/预算/熔断/限流）
 │   │   ├── ledger.py       # 执行记录
@@ -107,6 +108,7 @@ from ..governance.visibility import CapabilityVisibilityFilter
 - **接入协议语言无关**：对外暴露的能力描述（工具列表、状态定义）必须是纯数据结构（dict/JSON Schema），禁止在协议层泄漏 Python 特有概念（`Callable`、`inspect`、装饰器元数据）。Python SDK 的装饰器是协议的语法糖，不是协议本身。详见 `docs/ARCHITECTURE_ANALYSIS.md` 决策7
 - **数据库编码规范**：详见 `.cursor/rules/owlclaw_database.mdc`（编码规则）和 `docs/DATABASE_ARCHITECTURE.md`（架构设计）
 - **Declarative Binding（强制）**：SKILL.md 的 `metadata.json` 中 `binding` 字段为声明式工具绑定。binding 中的 credential 必须通过 `${ENV_VAR}` 引用，禁止明文；SQL binding 强制参数化查询；binding 执行器集中在 `owlclaw/capabilities/bindings/`，不得散落在其他模块。详见 `docs/ARCHITECTURE_ANALYSIS.md` 决策12
+- **cli-migrate 与 Binding 联动（强制）**：`cli-migrate` 的 `--output-mode binding` 生成包含 Declarative Binding 的 SKILL.md。BindingGenerator 位于 `cli-migrate` 的 Generator Module 中，复用 `OpenAPIScanner`/`ORMScanner` 的扫描结果。生成的 SKILL.md 必须通过 `owlclaw skill validate`。不得新增 connections 等冗余概念——`cli-migrate` 就是自动发现存量系统能力的实现路径。详见 `docs/ARCHITECTURE_ANALYSIS.md` 决策12 "自动发现与生成"
 
 ---
 

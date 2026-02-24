@@ -1432,6 +1432,70 @@ binding 的 `tools_schema` 使用完整 JSON Schema，对非技术用户门槛�
 - 会话开始时快照可用 Skills 列表，会话内保持稳定
 - 每个 Skill 注入 prompt 的 token 开销透明化，纳入 governance budget 控制
 
+#### 自动发现与生成：cli-migrate 作为 Binding 的生产路径（2026-02-24）
+
+**核心洞察**：Declarative Binding 解决了"Agent 如何调用存量系统"的运行时问题，但 binding 声明本身（HTTP URL、参数映射、认证方式）仍需人工编写。这对业务用户来说门槛过高——他们不应该手写 JSON Schema 和 URL 模板。
+
+**解法不是新概念，而是打通已有工具链**：OwlClaw 已有 `cli-migrate`（AI 辅助迁移工具）和 `cli-scan`（AST 代码扫描器），它们的 Scanner 模块（`OpenAPIScanner`、`ORMScanner`、`CronScanner`）已经具备自动发现存量系统能力的设计。关键变化是：**`cli-migrate` 的输出从生成 `@handler` Python 代码，扩展为同时生成包含 Declarative Binding 的 SKILL.md。**
+
+**完整链路**：
+
+```
+IT 运维操作（一次性）：
+  owlclaw migrate scan --openapi https://erp.company.com/api/v3/openapi.json
+    │
+    ├── OpenAPIScanner 解析 API 端点
+    ├── 提取 path/method/parameters/auth/response schema
+    ├── 生成 SKILL.md（含 HTTP Binding 声明）
+    │   ├── name/description 从 OpenAPI summary/description 提取
+    │   ├── tools_schema 从 parameters + requestBody 生成
+    │   ├── binding.type = "http"
+    │   ├── binding.url = "${ERP_BASE_URL}/api/v1/..."
+    │   ├── binding.headers.Authorization = "Bearer ${ERP_API_TOKEN}"
+    │   └── prerequisites.env = ["ERP_BASE_URL", "ERP_API_TOKEN"]
+    └── 输出到 capabilities/ 目录
+
+  owlclaw migrate scan --orm ./models.py
+    │
+    ├── ORMScanner 识别 SQLAlchemy/Django ORM 模型
+    ├── 提取 table/columns/relationships
+    ├── 生成 SKILL.md（含 SQL Binding 声明）
+    │   ├── binding.type = "sql"
+    │   ├── binding.query = "SELECT ... WHERE :param"
+    │   ├── binding.read_only = true
+    │   └── prerequisites.env = ["FINANCE_DB_URL"]
+    └── 输出到 capabilities/ 目录
+
+业务用户操作（日常）：
+  用自然语言编写 SKILL.md 的 body（业务规则、决策指引）
+  引用 cli-migrate 生成的工具（无需理解 binding 细节）
+  Agent 运行时自动加载 binding → 调用存量系统
+```
+
+**与"Skill Pack"概念的区别**：之前讨论过让 IT 团队"包装专业 Skill"的方案，但这本质上是在中间加了一层——IT 费工夫包装，不如直接用 LangChain 编排。现在的方案是：**IT 只需运行一条命令**（`owlclaw migrate scan`），工具自动生成 binding-enabled SKILL.md，IT 的工作量从"编写代码"降为"运行命令 + 配置环境变量"。
+
+**与"connections"概念的区别**：之前提出在 `owlclaw.yaml` 中新增 `connections` 配置来指向 OpenAPI/DB Schema URL。但 `cli-migrate` 的 Scanner 模块已经具备这些能力（`OpenAPIScanner` 解析 OpenAPI 规范、`ORMScanner` 识别 ORM 模型、`CronScanner` 识别定时任务），不需要新概念。`cli-migrate` 就是"自动发现"的实现路径。
+
+**对 cli-migrate spec 的影响**：
+
+| 原设计 | 新增/变更 |
+|--------|-----------|
+| `HandlerGenerator` 生成 `@handler` Python 代码 | 新增 `BindingGenerator` 生成含 binding 声明的 SKILL.md |
+| `SKILLGenerator` 生成知识文档骨架 | 扩展为同时生成 binding 字段（从 OpenAPI/ORM 元数据映射） |
+| `OpenAPIScanner` 提取 API 端点元数据 | 不变（已有能力足够） |
+| `ORMScanner` 识别 CRUD 操作 | 不变（已有能力足够） |
+| 输出模式：仅 `@handler` 代码 | 新增输出模式：`--output-mode binding`（生成 SKILL.md + binding） |
+
+**三种用户角色的工作量对比**：
+
+| 角色 | 工作内容 | 工作量 |
+|------|---------|--------|
+| IT 运维 | 运行 `owlclaw migrate scan` + 配置环境变量 | 分钟级（一次性） |
+| 业务用户 | 用自然语言写 SKILL.md body（业务规则、决策指引） | 分钟级（按需） |
+| AI 开发者 | 无（Agent 自动理解 binding + 业务知识） | 零 |
+
+这实现了 OwlClaw 的产品愿景："Markdown 即 AI 能力"——业务开发者用 SKILL.md 描述业务接口，OwlClaw 的 Agent 自动理解并使用，**无需 AI 开发团队**。
+
 ---
 
 ## 五、OwlClaw 架构设计（v3 — Agent 自驱动）
@@ -2625,7 +2689,7 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 
 ---
 
-> **文档版本**: v4.4（v4.3 + §4.12 OpenClaw 对标补充：书写门槛、Prerequisites、简化语法、三种执行模式、Session Snapshot）
+> **文档版本**: v4.5（v4.4 + §4.12 补充：cli-migrate 作为 Binding 自动生成路径，取代 connections 概念和 Skill Pack 方案）
 > **创建时间**: 2026-02-10
 > **最后更新**: 2026-02-24
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`

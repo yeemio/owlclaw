@@ -142,6 +142,38 @@
   - [ ] 15.3 更新 `owlclaw skill init` 生成的模板包含 binding 字段注释
   - [ ] 15.4 更新 `owlclaw skill init` 默认模板为"最小可用"版本
 
+### Phase 5：cli-migrate 自动生成（P1，依赖 cli-migrate spec）
+
+- [ ] **Task 16**: BindingGenerator — 从 OpenAPI 生成 HTTP Binding SKILL.md
+  - [ ] 16.1 实现 `BindingGenerator` 类（位于 cli-migrate 的 generators 模块）
+  - [ ] 16.2 实现 `generate_from_openapi()`：operationId/summary → name，description → SKILL.md description
+  - [ ] 16.3 实现 OpenAPI parameters + requestBody → tools_schema + binding 映射
+  - [ ] 16.4 实现 security schemes → `${ENV_VAR}` headers + prerequisites.env 映射
+  - [ ] 16.5 实现 response schema → response_mapping 映射
+  - [ ] 16.6 生成 SKILL.md body 含业务规则占位符（提示业务用户填写）
+  - [ ] 16.7 生成的 SKILL.md 通过 `owlclaw skill validate` 验证
+  - [ ] 16.8 单元测试：从 OpenAPI 规范生成 → 验证 binding 完整性 → 验证 prerequisites
+
+- [ ] **Task 17**: BindingGenerator — 从 ORM 模型生成 SQL Binding SKILL.md
+  - [ ] 17.1 实现 `generate_from_orm()`：model/table → name，columns → 参数化查询
+  - [ ] 17.2 生成的 SQL binding 强制 `read_only: true`（默认），写操作需显式声明
+  - [ ] 17.3 实现 connection string → prerequisites.env 映射
+  - [ ] 17.4 生成 SKILL.md body 含数据访问规则占位符
+  - [ ] 17.5 单元测试：从 ORM 模型生成 → 验证 SQL 参数化 → 验证 read_only
+
+- [ ] **Task 18**: cli-migrate `--output-mode binding` 集成
+  - [ ] 18.1 扩展 `owlclaw migrate scan` 命令增加 `--output-mode` 参数（handler/binding/both）
+  - [ ] 18.2 `--output-mode binding` 时调用 BindingGenerator 替代 HandlerGenerator
+  - [ ] 18.3 `--output-mode both` 时同时生成 @handler 代码和 binding SKILL.md
+  - [ ] 18.4 集成测试：OpenAPI 规范 → `--output-mode binding` → 生成 SKILL.md → validate → Agent 加载
+  - [ ] 18.5 集成测试：ORM 模型 → `--output-mode binding` → 生成 SKILL.md → validate → Agent 加载
+
+- [ ] **Task 19**: 三种角色工作流文档与示例
+  - [ ] 19.1 编写 IT 运维工作流文档（运行命令 + 配置环境变量）
+  - [ ] 19.2 编写业务用户工作流文档（自然语言编写 SKILL.md body）
+  - [ ] 19.3 创建端到端示例：OpenAPI → binding SKILL.md → 业务规则填写 → Agent 调用
+  - [ ] 19.4 `owlclaw skill init --from-binding` 模式：从已有 binding SKILL.md 生成业务规则模板
+
 ## Backlog
 
 - [ ] gRPC Binding Executor（Phase 3 里程碑，按需评估）

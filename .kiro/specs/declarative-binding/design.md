@@ -634,6 +634,78 @@ def auto_register_binding_tools(
     return registered
 ```
 
+### 9. BindingGenerator（cli-migrate 扩展）
+
+**职责：** 从 OpenAPI 规范或 ORM 模型元数据自动生成包含 Declarative Binding 的 SKILL.md。
+
+位于 `cli-migrate` 的 Generator Module 中，与已有的 `HandlerGenerator` 和 `SKILLGenerator` 并列。
+
+```python
+@dataclass
+class BindingGenerationResult:
+    skill_path: Path
+    skill_content: str
+    binding_type: str
+    tools_count: int
+    prerequisites: list[str]
+    warnings: list[str]
+
+
+class BindingGenerator:
+    """Generates SKILL.md files with Declarative Binding from scanner results."""
+
+    def generate_from_openapi(
+        self, endpoint: "APIEndpoint", config: "GenerationConfig"
+    ) -> BindingGenerationResult:
+        """Generate SKILL.md with HTTP Binding from an OpenAPI endpoint."""
+        # 1. Map operationId/summary → name
+        # 2. Map description → SKILL.md description
+        # 3. Map parameters + requestBody → tools_schema with binding
+        # 4. Map security schemes → prerequisites.env + headers with ${ENV_VAR}
+        # 5. Map response schema → response_mapping
+        # 6. Generate body with business rules placeholder
+
+    def generate_from_orm(
+        self, operation: "ORMOperation", config: "GenerationConfig"
+    ) -> BindingGenerationResult:
+        """Generate SKILL.md with SQL Binding from an ORM operation."""
+        # 1. Map model/table → name
+        # 2. Map columns → parameterized query
+        # 3. Set read_only based on operation type
+        # 4. Map connection string → prerequisites.env
+        # 5. Generate body with data access rules placeholder
+
+    def generate_from_cron(
+        self, task: "CronTask", config: "GenerationConfig"
+    ) -> BindingGenerationResult:
+        """Generate SKILL.md with HTTP Binding for cron task migration."""
+        # Cron tasks typically call HTTP endpoints or run scripts
+        # Generate binding pointing to the task's execution endpoint
+```
+
+**数据流（cli-migrate 扩展）**：
+
+```
+owlclaw migrate scan --openapi <spec> --output-mode binding
+    │
+    ├── OpenAPIScanner.scan_spec()     → List[APIEndpoint]    (已有)
+    ├── BindingGenerator.generate_from_openapi()               (新增)
+    │   ├── 提取 name/description 从 operationId/summary
+    │   ├── 生成 tools_schema + binding (type=http)
+    │   ├── 映射 security schemes → ${ENV_VAR} headers
+    │   └── 生成 prerequisites.env
+    └── 输出 SKILL.md 到 capabilities/ 目录
+
+owlclaw migrate scan --orm <models> --output-mode binding
+    │
+    ├── ORMScanner.scan_orm_operations() → List[ORMOperation] (已有)
+    ├── BindingGenerator.generate_from_orm()                    (新增)
+    │   ├── 生成参数化 SQL 查询
+    │   ├── 设置 read_only = true (默认)
+    │   └── 生成 prerequisites.env
+    └── 输出 SKILL.md 到 capabilities/ 目录
+```
+
 ## 包结构
 
 ```
@@ -651,6 +723,13 @@ owlclaw/capabilities/
     ├── sql_executor.py    # SQLBindingExecutor
     ├── credential.py      # CredentialResolver
     └── tool.py            # BindingTool
+
+owlclaw/cli/migrate/       # cli-migrate 扩展
+├── generators/
+│   ├── handler.py         # 已有 — HandlerGenerator
+│   ├── skill.py           # 已有 — SKILLGenerator
+│   └── binding.py         # 新增 — BindingGenerator
+└── ...
 ```
 
 ## 与治理层的集成
@@ -709,6 +788,7 @@ BindingTool 注册到 CapabilityRegistry 后，自动受以下治理约束：
 - **owlclaw.security**: 输入/输出清洗
 - **owlclaw.config**: 配置解析（owlclaw.yaml secrets）
 - **owlclaw.integrations.queue_adapters**: Queue binding 复用
+- **owlclaw.cli.migrate** (cli-migrate spec): BindingGenerator 扩展 — 从 OpenAPI/ORM 扫描结果自动生成 binding SKILL.md
 
 ---
 
