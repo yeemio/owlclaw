@@ -3,6 +3,7 @@
 from owlclaw.triggers.webhook.event_logger import EventLogger, build_event
 from owlclaw.triggers.webhook.execution import ExecutionTrigger
 from owlclaw.triggers.webhook.governance import GovernanceClient
+from owlclaw.triggers.webhook.http.app import HttpGatewayConfig, create_webhook_app
 from owlclaw.triggers.webhook.manager import WebhookEndpointManager
 from owlclaw.triggers.webhook.monitoring import MonitoringService
 from owlclaw.triggers.webhook.transformer import PayloadTransformer
@@ -52,9 +53,10 @@ __all__ = [
     "GovernanceClient",
     "GovernanceContext",
     "GovernanceDecision",
-    "HttpRequest",
     "HealthCheckResult",
     "HealthStatusSnapshot",
+    "HttpGatewayConfig",
+    "HttpRequest",
     "MetricRecord",
     "MetricStats",
     "MonitoringService",
@@ -69,4 +71,5 @@ __all__ = [
     "WebhookEndpoint",
     "WebhookEndpointManager",
     "build_event",
+    "create_webhook_app",
 ]

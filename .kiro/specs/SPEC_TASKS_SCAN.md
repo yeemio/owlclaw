@@ -102,7 +102,7 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（11/72） | webhook 触发器（Task 0 Protocol-first + Task 2/3/4/5/6/7/8/9/10/11 已完成） |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（12/72） | webhook 触发器（Task 0 Protocol-first + Task 2/3/4/5/6/7/8/9/10/11/12 已完成） |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-webhook Task 11） |
-| 批次状态 | **已完成（本批）**。完成 Task 11（11.1~11.6）：MonitoringService 指标/健康/告警/查询与测试收口。 |
-| 已完成项 | 1) 新增 `MonitoringService`（record_metric/get_health_status/trigger_alert/get_metrics）；2) 实现指标聚合（成功率、失败率、平均响应时间、P95、P99）与时间窗口（realtime/hour/day）；3) 实现健康检查注册与执行（database/runtime/governance 可注入）；4) 实现阈值告警与去重（失败率/响应时间）；5) 新增属性测试覆盖 Property 23/24；6) 新增单元测试覆盖健康状态响应格式、聚合准确性、告警去重。 |
-| 下一待执行 | `codex-work`：`triggers-webhook` Task 12（HTTP 接入层）→ Task 13（配置管理）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/webhook/monitoring.py owlclaw/triggers/webhook/types.py owlclaw/triggers/webhook/__init__.py tests/unit/triggers/test_webhook_monitoring.py tests/unit/triggers/test_webhook_monitoring_properties.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_webhook_monitoring.py tests/unit/triggers/test_webhook_monitoring_properties.py -q`（5 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（66 passed, 201 deselected）。 |
+| 当前批次 | coding loop（codex-work: triggers-webhook Task 12） |
+| 批次状态 | **已完成（本批）**。完成 Task 12（12.1~12.6）：HTTP 网关路由、请求流程、速率限制、统一响应与测试收口。 |
+| 已完成项 | 1) 新增 FastAPI 网关模块 `owlclaw/triggers/webhook/http/app.py` 与配置 `HttpGatewayConfig`；2) 实现路由 `POST /webhooks/{endpoint_id}`、`/endpoints` CRUD、`GET /health`、`GET /metrics`；3) 实现请求 ID 中间件、来源信息采集、CORS 配置、TLS 配置标记；4) 实现 IP/端点双维度速率限制（429）；5) 实现统一成功/错误响应格式（含 request_id 与 timestamp）；6) 新增属性测试覆盖 Property 15/16；7) 新增接入层端到端测试覆盖请求流程、错误场景、速率限制。 |
+| 下一待执行 | `codex-work`：`triggers-webhook` Task 13（配置管理）→ Task 14（集成检查点）→ Task 15（端到端集成）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/webhook/http/app.py owlclaw/triggers/webhook/http/__init__.py owlclaw/triggers/webhook/__init__.py tests/unit/triggers/test_webhook_http_gateway.py tests/unit/triggers/test_webhook_http_gateway_properties.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_webhook_http_gateway.py tests/unit/triggers/test_webhook_http_gateway_properties.py -q`（5 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（71 passed, 201 deselected）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
