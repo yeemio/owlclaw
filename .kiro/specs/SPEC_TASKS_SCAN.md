@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（14/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（15/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 14.4~14.6） |
-| 批次状态 | **已完成**。决策对比/错误注入/并发场景 E2E 测试已补齐，Task 14 全部收口。 |
-| 已完成项 | 1) 新增 `tests/e2e/test_e2e_advanced_scenarios.py`，覆盖决策对比 E2E（14.4）；2) 覆盖错误注入与回滚验证（14.5）；3) 覆盖高并发执行与一致性断言（14.6）；4) 回填 Task 14.4~14.6 与顶层 Task 14。 |
-| 下一待执行 | `e2e-validation` Task 15.1（README 文档）与 Task 15.2（API 文档）。 |
-| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 62 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 15.1~15.3） |
+| 批次状态 | **已完成**。README、API 文档与示例场景已交付，Task 15 全部收口。 |
+| 已完成项 | 1) 新增 `docs/e2e/README.md`；2) 新增 `docs/e2e/API.md`；3) 新增 `config/e2e/scenarios/mionyee-tasks.json`、`decision-comparison.json`、`error-injection.json`；4) 回填 Task 15.1~15.3 与顶层 Task 15。 |
+| 下一待执行 | `e2e-validation` Task 16.1（EventImporter）~16.5（ReplayReport）。 |
+| 验收快照 | `poetry run pytest tests/e2e -q` -> 62 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
