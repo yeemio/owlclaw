@@ -1,10 +1,12 @@
 """Webhook trigger core types and contracts."""
 
 from owlclaw.triggers.webhook.configuration import WebhookConfigManager, dump_config
+from owlclaw.triggers.webhook.database import DatabaseVersionStatus, WebhookDatabaseManager
 from owlclaw.triggers.webhook.event_logger import EventLogger, build_event
 from owlclaw.triggers.webhook.execution import ExecutionTrigger
 from owlclaw.triggers.webhook.governance import GovernanceClient
 from owlclaw.triggers.webhook.http.app import HttpGatewayConfig, create_webhook_app
+from owlclaw.triggers.webhook.main import WebhookApplication, build_webhook_application
 from owlclaw.triggers.webhook.manager import WebhookEndpointManager
 from owlclaw.triggers.webhook.monitoring import MonitoringService
 from owlclaw.triggers.webhook.transformer import PayloadTransformer
@@ -45,6 +47,7 @@ __all__ = [
     "AuthMethod",
     "EndpointFilter",
     "EndpointConfig",
+    "DatabaseVersionStatus",
     "EventFilter",
     "EventLogger",
     "EventType",
@@ -73,10 +76,13 @@ __all__ = [
     "WebhookEventRecord",
     "WebhookEndpoint",
     "WebhookEndpointManager",
+    "WebhookApplication",
+    "WebhookDatabaseManager",
     "WebhookConfigManager",
     "WebhookGlobalConfig",
     "WebhookSystemConfig",
     "build_event",
+    "build_webhook_application",
     "create_webhook_app",
     "dump_config",
 ]

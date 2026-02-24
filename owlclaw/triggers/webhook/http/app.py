@@ -27,6 +27,7 @@ from owlclaw.triggers.webhook.types import (
     GovernanceContext,
     HttpRequest,
     MetricRecord,
+    RetryPolicy,
     TransformationRule,
     ValidationError,
 )
@@ -194,6 +195,7 @@ def create_webhook_app(
             options=ExecutionOptions(
                 mode=endpoint.config.execution_mode,
                 timeout_seconds=endpoint.config.timeout_seconds,
+                idempotency_key=request.headers.get("x-idempotency-key"),
                 retry_policy=endpoint.config.retry_policy,
             ),
         )
@@ -234,6 +236,16 @@ def create_webhook_app(
             ),
             execution_mode=str(config_payload.get("execution_mode", "async")),  # type: ignore[arg-type]
             timeout_seconds=config_payload.get("timeout_seconds"),
+            retry_policy=(
+                None
+                if config_payload.get("retry_policy") is None
+                else RetryPolicy(
+                    max_attempts=int(config_payload["retry_policy"].get("max_attempts", 3)),
+                    initial_delay_ms=int(config_payload["retry_policy"].get("initial_delay_ms", 1000)),
+                    max_delay_ms=int(config_payload["retry_policy"].get("max_delay_ms", 30000)),
+                    backoff_multiplier=float(config_payload["retry_policy"].get("backoff_multiplier", 2.0)),
+                )
+            ),
         )
         endpoint = await manager.create_endpoint(config)
         return JSONResponse(status_code=201, content={"id": endpoint.id, "url": endpoint.url, "config": asdict(endpoint.config)})
@@ -269,6 +281,16 @@ def create_webhook_app(
             ),
             execution_mode=str(config_payload.get("execution_mode", "async")),  # type: ignore[arg-type]
             timeout_seconds=config_payload.get("timeout_seconds"),
+            retry_policy=(
+                None
+                if config_payload.get("retry_policy") is None
+                else RetryPolicy(
+                    max_attempts=int(config_payload["retry_policy"].get("max_attempts", 3)),
+                    initial_delay_ms=int(config_payload["retry_policy"].get("initial_delay_ms", 1000)),
+                    max_delay_ms=int(config_payload["retry_policy"].get("max_delay_ms", 30000)),
+                    backoff_multiplier=float(config_payload["retry_policy"].get("backoff_multiplier", 2.0)),
+                )
+            ),
             enabled=bool(config_payload.get("enabled", True)),
         )
         updated = await manager.update_endpoint(endpoint_id, config)
