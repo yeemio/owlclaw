@@ -390,8 +390,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test query performance with indexes
     - _Requirements: 1.1, 1.3_
 
-- [ ] 20. Implement FastAPI service foundation
-  - [ ] 20.1 Create `owlhub/api/app.py` with FastAPI application
+- [x] 20. Implement FastAPI service foundation
+  - [x] 20.1 Create `owlhub/api/app.py` with FastAPI application
     - Set up FastAPI app with CORS middleware
     - Configure database connection pooling
     - Add health check endpoint
@@ -399,13 +399,13 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Set up structured logging
     - _Requirements: 8.3_
 
-  - [ ] 20.2 Create API request/response schemas
+  - [x] 20.2 Create API request/response schemas
     - Create Pydantic models for SkillSearchResponse, SkillDetail, VersionInfo
     - Create models for PublishRequest, PublishResponse, UpdateStateRequest
     - Add validation rules and examples
     - _Requirements: 2.1, 2.3_
 
-  - [ ]* 20.3 Write unit tests for API schemas
+  - [x]* 20.3 Write unit tests for API schemas
     - Test schema validation with valid data
     - Test schema validation with invalid data
     - Test serialization/deserialization
