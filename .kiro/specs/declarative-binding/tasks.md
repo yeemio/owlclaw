@@ -113,11 +113,11 @@
   - [x] 11.3 SQL binding write 操作联动 risk_level 确认流程
   - [x] 11.4 单元测试：输入清洗、输出脱敏、risk_level 联动
 
-- [ ] **Task 12**: 治理集成
-  - [ ] 12.1 BindingTool 参与 governance.visibility 过滤
-  - [ ] 12.2 BindingTool 调用消耗 governance.budget
-  - [ ] 12.3 BindingTool 受 governance rate limiting 控制
-  - [ ] 12.4 集成测试：visibility 过滤、budget 消耗、rate limiting
+- [x] **Task 12**: 治理集成
+  - [x] 12.1 BindingTool 参与 governance.visibility 过滤
+  - [x] 12.2 BindingTool 调用消耗 governance.budget
+  - [x] 12.3 BindingTool 受 governance rate limiting 控制
+  - [x] 12.4 集成测试：visibility 过滤、budget 消耗、rate limiting
 
 ### Phase 4：开发者体验 + 示例（P2）
 

@@ -57,6 +57,9 @@ class BindingTool:
         agent_id: str = "binding-tool",
         risk_level: str = "low",
         requires_confirmation: bool = False,
+        task_type: str | None = None,
+        constraints: dict[str, Any] | None = None,
+        focus: list[str] | None = None,
         sanitizer: InputSanitizer | None = None,
         masker: DataMasker | None = None,
         risk_gate: RiskGate | None = None,
@@ -71,6 +74,9 @@ class BindingTool:
         self.agent_id = agent_id
         self.risk_level = risk_level
         self.requires_confirmation = requires_confirmation
+        self.task_type = task_type or ""
+        self.constraints = constraints or {}
+        self.focus = list(focus or [])
         self._sanitizer = sanitizer or InputSanitizer()
         self._masker = masker or DataMasker()
         self._risk_gate = risk_gate or RiskGate()
