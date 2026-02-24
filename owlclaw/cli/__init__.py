@@ -115,6 +115,80 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         )
         return True
 
+    if sub == "search":
+        from owlclaw.cli.skill_hub import search_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill search")
+        parser.add_argument("--query", "-q", default="")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--tags", default="")
+        parser.add_argument("--tag-mode", default="and")
+        parser.add_argument("--include-draft", action="store_true", default=False)
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        search_command(
+            query=ns.query,
+            index_url=ns.index_url,
+            tags=ns.tags,
+            tag_mode=ns.tag_mode,
+            include_draft=ns.include_draft,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
+    if sub == "install":
+        from owlclaw.cli.skill_hub import install_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill install")
+        parser.add_argument("name")
+        parser.add_argument("--version", default="")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        install_command(
+            name=ns.name,
+            version=ns.version,
+            index_url=ns.index_url,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
+    if sub == "installed":
+        from owlclaw.cli.skill_hub import installed_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill installed")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        installed_command(
+            index_url=ns.index_url,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
+    if sub == "update":
+        from owlclaw.cli.skill_hub import update_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill update")
+        parser.add_argument("name", nargs="?", default="")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        update_command(
+            name=ns.name,
+            index_url=ns.index_url,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
     print(f"Error: unknown skill subcommand: {sub}", file=sys.stderr)
     raise SystemExit(2)
 
@@ -232,6 +306,53 @@ def _dispatch_memory_command(argv: list[str]) -> bool:
     raise SystemExit(2)
 
 
+def _dispatch_trigger_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw trigger ...` using argparse for command-specific templates."""
+    if not argv or argv[0] != "trigger":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["trigger"])
+
+    sub = argv[1]
+    sub_argv = argv[2:]
+    if "--help" in sub_argv or "-h" in sub_argv:
+        if sub == "template" and sub_argv and sub_argv[0] == "db-change":
+            _print_help_and_exit(["trigger", "template", "db-change"])
+        _print_help_and_exit(["trigger", sub])
+
+    if sub != "template":
+        print(f"Error: unknown trigger subcommand: {sub}", file=sys.stderr)
+        raise SystemExit(2)
+    if len(sub_argv) < 1:
+        _print_help_and_exit(["trigger", "template"])
+
+    template_name = sub_argv[0]
+    if template_name != "db-change":
+        print(f"Error: unknown trigger template: {template_name}", file=sys.stderr)
+        raise SystemExit(2)
+
+    from owlclaw.cli.trigger_template import db_change_template_command
+
+    parser = argparse.ArgumentParser(add_help=False, prog="owlclaw trigger template db-change")
+    parser.add_argument("--output", "--path", "-o", "-p", dest="output_dir", default=".")
+    parser.add_argument("--channel", default="position_changes")
+    parser.add_argument("--table", dest="table_name", default="positions")
+    parser.add_argument("--trigger-name", dest="trigger_name", default="position_changes_trigger")
+    parser.add_argument("--function-name", dest="function_name", default="notify_position_changes")
+    parser.add_argument("--force", "-f", action="store_true", default=False)
+    ns = parser.parse_args(sub_argv[1:])
+    target = db_change_template_command(
+        output_dir=ns.output_dir,
+        channel=ns.channel,
+        table_name=ns.table_name,
+        trigger_name=ns.trigger_name,
+        function_name=ns.function_name,
+        force=ns.force,
+    )
+    print(f"Generated: {target}")
+    return True
+
+
 def _print_help_and_exit(argv: list[str]) -> None:
     """Print plain help when Typer/Rich make_metavar bug triggers (--help)."""
     argv = [a for a in argv if a not in ("--help", "-h")]
@@ -242,6 +363,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  db     Database: init, migrate, status")
         print("  memory Agent memory: list, prune, reset, stats")
         print("  skill  Create, validate, list Agent Skills (SKILL.md)")
+        print("  trigger Trigger templates (db-change)")
         print("\n  owlclaw db --help   owlclaw skill --help")
         sys.exit(0)
     if argv == ["db"]:
@@ -383,6 +505,32 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw memory migrate-backend --agent <name> --source-backend <x> --target-backend <y> [OPTIONS]")
         print("\n  Migrate memory entries between storage backends.")
         sys.exit(0)
+    if argv == ["trigger"]:
+        print("Usage: owlclaw trigger [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Trigger tooling commands.")
+        print("Commands:")
+        print("  template  Generate trigger templates")
+        print("\n  owlclaw trigger template --help")
+        sys.exit(0)
+    if argv == ["trigger", "template"]:
+        print("Usage: owlclaw trigger template [OPTIONS] TEMPLATE")
+        print("\n  Generate trigger templates.")
+        print("Templates:")
+        print("  db-change  PostgreSQL NOTIFY trigger SQL")
+        print("\n  owlclaw trigger template db-change --help")
+        sys.exit(0)
+    if argv == ["trigger", "db-change"] or argv == ["trigger", "template", "db-change"]:
+        print("Usage: owlclaw trigger template db-change [OPTIONS]")
+        print("\n  Generate PostgreSQL NOTIFY trigger SQL template.")
+        print("Options:")
+        print("  --output, --path TEXT      Output directory (default: .)")
+        print("  --channel TEXT             NOTIFY channel (default: position_changes)")
+        print("  --table TEXT               Source table (default: positions)")
+        print("  --trigger-name TEXT        Trigger name (default: position_changes_trigger)")
+        print("  --function-name TEXT       Function name (default: notify_position_changes)")
+        print("  --force                    Overwrite existing target file")
+        print("  --help                     Show this message and exit")
+        sys.exit(0)
     if argv == ["skill", "init"]:
         print("Usage: owlclaw skill init [OPTIONS]")
         print("\n  Scaffold a new SKILL.md in current directory.")
@@ -404,6 +552,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
     print("  skill  Create, validate, list Agent Skills (SKILL.md)")
+    print("  trigger Trigger templates (db-change)")
     sys.exit(0)
 
 
@@ -540,6 +689,11 @@ def _main_impl() -> None:
         raise
     try:
         if _dispatch_memory_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_trigger_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None

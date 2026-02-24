@@ -28,6 +28,7 @@ class SkillManifest:
     dependencies: dict[str, str] = field(default_factory=dict)
     repository: str | None = None
     homepage: str | None = None
+    version_state: VersionState = VersionState.RELEASED
 
 
 @dataclass(frozen=True)
@@ -63,4 +64,3 @@ class ValidationResult:
 def utc_now() -> datetime:
     """Return timezone-aware UTC datetime."""
     return datetime.now(timezone.utc)
-
