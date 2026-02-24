@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（108/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（109/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 31.3） |
-| 批次状态 | **已完成（部分）**。完成 observability 测试覆盖（health、metrics、日志格式、错误上下文）并通过回归验证。 |
-| 已完成项 | 1) 新增 `tests/unit/test_owlhub_observability.py`：覆盖 health endpoint 响应、`/metrics` Prometheus 格式、API 请求结构化日志格式、API 异常日志上下文（method/path）、CLI publish 失败日志上下文（mode/path）；2) 复用现有测试协同验证可观测链路：`tests/unit/test_owlhub_api_schemas.py`、`tests/unit/test_owlhub_api_publish.py`、`tests/unit/test_owlhub_cli_client.py`；3) 回填 `owlhub/tasks.md` 的 Task 31 与 31.3。 |
-| 下一待执行 | `owlhub` Task 32.1（Create Docker configuration）。 |
-| 验收快照 | `poetry run ruff check tests/unit/test_owlhub_observability.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_observability.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_publish.py tests/unit/test_owlhub_cli_client.py -q` -> 38 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 32.1） |
+| 批次状态 | **已完成（部分）**。完成 Docker 化配置（API service + postgres + redis 可选）并补充部署配置测试。 |
+| 已完成项 | 1) 新增 `deploy/Dockerfile.owlhub-api`：基于 `python:3.11-slim` + Poetry 安装主依赖（含 `api` extra），以 `uvicorn owlclaw.owlhub.api.app:create_app --factory` 启动 API；2) 新增 `deploy/docker-compose.owlhub-api.yml`：本地开发编排（`owlhub-api` + `postgres` + `redis` 可选 profile），包含 API 环境变量、健康检查、数据卷；3) 新增 `tests/unit/test_owlhub_deployment_config.py`：校验 Dockerfile 启动命令和 compose 服务/环境变量关键字段；4) 回填 `owlhub/tasks.md` 的 Task 32.1。 |
+| 下一待执行 | `owlhub` Task 32.2（Create Kubernetes deployment manifests）。 |
+| 验收快照 | `poetry run ruff check tests/unit/test_owlhub_deployment_config.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_deployment_config.py tests/unit/test_owlhub_observability.py tests/unit/test_owlhub_api_schemas.py -q` -> 10 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

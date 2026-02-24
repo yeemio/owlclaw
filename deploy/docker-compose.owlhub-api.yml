@@ -1,0 +1,58 @@
+services:
+  owlhub-api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.owlhub-api
+    container_name: owlhub-api
+    ports:
+      - "8000:8000"
+    environment:
+      OWLHUB_LOG_LEVEL: ${OWLHUB_LOG_LEVEL:-INFO}
+      OWLHUB_INDEX_PATH: /data/index.json
+      OWLHUB_REVIEW_DIR: /data/reviews
+      OWLHUB_AUDIT_LOG: /data/audit.log.jsonl
+      OWLHUB_STATISTICS_DB: /data/skill_statistics.json
+      OWLHUB_BLACKLIST_DB: /data/blacklist.json
+      OWLCLAW_DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/owlhub
+      OWLHUB_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - owlhub_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: owlhub-postgres
+    environment:
+      POSTGRES_DB: owlhub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - owlhub_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d owlhub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: owlhub-redis
+    ports:
+      - "6379:6379"
+    profiles: ["redis"]
+
+volumes:
+  owlhub_data:
+  owlhub_postgres_data:
