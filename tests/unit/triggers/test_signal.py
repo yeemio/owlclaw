@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+from uuid import uuid4
 
 import pytest
 
@@ -16,6 +17,7 @@ from owlclaw.triggers.signal import (
     SignalType,
 )
 from owlclaw.triggers.signal.handlers import default_handlers
+from owlclaw.triggers.signal.persistence import AgentControlStateORM, PendingInstructionORM
 
 
 class _Runtime:
@@ -71,6 +73,14 @@ def _signal(kind: SignalType) -> Signal:
 def test_signal_config_defaults() -> None:
     cfg = SignalTriggerConfig()
     assert cfg.default_instruct_ttl_seconds == 3600
+
+
+def test_signal_config_validator_paths() -> None:
+    cfg = SignalTriggerConfig(default_instruct_ttl_seconds=60, max_pending_instructions=20)
+    assert cfg.default_instruct_ttl_seconds == 60
+    assert cfg.max_pending_instructions == 20
+    with pytest.raises(ValueError):
+        SignalTriggerConfig(default_instruct_ttl_seconds=0)
 
 
 @pytest.mark.asyncio
@@ -193,3 +203,132 @@ async def test_router_authorization_blocked() -> None:
     result = await router.dispatch(_signal(SignalType.PAUSE))
     assert result.status == "error"
     assert result.error_code == "unauthorized"
+
+
+class _ScalarRows:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def all(self):
+        return list(self._rows)
+
+
+class _ExecResult:
+    def __init__(self, rows=None, rowcount=None):
+        self._rows = rows or []
+        self.rowcount = rowcount
+
+    def scalars(self):
+        return _ScalarRows(self._rows)
+
+
+class _FakeSession:
+    def __init__(self, scalars=None, executes=None):
+        self.scalars = list(scalars or [])
+        self.executes = list(executes or [])
+        self.added = []
+        self.deleted = []
+        self.commits = 0
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):  # noqa: ANN001
+        return False
+
+    async def scalar(self, stmt):  # noqa: ANN001
+        _ = stmt
+        return self.scalars.pop(0) if self.scalars else None
+
+    async def execute(self, stmt):  # noqa: ANN001
+        _ = stmt
+        return self.executes.pop(0) if self.executes else _ExecResult()
+
+    def add(self, item):  # noqa: ANN001
+        self.added.append(item)
+
+    async def delete(self, item):  # noqa: ANN001
+        self.deleted.append(item)
+
+    async def commit(self):
+        self.commits += 1
+
+
+class _FakeSessionFactory:
+    def __init__(self, session: _FakeSession):
+        self._session = session
+
+    def __call__(self):
+        return self._session
+
+
+@pytest.mark.asyncio
+async def test_signal_state_db_get_creates_default_state_when_missing() -> None:
+    session = _FakeSession(
+        scalars=[None],
+        executes=[_ExecResult(rows=[])],
+    )
+    manager = AgentStateManager(session_factory=_FakeSessionFactory(session))  # type: ignore[arg-type]
+    state = await manager.get("a1", "t1")
+    assert state.paused is False
+    assert state.pending_instructions == []
+    assert session.commits == 1
+    assert any(isinstance(item, AgentControlStateORM) for item in session.added)
+
+
+@pytest.mark.asyncio
+async def test_signal_state_db_set_paused_add_and_update_paths() -> None:
+    existing = AgentControlStateORM(agent_id="a1", tenant_id="t1", paused=False)
+    session = _FakeSession(scalars=[None, existing])
+    manager = AgentStateManager(session_factory=_FakeSessionFactory(session))  # type: ignore[arg-type]
+
+    await manager.set_paused("a1", "t1", True)
+    await manager.set_paused("a1", "t1", False)
+
+    assert session.commits == 2
+    assert any(isinstance(item, AgentControlStateORM) for item in session.added)
+    assert existing.paused is False
+
+
+@pytest.mark.asyncio
+async def test_signal_state_db_add_consume_and_cleanup_paths() -> None:
+    now = datetime.now(timezone.utc)
+    oldest = PendingInstructionORM(
+        id=uuid4(),
+        tenant_id="t1",
+        agent_id="a1",
+        content="old",
+        operator="op",
+        source="cli",
+        created_at=now - timedelta(minutes=2),
+        expires_at=now + timedelta(minutes=5),
+        consumed=False,
+    )
+    row_active = PendingInstructionORM(
+        id=uuid4(),
+        tenant_id="t1",
+        agent_id="a1",
+        content="new",
+        operator="op",
+        source="cli",
+        created_at=now - timedelta(minutes=1),
+        expires_at=now + timedelta(minutes=5),
+        consumed=False,
+    )
+    session = _FakeSession(
+        scalars=[2, oldest],
+        executes=[_ExecResult(rows=[row_active]), _ExecResult(rowcount=3)],
+    )
+    manager = AgentStateManager(max_pending_instructions=2, session_factory=_FakeSessionFactory(session))  # type: ignore[arg-type]
+    pending = PendingInstruction.create(content="latest", operator="op", source=SignalSource.CLI, ttl_seconds=3600)
+    await manager.add_instruction("a1", "t1", pending)
+    consumed = await manager.consume_instructions("a1", "t1")
+    cleaned = await manager.cleanup_expired_instructions("a1", "t1")
+
+    assert len(consumed) == 1
+    assert consumed[0].content == "new"
+    assert cleaned == 3
+    assert row_active.consumed is True
+    assert row_active.consumed_at is not None
+    assert oldest in session.deleted
+    assert session.commits == 3
