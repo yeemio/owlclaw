@@ -330,8 +330,8 @@
     - 测试配置默认值
     - _需求：2.1, 10.1_
 
-- [ ] 18. 实现具体队列适配器（Kafka）
-  - [ ] 18.1 实现 KafkaQueueAdapter
+- [x] 18. 实现具体队列适配器（Kafka）
+  - [x] 18.1 实现 KafkaQueueAdapter
     - 实现基于 aiokafka 的 Kafka 适配器
     - 实现 connect 方法（连接到 Kafka broker）
     - 实现 consume 方法（消费消息流）
@@ -342,11 +342,11 @@
     - 实现 health_check 方法（检查连接状态）
     - _需求：1.2, 1.3_
   
-  - [ ]* 18.2 为 Kafka 适配器编写属性测试
+  - [x]* 18.2 为 Kafka 适配器编写属性测试
     - **属性 1：适配器接口一致性**
     - **验证需求：1.2, 1.3**
   
-  - [ ]* 18.3 为 Kafka 适配器编写集成测试
+  - [x]* 18.3 为 Kafka 适配器编写集成测试
     - 测试连接到 Kafka（使用 testcontainers）
     - 测试消息消费
     - 测试 offset 提交
