@@ -66,7 +66,8 @@
 - [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
 - [ ] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
 - [ ] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
-- [ ] `owlclaw-mcp` — MCP Server（OpenClaw 通道，只读查询为主） → spec: mcp-server
+- [x] `owlclaw-mcp` — MCP Server（OpenClaw 通道，只读查询为主） → spec: mcp-server  
+  说明：MVP 先落地于 `owlclaw/mcp/`（协议处理 + tools/resources + stdio 处理 + e2e 验证）；后续按 release 计划补独立 `owlclaw-mcp/` 打包形态。
 - [ ] 非交易场景 examples（至少 2 个） → spec: examples
 - [ ] LangChain 集成示例（LangChain chain + LangGraph workflow 作为 capability） → spec: examples
 - [ ] 业务 Skills 示例（至少 3 个行业：电商/金融/SaaS） → spec: examples
@@ -112,7 +113,7 @@
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
-| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（10/12） | owlclaw-mcp |
+| mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
@@ -142,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-work：triggers-queue Task 20~21） |
-| 批次状态 | **已完成**。`codex-work` Task 20~21 已审校通过并合并，验收通过。 |
-| 已完成项 | 1) 新增 `tests/integration/test_queue_trigger_e2e.py`，覆盖完整链路、幂等、重试、错误恢复场景；2) `triggers-queue/tasks.md` 已回填 Task 20、21.1~21.4；3) 进度校准：`triggers-queue 76/89`、`mcp-server 10/12`。 |
-| 下一待执行 | `codex-work` 继续 `triggers-queue` Task 22（日志安全）→ Task 23（配置模板与文档）→ Task 24（Mock 验证脚本）→ Task 25（最终检查点）；`codex-gpt-work` 继续 `mcp-server` Task 3.3（单测覆盖率）与 3.4（文档完整）。 |
-| 验收快照 | `poetry run ruff check tests/integration/test_queue_trigger_e2e.py`（All checks passed）；`poetry run pytest tests/integration/test_queue_trigger_e2e.py -q`（4 passed）；`poetry run ruff check owlclaw/mcp tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 132 source files）；`poetry run pytest tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py -q`（5 passed）。 |
+| 当前批次 | spec loop（codex-gpt-work：mcp-server 终轮验收 3.3~3.4） |
+| 批次状态 | **已完成**。mcp-server 全部任务收口（12/12）。 |
+| 已完成项 | 1) 补充 MCP 单测分支覆盖（请求校验/错误码/类型映射/schema 分支）；2) 覆盖率提升至 `owlclaw.mcp=96%`；3) 新增文档 `docs/MCP_SERVER.md`，明确 MVP 能力边界与使用方式；4) 回填 `mcp-server/tasks.md` 剩余验收项并标记完成。 |
+| 下一待执行 | `codex-work` 继续 `triggers-queue` Task 22（日志安全）→ Task 23（配置模板与文档）→ Task 24（Mock 验证脚本）→ Task 25（最终检查点）；`codex-gpt-work` 按分配进入 `owlhub` Task 1（需求与设计前置）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py --cov=owlclaw.mcp --cov-report=term-missing -q` -> 11 passed, 96% cover；`poetry run ruff check owlclaw/mcp tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py` -> all checks passed；`poetry run pytest tests/integration/test_queue_trigger_e2e.py -q`（4 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
