@@ -52,7 +52,7 @@ class LangChainAdapter:
         self._config = config
         self._schema_bridge = schema_bridge or SchemaBridge()
         self._trace_manager = trace_manager or TraceManager(config)
-        self._error_handler = error_handler or ErrorHandler()
+        self._error_handler = error_handler or ErrorHandler(fallback_executor=self._invoke_fallback)
         self._privacy_masker = PrivacyMasker(config.privacy.mask_patterns)
 
     def register_runnable(self, runnable: Any, config: RunnableConfig) -> None:
@@ -395,3 +395,24 @@ class LangChainAdapter:
         )
         if asyncio.iscoroutine(result):
             await result
+
+    async def _invoke_fallback(
+        self,
+        fallback_name: str,
+        input_data: dict[str, Any],
+        context: Any,
+        error: Exception,
+    ) -> dict[str, Any]:
+        registry = getattr(self._app, "registry", None)
+        invoke_handler = getattr(registry, "invoke_handler", None)
+        if not callable(invoke_handler):
+            raise RuntimeError("fallback capability cannot be invoked: app.registry.invoke_handler unavailable")
+
+        session: dict[str, Any] = dict(input_data)
+        session["_original_error"] = str(error)
+        if isinstance(context, dict):
+            session["context"] = context
+        result = invoke_handler(fallback_name, session=session)
+        if asyncio.iscoroutine(result):
+            return await result
+        return result
