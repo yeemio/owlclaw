@@ -451,3 +451,110 @@ async def test_queue_trigger_governance_unavailable_fails_open() -> None:
 
     assert len(runtime.calls) == 1
     assert adapter.get_acked() == ["g-open"]
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_records_success_ledger_fields() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    ledger = _FakeLedger()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        adapter=adapter,
+        agent_runtime=runtime,
+        ledger=ledger,
+    )
+    msg = _raw_message(
+        message_id="s-1",
+        body=b'{"id":"1"}',
+        headers={"x-event-name": "order_created", "x-tenant-id": "tenant-a"},
+    )
+
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(ledger.records) == 1
+    record = ledger.records[0]
+    assert record["status"] == "success"
+    assert record["tenant_id"] == "tenant-a"
+    assert record["run_id"] == "queue-s-1"
+    assert record["execution_time_ms"] >= 0
+    input_params = record["input_params"]
+    assert isinstance(input_params, dict)
+    assert input_params["trace_id"] == "queue-s-1"
+    assert input_params["message_id"] == "s-1"
+    output_result = record["output_result"]
+    assert isinstance(output_result, dict)
+    assert output_result["agent_run_id"] == "run-1"
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_metrics_and_trace_logs(caplog: pytest.LogCaptureFixture) -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime(should_fail=True)
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            max_retries=1,
+            retry_backoff_base=0.001,
+            ack_policy="ack",
+        ),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+    caplog.set_level(logging.INFO)
+    adapter.enqueue(_raw_message(message_id="m-log-2", body=b'{"id":"1"}'))
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    status = await trigger.health_check()
+    metrics = status["metrics"]
+    assert isinstance(metrics, dict)
+    assert metrics["failed_total"] >= 1
+    assert metrics["retries_total"] == 1
+    assert any("trace_id=queue-m-log-2" in record.message for record in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_multi_tenant_propagation() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    governance = _FakeGovernance({"allowed": True})
+    ledger = _FakeLedger()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        adapter=adapter,
+        agent_runtime=runtime,
+        governance=governance,
+        ledger=ledger,
+    )
+
+    adapter.enqueue(
+        _raw_message(
+            message_id="mt-1",
+            body=b'{"id":"1"}',
+            headers={"x-tenant-id": "tenant-1"},
+        )
+    )
+    adapter.enqueue(
+        _raw_message(
+            message_id="mt-2",
+            body=b'{"id":"2"}',
+            headers={"x-tenant-id": "tenant-2"},
+        )
+    )
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    runtime_tenants = {str(call["tenant_id"]) for call in runtime.calls}
+    governance_tenants = {str(call["tenant_id"]) for call in governance.calls}
+    ledger_tenants = {str(record["tenant_id"]) for record in ledger.records if record["status"] == "success"}
+
+    assert runtime_tenants == {"tenant-1", "tenant-2"}
+    assert governance_tenants == {"tenant-1", "tenant-2"}
+    assert ledger_tenants == {"tenant-1", "tenant-2"}

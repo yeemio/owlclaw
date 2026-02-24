@@ -62,6 +62,23 @@ class _AlwaysFailRuntime:
         raise RuntimeError("boom")
 
 
+class _AllowGovernance:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    async def check_permission(self, context: dict[str, object]) -> dict[str, object]:
+        self.calls.append(context)
+        return {"allowed": True}
+
+
+class _CollectLedger:
+    def __init__(self) -> None:
+        self.records: list[dict[str, object]] = []
+
+    async def record_execution(self, **kwargs: object) -> None:
+        self.records.append(kwargs)
+
+
 def _raw_message(message_id: str, body: bytes, headers: dict[str, str] | None = None) -> RawMessage:
     return RawMessage(
         message_id=message_id,
@@ -326,5 +343,81 @@ def test_property_processing_error_respects_ack_policy(policy: str) -> None:
         else:
             assert adapter.get_dlq()
             assert adapter.get_dlq()[0][0] == "err-1"
+
+    asyncio.run(_run())
+
+
+@given(
+    tenant_id=st.text(min_size=1, max_size=12),
+    event_name=st.text(min_size=1, max_size=12),
+)
+@settings(max_examples=20, deadline=None)
+def test_property_ledger_success_record_completeness(tenant_id: str, event_name: str) -> None:
+    """Feature: triggers-queue, Property 18+19: Ledger 记录与指标字段完整性."""
+
+    async def _run() -> None:
+        adapter = MockQueueAdapter()
+        ledger = _CollectLedger()
+        trigger = QueueTrigger(
+            config=QueueTriggerConfig(queue_name="q", consumer_group="g"),
+            adapter=adapter,
+            agent_runtime=_CaptureRuntime(),
+            ledger=ledger,
+        )
+        adapter.enqueue(
+            _raw_message(
+                "ledger-1",
+                b'{"id":1}',
+                headers={"x-tenant-id": tenant_id, "x-event-name": event_name},
+            )
+        )
+        await trigger.start()
+        await _flush_queue(adapter)
+        await trigger.stop()
+
+        assert ledger.records
+        record = ledger.records[-1]
+        assert record["status"] == "success"
+        assert record["tenant_id"] == tenant_id
+        assert record["run_id"] == "queue-ledger-1"
+        assert record["execution_time_ms"] >= 0
+        status = await trigger.health_check()
+        assert status["metrics"]["processed_total"] >= 1
+
+    asyncio.run(_run())
+
+
+@given(
+    tenant_a=st.text(min_size=1, max_size=8),
+    tenant_b=st.text(min_size=1, max_size=8).filter(lambda t: t.strip() != ""),
+)
+@settings(max_examples=20, deadline=None)
+def test_property_multi_tenant_isolation_propagation(tenant_a: str, tenant_b: str) -> None:
+    """Feature: triggers-queue, Property 20: 多租户隔离透传."""
+
+    async def _run() -> None:
+        tenant_b_local = f"{tenant_b}-b" if tenant_a == tenant_b else tenant_b
+
+        adapter = MockQueueAdapter()
+        governance = _AllowGovernance()
+        ledger = _CollectLedger()
+        runtime = _CaptureRuntime()
+        trigger = QueueTrigger(
+            config=QueueTriggerConfig(queue_name="q", consumer_group="g"),
+            adapter=adapter,
+            agent_runtime=runtime,
+            governance=governance,
+            ledger=ledger,
+        )
+        adapter.enqueue(_raw_message("t-1", b'{"id":1}', headers={"x-tenant-id": tenant_a}))
+        adapter.enqueue(_raw_message("t-2", b'{"id":2}', headers={"x-tenant-id": tenant_b_local}))
+        await trigger.start()
+        await _flush_queue(adapter)
+        await trigger.stop()
+
+        governance_tenants = {str(call["tenant_id"]) for call in governance.calls}
+        ledger_tenants = {str(record["tenant_id"]) for record in ledger.records if record["status"] == "success"}
+        assert governance_tenants == {tenant_a, tenant_b_local}
+        assert ledger_tenants == {tenant_a, tenant_b_local}
 
     asyncio.run(_run())

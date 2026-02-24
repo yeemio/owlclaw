@@ -263,14 +263,14 @@
   - 确保所有测试通过，如有问题请询问用户。
 
 
-- [ ] 15. 实现 Ledger 集成和监控指标
-  - [ ] 15.1 在 _process_message 中添加 Ledger 记录
+- [x] 15. 实现 Ledger 集成和监控指标
+  - [x] 15.1 在 _process_message 中添加 Ledger 记录
     - 实现成功处理后的 Ledger 记录
     - 实现记录字段（trace_id、message_id、queue、event_name、tenant_id、status、duration_ms、agent_run_id）
     - 实现处理时长计算
     - _需求：7.2, 7.3_
   
-  - [ ] 15.2 实现监控指标记录
+  - [x] 15.2 实现监控指标记录
     - 实现消费速率指标（Prometheus Counter）
     - 实现失败率指标（Prometheus Counter）
     - 实现重试率指标（Prometheus Counter）
@@ -279,31 +279,31 @@
     - 实现 trace_id 记录到日志
     - _需求：7.3, 8.1, 8.2, 8.3, 8.5_
   
-  - [ ]* 15.3 为 Ledger 和监控编写属性测试
+  - [x]* 15.3 为 Ledger 和监控编写属性测试
     - **属性 18：Ledger 审计记录完整性**
     - **属性 19：监控指标记录**
     - **属性 21：日志记录完整性**
     - **验证需求：7.2, 7.3, 8.1, 8.2, 8.3, 8.5**
   
-  - [ ]* 15.4 为 Ledger 和监控编写单元测试
+  - [x]* 15.4 为 Ledger 和监控编写单元测试
     - 测试 Ledger 记录完整性
     - 测试指标计数准确性
     - 测试日志包含 trace_id
     - _需求：7.2, 7.3, 8.1, 8.2_
 
-- [ ] 16. 实现多租户隔离
-  - [ ] 16.1 在消息处理中添加租户隔离
+- [x] 16. 实现多租户隔离
+  - [x] 16.1 在消息处理中添加租户隔离
     - 实现 tenant_id 提取（从 headers 或 envelope）
     - 实现 tenant_id 传递到 Agent Runtime
     - 实现 tenant_id 传递到 Governance Layer
     - 实现 tenant_id 记录到 Ledger
     - _需求：7.5_
   
-  - [ ]* 16.2 为多租户隔离编写属性测试
+  - [x]* 16.2 为多租户隔离编写属性测试
     - **属性 20：多租户隔离**
     - **验证需求：7.5**
   
-  - [ ]* 16.3 为多租户隔离编写单元测试
+  - [x]* 16.3 为多租户隔离编写单元测试
     - 测试不同租户消息处理
     - 测试租户 ID 传递
     - 测试租户隔离正确性

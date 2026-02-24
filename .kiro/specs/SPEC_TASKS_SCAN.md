@@ -102,7 +102,7 @@
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（3/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/17） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（14/25） | 消息队列触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（16/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-queue retry/ack checkpoint） |
-| 批次状态 | **已完成（本批）**。完成 Task 12~14：重试链路、错误策略与核心处理逻辑检查点收口。 |
-| 已完成项 | 1) `triggers-queue` Task 12（12.1~12.3）；2) `triggers-queue` Task 13（13.1~13.4）；3) `triggers-queue` Task 14（检查点通过）。 |
-| 下一待执行 | `triggers-webhook` Task 2（数据模型与持久化层）；`triggers-queue` Task 15（Ledger 集成和监控指标）与 Task 16（多租户隔离）。 |
-| 验收快照 | `poetry run pytest tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py -q`（23 passed）；`poetry run ruff check owlclaw/triggers/queue/trigger.py tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py`（All checks passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-queue ledger + tenant isolation） |
+| 批次状态 | **已完成（本批）**。完成 Task 15~16：成功/拒绝 Ledger 审计记录、监控指标埋点（processed/failed/retries/dedup/latency）以及多租户在 governance/runtime/ledger 全链路透传。 |
+| 已完成项 | 1) `triggers-queue` Task 15（15.1~15.4）；2) `triggers-queue` Task 16（16.1~16.3）；3) 新增属性测试（Ledger 完整性、租户隔离）与单元测试（trace 日志、指标快照、多租户透传）。 |
+| 下一待执行 | `triggers-webhook` Task 2（数据模型与持久化层）；`triggers-queue` Task 17（配置管理）与 Task 18（Kafka 适配器）。 |
+| 验收快照 | `poetry run pytest tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py -q`（28 passed）；`poetry run pytest tests/unit/triggers -k queue -q`（41 passed）；`poetry run ruff check owlclaw/triggers/queue/trigger.py owlclaw/triggers/queue/__init__.py tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py`（All checks passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
