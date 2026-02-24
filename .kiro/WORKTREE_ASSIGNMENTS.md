@@ -161,12 +161,12 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| integrations-hatchet | 144/147 | `owlclaw/integrations/hatchet.py`, `owlclaw/agent/runtime/hatchet_bridge.py`, `tests/unit/integrations/test_hatchet*.py` |
-| integrations-langchain | 0/101 | `owlclaw/integrations/langchain/**`, `tests/unit/integrations/test_langchain*.py` |
+| triggers-webhook | 0/17 | `owlclaw/triggers/webhook.py`, `tests/unit/triggers/test_webhook*.py` |
+| triggers-queue | 0/25 | `owlclaw/triggers/queue.py`, `tests/unit/triggers/test_queue*.py` |
 
-**备注**：triggers-cron 已完成（117/117 ✅），等待 review-work 审校后合并。integrations-hatchet 仍有 3 个 task 进行中。
+**前置条件**：integrations-hatchet(37/37 ✅) + integrations-langchain(50/50 ✅) + triggers-cron(19/19 ✅) 已全部完成。
 
-**下一任务（当前完成后）**：integrations-hatchet + integrations-langchain 收口后 → **triggers-webhook** (0/69)。
+**下一任务（当前完成后）**：triggers-webhook + triggers-queue 收口后 → **triggers-db-change** (0/11) + **triggers-api** (0/10)。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -188,11 +188,12 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| skill-templates | 92/149 | `owlclaw/capabilities/skills.py`, `.kiro/specs/skill-templates/**`, `tests/unit/test_skill_templates*.py` |
+| e2e-validation | 3/19 | `tests/integration/test_e2e*.py`, `tests/integration/test_mionyee*.py` |
+| mcp-server | 0/12 | `owlclaw_mcp/**`, `tests/unit/test_mcp*.py` |
 
-**前置条件**：capabilities-skills(108/108) + agent-tools(139/139) 已完成。
+**前置条件**：skill-templates(56/56 ✅) + integrations-langfuse(20/20 ✅) + integrations-langchain(50/50 ✅) 已完成。
 
-**下一任务（当前完成后）**：skill-templates 收口后 → **integrations-langfuse** (0/66)。
+**下一任务（当前完成后）**：e2e-validation + mcp-server 收口后 → **owlhub** (0/42) + **cli-scan** (0/37)。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -233,6 +234,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-23 | codex-gpt-work：capabilities-skills+agent-tools → skill-templates | capabilities-skills(108/108) + agent-tools(139/139) 已完成 |
 | 2026-02-23 | codex-work：integrations-hatchet 追加 triggers-cron | triggers-cron 116/117 接近完成，hatchet 同步收尾 |
 | 2026-02-23 | codex-work：追加 integrations-langchain | triggers-cron(117/117) 已完成，等待审校；提前分配 Phase 2 任务 |
+| 2026-02-23 | codex-work：hatchet+langchain+cron 全完成 → triggers-webhook + triggers-queue | Phase 1 全部完成，进入 Phase 2 触发器族 |
+| 2026-02-23 | codex-gpt-work：skill-templates+langfuse+langchain 全完成 → e2e-validation + mcp-server | Phase 1/2 integrations 完成，进入 e2e 与 mcp |
 
 ---
 
@@ -240,17 +243,11 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 以下 spec 尚未分配到任何编码 worktree，等当前批次完成后按优先级分配：
 
-**Phase 1 剩余**（优先）：
-- （已全部分配）
+**Phase 1 + Phase 2 integrations 全部完成 ✅**
 
-**Phase 2 待分配**（次优先）：
-- integrations-langfuse (0/66)
-- triggers-webhook (0/69)、triggers-queue (0/89)、triggers-db-change (0/11)、triggers-api (0/10)、triggers-signal (0/14)
-
-**Phase 2**（次优先）：
-- triggers-webhook, triggers-queue, triggers-db-change, triggers-api, triggers-signal
-- integrations-langfuse, integrations-langchain
-- cli-scan, owlhub, mcp-server, examples
+**Phase 2 剩余待分配**：
+- triggers-db-change (0/11)、triggers-api (0/10)、triggers-signal (0/14)
+- owlhub (0/42)、cli-scan (0/37)、examples (0/12)
 
 **Phase 3**（后续）：
-- cli-migrate, release, ci-setup, e2e-validation
+- cli-migrate (0/12)、release (0/32)、ci-setup (0/12)

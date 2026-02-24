@@ -8,6 +8,7 @@ HatchetConfig, HatchetClient, and the task() decorator.
 import logging
 import os
 import re
+import signal
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -21,8 +22,9 @@ logger = logging.getLogger(__name__)
 # Lazy import to avoid loading hatchet_sdk when not using Hatchet
 def _get_hatchet():
     from hatchet_sdk import Hatchet
-    from hatchet_sdk.config import ClientConfig
-    return Hatchet, ClientConfig
+    from hatchet_sdk.config import ClientConfig, ClientTLSConfig
+
+    return Hatchet, ClientConfig, ClientTLSConfig
 
 
 def _substitute_env(value: str) -> str:
@@ -54,14 +56,28 @@ class HatchetConfig(BaseModel):
 
     server_url: str = "http://localhost:7077"
     api_token: str | None = None
+    grpc_host_port: str | None = None
+    grpc_tls_strategy: str = "tls"
 
     @model_validator(mode="before")
     @classmethod
     def server_url_from_env(cls, data: Any) -> Any:
-        if isinstance(data, dict) and "server_url" not in data:
-            url = os.environ.get("HATCHET_SERVER_URL", "").strip()
-            if url:
-                data = {**data, "server_url": url}
+        if isinstance(data, dict):
+            updates: dict[str, Any] = {}
+            if "server_url" not in data:
+                url = os.environ.get("HATCHET_SERVER_URL", "").strip()
+                if url:
+                    updates["server_url"] = url
+            if "grpc_tls_strategy" not in data:
+                tls_strategy = os.environ.get("HATCHET_GRPC_TLS_STRATEGY", "").strip()
+                if tls_strategy:
+                    updates["grpc_tls_strategy"] = tls_strategy
+            if "grpc_host_port" not in data:
+                host_port = os.environ.get("HATCHET_GRPC_HOST_PORT", "").strip()
+                if host_port:
+                    updates["grpc_host_port"] = host_port
+            if updates:
+                data = {**data, **updates}
         return data
     namespace: str = "owlclaw"
     mode: str = "production"
@@ -96,6 +112,24 @@ class HatchetConfig(BaseModel):
         if not 1 <= v <= 65535:
             raise ValueError("postgres_port must be between 1 and 65535")
         return v
+
+    @field_validator("grpc_tls_strategy")
+    @classmethod
+    def grpc_tls_strategy_not_empty(cls, v: str) -> str:
+        value = v.strip().lower()
+        if not value:
+            raise ValueError("grpc_tls_strategy cannot be empty")
+        return value
+
+    @field_validator("grpc_host_port")
+    @classmethod
+    def grpc_host_port_not_empty(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        value = v.strip()
+        if not value:
+            raise ValueError("grpc_host_port cannot be empty")
+        return value
 
     @classmethod
     def from_yaml(cls, config_path: Path | str) -> "HatchetConfig":
@@ -154,13 +188,15 @@ class HatchetClient:
             raise ValueError(
                 "Hatchet API token required: set api_token in config or HATCHET_API_TOKEN"
             )
-        hatchet_cls, client_config_cls = _get_hatchet()
+        hatchet_cls, client_config_cls, client_tls_config_cls = _get_hatchet()
         try:
+            grpc_host_port = self.config.grpc_host_port or _server_url_to_host_port(self.config.server_url)
             client_config = client_config_cls(
-                host_port=_server_url_to_host_port(self.config.server_url),
+                host_port=grpc_host_port,
                 server_url=self.config.server_url,
                 token=token,
                 namespace=self.config.namespace,
+                tls_config=client_tls_config_cls(strategy=self.config.grpc_tls_strategy),
             )
             self._hatchet = hatchet_cls(config=client_config)
             logger.info("Connected to Hatchet at %s", self.config.server_url)
@@ -360,6 +396,9 @@ class HatchetClient:
         """Start the Hatchet worker (blocking)."""
         if self._hatchet is None:
             raise RuntimeError("Must call connect() before start_worker()")
+        if not hasattr(signal, "SIGQUIT"):
+            # Hatchet SDK expects SIGQUIT on POSIX; map to SIGTERM for Windows.
+            signal.SIGQUIT = signal.SIGTERM  # type: ignore[attr-defined]
         worker_name = self.config.worker_name or f"owlclaw-worker-{os.getpid()}"
         workflows = list(self._workflows.values())
         if not workflows:
