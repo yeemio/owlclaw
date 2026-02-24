@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}OwlHub - Search{% endblock %}
+{% block content %}
+<h1>Search Skills</h1>
+<input id="q" type="text" placeholder="Type to filter by name/description/tag" style="width:100%;padding:10px;border:1px solid #d1d1cb;border-radius:8px;">
+<div id="results" style="margin-top:14px;">
+  {% for skill in skills %}
+  <article class="card" data-search="{{ (skill.name ~ ' ' ~ skill.description ~ ' ' ~ (skill.tags | join(' '))) | lower }}">
+    <h2>{{ skill.name }} <span class="meta">@{{ skill.version }}</span></h2>
+    <div class="meta">{{ skill.publisher }}</div>
+    <p>{{ skill.description }}</p>
+  </article>
+  {% endfor %}
+</div>
+<script>
+const input = document.getElementById("q");
+const cards = Array.from(document.querySelectorAll("[data-search]"));
+input.addEventListener("input", () => {
+  const q = input.value.trim().toLowerCase();
+  for (const card of cards) {
+    const text = card.getAttribute("data-search") || "";
+    card.style.display = q && !text.includes(q) ? "none" : "";
+  }
+});
+</script>
+{% endblock %}

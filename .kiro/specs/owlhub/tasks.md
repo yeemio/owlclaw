@@ -215,14 +215,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 2.1, 6.1, 8.4_
 
 - [ ] 10. Implement Static Site Generator
-  - [ ] 10.1 Create `owlhub/site/generator.py` with SiteGenerator class
+  - [x] 10.1 Create `owlhub/site/generator.py` with SiteGenerator class
     - Set up Jinja2 templating environment
     - Implement page generation for skill list, detail, search
     - Generate RSS feed for new skills and updates
     - Generate sitemap.xml for SEO
     - _Requirements: 2.1, 2.3, 8.2_
 
-  - [ ] 10.2 Create HTML templates with Jinja2
+  - [x] 10.2 Create HTML templates with Jinja2
     - Create base.html template with navigation and footer
     - Create index.html for skill listing with sorting and filtering
     - Create skill_detail.html for individual skill pages
@@ -238,7 +238,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add Chart.js for visualization
     - _Requirements: 6.1, 6.2, 6.5_
 
-  - [ ]* 10.4 Write unit tests for Static Site Generator
+  - [x]* 10.4 Write unit tests for Static Site Generator
     - Test HTML generation from index data
     - Test RSS feed generation
     - Test search index generation
