@@ -1,13 +1,14 @@
 """owlclaw db rollback — downgrade Alembic migrations (one step, --steps N, or --target)."""
 
 import os
+from contextlib import suppress
 
 import typer
 from alembic import command
 from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from sqlalchemy.ext.asyncio import AsyncEngine
-from alembic.runtime.migration import MigrationContext
 from typer.models import OptionInfo
 
 from owlclaw.db import ConfigurationError, get_engine
@@ -121,10 +122,8 @@ def rollback_command(
         typer.echo(f"Error: failed to read current migration revision: {e}", err=True)
         raise typer.Exit(1) from e
     finally:
-        try:
+        with suppress(Exception):
             engine.sync_engine.dispose()
-        except Exception:
-            pass
 
     if not current_rev or current_rev.lower() == "base":
         typer.echo("Already at base revision.")
@@ -196,7 +195,7 @@ def rollback_command(
             confirm = input("Continue? [y/N]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             typer.echo("\nAborted.")
-            raise typer.Exit(130)
+            raise typer.Exit(130) from None
         if confirm not in ("y", "yes"):
             typer.echo("Aborted.")
             return

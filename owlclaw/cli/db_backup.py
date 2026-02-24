@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+from contextlib import suppress
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -83,7 +84,6 @@ def _build_pg_dump_args(
 ) -> list[str]:
     """Build pg_dump command argv (without pg_dump binary)."""
     conn_str = _connection_string_for_pg_dump(url)
-    parsed = urlparse(conn_str)
     # pg_dump accepts -d connection_string (URI or key=value)
     args = [
         "pg_dump",
@@ -180,7 +180,7 @@ def backup_command(
             reply = input(f"File {output_path} already exists. Overwrite? [y/N]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             typer.echo("\nAborted.")
-            raise typer.Exit(130)
+            raise typer.Exit(130) from None
         if reply not in ("y", "yes"):
             typer.echo("Aborted.")
             return
@@ -207,25 +207,21 @@ def backup_command(
             )
     except subprocess.TimeoutExpired:
         if output_path.exists():
-            try:
+            with suppress(OSError):
                 output_path.unlink()
-            except OSError:
-                pass
         typer.echo("Error: backup timed out.", err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except FileNotFoundError:
         typer.echo("Error: pg_dump not found.", err=True)
-        raise typer.Exit(2)
+        raise typer.Exit(2) from None
 
     if result.returncode != 0:
         if output_path.exists():
-            try:
+            with suppress(OSError):
                 output_path.unlink()
-            except OSError:
-                pass
         stderr = (result.stderr or "").strip()
         typer.echo(f"Backup failed: {stderr or result.returncode}", err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
 
     size = output_path.stat().st_size
     typer.echo(f"Backup written: {output_path.resolve()}")

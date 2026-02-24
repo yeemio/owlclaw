@@ -3,15 +3,16 @@
 import asyncio
 import os
 import time
+from contextlib import suppress
 from urllib.parse import urlsplit, urlunsplit
 
 import typer
-from typer.models import OptionInfo
+from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
-from alembic.config import Config
-from alembic.script import ScriptDirectory
-from alembic.runtime.migration import MigrationContext
+from typer.models import OptionInfo
 
 from owlclaw.db import ConfigurationError, get_engine
 
@@ -132,8 +133,12 @@ async def _check_connection_pool(engine: AsyncEngine) -> dict:
     """Check connection pool usage."""
     try:
         pool = getattr(engine, "sync_engine", engine).pool
-        size = pool.size()
-        checked_out = pool.checkedout()
+        size_fn = getattr(pool, "size", None)
+        checkedout_fn = getattr(pool, "checkedout", None)
+        if not callable(size_fn) or not callable(checkedout_fn):
+            return {"name": "Connection pool", "status": "WARN", "message": "pool stats unavailable"}
+        size = int(size_fn())
+        checked_out = int(checkedout_fn())
         usage_pct = (checked_out / size * 100) if size > 0 else 0
         if usage_pct < 70:
             status = "OK"
@@ -157,11 +162,7 @@ async def _check_disk_usage(engine: AsyncEngine) -> dict:
             r = await conn.execute(text("SELECT pg_database_size(current_database())"))
             size_bytes = int(r.scalar() or 0)
         size_str = _format_size(size_bytes)
-        # Warn if over 10GB
-        if size_bytes < 10 * 1024 * 1024 * 1024:
-            status = "OK"
-        else:
-            status = "WARN"
+        status = "OK" if size_bytes < 10 * 1024 * 1024 * 1024 else "WARN"
         return {"name": "Disk usage", "status": status, "message": size_str}
     except Exception as e:
         return {"name": "Disk usage", "status": "ERROR", "message": f"check failed — {e}"}
@@ -249,9 +250,9 @@ def check_command(
     ),
 ) -> None:
     """Run database health checks (connection, migration, pgvector, pool, disk, slow queries)."""
-    database_url = _normalize_optional_str_option(database_url)
+    normalized_database_url = _normalize_optional_str_option(database_url)
     verbose = _normalize_bool_option(verbose, False)
-    url = (database_url or os.environ.get("OWLCLAW_DATABASE_URL") or "").strip()
+    url = (normalized_database_url or os.environ.get("OWLCLAW_DATABASE_URL") or "").strip()
     if not url:
         typer.echo("Error: Set OWLCLAW_DATABASE_URL or pass --database-url.", err=True)
         raise typer.Exit(2)
@@ -266,7 +267,5 @@ def check_command(
         if any(c["status"] == "ERROR" for c in checks):
             raise typer.Exit(1)
     finally:
-        try:
+        with suppress(Exception):
             engine.sync_engine.dispose()
-        except Exception:
-            pass

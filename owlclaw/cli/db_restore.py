@@ -7,12 +7,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import typer
-from typer.models import OptionInfo
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from typer.models import OptionInfo
 
 from owlclaw.cli.progress import progress_after
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
-
 
 
 def _normalize_optional_str_option(value: object) -> str:
@@ -232,7 +231,7 @@ def restore_command(
             reply = input("Continue? [y/N]: ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             typer.echo("\nAborted.")
-            raise typer.Exit(130)
+            raise typer.Exit(130) from None
         if reply not in ("y", "yes"):
             typer.echo("Aborted.")
             return
@@ -248,7 +247,7 @@ def restore_command(
     except subprocess.TimeoutExpired:
         typer.echo("Error: restore timed out.", err=True)
         typer.echo("Consider restoring from a backup or re-running migrations.", err=True)
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     except FileNotFoundError as e:
         cmd = "psql" if backup_format == "sql" else "pg_restore"
         typer.echo(f"Error: {cmd} not found. Install PostgreSQL client tools.", err=True)
