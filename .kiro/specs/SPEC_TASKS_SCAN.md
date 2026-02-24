@@ -50,8 +50,8 @@
 - [x] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
 - [x] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
 - [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
-- [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
-- [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
+- [x] mionyee 3 个任务端到端验证 → spec: e2e-validation
+- [x] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（84/85） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（63/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -112,7 +112,7 @@
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
-| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（0/12） | owlclaw-mcp |
+| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（4/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（常规审校：全局质量扫描 + 类型修复） |
-| 批次状态 | **已完成**。无可合并功能分支增量，已完成常规审校并修复 2 处类型兼容问题。 |
-| 已完成项 | 1) `mypy` 修复：`shadow_mode.py` 改用 `timezone.utc`（兼容 Python 3.10）；2) `mypy` 修复：`QueueAdapter.consume` 协议签名改为 `def -> AsyncIterator`；3) 校准 `triggers-queue` 实际进度到 `63/89`。 |
-| 下一待执行 | `codex-work` 继续 `triggers-queue` Task 18（Kafka 适配器）与 `triggers-webhook` Task 2；`codex-gpt-work` 继续 `e2e-validation` Task 19。 |
-| 验收快照 | `poetry run ruff check .`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 128 source files）。 |
+| 当前批次 | orchestrate（合并 review-work → main；同步各 worktree；更新进度） |
+| 批次状态 | **已完成**。review-work 合并到 main（fast-forward）；所有 worktree 已同步；进度校准完成。 |
+| 已完成项 | 1) 合并 review-work → main（triggers-queue Task 7~17 + e2e-validation Task 16~18 + mypy 修复）；2) e2e-validation 19/19 全部完成（✅）；3) mcp-server 4/12（Task 1.1~1.2 文档前置完成）；4) 功能清单 e2e 两项打勾。 |
+| 下一待执行 | `codex-work`：`triggers-queue` Task 18（Kafka 适配器，已在分支进行中）→ Task 19~25，然后 `triggers-webhook` Task 2+；`codex-gpt-work`：`mcp-server` Task 2.1.1+（核心能力注册实现）。 |
+| 验收快照 | review-work 合并前：`ruff check .` All checks passed；`mypy owlclaw/` no issues in 128 files。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
