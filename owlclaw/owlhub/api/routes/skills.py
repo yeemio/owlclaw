@@ -5,8 +5,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
+import urllib.parse
 from datetime import datetime, timezone
 from functools import lru_cache
+from hashlib import sha256
 from pathlib import Path
 from typing import Annotated, Any, cast
 
@@ -25,12 +28,15 @@ from owlclaw.owlhub.api.schemas import (
     UpdateStateRequest,
     VersionInfo,
 )
+from owlclaw.owlhub.indexer import IndexBuilder
 from owlclaw.owlhub.review import ReviewStatus
 from owlclaw.owlhub.schema import VersionState
 
 router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
 current_principal_type = Annotated[Principal, Depends(get_current_principal)]
 logger = logging.getLogger(__name__)
+_SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+_CHECKSUM_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 @lru_cache(maxsize=1)
@@ -194,10 +200,14 @@ def publish_skill(
         request_payload = PublishRequest.model_validate(payload)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    publisher = request_payload.publisher.strip()
-    skill_name = request_payload.skill_name.strip()
-    version = request_payload.version.strip()
+    publisher = _sanitize_text(request_payload.publisher)
+    skill_name = _sanitize_text(request_payload.skill_name)
+    version = _sanitize_text(request_payload.version)
     metadata_dict = request_payload.metadata if isinstance(request_payload.metadata, dict) else {}
+    if not _is_safe_identifier(publisher):
+        raise HTTPException(status_code=422, detail="invalid publisher format")
+    if not _is_safe_identifier(skill_name):
+        raise HTTPException(status_code=422, detail="invalid skill name format")
 
     if not _principal_allowed_for_publisher(principal, publisher):
         raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
@@ -208,9 +218,9 @@ def publish_skill(
         "name": skill_name,
         "version": version,
         "publisher": publisher,
-        "description": str(metadata_dict.get("description", "")).strip(),
-        "license": str(metadata_dict.get("license", "")).strip(),
-        "tags": metadata_dict.get("tags", []),
+        "description": _sanitize_text(str(metadata_dict.get("description", "")), max_len=512),
+        "license": _sanitize_text(str(metadata_dict.get("license", "")), max_len=64),
+        "tags": [_sanitize_text(str(tag), max_len=32) for tag in metadata_dict.get("tags", []) if isinstance(tag, str)],
         "dependencies": metadata_dict.get("dependencies", {}),
     }
 
@@ -230,6 +240,13 @@ def publish_skill(
             detail={"message": "manifest validation failed", "review_id": review.review_id, "errors": errors},
         )
 
+    download_url = _sanitize_text(str(metadata_dict.get("download_url", "")), max_len=2048)
+    checksum = _resolve_publish_checksum(
+        download_url=download_url,
+        provided_checksum=_sanitize_text(str(metadata_dict.get("checksum", "")), max_len=80),
+        manifest_payload=manifest_payload,
+    )
+
     now = datetime.now(timezone.utc).isoformat()
     state = str(metadata_dict.get("version_state", VersionState.RELEASED.value)).strip().lower()
     if state not in {member.value for member in VersionState}:
@@ -244,8 +261,8 @@ def publish_skill(
         "version_state": state,
         "published_at": now,
         "updated_at": now,
-        "download_url": str(metadata_dict.get("download_url", "")),
-        "checksum": str(metadata_dict.get("checksum", "")),
+        "download_url": download_url,
+        "checksum": checksum,
         "statistics": metadata_dict.get("statistics", {})
         if isinstance(metadata_dict.get("statistics", {}), dict)
         else {"total_downloads": 0, "downloads_last_30d": 0},
@@ -306,6 +323,8 @@ def update_skill_state(
     request: Request,
     principal: current_principal_type,
 ) -> dict[str, Any]:
+    if not _is_safe_identifier(publisher) or not _is_safe_identifier(name):
+        raise HTTPException(status_code=422, detail="invalid publisher or skill name format")
     if not _principal_allowed_for_publisher(principal, publisher):
         raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
     try:
@@ -379,6 +398,8 @@ def takedown_skill(
     request: Request,
     principal: current_principal_type,
 ) -> dict[str, Any]:
+    if not _is_safe_identifier(publisher) or not _is_safe_identifier(name):
+        raise HTTPException(status_code=422, detail="invalid publisher or skill name format")
     if principal.role != "admin":
         raise HTTPException(status_code=403, detail="admin role required")
     try:
@@ -453,3 +474,43 @@ def _is_hidden(*, entry: dict[str, Any], request: Request | None = None) -> bool
         return False
     manager = request.app.state.blacklist_manager
     return bool(manager.is_blocked(publisher=publisher, skill_name=skill_name))
+
+
+def _sanitize_text(value: str, *, max_len: int = 128) -> str:
+    filtered = "".join(ch for ch in value if ch >= " " and ch != "\x7f")
+    return filtered.strip()[:max_len]
+
+
+def _is_safe_identifier(value: str) -> bool:
+    return bool(_SAFE_IDENTIFIER.fullmatch(value))
+
+
+def _resolve_publish_checksum(*, download_url: str, provided_checksum: str, manifest_payload: dict[str, Any]) -> str:
+    if provided_checksum and not _CHECKSUM_PATTERN.fullmatch(provided_checksum):
+        raise HTTPException(status_code=422, detail="invalid checksum format")
+
+    local_file = _resolve_local_file_path(download_url)
+    if local_file is not None and local_file.exists() and local_file.is_file():
+        actual = IndexBuilder().calculate_checksum(local_file)
+        if provided_checksum and provided_checksum != actual:
+            raise HTTPException(status_code=422, detail="checksum does not match package content")
+        return provided_checksum or actual
+
+    if provided_checksum:
+        return provided_checksum
+    if download_url:
+        raise HTTPException(status_code=422, detail="checksum is required when package file is not locally accessible")
+
+    payload = json.dumps(manifest_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return f"sha256:{sha256(payload).hexdigest()}"
+
+
+def _resolve_local_file_path(download_url: str) -> Path | None:
+    if not download_url:
+        return None
+    parsed = urllib.parse.urlparse(download_url)
+    if parsed.scheme in {"http", "https"}:
+        return None
+    if parsed.scheme == "file":
+        return Path(download_url.replace("file://", "")).expanduser().resolve()
+    return Path(download_url).expanduser().resolve()

@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import time
 import uuid
@@ -124,6 +125,12 @@ class AuthManager:
         if count > self.rate_limit_per_window:
             raise HTTPException(status_code=429, detail="rate limit exceeded")
 
+    def enforce_request_rate_limit(self, request: Request) -> None:
+        client = request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+        if not client:
+            client = request.client.host if request.client is not None else "unknown"
+        self.check_rate_limit(f"ip:{client}")
+
 
 def create_auth_router(auth: AuthManager) -> APIRouter:
     """Create auth endpoints router."""
@@ -157,6 +164,7 @@ def enforce_write_auth(request: Request) -> None:
     """Middleware-compatible helper enforcing write auth and role checks."""
     if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
         return
+    _enforce_csrf_for_form_request(request)
     path = request.url.path
     if path.startswith("/api/v1/auth") or path in {"/health"}:
         return
@@ -226,3 +234,18 @@ def _b64url_decode(data: str) -> bytes:
 
 def _sha256(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+_FORM_CONTENT_TYPE_PATTERN = re.compile(r"^(application/x-www-form-urlencoded|multipart/form-data)", re.IGNORECASE)
+
+
+def _enforce_csrf_for_form_request(request: Request) -> None:
+    if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
+        return
+    content_type = request.headers.get("Content-Type", "")
+    if not _FORM_CONTENT_TYPE_PATTERN.match(content_type):
+        return
+    expected = os.getenv("OWLHUB_CSRF_TOKEN", "owlhub-csrf-token")
+    provided = request.headers.get("X-CSRF-Token", "")
+    if not provided or not hmac.compare_digest(provided, expected):
+        raise HTTPException(status_code=403, detail="csrf token required")
