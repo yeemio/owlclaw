@@ -2,6 +2,7 @@
 
 from owlclaw.cli.scan.complexity import ComplexityCalculator
 from owlclaw.cli.scan.dependency import CyclicDependencyDetector, Dependency, DependencyAnalyzer, DependencyGraph
+from owlclaw.cli.scan.discovery import FileDiscovery
 from owlclaw.cli.scan.docstring import DocstringParser
 from owlclaw.cli.scan.extractor import SignatureExtractor
 from owlclaw.cli.scan.models import (
@@ -39,6 +40,7 @@ __all__ = [
     "DecoratorInfo",
     "DocstringParser",
     "DocstringStyle",
+    "FileDiscovery",
     "FileScanResult",
     "FunctionScanResult",
     "FunctionSignature",
