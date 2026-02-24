@@ -4,14 +4,16 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from secrets import token_urlsafe
-from typing import Protocol
+from typing import Any, Protocol, cast
 from uuid import UUID, uuid4
 
 from owlclaw.triggers.webhook.persistence.models import WebhookEndpointModel
 from owlclaw.triggers.webhook.types import (
     AuthMethod,
+    AuthMethodType,
     EndpointConfig,
     EndpointFilter,
+    ExecutionMode,
     RetryPolicy,
     ValidationError,
     ValidationResult,
@@ -189,7 +191,7 @@ class WebhookEndpointManager:
         auth_method = model.auth_method or {}
         retry_policy = model.retry_policy or None
         auth = AuthMethod(
-            type=auth_method.get("type", "bearer"),
+            type=_normalize_auth_method_type(auth_method.get("type", "bearer")),
             token=auth_method.get("token"),
             secret=auth_method.get("secret"),
             algorithm=auth_method.get("algorithm"),
@@ -201,7 +203,7 @@ class WebhookEndpointManager:
             target_agent_id=model.target_agent_id,
             auth_method=auth,
             transformation_rule_id=(None if model.transformation_rule_id is None else str(model.transformation_rule_id)),
-            execution_mode=model.execution_mode,
+            execution_mode=_normalize_execution_mode(model.execution_mode),
             timeout_seconds=(None if model.timeout is None else float(model.timeout)),
             retry_policy=(
                 None
@@ -224,3 +226,17 @@ class WebhookEndpointManager:
             updated_at=model.updated_at,
             tenant_id=model.tenant_id,
         )
+
+
+def _normalize_auth_method_type(value: object) -> AuthMethodType:
+    normalized = str(value)
+    if normalized not in {"bearer", "hmac", "basic"}:
+        return "bearer"
+    return cast(AuthMethodType, normalized)
+
+
+def _normalize_execution_mode(value: Any) -> ExecutionMode:
+    normalized = str(value)
+    if normalized not in {"sync", "async"}:
+        return "async"
+    return cast(ExecutionMode, normalized)

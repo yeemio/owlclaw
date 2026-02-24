@@ -1,0 +1,372 @@
+"""Read-only skill endpoints for OwlHub API."""
+
+from __future__ import annotations
+
+import json
+import os
+from datetime import datetime, timezone
+from functools import lru_cache
+from pathlib import Path
+from typing import Annotated, Any, cast
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import ValidationError
+
+from owlclaw.owlhub.api.auth import Principal, get_current_principal
+from owlclaw.owlhub.api.schemas import (
+    PublishRequest,
+    PublishResponse,
+    SkillDetail,
+    SkillSearchItem,
+    SkillSearchResponse,
+    SkillStatisticsResponse,
+    UpdateStateRequest,
+    VersionInfo,
+)
+from owlclaw.owlhub.review import ReviewStatus
+from owlclaw.owlhub.schema import VersionState
+
+router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
+current_principal_type = Annotated[Principal, Depends(get_current_principal)]
+
+
+@lru_cache(maxsize=1)
+def _load_index() -> dict[str, Any]:
+    index_path = Path(os.getenv("OWLHUB_INDEX_PATH", "./index.json")).resolve()
+    if not index_path.exists():
+        return {"skills": []}
+    return cast(dict[str, Any], json.loads(index_path.read_text(encoding="utf-8")))
+
+
+def _iter_skills() -> list[dict]:
+    data = _load_index()
+    skills = data.get("skills", [])
+    return skills if isinstance(skills, list) else []
+
+
+def _save_index(data: dict[str, Any]) -> None:
+    index_path = Path(os.getenv("OWLHUB_INDEX_PATH", "./index.json")).resolve()
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _load_index.cache_clear()
+
+
+@router.get("", response_model=SkillSearchResponse)
+def search_skills(
+    query: str = "",
+    tags: str = "",
+    sort_by: str = Query("name", pattern="^(name|updated_at|downloads)$"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+) -> SkillSearchResponse:
+    requested_tags = {tag.strip().lower() for tag in tags.split(",") if tag.strip()}
+    normalized_query = query.strip().lower()
+
+    items: list[SkillSearchItem] = []
+    for entry in _iter_skills():
+        manifest = entry.get("manifest", {})
+        name = str(manifest.get("name", "")).strip()
+        publisher = str(manifest.get("publisher", "")).strip()
+        version = str(manifest.get("version", "")).strip()
+        description = str(manifest.get("description", "")).strip()
+        skill_tags = [tag for tag in manifest.get("tags", []) if isinstance(tag, str)]
+        lowered_tags = {tag.lower() for tag in skill_tags}
+        if normalized_query and normalized_query not in f"{name} {description}".lower():
+            continue
+        if requested_tags and not requested_tags.issubset(lowered_tags):
+            continue
+        items.append(
+            SkillSearchItem(
+                name=name,
+                publisher=publisher,
+                version=version,
+                description=description,
+                tags=skill_tags,
+                version_state=str(entry.get("version_state", "released")),
+            )
+        )
+
+    if sort_by == "downloads":
+        items.sort(
+            key=lambda item: int(
+                _find_statistics(item.publisher, item.name, item.version).get("total_downloads", 0)
+            ),
+            reverse=True,
+        )
+    elif sort_by == "updated_at":
+        items.sort(
+            key=lambda item: str(_find_updated_at(item.publisher, item.name, item.version)),
+            reverse=True,
+        )
+    else:
+        items.sort(key=lambda item: (item.name, item.version))
+
+    total = len(items)
+    start = (page - 1) * page_size
+    end = start + page_size
+    return SkillSearchResponse(total=total, page=page, page_size=page_size, items=items[start:end])
+
+
+@router.get("/{publisher}/{name}", response_model=SkillDetail)
+def get_skill_detail(publisher: str, name: str) -> SkillDetail:
+    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name)]
+    if not entries:
+        raise HTTPException(status_code=404, detail="skill not found")
+
+    entries.sort(key=lambda entry: str(entry.get("manifest", {}).get("version", "")))
+    latest = entries[-1]
+    manifest = latest.get("manifest", {})
+    versions = [
+        VersionInfo(
+            version=str(entry.get("manifest", {}).get("version", "")),
+            version_state=str(entry.get("version_state", "released")),
+            published_at=entry.get("published_at"),
+            updated_at=entry.get("updated_at"),
+        )
+        for entry in entries
+    ]
+    return SkillDetail(
+        name=str(manifest.get("name", "")),
+        publisher=str(manifest.get("publisher", "")),
+        description=str(manifest.get("description", "")),
+        tags=[tag for tag in manifest.get("tags", []) if isinstance(tag, str)],
+        dependencies=manifest.get("dependencies", {}) if isinstance(manifest.get("dependencies", {}), dict) else {},
+        versions=versions,
+        statistics=latest.get("statistics", {}) if isinstance(latest.get("statistics", {}), dict) else {},
+    )
+
+
+@router.get("/{publisher}/{name}/versions", response_model=list[VersionInfo])
+def get_skill_versions(publisher: str, name: str) -> list[VersionInfo]:
+    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name)]
+    if not entries:
+        raise HTTPException(status_code=404, detail="skill not found")
+    entries.sort(key=lambda entry: str(entry.get("manifest", {}).get("version", "")))
+    return [
+        VersionInfo(
+            version=str(entry.get("manifest", {}).get("version", "")),
+            version_state=str(entry.get("version_state", "released")),
+            published_at=entry.get("published_at"),
+            updated_at=entry.get("updated_at"),
+        )
+        for entry in entries
+    ]
+
+
+@router.get("/{publisher}/{name}/statistics", response_model=SkillStatisticsResponse)
+def get_skill_statistics(publisher: str, name: str, request: Request) -> SkillStatisticsResponse:
+    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name)]
+    if not entries:
+        raise HTTPException(status_code=404, detail="skill not found")
+    entries.sort(key=lambda entry: str(entry.get("manifest", {}).get("version", "")))
+    latest = entries[-1]
+    manifest = latest.get("manifest", {})
+    tracker = request.app.state.statistics_tracker
+    stats = tracker.get_statistics(
+        skill_name=name,
+        publisher=publisher,
+        repository=str(manifest.get("repository", "")).strip() or None,
+    )
+    return SkillStatisticsResponse(
+        skill_name=stats.skill_name,
+        publisher=stats.publisher,
+        total_downloads=stats.total_downloads,
+        downloads_last_30d=stats.downloads_last_30d,
+        total_installs=stats.total_installs,
+        active_installs=stats.active_installs,
+        last_updated=stats.last_updated,
+    )
+
+
+@router.post("", response_model=PublishResponse)
+def publish_skill(
+    payload: dict[str, Any],
+    request: Request,
+    principal: current_principal_type,
+) -> PublishResponse:
+    try:
+        request_payload = PublishRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    publisher = request_payload.publisher.strip()
+    skill_name = request_payload.skill_name.strip()
+    version = request_payload.version.strip()
+    metadata_dict = request_payload.metadata if isinstance(request_payload.metadata, dict) else {}
+
+    if not _principal_allowed_for_publisher(principal, publisher):
+        raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
+
+    manifest_payload = {
+        "name": skill_name,
+        "version": version,
+        "publisher": publisher,
+        "description": str(metadata_dict.get("description", "")).strip(),
+        "license": str(metadata_dict.get("license", "")).strip(),
+        "tags": metadata_dict.get("tags", []),
+        "dependencies": metadata_dict.get("dependencies", {}),
+    }
+
+    validator = request.app.state.validator
+    validation = validator.validate_manifest(manifest_payload)
+    review_system = request.app.state.review_system
+    review = review_system.submit_manifest_for_review(
+        manifest=manifest_payload,
+        skill_name=skill_name,
+        version=version,
+        publisher=publisher,
+    )
+    if not validation.is_valid or review.status == ReviewStatus.REJECTED:
+        errors = [{"field": err.field, "message": err.message} for err in validation.errors]
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "manifest validation failed", "review_id": review.review_id, "errors": errors},
+        )
+
+    now = datetime.now(timezone.utc).isoformat()
+    state = str(metadata_dict.get("version_state", VersionState.RELEASED.value)).strip().lower()
+    if state not in {member.value for member in VersionState}:
+        raise HTTPException(status_code=422, detail="invalid version state")
+
+    index_data = _load_index()
+    skills = index_data.get("skills", [])
+    if not isinstance(skills, list):
+        skills = []
+    entry = {
+        "manifest": manifest_payload,
+        "version_state": state,
+        "published_at": now,
+        "updated_at": now,
+        "download_url": str(metadata_dict.get("download_url", "")),
+        "checksum": str(metadata_dict.get("checksum", "")),
+        "statistics": metadata_dict.get("statistics", {})
+        if isinstance(metadata_dict.get("statistics", {}), dict)
+        else {"total_downloads": 0, "downloads_last_30d": 0},
+    }
+    replaced = False
+    for idx, existing in enumerate(skills):
+        manifest = existing.get("manifest", {})
+        if (
+            str(manifest.get("publisher", "")) == publisher
+            and str(manifest.get("name", "")) == skill_name
+            and str(manifest.get("version", "")) == version
+        ):
+            skills[idx] = entry
+            replaced = True
+            break
+    if not replaced:
+        skills.append(entry)
+    index_data["skills"] = skills
+    index_data["total_skills"] = len(skills)
+    index_data["generated_at"] = now
+    _save_index(index_data)
+
+    audit = request.app.state.audit_logger
+    audit.log(
+        event_type="publish",
+        principal=principal,
+        details={
+            "publisher": publisher,
+            "skill_name": skill_name,
+            "version": version,
+            "review_id": review.review_id,
+        },
+    )
+    return PublishResponse(accepted=True, review_id=review.review_id, status=review.status.value)
+
+
+@router.put("/{publisher}/{name}/versions/{version}/state", response_model=dict[str, Any])
+def update_skill_state(
+    publisher: str,
+    name: str,
+    version: str,
+    payload: dict[str, Any],
+    request: Request,
+    principal: current_principal_type,
+) -> dict[str, Any]:
+    if not _principal_allowed_for_publisher(principal, publisher):
+        raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
+    try:
+        request_payload = UpdateStateRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    state = request_payload.state.strip().lower()
+    if state not in {member.value for member in VersionState}:
+        raise HTTPException(status_code=422, detail="invalid version state")
+
+    index_data = _load_index()
+    skills = index_data.get("skills", [])
+    if not isinstance(skills, list):
+        skills = []
+    target: dict[str, Any] | None = None
+    for entry in skills:
+        manifest = entry.get("manifest", {})
+        if (
+            str(manifest.get("publisher", "")) == publisher
+            and str(manifest.get("name", "")) == name
+            and str(manifest.get("version", "")) == version
+        ):
+            target = entry
+            break
+    if target is None:
+        raise HTTPException(status_code=404, detail="skill version not found")
+
+    old_state = str(target.get("version_state", VersionState.RELEASED.value))
+    target["version_state"] = state
+    target["updated_at"] = datetime.now(timezone.utc).isoformat()
+    index_data["skills"] = skills
+    index_data["total_skills"] = len(skills)
+    _save_index(index_data)
+
+    audit = request.app.state.audit_logger
+    audit.log(
+        event_type="state_update",
+        principal=principal,
+        details={
+            "publisher": publisher,
+            "skill_name": name,
+            "version": version,
+            "from_state": old_state,
+            "to_state": state,
+        },
+    )
+    return {"updated": True, "publisher": publisher, "skill_name": name, "version": version, "state": state}
+
+
+def _is_skill(entry: dict, publisher: str, name: str) -> bool:
+    manifest = entry.get("manifest", {})
+    return str(manifest.get("publisher", "")) == publisher and str(manifest.get("name", "")) == name
+
+
+def _find_statistics(publisher: str, name: str, version: str) -> dict:
+    for entry in _iter_skills():
+        manifest = entry.get("manifest", {})
+        if (
+            str(manifest.get("publisher", "")) == publisher
+            and str(manifest.get("name", "")) == name
+            and str(manifest.get("version", "")) == version
+        ):
+            stats = entry.get("statistics", {})
+            return stats if isinstance(stats, dict) else {}
+    return {}
+
+
+def _find_updated_at(publisher: str, name: str, version: str) -> str:
+    for entry in _iter_skills():
+        manifest = entry.get("manifest", {})
+        if (
+            str(manifest.get("publisher", "")) == publisher
+            and str(manifest.get("name", "")) == name
+            and str(manifest.get("version", "")) == version
+        ):
+            return str(entry.get("updated_at", ""))
+    return ""
+
+
+def _principal_allowed_for_publisher(principal: Principal, publisher: str) -> bool:
+    if principal.role == "admin":
+        return True
+    target = publisher.strip().lower()
+    identity = principal.user_id.strip().lower()
+    if identity == target:
+        return True
+    return ":" in identity and identity.split(":", 1)[1] == target

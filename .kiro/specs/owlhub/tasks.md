@@ -93,8 +93,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Generate random files, calculate checksum → transfer → recalculate, verify match
     - _Requirements: 1.1, 1.3, 5.3_
 
-- [ ] 4. Implement CLI Client for skill management
-  - [ ] 4.1 Create `owlclaw/cli/skill.py` with CLI commands
+- [x] 4. Implement CLI Client for skill management
+  - [x] 4.1 Create `owlclaw/cli/skill.py` with CLI commands
     - Implement `search` command with query and tag filtering
     - Implement `install` command with version specification support
     - Implement `list` command to show installed skills
@@ -103,7 +103,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add rich output formatting for better UX
     - _Requirements: 2.1, 2.5, 3.1, 3.2, 4.5_
 
-  - [ ] 4.2 Implement skill installation logic
+  - [x] 4.2 Implement skill installation logic
     - Download skill package from download_url
     - Verify checksum before extraction
     - Extract to installation directory
@@ -111,14 +111,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Handle installation errors and rollback on failure
     - _Requirements: 3.1, 3.2, 3.5, 5.3_
 
-  - [ ] 4.3 Implement lock file management
+  - [x] 4.3 Implement lock file management
     - Create `skill-lock.json` schema with version, generated_at, skills
     - Implement lock file generation after installation
     - Implement lock file reading for reproducible installs
     - Store resolved versions, URLs, and checksums
     - _Requirements: 3.4_
 
-  - [ ]* 4.4 Write unit tests for CLI Client
+  - [x]* 4.4 Write unit tests for CLI Client
     - Test search with no results
     - Test install of already installed skill
     - Test install of non-existent version
@@ -127,7 +127,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test installation rollback on validation failure
     - _Requirements: 2.1, 3.1, 3.2, 3.4, 3.5_
 
-  - [ ]* 4.5 Write property tests for CLI Client
+  - [x]* 4.5 Write property tests for CLI Client
     - **Property 6: 多维度搜索**
     - **Validates: Requirements 2.1, 2.2**
     - Generate random skill sets and queries, verify results match and are sorted correctly
@@ -142,15 +142,15 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Generate invalid skill packages, verify installation rejected and state unchanged
     - _Requirements: 2.1, 2.2, 3.1, 3.2, 3.4, 3.5_
 
-- [ ] 5. Set up GitHub Actions workflow for index publishing
-  - Create `.github/workflows/build-index.yml`
+- [x] 5. Set up GitHub Actions workflow for index publishing
+  - Create `.github/workflows/owlhub-build-index.yml`
   - Configure workflow to run Index Builder on schedule (hourly)
   - Configure workflow to run on manual trigger
   - Publish generated index.json to GitHub Pages
   - Add workflow for validating PRs that add new skills
   - _Requirements: 8.1, 8.2_
 
-- [ ]* 5.1 Write integration test for Phase 1 end-to-end flow
+- [x]* 5.1 Write integration test for Phase 1 end-to-end flow
   - Test complete publish flow: create skill → validate → build index → publish
   - Test complete install flow: search → download → validate → install → lock
   - Verify index.json is accessible and parseable by CLI
@@ -158,7 +158,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
   - **Validates: Requirements 8.2**
   - _Requirements: 1.1, 2.1, 3.1, 8.1, 8.2_
 
-- [ ] 6. Create configuration and documentation for Phase 1
+- [x] 6. Create configuration and documentation for Phase 1
   - Create `.owlhub/config.yaml` with index_url, repositories, update_interval
   - Document CLI commands and usage examples
   - Document skill package structure requirements
@@ -166,7 +166,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
   - Add Phase 1 architecture diagram to docs
   - _Requirements: 8.1, 8.5_
 
-- [ ] 7. Checkpoint - Phase 1 Complete
+- [x] 7. Checkpoint - Phase 1 Complete
   - Ensure all Phase 1 tests pass
   - Verify CLI can search and install skills from generated index
   - Verify index.json is valid and accessible
@@ -174,55 +174,55 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 
 ## Phase 2: Static Site Mode (Enhanced Discovery)
 
-- [ ] 8. Implement Statistics Tracker for GitHub-based metrics
-  - [ ] 8.1 Create `owlhub/statistics/tracker.py` with StatisticsTracker class
+- [x] 8. Implement Statistics Tracker for GitHub-based metrics
+  - [x] 8.1 Create `owlhub/statistics/tracker.py` with StatisticsTracker class
     - Implement GitHub API integration for release download counts
     - Implement `get_statistics()` to fetch skill download metrics
     - Calculate downloads_last_30d from GitHub API data
     - Cache statistics to avoid rate limiting
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ]* 8.2 Write unit tests for Statistics Tracker
+  - [x]* 8.2 Write unit tests for Statistics Tracker
     - Test fetching statistics from GitHub API
     - Test caching behavior
     - Test handling API rate limits
     - Test statistics aggregation
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ]* 8.3 Write property test for statistics accuracy
+  - [x]* 8.3 Write property test for statistics accuracy
     - **Property 18: 统计计数准确性**
     - **Validates: Requirements 6.1, 6.2, 6.3**
     - Simulate N download/install operations, verify counts reflect operations accurately
     - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 9. Enhance Index Builder with statistics and search metadata
-  - [ ] 9.1 Update IndexBuilder to include statistics in index.json
+- [x] 9. Enhance Index Builder with statistics and search metadata
+  - [x] 9.1 Update IndexBuilder to include statistics in index.json
     - Integrate StatisticsTracker to fetch download counts
     - Add statistics field to each skill entry
     - Include total_downloads, downloads_last_30d, last_updated
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ] 9.2 Generate search index metadata for lunr.js
+  - [x] 9.2 Generate search index metadata for lunr.js
     - Create searchable text from skill name, description, tags
     - Generate search index JSON for client-side search
     - Optimize index size for fast loading
     - _Requirements: 2.1, 2.2_
 
-  - [ ]* 9.3 Write unit tests for enhanced Index Builder
+  - [x]* 9.3 Write unit tests for enhanced Index Builder
     - Test statistics integration in index generation
     - Test search metadata generation
     - Test backward compatibility with Phase 1 index format
     - _Requirements: 2.1, 6.1, 8.4_
 
-- [ ] 10. Implement Static Site Generator
-  - [ ] 10.1 Create `owlhub/site/generator.py` with SiteGenerator class
+- [x] 10. Implement Static Site Generator
+  - [x] 10.1 Create `owlhub/site/generator.py` with SiteGenerator class
     - Set up Jinja2 templating environment
     - Implement page generation for skill list, detail, search
     - Generate RSS feed for new skills and updates
     - Generate sitemap.xml for SEO
     - _Requirements: 2.1, 2.3, 8.2_
 
-  - [ ] 10.2 Create HTML templates with Jinja2
+  - [x] 10.2 Create HTML templates with Jinja2
     - Create base.html template with navigation and footer
     - Create index.html for skill listing with sorting and filtering
     - Create skill_detail.html for individual skill pages
@@ -230,7 +230,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add responsive CSS for mobile compatibility
     - _Requirements: 2.1, 2.2, 2.3_
 
-  - [ ] 10.3 Create statistics dashboard page
+  - [x] 10.3 Create statistics dashboard page
     - Create dashboard.html template
     - Display top skills by downloads
     - Display recently updated skills
@@ -238,14 +238,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add Chart.js for visualization
     - _Requirements: 6.1, 6.2, 6.5_
 
-  - [ ]* 10.4 Write unit tests for Static Site Generator
+  - [x]* 10.4 Write unit tests for Static Site Generator
     - Test HTML generation from index data
     - Test RSS feed generation
     - Test search index generation
     - Test template rendering with various data
     - _Requirements: 2.1, 2.3, 8.2_
 
-  - [ ]* 10.5 Write property tests for site generation
+  - [x]* 10.5 Write property tests for site generation
     - **Property 7: 技能详情完整性**
     - **Validates: Requirements 2.3**
     - Generate random skills, verify detail pages contain all required information
@@ -254,92 +254,92 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Generate large skill set, verify pagination produces complete non-duplicate results
     - _Requirements: 2.3, 2.4_
 
-- [ ] 11. Implement Review System (Phase 2 - automated validation)
-  - [ ] 11.1 Create `owlhub/review/system.py` with ReviewSystem class
+- [x] 11. Implement Review System (Phase 2 - automated validation)
+  - [x] 11.1 Create `owlhub/review/system.py` with ReviewSystem class
     - Implement `submit_for_review()` to create review records
     - Implement automated validation checks using Validator
     - Generate review reports with validation results
     - Store review records in JSON files (Phase 2) or database (Phase 3)
     - _Requirements: 7.1, 7.4_
 
-  - [ ]* 11.2 Write unit tests for Review System
+  - [x]* 11.2 Write unit tests for Review System
     - Test review submission and record creation
     - Test automated validation integration
     - Test review status transitions
     - _Requirements: 7.1, 7.4_
 
-  - [ ]* 11.3 Write property test for review workflow
+  - [x]* 11.3 Write property test for review workflow
     - **Property 20: 审核状态转换**
     - **Validates: Requirements 7.1, 7.4**
     - Submit random skills for review, execute approve/reject, verify state transitions
     - _Requirements: 7.1, 7.4_
 
-- [ ] 12. Implement tagging and categorization
-  - [ ] 12.1 Add tag-based filtering to CLI search command
+- [x] 12. Implement tagging and categorization
+  - [x] 12.1 Add tag-based filtering to CLI search command
     - Support multiple tag filters with AND/OR logic
     - Display tags in search results
     - _Requirements: 2.1, 7.2_
 
-  - [ ] 12.2 Add tag browsing to static site
+  - [x] 12.2 Add tag browsing to static site
     - Create tag cloud on homepage
     - Create tag detail pages showing skills by tag
     - Add tag filtering to search interface
     - _Requirements: 2.1, 7.2_
 
-  - [ ]* 12.3 Write property test for tag-based retrieval
+  - [x]* 12.3 Write property test for tag-based retrieval
     - **Property 21: 标签分类检索**
     - **Validates: Requirements 7.2**
     - Generate skills with random tags, verify retrieval by tag works correctly
     - _Requirements: 7.2_
 
-- [ ] 13. Update GitHub Actions workflow for Phase 2
+- [x] 13. Update GitHub Actions workflow for Phase 2
   - Update workflow to run StatisticsTracker before IndexBuilder
   - Update workflow to run SiteGenerator after IndexBuilder
   - Deploy generated static site to GitHub Pages
   - Configure custom domain if needed
   - _Requirements: 8.2_
 
-- [ ] 14. Add CLI update command
-  - [ ] 14.1 Implement `update` command in CLI
+- [x] 14. Add CLI update command
+  - [x] 14.1 Implement `update` command in CLI
     - Check installed skills against index for newer versions
     - Support updating single skill or all skills
     - Update lock file after successful updates
     - Display update summary (what was updated, versions)
     - _Requirements: 3.3_
 
-  - [ ]* 14.2 Write unit tests for update command
+  - [x]* 14.2 Write unit tests for update command
     - Test update detection when newer version exists
     - Test no-op when already on latest version
     - Test update of single skill vs all skills
     - Test lock file update after upgrade
     - _Requirements: 3.3_
 
-  - [ ]* 14.3 Write property test for version update detection
+  - [x]* 14.3 Write property test for version update detection
     - **Property 10: 版本更新检测**
     - **Validates: Requirements 3.3**
     - Install old version, publish new version, verify update command detects it
     - _Requirements: 3.3_
 
-- [ ] 15. Implement version state management
-  - [ ] 15.1 Add version state support to IndexBuilder
+- [x] 15. Implement version state management
+  - [x] 15.1 Add version state support to IndexBuilder
     - Parse version state from SKILL.md or repository tags
     - Include state in index.json for each version
     - Support DRAFT, RELEASED, DEPRECATED states
     - _Requirements: 1.4_
 
-  - [ ] 15.2 Update CLI to respect version states
+  - [x] 15.2 Update CLI to respect version states
     - Filter out DRAFT versions in search results (unless --include-draft flag)
     - Show deprecation warnings when installing DEPRECATED versions
     - Display version state in `list` command output
     - _Requirements: 1.4_
 
-  - [ ]* 15.3 Write property test for version state management
+  - [x]* 15.3 Write property test for version state management
     - **Property 4: 版本状态管理**
     - **Validates: Requirements 1.4**
     - Generate versions with random states, verify queries return correct state
     - _Requirements: 1.4_
 
-- [ ]* 16. Write integration tests for Phase 2 end-to-end flows
+- [x]* 16. Write integration tests for Phase 2 end-to-end flows
   - Test complete site generation: index → statistics → site → deploy
   - Test CLI compatibility with Phase 2 index format
   - Test search functionality on generated site
@@ -349,7 +349,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
   - Verify Phase 1 CLI can read Phase 2 index data
   - _Requirements: 2.1, 6.1, 8.2, 8.4_
 
-- [ ] 17. Update documentation for Phase 2
+- [x] 17. Update documentation for Phase 2
   - Document static site features and navigation
   - Document statistics tracking and dashboard
   - Document tag-based search and filtering
@@ -357,7 +357,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
   - Add Phase 2 architecture diagram
   - _Requirements: 8.5_
 
-- [ ] 18. Checkpoint - Phase 2 Complete
+- [x] 18. Checkpoint - Phase 2 Complete
   - Ensure all Phase 2 tests pass
   - Verify static site is generated and accessible
   - Verify statistics are displayed correctly
@@ -390,8 +390,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test query performance with indexes
     - _Requirements: 1.1, 1.3_
 
-- [ ] 20. Implement FastAPI service foundation
-  - [ ] 20.1 Create `owlhub/api/app.py` with FastAPI application
+- [x] 20. Implement FastAPI service foundation
+  - [x] 20.1 Create `owlhub/api/app.py` with FastAPI application
     - Set up FastAPI app with CORS middleware
     - Configure database connection pooling
     - Add health check endpoint
@@ -399,33 +399,33 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Set up structured logging
     - _Requirements: 8.3_
 
-  - [ ] 20.2 Create API request/response schemas
+  - [x] 20.2 Create API request/response schemas
     - Create Pydantic models for SkillSearchResponse, SkillDetail, VersionInfo
     - Create models for PublishRequest, PublishResponse, UpdateStateRequest
     - Add validation rules and examples
     - _Requirements: 2.1, 2.3_
 
-  - [ ]* 20.3 Write unit tests for API schemas
+  - [x]* 20.3 Write unit tests for API schemas
     - Test schema validation with valid data
     - Test schema validation with invalid data
     - Test serialization/deserialization
     - _Requirements: 2.1, 2.3_
 
-- [ ] 21. Implement Registry API endpoints
-  - [ ] 21.1 Create `owlhub/api/routes/skills.py` with search endpoint
+- [x] 21. Implement Registry API endpoints
+  - [x] 21.1 Create `owlhub/api/routes/skills.py` with search endpoint
     - Implement `GET /api/v1/skills` with query, tags, sort_by, pagination
     - Support sorting by downloads, updated_at, name
     - Implement efficient database queries with joins
     - Add response caching for common queries
     - _Requirements: 2.1, 2.2, 2.4_
 
-  - [ ] 21.2 Implement skill detail and version endpoints
+  - [x] 21.2 Implement skill detail and version endpoints
     - Implement `GET /api/v1/skills/{publisher}/{name}` for skill details
     - Implement `GET /api/v1/skills/{publisher}/{name}/versions` for version list
     - Include statistics and dependency information
     - _Requirements: 2.3_
 
-  - [ ]* 21.3 Write unit tests for read-only API endpoints
+  - [x]* 21.3 Write unit tests for read-only API endpoints
     - Test search with various query parameters
     - Test pagination edge cases (empty results, last page)
     - Test sorting by different fields
@@ -433,7 +433,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test version listing
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ]* 21.4 Write property tests for API search and pagination
+  - [x]* 21.4 Write property tests for API search and pagination
     - **Property 6: 多维度搜索** (API version)
     - **Validates: Requirements 2.1, 2.2**
     - Test search results match query and are correctly sorted
@@ -442,35 +442,35 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test pagination produces complete non-duplicate results
     - _Requirements: 2.1, 2.2, 2.4_
 
-- [ ] 22. Implement Authentication and Authorization
-  - [ ] 22.1 Create `owlhub/api/auth.py` with OAuth2 integration
+- [x] 22. Implement Authentication and Authorization
+  - [x] 22.1 Create `owlhub/api/auth.py` with OAuth2 integration
     - Implement GitHub OAuth2 flow
     - Implement JWT token generation and validation
     - Create API key management for programmatic access
     - Store user sessions securely
     - _Requirements: 5.1_
 
-  - [ ] 22.2 Add authentication middleware to FastAPI
+  - [x] 22.2 Add authentication middleware to FastAPI
     - Protect write endpoints with authentication
     - Implement role-based access control (publisher, reviewer, admin)
     - Add rate limiting per user/API key
     - _Requirements: 5.1_
 
-  - [ ]* 22.3 Write unit tests for authentication
+  - [x]* 22.3 Write unit tests for authentication
     - Test OAuth2 flow with valid credentials
     - Test JWT token validation
     - Test API key authentication
     - Test unauthorized access rejection
     - _Requirements: 5.1_
 
-  - [ ]* 22.4 Write property test for authentication protection
+  - [x]* 22.4 Write property test for authentication protection
     - **Property 14: 身份验证保护**
     - **Validates: Requirements 5.1**
     - Send unauthenticated publish requests, verify 401 responses
     - _Requirements: 5.1_
 
-- [ ] 23. Implement skill publishing endpoints
-  - [ ] 23.1 Create publish and update endpoints
+- [x] 23. Implement skill publishing endpoints
+  - [x] 23.1 Create publish and update endpoints
     - Implement `POST /api/v1/skills` for publishing new skills
     - Implement `PUT /api/v1/skills/{publisher}/{name}/versions/{version}/state` for state updates
     - Validate publisher matches authenticated user
@@ -478,14 +478,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Trigger review workflow on publish
     - _Requirements: 1.1, 1.4, 5.1, 7.1_
 
-  - [ ] 23.2 Implement audit logging for publish operations
+  - [x] 23.2 Implement audit logging for publish operations
     - Create `owlhub/api/audit.py` with audit logging
     - Log publisher identity, timestamp, changes for all publish operations
     - Store audit logs in database or separate audit log file
     - Provide audit log query API for admins
     - _Requirements: 5.2_
 
-  - [ ]* 23.3 Write unit tests for publish endpoints
+  - [x]* 23.3 Write unit tests for publish endpoints
     - Test successful skill publication
     - Test version state updates
     - Test publisher validation (can only publish own skills)
@@ -493,7 +493,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test audit log creation
     - _Requirements: 1.1, 1.4, 5.1, 5.2, 7.1_
 
-  - [ ]* 23.4 Write property tests for publishing
+  - [x]* 23.4 Write property tests for publishing
     - **Property 1: 版本发布与检索** (API version)
     - **Validates: Requirements 1.1**
     - Publish random skills via API, verify retrieval
@@ -502,29 +502,29 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Execute publish operations, verify audit logs contain complete information
     - _Requirements: 1.1, 5.2_
 
-- [ ] 24. Implement real-time Statistics Service
-  - [ ] 24.1 Update StatisticsTracker for database-backed tracking
+- [x] 24. Implement real-time Statistics Service
+  - [x] 24.1 Update StatisticsTracker for database-backed tracking
     - Implement `record_download()` to write to skill_statistics table
     - Implement `record_install()` with user_id tracking
     - Implement aggregation queries for total and time-windowed stats
     - Add background job for daily statistics aggregation
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ] 24.2 Create statistics API endpoints
+  - [x] 24.2 Create statistics API endpoints
     - Implement `GET /api/v1/skills/{publisher}/{name}/statistics`
     - Implement `GET /api/v1/statistics/export` with format parameter
     - Support JSON and CSV export formats
     - Add admin-only endpoint for full statistics dump
     - _Requirements: 6.3, 6.4, 6.5_
 
-  - [ ]* 24.3 Write unit tests for Statistics Service
+  - [x]* 24.3 Write unit tests for Statistics Service
     - Test download/install event recording
     - Test statistics aggregation
     - Test concurrent event handling
     - Test export format generation
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ]* 24.4 Write property tests for statistics
+  - [x]* 24.4 Write property tests for statistics
     - **Property 18: 统计计数准确性** (database version)
     - **Validates: Requirements 6.1, 6.2, 6.3**
     - Execute N operations, verify counts are accurate
@@ -533,8 +533,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Export statistics, verify completeness and schema compliance
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [ ] 25. Implement full Review System with human workflow
-  - [ ] 25.1 Enhance ReviewSystem for Phase 3
+- [x] 25. Implement full Review System with human workflow
+  - [x] 25.1 Enhance ReviewSystem for Phase 3
     - Update to use database for review records
     - Implement `approve()` and `reject()` methods
     - Implement `appeal()` for rejected skills
@@ -542,7 +542,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Send notifications on review status changes
     - _Requirements: 7.1, 7.4, 7.5_
 
-  - [ ] 25.2 Create review API endpoints
+  - [x] 25.2 Create review API endpoints
     - Implement `GET /api/v1/reviews/pending` for reviewers
     - Implement `POST /api/v1/reviews/{id}/approve` for approval
     - Implement `POST /api/v1/reviews/{id}/reject` with reason
@@ -550,14 +550,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Restrict endpoints to reviewer/admin roles
     - _Requirements: 7.1, 7.4, 7.5_
 
-  - [ ]* 25.3 Write unit tests for Review System Phase 3
+  - [x]* 25.3 Write unit tests for Review System Phase 3
     - Test review record creation in database
     - Test approve/reject workflows
     - Test appeal submission and tracking
     - Test reviewer permissions
     - _Requirements: 7.1, 7.4, 7.5_
 
-  - [ ]* 25.4 Write property tests for review workflow
+  - [x]* 25.4 Write property tests for review workflow
     - **Property 20: 审核状态转换** (database version)
     - **Validates: Requirements 7.1, 7.4**
     - Test state transitions with database persistence

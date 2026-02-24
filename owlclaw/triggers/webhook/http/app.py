@@ -5,12 +5,13 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.responses import Response
 
 from owlclaw.triggers.webhook.event_logger import EventLogger, build_event
 from owlclaw.triggers.webhook.execution import ExecutionTrigger
@@ -20,8 +21,10 @@ from owlclaw.triggers.webhook.monitoring import MonitoringService
 from owlclaw.triggers.webhook.transformer import PayloadTransformer
 from owlclaw.triggers.webhook.types import (
     AuthMethod,
+    AuthMethodType,
     EndpointConfig,
     EventFilter,
+    ExecutionMode,
     ExecutionOptions,
     FieldMapping,
     GovernanceContext,
@@ -102,11 +105,11 @@ def create_webhook_app(
     )
 
     @app.middleware("http")
-    async def _request_trace_middleware(request: Request, call_next: Any) -> JSONResponse:
+    async def _request_trace_middleware(request: Request, call_next: Any) -> Response:
         request_id = request.headers.get("x-request-id", str(uuid4()))
         request.state.request_id = request_id
         started = datetime.now(timezone.utc)
-        response = await call_next(request)
+        response = cast(Response, await call_next(request))
         elapsed = (datetime.now(timezone.utc) - started).total_seconds() * 1000.0
         response.headers["x-request-id"] = request_id
         await monitoring.record_metric(MetricRecord(name="response_time_ms", value=elapsed))
@@ -227,14 +230,14 @@ def create_webhook_app(
             name=str(config_payload["name"]),
             target_agent_id=str(config_payload["target_agent_id"]),
             auth_method=AuthMethod(
-                type=str(config_payload["auth_method"]["type"]),
+                type=_normalize_auth_method_type(config_payload["auth_method"]["type"]),
                 token=config_payload["auth_method"].get("token"),
                 secret=config_payload["auth_method"].get("secret"),
                 algorithm=config_payload["auth_method"].get("algorithm"),
                 username=config_payload["auth_method"].get("username"),
                 password=config_payload["auth_method"].get("password"),
             ),
-            execution_mode=str(config_payload.get("execution_mode", "async")),  # type: ignore[arg-type]
+            execution_mode=_normalize_execution_mode(config_payload.get("execution_mode", "async")),
             timeout_seconds=config_payload.get("timeout_seconds"),
             retry_policy=(
                 None
@@ -272,14 +275,14 @@ def create_webhook_app(
             name=str(config_payload["name"]),
             target_agent_id=str(config_payload["target_agent_id"]),
             auth_method=AuthMethod(
-                type=str(config_payload["auth_method"]["type"]),
+                type=_normalize_auth_method_type(config_payload["auth_method"]["type"]),
                 token=config_payload["auth_method"].get("token"),
                 secret=config_payload["auth_method"].get("secret"),
                 algorithm=config_payload["auth_method"].get("algorithm"),
                 username=config_payload["auth_method"].get("username"),
                 password=config_payload["auth_method"].get("password"),
             ),
-            execution_mode=str(config_payload.get("execution_mode", "async")),  # type: ignore[arg-type]
+            execution_mode=_normalize_execution_mode(config_payload.get("execution_mode", "async")),
             timeout_seconds=config_payload.get("timeout_seconds"),
             retry_policy=(
                 None
@@ -352,3 +355,17 @@ def _error_response(error: ValidationError, *, request_id: str) -> JSONResponse:
             }
         },
     )
+
+
+def _normalize_auth_method_type(value: object) -> AuthMethodType:
+    normalized = str(value)
+    if normalized not in {"bearer", "hmac", "basic"}:
+        raise ValueError("auth_method.type must be one of bearer/hmac/basic")
+    return cast(AuthMethodType, normalized)
+
+
+def _normalize_execution_mode(value: object) -> ExecutionMode:
+    normalized = str(value)
+    if normalized not in {"sync", "async"}:
+        raise ValueError("execution_mode must be sync or async")
+    return cast(ExecutionMode, normalized)

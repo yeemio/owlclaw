@@ -23,7 +23,7 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 - **自建**：Agent 运行时（身份/记忆/知识/决策）、能力注册与 Skills 挂载、治理层（可见性过滤/Ledger/预算）、事件触发器统一层、Skills 生态（OwlHub）
 - **集成**：Hatchet MIT（持久执行）、litellm（LLM）、Langfuse（可观测）、Agent Skills 规范（知识文档）
 - **生态定位**：编排框架（LangChain）给 Agent 手和脚，OwlClaw 给 Agent 大脑和心跳——生态位互补，不是竞争
-- **架构文档**：`docs/ARCHITECTURE_ANALYSIS.md`（v4.0，唯一架构真源）
+- **架构文档**：`docs/ARCHITECTURE_ANALYSIS.md`（v4.5，唯一架构真源）
 
 ---
 
@@ -103,6 +103,7 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 | **编排框架标准接入** | LangChain chain/LangGraph workflow 通过 @handler 注册为 capability，OwlClaw 不依赖任何编排框架 | `ARCHITECTURE_ANALYSIS.md` §4.8 |
 | **Skills 生态（OwlHub）** | SKILL.md 遵循 agentskills.io 规范；OwlHub 渐进式架构（GitHub → 静态站点 → 数据库）；CLI 优先；模板降低门槛 | `ARCHITECTURE_ANALYSIS.md` §2.7 + §4.10 |
 | **Declarative Binding** | SKILL.md 的 binding 字段为声明式工具绑定；credential 必须 `${ENV_VAR}` 引用；SQL 强制参数化；执行器集中在 `owlclaw/capabilities/bindings/` | `ARCHITECTURE_ANALYSIS.md` §4.12 |
+| **cli-migrate 自动生成** | `cli-migrate --output-mode binding` 从 OpenAPI/ORM 自动生成 binding SKILL.md；不得新增 connections 等冗余概念；cli-migrate 就是自动发现的实现路径 | `ARCHITECTURE_ANALYSIS.md` §4.12 "自动发现与生成" |
 
 ---
 

@@ -2,6 +2,7 @@
 
 import typer
 
+from owlclaw.cli.skill_hub import install_command, installed_command, search_command, update_command
 from owlclaw.cli.skill_init import init_command
 from owlclaw.cli.skill_list import list_command, templates_command
 from owlclaw.cli.skill_validate import validate_command
@@ -15,3 +16,7 @@ skill_app.command("init")(init_command)
 skill_app.command("validate")(validate_command)
 skill_app.command("list")(list_command)
 skill_app.command("templates")(templates_command)
+skill_app.command("search")(search_command)
+skill_app.command("install")(install_command)
+skill_app.command("installed")(installed_command)
+skill_app.command("update")(update_command)

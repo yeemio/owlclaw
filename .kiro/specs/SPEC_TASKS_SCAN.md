@@ -1,6 +1,6 @@
 # SPEC_TASKS_SCAN — OwlClaw 功能清单总览
 
-> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.3（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding）+ `docs/DATABASE_ARCHITECTURE.md`
+> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.5（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
 > **最后更新**: 2026-02-24
 
@@ -58,13 +58,14 @@
 - [ ] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
 - [ ] `owlclaw.capabilities.skills` 扩展 — Skills Loader binding 检测与 BindingTool 自动注册 → spec: declarative-binding Task 6
 - [ ] `owlclaw.cli.skill` 扩展 — `owlclaw skill validate` binding schema 验证 → spec: declarative-binding Task 7
+- [ ] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
-- [x] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
+- [ ] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
 - [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
-- [x] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
-- [x] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
+- [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
+- [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
@@ -108,21 +109,21 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（2/72） | webhook 触发器（Task 0 Protocol-first 已勾，+3 subtasks） |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
-| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（12/17） | Signal 触发器（Task 0/1/2/3/4/5/6/7/8 已完成） |
+| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/87） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
-| cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
+| cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（0/41） | GitHub Actions CI（lint + test） |
 
@@ -150,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-signal Task 4/7/8） |
-| 批次状态 | **进行中（本批）**。`triggers-signal` 已推进至 12/17。 |
-| 已完成项 | 1) Task 4：`PauseHandler`/`ResumeHandler` 增加可注入回调（用于暂停/恢复 cron 触发流）并补充单测；2) Task 7：新增 `owlclaw agent` CLI 子命令（pause/resume/trigger/instruct/status）走统一 `SignalRouter.dispatch()`；3) Task 8：新增 `POST /admin/signal`（Bearer 鉴权、Pydantic 校验、复用 API Trigger Starlette 服务）并补单测。 |
-| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 9（MCP 集成）→ Task 10/11（runtime 集成）→ Task 12/13/14（测试与文档收口）。 |
-| 验收快照 | `poetry run ruff check owlclaw/cli/__init__.py owlclaw/cli/agent_signal.py owlclaw/triggers/signal/handlers.py owlclaw/triggers/signal/api.py owlclaw/triggers/api/server.py tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_api.py tests/unit/triggers/test_signal.py tests/unit/test_cli_agent_signal.py -q`（25 passed）。 |
+| 当前批次 | orchestrate（cli-migrate 与 declarative-binding 打通 + 文档全面更新） |
+| 批次状态 | **已完成**。核心洞察：cli-migrate 的 Scanner 模块（OpenAPIScanner/ORMScanner/CronScanner）已具备自动发现存量系统能力，不需要新增 connections 概念或 Skill Pack 层。关键变化：cli-migrate 输出从仅 @handler 代码扩展为同时支持 binding SKILL.md 生成。 |
+| 已完成项 | 1) `ARCHITECTURE_ANALYSIS` 更新至 v4.5（§4.12 补充：cli-migrate 作为 Binding 自动生成路径，取代 connections 概念和 Skill Pack 方案；完整链路：IT 运行命令 → 自动生成 binding SKILL.md → 业务用户填写自然语言 → Agent 调用）；2) `declarative-binding` spec 更新（requirements +R12/R13，design +BindingGenerator 组件，tasks +Phase 5 共 4 个 Task/18 个子任务，总计 105 子任务）；3) `cli-migrate` spec 更新（requirements +R16/R17 binding 输出模式，design +BindingGenerator 数据流，tasks +§4 binding 输出模式 12 个子任务，总计 24 子任务）；4) `owlclaw_architecture.mdc` 更新（cli-migrate 与 binding 联动规则）；5) `owlclaw_core.mdc` 更新（关键规则速查增加 cli-migrate 自动生成）；6) SPEC_TASKS_SCAN 功能清单、Spec 索引、Checkpoint 全部同步。 |
+| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐 → Task 1-7。Phase 5（cli-migrate 联动）依赖 Phase 1 完成后启动。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
+| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.5；`declarative-binding` spec（13 个需求 + 9 个组件 + 19 个 task + backlog）；`cli-migrate` spec（17 个需求 + 8 个组件 + 9 个任务组）；`owlclaw_architecture.mdc` 和 `owlclaw_core.mdc` 规则已同步。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
