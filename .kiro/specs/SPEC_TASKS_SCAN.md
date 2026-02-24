@@ -112,7 +112,7 @@
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
-| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（4/12） | owlclaw-mcp |
+| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（10/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（合并 review-work → main；同步各 worktree；更新进度） |
-| 批次状态 | **已完成**。review-work 合并到 main（fast-forward）；所有 worktree 已同步；进度校准完成。 |
-| 已完成项 | 1) 合并 review-work → main（triggers-queue Task 7~17 + e2e-validation Task 16~18 + mypy 修复）；2) e2e-validation 19/19 全部完成（✅）；3) mcp-server 4/12（Task 1.1~1.2 文档前置完成）；4) 功能清单 e2e 两项打勾。 |
-| 下一待执行 | `codex-work`：`triggers-queue` Task 18（Kafka 适配器，已在分支进行中）→ Task 19~25，然后 `triggers-webhook` Task 2+；`codex-gpt-work`：`mcp-server` Task 2.1.1+（核心能力注册实现）。 |
-| 验收快照 | review-work 合并前：`ruff check .` All checks passed；`mypy owlclaw/` no issues in 128 files。 |
+| 当前批次 | spec loop（codex-gpt-work：mcp-server Task 2.1.1~2.1.2） |
+| 批次状态 | **已完成**。MCP 最小协议能力、注册流程与最小端到端验证已落地。 |
+| 已完成项 | 1) 新增 `owlclaw/mcp/server.py` 与 `owlclaw/mcp/__init__.py`，实现 `initialize`/`tools/list`/`tools/call`/`resources/list`/`resources/read`；2) 提供 `McpProtocolServer.from_app(app)` 注册接入流程；3) 新增 `tests/unit/test_mcp_server.py` 与 `tests/integration/test_mcp_server_integration.py` 覆盖核心流程与错误码；4) 回填 `mcp-server/tasks.md` 的 Task 2.1.1、2.1.2 及可验证验收项。 |
+| 下一待执行 | `mcp-server` 剩余验收项：`3.3 单元测试覆盖率 >80%`、`3.4 文档完整`，随后推进 `owlclaw-mcp` 独立目录与 CLI/传输扩展任务。 |
+| 验收快照 | `poetry run ruff check owlclaw/mcp tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py` -> all checks passed；`poetry run pytest tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py -q` -> 5 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
