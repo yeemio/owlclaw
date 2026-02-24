@@ -174,22 +174,22 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 
 ## Phase 2: Static Site Mode (Enhanced Discovery)
 
-- [ ] 8. Implement Statistics Tracker for GitHub-based metrics
-  - [ ] 8.1 Create `owlhub/statistics/tracker.py` with StatisticsTracker class
+- [x] 8. Implement Statistics Tracker for GitHub-based metrics
+  - [x] 8.1 Create `owlhub/statistics/tracker.py` with StatisticsTracker class
     - Implement GitHub API integration for release download counts
     - Implement `get_statistics()` to fetch skill download metrics
     - Calculate downloads_last_30d from GitHub API data
     - Cache statistics to avoid rate limiting
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ]* 8.2 Write unit tests for Statistics Tracker
+  - [x]* 8.2 Write unit tests for Statistics Tracker
     - Test fetching statistics from GitHub API
     - Test caching behavior
     - Test handling API rate limits
     - Test statistics aggregation
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ]* 8.3 Write property test for statistics accuracy
+  - [x]* 8.3 Write property test for statistics accuracy
     - **Property 18: 统计计数准确性**
     - **Validates: Requirements 6.1, 6.2, 6.3**
     - Simulate N download/install operations, verify counts reflect operations accurately

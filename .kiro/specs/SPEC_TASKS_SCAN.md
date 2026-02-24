@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（24/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（合并 review-work → main；Protocol-first 影响评估；spec 补充 Task 0） |
-| 批次状态 | **已完成**。架构决策 4.11 落地；受影响 spec 已补充 Protocol-first 前置任务。 |
-| 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.11（Protocol-first）；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加强制约束（先契约后 SDK）；3) 保持 `triggers-queue` 完成态（89/89）及 scan 计数一致。 |
-| 下一待执行 | `codex-work` 优先推进 `triggers-webhook`/`triggers-api`/`triggers-signal` 的协议契约与测试（按 Protocol-first）；`codex-gpt-work` 继续 `owlhub` Task 4（CLI Client）。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.2（含 §4.11）；`.cursor` 架构规则已加入 Protocol-first 强制条款；Spec scan checkpoint 已同步下一步执行顺序。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 8.1~8.3） |
+| 批次状态 | **已完成**。Statistics Tracker（GitHub release 下载统计 + 缓存 + 本地事件聚合）与单元/属性测试已落地并通过验收。 |
+| 已完成项 | 1) 新增 `owlclaw/owlhub/statistics/tracker.py`（`SkillStatistics` + `StatisticsTracker`）；2) 实现 GitHub API 统计拉取、TTL 缓存、rate limit 错误处理；3) 实现本地 `record_download`/`record_install` 聚合；4) 新增 `tests/unit/test_owlhub_statistics.py` 覆盖 API 拉取、缓存、异常处理与 Property 18；5) 更新 `owlclaw/owlhub/__init__.py` 导出统计模块；6) 回填 `owlhub/tasks.md` 的 Task 8、8.1、8.2、8.3。 |
+| 下一待执行 | `owlhub` Task 9（增强 Index Builder：statistics + search metadata）。 |
+| 验收快照 | `poetry run mypy owlclaw/owlhub/statistics/tracker.py` -> success；`poetry run ruff check owlclaw/owlhub/statistics/tracker.py tests/unit/test_owlhub_statistics.py owlclaw/owlhub/__init__.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_statistics.py -q` -> 5 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
