@@ -16,7 +16,7 @@
 
 ## 任务列表
 
-- [ ] 1. 创建 LangChain 集成模块基础结构
+- [x] 1. 创建 LangChain 集成模块基础结构
   - 创建 `owlclaw/integrations/langchain/` 目录
   - 创建 `__init__.py` 文件，定义公开接口
   - 创建 `config.py` 文件，定义配置数据类
@@ -25,57 +25,57 @@
   - 配置 setup.py/pyproject.toml 将 LangChain 定义为可选依赖
   - _需求：FR-1, FR-2_
 
-- [ ] 2. 实现配置管理
-  - [ ] 2.1 实现 LangChainConfig 数据类
+- [x] 2. 实现配置管理
+  - [x] 2.1 实现 LangChainConfig 数据类
     - 定义配置字段（enabled、version_check、timeout、tracing、privacy）
     - 实现 `from_yaml` 类方法加载 YAML 配置
     - 实现 `_replace_env_vars` 静态方法替换环境变量
     - 实现 `validate` 方法验证配置合法性
     - _需求：FR-19, FR-20_
   
-  - [ ]* 2.2 为配置加载编写单元测试
+  - [x]* 2.2 为配置加载编写单元测试
     - 测试从 YAML 加载配置
     - 测试环境变量替换
     - 测试配置验证（有效和无效配置）
     - _需求：FR-19, FR-20_
 
-- [ ] 3. 实现 SchemaBridge 组件
-  - [ ] 3.1 实现 Schema 验证和转换
+- [x] 3. 实现 SchemaBridge 组件
+  - [x] 3.1 实现 Schema 验证和转换
     - 实现 `validate_input` 方法使用 jsonschema 验证输入
     - 实现 `transform_input` 方法转换输入数据
     - 实现 `transform_output` 方法转换输出数据
     - 定义 `ValidationError` 异常类
     - _需求：FR-5, FR-6_
   
-  - [ ]* 3.2 为 Schema 验证编写属性测试
+  - [x]* 3.2 为 Schema 验证编写属性测试
     - **属性 3：输入 Schema 验证**
     - **验证需求：FR-5.1**
   
-  - [ ]* 3.3 为 Schema 验证失败编写属性测试
+  - [x]* 3.3 为 Schema 验证失败编写属性测试
     - **属性 4：Schema 验证失败响应**
     - **验证需求：FR-5.3**
   
-  - [ ]* 3.4 为输出转换编写属性测试
+  - [x]* 3.4 为输出转换编写属性测试
     - **属性 5：输出格式封装**
     - **验证需求：FR-6.2**
 
-- [ ] 4. 实现 ErrorHandler 组件
-  - [ ] 4.1 实现异常映射和错误处理
+- [x] 4. 实现 ErrorHandler 组件
+  - [x] 4.1 实现异常映射和错误处理
     - 定义 `EXCEPTION_MAPPING` 异常映射表
     - 实现 `map_exception` 方法映射 LangChain 异常
     - 实现 `create_error_response` 方法创建错误响应
     - 实现 `handle_fallback` 方法处理 fallback
     - _需求：FR-16, FR-17_
   
-  - [ ]* 4.2 为异常捕获编写属性测试
+  - [x]* 4.2 为异常捕获编写属性测试
     - **属性 10：异常捕获**
     - **验证需求：FR-16.1**
   
-  - [ ]* 4.3 为异常映射编写属性测试
+  - [x]* 4.3 为异常映射编写属性测试
     - **属性 11：异常映射**
     - **验证需求：FR-16.2**
 
-- [ ] 5. 检查点 - 确保基础组件测试通过
+- [x] 5. 检查点 - 确保基础组件测试通过
   - 确保所有测试通过，如有问题请询问用户
 
 - [ ] 6. 实现 TraceManager 组件

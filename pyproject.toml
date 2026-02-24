@@ -25,6 +25,7 @@ hatchet-sdk = "^1.23.0"
 litellm = "^1.0"
 pydantic = "^2.0"
 pyyaml = "^6.0"
+jsonschema = {version = "^4.0", optional = true}
 sqlalchemy = {version = "^2.0", extras = ["asyncio"]}
 asyncpg = "^0.30"
 python-frontmatter = "^1.1"
@@ -38,6 +39,8 @@ jinja2 = "^3.0"
 pgvector = "^0.4.2"
 qdrant-client = "^1.9.1"
 scikit-learn = "^1.5.0"
+langchain = {version = ">=0.1.0,<0.3.0", optional = true}
+langchain-core = {version = ">=0.1.0,<0.3.0", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 psycopg2-binary = "^2.9"
@@ -58,6 +61,9 @@ optional = true
 langfuse = "^2.0"
 opentelemetry-api = "^1.0"
 opentelemetry-sdk = "^1.0"
+
+[tool.poetry.extras]
+langchain = ["langchain", "langchain-core", "jsonschema"]
 
 [tool.poetry.scripts]
 owlclaw = "owlclaw.cli:main"
