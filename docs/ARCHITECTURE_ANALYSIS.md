@@ -2308,6 +2308,13 @@ OwlClaw 不是又一个 Agent 框架。它是一个**组合层**，把成熟的�
 OwlClaw 自建的是没人做的：业务应用接入层、治理层、Agent 运行时。
 OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、Skills 规范。
 
+### Langfuse Integration Status (2026-02-24)
+
+- 新增 `owlclaw/integrations/langfuse.py` 作为隔离层，承载配置、采样、trace/span、token 成本、隐私脱敏与上下文传递能力。
+- `AgentRuntime` 在每次 run 生命周期中设置并恢复 `TraceContext`，确保 LLM 与工具调用可以关联到同一 trace。
+- `llm.acompletion()` 在存在 trace 上下文时自动记录 generation（成功/失败、token、成本、延迟）。
+- 工具执行链路（含 built-in）会产出 Langfuse span 更新，且 Langfuse 不可用时保持降级不阻塞业务执行。
+
 ---
 
 > **文档版本**: v4.1（v4.0 + §5.3.2 触发器 API 双模式决策 + §4.3 SKILL.md focus/risk_level 扩展 + §8.9 Spec 洞察反哺架构 6 项）

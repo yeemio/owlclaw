@@ -21,7 +21,7 @@
 
 ## 任务
 
-- [ ] 1. 设置项目结构和核心接口
+- [x] 1. 设置项目结构和核心接口
   - 创建 Python 项目结构（`owlclaw/e2e/`、`tests/e2e/`、`config/`）
   - 配置 Python 质量工具（ruff、mypy）
   - 安装依赖：hypothesis（属性测试）、pytest（单元/集成测试）
@@ -29,17 +29,17 @@
   - _需求: 1.1, 2.1, 3.1_
 
 - [ ] 2. 实现测试场景管理器
-  - [ ] 2.1 实现 TestScenarioManager 类
+  - [x] 2.1 实现 TestScenarioManager 类
     - 实现 createScenario、getScenario、updateScenario、deleteScenario 方法
     - 实现场景配置验证逻辑
     - 实现场景存储（使用 JSON 文件或内存存储）
     - _需求: 4.1, 4.2_
   
-  - [ ]* 2.2 编写 TestScenarioManager 的属性测试
+  - [x]* 2.2 编写 TestScenarioManager 的属性测试
     - **属性 11: 测试场景 CRUD 往返**
     - **验证需求: 4.1**
   
-  - [ ]* 2.3 编写场景配置验证的属性测试
+  - [x]* 2.3 编写场景配置验证的属性测试
     - **属性 12: 场景配置验证**
     - **验证需求: 4.2**
   

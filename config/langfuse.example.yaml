@@ -1,0 +1,29 @@
+langfuse:
+  # Base
+  enabled: true
+  public_key: ${LANGFUSE_PUBLIC_KEY}
+  secret_key: ${LANGFUSE_SECRET_KEY}
+  host: ${LANGFUSE_HOST}
+
+  # Sampling and upload
+  sampling_rate: 1.0
+  async_upload: true
+  batch_size: 10
+  flush_interval_seconds: 5
+
+  # Privacy
+  mask_inputs: false
+  mask_outputs: false
+  custom_mask_patterns: []
+
+# Production suggestion:
+# langfuse:
+#   enabled: true
+#   sampling_rate: 0.1
+#   mask_inputs: true
+#   mask_outputs: true
+
+# Disabled example:
+# langfuse:
+#   enabled: false
+
