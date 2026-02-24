@@ -112,7 +112,7 @@
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
-| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（4/12） | owlclaw-mcp |
+| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（10/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-work：triggers-queue Task 18~19） |
-| 批次状态 | **已完成**。`codex-work` Task 18~19 审校通过并合并，验收通过。 |
-| 已完成项 | 1) 合并 `KafkaQueueAdapter` 与 `ensure_adapter_dependency`；2) `triggers-queue/tasks.md` 已回填 Task 18.1~18.3、19.1~19.2；3) 进度校准为 `triggers-queue 70/89`。 |
-| 下一待执行 | `codex-work` 继续 `triggers-queue` Task 20（核心检查点）→ Task 21（端到端集成测试）→ Task 22~25；之后切换 `triggers-webhook` Task 2+。 |
-| 验收快照 | `poetry run ruff check owlclaw/integrations/queue_adapters tests/unit/triggers/test_queue_kafka_adapter.py tests/unit/triggers/test_queue_kafka_adapter_properties.py tests/unit/triggers/test_queue_adapter_dependencies.py tests/integration/test_queue_kafka_adapter_integration.py`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 130 source files）；`poetry run pytest tests/unit/triggers/test_queue_kafka_adapter.py tests/unit/triggers/test_queue_kafka_adapter_properties.py tests/unit/triggers/test_queue_adapter_dependencies.py tests/integration/test_queue_kafka_adapter_integration.py -q`（12 passed, 1 skipped）。 |
+| 当前批次 | review loop（审校 codex-gpt-work：mcp-server Task 2.1.1~2.1.2） |
+| 批次状态 | **已完成**。`codex-gpt-work` 的 mcp-server Task 2.1.1~2.1.2 已审校通过并合并，验收通过。 |
+| 已完成项 | 1) 合并 `McpProtocolServer` 最小能力实现与 `from_app()` 注册流程；2) 回填 `mcp-server/tasks.md` 的 Task 2.1.1~2.1.2 与验收项；3) 保持 `triggers-queue` 进度不回退（70/89）。 |
+| 下一待执行 | `mcp-server` 剩余验收项：`3.3 单元测试覆盖率 >80%`、`3.4 文档完整`；并行继续 `codex-work` 的 `triggers-queue` Task 20+。 |
+| 验收快照 | `poetry run ruff check owlclaw/mcp tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 132 source files）；`poetry run pytest tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py -q`（5 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
