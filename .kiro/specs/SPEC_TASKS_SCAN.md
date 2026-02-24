@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-queue Task 23） |
-| 批次状态 | **已完成**。Task 23（配置模板与文档）已完成。 |
-| 已完成项 | 1) Task 23.1：新增 `config/queue_trigger.example.yaml`（Kafka/RabbitMQ/SQS/Mock 示例）；2) Task 23.2：扩展根目录 `.env.example`（Queue Trigger + Redis + Agent Runtime 变量）；3) Task 23.3：新增 `docs/triggers/queue.md`（快速开始、配置说明、适配器选型、故障排查）。 |
-| 下一待执行 | `codex-work`：`triggers-queue` Task 24（Mock 模式验证脚本与文档）→ Task 25（最终检查点）；之后切换 `triggers-webhook` Task 2+。 |
-| 验收快照 | 文档与模板产物校验：`config/queue_trigger.example.yaml`、`.env.example`、`docs/triggers/queue.md` 均已创建/更新并与 Task 23 要求对齐。 |
+| 当前批次 | review loop（常规审校：无待审分支增量） |
+| 批次状态 | **已完成**。`codex-work` 与 `codex-gpt-work` 均无新提交，常规质量扫描通过。 |
+| 已完成项 | 1) 审批并合并 `codex-work` Task 22（日志安全）；2) 审批并合并 `codex-work` Task 23（配置模板与文档）；3) 分支增量扫描确认两条编码分支均已追平。 |
+| 下一待执行 | `codex-work` 继续 `triggers-queue` Task 24（Mock 验证脚本）→ Task 25（最终检查点）；`codex-gpt-work` 继续 `owlhub` Task 1。 |
+| 验收快照 | `poetry run ruff check .`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 133 source files）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
