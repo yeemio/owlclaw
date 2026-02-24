@@ -43,7 +43,7 @@
 - [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
 - [x] `owlclaw.governance.ledger` — 执行记录 → spec: governance
 - [x] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
-- [ ] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
+- [x] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
 - [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet
 - [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
@@ -94,7 +94,7 @@
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（19/19） | runtime + heartbeat + function calling |
 | agent-tools | `.kiro/specs/agent-tools/` | ✅ 三层齐全，已完成（52/52） | 内建工具 |
 | governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（95/95） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（18/19） | cron 触发器（仅剩真实 Hatchet 外部 E2E 验收） |
+| triggers-cron | `.kiro/specs/triggers-cron/` | ✅ 三层齐全，已完成（19/19） | cron 触发器 |
 | integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 三层齐全，已完成（37/37） | Hatchet 集成 |
 | integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（37/37） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
@@ -107,7 +107,7 @@
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（0/20） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（0/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（16/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（25/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
@@ -142,12 +142,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 规范化（SPEC_TASKS_SCAN 事实对齐） |
-| 批次状态 | **已完成**。完成 `SPEC_TASKS_SCAN` 与各 spec `tasks.md` 统计口径对齐，并同步功能清单勾选状态。 |
-| 已完成项 | 1) 重新统计 `.kiro/specs/*/tasks.md` 的 `[x]/[ ]`；2) 更新 Spec 索引的进度数字与完成/进行中状态；3) 修正 Phase 1 功能清单中已完成模块（runtime/heartbeat、integrations-hatchet、security、configuration）勾选。 |
-| 下一待执行 | 审校并合并 `codex-work`（integrations-langchain）与 `codex-gpt-work`（integrations-langfuse/skill-templates）待审变更，然后回填对应 spec 进度。 |
-| 验收快照 | 统计命令：`Get-ChildItem .kiro/specs -Directory ... Select-String '^- \\[( |x|X)\\]'`；文档一致性复核：`rg -n \"Spec 索引|Checkpoint|Phase 1\" .kiro/specs/SPEC_TASKS_SCAN.md`。 |
-| 阻塞项 | 无（文档规范化层面）；功能实现层面的外部依赖仍见各 spec 独立阻塞记录。 |
+| 当前批次 | review loop（合并 codex-work：integrations-langchain） |
+| 批次状态 | **进行中**。已完成 `codex-work` 合并冲突解决与 spec 进度回填，正在执行审校验收。 |
+| 已完成项 | 1) 将 `triggers-cron` 状态更新为完成（19/19）；2) 合并并记录 `integrations-langchain` 当前进度（16/50）；3) 保持 SPEC_TASKS_SCAN 与本地 `tasks.md` 统计口径一致。 |
+| 下一待执行 | 完成 `codex-work` 审校测试并提交合并；随后审校 `codex-gpt-work`（integrations-langfuse/skill-templates）。 |
+| 验收快照 | 统计命令：`Get-ChildItem .kiro/specs -Directory ... Select-String '^- \\[( |x|X)\\]'`；冲突复核：`rg -n \"^<<<<<<<|^=======|^>>>>>>>\" .kiro/specs/SPEC_TASKS_SCAN.md`。 |
+| 阻塞项 | 无（当前为常规合并审校流程）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

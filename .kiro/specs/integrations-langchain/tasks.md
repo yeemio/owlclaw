@@ -16,7 +16,7 @@
 
 ## 任务列表
 
-- [ ] 1. 创建 LangChain 集成模块基础结构
+- [x] 1. 创建 LangChain 集成模块基础结构
   - 创建 `owlclaw/integrations/langchain/` 目录
   - 创建 `__init__.py` 文件，定义公开接口
   - 创建 `config.py` 文件，定义配置数据类
@@ -25,61 +25,61 @@
   - 配置 setup.py/pyproject.toml 将 LangChain 定义为可选依赖
   - _需求：FR-1, FR-2_
 
-- [ ] 2. 实现配置管理
-  - [ ] 2.1 实现 LangChainConfig 数据类
+- [x] 2. 实现配置管理
+  - [x] 2.1 实现 LangChainConfig 数据类
     - 定义配置字段（enabled、version_check、timeout、tracing、privacy）
     - 实现 `from_yaml` 类方法加载 YAML 配置
     - 实现 `_replace_env_vars` 静态方法替换环境变量
     - 实现 `validate` 方法验证配置合法性
     - _需求：FR-19, FR-20_
   
-  - [ ]* 2.2 为配置加载编写单元测试
+  - [x]* 2.2 为配置加载编写单元测试
     - 测试从 YAML 加载配置
     - 测试环境变量替换
     - 测试配置验证（有效和无效配置）
     - _需求：FR-19, FR-20_
 
-- [ ] 3. 实现 SchemaBridge 组件
-  - [ ] 3.1 实现 Schema 验证和转换
+- [x] 3. 实现 SchemaBridge 组件
+  - [x] 3.1 实现 Schema 验证和转换
     - 实现 `validate_input` 方法使用 jsonschema 验证输入
     - 实现 `transform_input` 方法转换输入数据
     - 实现 `transform_output` 方法转换输出数据
     - 定义 `ValidationError` 异常类
     - _需求：FR-5, FR-6_
   
-  - [ ]* 3.2 为 Schema 验证编写属性测试
+  - [x]* 3.2 为 Schema 验证编写属性测试
     - **属性 3：输入 Schema 验证**
     - **验证需求：FR-5.1**
   
-  - [ ]* 3.3 为 Schema 验证失败编写属性测试
+  - [x]* 3.3 为 Schema 验证失败编写属性测试
     - **属性 4：Schema 验证失败响应**
     - **验证需求：FR-5.3**
   
-  - [ ]* 3.4 为输出转换编写属性测试
+  - [x]* 3.4 为输出转换编写属性测试
     - **属性 5：输出格式封装**
     - **验证需求：FR-6.2**
 
-- [ ] 4. 实现 ErrorHandler 组件
-  - [ ] 4.1 实现异常映射和错误处理
+- [x] 4. 实现 ErrorHandler 组件
+  - [x] 4.1 实现异常映射和错误处理
     - 定义 `EXCEPTION_MAPPING` 异常映射表
     - 实现 `map_exception` 方法映射 LangChain 异常
     - 实现 `create_error_response` 方法创建错误响应
     - 实现 `handle_fallback` 方法处理 fallback
     - _需求：FR-16, FR-17_
   
-  - [ ]* 4.2 为异常捕获编写属性测试
+  - [x]* 4.2 为异常捕获编写属性测试
     - **属性 10：异常捕获**
     - **验证需求：FR-16.1**
   
-  - [ ]* 4.3 为异常映射编写属性测试
+  - [x]* 4.3 为异常映射编写属性测试
     - **属性 11：异常映射**
     - **验证需求：FR-16.2**
 
-- [ ] 5. 检查点 - 确保基础组件测试通过
+- [x] 5. 检查点 - 确保基础组件测试通过
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 6. 实现 TraceManager 组件
-  - [ ] 6.1 实现 Trace 管理
+- [x] 6. 实现 TraceManager 组件
+  - [x] 6.1 实现 Trace 管理
     - 定义 `TraceSpan` 数据类
     - 实现 `TraceManager` 类
     - 实现 `create_span` 方法创建 trace span
@@ -87,12 +87,12 @@
     - 实现 `_generate_trace_id` 方法生成 trace ID
     - _需求：FR-13, FR-14_
   
-  - [ ]* 6.2 为 Trace Span 创建编写属性测试
+  - [x]* 6.2 为 Trace Span 创建编写属性测试
     - **属性 9：Trace Span 创建**
     - **验证需求：FR-13.1**
 
-- [ ] 7. 实现 LangChainAdapter 核心功能
-  - [ ] 7.1 实现 Adapter 初始化和注册
+- [x] 7. 实现 LangChainAdapter 核心功能
+  - [x] 7.1 实现 Adapter 初始化和注册
     - 定义 `RunnableConfig` 数据类
     - 实现 `LangChainAdapter` 类
     - 实现 `__init__` 方法初始化适配器
@@ -100,16 +100,16 @@
     - 实现 `_create_handler` 方法创建 capability handler
     - _需求：FR-3, FR-4_
   
-  - [ ]* 7.2 为 Runnable 类型验证编写属性测试
+  - [x]* 7.2 为 Runnable 类型验证编写属性测试
     - **属性 1：Runnable 类型验证**
     - **验证需求：FR-3.4**
   
-  - [ ]* 7.3 为注册失败编写属性测试
+  - [x]* 7.3 为注册失败编写属性测试
     - **属性 2：注册失败错误信息**
     - **验证需求：FR-3.5**
 
-- [ ] 8. 实现 Runnable 执行逻辑
-  - [ ] 8.1 实现 execute 方法
+- [x] 8. 实现 Runnable 执行逻辑
+  - [x] 8.1 实现 execute 方法
     - 实现输入 schema 验证
     - 实现输入转换
     - 实现 trace span 创建
@@ -119,70 +119,70 @@
     - 实现 span 结束
     - _需求：FR-5, FR-6, FR-7, FR-13, FR-16, FR-17_
   
-  - [ ] 8.2 实现 _execute_with_timeout 方法
+  - [x] 8.2 实现 _execute_with_timeout 方法
     - 检测 Runnable 是否支持异步（ainvoke 方法）
     - 异步 Runnable 使用 ainvoke
     - 同步 Runnable 使用 run_in_executor
     - 应用超时控制
     - _需求：FR-7, FR-8_
   
-  - [ ]* 8.3 为异步检测编写属性测试
+  - [x]* 8.3 为异步检测编写属性测试
     - **属性 6：异步检测**
     - **验证需求：FR-7.1**
 
-- [ ] 9. 实现重试机制
-  - [ ] 9.1 实现重试策略
+- [x] 9. 实现重试机制
+  - [x] 9.1 实现重试策略
     - 定义 `RetryPolicy` 数据类
     - 实现 `calculate_backoff_delay` 函数计算重试延迟
     - 实现 `should_retry` 函数判断是否应该重试
     - 在 execute 方法中集成重试逻辑
     - _需求：FR-18_
   
-  - [ ]* 9.2 为指数退避编写属性测试
+  - [x]* 9.2 为指数退避编写属性测试
     - **属性 12：指数退避重试**
     - **验证需求：FR-18.4**
 
-- [ ] 10. 检查点 - 确保核心功能测试通过
+- [x] 10. 检查点 - 确保核心功能测试通过
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 11. 集成 Governance Layer
-  - [ ] 11.1 在 execute 方法中添加权限验证
+- [x] 11. 集成 Governance Layer
+  - [x] 11.1 在 execute 方法中添加权限验证
     - 在执行前调用 Governance Layer 验证权限
     - 传递执行上下文（user_id、agent_id、capability_name）
     - 权限验证失败时返回 403 错误
     - 应用速率限制和配额控制
     - _需求：FR-9, FR-10_
   
-  - [ ]* 11.2 为权限验证失败编写属性测试
+  - [x]* 11.2 为权限验证失败编写属性测试
     - **属性 7：权限验证失败响应**
     - **验证需求：FR-9.3**
   
-  - [ ]* 11.3 编写 Governance 集成测试
+  - [x]* 11.3 编写 Governance 集成测试
     - 测试权限验证通过的情况
     - 测试权限验证失败的情况
     - 测试速率限制触发
     - _需求：FR-9, FR-10_
 
-- [ ] 12. 集成 Ledger
-  - [ ] 12.1 在 execute 方法中添加 Ledger 记录
+- [x] 12. 集成 Ledger
+  - [x] 12.1 在 execute 方法中添加 Ledger 记录
     - 在执行开始时记录开始事件
     - 在执行结束时记录完成事件（成功或失败）
     - 记录执行时长、输入输出、错误信息
     - 记录 trace_id 和 span_id
     - _需求：FR-11, FR-12_
   
-  - [ ]* 12.2 为执行记录编写属性测试
+  - [x]* 12.2 为执行记录编写属性测试
     - **属性 8：执行记录完整性**
     - **验证需求：FR-11.1, FR-11.2**
   
-  - [ ]* 12.3 编写 Ledger 集成测试
+  - [x]* 12.3 编写 Ledger 集成测试
     - 测试成功执行的记录
     - 测试失败执行的记录
     - 测试记录包含所有必需字段
     - _需求：FR-11, FR-12_
 
-- [ ] 13. 实现隐私保护
-  - [ ] 13.1 实现数据脱敏
+- [x] 13. 实现隐私保护
+  - [x] 13.1 实现数据脱敏
     - 创建 `PrivacyMasker` 类
     - 定义 PII 检测模式（邮箱、电话）
     - 定义密钥检测模式（API key、password）
@@ -190,43 +190,43 @@
     - 在输入输出记录前应用脱敏
     - _需求：NFR-5_
   
-  - [ ]* 13.2 为 PII 脱敏编写属性测试
+  - [x]* 13.2 为 PII 脱敏编写属性测试
     - **属性 13：PII 脱敏**
     - **验证需求：NFR-5.2**
   
-  - [ ]* 13.3 编写隐私保护单元测试
+  - [x]* 13.3 编写隐私保护单元测试
     - 测试邮箱脱敏
     - 测试电话脱敏
     - 测试 API key 脱敏
     - 测试自定义模式脱敏
     - _需求：NFR-5_
 
-- [ ] 14. 实现 OwlClawApp 集成
-  - [ ] 14.1 在 OwlClawApp 中添加 LangChain 支持
+- [x] 14. 实现 OwlClawApp 集成
+  - [x] 14.1 在 OwlClawApp 中添加 LangChain 支持
     - 在 `OwlClawApp` 类中添加 `_langchain_adapter` 属性
     - 实现 `register_langchain_runnable` 方法
     - 实现装饰器支持（扩展 `@app.handler`）
     - 在应用初始化时加载 LangChain 配置
     - _需求：FR-3_
   
-  - [ ]* 14.2 编写集成测试
+  - [x]* 14.2 编写集成测试
     - 测试注册 Runnable
     - 测试执行 Runnable
     - 测试装饰器注册
     - _需求：FR-3_
 
-- [ ] 15. 检查点 - 确保集成测试通过
+- [x] 15. 检查点 - 确保集成测试通过
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 16. 实现版本检查
-  - [ ] 16.1 实现 LangChain 版本验证
+- [x] 16. 实现版本检查
+  - [x] 16.1 实现 LangChain 版本验证
     - 实现 `check_langchain_version` 函数
     - 在模块导入时检查 LangChain 版本
     - 版本不兼容时抛出清晰的错误
     - 提供版本升级建议
     - _需求：FR-2_
   
-  - [ ]* 16.2 编写版本检查单元测试
+  - [x]* 16.2 编写版本检查单元测试
     - 测试兼容版本通过
     - 测试不兼容版本被拒绝
     - 测试未安装 LangChain 的错误提示
