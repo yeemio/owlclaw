@@ -107,11 +107,11 @@
 
 ### Phase 3：安全与治理（P1）
 
-- [ ] **Task 11**: 安全集成
-  - [ ] 11.1 binding 输入参数经过 InputSanitizer 清洗
-  - [ ] 11.2 binding 返回数据经过 DataMasker 脱敏
-  - [ ] 11.3 SQL binding write 操作联动 risk_level 确认流程
-  - [ ] 11.4 单元测试：输入清洗、输出脱敏、risk_level 联动
+- [x] **Task 11**: 安全集成
+  - [x] 11.1 binding 输入参数经过 InputSanitizer 清洗
+  - [x] 11.2 binding 返回数据经过 DataMasker 脱敏
+  - [x] 11.3 SQL binding write 操作联动 risk_level 确认流程
+  - [x] 11.4 单元测试：输入清洗、输出脱敏、risk_level 联动
 
 - [ ] **Task 12**: 治理集成
   - [ ] 12.1 BindingTool 参与 governance.visibility 过滤
