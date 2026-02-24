@@ -61,7 +61,7 @@
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
-- [ ] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
+- [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
 - [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
 - [ ] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
@@ -107,7 +107,7 @@
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（20/20） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（25/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-work langchain 增量） |
-| 批次状态 | **已完成**。`integrations-langchain` 进度推进到（25/50），并完成针对性审校修复（mypy）。 |
-| 已完成项 | 1) 合并 `codex-work` 新增提交（streaming、examples、docs、metrics、integration tests）；2) 修复审校发现的类型问题（`app.py`、`langchain/adapter.py`）；3) 执行变更范围静态检查与测试。 |
-| 下一待执行 | 继续跟进 `integrations-langchain` 余下任务（25/50），并同步审校 `e2e-validation` 后续提交。 |
-| 验收快照 | `poetry run ruff check owlclaw/integrations/langchain owlclaw/app.py ...` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/langchain owlclaw/app.py --hide-error-context --no-error-summary` -> `Success`；`poetry run pytest tests/unit/integrations/test_langchain_examples.py tests/unit/integrations/test_langchain_health.py tests/unit/integrations/test_langchain_metrics.py tests/unit/integrations/test_langchain_stream.py tests/unit/test_app_langchain.py tests/integration/test_langchain_integration.py -q` -> `16 passed`。 |
+| 当前批次 | spec 循环（integrations-langchain 收口） |
+| 批次状态 | **已完成**。`integrations-langchain` 全部任务完成（**101/101**）。 |
+| 已完成项 | 完成 LangChain 适配层（config/schema/errors/trace/adapter/retry/privacy/version/metrics）、OwlClaw API 接入、流式执行、治理与 Ledger 集成、容错降级与健康检查、示例与文档、E2E/性能验证，并收口全部验收清单。 |
+| 下一待执行 | 按分配推进下一 spec（例如 `e2e-validation`）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_app_langchain.py tests/unit/integrations/test_langchain_config.py tests/unit/integrations/test_langchain_schema.py tests/unit/integrations/test_langchain_errors.py tests/unit/integrations/test_langchain_trace.py tests/unit/integrations/test_langchain_adapter.py tests/unit/integrations/test_langchain_retry.py tests/unit/integrations/test_langchain_governance_ledger.py tests/unit/integrations/test_langchain_privacy.py tests/unit/integrations/test_langchain_version.py tests/unit/integrations/test_langchain_stream.py tests/unit/integrations/test_langchain_examples.py tests/unit/integrations/test_langchain_health.py tests/unit/integrations/test_langchain_metrics.py tests/integration/test_langchain_integration.py -q` -> `58 passed`；`poetry run pytest ... --cov=owlclaw.integrations.langchain --cov-report=term -q` -> `TOTAL 90%`；`poetry run mypy owlclaw/integrations/langchain owlclaw/app.py` -> `Success`；`poetry run ruff check owlclaw/app.py owlclaw/integrations/langchain ... examples/langchain` -> `All checks passed!`；性能脚本：`sequential_rps=6537.63, sequential_avg_ms=0.153, concurrent_rps=1308.70`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
