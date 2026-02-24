@@ -339,7 +339,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Generate versions with random states, verify queries return correct state
     - _Requirements: 1.4_
 
-- [ ]* 16. Write integration tests for Phase 2 end-to-end flows
+- [x]* 16. Write integration tests for Phase 2 end-to-end flows
   - Test complete site generation: index → statistics → site → deploy
   - Test CLI compatibility with Phase 2 index format
   - Test search functionality on generated site
