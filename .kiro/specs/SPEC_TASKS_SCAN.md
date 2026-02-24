@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（15/26） | 声明式工具绑定（Task 0~14 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（16/26） | 声明式工具绑定（Task 0~15 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: declarative-binding Task 14） |
-| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 15/26。 |
-| 已完成项 | 1) 完成 Task 14：新增 `examples/binding-http/`（active/shadow/shell 三模式）；2) 新增 `mock_server.py` 供 HTTP binding 示例运行；3) 三个 SKILL.md 均通过 `owlclaw skill validate`。 |
-| 下一待执行 | `codex-work`：进入 `declarative-binding` Task 15（examples 索引、模板库、init 默认模板联动）。 |
-| 验收快照 | 本批验证：`poetry run owlclaw skill validate examples/binding-http/capabilities`（3 passed）+ `poetry run ruff check examples/binding-http/mock_server.py` 通过。 |
+| 当前批次 | coding loop（codex-work: declarative-binding Task 15） |
+| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 16/26。 |
+| 已完成项 | 1) 完成 Task 15.1：`examples/README.md` 加入 `binding-http` 索引；2) 完成 Task 15.2：模板库新增 `integration/binding-http-client.md.j2`；3) 完成 Task 15.3/15.4：`owlclaw skill init` 默认最小模板且含可选 binding 注释。 |
+| 下一待执行 | `codex-work`：进入 Phase 5 的 Task 16（BindingGenerator: OpenAPI → HTTP Binding SKILL.md）。 |
+| 验收快照 | 本批验证：`poetry run ruff check .` 通过；`poetry run owlclaw skill validate examples/binding-http/capabilities`（3 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
