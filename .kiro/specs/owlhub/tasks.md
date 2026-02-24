@@ -442,28 +442,28 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test pagination produces complete non-duplicate results
     - _Requirements: 2.1, 2.2, 2.4_
 
-- [ ] 22. Implement Authentication and Authorization
-  - [ ] 22.1 Create `owlhub/api/auth.py` with OAuth2 integration
+- [x] 22. Implement Authentication and Authorization
+  - [x] 22.1 Create `owlhub/api/auth.py` with OAuth2 integration
     - Implement GitHub OAuth2 flow
     - Implement JWT token generation and validation
     - Create API key management for programmatic access
     - Store user sessions securely
     - _Requirements: 5.1_
 
-  - [ ] 22.2 Add authentication middleware to FastAPI
+  - [x] 22.2 Add authentication middleware to FastAPI
     - Protect write endpoints with authentication
     - Implement role-based access control (publisher, reviewer, admin)
     - Add rate limiting per user/API key
     - _Requirements: 5.1_
 
-  - [ ]* 22.3 Write unit tests for authentication
+  - [x]* 22.3 Write unit tests for authentication
     - Test OAuth2 flow with valid credentials
     - Test JWT token validation
     - Test API key authentication
     - Test unauthorized access rejection
     - _Requirements: 5.1_
 
-  - [ ]* 22.4 Write property test for authentication protection
+  - [x]* 22.4 Write property test for authentication protection
     - **Property 14: 身份验证保护**
     - **Validates: Requirements 5.1**
     - Send unauthenticated publish requests, verify 401 responses
