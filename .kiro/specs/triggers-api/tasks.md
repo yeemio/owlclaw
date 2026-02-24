@@ -10,6 +10,14 @@
 
 ## 任务列表
 
+### Phase 0：协议契约先行（Protocol-first，决策 4.11）
+
+- [ ] **Task 0**: 定义 API 触发器协议契约
+  - [ ] 0.1 提交 OpenAPI/JSON Schema：端点注册格式、请求/响应 schema、错误码表（400/401/429/503/408）
+  - [ ] 0.2 确认同步/异步两种响应模式的协议语义（202 + run_id vs 直接结果）
+  - [ ] 0.3 协议层不泄漏 Python 特有语义（无 Callable/装饰器元数据）
+  - _说明：Task 1 的 Python 实现必须从本契约派生，禁止跳过契约直接做 Python API_
+
 ### Phase 1：HTTP 服务与端点注册
 
 - [ ] **Task 1**: 创建 `owlclaw/triggers/api/` 模块结构

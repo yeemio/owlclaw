@@ -56,7 +56,7 @@
 ### Phase 2：扩展 + 可观测 + 生态接入
 
 - [ ] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
-- [ ] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
+- [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
 - [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
@@ -101,17 +101,17 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（84/89） | 消息队列触发器 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（2/72） | webhook 触发器（Task 0 Protocol-first 已勾，+3 subtasks） |
+| triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（20/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 6~7） |
-| 批次状态 | **已完成**。Phase 1 配置/文档与 Checkpoint 验收已完成。 |
-| 已完成项 | 1) 新增 `.owlhub/config.yaml`（`index_url/repositories/update_interval/install_dir/lock_file`）；2) 新增 `docs/owlhub/phase1.md`（Phase 1 架构图、配置、技能包结构、index schema、CLI 用法）；3) 更新 `docs/cli/skill-commands.md` 增补 `search/install/installed` 文档；4) 回填 `owlhub/tasks.md` 的 Task 6、7。 |
-| 下一待执行 | `owlhub` Task 8（Statistics Tracker，Phase 2 起点）。 |
-| 验收快照 | `poetry run pytest tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py tests/unit/test_owlhub_cli_client.py tests/integration/test_owlhub_phase1_flow.py -q -rA` -> 21 passed；`poetry run python scripts/owlhub_build_index.py --output <tmp>/dist/index.json --repos <tmp>/repos` -> generated index with 1 skills。 |
+| 当前批次 | orchestrate（合并 review-work → main；Protocol-first 影响评估；spec 补充 Task 0） |
+| 批次状态 | **已完成**。架构决策 4.11 落地；受影响 spec 已补充 Protocol-first 前置任务。 |
+| 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.11（Protocol-first）；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加强制约束（先契约后 SDK）；3) 保持 `triggers-queue` 完成态（89/89）及 scan 计数一致。 |
+| 下一待执行 | `codex-work` 优先推进 `triggers-webhook`/`triggers-api`/`triggers-signal` 的协议契约与测试（按 Protocol-first）；`codex-gpt-work` 继续 `owlhub` Task 4（CLI Client）。 |
+| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.2（含 §4.11）；`.cursor` 架构规则已加入 Protocol-first 强制条款；Spec scan checkpoint 已同步下一步执行顺序。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
