@@ -12,7 +12,7 @@
 
 ### Phase 1：核心监听与聚合
 
-- [ ] **Task 1**: 创建 `owlclaw/triggers/db_change/` 模块结构
+- [x] **Task 1**: 创建 `owlclaw/triggers/db_change/` 模块结构
   - 创建 `__init__.py`, `adapter.py`, `aggregator.py`, `manager.py`, `config.py`
   - 定义 `DBChangeEvent` dataclass
   - 定义 `DBChangeAdapter` 抽象基类
@@ -24,14 +24,14 @@
   - 连接健康检查 + 自动重连（可配置间隔）
   - 优雅停止（取消所有 listener，关闭连接）
 
-- [ ] **Task 3**: 实现 `EventAggregator`
+- [x] **Task 3**: 实现 `EventAggregator`
   - debounce 策略：窗口期内只 flush 最后一批
   - batch 策略：累积到 batch_size 后 flush
   - 混合模式：先 batch，batch 满前到达 debounce 超时也 flush
   - 无聚合模式：直通 flush
   - 线程安全（asyncio Lock）
 
-- [ ] **Task 4**: 实现 `DBChangeTriggerManager`
+- [x] **Task 4**: 实现 `DBChangeTriggerManager`
   - register() 注册触发器 → 创建 aggregator
   - 与 GovernanceService 集成（cooldown/rate limit/budget）
   - 与 AgentRunner 集成（dispatch Hatchet task）
@@ -49,7 +49,7 @@
 
 ### Phase 2：测试与降级
 
-- [ ] **Task 7**: 单元测试
+- [x] **Task 7**: 单元测试
   - EventAggregator：debounce/batch/混合/直通 四种模式
   - DBChangeEvent 解析：正常/空 payload/非 JSON
   - DBChangeTriggerManager：register/trigger/governance block

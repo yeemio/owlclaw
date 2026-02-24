@@ -104,7 +104,7 @@
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
-| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
+| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（4/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-webhook final close） |
-| 批次状态 | **已完成（收口）**。`triggers-webhook/tasks.md` 已达 `72/72`，无未勾选项。 |
-| 已完成项 | 1) 完成端点管理/验证/转换/治理/执行/日志/监控/HTTP 网关/配置管理；2) 完成端到端集成与性能测试；3) 完成 API/部署/运维文档；4) 功能清单与 tasks 状态已对齐为完成态。 |
-| 下一待执行 | `codex-work`：按任务分配切换到下一个未完成 spec（如 `triggers-db-change` / `triggers-api` / `triggers-signal` / `cli-scan`）。 |
-| 验收快照 | `poetry run pytest tests/integration/test_webhook_e2e.py tests/integration/test_webhook_performance.py -q`（6 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（79 passed, 201 deselected）；`poetry run ruff check owlclaw/triggers/webhook tests/unit/triggers tests/integration`（All checks passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-db-change Task 1/3/4/7） |
+| 批次状态 | **已完成（本批）**。完成 db-change 核心骨架、聚合器、管理器与首批单元测试。 |
+| 已完成项 | 1) 新增 `owlclaw/triggers/db_change` 模块（adapter/config/aggregator/manager）；2) 实现 `DBChangeEvent`、`DBChangeAdapter`、`PostgresNotifyAdapter`（NOTIFY payload 解析与重连循环）；3) 实现 `EventAggregator`（passthrough/debounce/batch/hybrid）；4) 实现 `DBChangeTriggerManager`（register/start/stop/governance gate/agent dispatch/ledger block record）；5) 新增单元测试覆盖聚合策略、payload 解析、manager 治理阻断路径。 |
+| 下一待执行 | `codex-work`：`triggers-db-change` Task 2（Notify adapter 完整化）→ Task 5（decorator + function API）→ Task 6（SQL 模板 + CLI）→ Task 8/9（集成与降级）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/db_change tests/unit/triggers/test_db_change.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_db_change.py -q`（3 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
