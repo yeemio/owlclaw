@@ -5,6 +5,7 @@ from owlclaw.triggers.queue.idempotency import IdempotencyStore, MockIdempotency
 from owlclaw.triggers.queue.models import MessageEnvelope, RawMessage
 from owlclaw.triggers.queue.parsers import BinaryParser, JSONParser, MessageParser, ParseError, TextParser
 from owlclaw.triggers.queue.protocols import QueueAdapter
+from owlclaw.triggers.queue.trigger import ProcessResult, QueueTrigger
 
 __all__ = [
     "IdempotencyStore",
@@ -19,5 +20,7 @@ __all__ = [
     "RawMessage",
     "RedisIdempotencyStore",
     "TextParser",
+    "ProcessResult",
+    "QueueTrigger",
     "validate_config",
 ]

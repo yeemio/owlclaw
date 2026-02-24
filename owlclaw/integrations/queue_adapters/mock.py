@@ -61,3 +61,6 @@ class MockQueueAdapter:
 
     def get_dlq(self) -> list[tuple[str, str]]:
         return list(self._dlq)
+
+    def pending_count(self) -> int:
+        return len(self._queue)
