@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from owlclaw.e2e.replay import EventImporter, ReplayEngine, ReplayScheduler
+from owlclaw.e2e.replay import EventImporter, ReplayComparator, ReplayEngine, ReplayScheduler
 
 
 def _write_json_events(path: Path) -> None:
@@ -72,3 +72,22 @@ async def test_replay_engine_records_agent_and_cron_decisions(tmp_path: Path) ->
     assert result.consistency_rate == 1.0
     assert result.memory_growth == [1, 2]
 
+
+def test_replay_comparator_calculates_consistency_and_distribution(tmp_path: Path) -> None:
+    source = tmp_path / "events.json"
+    _write_json_events(source)
+    importer = EventImporter()
+    events = importer.import_events(str(source), format="json")
+    comparator = ReplayComparator()
+
+    metrics = comparator.compare(
+        events,
+        agent_decisions=[
+            {"decision": "check_entry_opportunity"},
+            {"decision": "different_decision"},
+        ],
+    )
+    assert metrics["consistency_rate"] == 0.5
+    assert metrics["deviation_distribution"]["low"] == 1
+    assert metrics["deviation_distribution"]["medium"] == 1
+    assert metrics["quality_trend"] == [1.0, 0.5]

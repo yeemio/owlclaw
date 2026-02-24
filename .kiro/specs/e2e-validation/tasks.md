@@ -309,7 +309,7 @@
     - 创建决策对比的示例场景
     - 创建错误注入的示例场景
 
-- [ ] 16. 实现历史回放测试引擎（需求 9）
+- [x] 16. 实现历史回放测试引擎（需求 9）
   - [x] 16.1 实现 EventImporter
     - 支持 CSV/JSON 格式导入历史事件序列
     - 事件验证（时间戳格式、必填字段、payload 结构）
@@ -321,32 +321,32 @@
     - 串联 EventImporter → ReplayScheduler → Agent/Cron 执行
     - 分别在 V3 Agent 和 Original Cron 上回放
     - 记录每个事件的 Agent 决策（capability 选择、参数、结果）
-  - [ ] 16.4 实现 ReplayComparator
+  - [x] 16.4 实现 ReplayComparator
     - 计算决策一致率（Agent vs 历史实际决策）
     - 计算决策偏差分布（按 low/medium/high/critical 分类）
     - 计算时间序列决策质量趋势
     - 记录 Agent 记忆增长曲线（评估学习效果）
-  - [ ] 16.5 实现 ReplayReport
+  - [x] 16.5 实现 ReplayReport
     - 生成回放对比报告（含可视化图表）
     - 高亮关键偏差事件
     - _需求: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7_
 
-- [ ] 17. 实现 Shadow Mode（需求 10）
-  - [ ] 17.1 实现 ShadowModeInterceptor
+- [x] 17. 实现 Shadow Mode（需求 10）
+  - [x] 17.1 实现 ShadowModeInterceptor
     - 拦截 Agent 的 capability 调用（记录但不执行）
     - 返回模拟成功结果
     - 与 Agent Runtime 集成（在 EXECUTING 阶段拦截）
-  - [ ] 17.2 实现 ShadowComparator
+  - [x] 17.2 实现 ShadowComparator
     - 实时对比 Agent 决策与 Cron 实际执行结果
     - 存储对比记录到数据库
     - 计算实时一致率
-  - [ ] 17.3 实现 ShadowDashboard 数据接口
+  - [x] 17.3 实现 ShadowDashboard 数据接口
     - 一致率实时指标
     - 决策差异详情列表
     - 按天的质量趋势
     - LLM 累计成本
     - 自动切换建议（连续 7 天一致率 > 90%）
-  - [ ] 17.4 实现 migration_weight 协同
+  - [x] 17.4 实现 migration_weight 协同
     - migration_weight=0.0 时纯 Shadow Mode
     - migration_weight 变化时 Shadow/Agent 比例自动调整
     - 质量下降自动回退 migration_weight

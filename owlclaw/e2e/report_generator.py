@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from owlclaw.e2e.models import ExecutionResult
+from owlclaw.e2e.replay import ReplayResult
 
 
 class ReportGenerator:
@@ -180,6 +181,56 @@ class ReportGenerator:
             "recommendations": [],
         }
         return report
+
+    def generate_replay_report(self, replay_result: ReplayResult) -> dict[str, Any]:
+        """Generate report for historical replay comparison results."""
+        return {
+            "id": f"replay-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+            "title": "E2E Historical Replay Report",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "summary": {
+                "total_events": replay_result.total_events,
+                "consistency_rate": replay_result.consistency_rate,
+                "deviation_distribution": replay_result.deviation_distribution,
+            },
+            "sections": [
+                {
+                    "title": "decision_consistency",
+                    "content": "Agent decisions compared against historical actual decisions.",
+                    "data": replay_result.agent_decisions,
+                    "charts": ["consistency_trend"],
+                },
+                {
+                    "title": "deviation_distribution",
+                    "content": "Deviation counts grouped by severity.",
+                    "data": replay_result.deviation_distribution,
+                    "charts": ["deviation_distribution"],
+                },
+            ],
+            "charts": [
+                {
+                    "id": "consistency_trend",
+                    "type": "line",
+                    "title": "Decision Quality Trend",
+                    "data": {
+                        "labels": [str(index + 1) for index in range(len(replay_result.quality_trend))],
+                        "values": replay_result.quality_trend,
+                    },
+                    "options": {"y_axis": "rate"},
+                },
+                {
+                    "id": "deviation_distribution",
+                    "type": "bar",
+                    "title": "Deviation Distribution",
+                    "data": {
+                        "labels": list(replay_result.deviation_distribution.keys()),
+                        "values": list(replay_result.deviation_distribution.values()),
+                    },
+                    "options": {"stacked": False},
+                },
+            ],
+            "recommendations": ["Review medium/high deviation events before production rollout."],
+        }
 
     def export_report(self, report: dict[str, Any], format_name: str) -> str:
         """Export report into JSON, HTML, or PDF textual payload."""

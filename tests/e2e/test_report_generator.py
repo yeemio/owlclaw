@@ -10,6 +10,7 @@ from hypothesis import strategies as st
 
 from owlclaw.e2e.comparison_engine import ComparisonEngine
 from owlclaw.e2e.models import ExecutionResult, ExecutionStatus
+from owlclaw.e2e.replay import ReplayResult
 from owlclaw.e2e.report_generator import ReportGenerator
 
 
@@ -154,3 +155,19 @@ def test_export_report_rejects_unknown_format() -> None:
     report = generator.generate_validation_report([_result(scenario_id="x", status=ExecutionStatus.PASSED)])
     with pytest.raises(ValueError):
         generator.export_report(report, "xml")
+
+
+def test_generate_replay_report_contains_visualized_metrics() -> None:
+    replay_result = ReplayResult(
+        total_events=3,
+        agent_decisions=[{"decision": "a"}],
+        cron_decisions=[{"decision": "a"}],
+        consistency_rate=0.9,
+        deviation_distribution={"low": 2, "medium": 1, "high": 0, "critical": 0},
+        quality_trend=[1.0, 1.0, 0.9],
+        memory_growth=[1, 2, 3],
+    )
+    report = ReportGenerator().generate_replay_report(replay_result)
+    assert report["summary"]["total_events"] == 3
+    assert report["summary"]["consistency_rate"] == 0.9
+    assert len(report["charts"]) == 2
