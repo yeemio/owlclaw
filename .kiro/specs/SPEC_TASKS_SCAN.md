@@ -102,11 +102,11 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（2/72） | webhook 触发器（Task 0 Protocol-first 已勾，+3 subtasks） |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
@@ -143,8 +143,8 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（架构决策收敛：Protocol-first） |
-| 批次状态 | **已完成**。已将“面向所有业务系统”的定位固化为架构约束：协议优先于语言 SDK。 |
+| 当前批次 | orchestrate（合并 review-work → main；Protocol-first 影响评估；spec 补充 Task 0） |
+| 批次状态 | **已完成**。架构决策 4.11 落地；受影响 spec 已补充 Protocol-first 前置任务。 |
 | 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.11（Protocol-first）；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加强制约束（先契约后 SDK）；3) 保持 `triggers-queue` 完成态（89/89）及 scan 计数一致。 |
 | 下一待执行 | `codex-work` 优先推进 `triggers-webhook`/`triggers-api`/`triggers-signal` 的协议契约与测试（按 Protocol-first）；`codex-gpt-work` 继续 `owlhub` Task 4（CLI Client）。 |
 | 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.2（含 §4.11）；`.cursor` 架构规则已加入 Protocol-first 强制条款；Spec scan checkpoint 已同步下一步执行顺序。 |
