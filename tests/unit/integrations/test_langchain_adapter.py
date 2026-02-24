@@ -13,6 +13,14 @@ from owlclaw.integrations.langchain.adapter import LangChainAdapter, RunnableCon
 from owlclaw.integrations.langchain.config import LangChainConfig
 
 
+@pytest.fixture(autouse=True)
+def _mock_langchain_version_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "owlclaw.integrations.langchain.adapter.check_langchain_version",
+        lambda **kwargs: None,
+    )
+
+
 class DummyRegistry:
     def __init__(self) -> None:
         self.handlers: dict[str, Any] = {}

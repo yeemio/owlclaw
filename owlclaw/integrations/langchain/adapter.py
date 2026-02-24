@@ -15,6 +15,7 @@ from owlclaw.integrations.langchain.privacy import PrivacyMasker
 from owlclaw.integrations.langchain.retry import RetryPolicy, calculate_backoff_delay, should_retry
 from owlclaw.integrations.langchain.schema import SchemaBridge
 from owlclaw.integrations.langchain.trace import TraceManager
+from owlclaw.integrations.langchain.version import check_langchain_version
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,10 @@ class LangChainAdapter:
 
     def register_runnable(self, runnable: Any, config: RunnableConfig) -> None:
         """Register runnable as capability handler."""
+        check_langchain_version(
+            min_version=self._config.min_version,
+            max_version=self._config.max_version,
+        )
         self._validate_runnable(runnable)
         if not config.name.strip():
             raise ValueError("Runnable config name must be non-empty")

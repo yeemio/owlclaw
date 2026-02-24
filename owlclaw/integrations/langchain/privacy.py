@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-_EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+_EMAIL_PATTERN = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 _PHONE_PATTERN = re.compile(r"\b\d{3}[-\s]?\d{4}[-\s]?\d{4}\b")
 _KEY_PATTERN = re.compile(r"(?i)\b(api[_-]?key|token|secret|password)\s*[:=]\s*\S+")
 

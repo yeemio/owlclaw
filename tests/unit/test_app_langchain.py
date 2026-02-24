@@ -10,6 +10,18 @@ import pytest
 from owlclaw import OwlClaw
 
 
+@pytest.fixture(autouse=True)
+def _mock_langchain_version_check(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "owlclaw.integrations.langchain.check_langchain_version",
+        lambda **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "owlclaw.integrations.langchain.adapter.check_langchain_version",
+        lambda **kwargs: None,
+    )
+
+
 class EchoRunnable:
     async def ainvoke(self, payload: dict[str, Any]) -> dict[str, Any]:
         return {"text": payload["text"]}

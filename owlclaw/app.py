@@ -201,7 +201,9 @@ class OwlClaw:
         if not self.registry:
             raise RuntimeError("Must call mount_skills() before registering LangChain runnables")
         adapter = self._get_langchain_adapter()
-        from owlclaw.integrations.langchain import RunnableConfig
+        from owlclaw.integrations.langchain import RunnableConfig, check_langchain_version
+
+        check_langchain_version()
 
         adapter.register_runnable(
             runnable=runnable,
