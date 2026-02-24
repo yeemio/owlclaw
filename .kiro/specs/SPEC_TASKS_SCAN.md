@@ -152,9 +152,9 @@
 |------|---|
 | 最后更新 | 2026-02-24 |
 | 当前批次 | review-work（持续合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
-| 批次状态 | **进行中（本批）**。`review-work` 无新增待合并分支提交，已完成一轮全仓门禁审校与回归。 |
+| 批次状态 | **进行中（本批）**。已完成一轮全仓门禁审校与回归；`codex-gpt-work` 新增 2 提交已审阅，当前结论为 **FIX_NEEDED（分支需先与 review-work/main 同步后再提审，避免回退已合并功能）**。 |
 | 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）+ BindingTool/Ledger + Skills 自动注册 + CLI validate 扩展 + Queue/SQL Executor + Shadow 报告链路 + 安全集成（InputSanitizer/DataMasker/risk_level）+ 治理集成（visibility/budget/rate limit）+ HTTP reference examples（active/shadow/shell）+ 文档/模板联动（examples 索引、binding-http-client 模板、skill init 默认最小模板注释）；2) `cli-scan` 收口（Task 1~20 完成，80/80）；3) 保持并修复 `serialization.py` 的 mypy/ruff 兼容写法，避免类型回退；4) 合并 `codex-gpt-work` 批次：`owlhub` Phase 3 集成流与文档、CI/CD 部署流程、checksum 全链路校验与安全加固；5) 顶层 CLI 回归修复：恢复 `CliRunner.invoke(app, ...)` 场景下 `db` 子命令注册（修复 `tests/unit/test_cli_db.py` 与 `tests/integration/test_cli_db_workflows.py` 失败）；6) 全量门禁通过：`ruff check .` + `mypy owlclaw/` + `pytest -q`（1640 passed, 28 skipped）。 |
-| 下一待执行 | 1) 继续监控并合并 `codex-work` / `codex-gpt-work` 新提交；2) 审校重点转向 `declarative-binding` Task 16 与 `owlhub` 收尾任务；3) 保持 `review-work` 与两条开发分支差异归零。 |
+| 下一待执行 | 1) 要求 `codex-gpt-work` 先同步 `main/review-work` 并重提其 2 个提交（避免把 `declarative-binding` 已合并能力回退）；2) 继续监控并合并 `codex-work` 新提交；3) 审校重点转向 `declarative-binding` Task 16 与 `owlhub` 收尾任务。 |
 | 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(16/26)，`owlhub` 🟡(38/42)，`triggers-signal` ✅(15/15)，全仓测试门禁 ✅（1640 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
