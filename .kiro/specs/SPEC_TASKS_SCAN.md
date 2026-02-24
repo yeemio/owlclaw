@@ -113,7 +113,7 @@
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC 预留） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（11/11） | API 调用触发器（REST 入口到 Agent Run） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（9/15） | Signal 触发器 |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（10/15） | Signal 触发器 |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
@@ -153,9 +153,9 @@
 | 最后更新 | 2026-02-24 |
 | 当前批次 | review-work（合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
 | 批次状态 | **已完成（可放行）**。两条开发分支均已合并到 `review-work` 并通过质量门。 |
-| 已完成项 | 1) 合并 `codex-work`（signal 持久化状态、admin API、CLI 信号流）；2) 修复合并后类型问题（`result.rowcount` 与 `uvicorn` 可选依赖导入）；3) 验证通过：`ruff` + `mypy` + `pytest`（signal 相关 25 passed, 1 skipped）；4) 合并 `codex-gpt-work`（owlhub moderation、CLI API 模式、依赖解析/安装图）；5) 验证通过：`ruff` + `mypy` + `pytest`（新增 owlhub/cli 相关 32 passed）；6) 更新 SPEC_TASKS_SCAN 为事实进度（signal 9/15、owlhub 29/42 等）。 |
-| 下一待执行 | 1) 完成 `triggers-signal` 剩余 6 项任务并做端到端回归；2) 推进 `declarative-binding` Phase 1（Task 0-7）；3) 准备 `review-work -> main` 汇总合并说明。 |
-| 验收快照 | 本轮审校后：`triggers-webhook` ✅、`triggers-api` ✅、`triggers-db-change` ✅、`triggers-signal` 🟡(9/15)、`owlhub` 🟡(29/42)。 |
+| 已完成项 | 1) 合并 `codex-work`（signal 持久化状态、admin API、CLI 信号流）；2) 修复合并后类型问题（`result.rowcount` 与 `uvicorn` 可选依赖导入）；3) 验证通过：`ruff` + `mypy` + `pytest`（signal 相关 25 passed, 1 skipped）；4) 合并 `codex-gpt-work`（owlhub moderation、CLI API 模式、依赖解析/安装图）；5) 验证通过：`ruff` + `mypy` + `pytest`（新增 owlhub/cli 相关 32 passed）；6) 补齐 `triggers-signal` Task 9（MCP 工具：pause/resume/trigger/instruct）并新增单测；7) 更新 SPEC_TASKS_SCAN 为事实进度（signal 10/15、owlhub 29/42 等）。 |
+| 下一待执行 | 1) 完成 `triggers-signal` 剩余 5 项任务并做端到端回归；2) 推进 `declarative-binding` Phase 1（Task 0-7）；3) 准备 `review-work -> main` 汇总合并说明。 |
+| 验收快照 | 本轮审校后：`triggers-webhook` ✅、`triggers-api` ✅、`triggers-db-change` ✅、`triggers-signal` 🟡(10/15)、`owlhub` 🟡(29/42)。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
