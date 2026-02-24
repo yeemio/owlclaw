@@ -14,7 +14,7 @@ class QueueAdapter(Protocol):
     async def connect(self) -> None:
         """Connect to backing queue system."""
 
-    async def consume(self) -> AsyncIterator[RawMessage]:
+    def consume(self) -> AsyncIterator[RawMessage]:
         """Yield queued messages."""
 
     async def ack(self, message: RawMessage) -> None:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 
@@ -72,7 +72,7 @@ class ShadowModeInterceptor:
             agent_id=agent_id,
             capability=capability_name,
             args=dict(args),
-            timestamp=datetime.now(UTC),
+            timestamp=datetime.now(timezone.utc),
         )
         self._logs.append(entry)
         return InterceptResult(
