@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（42/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（43/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 12.1~12.3） |
-| 批次状态 | **已完成**。Tag filtering（CLI AND/OR）与静态站点 tag 浏览能力已落地，Property 21 已覆盖。 |
-| 已完成项 | 1) 更新 `owlclaw/owlhub/client.py`：`search` 支持 `tag_mode=and|or` 并返回 `tags`；2) 更新 `owlclaw/cli/skill_hub.py` 与 `owlclaw/cli/__init__.py`：新增 `--tag-mode`，搜索输出展示 tags；3) 更新 `owlclaw/owlhub/site/generator.py`：生成 tag cloud 与 `tags/<tag>.html` 页面；4) 更新模板 `base.html/index.html/search.html` 并新增 `tag.html`，支持 tag 云/筛选/分类浏览；5) 扩展 `tests/unit/test_owlhub_cli_client.py` 与 `tests/unit/test_owlhub_site_generator.py`，新增 Property 21 与 tag 浏览验证；6) 回填 `owlhub/tasks.md` 的 Task 12、12.1、12.2、12.3。 |
-| 下一待执行 | `owlhub` Task 13（Phase 2 workflow 更新）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py owlclaw/owlhub/site/generator.py tests/unit/test_owlhub_cli_client.py tests/unit/test_owlhub_site_generator.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/client.py owlclaw/owlhub/site/generator.py` -> success；`poetry run pytest tests/unit/test_owlhub_cli_client.py tests/unit/test_owlhub_site_generator.py -q` -> 14 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 13） |
+| 批次状态 | **已完成**。Phase 2 workflow 已支持统计+索引+站点生成并自动部署 Pages。 |
+| 已完成项 | 1) 更新 `.github/workflows/owlhub-build-index.yml`：新增 `push` 触发、Pages 权限、`deploy-pages` job；2) workflow 中增加 `scripts/owlhub_build_index.py --github-token`（统计前置）与 `scripts/owlhub_generate_site.py`（站点生成）；3) 新增可选 `CNAME` 输出步骤（`vars.OWLHUB_CNAME`）；4) 新增 `scripts/owlhub_generate_site.py` 并更新 `scripts/owlhub_build_index.py` 以注入 `StatisticsTracker`。 |
+| 下一待执行 | `owlhub` Task 14（CLI update command）。 |
+| 验收快照 | `poetry run ruff check scripts/owlhub_build_index.py scripts/owlhub_generate_site.py` -> all checks passed；`poetry run mypy scripts/owlhub_build_index.py scripts/owlhub_generate_site.py` -> success；`poetry run pytest tests/unit/test_owlhub_index_builder.py tests/unit/test_owlhub_site_generator.py -q` -> 13 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

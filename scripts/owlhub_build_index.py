@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from owlclaw.owlhub.indexer import IndexBuilder
+from owlclaw.owlhub.statistics import StatisticsTracker
 
 
 def main() -> None:
@@ -18,9 +19,11 @@ def main() -> None:
         required=True,
         help="Repository paths to crawl (space separated)",
     )
+    parser.add_argument("--github-token", default="", help="GitHub token for release statistics API")
     args = parser.parse_args()
 
-    builder = IndexBuilder()
+    stats = StatisticsTracker(github_token=args.github_token or None)
+    builder = IndexBuilder(statistics_tracker=stats)
     index = builder.build_index(args.repos)
     output = Path(args.output).resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -30,4 +33,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
