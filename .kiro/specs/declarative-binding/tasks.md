@@ -46,16 +46,16 @@
   - [x] 3.3 未知类型时抛出 ValueError（含可用类型列表）
   - [x] 3.4 单元测试：注册、获取、未知类型错误
 
-- [ ] **Task 4**: HTTPBinding Executor（MVP 核心）
-  - [ ] 4.1 实现 `http_executor.py`：HTTPBindingExecutor 类
-  - [ ] 4.2 实现 URL 路径参数模板解析（`{param}` → 实际值）
-  - [ ] 4.3 实现 headers 的 credential 解析
-  - [ ] 4.4 实现 body_template 参数替换
-  - [ ] 4.5 实现 response_mapping（JSONPath 提取、status_codes 映射）
-  - [ ] 4.6 实现 active 模式：正常 HTTP 调用 + 超时 + 重试（指数退避）
-  - [ ] 4.7 实现 shadow 模式：GET 正常执行，写操作只记录不发送
-  - [ ] 4.8 单元测试：active GET/POST、shadow 拦截、超时重试、response mapping
-  - [ ] 4.9 集成测试：使用 httpx mock 的完整调用链路
+- [x] **Task 4**: HTTPBinding Executor（MVP 核心）
+  - [x] 4.1 实现 `http_executor.py`：HTTPBindingExecutor 类
+  - [x] 4.2 实现 URL 路径参数模板解析（`{param}` → 实际值）
+  - [x] 4.3 实现 headers 的 credential 解析
+  - [x] 4.4 实现 body_template 参数替换
+  - [x] 4.5 实现 response_mapping（JSONPath 提取、status_codes 映射）
+  - [x] 4.6 实现 active 模式：正常 HTTP 调用 + 超时 + 重试（指数退避）
+  - [x] 4.7 实现 shadow 模式：GET 正常执行，写操作只记录不发送
+  - [x] 4.8 单元测试：active GET/POST、shadow 拦截、超时重试、response mapping
+  - [x] 4.9 集成测试：使用 httpx mock 的完整调用链路
 
 - [ ] **Task 5**: BindingTool 与 Ledger 集成
   - [ ] 5.1 实现 `tool.py`：BindingTool 类

@@ -2,6 +2,7 @@
 
 from owlclaw.capabilities.bindings.credential import CredentialResolver
 from owlclaw.capabilities.bindings.executor import BindingExecutor, BindingExecutorRegistry
+from owlclaw.capabilities.bindings.http_executor import HTTPBindingExecutor
 from owlclaw.capabilities.bindings.schema import (
     BindingConfig,
     HTTPBindingConfig,
@@ -18,6 +19,7 @@ __all__ = [
     "BindingExecutorRegistry",
     "CredentialResolver",
     "HTTPBindingConfig",
+    "HTTPBindingExecutor",
     "QueueBindingConfig",
     "RetryConfig",
     "SQLBindingConfig",
