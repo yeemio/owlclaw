@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 
 import httpx
 import pytest
@@ -8,7 +8,7 @@ import pytest
 from owlclaw.capabilities.bindings import CredentialResolver, HTTPBindingConfig, HTTPBindingExecutor, RetryConfig
 
 
-def _transport(handler: Callable[[httpx.Request], httpx.Response]) -> httpx.MockTransport:
+def _transport(handler: Callable[[httpx.Request], Coroutine[None, None, httpx.Response]]) -> httpx.MockTransport:
     return httpx.MockTransport(handler)
 
 

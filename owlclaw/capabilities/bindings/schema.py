@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import asdict, dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 BINDING_TYPES = {"http", "queue", "sql", "grpc"}
 HTTP_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE"}
@@ -78,8 +78,10 @@ def parse_binding_config(data: dict[str, Any]) -> BindingConfig:
     }
     binding_type = str(data["type"])
     if binding_type == "http":
+        method_raw = str(data.get("method", "GET")).upper()
+        method = method_raw if method_raw in HTTP_METHODS else "GET"
         return HTTPBindingConfig(
-            method=str(data.get("method", "GET")).upper(),
+            method=cast(Literal["GET", "POST", "PUT", "PATCH", "DELETE"], method),
             url=str(data.get("url", "")),
             headers=_to_str_dict(data.get("headers", {})),
             body_template=_to_dict_or_none(data.get("body_template")),
@@ -87,11 +89,15 @@ def parse_binding_config(data: dict[str, Any]) -> BindingConfig:
             **common,
         )
     if binding_type == "queue":
+        provider_raw = str(data.get("provider", "kafka"))
+        provider = provider_raw if provider_raw in QUEUE_PROVIDERS else "kafka"
+        format_raw = str(data.get("format", "json"))
+        format_value = format_raw if format_raw in QUEUE_FORMATS else "json"
         return QueueBindingConfig(
-            provider=str(data.get("provider", "kafka")),
+            provider=cast(Literal["kafka", "rabbitmq", "redis"], provider),
             connection=str(data.get("connection", "")),
             topic=str(data.get("topic", "")),
-            format=str(data.get("format", "json")),
+            format=cast(Literal["json", "avro", "protobuf"], format_value),
             headers_mapping=_to_str_dict(data.get("headers_mapping", {})),
             **common,
         )

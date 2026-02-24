@@ -67,16 +67,14 @@ class SchemaValidator:
         return len(errors) == 0, errors
 
     def _validate_metadata(self, metadata: dict[str, Any], errors: list[str]) -> None:
-        required: dict[str, type[Any] | tuple[type[Any], ...]] = {
-            "project_path": str,
-            "scanned_files": int,
-            "failed_files": int,
-            "scan_time_seconds": (int, float),
-        }
-        for field, expected in required.items():
-            value = metadata.get(field)
-            if not isinstance(value, expected):
-                errors.append(f"metadata.{field} has invalid type")
+        if not isinstance(metadata.get("project_path"), str):
+            errors.append("metadata.project_path has invalid type")
+        if not isinstance(metadata.get("scanned_files"), int):
+            errors.append("metadata.scanned_files has invalid type")
+        if not isinstance(metadata.get("failed_files"), int):
+            errors.append("metadata.failed_files has invalid type")
+        if not isinstance(metadata.get("scan_time_seconds"), int | float):
+            errors.append("metadata.scan_time_seconds has invalid type")
 
     def _validate_file_result(self, key: str, value: dict[str, Any], errors: list[str]) -> None:
         if not isinstance(value.get("file_path"), str):

@@ -9,7 +9,7 @@ import httpx
 
 from owlclaw.capabilities.bindings.credential import CredentialResolver
 from owlclaw.capabilities.bindings.executor import BindingExecutor
-from owlclaw.capabilities.bindings.schema import HTTPBindingConfig
+from owlclaw.capabilities.bindings.schema import BindingConfig, HTTPBindingConfig
 
 WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -21,7 +21,9 @@ class HTTPBindingExecutor(BindingExecutor):
         self._credential_resolver = credential_resolver or CredentialResolver()
         self._transport = transport
 
-    async def execute(self, config: HTTPBindingConfig, parameters: dict[str, Any]) -> dict[str, Any]:
+    async def execute(self, config: BindingConfig, parameters: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(config, HTTPBindingConfig):
+            raise TypeError("HTTPBindingExecutor requires HTTPBindingConfig")
         method = config.method.upper()
         url = self._render_url(config.url, parameters)
         headers = self._render_headers(config.headers)
@@ -114,7 +116,8 @@ class HTTPBindingExecutor(BindingExecutor):
                 return [_resolve(v) for v in value]
             return value
 
-        return _resolve(body_template)
+        resolved = _resolve(body_template)
+        return resolved if isinstance(resolved, dict) else None
 
     def _apply_response_mapping(self, mapping: dict[str, Any], status_code: int, payload: Any) -> Any:
         status_map = mapping.get("status_codes", {}) if isinstance(mapping, dict) else {}

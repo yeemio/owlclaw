@@ -55,3 +55,13 @@ jobs:
 
       - name: Run tests
         run: poetry run pytest -q --tb=short -m "not integration"
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run dependency vulnerability scan
+        uses: pypa/gh-action-pip-audit@v1.1.0
+        with:
+          inputs: pyproject.toml

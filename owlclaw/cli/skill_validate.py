@@ -111,10 +111,10 @@ def _iter_string_values(value: Any) -> list[str]:
             out.extend(_iter_string_values(item))
         return out
     if isinstance(value, list):
-        out: list[str] = []
+        items_out: list[str] = []
         for item in value:
-            out.extend(_iter_string_values(item))
-        return out
+            items_out.extend(_iter_string_values(item))
+        return items_out
     return []
 
 
