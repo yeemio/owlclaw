@@ -32,7 +32,7 @@ The implementation follows a bottom-up approach: core data models → parser com
   - **Validates: Requirements 9.2, 14.4**
 
 - [ ] 2. Implement AST parser and signature extraction
-  - [ ] 2.1 Implement ASTParser class
+  - [x] 2.1 Implement ASTParser class
     - Write `parse_file()` method using `ast.parse()`
     - Write `extract_functions()` to find module-level functions
     - Write `extract_classes()` to find class definitions
@@ -40,11 +40,11 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Handle SyntaxError with detailed error reporting
     - _Requirements: 1.2, 1.3, 1.5, 13.1_
   
-  - [ ]* 2.2 Write property test for valid Python parsing
+  - [x]* 2.2 Write property test for valid Python parsing
     - **Property 2: Valid Python Parsing**
     - **Validates: Requirements 1.2, 1.3, 13.1**
   
-  - [ ]* 2.3 Write property test for syntax error resilience
+  - [x]* 2.3 Write property test for syntax error resilience
     - **Property 3: Syntax Error Resilience**
     - **Validates: Requirements 1.5, 11.6**
   
