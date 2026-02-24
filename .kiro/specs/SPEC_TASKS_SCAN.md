@@ -95,7 +95,7 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108） | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108），backlog +7 运行时增强 | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -116,7 +116,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/73） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/87） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
@@ -150,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（架构决策 4.12 Declarative Binding 落地；新建 spec；功能清单更新） |
-| 批次状态 | **已完成**。架构决策 4.12 落地；`declarative-binding` spec 三层文档已创建；功能清单已更新。 |
-| 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.12（Declarative Binding：声明式工具绑定），文档版本升至 v4.3；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加 Declarative Binding 强制约束；3) 新建 `.kiro/specs/declarative-binding/` 三层文档（requirements/design/tasks，共 73 个子任务）；4) 功能清单新增 Phase 1.5 声明式工具绑定条目；5) Spec 索引新增 declarative-binding 条目。 |
-| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐 → Task 1 Schema → Task 2 CredentialResolver → Task 3 Executor 注册表 → Task 4 HTTPBinding → Task 5 BindingTool → Task 6 Skills Loader 扩展 → Task 7 CLI validate 扩展。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.3（含 §4.12 完整 binding schema 设计、业界参考、集成架构图、里程碑）；`.cursor` 架构规则已加入 Declarative Binding 强制条款；`declarative-binding` spec 三层齐全（requirements 8 个需求 + design 8 个组件 + tasks 14 个 task + backlog）。 |
+| 当前批次 | orchestrate（OpenClaw 对标分析 → DX 降门槛 + 运行时增强补充） |
+| 批次状态 | **已完成**。OpenClaw 深度对标完成；SKILL.md 书写门槛问题已识别并补充到 spec；运行时增强 7 项已加入 capabilities-skills backlog。 |
+| 已完成项 | 1) OpenClaw 深度对标分析（SKILL.md 模型、ClawHub 生态、Lobster 工作流、50+ 内置 Skills）；2) `ARCHITECTURE_ANALYSIS` 更新至 v4.4（§4.12 补充 OpenClaw 对标：书写门槛、Prerequisites、简化语法、三种执行模式、Session Snapshot）；3) `declarative-binding` requirements 新增 R9/R10/R11（Prerequisites + 简化 Tools 语法 + 最小可用规范）；4) `declarative-binding` tasks 新增 Task 0.5/0.6、Task 7.5/7.6/7.7、Task 13（DX 降门槛）、Task 14/15 重组（共 87 子任务）；5) `capabilities-skills` backlog 新增 7 项运行时增强（Prerequisites/Session Snapshot/Token Budget/优先级覆盖/Enable-Disable/环境变量注入/热重载）。 |
+| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐（含简化语法 + prerequisites 规范）→ Task 1-7。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
+| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.4（含 OpenClaw 对标补充）；`declarative-binding` spec 三层齐全（requirements 11 个需求 + design 8 个组件 + tasks 15 个 task + backlog）；`capabilities-skills` backlog 新增 7 项运行时增强。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
