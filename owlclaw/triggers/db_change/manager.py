@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import json
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from decimal import Decimal
+from time import monotonic
 from typing import Any, Protocol
 
 from owlclaw.triggers.db_change.adapter import DBChangeAdapter, DBChangeEvent
 from owlclaw.triggers.db_change.aggregator import EventAggregator
 from owlclaw.triggers.db_change.config import DBChangeTriggerConfig
+
+logger = logging.getLogger(__name__)
 
 
 class GovernanceServiceProtocol(Protocol):
@@ -64,6 +70,8 @@ class DBChangeTriggerManager:
         governance: GovernanceServiceProtocol,
         agent_runtime: AgentRuntimeProtocol,
         ledger: LedgerProtocol | None = None,
+        retry_interval_seconds: float = 5.0,
+        local_queue_max_size: int = 1000,
     ) -> None:
         self._adapter = adapter
         self._governance = governance
@@ -73,14 +81,25 @@ class DBChangeTriggerManager:
         self._lock = asyncio.Lock()
         self._started = False
         self._handlers: dict[str, Callable[[list[DBChangeEvent]], Awaitable[None]] | None] = {}
+        self._retry_interval_seconds = retry_interval_seconds
+        self._local_queue_max_size = local_queue_max_size
+        self._local_retry_queue: asyncio.Queue[tuple[DBChangeTriggerConfig, dict[str, Any]]] = asyncio.Queue(
+            maxsize=local_queue_max_size
+        )
+        self._retry_task: asyncio.Task[None] | None = None
         self._adapter.on_event(self._on_event)
 
-    def register(self, config: DBChangeTriggerConfig, handler: Callable[[list[DBChangeEvent]], Awaitable[None]] | None = None) -> None:
+    def register(
+        self,
+        config: DBChangeTriggerConfig,
+        handler: Callable[[list[DBChangeEvent]], Awaitable[None]] | None = None,
+    ) -> None:
         mode = "hybrid" if config.batch_size and config.debounce_seconds else "batch" if config.batch_size else "debounce" if config.debounce_seconds else "passthrough"
         aggregator = EventAggregator(
             mode=mode,  # type: ignore[arg-type]
             debounce_seconds=config.debounce_seconds,
             batch_size=config.batch_size,
+            max_buffer_events=config.max_buffer_events,
             on_flush=lambda events: self._on_aggregated(config, events),
         )
         self._states[config.channel] = _TriggerState(config=config, aggregator=aggregator)
@@ -93,17 +112,26 @@ class DBChangeTriggerManager:
             channels = list(self._states.keys())
             await self._adapter.start(channels)
             self._started = True
+            self._retry_task = asyncio.create_task(self._retry_loop())
 
     async def stop(self) -> None:
         async with self._lock:
             if not self._started:
                 return
+            if self._retry_task is not None:
+                self._retry_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self._retry_task
+                self._retry_task = None
             await self._adapter.stop()
             self._started = False
 
     async def _on_event(self, event: DBChangeEvent) -> None:
         state = self._states.get(event.channel)
         if state is None:
+            return
+        if self._is_payload_oversized(event, state.config.max_payload_bytes):
+            logger.warning("db_change payload over size limit on channel %s", event.channel)
             return
         await state.aggregator.push(event)
 
@@ -130,12 +158,54 @@ class DBChangeTriggerManager:
                 )
             return
         payload = {"channel": config.channel, "events": [event.payload for event in events], "event_count": len(events)}
-        await self._agent_runtime.trigger_event(
-            event_name=config.event_name,
-            payload=payload,
-            focus=config.focus,
-            tenant_id=config.tenant_id,
-        )
+        if not await self._dispatch_agent_trigger(config, payload):
+            return
         fallback = self._handlers.get(config.channel)
         if fallback is not None:
             await fallback(events)
+
+    async def _dispatch_agent_trigger(self, config: DBChangeTriggerConfig, payload: dict[str, Any]) -> bool:
+        try:
+            await self._agent_runtime.trigger_event(
+                event_name=config.event_name,
+                payload=payload,
+                focus=config.focus,
+                tenant_id=config.tenant_id,
+            )
+            return True
+        except Exception as exc:
+            logger.warning("db_change trigger dispatch failed, queued locally: %s", exc)
+            await self._enqueue_local_retry(config, payload)
+            return False
+
+    async def _enqueue_local_retry(self, config: DBChangeTriggerConfig, payload: dict[str, Any]) -> None:
+        if self._local_retry_queue.full():
+            dropped = await self._local_retry_queue.get()
+            self._local_retry_queue.task_done()
+            logger.warning("db_change retry queue full, dropping oldest event for %s", dropped[0].event_name)
+        await self._local_retry_queue.put((config, payload))
+
+    async def _retry_loop(self) -> None:
+        while True:
+            config, payload = await self._local_retry_queue.get()
+            try:
+                await self._agent_runtime.trigger_event(
+                    event_name=config.event_name,
+                    payload=payload,
+                    focus=config.focus,
+                    tenant_id=config.tenant_id,
+                )
+            except Exception as exc:
+                logger.warning("db_change retry failed for %s, requeueing: %s", config.event_name, exc)
+                await asyncio.sleep(self._retry_interval_seconds)
+                await self._enqueue_local_retry(config, payload)
+            finally:
+                self._local_retry_queue.task_done()
+
+    @staticmethod
+    def _is_payload_oversized(event: DBChangeEvent, max_payload_bytes: int) -> bool:
+        started = monotonic()
+        serialized = json.dumps(event.payload, ensure_ascii=False)
+        if monotonic() - started > 0.05:
+            logger.debug("db_change payload serialization took >50ms on channel %s", event.channel)
+        return len(serialized.encode("utf-8")) > max_payload_bytes

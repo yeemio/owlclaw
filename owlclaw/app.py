@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
@@ -15,6 +16,12 @@ from owlclaw.capabilities.skills import SkillsLoader
 from owlclaw.config import ConfigManager
 from owlclaw.governance.visibility import CapabilityView
 from owlclaw.triggers.cron import CronTriggerRegistry
+from owlclaw.triggers.db_change import (
+    DBChangeTriggerConfig,
+    DBChangeTriggerManager,
+    DBChangeTriggerRegistration,
+    PostgresNotifyAdapter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +37,32 @@ def _dict_to_capability_view(d: dict[str, Any]) -> CapabilityView:
         risk_level=d.get("risk_level") or "low",
         requires_confirmation=d.get("requires_confirmation"),
     )
+
+
+class _AllowAllGovernance:
+    async def allow_trigger(self, event_name: str, tenant_id: str) -> bool:  # noqa: ARG002
+        return True
+
+
+class _RuntimeProxy:
+    def __init__(self, app: OwlClaw) -> None:
+        self._app = app
+
+    async def trigger_event(
+        self,
+        event_name: str,
+        payload: dict[str, Any],
+        focus: str | None = None,
+        tenant_id: str = "default",
+    ) -> Any:
+        if self._app._runtime is None:
+            raise RuntimeError("Agent runtime is not started; call app.start() before consuming db-change events.")
+        return await self._app._runtime.trigger_event(
+            event_name=event_name,
+            payload=payload,
+            focus=focus,
+            tenant_id=tenant_id,
+        )
 
 
 class OwlClaw:
@@ -71,6 +104,7 @@ class OwlClaw:
 
         # Cron triggers (Task 4.3)
         self.cron_registry: CronTriggerRegistry = CronTriggerRegistry(self)
+        self.db_change_manager: DBChangeTriggerManager | None = None
         self._runtime: AgentRuntime | None = None
         self._langchain_adapter: Any = None
 
@@ -288,6 +322,91 @@ class OwlClaw:
             return wrapper
 
         return decorator
+
+    def db_change(
+        self,
+        *,
+        channel: str,
+        event_name: str | None = None,
+        tenant_id: str = "default",
+        debounce_seconds: float | None = None,
+        batch_size: int | None = None,
+        max_buffer_events: int = 1000,
+        max_payload_bytes: int = 7900,
+        focus: str | None = None,
+    ) -> Callable:
+        """Decorator to register a db-change trigger with fallback handler."""
+
+        from functools import wraps
+
+        def decorator(fn: Callable) -> Callable:
+            cfg = DBChangeTriggerConfig(
+                tenant_id=tenant_id,
+                channel=channel,
+                event_name=event_name or fn.__name__,
+                agent_id=self.name,
+                debounce_seconds=debounce_seconds,
+                batch_size=batch_size,
+                max_buffer_events=max_buffer_events,
+                max_payload_bytes=max_payload_bytes,
+                focus=focus,
+            )
+            self._ensure_db_change_manager().register(cfg, handler=fn)
+
+            @wraps(fn)
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
+                if inspect.iscoroutinefunction(fn):
+                    return await fn(*args, **kwargs)
+                return fn(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+    def trigger(self, registration: DBChangeTriggerRegistration) -> None:
+        """Register a trigger using function-call style API."""
+
+        if isinstance(registration, DBChangeTriggerRegistration):
+            self._ensure_db_change_manager().register(registration.config)
+            return
+        raise TypeError(f"Unsupported trigger registration type: {type(registration).__name__}")
+
+    def _ensure_db_change_manager(self) -> DBChangeTriggerManager:
+        if self.db_change_manager is not None:
+            return self.db_change_manager
+        dsn = self._resolve_db_change_dsn()
+        adapter = PostgresNotifyAdapter(dsn=dsn, reconnect_interval=self._resolve_db_change_reconnect_interval())
+        self.db_change_manager = DBChangeTriggerManager(
+            adapter=adapter,
+            governance=_AllowAllGovernance(),
+            agent_runtime=_RuntimeProxy(self),
+            ledger=self if self._ledger is not None else None,
+        )
+        return self.db_change_manager
+
+    def _resolve_db_change_dsn(self) -> str:
+        triggers_cfg = self._config.get("triggers", {})
+        db_change_cfg: dict[str, Any] = {}
+        if isinstance(triggers_cfg, dict):
+            candidate = triggers_cfg.get("db_change")
+            if isinstance(candidate, dict):
+                db_change_cfg = candidate
+        dsn = db_change_cfg.get("dsn") or db_change_cfg.get("database_url") or os.getenv("OWLCLAW_DATABASE_URL")
+        if not isinstance(dsn, str) or not dsn.strip():
+            raise RuntimeError(
+                "db_change requires database dsn; set triggers.db_change.dsn or OWLCLAW_DATABASE_URL before registration"
+            )
+        return dsn.strip()
+
+    def _resolve_db_change_reconnect_interval(self) -> float:
+        triggers_cfg = self._config.get("triggers", {})
+        if isinstance(triggers_cfg, dict):
+            db_change_cfg = triggers_cfg.get("db_change")
+            if isinstance(db_change_cfg, dict):
+                value = db_change_cfg.get("reconnect_interval", 30.0)
+                if isinstance(value, int | float) and value > 0:
+                    return float(value)
+        return 30.0
 
     def state(self, name: str) -> Callable:
         """Decorator to register a state provider.
@@ -630,11 +749,15 @@ class OwlClaw:
                 ledger=self._ledger,
                 tenant_id=tenant_id,
             )
+        if self.db_change_manager is not None:
+            await self.db_change_manager.start()
         self._runtime = runtime
         return runtime
 
     async def stop(self) -> None:
         """Stop governance and wait for cron in-flight tasks."""
+        if self.db_change_manager is not None:
+            await self.db_change_manager.stop()
         await self.stop_governance()
         await self.cron_registry.wait_for_all_tasks()
         self._runtime = None
@@ -645,6 +768,7 @@ class OwlClaw:
             "app": self.name,
             "runtime_initialized": bool(self._runtime and self._runtime.is_initialized),
             "cron": self.cron_registry.get_health_status(),
+            "db_change_registered_channels": len(self.db_change_manager._states) if self.db_change_manager else 0,  # noqa: SLF001
             "governance_enabled": self._ledger is not None,
         }
 

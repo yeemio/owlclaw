@@ -57,7 +57,7 @@
 
 - [x] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
 - [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
-- [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
+- [x] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
@@ -104,7 +104,7 @@
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
-| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（4/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
+| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-db-change Task 1/3/4/7） |
-| 批次状态 | **已完成（本批）**。完成 db-change 核心骨架、聚合器、管理器与首批单元测试。 |
-| 已完成项 | 1) 新增 `owlclaw/triggers/db_change` 模块（adapter/config/aggregator/manager）；2) 实现 `DBChangeEvent`、`DBChangeAdapter`、`PostgresNotifyAdapter`（NOTIFY payload 解析与重连循环）；3) 实现 `EventAggregator`（passthrough/debounce/batch/hybrid）；4) 实现 `DBChangeTriggerManager`（register/start/stop/governance gate/agent dispatch/ledger block record）；5) 新增单元测试覆盖聚合策略、payload 解析、manager 治理阻断路径。 |
-| 下一待执行 | `codex-work`：`triggers-db-change` Task 2（Notify adapter 完整化）→ Task 5（decorator + function API）→ Task 6（SQL 模板 + CLI）→ Task 8/9（集成与降级）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/db_change tests/unit/triggers/test_db_change.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_db_change.py -q`（3 passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-db-change Task 2/5/6/8/9/10/11） |
+| 批次状态 | **已完成（本批）**。`triggers-db-change` 全任务收口（11/11）。 |
+| 已完成项 | 1) 强化 `PostgresNotifyAdapter`（并发回调隔离、健康检查重连、优雅停止）；2) 增加边界/降级（payload 限制、聚合器内存保护、runtime 不可用本地重试队列）；3) 完成 API（`@app.db_change` + `app.trigger(db_change(...))`）；4) 新增 CLI `owlclaw trigger template db-change` 与 `templates/notify_trigger.sql`；5) 增加 CDC 预留（`DebeziumAdapter` + `DebeziumConfig`）；6) 补全单元/集成测试与文档（NOTIFY_SETUP/AGGREGATION_TUNING/CDC_ROADMAP）。 |
+| 下一待执行 | `codex-work`：进入 `triggers-api`（Task 0/1/2...）按分配继续推进。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/db_change owlclaw/app.py owlclaw/cli/__init__.py owlclaw/cli/trigger_template.py tests/unit/triggers/test_db_change.py tests/unit/test_cli_trigger_template.py tests/integration/test_db_change_integration.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_db_change.py tests/unit/test_cli_trigger_template.py tests/unit/triggers/test_cron_decorator.py -q`（24 passed）；`poetry run pytest tests/unit/triggers -k db_change -q`（9 passed）；`poetry run pytest tests/integration/test_db_change_integration.py -q`（1 skipped: Docker unavailable）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

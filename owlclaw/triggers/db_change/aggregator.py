@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable
 from typing import Literal
 
 from owlclaw.triggers.db_change.adapter import DBChangeEvent
 
 AggregationMode = Literal["passthrough", "debounce", "batch", "hybrid"]
+logger = logging.getLogger(__name__)
 
 
 class EventAggregator:
@@ -21,18 +23,22 @@ class EventAggregator:
         on_flush: Callable[[list[DBChangeEvent]], Awaitable[None]],
         debounce_seconds: float | None = None,
         batch_size: int | None = None,
+        max_buffer_events: int = 1000,
     ) -> None:
         self._mode = mode
         self._on_flush = on_flush
         self._debounce_seconds = debounce_seconds
         self._batch_size = batch_size
+        self._max_buffer_events = max_buffer_events
         self._buffer: list[DBChangeEvent] = []
         self._debounce_task: asyncio.Task[None] | None = None
         self._lock = asyncio.Lock()
+        self.dropped_events = 0
 
     async def push(self, event: DBChangeEvent) -> None:
         async with self._lock:
             self._buffer.append(event)
+            self._enforce_memory_bound()
             if self._mode == "passthrough":
                 await self._flush_locked()
                 return
@@ -67,3 +73,15 @@ class EventAggregator:
             self._debounce_task.cancel()
             self._debounce_task = None
         await self._on_flush(batch)
+
+    def _enforce_memory_bound(self) -> None:
+        overflow = len(self._buffer) - self._max_buffer_events
+        if overflow <= 0:
+            return
+        del self._buffer[:overflow]
+        self.dropped_events += overflow
+        logger.warning(
+            "db_change aggregator dropped %d events because max_buffer_events=%d",
+            overflow,
+            self._max_buffer_events,
+        )
