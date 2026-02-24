@@ -19,9 +19,11 @@ from owlclaw.owlhub.api.auth import (
     enforce_write_auth,
     get_current_principal,
 )
+from owlclaw.owlhub.api.routes.blacklist import router as blacklist_router
 from owlclaw.owlhub.api.routes.reviews import router as reviews_router
 from owlclaw.owlhub.api.routes.skills import router as skills_router
 from owlclaw.owlhub.api.routes.statistics import router as statistics_router
+from owlclaw.owlhub.models import BlacklistManager
 from owlclaw.owlhub.review import ReviewSystem
 from owlclaw.owlhub.statistics import StatisticsTracker
 from owlclaw.owlhub.validator import Validator
@@ -47,10 +49,12 @@ def create_app() -> FastAPI:
     validator = Validator()
     review_dir = Path(os.getenv("OWLHUB_REVIEW_DIR", "./.owlhub/reviews")).resolve()
     statistics_db = Path(os.getenv("OWLHUB_STATISTICS_DB", "./.owlhub/skill_statistics.json")).resolve()
+    blacklist_db = Path(os.getenv("OWLHUB_BLACKLIST_DB", "./.owlhub/blacklist.json")).resolve()
     app.state.validator = validator
     app.state.review_system = ReviewSystem(storage_dir=review_dir, validator=validator)
     app.state.audit_logger = AuditLogger()
     app.state.statistics_tracker = StatisticsTracker(storage_path=statistics_db)
+    app.state.blacklist_manager = BlacklistManager(path=blacklist_db)
     app.state.auth_manager = AuthManager()
 
     @app.middleware("http")
@@ -70,6 +74,7 @@ def create_app() -> FastAPI:
         return {"status": "accepted", "user_id": principal.user_id, "role": principal.role}
 
     app.include_router(create_auth_router(app.state.auth_manager))
+    app.include_router(blacklist_router)
     app.include_router(skills_router)
     app.include_router(reviews_router)
     app.include_router(statistics_router)
