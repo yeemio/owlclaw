@@ -92,7 +92,7 @@ class TemplateRenderer:
         param_defs: list[TemplateParameter],
     ) -> dict[str, Any]:
         """Convert parameter values to expected types."""
-        result = {}
+        result: dict[str, Any] = {}
         for p in param_defs:
             if p.name not in params:
                 continue
