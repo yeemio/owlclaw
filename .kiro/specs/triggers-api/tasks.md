@@ -12,26 +12,26 @@
 
 ### Phase 0：协议契约先行（Protocol-first，决策 4.11）
 
-- [ ] **Task 0**: 定义 API 触发器协议契约
-  - [ ] 0.1 提交 OpenAPI/JSON Schema：端点注册格式、请求/响应 schema、错误码表（400/401/429/503/408）
-  - [ ] 0.2 确认同步/异步两种响应模式的协议语义（202 + run_id vs 直接结果）
-  - [ ] 0.3 协议层不泄漏 Python 特有语义（无 Callable/装饰器元数据）
+- [x] **Task 0**: 定义 API 触发器协议契约
+  - [x] 0.1 提交 OpenAPI/JSON Schema：端点注册格式、请求/响应 schema、错误码表（400/401/429/503/408）
+  - [x] 0.2 确认同步/异步两种响应模式的协议语义（202 + run_id vs 直接结果）
+  - [x] 0.3 协议层不泄漏 Python 特有语义（无 Callable/装饰器元数据）
   - _说明：Task 1 的 Python 实现必须从本契约派生，禁止跳过契约直接做 Python API_
 
 ### Phase 1：HTTP 服务与端点注册
 
-- [ ] **Task 1**: 创建 `owlclaw/triggers/api/` 模块结构
+- [x] **Task 1**: 创建 `owlclaw/triggers/api/` 模块结构
   - 创建 `__init__.py`, `server.py`, `auth.py`, `config.py`, `handler.py`
   - 定义 `APITriggerConfig` Pydantic 模型
   - 添加 starlette + uvicorn 到可选依赖
 
-- [ ] **Task 2**: 实现 `APITriggerServer`
+- [x] **Task 2**: 实现 `APITriggerServer`
   - Starlette 应用初始化 + 路由管理
   - `register()` 动态注册端点
   - uvicorn 启动/停止生命周期
   - CORS 中间件配置
 
-- [ ] **Task 3**: 实现 `AuthProvider` 认证体系
+- [x] **Task 3**: 实现 `AuthProvider` 认证体系
   - `APIKeyAuthProvider`: X-API-Key header 验证
   - `BearerTokenAuthProvider`: Authorization Bearer 验证
   - 认证失败 → 401 JSON 响应

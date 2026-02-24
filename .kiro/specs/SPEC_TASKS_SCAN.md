@@ -105,7 +105,7 @@
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（6/13） | API 调用触发器（Task 0/1/2/3 已完成） |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-db-change Task 2/5/6/8/9/10/11） |
-| 批次状态 | **已完成（本批）**。`triggers-db-change` 全任务收口（11/11）。 |
-| 已完成项 | 1) 强化 `PostgresNotifyAdapter`（并发回调隔离、健康检查重连、优雅停止）；2) 增加边界/降级（payload 限制、聚合器内存保护、runtime 不可用本地重试队列）；3) 完成 API（`@app.db_change` + `app.trigger(db_change(...))`）；4) 新增 CLI `owlclaw trigger template db-change` 与 `templates/notify_trigger.sql`；5) 增加 CDC 预留（`DebeziumAdapter` + `DebeziumConfig`）；6) 补全单元/集成测试与文档（NOTIFY_SETUP/AGGREGATION_TUNING/CDC_ROADMAP）。 |
-| 下一待执行 | `codex-work`：进入 `triggers-api`（Task 0/1/2...）按分配继续推进。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/db_change owlclaw/app.py owlclaw/cli/__init__.py owlclaw/cli/trigger_template.py tests/unit/triggers/test_db_change.py tests/unit/test_cli_trigger_template.py tests/integration/test_db_change_integration.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_db_change.py tests/unit/test_cli_trigger_template.py tests/unit/triggers/test_cron_decorator.py -q`（24 passed）；`poetry run pytest tests/unit/triggers -k db_change -q`（9 passed）；`poetry run pytest tests/integration/test_db_change_integration.py -q`（1 skipped: Docker unavailable）。 |
+| 当前批次 | coding loop（codex-work: triggers-api Task 0/1/2/3） |
+| 批次状态 | **进行中（本批）**。已完成 `triggers-api` 协议契约与服务基础层（Task 0/1/2/3）。 |
+| 已完成项 | 1) 新增协议契约文档：`openapi.yaml` + `api_trigger_registration.schema.json` + `PROTOCOL_NOTES.md`（同步/异步语义与错误码）；2) 新建 `owlclaw/triggers/api/` 模块：`config.py`、`auth.py`、`handler.py`、`server.py`、`__init__.py`；3) 实现 `APITriggerServer` 动态注册、CORS、同步/异步响应骨架、uvicorn 生命周期（延迟导入）；4) 实现 `APIKeyAuthProvider` 与 `BearerTokenAuthProvider`。 |
+| 下一待执行 | `codex-work`：继续 `triggers-api` Task 4（请求处理管道：sanitizer/governance/ledger）→ Task 5（sync/async 结果查询）→ Task 6（`@app.api` + `app.trigger(api_call(...))`）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/api owlclaw/triggers/__init__.py tests/unit/triggers/test_api.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_api.py tests/unit/triggers/test_db_change.py -q`（15 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

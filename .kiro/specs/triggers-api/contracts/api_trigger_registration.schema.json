@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://owlclaw.dev/schemas/triggers/api-trigger-registration.schema.json",
+  "title": "API Trigger Registration",
+  "type": "object",
+  "required": ["path", "method", "event_name", "response_mode"],
+  "properties": {
+    "path": {"type": "string", "pattern": "^/"},
+    "method": {"type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]},
+    "event_name": {"type": "string", "minLength": 1},
+    "tenant_id": {"type": "string", "minLength": 1, "default": "default"},
+    "response_mode": {"type": "string", "enum": ["sync", "async"], "default": "async"},
+    "sync_timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 300, "default": 60},
+    "focus": {"type": ["string", "null"]},
+    "auth_required": {"type": "boolean", "default": true},
+    "description": {"type": ["string", "null"]}
+  },
+  "additionalProperties": false
+}
