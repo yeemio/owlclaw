@@ -104,6 +104,98 @@ def test_skill_validate_non_skill_file_exits_with_error(tmp_path):
     assert "file is not skill.md" in result.output.lower()
 
 
+def test_skill_validate_binding_passes_with_prerequisites_env_declared(tmp_path, monkeypatch):
+    monkeypatch.setenv("API_TOKEN", "token")
+    skill_dir = tmp_path / "binding-ok"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: binding-ok
+description: valid binding
+metadata:
+  tools_schema:
+    fetch-order:
+      description: fetch order
+      binding:
+        type: http
+        method: GET
+        url: https://svc.local/orders/{order_id}
+        headers:
+          Authorization: ${API_TOKEN}
+owlclaw:
+  prerequisites:
+    env:
+      - API_TOKEN
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["validate", str(skill_dir)])
+    assert result.exit_code == 0
+    assert "OK:" in result.output
+
+
+def test_skill_validate_binding_fails_when_env_ref_not_declared_in_prerequisites(tmp_path, monkeypatch):
+    monkeypatch.setenv("API_TOKEN", "token")
+    skill_dir = tmp_path / "binding-missing-prereq"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: binding-missing-prereq
+description: invalid binding
+metadata:
+  tools_schema:
+    fetch-order:
+      description: fetch order
+      binding:
+        type: http
+        method: GET
+        url: https://svc.local/orders/{order_id}
+        headers:
+          Authorization: ${API_TOKEN}
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["validate", str(skill_dir)])
+    assert result.exit_code != 0
+    assert "env refs not declared in prerequisites.env: API_TOKEN" in result.output
+
+
+def test_skill_validate_binding_warns_on_plaintext_secret_and_missing_bin(tmp_path):
+    skill_dir = tmp_path / "binding-warning"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: binding-warning
+description: binding warnings
+metadata:
+  tools_schema:
+    fetch-order:
+      description: fetch order
+      binding:
+        type: http
+        method: GET
+        url: https://svc.local/orders/{order_id}
+        body_template:
+          api_key: sk-veryverylongtokenvalue
+owlclaw:
+  prerequisites:
+    bins:
+      - this_binary_does_not_exist_123
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["validate", str(skill_dir)])
+    assert result.exit_code == 0
+    assert "plaintext secret" in result.output.lower()
+    assert "binary not found in PATH".lower() in result.output.lower()
+
+
 def test_skill_validate_deduplicates_overlapping_paths(tmp_path):
     """validate should not process the same SKILL.md twice for overlapping inputs."""
     skill_dir = tmp_path / "dup-skill"

@@ -44,7 +44,9 @@ def _restore_env(old: dict[str, str | None]) -> None:
 def _issue_token(client: TestClient, *, code: str = "gho_acme1111", role: str = "publisher") -> str:
     response = client.post("/api/v1/auth/token", json={"github_code": code, "role": role})
     assert response.status_code == 200
-    return response.json()["access_token"]
+    token = response.json().get("access_token")
+    assert isinstance(token, str)
+    return token
 
 
 def test_publish_generates_checksum_from_local_package_when_missing(tmp_path: Path) -> None:

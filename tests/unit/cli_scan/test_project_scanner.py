@@ -106,3 +106,26 @@ def test_property_error_logging_completeness(trailing: str) -> None:
         assert result.metadata.failed_files == 1
         assert result.files["broken.py"].errors
         assert "line=" in result.files["broken.py"].errors[0]
+
+
+@settings(deadline=None, max_examples=20)
+@given(file_count=st.integers(min_value=1, max_value=5), broken_index=st.integers(min_value=0, max_value=4))
+def test_property_scan_statistics_accuracy(file_count: int, broken_index: int) -> None:
+    # Property 26: Scan Statistics Accuracy
+    with TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+        broken_slot = broken_index % file_count
+        for i in range(file_count):
+            target = root / f"f{i}.py"
+            if i == broken_slot:
+                target.write_text("def bad(:\n    pass\n", encoding="utf-8")
+            else:
+                target.write_text("def ok():\n    return 1\n", encoding="utf-8")
+
+        scanner = ProjectScanner(ScanConfig(project_path=root))
+        result = scanner.scan()
+
+        assert result.metadata.scanned_files == file_count
+        assert result.metadata.failed_files == 1
+        observed_failed = sum(1 for item in result.files.values() if item.errors)
+        assert observed_failed == result.metadata.failed_files

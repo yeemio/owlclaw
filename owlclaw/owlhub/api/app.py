@@ -87,6 +87,7 @@ def create_app() -> FastAPI:
         method = request.method
         path = request.url.path
         auth_manager = app.state.auth_manager
+        response: Response
         try:
             auth_manager.enforce_request_rate_limit(request)
             enforce_write_auth(request)

@@ -56,8 +56,8 @@
 ### Phase 1.5：声明式工具绑定（决策 4.12）
 
 - [ ] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
-- [ ] `owlclaw.capabilities.skills` 扩展 — Skills Loader binding 检测与 BindingTool 自动注册 → spec: declarative-binding Task 6
-- [ ] `owlclaw.cli.skill` 扩展 — `owlclaw skill validate` binding schema 验证 → spec: declarative-binding Task 7
+- [x] `owlclaw.capabilities.skills` 扩展 — Skills Loader binding 检测与 BindingTool 自动注册 → spec: declarative-binding Task 6
+- [x] `owlclaw.cli.skill` 扩展 — `owlclaw skill validate` binding schema 验证 → spec: declarative-binding Task 7
 - [ ] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
 
 ### Phase 2：扩展 + 可观测 + 生态接入
@@ -70,7 +70,7 @@
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
-- [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
+- [x] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
 - [ ] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
 - [ ] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
 - [x] `owlclaw-mcp` — MCP Server（OpenClaw 通道，只读查询为主） → spec: mcp-server  
@@ -117,10 +117,10 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（8/26） | 声明式工具绑定（Task 0~7 已完成：契约/schema + Resolver/Registry + HTTP Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（39/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（44/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11 已完成） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 36.3） |
-| 批次状态 | **已完成（部分）**。完成安全测试收敛（限流/鉴权绕过/SQL 注入样式输入/XSS 转义/checksum 篡改）。 |
-| 已完成项 | 1) 扩展 `tests/unit/test_owlhub_api_security_hardening.py`：新增 SQL 注入样式标识拒绝测试、伪造 Bearer token 绕过失败测试；2) 扩展 `tests/unit/test_owlhub_site_generator.py`：新增脚本注入内容转义测试；3) 修复 `owlhub/site/generator.py` 详情页文件名 slug 安全化（避免非法字符导致生成失败）；4) 结合 `tests/unit/test_owlhub_api_checksums.py` 与 `tests/unit/test_owlhub_cli_client.py` 覆盖 checksum 篡改拒绝；5) 回填 `owlhub/tasks.md` Task 36（含 36.3）并同步进度 `owlhub 39/42`。 |
-| 下一待执行 | `owlhub` Task 37（User experience improvements）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/site/generator.py tests/unit/test_owlhub_site_generator.py tests/unit/test_owlhub_api_security_hardening.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_site_generator.py tests/unit/test_owlhub_api_security_hardening.py tests/unit/test_owlhub_api_checksums.py tests/unit/test_owlhub_cli_client.py -q -k "generated_html_escapes_script_content or sql_injection or auth_bypass or install_rejects_checksum_mismatch"` -> 4 passed。 |
+| 当前批次 | review-work（持续合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
+| 批次状态 | **进行中（本批）**。已推进 `declarative-binding` 到 Task 7、`cli-scan` 全量收口，以及 `owlhub` 到 Task 36.2。 |
+| 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）+ BindingTool/Ledger + Skills 自动注册 + CLI validate 扩展；2) `cli-scan` 收口（Task 1~20 完成，80/80）；3) 保持并修复 `serialization.py` 的 mypy/ruff 兼容写法，避免类型回退；4) 合并 `codex-gpt-work` 批次：`owlhub` Phase 3 集成流与文档、CI/CD 部署流程、checksum 全链路校验与安全加固；5) 定向回归通过：`ruff` + `mypy` + `pytest`（`cli_scan`、`bindings`、`owlhub` 关键路径）。 |
+| 下一待执行 | 1) 推进 `declarative-binding` Task 8（QueueBinding Executor）；2) 推进 `owlhub` Task 36.3（security tests）与剩余收尾任务；3) 继续保持 `review-work` 与两条开发分支差异归零。 |
+| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(8/26)，`owlhub` 🟡(38/42)，`triggers-signal` ✅(15/15)。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
