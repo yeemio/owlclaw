@@ -82,7 +82,14 @@ poetry install
 
 Poetry 有依赖缓存，重复安装很快（几秒到一分钟）。
 
-**Codex CLI 启动**：在 Windows 上使用 **PowerShell**（不要用 CMD）。全局配置已设置 `approval_mode = "full-auto"`（`~/.codex/config.toml`），Codex CLI 启动后自动执行，无需逐条确认。
+**Codex CLI 启动**：在 Windows 上使用 **PowerShell**（不要用 CMD）。全局配置已设置自动审批（`~/.codex/config.toml`）：
+
+```toml
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+```
+
+Codex CLI 启动后自动执行所有操作，无需逐条确认。`danger-full-access` 允许 Codex 写入任意目录，这是 Git Worktree 架构的必要条件：worktree 的 `.git` 元数据存储在主仓库 `D:\AI\owlclaw\.git\worktrees\<name>\`，若使用 `workspace-write` 会因跨目录权限被沙箱拦截导致 merge/commit 失败。
 
 ```powershell
 # 审校
@@ -279,6 +286,49 @@ Review Loop 的完整定义见 `.kiro/WORKTREE_ASSIGNMENTS.md` 中审校部分�
 - **审校积压**：审校 worktree 来不及审核编码分支的变更 → 暂停一个编码 worktree，让审校追上
 - **跨 spec 依赖密集**：多个 spec 之间依赖频繁变动 → 将相关 spec 合并分配给同一个编码 worktree 串行处理
 - **测试频繁失败**：合并后测试通过率低 → 减速，确保每个编码 worktree 在提交前本地测试通过
+- **内存耗尽 / 系统死机**：Python 进程未释放（见下方 §6.4）→ 立即清理残留进程，再重启 Codex-CLI
+
+### 6.4 资源释放规范（防死机）⚠️
+
+**问题根因**：多个 worktree 并行运行 `pytest`，每轮 spec 循环都会启动 Python 子进程。若进程未正常退出（测试超时、异常中断、后台 `&` 启动），会持续积累占用内存，最终导致系统死机。
+
+**AI Agent 必须遵守的测试执行规范**：
+
+```bash
+# ✅ 正确：加超时限制，pytest 自动管理子进程生命周期
+poetry run pytest tests/unit/xxx.py -q --timeout=30
+
+# ✅ 正确：指定测试范围，不跑全量（避免长时间占用）
+poetry run pytest tests/unit/test_foo.py tests/unit/test_bar.py -q --timeout=30
+
+# ❌ 禁止：后台运行测试
+poetry run pytest tests/ &
+
+# ❌ 禁止：无超时限制跑全量测试（可能挂起）
+poetry run pytest
+```
+
+**每批次测试结束后，必须清理残留进程**：
+
+```powershell
+# Windows PowerShell（在每个 worktree 的测试批次结束后执行）
+taskkill /F /IM python.exe /T 2>$null; echo "进程已清理"
+```
+
+```bash
+# WSL / Linux
+pkill -f pytest 2>/dev/null; pkill -f "python -m" 2>/dev/null; echo "进程已清理"
+```
+
+**人工监控建议**：若发现内存持续上涨，立即在 PowerShell 执行：
+
+```powershell
+# 查看所有 Python 进程
+Get-Process python | Select-Object Id, CPU, WorkingSet, StartTime
+
+# 强制清理全部 Python 进程
+taskkill /F /IM python.exe /T
+```
 
 ### 6.3 扩容策略
 
