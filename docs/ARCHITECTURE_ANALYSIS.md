@@ -1395,6 +1395,43 @@ shadow 模式直接解决了 FastPath 提案的核心需求——"不影响现�
 
 FastPath 提案状态更新为 `Resolved — 纳入决策 4.12 Declarative Binding`。
 
+#### OpenClaw 对标分析补充（2026-02-24）
+
+OpenClaw（22.3 万星）验证了"SKILL.md 即能力"的模式在市场上的成功。其核心机制是 Agent 通过 bash/curl 执行 SKILL.md 中描述的命令（隐式绑定），与 OwlClaw 的声明式绑定（显式绑定）形成互补。对标分析揭示了以下需要补充的设计点：
+
+**1. SKILL.md 书写门槛**
+
+OpenClaw 的最小 SKILL.md 只需 `name` + `description`，5 分钟上手。OwlClaw 的 SKILL.md 要求理解 `owlclaw:` 扩展字段（task_type、constraints、trigger、cron 表达式），门槛过高。
+
+决策：所有 `owlclaw:` 扩展字段均为可选，只有 `name` + `description` + body 是必需的。`owlclaw skill init` 默认生成最小版本。
+
+**2. Skill Prerequisites（加载前提条件）**
+
+OpenClaw 的 `metadata.openclaw.requires`（env/bins/config/os）在加载时过滤不可用的 skill。OwlClaw 需要同样的机制——如果 binding 依赖的环境变量不存在，应在加载时就跳过，而不是等到 Agent 调用时才失败。
+
+决策：在 `owlclaw:` 字段中增加 `prerequisites`（env/bins/config/python_packages/os），加载时检查。
+
+**3. 简化 Tools 声明**
+
+binding 的 `tools_schema` 使用完整 JSON Schema，对非技术用户门槛过高。
+
+决策：支持简化 YAML 语法（`param: string`），运行时自动展开为 JSON Schema。
+
+**4. 三种 Skill 执行模式共存**
+
+| 模式 | 适用场景 | 执行方式 |
+|------|---------|---------|
+| **Declarative Binding** | 存量系统接入（HTTP/Queue/SQL） | 运行时根据 binding 声明自动调用 |
+| **@handler** | 复杂业务逻辑 | Python 代码实现 |
+| **Shell 指令** | 简单工具调用（curl/CLI） | Agent 读 body 中的命令示例，通过内建 shell 工具执行 |
+
+三种模式共存，渐进式迁移：从 shell 指令（最简单）→ binding（零代码但结构化）→ @handler（最灵活）。
+
+**5. Session Skill Snapshot + Token Budget**
+
+- 会话开始时快照可用 Skills 列表，会话内保持稳定
+- 每个 Skill 注入 prompt 的 token 开销透明化，纳入 governance budget 控制
+
 ---
 
 ## 五、OwlClaw 架构设计（v3 — Agent 自驱动）
@@ -2588,7 +2625,7 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 
 ---
 
-> **文档版本**: v4.3（v4.2 + §4.12 Declarative Binding：声明式工具绑定，SKILL.md 从知识文档升级为可执行契约）
+> **文档版本**: v4.4（v4.3 + §4.12 OpenClaw 对标补充：书写门槛、Prerequisites、简化语法、三种执行模式、Session Snapshot）
 > **创建时间**: 2026-02-10
 > **最后更新**: 2026-02-24
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`

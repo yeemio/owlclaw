@@ -95,7 +95,7 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108） | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108），backlog +7 运行时增强 | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -116,9 +116,9 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/73） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/87） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（83/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -150,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 25.1~25.4） |
-| 批次状态 | **已完成**。ReviewSystem 人工审核流（分配/审批/驳回/申诉）与 review API 已落地并通过测试。 |
-| 已完成项 | 1) 更新 `owlclaw/owlhub/review/system.py`：新增 `AppealRecord`、`list_pending_records()`、`assign_reviewer()`、`appeal()`、`list_appeals()`、通知记录与 appeals 持久化；2) 更新 `owlclaw/owlhub/review/__init__.py`：导出 `AppealRecord`；3) 新增 `owlclaw/owlhub/api/routes/reviews.py`：实现 `GET /api/v1/reviews/pending`、`POST /api/v1/reviews/{id}/approve`、`POST /api/v1/reviews/{id}/reject`、`POST /api/v1/reviews/{id}/appeal`，并加入 reviewer/admin/publisher 权限约束；4) 更新 `owlclaw/owlhub/api/app.py`：挂载 reviews router；5) 更新 `owlclaw/owlhub/api/schemas.py`：新增 `RejectRequest`、`AppealRequest`、`ReviewRecordResponse`；6) 新增 `tests/unit/test_owlhub_api_reviews.py`：覆盖审核接口权限/状态流/申诉持久化 + Property 20/23（API 版）；7) 回填 `owlhub/tasks.md` 的 Task 25、25.1、25.2、25.3、25.4。 |
-| 下一待执行 | `owlhub` Task 26（blacklist and moderation features）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/review/system.py owlclaw/owlhub/review/__init__.py owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/reviews.py owlclaw/owlhub/api/schemas.py tests/unit/test_owlhub_api_reviews.py tests/unit/test_owlhub_api_schemas.py --fix` -> all checks passed；`poetry run mypy owlclaw/owlhub/review/system.py owlclaw/owlhub/api/routes/reviews.py owlclaw/owlhub/api/app.py` -> success；`poetry run pytest tests/unit/test_owlhub_api_reviews.py tests/unit/test_owlhub_review_system.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_publish.py tests/unit/test_owlhub_api_auth.py -q` -> 23 passed。 |
+| 当前批次 | orchestrate（OpenClaw 对标分析 → DX 降门槛 + 运行时增强补充） |
+| 批次状态 | **已完成**。OpenClaw 深度对标完成；SKILL.md 书写门槛问题已识别并补充到 spec；运行时增强 7 项已加入 capabilities-skills backlog。 |
+| 已完成项 | 1) OpenClaw 深度对标分析（SKILL.md 模型、ClawHub 生态、Lobster 工作流、50+ 内置 Skills）；2) `ARCHITECTURE_ANALYSIS` 更新至 v4.4（§4.12 补充 OpenClaw 对标：书写门槛、Prerequisites、简化语法、三种执行模式、Session Snapshot）；3) `declarative-binding` requirements 新增 R9/R10/R11（Prerequisites + 简化 Tools 语法 + 最小可用规范）；4) `declarative-binding` tasks 新增 Task 0.5/0.6、Task 7.5/7.6/7.7、Task 13（DX 降门槛）、Task 14/15 重组（共 87 子任务）；5) `capabilities-skills` backlog 新增 7 项运行时增强（Prerequisites/Session Snapshot/Token Budget/优先级覆盖/Enable-Disable/环境变量注入/热重载）。 |
+| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐（含简化语法 + prerequisites 规范）→ Task 1-7。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
+| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.4（含 OpenClaw 对标补充）；`declarative-binding` spec 三层齐全（requirements 11 个需求 + design 8 个组件 + tasks 15 个 task + backlog）；`capabilities-skills` backlog 新增 7 项运行时增强。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
