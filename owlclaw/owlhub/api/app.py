@@ -86,7 +86,9 @@ def create_app() -> FastAPI:
         started = time.perf_counter()
         method = request.method
         path = request.url.path
+        auth_manager = app.state.auth_manager
         try:
+            auth_manager.enforce_request_rate_limit(request)
             enforce_write_auth(request)
         except HTTPException as exc:
             _log_json(
@@ -103,7 +105,9 @@ def create_app() -> FastAPI:
                 status_code=exc.status_code,
                 duration_ms=(time.perf_counter() - started) * 1000.0,
             )
-            return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+            response = JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+            _attach_security_headers(response)
+            return response
         try:
             response = await call_next(request)
         except Exception:
@@ -128,6 +132,7 @@ def create_app() -> FastAPI:
             duration_ms=round(duration_ms, 3),
         )
         app.state.metrics.record_request(method=method, path=path, status_code=response.status_code, duration_ms=duration_ms)
+        _attach_security_headers(response)
         return response
 
     @app.get("/health")
@@ -169,3 +174,11 @@ def create_app() -> FastAPI:
     app.include_router(create_audit_router(app.state.audit_logger))
 
     return app
+
+
+def _attach_security_headers(response: Response) -> None:
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'")
+    response.headers.setdefault("X-Permitted-Cross-Domain-Policies", "none")

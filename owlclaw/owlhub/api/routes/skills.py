@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -31,6 +32,7 @@ from owlclaw.owlhub.schema import VersionState
 router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
 current_principal_type = Annotated[Principal, Depends(get_current_principal)]
 logger = logging.getLogger(__name__)
+_SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 
 
 @lru_cache(maxsize=1)
@@ -194,10 +196,14 @@ def publish_skill(
         request_payload = PublishRequest.model_validate(payload)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    publisher = request_payload.publisher.strip()
-    skill_name = request_payload.skill_name.strip()
-    version = request_payload.version.strip()
+    publisher = _sanitize_text(request_payload.publisher)
+    skill_name = _sanitize_text(request_payload.skill_name)
+    version = _sanitize_text(request_payload.version)
     metadata_dict = request_payload.metadata if isinstance(request_payload.metadata, dict) else {}
+    if not _is_safe_identifier(publisher):
+        raise HTTPException(status_code=422, detail="invalid publisher format")
+    if not _is_safe_identifier(skill_name):
+        raise HTTPException(status_code=422, detail="invalid skill name format")
 
     if not _principal_allowed_for_publisher(principal, publisher):
         raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
@@ -208,9 +214,9 @@ def publish_skill(
         "name": skill_name,
         "version": version,
         "publisher": publisher,
-        "description": str(metadata_dict.get("description", "")).strip(),
-        "license": str(metadata_dict.get("license", "")).strip(),
-        "tags": metadata_dict.get("tags", []),
+        "description": _sanitize_text(str(metadata_dict.get("description", "")), max_len=512),
+        "license": _sanitize_text(str(metadata_dict.get("license", "")), max_len=64),
+        "tags": [_sanitize_text(str(tag), max_len=32) for tag in metadata_dict.get("tags", []) if isinstance(tag, str)],
         "dependencies": metadata_dict.get("dependencies", {}),
     }
 
@@ -306,6 +312,8 @@ def update_skill_state(
     request: Request,
     principal: current_principal_type,
 ) -> dict[str, Any]:
+    if not _is_safe_identifier(publisher) or not _is_safe_identifier(name):
+        raise HTTPException(status_code=422, detail="invalid publisher or skill name format")
     if not _principal_allowed_for_publisher(principal, publisher):
         raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
     try:
@@ -379,6 +387,8 @@ def takedown_skill(
     request: Request,
     principal: current_principal_type,
 ) -> dict[str, Any]:
+    if not _is_safe_identifier(publisher) or not _is_safe_identifier(name):
+        raise HTTPException(status_code=422, detail="invalid publisher or skill name format")
     if principal.role != "admin":
         raise HTTPException(status_code=403, detail="admin role required")
     try:
@@ -453,3 +463,12 @@ def _is_hidden(*, entry: dict[str, Any], request: Request | None = None) -> bool
         return False
     manager = request.app.state.blacklist_manager
     return bool(manager.is_blocked(publisher=publisher, skill_name=skill_name))
+
+
+def _sanitize_text(value: str, *, max_len: int = 128) -> str:
+    filtered = "".join(ch for ch in value if ch >= " " and ch != "\x7f")
+    return filtered.strip()[:max_len]
+
+
+def _is_safe_identifier(value: str) -> bool:
+    return bool(_SAFE_IDENTIFIER.fullmatch(value))
