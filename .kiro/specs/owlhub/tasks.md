@@ -14,21 +14,21 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 
 ## Phase 1: GitHub Index Mode (Minimal Viable Registry)
 
-- [ ] 1. Set up project structure and core data models
+- [x] 1. Set up project structure and core data models
   - Create `owlhub/` package with `indexer/`, `validator/`, and `schema/` subpackages
   - Define `SkillManifest`, `IndexEntry`, `ValidationResult`, `ValidationError` dataclasses in `owlhub/schema/`
   - Define `VersionState` enum (DRAFT, RELEASED, DEPRECATED)
   - Add type hints and docstrings following project conventions
   - _Requirements: 1.1, 1.4, 4.1_
 
-- [ ]* 1.1 Write property test for data model serialization
+- [x]* 1.1 Write property test for data model serialization
   - **Property 24: GitHub 索引格式正确性**
   - **Validates: Requirements 8.1**
   - Generate random SkillManifest instances and verify JSON serialization matches schema
   - _Requirements: 8.1_
 
-- [ ] 2. Implement Validator component
-  - [ ] 2.1 Create `owlhub/validator/validator.py` with Validator class
+- [x] 2. Implement Validator component
+  - [x] 2.1 Create `owlhub/validator/validator.py` with Validator class
     - Implement `validate_version()` with semver regex pattern
     - Implement `validate_manifest()` for required fields validation
     - Implement `validate_structure()` for directory structure checks
@@ -36,7 +36,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Return detailed ValidationResult with errors and warnings
     - _Requirements: 1.2, 1.5, 4.1, 4.2, 4.3, 4.4_
 
-  - [ ]* 2.2 Write unit tests for Validator
+  - [x]* 2.2 Write unit tests for Validator
     - Test valid semver formats (1.0.0, 1.2.3-alpha.1, 1.0.0+build)
     - Test invalid semver formats (1.0, v1.0.0, 1.0.0.0)
     - Test required field validation (name, version, publisher, description, license)
@@ -44,7 +44,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test dependency constraint formats (^1.0.0, >=1.0.0,<2.0.0, ~1.2.3)
     - _Requirements: 1.2, 1.5, 4.1, 4.2, 4.3, 4.4_
 
-  - [ ]* 2.3 Write property tests for Validator
+  - [x]* 2.3 Write property tests for Validator
     - **Property 2: 语义化版本号验证**
     - **Validates: Requirements 1.2**
     - Generate random version strings and verify correct classification
@@ -56,15 +56,15 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Generate skill packages with multiple errors and verify all are reported
     - _Requirements: 1.2, 1.5, 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 3. Implement Index Builder component
-  - [ ] 3.1 Create `owlhub/indexer/crawler.py` for repository crawling
+- [x] 3. Implement Index Builder component
+  - [x] 3.1 Create `owlhub/indexer/crawler.py` for repository crawling
     - Implement GitHub API client for fetching repository contents
     - Implement SKILL.md frontmatter parsing using PyYAML
     - Handle API rate limiting and errors gracefully
     - Support authentication via GitHub token
     - _Requirements: 1.1, 4.1_
 
-  - [ ] 3.2 Create `owlhub/indexer/builder.py` for index generation
+  - [x] 3.2 Create `owlhub/indexer/builder.py` for index generation
     - Implement `calculate_checksum()` using hashlib.sha256
     - Implement `crawl_repository()` to extract skill manifests
     - Implement `build_index()` to generate complete index.json
@@ -72,7 +72,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Generate index with version, generated_at, total_skills, and skills array
     - _Requirements: 1.1, 1.3, 5.3, 8.1_
 
-  - [ ]* 3.3 Write unit tests for Index Builder
+  - [x]* 3.3 Write unit tests for Index Builder
     - Test building index from empty repository list (expect empty index)
     - Test building index with single skill
     - Test building index with multiple versions of same skill
@@ -81,7 +81,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test checksum calculation consistency
     - _Requirements: 1.1, 1.3, 5.3, 8.1_
 
-  - [ ]* 3.4 Write property tests for Index Builder
+  - [x]* 3.4 Write property tests for Index Builder
     - **Property 1: 版本发布与检索**
     - **Validates: Requirements 1.1**
     - Generate random valid skill manifests, publish to index, verify retrieval
