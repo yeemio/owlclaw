@@ -60,7 +60,7 @@
 - [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
-- [ ] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
+- [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [ ] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
 - [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
@@ -100,14 +100,14 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（2/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（1/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
-| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（11/20） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（16/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（20/20） | Langfuse tracing |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（25/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（e2e-validation Task 2.4/2.5 导入导出） |
-| 批次状态 | **进行中**。完成测试场景导入导出能力与属性 15 往返验证，`e2e-validation` 推进到 **2/19**。 |
-| 已完成项 | 1) 新增 `TestScenarioManager.export_scenarios/import_scenarios`（JSON 序列化/反序列化，导入时按 `scenario_id` upsert）；2) 新增导入导出单测与属性 15（导出-导入后场景集合等价）；3) `e2e-validation/tasks.md` 勾选 2、2.4、2.5。 |
-| 下一待执行 | 继续 `e2e-validation` Task 3（DataCollector 基础实现与单元测试）。 |
-| 验收快照 | `poetry run pytest tests/e2e/test_models.py tests/e2e/test_scenario_manager.py -q` -> `9 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_models.py tests/e2e/test_scenario_manager.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 4 source files`。 |
+| 当前批次 | review loop（审校 codex-work langchain 增量） |
+| 批次状态 | **已完成**。`integrations-langchain` 进度推进到（25/50），并完成针对性审校修复（mypy）。 |
+| 已完成项 | 1) 合并 `codex-work` 新增提交（streaming、examples、docs、metrics、integration tests）；2) 修复审校发现的类型问题（`app.py`、`langchain/adapter.py`）；3) 执行变更范围静态检查与测试。 |
+| 下一待执行 | 继续跟进 `integrations-langchain` 余下任务（25/50），并同步审校 `e2e-validation` 后续提交。 |
+| 验收快照 | `poetry run ruff check owlclaw/integrations/langchain owlclaw/app.py ...` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/langchain owlclaw/app.py --hide-error-context --no-error-summary` -> `Success`；`poetry run pytest tests/unit/integrations/test_langchain_examples.py tests/unit/integrations/test_langchain_health.py tests/unit/integrations/test_langchain_metrics.py tests/unit/integrations/test_langchain_stream.py tests/unit/test_app_langchain.py tests/integration/test_langchain_integration.py -q` -> `16 passed`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

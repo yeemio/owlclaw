@@ -1,0 +1,18 @@
+langchain:
+  enabled: true
+  version_check: true
+  min_version: "0.1.0"
+  max_version: "0.3.0"
+  default_timeout_seconds: 30
+  max_concurrent_executions: 10
+  tracing:
+    enabled: true
+    langfuse_integration: true
+  privacy:
+    mask_inputs: false
+    mask_outputs: false
+    mask_patterns:
+      - "api_key"
+      - "password"
+      - "secret"
+      - "token"

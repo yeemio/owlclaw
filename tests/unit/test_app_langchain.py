@@ -90,3 +90,14 @@ def test_register_langchain_runnable_requires_mount_skills() -> None:
             description="x",
             input_schema={"type": "object", "properties": {}},
         )
+
+
+def test_langchain_health_status(tmp_path: Path) -> None:
+    _prepare_skill(tmp_path, "health-skill")
+    app = OwlClaw("lc-app")
+    app.mount_skills(str(tmp_path))
+
+    health = app.langchain_health_status()
+
+    assert health["status"] in {"healthy", "degraded"}
+    assert "langchain_available" in health
