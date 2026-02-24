@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -31,7 +32,7 @@ class EndpointRepository:
 
     async def get(self, endpoint_id: UUID) -> WebhookEndpointModel | None:
         stmt = select(WebhookEndpointModel).where(WebhookEndpointModel.id == endpoint_id)
-        return await self._session.scalar(stmt)
+        return cast(WebhookEndpointModel | None, await self._session.scalar(stmt))
 
     async def list(self, *, tenant_id: str, enabled: bool | None = None) -> list[WebhookEndpointModel]:
         stmt = select(WebhookEndpointModel).where(WebhookEndpointModel.tenant_id == tenant_id)
@@ -109,7 +110,7 @@ class IdempotencyRepository:
 
     async def get(self, key: str) -> WebhookIdempotencyKeyModel | None:
         stmt = select(WebhookIdempotencyKeyModel).where(WebhookIdempotencyKeyModel.key == key)
-        return await self._session.scalar(stmt)
+        return cast(WebhookIdempotencyKeyModel | None, await self._session.scalar(stmt))
 
     async def upsert(self, item: WebhookIdempotencyKeyModel) -> WebhookIdempotencyKeyModel:
         existing = await self.get(item.key)
@@ -129,7 +130,7 @@ class IdempotencyRepository:
         result = await self._session.execute(
             delete(WebhookIdempotencyKeyModel).where(WebhookIdempotencyKeyModel.expires_at < now)
         )
-        return int(result.rowcount or 0)
+        return int(getattr(result, "rowcount", 0) or 0)
 
 
 class TransformationRuleRepository:
@@ -146,7 +147,7 @@ class TransformationRuleRepository:
 
     async def get(self, rule_id: UUID) -> WebhookTransformationRuleModel | None:
         stmt = select(WebhookTransformationRuleModel).where(WebhookTransformationRuleModel.id == rule_id)
-        return await self._session.scalar(stmt)
+        return cast(WebhookTransformationRuleModel | None, await self._session.scalar(stmt))
 
     async def list(self, *, tenant_id: str) -> list[WebhookTransformationRuleModel]:
         stmt = (
@@ -172,7 +173,7 @@ class ExecutionRepository:
 
     async def get(self, execution_id: UUID) -> WebhookExecutionModel | None:
         stmt = select(WebhookExecutionModel).where(WebhookExecutionModel.id == execution_id)
-        return await self._session.scalar(stmt)
+        return cast(WebhookExecutionModel | None, await self._session.scalar(stmt))
 
 
 class InMemoryEndpointRepository:

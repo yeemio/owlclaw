@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 try:
-    import asyncpg
+    import asyncpg  # type: ignore[import-untyped]
 except Exception:  # pragma: no cover - runtime optional
     asyncpg = None  # type: ignore[assignment]
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta, timezone
-from typing import Protocol
+from typing import Literal, Protocol
 
 from owlclaw.triggers.webhook.types import (
     AlertRecord,
@@ -61,8 +61,9 @@ class MonitoringService:
                 continue
             checks.append(HealthCheckResult(name=name, status="pass" if healthy else "fail"))
         failed = sum(1 for item in checks if item.status == "fail")
+        status: Literal["healthy", "degraded", "unhealthy"]
         if not checks or failed == len(checks):
-            status: str = "unhealthy"
+            status = "unhealthy"
         elif failed > 0:
             status = "degraded"
         else:

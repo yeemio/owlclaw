@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal, cast
 
 from owlclaw.triggers.api.config import APITriggerConfig
 
@@ -18,10 +18,10 @@ class APITriggerRegistration:
 def api_call(
     *,
     path: str,
-    method: str = "POST",
+    method: Literal["GET", "POST", "PUT", "PATCH", "DELETE"] = "POST",
     event_name: str,
     tenant_id: str = "default",
-    response_mode: str = "async",
+    response_mode: Literal["sync", "async"] = "async",
     sync_timeout_seconds: int = 60,
     focus: str | None = None,
     auth_required: bool = True,
@@ -32,7 +32,7 @@ def api_call(
     return APITriggerRegistration(
         config=APITriggerConfig(
             path=path,
-            method=method.upper(),
+            method=cast(Literal["GET", "POST", "PUT", "PATCH", "DELETE"], method.upper()),
             event_name=event_name,
             tenant_id=tenant_id,
             response_mode=response_mode,

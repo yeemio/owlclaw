@@ -5,10 +5,10 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 from uuid import uuid4
 
-from owlclaw.triggers.webhook.types import AgentInput, ExecutionOptions, ExecutionResult, RetryPolicy
+from owlclaw.triggers.webhook.types import AgentInput, ExecutionOptions, ExecutionResult, ExecutionStatus, RetryPolicy
 
 
 class RuntimeInvokerProtocol(Protocol):
@@ -128,7 +128,7 @@ class ExecutionTrigger:
             )
         return ExecutionResult(
             execution_id=execution_id,
-            status=str(runtime_result.get("status", "completed")),
+            status=_normalize_execution_status(runtime_result.get("status", "completed")),
             started_at=now,
             completed_at=now,
             output=output,
@@ -144,3 +144,10 @@ def _retry_delay_seconds(policy: RetryPolicy, attempt: int) -> float:
     raw = policy.initial_delay_ms * (policy.backoff_multiplier ** (attempt - 1))
     bounded = min(raw, policy.max_delay_ms)
     return max(0.0, float(bounded) / 1000.0)
+
+
+def _normalize_execution_status(value: object) -> ExecutionStatus:
+    normalized = str(value)
+    if normalized not in {"accepted", "running", "completed", "failed"}:
+        return "failed"
+    return cast(ExecutionStatus, normalized)

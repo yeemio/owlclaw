@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import json
 from datetime import datetime
+from typing import Any
 from urllib.parse import parse_qs
 from xml.etree import ElementTree
 
@@ -181,7 +182,9 @@ def _convert_value(value: object, transform: str | None) -> object:
     if transform == "number":
         if value is None:
             return 0.0
-        return float(value)
+        if isinstance(value, int | float | str):
+            return float(value)
+        raise ValueError("number transform requires int/float/string")
     if transform == "boolean":
         if isinstance(value, bool):
             return value
@@ -208,8 +211,8 @@ def _convert_value(value: object, transform: str | None) -> object:
 def _evaluate_custom_logic(expression: str, payload: dict[str, object], parameters: dict[str, object]) -> dict[str, object]:
     tree = ast.parse(expression, mode="eval")
     _validate_ast(tree)
-    safe_globals = {"__builtins__": {}}
-    safe_locals = {"payload": payload, "parameters": parameters}
+    safe_globals: dict[str, Any] = {"__builtins__": {}}
+    safe_locals: dict[str, object] = {"payload": payload, "parameters": parameters}
     result = eval(compile(tree, "<transform-logic>", "eval"), safe_globals, safe_locals)
     if not isinstance(result, dict):
         raise ValueError("custom logic result must be dict")

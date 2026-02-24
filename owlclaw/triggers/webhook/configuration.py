@@ -5,9 +5,10 @@ from __future__ import annotations
 import copy
 import json
 import os
+from collections.abc import Callable
 from dataclasses import asdict
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal, cast
 
 import yaml
 
@@ -21,7 +22,7 @@ class WebhookConfigManager:
         self._current = WebhookSystemConfig()
         self._versions: dict[str, WebhookSystemConfig] = {}
         self._version_order: list[str] = []
-        self._listeners: list[Any] = []
+        self._listeners: list[Callable[[WebhookSystemConfig], None]] = []
         self._version = 0
 
     def load_from_file(self, path: str) -> WebhookSystemConfig:
@@ -43,7 +44,7 @@ class WebhookConfigManager:
         if retries_env is not None:
             updated.global_config.max_retries = int(retries_env)
         if log_level_env is not None:
-            updated.global_config.log_level = str(log_level_env).upper()  # type: ignore[assignment]
+            updated.global_config.log_level = _normalize_log_level(log_level_env)
         self.validate(updated)
         return updated
 
@@ -87,7 +88,7 @@ class WebhookConfigManager:
     def list_versions(self) -> list[str]:
         return list(self._version_order)
 
-    def watch(self, callback: Any) -> None:
+    def watch(self, callback: Callable[[WebhookSystemConfig], None]) -> None:
         self._listeners.append(callback)
 
     def _notify_listeners(self, config: WebhookSystemConfig) -> None:
@@ -107,7 +108,7 @@ class WebhookConfigManager:
             global_config=WebhookGlobalConfig(
                 timeout_seconds=float(global_data.get("timeout_seconds", 30.0)),
                 max_retries=int(global_data.get("max_retries", 3)),
-                log_level=str(global_data.get("log_level", "INFO")).upper(),  # type: ignore[assignment]
+                log_level=_normalize_log_level(global_data.get("log_level", "INFO")),
             ),
             endpoints=copy.deepcopy(endpoints),
         )
@@ -121,3 +122,10 @@ def dump_config(config: WebhookSystemConfig) -> dict[str, Any]:
     payload = asdict(config)
     payload["meta"] = {"dumped_at": datetime.now(timezone.utc).isoformat()}
     return payload
+
+
+def _normalize_log_level(value: object) -> Literal["DEBUG", "INFO", "WARNING", "ERROR"]:
+    normalized = str(value).upper()
+    if normalized not in {"DEBUG", "INFO", "WARNING", "ERROR"}:
+        raise ValueError("log_level must be one of DEBUG/INFO/WARNING/ERROR")
+    return cast(Literal["DEBUG", "INFO", "WARNING", "ERROR"], normalized)
