@@ -1157,6 +1157,244 @@ Skills 生态不改变 OwlClaw 的核心架构——它是在现有的 `@app.han
 2. **P2**：补齐跨语言示例（至少 TS/Java 中一种）与 SDK 无关的端到端样例。
 3. **P3**：在协议稳定后扩展 Java/.NET/Go/TS SDK，避免 SDK 反向锁定协议。
 
+### 4.12 决策12：Declarative Binding（声明式工具绑定）
+
+**SKILL.md 不只是知识文档，也是可执行契约。通过声明式绑定（Binding），Agent 能直接调用存量系统的 API/队列/数据库，无需编写 Python 适配代码。**
+
+#### 背景
+
+OwlClaw 的产品愿景是"Markdown 即 AI 能力"（§2.7），SKILL.md 让业务开发者用自然语言描述业务规则，Agent 通过 function calling 自主决策。但当前的工具链存在一个断裂点：
+
+```
+SKILL.md 声明工具 → 需要 @handler Python 代码绑定实际 API → Agent 才能调用
+```
+
+这个 `@handler` 步骤要求编写 Python 适配代码，对存量系统（Java/Go/.NET/非 Python 技术栈）构成接入壁垒。红军审视（§2.6 攻击面 3）已指出："Brownfield 接入的摩擦力可能远超预期"。
+
+同时，FastPath 提案（`docs/ZERO_CODE_FASTPATH_DECISION_PROPOSAL.md`）提出了"零代码接入存量系统"的需求，但其解法（HTTP Edge / LLM Proxy 新组件）偏离了 OwlClaw 的 SDK 定位。更自然的解法是：**让 SKILL.md 自身承载工具的接入信息，Agent 运行时根据声明自动完成调用。**
+
+#### 业界参考
+
+| 方案 | 机制 | 优点 | 局限 | OwlClaw 借鉴点 |
+|------|------|------|------|---------------|
+| **Dapr Bindings** | YAML 声明 binding 类型（HTTP/Kafka/PostgreSQL/...）+ sidecar 代理执行 | 40+ 绑定类型、成熟稳定、输入/输出双向 | 需要 Dapr sidecar（太重）；YAML 配置与业务知识分离 | binding 类型分类（HTTP/Queue/SQL）；credential 通过 secret store 引用 |
+| **MCP Tools** | JSON Schema 声明工具签名 + Server 实现调用逻辑 | 标准化工具发现与调用协议；LLM 原生理解 | 工具实现仍需代码；无声明式绑定 | `inputSchema` 格式；工具发现协议 |
+| **Terraform Provider** | HCL 声明资源 + Provider 实现 CRUD | 声明式基础设施管理；Provider 生态丰富 | 面向基础设施而非 API 调用 | Provider 注册机制；声明式 + 可扩展的架构 |
+| **Anthropic 指导** | "找到最简单的方案，只在需要时增加复杂度" | 避免过度工程化 | — | MVP 先做 HTTP binding，按需扩展 |
+
+**关键设计取舍**：Dapr 把 binding 做成独立的基础设施层（sidecar），OwlClaw 把 binding 嵌入 SKILL.md 的 metadata——**知识与接入合一，一个文件描述"做什么"和"怎么连"**。这是 OwlClaw 相对于 Dapr 的差异化：不需要额外的基础设施组件，SKILL.md 就是全部。
+
+#### 决策内容
+
+1. **SKILL.md 的 `metadata.json` 扩展 `binding` 字段**：每个工具可声明其接入方式（HTTP/Queue/SQL/gRPC），Agent 运行时根据 binding 自动完成调用，无需 `@handler` 代码。
+2. **binding 是可选的**：有 binding 的工具走声明式调用；无 binding 的工具走传统 `@handler` 注册。两种模式共存，渐进式迁移。
+3. **binding 执行器是可插拔的**：`owlclaw/capabilities/bindings/` 下按类型实现执行器（HTTPBinding、QueueBinding、SQLBinding），新类型通过注册机制扩展。
+4. **credential 不写入 SKILL.md**：敏感信息通过环境变量引用（`${VAR_NAME}`），运行时从 `owlclaw.config` 或环境变量解析。参考 Dapr 的 secretKeyRef 模式。
+
+#### Binding Schema 设计
+
+**通用结构**（所有 binding 类型共享）：
+
+```json
+{
+  "tool_name": {
+    "description": "工具描述",
+    "parameters": { "...JSON Schema..." },
+    "returns": { "...JSON Schema..." },
+    "binding": {
+      "type": "http | queue | sql | grpc",
+      "mode": "active | shadow",
+      "timeout_ms": 5000,
+      "retry": { "max_attempts": 3, "backoff_ms": 1000 },
+      "...type-specific fields..."
+    }
+  }
+}
+```
+
+**HTTP Binding**（面向 REST API，最常用）：
+
+```json
+{
+  "get_inventory_levels": {
+    "description": "获取指定仓库的库存水平",
+    "parameters": {
+      "warehouse_id": { "type": "string", "description": "仓库 ID" }
+    },
+    "binding": {
+      "type": "http",
+      "method": "GET",
+      "url": "${ERP_BASE_URL}/api/v1/inventory/{warehouse_id}",
+      "headers": {
+        "Authorization": "Bearer ${ERP_API_TOKEN}",
+        "Content-Type": "application/json"
+      },
+      "response_mapping": {
+        "path": "$.data",
+        "error_path": "$.error.message",
+        "status_codes": { "200": "success", "404": "not_found", "429": "rate_limited" }
+      }
+    }
+  }
+}
+```
+
+设计要点：
+- URL 支持路径参数模板（`{warehouse_id}`），运行时从工具参数中替换
+- Headers 支持环境变量引用（`${ERP_API_TOKEN}`）
+- `response_mapping` 提取响应中的有效数据，避免将整个 HTTP 响应传给 LLM
+- `status_codes` 映射 HTTP 状态码到语义化错误，便于 Agent 理解和重试
+
+**Queue Binding**（面向消息队列，用于异步场景和 shadow 模式）：
+
+```json
+{
+  "submit_order": {
+    "description": "提交订单到处理队列",
+    "parameters": {
+      "order_id": { "type": "string" },
+      "items": { "type": "array" }
+    },
+    "binding": {
+      "type": "queue",
+      "provider": "kafka | rabbitmq | redis",
+      "mode": "active",
+      "connection": "${KAFKA_BROKER_URL}",
+      "topic": "orders.submit",
+      "format": "json",
+      "headers_mapping": {
+        "correlation_id": "{order_id}",
+        "source": "owlclaw-agent"
+      }
+    }
+  }
+}
+```
+
+设计要点：
+- `provider` 复用 `owlclaw/integrations/queue_adapters/` 已有的适配器（Kafka 已完成）
+- `mode: shadow` 时只消费不 ack，用于旁路观察（对应 FastPath 的 Queue Mirror 需求）
+- `headers_mapping` 注入追踪信息，便于 Ledger 审计
+
+**SQL Binding**（面向数据库查询，只读场景）：
+
+```json
+{
+  "get_daily_transactions": {
+    "description": "获取指定日期和类别的交易记录",
+    "parameters": {
+      "date": { "type": "string", "format": "date" },
+      "category": { "type": "string" }
+    },
+    "binding": {
+      "type": "sql",
+      "connection": "${FINANCE_DB_URL}",
+      "query": "SELECT id, amount, description, created_at FROM transactions WHERE date = :date AND category = :category ORDER BY created_at DESC LIMIT 100",
+      "read_only": true,
+      "parameter_mapping": {
+        "date": ":date",
+        "category": ":category"
+      }
+    }
+  }
+}
+```
+
+设计要点：
+- **强制参数化查询**：禁止字符串拼接，所有参数通过 `parameter_mapping` 绑定（防 SQL 注入）
+- `read_only: true` 为默认值，写操作需要显式声明且受 `risk_level` 约束
+- 连接字符串走环境变量，不写入 SKILL.md
+
+#### 执行模式：active vs shadow
+
+| 模式 | 行为 | 用途 |
+|------|------|------|
+| `active` | 正常调用目标系统，返回真实结果 | 生产运行 |
+| `shadow` | 调用目标系统但不产生副作用（HTTP GET 正常执行；POST/PUT/DELETE 只记录不发送；Queue 只消费不 ack；SQL 只读） | 零代码对比验证、接入前评估 |
+
+shadow 模式直接解决了 FastPath 提案的核心需求——"不影响现网主链路，先看到可量化效果"。shadow 执行的结果写入 Ledger，通过 `e2e-validation` 已有的 report_generator 生成对比报告。
+
+#### 与现有架构的集成
+
+```
+                    SKILL.md
+                    ├── 业务知识（自然语言）    → Agent prompt 注入
+                    ├── tools_schema            → function calling 工具列表
+                    │   └── binding（可选）      → 声明式调用
+                    ├── triggers_recommended    → 触发时机建议
+                    ├── governance_hints        → 治理边界
+                    ├── focus                   → 按需加载
+                    └── risk_level              → 安全等级
+
+                         │
+                         ▼
+            ┌─── capabilities.skills ───┐
+            │  Skills 加载器             │
+            │  ├── 有 binding → 注册为   │
+            │  │   BindingTool          │
+            │  └── 无 binding → 需要    │
+            │      @handler 注册        │
+            └───────────┬───────────────┘
+                        │
+                        ▼
+            ┌─── capabilities.bindings ─┐
+            │  Binding 执行器注册表      │
+            │  ├── HTTPBinding          │
+            │  ├── QueueBinding         │
+            │  ├── SQLBinding           │
+            │  └── gRPCBinding（预留）   │
+            └───────────┬───────────────┘
+                        │
+          ┌─────────────┼──────────────┐
+          ▼             ▼              ▼
+    governance     security       integrations
+    ├── visibility  ├── sanitize   ├── queue_adapters/
+    │   过滤        │   输入输出   │   (Kafka 已有)
+    ├── ledger      ├── risk_level ├── llm/
+    │   记录        │   确认流程   │   (litellm)
+    └── budget      └── masking    └── hatchet/
+        预算控制        数据脱敏       (持久执行)
+```
+
+**关键集成点**：
+
+1. **capabilities.skills**：Skills 加载器检测 `tools_schema` 中是否有 `binding` 字段，有则自动注册为 BindingTool（无需 `@handler`），无则保持现有行为
+2. **governance.visibility**：BindingTool 与 @handler 注册的工具一样受可见性过滤、预算限制、限流控制
+3. **governance.ledger**：所有 binding 调用记录到 Ledger（请求参数、响应摘要、耗时、状态码），shadow 模式额外标记 `mode=shadow`
+4. **security**：binding 的输入参数经过 InputSanitizer；SQL binding 强制参数化查询；`risk_level: high/critical` 的 binding 工具需要人工确认
+5. **integrations.queue_adapters**：Queue binding 复用已有的 Kafka/RabbitMQ 适配器，不重复实现
+6. **config**：环境变量引用（`${VAR_NAME}`）通过 `owlclaw.config` 统一解析，支持 `.env` 文件和系统环境变量
+
+#### 强制约束
+
+1. **credential 隔离**：binding 中的敏感信息（API Token、数据库密码）必须通过 `${ENV_VAR}` 引用，禁止明文写入 SKILL.md 或 metadata.json
+2. **SQL 注入防护**：SQL binding 强制使用参数化查询（`:param` 占位符），运行时禁止字符串拼接。无 `parameter_mapping` 的 SQL binding 拒绝执行
+3. **shadow 模式安全**：shadow 模式下，写操作（HTTP POST/PUT/DELETE、Queue produce with ack、SQL write）只记录意图到 Ledger，不实际执行
+4. **binding 验证**：`owlclaw skill validate` 命令扩展 binding schema 验证（URL 格式、必填字段、环境变量引用格式）
+5. **超时与重试**：所有 binding 调用必须有超时（默认 5000ms）和重试策略（默认 3 次指数退避），防止 Agent 因外部系统故障卡死
+
+#### 里程碑
+
+1. **P0（MVP）**：HTTP Binding 执行器 + shadow 模式 + Ledger 集成 + `owlclaw skill validate` binding 验证
+2. **P1**：Queue Binding 执行器（复用 queue_adapters）+ SQL Binding 执行器（只读）+ 对比报告生成
+3. **P2**：gRPC Binding + SQL 写操作（需 risk_level 约束）+ OwlHub binding 模板
+4. **P3**：自定义 Binding 类型注册机制 + 社区贡献的 Binding 扩展
+
+#### 与 FastPath 提案的关系
+
+本决策取代 `docs/ZERO_CODE_FASTPATH_DECISION_PROPOSAL.md` 中的 HTTP Edge 和 LLM Proxy 方案。FastPath 提案的核心需求通过以下方式满足：
+
+| FastPath 需求 | Declarative Binding 实现 |
+|--------------|------------------------|
+| Queue Mirror（shadow consumer） | Queue Binding + `mode: shadow` |
+| Cron Shell（调度壳替换） | `triggers_recommended` + HTTP Binding 指向已有任务 API |
+| HTTP Edge（网关旁路） | HTTP Binding + `mode: shadow` |
+| LLM Proxy（透明代理） | 不在 binding 范围——属于 `integrations-llm` 的 proxy 模式（按需评估） |
+| 标准对比报告 | shadow 模式数据 → Ledger → `e2e-validation` report_generator |
+| mionyee 基准样板 | mionyee 的 SKILL.md + HTTP Binding 作为 reference implementation |
+
+FastPath 提案状态更新为 `Resolved — 纳入决策 4.12 Declarative Binding`。
+
 ---
 
 ## 五、OwlClaw 架构设计（v3 — Agent 自驱动）
@@ -2350,7 +2588,7 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 
 ---
 
-> **文档版本**: v4.2（v4.1 + §4.11 Protocol-first：协议优先于语言 SDK）
+> **文档版本**: v4.3（v4.2 + §4.12 Declarative Binding：声明式工具绑定，SKILL.md 从知识文档升级为可执行契约）
 > **创建时间**: 2026-02-10
 > **最后更新**: 2026-02-24
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`

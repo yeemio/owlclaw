@@ -1,6 +1,6 @@
 # SPEC_TASKS_SCAN — OwlClaw 功能清单总览
 
-> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.1（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构）+ `docs/DATABASE_ARCHITECTURE.md`
+> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.3（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
 > **最后更新**: 2026-02-24
 
@@ -52,6 +52,12 @@
 - [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
 - [x] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [x] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
+
+### Phase 1.5：声明式工具绑定（决策 4.12）
+
+- [ ] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
+- [ ] `owlclaw.capabilities.skills` 扩展 — Skills Loader binding 检测与 BindingTool 自动注册 → spec: declarative-binding Task 6
+- [ ] `owlclaw.cli.skill` 扩展 — `owlclaw skill validate` binding schema 验证 → spec: declarative-binding Task 7
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
@@ -110,8 +116,9 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/73） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（78/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 24.1~24.4） |
-| 批次状态 | **已完成**。实时统计服务、技能统计查询、管理员导出接口（JSON/CSV）与统计性质测试已落地并通过测试。 |
-| 已完成项 | 1) 更新 `owlclaw/owlhub/statistics/tracker.py`：增加线程安全事件记录、文件持久化（模拟 skill_statistics 表）、`list_all_statistics()`、`export(json/csv)`、`run_daily_aggregation()`；2) 新增 `owlclaw/owlhub/api/routes/statistics.py`：实现 `GET /api/v1/statistics/export`（admin-only，支持 JSON/CSV）；3) 更新 `owlclaw/owlhub/api/routes/skills.py`：新增 `GET /api/v1/skills/{publisher}/{name}/statistics`；4) 更新 `owlclaw/owlhub/api/app.py`：注入 `StatisticsTracker` 并挂载统计路由；5) 更新 `owlclaw/owlhub/api/schemas.py`：新增 `SkillStatisticsResponse`；6) 新增 `tests/unit/test_owlhub_api_statistics.py`：覆盖聚合、并发记录、导出格式、权限控制、Property 18/19（数据库版）；7) 回填 `owlhub/tasks.md` 的 Task 24、24.1、24.2、24.3、24.4。 |
-| 下一待执行 | `owlhub` Task 25（full review system with human workflow）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/statistics/tracker.py owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/skills.py owlclaw/owlhub/api/routes/statistics.py owlclaw/owlhub/api/schemas.py tests/unit/test_owlhub_api_statistics.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_statistics.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/statistics/tracker.py owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/skills.py owlclaw/owlhub/api/routes/statistics.py` -> success；`poetry run pytest tests/unit/test_owlhub_statistics.py tests/unit/test_owlhub_api_statistics.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_routes.py tests/unit/test_owlhub_api_auth.py tests/unit/test_owlhub_api_publish.py -q` -> 27 passed。 |
+| 当前批次 | orchestrate（架构决策 4.12 Declarative Binding 落地；新建 spec；功能清单更新） |
+| 批次状态 | **已完成**。架构决策 4.12 落地；`declarative-binding` spec 三层文档已创建；功能清单已更新。 |
+| 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.12（Declarative Binding：声明式工具绑定），文档版本升至 v4.3；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加 Declarative Binding 强制约束；3) 新建 `.kiro/specs/declarative-binding/` 三层文档（requirements/design/tasks，共 73 个子任务）；4) 功能清单新增 Phase 1.5 声明式工具绑定条目；5) Spec 索引新增 declarative-binding 条目。 |
+| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐 → Task 1 Schema → Task 2 CredentialResolver → Task 3 Executor 注册表 → Task 4 HTTPBinding → Task 5 BindingTool → Task 6 Skills Loader 扩展 → Task 7 CLI validate 扩展。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
+| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.3（含 §4.12 完整 binding schema 设计、业界参考、集成架构图、里程碑）；`.cursor` 架构规则已加入 Declarative Binding 强制条款；`declarative-binding` spec 三层齐全（requirements 8 个需求 + design 8 个组件 + tasks 14 个 task + backlog）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

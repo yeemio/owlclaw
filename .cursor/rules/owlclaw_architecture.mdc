@@ -106,6 +106,7 @@ from ..governance.visibility import CapabilityVisibilityFilter
 - **编排框架标准接入**：LangChain chain / LangGraph workflow / CrewAI crew 通过 `@app.handler` 注册为 capability handler。OwlClaw 核心不依赖任何编排框架（`pip install owlclaw` 不拉入 LangChain），LangChain LLM 后端适配器通过 `pip install owlclaw[langchain]` 可选安装。详见 `docs/ARCHITECTURE_ANALYSIS.md` 决策8
 - **接入协议语言无关**：对外暴露的能力描述（工具列表、状态定义）必须是纯数据结构（dict/JSON Schema），禁止在协议层泄漏 Python 特有概念（`Callable`、`inspect`、装饰器元数据）。Python SDK 的装饰器是协议的语法糖，不是协议本身。详见 `docs/ARCHITECTURE_ANALYSIS.md` 决策7
 - **数据库编码规范**：详见 `.cursor/rules/owlclaw_database.mdc`（编码规则）和 `docs/DATABASE_ARCHITECTURE.md`（架构设计）
+- **Declarative Binding（强制）**：SKILL.md 的 `metadata.json` 中 `binding` 字段为声明式工具绑定。binding 中的 credential 必须通过 `${ENV_VAR}` 引用，禁止明文；SQL binding 强制参数化查询；binding 执行器集中在 `owlclaw/capabilities/bindings/`，不得散落在其他模块。详见 `docs/ARCHITECTURE_ANALYSIS.md` 决策12
 
 ---
 

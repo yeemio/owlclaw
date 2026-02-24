@@ -102,6 +102,7 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 | **数据库 database 级隔离** | 复用宿主 PG，owlclaw / hatchet 各自独立 database，禁止跨库访问 | `owlclaw_architecture.mdc`、`docs/DATABASE_ARCHITECTURE.md` |
 | **编排框架标准接入** | LangChain chain/LangGraph workflow 通过 @handler 注册为 capability，OwlClaw 不依赖任何编排框架 | `ARCHITECTURE_ANALYSIS.md` §4.8 |
 | **Skills 生态（OwlHub）** | SKILL.md 遵循 agentskills.io 规范；OwlHub 渐进式架构（GitHub → 静态站点 → 数据库）；CLI 优先；模板降低门槛 | `ARCHITECTURE_ANALYSIS.md` §2.7 + §4.10 |
+| **Declarative Binding** | SKILL.md 的 binding 字段为声明式工具绑定；credential 必须 `${ENV_VAR}` 引用；SQL 强制参数化；执行器集中在 `owlclaw/capabilities/bindings/` | `ARCHITECTURE_ANALYSIS.md` §4.12 |
 
 ---
 
