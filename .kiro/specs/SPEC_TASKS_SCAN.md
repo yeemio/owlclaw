@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（e2e-validation Task 4.2 Mionyee 执行逻辑） |
-| 批次状态 | **进行中**。完成 Mionyee 任务执行链路（cron→agent→skills→governance→hatchet）与失败降级路径，`e2e-validation` 维持 **4/19**（顶层任务 4 未收口）。 |
-| 已完成项 | 1) `ExecutionEngine` 新增 `configure_mionyee_components()` 与 `execute_mionyee_task()`；2) `execute_scenario()` 在 `MIONYEE_TASK` 且无 runner 时自动走组件链路；3) `tests/e2e/test_execution_engine.py` 新增 Mionyee 成功/失败用例；4) `e2e-validation/tasks.md` 勾选 4.2。 |
-| 下一待执行 | 继续 `e2e-validation` Task 4.3/4.4（属性 1 与属性 2：完整流程与轨迹完整性）。 |
-| 验收快照 | `poetry run pytest tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py -q` -> `17 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 6 source files`。 |
+| 当前批次 | spec 循环（e2e-validation Task 4.3/4.4 属性测试） |
+| 批次状态 | **进行中**。完成属性 1（Mionyee 完整执行链）与属性 2（轨迹完整性），`e2e-validation` 维持 **4/19**（顶层任务 4 仍有 4.5~4.8 未收口）。 |
+| 已完成项 | 1) `ExecutionEngine` 组件 trace 补齐输入/输出字段；2) `tests/e2e/test_execution_engine.py` 新增属性 1/2（Hypothesis 各 100 例）验证组件链和 trace 完整性；3) `e2e-validation/tasks.md` 勾选 4.3、4.4。 |
+| 下一待执行 | 继续 `e2e-validation` Task 4.5/4.6（错误注入能力与属性测试）。 |
+| 验收快照 | `poetry run pytest tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py -q` -> `19 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 6 source files`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
