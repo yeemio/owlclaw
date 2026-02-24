@@ -7,6 +7,7 @@ import json
 import tarfile
 import tempfile
 from pathlib import Path
+from urllib.error import URLError
 from urllib.request import Request
 
 from hypothesis import given, settings
@@ -261,6 +262,64 @@ def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:
         raise AssertionError("expected checksum verification failure")
     except ValueError as exc:
         assert "checksum" in str(exc)
+
+
+def test_network_retry_for_remote_index(monkeypatch, tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    payload = index_file.read_text(encoding="utf-8")
+    attempts = {"count": 0}
+
+    def flaky_urlopen(request_or_url, timeout: int):  # noqa: ARG001
+        attempts["count"] += 1
+        if attempts["count"] < 3:
+            raise URLError("temporary offline")
+        return _FakeResponse(payload)
+
+    monkeypatch.setattr("urllib.request.urlopen", flaky_urlopen)
+    client = OwlHubClient(
+        index_url="http://hub.local/index.json",
+        install_dir=tmp_path / "skills",
+        lock_file=tmp_path / "lock.json",
+    )
+    results = client.search(query="entry")
+    assert len(results) == 1
+    assert attempts["count"] == 3
+
+
+def test_install_rollback_on_validation_failure(tmp_path: Path) -> None:
+    bad_archive = tmp_path / "broken-1.0.0.tar.gz"
+    with tarfile.open(bad_archive, "w:gz") as archive:
+        payload = b"broken"
+        info = tarfile.TarInfo(name="broken/README.md")
+        info.size = len(payload)
+        archive.addfile(info, io.BytesIO(payload))
+    index_file = _build_index_file(tmp_path, bad_archive, name="broken", publisher="acme", version="1.0.0")
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    try:
+        client.install(name="broken")
+        raise AssertionError("expected install failure")
+    except ValueError as exc:
+        assert "installation failed" in str(exc) or "SKILL.md" in str(exc)
+    assert not (tmp_path / "skills" / "broken" / "1.0.0").exists()
+
+
+def test_force_install_bypasses_checksum_and_moderation(tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="force-skill", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="force-skill", publisher="acme", version="1.0.0")
+    payload = json.loads(index_file.read_text(encoding="utf-8"))
+    payload["skills"][0]["checksum"] = "sha256:deadbeef"
+    payload["skills"][0]["blacklisted"] = True
+    index_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    try:
+        client.install(name="force-skill")
+        raise AssertionError("expected moderation/checksum failure")
+    except ValueError:
+        pass
+    installed = client.install(name="force-skill", force=True)
+    assert installed.exists()
+    assert client.last_install_warning is not None
 
 
 def test_search_filters_draft_by_default(tmp_path: Path) -> None:

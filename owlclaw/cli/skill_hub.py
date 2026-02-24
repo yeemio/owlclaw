@@ -54,6 +54,7 @@ def install_command(
     name: str = typer.Argument(..., help="Skill name to install."),
     version: str = typer.Option("", "--version", help="Exact version to install.", is_flag=False),
     no_deps: bool = typer.Option(False, "--no-deps", help="Skip dependency installation."),
+    force: bool = typer.Option(False, "--force", help="Force install on checksum/moderation errors."),
     mode: str = typer.Option("auto", "--mode", help="Hub mode: auto/index/api.", is_flag=False),
     api_base_url: str = typer.Option("", "--api-base-url", help="OwlHub API base URL.", is_flag=False),
     api_token: str = typer.Option("", "--api-token", help="OwlHub API token.", is_flag=False),
@@ -81,7 +82,7 @@ def install_command(
                 for dep_name, constraint in sorted(dependencies.items()):
                     typer.echo(f"  - {dep_name} ({constraint})")
     try:
-        installed_path = client.install(name=name, version=version or None, no_deps=no_deps)
+        installed_path = client.install(name=name, version=version or None, no_deps=no_deps, force=force)
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1) from exc

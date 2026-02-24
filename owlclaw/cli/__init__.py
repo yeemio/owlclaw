@@ -151,6 +151,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("name")
         parser.add_argument("--version", default="")
         parser.add_argument("--no-deps", action="store_true", default=False)
+        parser.add_argument("--force", action="store_true", default=False)
         parser.add_argument("--mode", default="auto")
         parser.add_argument("--api-base-url", default="")
         parser.add_argument("--api-token", default="")
@@ -162,6 +163,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             name=ns.name,
             version=ns.version,
             no_deps=ns.no_deps,
+            force=ns.force,
             mode=ns.mode,
             api_base_url=ns.api_base_url,
             api_token=ns.api_token,

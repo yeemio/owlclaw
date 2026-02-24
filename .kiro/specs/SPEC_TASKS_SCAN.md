@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（102/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（cli-migrate 与 declarative-binding 打通 + 文档全面更新） |
-| 批次状态 | **已完成**。核心洞察：cli-migrate 的 Scanner 模块（OpenAPIScanner/ORMScanner/CronScanner）已具备自动发现存量系统能力，不需要新增 connections 概念或 Skill Pack 层。关键变化：cli-migrate 输出从仅 @handler 代码扩展为同时支持 binding SKILL.md 生成。 |
-| 已完成项 | 1) `ARCHITECTURE_ANALYSIS` 更新至 v4.5（§4.12 补充：cli-migrate 作为 Binding 自动生成路径，取代 connections 概念和 Skill Pack 方案；完整链路：IT 运行命令 → 自动生成 binding SKILL.md → 业务用户填写自然语言 → Agent 调用）；2) `declarative-binding` spec 更新（requirements +R12/R13，design +BindingGenerator 组件，tasks +Phase 5 共 4 个 Task/18 个子任务，总计 105 子任务）；3) `cli-migrate` spec 更新（requirements +R16/R17 binding 输出模式，design +BindingGenerator 数据流，tasks +§4 binding 输出模式 12 个子任务，总计 24 子任务）；4) `owlclaw_architecture.mdc` 更新（cli-migrate 与 binding 联动规则）；5) `owlclaw_core.mdc` 更新（关键规则速查增加 cli-migrate 自动生成）；6) SPEC_TASKS_SCAN 功能清单、Spec 索引、Checkpoint 全部同步。 |
-| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐 → Task 1-7。Phase 5（cli-migrate 联动）依赖 Phase 1 完成后启动。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.5；`declarative-binding` spec（13 个需求 + 9 个组件 + 19 个 task + backlog）；`cli-migrate` spec（17 个需求 + 8 个组件 + 9 个任务组）；`owlclaw_architecture.mdc` 和 `owlclaw_core.mdc` 规则已同步。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 29.1~29.3） |
+| 批次状态 | **已完成**。错误处理与恢复机制已覆盖网络重试、安装回滚、`--force` 覆盖安装与异常消息增强，并通过测试。 |
+| 已完成项 | 1) 更新 `owlclaw/owlhub/client.py`：新增网络请求重试与退避、安装失败回滚（目录清理）、隐藏/校验失败时 `force` 覆盖、安装异常上下文消息；2) 更新 `owlclaw/cli/api_client.py`：透传 `force/no_deps` 到 index 安装流程；3) 更新 `owlclaw/cli/skill_hub.py`：安装命令新增 `--force`；4) 更新 `owlclaw/cli/__init__.py`：argparse 分发支持 `--force`；5) 更新 `tests/unit/test_owlhub_cli_client.py`：新增远程索引重试、安装失败回滚、`force` 覆盖安装测试；6) 回填 `owlhub/tasks.md` 的 Task 29、29.1、29.2、29.3。 |
+| 下一待执行 | `owlhub` Task 30（caching and performance optimizations）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/client.py owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py tests/unit/test_owlhub_cli_client.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/client.py owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py` -> success；`poetry run pytest tests/unit/test_owlhub_cli_client.py tests/unit/test_cli_resolver.py tests/integration/test_owlhub_dependency_installation.py tests/unit/test_cli_api_client.py tests/integration/test_owlhub_cli_api_compatibility.py -q` -> 29 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
