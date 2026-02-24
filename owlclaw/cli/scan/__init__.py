@@ -1,5 +1,6 @@
 """Core models for cli-scan."""
 
+from owlclaw.cli.scan.extractor import SignatureExtractor
 from owlclaw.cli.scan.models import (
     ComplexityLevel,
     ComplexityScore,
@@ -39,5 +40,6 @@ __all__ = [
     "ParsedDocstring",
     "ScanMetadata",
     "ScanResult",
+    "SignatureExtractor",
     "TypeSource",
 ]
