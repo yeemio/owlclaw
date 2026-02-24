@@ -1,0 +1,59 @@
+openapi: 3.1.0
+info:
+  title: OwlClaw API Trigger Contract
+  version: 1.0.0
+  description: |
+    Protocol-level contract for API-trigger endpoint registration and invocation.
+    This contract is language-agnostic and does not include Python-specific concepts.
+paths:
+  /trigger/registration:
+    post:
+      summary: Register an API trigger endpoint contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./api_trigger_registration.schema.json
+      responses:
+        '201':
+          description: Endpoint registered
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [created]
+        '400':
+          description: Invalid request payload
+        '401':
+          description: Unauthorized
+        '429':
+          description: Rate limited by governance
+        '503':
+          description: Budget exhausted / service unavailable
+        '408':
+          description: Sync-mode timeout
+components:
+  schemas:
+    SyncResponse:
+      type: object
+      required: [status, result]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        result:
+          type: object
+    AsyncAcceptedResponse:
+      type: object
+      required: [status, run_id]
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+        run_id:
+          type: string

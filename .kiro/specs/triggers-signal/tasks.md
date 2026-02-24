@@ -11,15 +11,15 @@
 
 ### Phase 0：协议契约先行（Protocol-first，决策 4.11）
 
-- [ ] **Task 0**: 定义 Signal 协议契约
-  - [ ] 0.1 提交 Signal 请求/响应 JSON Schema（pause/resume/trigger/instruct 四种操作的 schema 与错误码表）
-  - [ ] 0.2 确认三条入口（CLI/HTTP API/MCP）共用同一协议 schema，不各自定义独立格式
-  - [ ] 0.3 协议层不泄漏 Python 特有语义（无 Callable/装饰器元数据）
+- [x] **Task 0**: 定义 Signal 协议契约
+  - [x] 0.1 提交 Signal 请求/响应 JSON Schema（pause/resume/trigger/instruct 四种操作的 schema 与错误码表）
+  - [x] 0.2 确认三条入口（CLI/HTTP API/MCP）共用同一协议 schema，不各自定义独立格式
+  - [x] 0.3 协议层不泄漏 Python 特有语义（无 Callable/装饰器元数据）
   - _说明：Task 1 的 Python 实现必须从本契约派生，禁止跳过契约直接做 Python API_
 
 ### Phase 1：核心 Signal 框架
 
-- [ ] **Task 1**: 创建 `owlclaw/triggers/signal/` 模块结构
+- [x] **Task 1**: 创建 `owlclaw/triggers/signal/` 模块结构
   - 创建 `__init__.py`, `models.py`, `router.py`, `handlers.py`, `state.py`, `config.py`
   - 定义 `Signal`, `SignalType`, `SignalSource`, `SignalResult` 数据模型
   - 定义 `PendingInstruction` 数据模型

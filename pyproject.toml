@@ -42,6 +42,9 @@ qdrant-client = "^1.9.1"
 scikit-learn = "^1.5.0"
 langchain = {version = ">=0.1.0,<0.3.0", optional = true}
 langchain-core = {version = ">=0.1.0,<0.3.0", optional = true}
+fastapi = "^0.132.0"
+starlette = {version = "^0.38.0", optional = true}
+uvicorn = {version = "^0.30.0", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 psycopg2-binary = "^2.9"
@@ -54,6 +57,7 @@ ruff = "^0.9"
 mypy = "^1.0"
 hypothesis = "^6.0"
 pytest-benchmark = "^5.1.0"
+httpx = "^0.28.1"
 
 [tool.poetry.group.observability]
 optional = true
@@ -65,6 +69,7 @@ opentelemetry-sdk = "^1.0"
 
 [tool.poetry.extras]
 langchain = ["langchain", "langchain-core", "jsonschema"]
+api = ["starlette", "uvicorn"]
 
 [tool.poetry.scripts]
 owlclaw = "owlclaw.cli:main"
