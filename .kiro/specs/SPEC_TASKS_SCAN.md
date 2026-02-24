@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（11/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（12/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,10 +142,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 11.1~11.2） |
-| 批次状态 | **已完成**。测试环境隔离机制已补齐数据库/配置快照与自动清理上下文，属性 13 已落地。 |
-| 已完成项 | 1) 完善 `owlclaw/e2e/test_isolation.py`：新增数据库/配置隔离快照、隔离上下文管理器与 `is_active()`；2) 新增 `tests/e2e/test_test_isolation.py`：覆盖隔离机制单测 + 属性 13；3) 回填 Task 11.1、11.2 与顶层 Task 11 为已完成。 |
-| 下一待执行 | `e2e-validation` Task 12（检查点：确保所有测试通过）。 |
+| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 12） |
+| 批次状态 | **已完成**。Task 12 检查点通过，e2e 模块静态检查与测试均成功。 |
+| 已完成项 | 1) 执行 `poetry run ruff check owlclaw/e2e tests/e2e` 通过；2) 执行 `poetry run pytest tests/e2e -q` 通过（53 passed）；3) 回填 Task 12 为已完成。 |
+| 下一待执行 | `e2e-validation` Task 13.1（命令行接口）与 Task 13.2（配置管理）。 |
 | 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 53 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
