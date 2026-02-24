@@ -12,6 +12,8 @@ from typing import Any, Union, get_args, get_origin
 from owlclaw.app import OwlClaw
 from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.capabilities.skills import Skill, SkillsLoader
+from owlclaw.triggers.signal.models import Signal, SignalSource, SignalType
+from owlclaw.triggers.signal.router import SignalRouter
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +40,16 @@ class McpRequestError(ValueError):
 class McpProtocolServer:
     """Process JSON-RPC MCP requests against OwlClaw registry and skills."""
 
-    def __init__(self, *, registry: CapabilityRegistry, skills_loader: SkillsLoader):
+    def __init__(
+        self,
+        *,
+        registry: CapabilityRegistry,
+        skills_loader: SkillsLoader,
+        signal_router: SignalRouter | None = None,
+    ):
         self.registry = registry
         self.skills_loader = skills_loader
+        self.signal_router = signal_router
         self._resource_cache: dict[str, ResourceRef] = {}
         self._refresh_resource_cache()
 
@@ -134,6 +143,8 @@ class McpProtocolServer:
                     },
                 }
             )
+        if self.signal_router is not None:
+            tools.extend(self._signal_tool_defs())
         tools.sort(key=lambda item: item["name"])
         return {"tools": tools}
 
@@ -144,12 +155,125 @@ class McpProtocolServer:
             raise McpRequestError(-32602, "tool name must be a non-empty string")
         if not isinstance(arguments, dict):
             raise McpRequestError(-32602, "arguments must be an object")
+        if self.signal_router is not None and tool_name in _SIGNAL_TOOL_TO_TYPE:
+            signal_result = await self._handle_signal_tool_call(tool_name, arguments)
+            text = json.dumps(signal_result, ensure_ascii=False)
+            return {"content": [{"type": "text", "text": text}]}
         if tool_name not in self.registry.handlers:
             raise McpRequestError(-32001, f"tool not found: {tool_name}")
 
         result = await self.registry.invoke_handler(tool_name, **arguments)
         text = json.dumps(result, ensure_ascii=False) if not isinstance(result, str) else result
         return {"content": [{"type": "text", "text": text}]}
+
+    async def _handle_signal_tool_call(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        assert self.signal_router is not None
+        agent_id = arguments.get("agent_id")
+        if not isinstance(agent_id, str) or not agent_id.strip():
+            raise McpRequestError(-32602, "agent_id must be a non-empty string")
+        tenant_id = arguments.get("tenant_id", "default")
+        if not isinstance(tenant_id, str) or not tenant_id.strip():
+            raise McpRequestError(-32602, "tenant_id must be a non-empty string")
+        operator = arguments.get("operator", "mcp")
+        if not isinstance(operator, str) or not operator.strip():
+            raise McpRequestError(-32602, "operator must be a non-empty string")
+        message = arguments.get("message", "")
+        if not isinstance(message, str):
+            raise McpRequestError(-32602, "message must be a string")
+        focus = arguments.get("focus")
+        if focus is not None and not isinstance(focus, str):
+            raise McpRequestError(-32602, "focus must be a string when provided")
+        ttl_seconds = arguments.get("ttl_seconds", 3600)
+        if not isinstance(ttl_seconds, int):
+            raise McpRequestError(-32602, "ttl_seconds must be an integer")
+
+        signal_type = _SIGNAL_TOOL_TO_TYPE[tool_name]
+        if signal_type == SignalType.INSTRUCT and not message.strip():
+            raise McpRequestError(-32602, "message is required for owlclaw_instruct")
+
+        signal = Signal(
+            type=signal_type,
+            source=SignalSource.MCP,
+            agent_id=agent_id.strip(),
+            tenant_id=tenant_id.strip(),
+            operator=operator.strip(),
+            message=message,
+            focus=focus,
+            ttl_seconds=ttl_seconds,
+        )
+        result = await self.signal_router.dispatch(signal)
+        return {
+            "status": result.status,
+            "message": result.message,
+            "run_id": result.run_id,
+            "error_code": result.error_code,
+        }
+
+    def _signal_tool_defs(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "name": "owlclaw_pause",
+                "description": "Pause one target agent.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string"},
+                        "tenant_id": {"type": "string"},
+                        "operator": {"type": "string"},
+                        "message": {"type": "string"},
+                    },
+                    "required": ["agent_id"],
+                    "additionalProperties": False,
+                },
+            },
+            {
+                "name": "owlclaw_resume",
+                "description": "Resume one paused agent.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string"},
+                        "tenant_id": {"type": "string"},
+                        "operator": {"type": "string"},
+                        "message": {"type": "string"},
+                    },
+                    "required": ["agent_id"],
+                    "additionalProperties": False,
+                },
+            },
+            {
+                "name": "owlclaw_trigger",
+                "description": "Force-trigger one agent run.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string"},
+                        "tenant_id": {"type": "string"},
+                        "operator": {"type": "string"},
+                        "message": {"type": "string"},
+                        "focus": {"type": "string"},
+                    },
+                    "required": ["agent_id"],
+                    "additionalProperties": False,
+                },
+            },
+            {
+                "name": "owlclaw_instruct",
+                "description": "Queue one instruction for next run.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string"},
+                        "tenant_id": {"type": "string"},
+                        "operator": {"type": "string"},
+                        "message": {"type": "string"},
+                        "ttl_seconds": {"type": "integer"},
+                    },
+                    "required": ["agent_id", "message"],
+                    "additionalProperties": False,
+                },
+            },
+        ]
 
     def _handle_resources_list(self) -> dict[str, Any]:
         self._refresh_resource_cache()
@@ -278,3 +402,11 @@ class McpProtocolServer:
                 "message": message,
             },
         }
+
+
+_SIGNAL_TOOL_TO_TYPE: dict[str, SignalType] = {
+    "owlclaw_pause": SignalType.PAUSE,
+    "owlclaw_resume": SignalType.RESUME,
+    "owlclaw_trigger": SignalType.TRIGGER,
+    "owlclaw_instruct": SignalType.INSTRUCT,
+}

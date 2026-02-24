@@ -70,7 +70,9 @@ def test_dependency_analysis_unit_scenarios() -> None:
     assert any(edge.source == "pkg.mod.alpha" and edge.target == "pkg.mod.beta" for edge in graph.edges)
     assert any(imp.module == "math" and imp.import_type is ImportType.STDLIB for imp in graph.imports)
 
-    worker_run = tree.body[3].body[0]
+    worker_cls = tree.body[3]
+    assert isinstance(worker_cls, ast.ClassDef)
+    worker_run = worker_cls.body[0]
     assert isinstance(worker_run, ast.FunctionDef)
     calls = analyzer.extract_calls(worker_run)
     assert "self.step" in calls

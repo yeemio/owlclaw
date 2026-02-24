@@ -207,7 +207,7 @@ class APITriggerServer:
         if self._server_task is not None:
             return
         try:
-            import uvicorn
+            import uvicorn  # type: ignore[import-not-found]
         except ImportError as exc:  # pragma: no cover - optional runtime dependency
             raise RuntimeError("uvicorn is required to start APITriggerServer") from exc
         config = uvicorn.Config(self._app, host=self._host, port=self._port, log_level="warning")

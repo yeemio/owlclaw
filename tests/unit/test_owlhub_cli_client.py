@@ -7,6 +7,8 @@ import json
 import tarfile
 import tempfile
 from pathlib import Path
+from urllib.error import URLError
+from urllib.request import Request
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -18,6 +20,20 @@ from owlclaw.owlhub import OwlHubClient
 from owlclaw.owlhub.indexer import IndexBuilder
 
 runner = CliRunner()
+
+
+class _FakeResponse:
+    def __init__(self, payload: str):
+        self._payload = payload.encode("utf-8")
+
+    def read(self) -> bytes:
+        return self._payload
+
+    def __enter__(self) -> _FakeResponse:
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        return None
 
 
 def _build_skill_archive(base: Path, *, name: str, publisher: str, version: str) -> Path:
@@ -49,6 +65,7 @@ def _build_index_file(
     version: str,
     tags: list[str] | None = None,
     version_state: str = "released",
+    dependencies: dict[str, str] | None = None,
 ) -> Path:
     checksum = IndexBuilder().calculate_checksum(archive_path)
     index = {
@@ -64,7 +81,7 @@ def _build_index_file(
                     "description": f"{name} description",
                     "license": "MIT",
                     "tags": tags if tags is not None else ["demo"],
-                    "dependencies": {},
+                    "dependencies": dependencies if dependencies is not None else {},
                 },
                 "download_url": str(archive_path),
                 "checksum": checksum,
@@ -191,6 +208,93 @@ def test_cli_update_reports_no_updates(tmp_path: Path, monkeypatch, capsys) -> N
     assert "No updates available." in captured.out
 
 
+def test_cli_publish_command_via_api(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    skill_dir = tmp_path / "skill-publish"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: "entry-monitor"
+publisher: "acme"
+description: "entry monitor skill"
+license: "MIT"
+metadata:
+  version: "1.0.0"
+---
+# entry-monitor
+""",
+        encoding="utf-8",
+    )
+
+    def fake_urlopen(request: Request, timeout: int):  # noqa: ARG001
+        _ = request
+        return _FakeResponse(json.dumps({"accepted": True, "review_id": "r1", "status": "pending"}))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(
+        [
+            "skill",
+            "publish",
+            str(skill_dir),
+            "--api-base-url",
+            "http://hub.local",
+            "--api-token",
+            "token-123",
+        ]
+    )
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "Published: review_id=r1 status=pending" in captured.out
+
+
+def test_cli_install_and_publish_emit_structured_logs(tmp_path: Path, monkeypatch, capsys, caplog) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    skill_dir = tmp_path / "skill-publish"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: "entry-monitor"
+publisher: "acme"
+description: "entry monitor skill"
+license: "MIT"
+metadata:
+  version: "1.0.0"
+---
+# entry-monitor
+""",
+        encoding="utf-8",
+    )
+
+    def fake_urlopen(request: Request, timeout: int):  # noqa: ARG001
+        _ = request
+        return _FakeResponse(json.dumps({"accepted": True, "review_id": "r1", "status": "pending"}))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.chdir(tmp_path)
+    caplog.set_level("INFO")
+
+    install_handled = _dispatch_skill_command(["skill", "install", "entry-monitor"])
+    assert install_handled is True
+    publish_handled = _dispatch_skill_command(
+        [
+            "skill",
+            "publish",
+            str(skill_dir),
+            "--api-base-url",
+            "http://hub.local",
+            "--api-token",
+            "token-123",
+        ]
+    )
+    assert publish_handled is True
+    _ = capsys.readouterr()
+    assert '"event": "skill_install"' in caplog.text
+    assert '"event": "skill_publish"' in caplog.text
+
+
 def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:
     archive = _build_skill_archive(tmp_path, name="bad-skill", publisher="acme", version="1.0.0")
     index_file = _build_index_file(tmp_path, archive, name="bad-skill", publisher="acme", version="1.0.0")
@@ -204,6 +308,124 @@ def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:
         raise AssertionError("expected checksum verification failure")
     except ValueError as exc:
         assert "checksum" in str(exc)
+
+
+def test_network_retry_for_remote_index(monkeypatch, tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    payload = index_file.read_text(encoding="utf-8")
+    attempts = {"count": 0}
+
+    def flaky_urlopen(request_or_url, timeout: int):  # noqa: ARG001
+        attempts["count"] += 1
+        if attempts["count"] < 3:
+            raise URLError("temporary offline")
+        return _FakeResponse(payload)
+
+    monkeypatch.setattr("urllib.request.urlopen", flaky_urlopen)
+    client = OwlHubClient(
+        index_url="http://hub.local/index.json",
+        install_dir=tmp_path / "skills",
+        lock_file=tmp_path / "lock.json",
+    )
+    results = client.search(query="entry")
+    assert len(results) == 1
+    assert attempts["count"] == 3
+
+
+def test_remote_index_cache_hit_and_no_cache(tmp_path: Path, monkeypatch) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    payload = index_file.read_text(encoding="utf-8")
+    attempts = {"count": 0}
+
+    def fake_urlopen(request_or_url, timeout: int):  # noqa: ARG001
+        _ = request_or_url
+        attempts["count"] += 1
+        return _FakeResponse(payload)
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    cached_client = OwlHubClient(
+        index_url="http://hub.local/index.json",
+        install_dir=tmp_path / "skills",
+        lock_file=tmp_path / "lock-cached.json",
+    )
+    cached_client.search(query="entry")
+    cached_client.search(query="entry")
+    assert attempts["count"] == 1
+
+    attempts["count"] = 0
+    bypass_client = OwlHubClient(
+        index_url="http://hub.local/index.json",
+        install_dir=tmp_path / "skills",
+        lock_file=tmp_path / "lock-no-cache.json",
+        no_cache=True,
+    )
+    bypass_client.search(query="entry")
+    bypass_client.search(query="entry")
+    assert attempts["count"] == 2
+
+
+def test_cache_clear_command_removes_cached_files(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    payload = index_file.read_text(encoding="utf-8")
+
+    def fake_urlopen(request_or_url, timeout: int):  # noqa: ARG001
+        _ = request_or_url
+        return _FakeResponse(payload)
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    lock_file = tmp_path / "skill-lock.json"
+    client = OwlHubClient(
+        index_url="http://hub.local/index.json",
+        install_dir=tmp_path / "skills",
+        lock_file=lock_file,
+    )
+    client.search(query="entry")
+    assert any(client.cache_dir.iterdir())
+
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(["skill", "cache-clear"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "Cache cleared:" in captured.out
+    assert list(client.cache_dir.iterdir()) == []
+
+
+def test_install_rollback_on_validation_failure(tmp_path: Path) -> None:
+    bad_archive = tmp_path / "broken-1.0.0.tar.gz"
+    with tarfile.open(bad_archive, "w:gz") as archive:
+        payload = b"broken"
+        info = tarfile.TarInfo(name="broken/README.md")
+        info.size = len(payload)
+        archive.addfile(info, io.BytesIO(payload))
+    index_file = _build_index_file(tmp_path, bad_archive, name="broken", publisher="acme", version="1.0.0")
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    try:
+        client.install(name="broken")
+        raise AssertionError("expected install failure")
+    except ValueError as exc:
+        assert "installation failed" in str(exc) or "SKILL.md" in str(exc)
+    assert not (tmp_path / "skills" / "broken" / "1.0.0").exists()
+
+
+def test_force_install_bypasses_checksum_and_moderation(tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="force-skill", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="force-skill", publisher="acme", version="1.0.0")
+    payload = json.loads(index_file.read_text(encoding="utf-8"))
+    payload["skills"][0]["checksum"] = "sha256:deadbeef"
+    payload["skills"][0]["blacklisted"] = True
+    index_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    try:
+        client.install(name="force-skill")
+        raise AssertionError("expected moderation/checksum failure")
+    except ValueError:
+        pass
+    installed = client.install(name="force-skill", force=True)
+    assert installed.exists()
+    assert client.last_install_warning is not None
 
 
 def test_search_filters_draft_by_default(tmp_path: Path) -> None:

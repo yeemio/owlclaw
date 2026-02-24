@@ -92,6 +92,30 @@ def test_successful_skill_publication_and_audit_query(tmp_path: Path) -> None:
         _restore_env(old)
 
 
+def test_api_structured_logs_for_request_and_publish(tmp_path: Path, caplog) -> None:
+    old = _set_env(tmp_path)
+    try:
+        caplog.set_level("INFO")
+        client = TestClient(create_app())
+        token = _issue_token(client, code="gho_acme1234")
+        response = client.post(
+            "/api/v1/skills",
+            headers={"Authorization": f"Bearer {token}"},
+            json={
+                "publisher": "acme1234",
+                "skill_name": "entry-monitor",
+                "version": "1.0.0",
+                "metadata": {"description": "Entry monitor skill", "license": "MIT"},
+            },
+        )
+        assert response.status_code == 200
+        assert '"event": "api_request"' in caplog.text
+        assert '"duration_ms"' in caplog.text
+        assert '"event": "skill_publish"' in caplog.text
+    finally:
+        _restore_env(old)
+
+
 def test_version_state_updates(tmp_path: Path) -> None:
     old = _set_env(tmp_path)
     try:

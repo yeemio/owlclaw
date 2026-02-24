@@ -71,41 +71,41 @@
   - 与 API 触发器共享 Starlette 服务
 
 - [x] **Task 9**: 实现 MCP Server 集成
-  - `owlclaw_pause` MCP tool → Signal(type=PAUSE, source=MCP)
-  - `owlclaw_resume` MCP tool → Signal(type=RESUME, source=MCP)
-  - `owlclaw_trigger` MCP tool → Signal(type=TRIGGER, source=MCP)
-  - `owlclaw_instruct` MCP tool → Signal(type=INSTRUCT, source=MCP)
+  - [x] `owlclaw_pause` MCP tool → Signal(type=PAUSE, source=MCP)
+  - [x] `owlclaw_resume` MCP tool → Signal(type=RESUME, source=MCP)
+  - [x] `owlclaw_trigger` MCP tool → Signal(type=TRIGGER, source=MCP)
+  - [x] `owlclaw_instruct` MCP tool → Signal(type=INSTRUCT, source=MCP)
 
 ### Phase 3：Agent Runtime 集成
 
 - [x] **Task 10**: Agent Runtime paused 状态检查
-  - Cron/Heartbeat 触发前检查 paused 状态
-  - paused 时跳过 Run 并记录 status=SKIPPED
-  - Signal.TRIGGER 不受 paused 影响
+  - [x] Cron/Heartbeat 触发前检查 paused 状态
+  - [x] paused 时跳过 Run 并记录 status=SKIPPED
+  - [x] Signal.TRIGGER 不受 paused 影响
 
 - [x] **Task 11**: Instruction 注入到 Agent Run
-  - Run 启动时 consume_instructions()
-  - 注入到 STM 的固定区
-  - 消费后标记 consumed=True
-  - Ledger 记录指令消费事件
+  - [x] Run 启动时 consume_instructions()
+  - [x] 注入到 STM 的固定区
+  - [x] 消费后标记 consumed=True
+  - [x] Ledger 记录指令消费事件
 
 ### Phase 4：测试
 
 - [x] **Task 12**: 单元测试
-  - Signal 数据模型验证
-  - 各 Handler 逻辑（pause/resume/trigger/instruct）
-  - AgentStateManager CRUD
-  - Instruction TTL 过期逻辑
-  - 目标覆盖率：> 90%
+  - [x] Signal 数据模型验证
+  - [x] 各 Handler 逻辑（pause/resume/trigger/instruct）
+  - [x] AgentStateManager CRUD
+  - [x] Instruction TTL 过期逻辑
+  - [x] 目标覆盖率：> 90%
 
 - [x] **Task 13**: 集成测试
-  - CLI → SignalRouter → State 变更 全流程
-  - HTTP API → SignalRouter → State 变更 全流程
-  - pause → cron 不触发 → resume → cron 恢复
-  - instruct → Agent Run → STM 包含指令
+  - [x] CLI → SignalRouter → State 变更 全流程
+  - [x] HTTP API → SignalRouter → State 变更 全流程
+  - [x] pause → cron 不触发 → resume → cron 恢复
+  - [x] instruct → Agent Run → STM 包含指令
 
 - [x] **Task 14**: 文档
-  - Signal 系统使用指南
-  - CLI 命令参考
-  - MCP 工具集成说明
-  - 人工介入最佳实践（何时暂停、何时注入指令）
+  - [x] Signal 系统使用指南
+  - [x] CLI 命令参考
+  - [x] MCP 工具集成说明
+  - [x] 人工介入最佳实践（何时暂停、何时注入指令）

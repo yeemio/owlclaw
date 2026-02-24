@@ -6,7 +6,7 @@ import json
 import logging
 from dataclasses import asdict, dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -159,7 +159,7 @@ class ScanResult:
     files: dict[str, FileScanResult] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        return _serialize(asdict(self))
+        return cast(dict[str, Any], _serialize(asdict(self)))
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ScanResult:

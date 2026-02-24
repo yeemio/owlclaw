@@ -14,7 +14,6 @@ from owlclaw.capabilities.knowledge import KnowledgeInjector
 from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.capabilities.skills import SkillsLoader
 from owlclaw.integrations.langfuse import TraceContext
-from owlclaw.triggers.signal import AgentStateManager, PendingInstruction, SignalSource
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
@@ -234,62 +233,6 @@ class TestAgentRuntimeLifecycle:
 
 class TestAgentRuntimeRun:
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
-    async def test_run_skips_when_agent_paused_for_cron_trigger(self, mock_llm, tmp_path) -> None:
-        mock_llm.return_value = _make_llm_response("Done.")
-        state = AgentStateManager(max_pending_instructions=4)
-        await state.set_paused("bot", "default", True)
-        rt = AgentRuntime(
-            agent_id="bot",
-            app_dir=_make_app_dir(tmp_path),
-            signal_state_manager=state,
-        )
-        await rt.setup()
-        result = await rt.run(AgentRunContext(agent_id="bot", trigger="market_open", payload={"trigger_type": "cron"}))
-        assert result["status"] == "skipped"
-        assert result["reason"] == "agent_paused"
-        mock_llm.assert_not_called()
-
-    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
-    async def test_run_signal_manual_bypasses_paused_check(self, mock_llm, tmp_path) -> None:
-        mock_llm.return_value = _make_llm_response("Done.")
-        state = AgentStateManager(max_pending_instructions=4)
-        await state.set_paused("bot", "default", True)
-        rt = AgentRuntime(
-            agent_id="bot",
-            app_dir=_make_app_dir(tmp_path),
-            signal_state_manager=state,
-        )
-        await rt.setup()
-        result = await rt.run(AgentRunContext(agent_id="bot", trigger="signal_manual"))
-        assert result["status"] == "completed"
-        mock_llm.assert_called_once()
-
-    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
-    async def test_run_injects_pending_operator_instructions_into_payload(self, mock_llm, tmp_path) -> None:
-        mock_llm.return_value = _make_llm_response("Done.")
-        state = AgentStateManager(max_pending_instructions=4)
-        instruction = PendingInstruction.create(
-            content="pause buy operations",
-            operator="alice",
-            source=SignalSource.CLI,
-            ttl_seconds=3600,
-        )
-        await state.add_instruction("bot", "default", instruction)
-        rt = AgentRuntime(
-            agent_id="bot",
-            app_dir=_make_app_dir(tmp_path),
-            signal_state_manager=state,
-        )
-        await rt.setup()
-        context = AgentRunContext(agent_id="bot", trigger="manual", payload={"task_type": "ops"})
-        result = await rt.run(context)
-        assert result["status"] == "completed"
-        injected = context.payload.get("operator_instructions")
-        assert isinstance(injected, list)
-        assert injected[0]["content"] == "pause buy operations"
-        assert injected[0]["operator"] == "alice"
-
-    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_trigger_event_returns_completed(
         self, mock_llm, tmp_path
     ) -> None:
@@ -468,6 +411,68 @@ Check entries.
         await rt.setup()
         with pytest.raises(ValueError, match="payload must be a dictionary"):
             await rt.trigger_event("check", payload=["bad"])  # type: ignore[arg-type]
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_trigger_event_skips_when_agent_paused(self, mock_llm, tmp_path) -> None:
+        state_manager = AsyncMock()
+        state_manager.get.return_value = MagicMock(paused=True)
+        state_manager.consume_instructions.return_value = []
+        ledger = AsyncMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            signal_state_manager=state_manager,
+            ledger=ledger,
+        )
+        await rt.setup()
+        result = await rt.trigger_event("cron")
+        assert result["status"] == "skipped"
+        assert result["reason"] == "agent_paused"
+        mock_llm.assert_not_called()
+        ledger.record_execution.assert_called()
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_signal_manual_bypasses_paused_guard(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        state_manager = AsyncMock()
+        state_manager.get.return_value = MagicMock(paused=True)
+        state_manager.consume_instructions.return_value = []
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            signal_state_manager=state_manager,
+        )
+        await rt.setup()
+        result = await rt.trigger_event("signal_manual")
+        assert result["status"] == "completed"
+        assert mock_llm.called
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_trigger_event_injects_signal_instructions(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response("ok")
+        instruction = MagicMock(
+            content="review this order",
+            operator="ops",
+            source=MagicMock(value="cli"),
+            created_at="2026-02-24T00:00:00Z",
+            expires_at="2026-02-24T01:00:00Z",
+        )
+        state_manager = AsyncMock()
+        state_manager.get.return_value = MagicMock(paused=False)
+        state_manager.consume_instructions.return_value = [instruction]
+        ledger = AsyncMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            signal_state_manager=state_manager,
+            ledger=ledger,
+        )
+        await rt.setup()
+        await rt.trigger_event("cron")
+        user_msg = next(item for item in mock_llm.call_args.kwargs["messages"] if item["role"] == "user")
+        assert "signal_instructions" in user_msg["content"]
+        assert "review this order" in user_msg["content"]
+        assert ledger.record_execution.await_count >= 1
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_user_payload_is_sanitized_and_role_isolated(self, mock_llm, tmp_path) -> None:

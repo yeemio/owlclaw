@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from io import StringIO
 from pathlib import Path
+from typing import cast
 
 from fastapi.testclient import TestClient
 from hypothesis import given, settings
@@ -23,7 +24,7 @@ from owlclaw.owlhub.statistics import StatisticsTracker
 def _issue_token(client: TestClient, *, code: str, role: str = "publisher") -> str:
     response = client.post("/api/v1/auth/token", json={"github_code": code, "role": role})
     assert response.status_code == 200
-    return response.json()["access_token"]
+    return cast(str, response.json()["access_token"])
 
 
 def _prepare_env(root: Path) -> dict[str, str | None]:
@@ -118,6 +119,11 @@ def test_statistics_endpoint_and_export_formats(tmp_path: Path) -> None:
         assert csv_export.status_code == 200
         assert "text/csv" in csv_export.headers["content-type"]
         assert "skill_name" in csv_export.text
+
+        metrics = client.get("/metrics")
+        assert metrics.status_code == 200
+        assert 'owlhub_skill_downloads_total{publisher="acme",skill="entry-monitor"} 1' in metrics.text
+        assert 'owlhub_skill_installs_total{publisher="acme",skill="entry-monitor"} 1' in metrics.text
     finally:
         _restore_env(old)
 

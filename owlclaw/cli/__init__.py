@@ -120,6 +120,10 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
 
         parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill search")
         parser.add_argument("--query", "-q", default="")
+        parser.add_argument("--mode", default="auto")
+        parser.add_argument("--api-base-url", default="")
+        parser.add_argument("--api-token", default="")
+        parser.add_argument("--no-cache", action="store_true", default=False)
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--tags", default="")
         parser.add_argument("--tag-mode", default="and")
@@ -129,6 +133,10 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         ns = parser.parse_args(sub_argv)
         search_command(
             query=ns.query,
+            mode=ns.mode,
+            api_base_url=ns.api_base_url,
+            api_token=ns.api_token,
+            no_cache=ns.no_cache,
             index_url=ns.index_url,
             tags=ns.tags,
             tag_mode=ns.tag_mode,
@@ -144,6 +152,12 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill install")
         parser.add_argument("name")
         parser.add_argument("--version", default="")
+        parser.add_argument("--no-deps", action="store_true", default=False)
+        parser.add_argument("--force", action="store_true", default=False)
+        parser.add_argument("--mode", default="auto")
+        parser.add_argument("--api-base-url", default="")
+        parser.add_argument("--api-token", default="")
+        parser.add_argument("--no-cache", action="store_true", default=False)
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
@@ -151,6 +165,12 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         install_command(
             name=ns.name,
             version=ns.version,
+            no_deps=ns.no_deps,
+            force=ns.force,
+            mode=ns.mode,
+            api_base_url=ns.api_base_url,
+            api_token=ns.api_token,
+            no_cache=ns.no_cache,
             index_url=ns.index_url,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
@@ -161,11 +181,19 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         from owlclaw.cli.skill_hub import installed_command
 
         parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill installed")
+        parser.add_argument("--mode", default="auto")
+        parser.add_argument("--api-base-url", default="")
+        parser.add_argument("--api-token", default="")
+        parser.add_argument("--no-cache", action="store_true", default=False)
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
         ns = parser.parse_args(sub_argv)
         installed_command(
+            mode=ns.mode,
+            api_base_url=ns.api_base_url,
+            api_token=ns.api_token,
+            no_cache=ns.no_cache,
             index_url=ns.index_url,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
@@ -177,16 +205,60 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
 
         parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill update")
         parser.add_argument("name", nargs="?", default="")
+        parser.add_argument("--mode", default="auto")
+        parser.add_argument("--api-base-url", default="")
+        parser.add_argument("--api-token", default="")
+        parser.add_argument("--no-cache", action="store_true", default=False)
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
         ns = parser.parse_args(sub_argv)
         update_command(
             name=ns.name,
+            mode=ns.mode,
+            api_base_url=ns.api_base_url,
+            api_token=ns.api_token,
+            no_cache=ns.no_cache,
             index_url=ns.index_url,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
         )
+        return True
+
+    if sub == "publish":
+        from owlclaw.cli.skill_hub import publish_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill publish")
+        parser.add_argument("path", nargs="?", default=".")
+        parser.add_argument("--mode", default="api")
+        parser.add_argument("--api-base-url", default="")
+        parser.add_argument("--api-token", default="")
+        parser.add_argument("--no-cache", action="store_true", default=False)
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        publish_command(
+            path=ns.path,
+            mode=ns.mode,
+            api_base_url=ns.api_base_url,
+            api_token=ns.api_token,
+            no_cache=ns.no_cache,
+            index_url=ns.index_url,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
+    if sub == "cache-clear":
+        from owlclaw.cli.skill_hub import cache_clear_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill cache-clear")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        cache_clear_command(index_url=ns.index_url, install_dir=ns.install_dir, lock_file=ns.lock_file)
         return True
 
     print(f"Error: unknown skill subcommand: {sub}", file=sys.stderr)
@@ -546,6 +618,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  validate  Validate SKILL.md in current dir")
         print("  list      List skills in a directory")
         print("  templates List templates from the template library")
+        print("  publish   Publish a local skill to OwlHub API")
+        print("  cache-clear  Clear local OwlHub cache")
         print("\n  owlclaw skill init --help | owlclaw skill templates --help")
         sys.exit(0)
     if argv == ["init"]:

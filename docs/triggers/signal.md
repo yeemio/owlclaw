@@ -1,92 +1,78 @@
-# Signal Trigger Guide
+## Signal Trigger Guide
 
-## Overview
+### Overview
 
-Signal trigger provides manual intervention controls for a running agent:
+Signal trigger provides manual control over running agents. It supports four operations:
 
-- pause autonomous runs
-- resume autonomous runs
-- force trigger one run
-- queue operator instructions for next run
+- `pause`: stop normal scheduled/event-driven runs.
+- `resume`: restore normal runs.
+- `trigger`: force one run immediately.
+- `instruct`: queue one operator instruction for the next run.
 
-Signal requests from CLI, HTTP API, and MCP are normalized to the same `Signal` model and dispatched by `SignalRouter`.
+The signal protocol is shared by CLI, HTTP API, and MCP tools.
 
-## Data Flow
+### CLI Reference
 
-1. Client sends one signal operation (`pause|resume|trigger|instruct`).
-2. Entry adapter converts request into `Signal(source=cli|api|mcp, ...)`.
-3. `SignalRouter.dispatch()` validates, routes, and records ledger entry.
-4. Handler updates state (`paused`, `pending_instructions`) or triggers runtime.
+Use `owlclaw agent ...` commands:
 
-## CLI Reference
+- `owlclaw agent pause --agent-id <id> [--tenant-id <tenant>] [--operator <name>]`
+- `owlclaw agent resume --agent-id <id> [--tenant-id <tenant>] [--operator <name>]`
+- `owlclaw agent trigger --agent-id <id> [--focus <focus>] [--message <msg>]`
+- `owlclaw agent instruct --agent-id <id> --message <msg> [--ttl <seconds>]`
+- `owlclaw agent status --agent-id <id> [--tenant-id <tenant>]`
 
-All commands support `--agent-id` (and backward-compatible `--agent`):
+All commands are converted to `Signal` objects and dispatched by `SignalRouter`.
 
-```bash
-owlclaw agent pause --agent-id <id> [--tenant default] [--operator cli]
-owlclaw agent resume --agent-id <id> [--tenant default] [--operator cli]
-owlclaw agent trigger --agent-id <id> [--message "..."] [--focus "..."] [--tenant default] [--operator cli]
-owlclaw agent instruct --agent-id <id> --message "..." [--ttl 3600] [--tenant default] [--operator cli]
-owlclaw agent status --agent-id <id> [--tenant default]
-```
+### HTTP API
 
-## HTTP API Entry
-
-`APITriggerServer.register_signal_admin(...)` mounts a shared Starlette endpoint:
+Register admin endpoint on API trigger server:
 
 - `POST /admin/signal`
-- Bearer authentication via existing API auth provider
-- request body validation by `SignalAPIRequest` (Pydantic)
 
-Example request:
+Typical payload:
 
 ```json
 {
-  "type": "instruct",
-  "agent_id": "trading-bot",
+  "type": "pause",
+  "agent_id": "inventory-bot",
   "tenant_id": "default",
-  "operator": "ops",
-  "message": "暂停买入，等待风控确认",
-  "ttl_seconds": 3600
+  "operator": "ops-oncall",
+  "message": "maintenance window"
 }
 ```
 
-## MCP Integration
+When auth is enabled, provide a valid bearer token accepted by the API auth provider.
 
-`register_signal_mcp_tools()` registers 4 MCP tools through capability registry:
+### MCP Tools
+
+MCP server exposes four tools when `signal_router` is configured:
 
 - `owlclaw_pause`
 - `owlclaw_resume`
 - `owlclaw_trigger`
 - `owlclaw_instruct`
 
-All tools convert arguments to `Signal(source=MCP)` and call `SignalRouter.dispatch()`.
+Common arguments:
 
-## Runtime Integration
+- `agent_id` (required)
+- `tenant_id` (optional, default `default`)
+- `operator` (optional, default `mcp`)
+- `message` (required for `owlclaw_instruct`)
+- `focus` (optional, only for `owlclaw_trigger`)
+- `ttl_seconds` (optional, only for `owlclaw_instruct`)
 
-When `AgentRuntime` is provided with `signal_state_manager`:
+### Runtime Behavior
 
-- autonomous triggers (`heartbeat` and payload `trigger_type=cron`) are skipped when agent state is paused
-- signal manual trigger (`trigger="signal_manual"`) bypasses paused check
-- pending instructions are consumed at run start and injected into `context.payload["operator_instructions"]`
+- For non-manual triggers (for example cron/heartbeat), runtime checks `paused` before decision loop.
+- If paused, runtime returns `status=skipped` with reason `agent_paused`.
+- `signal_manual` trigger bypasses pause guard.
+- Pending instructions are consumed at run start and injected into run payload as `signal_instructions`.
+- Ledger records paused-skip and instruction-consumption events when ledger is configured.
 
-## Operational Best Practices
+### Operator Best Practices
 
-Use pause when:
-
-- market/system condition is unstable and autonomous behavior must stop
-- maintenance window requires deterministic freeze
-
-Use instruct when:
-
-- an operator decision must be applied once in the next run
-- short-term policy override is needed with explicit TTL
-
-Use trigger when:
-
-- a run is required immediately regardless of paused autonomous schedule
-
-Avoid:
-
-- long-lived instructions with no TTL discipline
-- bypassing router/state manager by direct state table writes
+- Use `pause` before risky production changes or incident containment.
+- Use `instruct` for short-lived operational guidance instead of hardcoding emergency logic.
+- Keep instruction TTL small (for example 10-60 minutes) to avoid stale directives.
+- Use `trigger` after `instruct` when immediate execution is required.
+- Always include `operator` and `message` for auditability.

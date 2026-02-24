@@ -228,7 +228,7 @@ class AgentStateManager:
                 )
             )
             await session.commit()
-            return int(result.rowcount or 0)
+            return int(getattr(result, "rowcount", 0) or 0)
 
     @staticmethod
     def _to_instruction(row: PendingInstructionORM) -> PendingInstruction:

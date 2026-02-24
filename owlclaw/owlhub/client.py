@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import tarfile
 import tempfile
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -31,18 +34,34 @@ class SearchResult:
     version_state: str
     download_url: str
     checksum: str
+    dependencies: dict[str, str]
 
 
 class OwlHubClient:
     """Read OwlHub index and perform local install/update operations."""
 
-    def __init__(self, *, index_url: str, install_dir: Path, lock_file: Path):
+    def __init__(
+        self,
+        *,
+        index_url: str,
+        install_dir: Path,
+        lock_file: Path,
+        cache_dir: Path | None = None,
+        cache_ttl_seconds: int = 3600,
+        no_cache: bool = False,
+    ):
         self.index_url = index_url
         self.install_dir = install_dir
         self.lock_file = lock_file
         self.validator = Validator()
         self.index_builder = IndexBuilder()
         self.last_install_warning: str | None = None
+        self.retry_attempts = 3
+        self.retry_backoff_seconds = 0.1
+        self.cache_dir = cache_dir or (self.lock_file.parent / ".owlhub-cache")
+        self.cache_ttl_seconds = max(0, cache_ttl_seconds)
+        self.no_cache = no_cache
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def search(
         self,
@@ -50,6 +69,7 @@ class OwlHubClient:
         tags: list[str] | None = None,
         tag_mode: str = "and",
         include_draft: bool = False,
+        include_hidden: bool = False,
     ) -> list[SearchResult]:
         """Search skills by name/description and optional tags."""
         data = self._load_index()
@@ -65,6 +85,8 @@ class OwlHubClient:
             name = str(manifest.get("name", "")).strip()
             description = str(manifest.get("description", "")).strip()
             publisher = str(manifest.get("publisher", "")).strip()
+            if not include_hidden and _is_hidden_entry(entry):
+                continue
             version = str(manifest.get("version", "")).strip()
             version_state = str(entry.get("version_state", "released")).strip().lower()
             skill_tags = {
@@ -92,46 +114,40 @@ class OwlHubClient:
                     version_state=version_state,
                     download_url=str(entry.get("download_url", "")),
                     checksum=str(entry.get("checksum", "")),
+                    dependencies=manifest.get("dependencies", {})
+                    if isinstance(manifest.get("dependencies", {}), dict)
+                    else {},
                 )
             )
 
         results.sort(key=lambda item: (item.name, item.version), reverse=False)
         return results
 
-    def install(self, *, name: str, version: str | None = None) -> Path:
+    def install(
+        self,
+        *,
+        name: str,
+        version: str | None = None,
+        no_deps: bool = False,
+        force: bool = False,
+    ) -> Path:
         """Install one skill by name and optional exact version."""
-        candidates = self.search(query=name)
+        candidates = self.search(query=name, include_hidden=force)
         matched = [item for item in candidates if item.name == name]
         if version is not None:
             matched = [item for item in matched if item.version == version]
         if not matched:
             raise ValueError(f"skill not found: {name}{'@' + version if version else ''}")
         selected = sorted(matched, key=lambda item: item.version)[-1]
-        self.last_install_warning = None
-        if selected.version_state == "deprecated":
-            self.last_install_warning = f"skill {selected.name}@{selected.version} is deprecated"
+        plan = [selected]
+        if not no_deps:
+            from owlclaw.cli.resolver import DependencyResolver
 
-        downloaded = self._download(selected.download_url)
-        actual_checksum = self.index_builder.calculate_checksum(downloaded)
-        if selected.checksum and actual_checksum != selected.checksum:
-            raise ValueError("checksum verification failed")
-
+            resolver = DependencyResolver(get_candidates=lambda dep_name: self._list_candidates_by_name(dep_name, include_hidden=force))
+            plan = [node.result for node in resolver.resolve(root=selected)]
         target = self.install_dir / selected.name / selected.version
-        if target.exists():
-            shutil.rmtree(target)
-        target.mkdir(parents=True, exist_ok=True)
-
-        if tarfile.is_tarfile(downloaded):
-            with tarfile.open(downloaded, "r:*") as archive:
-                archive.extractall(target)
-        else:
-            if downloaded.is_dir():
-                shutil.copytree(downloaded, target, dirs_exist_ok=True)
-            else:
-                shutil.copy2(downloaded, target / downloaded.name)
-
-        self._validate_install(target)
-        self._write_lock(selected, target)
+        for item in plan:
+            target = self._install_one(item, force=force)
         return target
 
     def list_installed(self) -> list[dict[str, Any]]:
@@ -182,8 +198,13 @@ class OwlHubClient:
     def _load_index(self) -> dict[str, Any]:
         parsed = urllib.parse.urlparse(self.index_url)
         if parsed.scheme in {"http", "https"}:
-            with urllib.request.urlopen(self.index_url, timeout=30) as response:
+            cache_file = self.cache_dir / f"index-{_sha256(self.index_url)}.json"
+            if not self.no_cache and _is_cache_fresh(cache_file, ttl_seconds=self.cache_ttl_seconds):
+                return cast(dict[str, Any], json.loads(cache_file.read_text(encoding="utf-8")))
+            with self._urlopen_with_retry(self.index_url, timeout=30) as response:
                 payload = response.read().decode("utf-8")
+            if not self.no_cache:
+                cache_file.write_text(payload, encoding="utf-8")
             return cast(dict[str, Any], json.loads(payload))
         path = Path(self.index_url.replace("file://", "")).resolve()
         return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
@@ -191,8 +212,14 @@ class OwlHubClient:
     def _download(self, url: str) -> Path:
         parsed = urllib.parse.urlparse(url)
         if parsed.scheme in {"http", "https"}:
-            with urllib.request.urlopen(url, timeout=60) as response:
+            cache_file = self.cache_dir / f"pkg-{_sha256(url)}.pkg"
+            if not self.no_cache and _is_cache_fresh(cache_file, ttl_seconds=self.cache_ttl_seconds):
+                return cache_file
+            with self._urlopen_with_retry(url, timeout=60) as response:
                 data = response.read()
+            if not self.no_cache:
+                cache_file.write_bytes(data)
+                return cache_file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pkg") as handle:
                 handle.write(data)
                 return Path(handle.name)
@@ -211,6 +238,70 @@ class OwlHubClient:
             return None
         matched.sort(key=lambda item: _version_sort_key(item.version))
         return matched[-1]
+
+    def _list_candidates_by_name(self, name: str, *, include_hidden: bool = False) -> list[SearchResult]:
+        return self.search(query=name, include_draft=True, include_hidden=include_hidden)
+
+    def _install_one(self, selected: SearchResult, *, force: bool = False) -> Path:
+        self.last_install_warning = None
+        source_entry = _find_source_entry(self._load_index(), selected)
+        if not force and source_entry is not None and _is_hidden_entry(source_entry):
+            raise ValueError(f"skill {selected.publisher}/{selected.name} is blocked by moderation policy")
+        if selected.version_state == "deprecated":
+            self.last_install_warning = f"skill {selected.name}@{selected.version} is deprecated"
+
+        downloaded = self._download(selected.download_url)
+        actual_checksum = self.index_builder.calculate_checksum(downloaded)
+        if not force and selected.checksum and actual_checksum != selected.checksum:
+            raise ValueError("checksum verification failed")
+        if force and selected.checksum and actual_checksum != selected.checksum:
+            self.last_install_warning = "checksum mismatch ignored due to --force"
+
+        target = self.install_dir / selected.name / selected.version
+        if target.exists():
+            shutil.rmtree(target)
+        target.mkdir(parents=True, exist_ok=True)
+
+        try:
+            if tarfile.is_tarfile(downloaded):
+                with tarfile.open(downloaded, "r:*") as archive:
+                    archive.extractall(target)
+            else:
+                if downloaded.is_dir():
+                    shutil.copytree(downloaded, target, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(downloaded, target / downloaded.name)
+
+            self._validate_install(target)
+            self._write_lock(selected, target)
+        except Exception as exc:
+            if target.exists():
+                shutil.rmtree(target, ignore_errors=True)
+            raise ValueError(f"installation failed for {selected.name}@{selected.version}: {exc}") from exc
+        return target
+
+    def _urlopen_with_retry(self, target: str, *, timeout: int) -> Any:
+        last_error: Exception | None = None
+        for attempt in range(1, self.retry_attempts + 1):
+            try:
+                return urllib.request.urlopen(target, timeout=timeout)
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
+                last_error = exc
+                if attempt >= self.retry_attempts:
+                    break
+                time.sleep(self.retry_backoff_seconds * attempt)
+        raise ValueError(f"network request failed after retries: {target}") from last_error
+
+    def clear_cache(self) -> int:
+        """Clear all cached index/package files and return removed count."""
+        removed = 0
+        if not self.cache_dir.exists():
+            return removed
+        for item in self.cache_dir.glob("*"):
+            if item.is_file():
+                item.unlink(missing_ok=True)
+                removed += 1
+        return removed
 
     def _write_lock(self, selected: SearchResult, target: Path) -> None:
         existing = {"version": "1.0", "generated_at": "", "skills": []}
@@ -260,3 +351,40 @@ def _compare_version(left: str, right: str) -> int:
     if left_key < right_key:
         return -1
     return 0
+
+
+def _is_hidden_entry(entry: dict[str, Any]) -> bool:
+    takedown = entry.get("takedown", {})
+    if isinstance(takedown, dict) and bool(takedown.get("is_taken_down", False)):
+        return True
+    if bool(entry.get("is_taken_down", False)):
+        return True
+    return bool(entry.get("blacklisted", False))
+
+
+def _find_source_entry(index_data: dict[str, Any], selected: SearchResult) -> dict[str, Any] | None:
+    skills = index_data.get("skills", [])
+    if not isinstance(skills, list):
+        return None
+    for entry in skills:
+        manifest = entry.get("manifest", {})
+        if (
+            str(manifest.get("publisher", "")) == selected.publisher
+            and str(manifest.get("name", "")) == selected.name
+            and str(manifest.get("version", "")) == selected.version
+        ):
+            return entry if isinstance(entry, dict) else None
+    return None
+
+
+def _is_cache_fresh(path: Path, *, ttl_seconds: int) -> bool:
+    if not path.exists():
+        return False
+    if ttl_seconds <= 0:
+        return False
+    age = time.time() - path.stat().st_mtime
+    return age <= ttl_seconds
+
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()

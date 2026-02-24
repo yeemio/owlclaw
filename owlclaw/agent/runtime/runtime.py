@@ -47,7 +47,6 @@ if TYPE_CHECKING:
     from owlclaw.governance.ledger import Ledger
     from owlclaw.governance.router import Router
     from owlclaw.governance.visibility import VisibilityFilter
-    from owlclaw.triggers.signal import AgentStateManager, PendingInstruction
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +112,7 @@ class AgentRuntime:
         builtin_tools: BuiltInTools | None = None,
         router: Router | None = None,
         ledger: Ledger | None = None,
-        signal_state_manager: AgentStateManager | None = None,
+        signal_state_manager: Any | None = None,
         model: str = _DEFAULT_MODEL,
         config: dict[str, Any] | None = None,
         config_path: str | None = None,
@@ -415,7 +414,100 @@ class AgentRuntime:
             focus=focus,
             tenant_id=normalized_tenant_id,
         )
+        await self._inject_pending_signal_instructions(context)
+        if normalized_event_name != "signal_manual":
+            paused = await self._is_agent_paused(normalized_tenant_id)
+            if paused:
+                await self._record_paused_skip(context)
+                return {
+                    "status": "skipped",
+                    "run_id": context.run_id,
+                    "reason": "agent_paused",
+                }
         return await self.run(context)
+
+    async def _is_agent_paused(self, tenant_id: str) -> bool:
+        if self._signal_state_manager is None:
+            return False
+        try:
+            state = await self._signal_state_manager.get(self.agent_id, tenant_id)
+        except Exception:
+            logger.debug("Signal state get failed", exc_info=True)
+            return False
+        return bool(getattr(state, "paused", False))
+
+    async def _inject_pending_signal_instructions(self, context: AgentRunContext) -> None:
+        if self._signal_state_manager is None:
+            return
+        try:
+            consumed = await self._signal_state_manager.consume_instructions(
+                self.agent_id,
+                context.tenant_id,
+            )
+        except Exception:
+            logger.debug("Signal instruction consume failed", exc_info=True)
+            return
+        if not consumed:
+            return
+        context.payload["signal_instructions"] = [
+            {
+                "content": str(getattr(item, "content", "")),
+                "operator": str(getattr(item, "operator", "")),
+                "source": str(getattr(getattr(item, "source", ""), "value", getattr(item, "source", ""))),
+                "created_at": str(getattr(item, "created_at", "")),
+                "expires_at": str(getattr(item, "expires_at", "")),
+            }
+            for item in consumed
+        ]
+        await self._record_instruction_consumption(context, count=len(consumed))
+
+    async def _record_paused_skip(self, context: AgentRunContext) -> None:
+        if self._ledger is None:
+            return
+        try:
+            await self._ledger.record_execution(
+                tenant_id=context.tenant_id,
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                capability_name="signal.pause_guard",
+                task_type="signal",
+                input_params={"trigger": context.trigger},
+                output_result={"status": "skipped", "reason": "agent_paused"},
+                decision_reasoning="paused guard in runtime",
+                execution_time_ms=0,
+                llm_model="",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="skipped",
+                error_message=None,
+            )
+        except Exception:
+            logger.debug("Ledger paused skip record failed", exc_info=True)
+
+    async def _record_instruction_consumption(self, context: AgentRunContext, *, count: int) -> None:
+        if self._ledger is None:
+            return
+        try:
+            await self._ledger.record_execution(
+                tenant_id=context.tenant_id,
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                capability_name="signal.consume_instructions",
+                task_type="signal",
+                input_params={"trigger": context.trigger},
+                output_result={"consumed_count": count},
+                decision_reasoning="runtime instruction injection",
+                execution_time_ms=0,
+                llm_model="",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="success",
+                error_message=None,
+            )
+        except Exception:
+            logger.debug("Ledger instruction consumption record failed", exc_info=True)
 
     # ------------------------------------------------------------------
     # Core run method
@@ -445,17 +537,6 @@ class AgentRuntime:
             context.trigger,
             context.focus,
         )
-
-        if await self._should_skip_paused_run(context):
-            self._reset_builtin_tool_budget(context.run_id)
-            self._release_skill_content_cache()
-            return {
-                "status": "skipped",
-                "run_id": context.run_id,
-                "reason": "agent_paused",
-            }
-
-        await self._inject_operator_instructions(context)
 
         if context.trigger == "heartbeat" and self._heartbeat_checker is not None:
             has_events = self._heartbeat_payload_has_events(context.payload)
@@ -551,39 +632,6 @@ class AgentRuntime:
         )
         self._update_trace(trace, status="success", output=result)
         return {"status": "completed", "run_id": context.run_id, **result}
-
-    async def _should_skip_paused_run(self, context: AgentRunContext) -> bool:
-        """Return True when autonomous triggers should be skipped due to paused state."""
-        if self._signal_state_manager is None:
-            return False
-        if context.trigger == "signal_manual":
-            return False
-        trigger_type = str(context.payload.get("trigger_type", "")).strip().lower()
-        is_autonomous = context.trigger == "heartbeat" or trigger_type == "cron"
-        if not is_autonomous:
-            return False
-        state = await self._signal_state_manager.get(self.agent_id, context.tenant_id)
-        return bool(state.paused)
-
-    async def _inject_operator_instructions(self, context: AgentRunContext) -> None:
-        """Consume pending instructions and add them to run context payload."""
-        if self._signal_state_manager is None:
-            return
-        instructions = await self._signal_state_manager.consume_instructions(self.agent_id, context.tenant_id)
-        if not instructions:
-            return
-        context.payload = dict(context.payload)
-        context.payload["operator_instructions"] = [self._instruction_to_payload(item) for item in instructions]
-
-    @staticmethod
-    def _instruction_to_payload(instruction: PendingInstruction) -> dict[str, Any]:
-        return {
-            "content": instruction.content,
-            "operator": instruction.operator,
-            "source": instruction.source.value,
-            "created_at": instruction.created_at.isoformat(),
-            "expires_at": instruction.expires_at.isoformat(),
-        }
 
     def _reset_builtin_tool_budget(self, run_id: str) -> None:
         """Reset built-in tool run budget after each run to avoid state growth."""

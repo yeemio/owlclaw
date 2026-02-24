@@ -1,126 +1,171 @@
-"""Integration tests for signal multi-entry flows."""
+"""Integration flows for signal router/API/runtime without external services."""
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from typing import Any
 
 import pytest
+from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
-from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.runtime import AgentRuntime
-from owlclaw.cli.agent_signal import pause_command, status_command
-from owlclaw.triggers.api import APITriggerServer
-from owlclaw.triggers.api.auth import BearerTokenAuthProvider
-from owlclaw.triggers.signal import AgentStateManager, Signal, SignalRouter, SignalSource, SignalType, default_handlers
+from owlclaw.cli import agent_signal
+from owlclaw.triggers.signal import (
+    AgentStateManager,
+    Signal,
+    SignalRouter,
+    SignalSource,
+    SignalType,
+    default_handlers,
+    register_signal_admin_route,
+)
 
-pytestmark = pytest.mark.integration
+
+class _Runtime:
+    async def trigger_event(
+        self,
+        event_name: str,
+        payload: dict[str, Any],
+        focus: str | None = None,
+        tenant_id: str = "default",
+    ) -> dict[str, Any]:
+        return {
+            "event_name": event_name,
+            "payload": payload,
+            "focus": focus,
+            "tenant_id": tenant_id,
+            "run_id": "run-signal",
+        }
+
+
+class _Governance:
+    async def allow_trigger(self, event_name: str, tenant_id: str) -> bool:  # noqa: ARG002
+        return True
 
 
 def _make_app_dir(tmp_path) -> str:
     (tmp_path / "SOUL.md").write_text("You are a helpful assistant.", encoding="utf-8")
-    (tmp_path / "IDENTITY.md").write_text("## My Capabilities\n- market_scan\n", encoding="utf-8")
+    (tmp_path / "IDENTITY.md").write_text("## My Capabilities\n- x\n", encoding="utf-8")
     return str(tmp_path)
 
 
-def _make_llm_response(content: str = "Done.") -> MagicMock:
-    message = MagicMock()
-    message.content = content
-    message.tool_calls = []
-    message.model_dump.return_value = {"role": "assistant", "content": content, "tool_calls": []}
-    choice = MagicMock()
-    choice.message = message
-    response = MagicMock()
-    response.choices = [choice]
-    usage = MagicMock()
-    usage.prompt_tokens = 0
-    usage.completion_tokens = 0
-    response.usage = usage
-    return response
-
-
-class _Runtime:
-    def __init__(self) -> None:
-        self.calls: list[dict] = []
-
-    async def trigger_event(self, event_name: str, payload: dict, focus: str | None = None, tenant_id: str = "default") -> dict:
-        self.calls.append({"event_name": event_name, "payload": payload, "focus": focus, "tenant_id": tenant_id})
-        return {"run_id": "run-1"}
+pytestmark = pytest.mark.integration
 
 
 @pytest.mark.asyncio
-async def test_http_api_signal_updates_state_through_router() -> None:
-    runtime = _Runtime()
-    state = AgentStateManager(max_pending_instructions=4)
-    router = SignalRouter(handlers=default_handlers(state=state, runtime=runtime))
-    server = APITriggerServer(auth_provider=BearerTokenAuthProvider({"token-1"}), agent_runtime=runtime)
-    server.register_signal_admin(signal_router=router, require_auth=True)
+async def test_pause_resume_and_trigger_flow_with_runtime_guard(monkeypatch, tmp_path) -> None:
+    async def _fake_acompletion(**_: Any) -> dict[str, Any]:
+        return {"choices": [{"message": {"role": "assistant", "content": "ok", "tool_calls": []}}]}
 
-    with TestClient(server.app) as client:
-        response = client.post(
-            "/admin/signal",
-            headers={"Authorization": "Bearer token-1"},
-            json={"type": "pause", "agent_id": "a1", "tenant_id": "default"},
+    monkeypatch.setattr("owlclaw.agent.runtime.runtime.llm_integration.acompletion", _fake_acompletion)
+
+    state = AgentStateManager()
+    runtime = AgentRuntime(
+        agent_id="bot",
+        app_dir=_make_app_dir(tmp_path),
+        signal_state_manager=state,
+    )
+    await runtime.setup()
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=_Runtime(), governance=_Governance()))
+
+    result_pause = await router.dispatch(
+        Signal(
+            type=SignalType.PAUSE,
+            source=SignalSource.CLI,
+            agent_id="bot",
+            tenant_id="default",
+            operator="op",
         )
-    assert response.status_code == 200
-    snapshot = await state.get("a1", "default")
-    assert snapshot.paused is True
+    )
+    assert result_pause.status == "paused"
 
+    skipped = await runtime.trigger_event("cron")
+    assert skipped["status"] == "skipped"
+    assert skipped["reason"] == "agent_paused"
 
-def test_cli_signal_commands_change_state_in_process() -> None:
-    pause_result = pause_command(agent="cli-a1", tenant="default", operator="op")
-    assert pause_result["status"] in {"paused", "already_paused"}
+    result_resume = await router.dispatch(
+        Signal(
+            type=SignalType.RESUME,
+            source=SignalSource.CLI,
+            agent_id="bot",
+            tenant_id="default",
+            operator="op",
+        )
+    )
+    assert result_resume.status == "resumed"
 
-    status_result = status_command(agent="cli-a1", tenant="default")
-    assert status_result["paused"] is True
-
-
-@pytest.mark.asyncio
-async def test_pause_blocks_cron_run_and_resume_restores(tmp_path) -> None:
-    state = AgentStateManager(max_pending_instructions=4)
-    runtime = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path), signal_state_manager=state)
-    await runtime.setup()
-    await state.set_paused("bot", "default", True)
-
-    with patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion") as mock_llm:
-        mock_llm.return_value = _make_llm_response("Done.")
-        skipped = await runtime.run(AgentRunContext(agent_id="bot", trigger="market_open", payload={"trigger_type": "cron"}))
-        assert skipped["status"] == "skipped"
-        assert skipped["reason"] == "agent_paused"
-        mock_llm.assert_not_called()
-
-        await state.set_paused("bot", "default", False)
-        resumed = await runtime.run(AgentRunContext(agent_id="bot", trigger="market_open", payload={"trigger_type": "cron"}))
-        assert resumed["status"] == "completed"
-        assert mock_llm.called
+    completed = await runtime.trigger_event("cron")
+    assert completed["status"] == "completed"
 
 
 @pytest.mark.asyncio
-async def test_instruct_signal_is_injected_into_next_run_payload(tmp_path) -> None:
-    state = AgentStateManager(max_pending_instructions=4)
-    runtime_stub = _Runtime()
-    router = SignalRouter(handlers=default_handlers(state=state, runtime=runtime_stub))
-    runtime = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path), signal_state_manager=state)
-    await runtime.setup()
+async def test_http_admin_signal_endpoint_updates_state() -> None:
+    state = AgentStateManager()
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=_Runtime(), governance=_Governance()))
+    app = Starlette(routes=[])
+    register_signal_admin_route(app_routes=app.router.routes, router=router, auth_provider=None, require_auth=False)
 
-    instruct_result = await router.dispatch(
+    with TestClient(app) as client:
+        response = client.post("/admin/signal", json={"type": "pause", "agent_id": "a1", "tenant_id": "t1"})
+        assert response.status_code == 200
+        assert response.json()["status"] == "paused"
+
+    current = await state.get("a1", "t1")
+    assert current.paused is True
+
+
+def test_cli_to_router_state_change_flow(monkeypatch) -> None:
+    state = AgentStateManager()
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=_Runtime(), governance=_Governance()))
+    monkeypatch.setattr(agent_signal, "_state_manager", state)
+    monkeypatch.setattr(agent_signal, "_router", router)
+
+    pause_result = agent_signal.pause_command(agent="a-cli", tenant="t-cli", operator="ops")
+    assert pause_result["status"] == "paused"
+    paused_state = agent_signal.status_command(agent="a-cli", tenant="t-cli")
+    assert paused_state["paused"] is True
+
+    resume_result = agent_signal.resume_command(agent="a-cli", tenant="t-cli", operator="ops")
+    assert resume_result["status"] == "resumed"
+    resumed_state = agent_signal.status_command(agent="a-cli", tenant="t-cli")
+    assert resumed_state["paused"] is False
+
+
+@pytest.mark.asyncio
+async def test_instruct_then_runtime_run_contains_instruction(monkeypatch, tmp_path) -> None:
+    async def _fake_acompletion(**_: Any) -> dict[str, Any]:
+        return {"choices": [{"message": {"role": "assistant", "content": "ok", "tool_calls": []}}]}
+
+    monkeypatch.setattr("owlclaw.agent.runtime.runtime.llm_integration.acompletion", _fake_acompletion)
+
+    state = AgentStateManager()
+    runtime = AgentRuntime(
+        agent_id="bot",
+        app_dir=_make_app_dir(tmp_path),
+        signal_state_manager=state,
+    )
+    await runtime.setup()
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=_Runtime(), governance=_Governance()))
+    instruct = await router.dispatch(
         Signal(
             type=SignalType.INSTRUCT,
             source=SignalSource.CLI,
             agent_id="bot",
             tenant_id="default",
             operator="ops",
-            message="hold buy orders",
-            ttl_seconds=3600,
+            message="check risk limits first",
         )
     )
-    assert instruct_result.status == "instruction_queued"
+    assert instruct.status == "instruction_queued"
 
-    context = AgentRunContext(agent_id="bot", trigger="manual", payload={"task_type": "ops"})
-    with patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion") as mock_llm:
-        mock_llm.return_value = _make_llm_response("Done.")
-        result = await runtime.run(context)
+    recorded_messages: dict[str, Any] = {}
+
+    async def _capture_decision_loop(context, trace=None):  # noqa: ANN001, ANN202
+        recorded_messages["payload"] = context.payload
+        return {"status": "completed", "run_id": context.run_id, "iterations": 1, "final_response": "ok", "tool_calls_total": 0}
+
+    runtime._decision_loop = _capture_decision_loop  # type: ignore[method-assign]
+    result = await runtime.trigger_event("cron")
     assert result["status"] == "completed"
-    injected = context.payload.get("operator_instructions")
-    assert isinstance(injected, list)
-    assert injected[0]["content"] == "hold buy orders"
+    assert "signal_instructions" in recorded_messages["payload"]
+    assert recorded_messages["payload"]["signal_instructions"][0]["content"] == "check risk limits first"

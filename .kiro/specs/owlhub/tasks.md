@@ -566,15 +566,15 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Submit random appeals, verify records are saved with complete information
     - _Requirements: 7.1, 7.4, 7.5_
 
-- [ ] 26. Implement blacklist and moderation features
-  - [ ] 26.1 Create blacklist management
+- [x] 26. Implement blacklist and moderation features
+  - [x] 26.1 Create blacklist management
     - Create `owlhub/models/blacklist.py` with Blacklist model
     - Implement blacklist API endpoints (admin-only)
     - Add blacklist checking to search and install flows
     - Support blacklisting by skill name or publisher
     - _Requirements: 5.4, 7.3_
 
-  - [ ] 26.2 Implement skill takedown functionality
+  - [x] 26.2 Implement skill takedown functionality
     - Implement `POST /api/v1/skills/{publisher}/{name}/takedown` endpoint
     - Mark skills as taken down without deleting data
     - Hide taken down skills from public index and search
@@ -582,7 +582,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Record takedown reason and timestamp
     - _Requirements: 7.3_
 
-  - [ ]* 26.3 Write unit tests for blacklist and takedown
+  - [x]* 26.3 Write unit tests for blacklist and takedown
     - Test blacklist addition and removal
     - Test blacklist filtering in search
     - Test blacklist blocking in install
@@ -590,7 +590,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test takedown preservation for existing installs
     - _Requirements: 5.4, 7.3_
 
-  - [ ]* 26.4 Write property tests for blacklist filtering
+  - [x]* 26.4 Write property tests for blacklist filtering
     - **Property 17: 黑名单过滤**
     - **Validates: Requirements 5.4**
     - Add random skills to blacklist, verify they don't appear in search/install
@@ -599,29 +599,29 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Take down random skills, verify hidden from public but accessible to existing users
     - _Requirements: 5.4, 7.3_
 
-- [ ] 27. Update CLI to support API mode
-  - [ ] 27.1 Add API client to CLI
+- [x] 27. Update CLI to support API mode
+  - [x] 27.1 Add API client to CLI
     - Create `owlclaw/cli/api_client.py` for API communication
     - Support both static index mode and API mode via configuration
     - Implement authentication token management for API mode
     - Add automatic fallback to static index if API unavailable
     - _Requirements: 8.3, 8.4_
 
-  - [ ] 27.2 Add publish command to CLI
+  - [x] 27.2 Add publish command to CLI
     - Implement `owlclaw skill publish <path>` command
     - Validate skill package locally before publishing
     - Authenticate with API and upload skill metadata
     - Display publish status and review information
     - _Requirements: 1.1, 5.1_
 
-  - [ ]* 27.3 Write unit tests for API client
+  - [x]* 27.3 Write unit tests for API client
     - Test API mode vs static index mode selection
     - Test authentication token handling
     - Test fallback behavior on API failure
     - Test publish command flow
     - _Requirements: 8.3, 8.4_
 
-  - [ ]* 27.4 Write integration test for CLI API compatibility
+  - [x]* 27.4 Write integration test for CLI API compatibility
     - **Property 26: 阶段间向后兼容性** (complete test)
     - **Validates: Requirements 8.4**
     - Test Phase 1 CLI with Phase 2 index
@@ -629,37 +629,37 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Verify backward compatibility maintained
     - _Requirements: 8.4_
 
-- [ ] 28. Implement dependency resolution
-  - [ ] 28.1 Create dependency resolver
+- [x] 28. Implement dependency resolution
+  - [x] 28.1 Create dependency resolver
     - Create `owlclaw/cli/resolver.py` with dependency resolution logic
     - Implement topological sort for dependency order
     - Detect circular dependencies and report errors
     - Resolve version constraints using semantic versioning
     - _Requirements: 3.1, 4.4_
 
-  - [ ] 28.2 Integrate resolver into install command
+  - [x] 28.2 Integrate resolver into install command
     - Automatically resolve and install dependencies
     - Display dependency tree before installation
     - Add `--no-deps` flag to skip dependency installation
     - Update lock file with full dependency graph
     - _Requirements: 3.1, 3.4_
 
-  - [ ]* 28.3 Write unit tests for dependency resolver
+  - [x]* 28.3 Write unit tests for dependency resolver
     - Test simple dependency chain resolution
     - Test circular dependency detection
     - Test version constraint resolution
     - Test missing dependency error handling
     - _Requirements: 3.1, 4.4_
 
-  - [ ]* 28.4 Write integration test for dependency installation
+  - [x]* 28.4 Write integration test for dependency installation
     - Test installing skill with dependencies
     - Test dependency tree display
     - Test lock file includes all dependencies
     - Verify correct installation order
     - _Requirements: 3.1, 3.4_
 
-- [ ] 29. Implement error handling and recovery
-  - [ ] 29.1 Add comprehensive error handling to all components
+- [x] 29. Implement error handling and recovery
+  - [x] 29.1 Add comprehensive error handling to all components
     - Implement network error handling with retry logic (exponential backoff)
     - Implement validation error handling with detailed messages
     - Implement integrity error handling with cleanup
@@ -667,14 +667,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Implement dependency conflict error handling with resolution hints
     - _Requirements: 3.5_
 
-  - [ ] 29.2 Add error recovery mechanisms
+  - [x] 29.2 Add error recovery mechanisms
     - Implement transaction rollback for failed installations
     - Implement cache clearing for corrupted downloads
     - Implement state recovery after interrupted operations
     - Add `--force` flag to override certain errors
     - _Requirements: 3.5_
 
-  - [ ]* 29.3 Write unit tests for error handling
+  - [x]* 29.3 Write unit tests for error handling
     - Test network error retry logic
     - Test validation error messages
     - Test integrity error cleanup
@@ -682,8 +682,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test dependency conflict reporting
     - _Requirements: 3.5_
 
-- [ ] 30. Add caching and performance optimizations
-  - [ ] 30.1 Implement caching layer
+- [x] 30. Add caching and performance optimizations
+  - [x] 30.1 Implement caching layer
     - Cache index.json with TTL (configurable, default 1 hour)
     - Cache downloaded skill packages
     - Cache API responses for read-only endpoints
@@ -691,22 +691,22 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add `owlclaw skill cache clear` command
     - _Requirements: NFR-2_
 
-  - [ ] 30.2 Optimize database queries
+  - [x] 30.2 Optimize database queries
     - Add database indexes for common query patterns
     - Implement query result caching with Redis (optional)
     - Use database connection pooling
     - Optimize N+1 query problems with eager loading
     - _Requirements: NFR-2_
 
-  - [ ]* 30.3 Write performance tests
+  - [x]* 30.3 Write performance tests
     - Test search response time with large dataset (P95 < 500ms)
     - Test concurrent API requests handling
     - Test cache hit/miss behavior
     - Test database query performance
     - _Requirements: NFR-2_
 
-- [ ] 31. Implement monitoring and observability
-  - [ ] 31.1 Add structured logging
+- [x] 31. Implement monitoring and observability
+  - [x] 31.1 Add structured logging
     - Use Python logging with JSON formatter
     - Log all API requests with timing
     - Log all publish/install operations
@@ -714,7 +714,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Configure log levels via environment variables
     - _Requirements: NFR-1_
 
-  - [ ] 31.2 Add metrics and health checks
+  - [x] 31.2 Add metrics and health checks
     - Implement `/health` endpoint with dependency checks
     - Implement `/metrics` endpoint with Prometheus format
     - Track API request counts, latencies, error rates
@@ -722,7 +722,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Track database connection pool metrics
     - _Requirements: NFR-1_
 
-  - [ ]* 31.3 Write tests for observability
+  - [x]* 31.3 Write tests for observability
     - Test health check endpoint responses
     - Test metrics endpoint format
     - Test logging output format
@@ -730,14 +730,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: NFR-1_
 
 - [ ] 32. Create deployment configuration
-  - [ ] 32.1 Create Docker configuration
+  - [x] 32.1 Create Docker configuration
     - Create `Dockerfile` for API service
     - Create `docker-compose.yml` for local development
     - Include PostgreSQL, Redis (optional) in compose
     - Configure environment variables properly
     - _Requirements: 8.3_
 
-  - [ ] 32.2 Create Kubernetes deployment manifests
+  - [x] 32.2 Create Kubernetes deployment manifests
     - Create deployment.yaml for API service
     - Create service.yaml for load balancing
     - Create configmap.yaml for configuration
