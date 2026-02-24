@@ -102,7 +102,7 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（2/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-queue final closeout） |
-| 批次状态 | **已完成并收口**。`triggers-queue` 全部任务 `89/89` 完成。 |
-| 已完成项 | 1) Task 24.1：新增 `scripts/test_queue_trigger.py`（MockQueueAdapter 全流程验证）；2) Task 24.2：新增 `docs/triggers/queue_validation.md`（步骤/预期/排查）；3) Task 25：完成 queue 单元/属性/集成测试、覆盖率检查、mypy、ruff 校验；4) Task 9 核心消费流程检查点补齐。 |
-| 下一待执行 | `codex-work`：切换 `triggers-webhook` Task 2（数据模型与持久化层）→ `triggers-db-change` / `triggers-api` / `triggers-signal`。 |
-| 验收快照 | `poetry run python scripts/test_queue_trigger.py`（PASSED）；`poetry run pytest tests/unit/triggers -k queue tests/integration/test_queue_trigger_e2e.py tests/integration/test_queue_kafka_adapter_integration.py --cov=owlclaw.triggers.queue --cov=owlclaw.integrations.queue_adapters --cov-report=term-missing -q`（74 passed, 1 skipped，TOTAL 89%）；`poetry run mypy owlclaw/`（Success: no issues found in 133 source files）；`poetry run ruff check .`（All checks passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-webhook Task 2） |
+| 批次状态 | **已完成（本批）**。完成 Task 2（2.1~2.3）：Webhook 持久化模型、迁移脚本、Repository 层与属性测试。 |
+| 已完成项 | 1) 新增 Alembic 迁移 `004_webhook_trigger_core.py`（endpoints/events/idempotency/rules/executions 五表 + tenant 索引）；2) 新增 ORM 模型与 SQLAlchemy Repository；3) 新增 InMemory Repository 供属性测试；4) 新增属性测试覆盖 Property 2（端点查询）与 Property 22（事件日志往返）。 |
+| 下一待执行 | `codex-work`：`triggers-webhook` Task 3（WebhookEndpointManager）→ Task 4（RequestValidator）→ Task 5 检查点。 |
+| 验收快照 | `poetry run pytest tests/unit/triggers/test_webhook_types.py tests/unit/triggers/test_webhook_migration.py tests/unit/triggers/test_webhook_repositories.py tests/unit/triggers/test_webhook_repositories_properties.py -q`（11 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（11 passed）；`poetry run ruff check owlclaw/triggers/webhook/persistence migrations/versions/004_webhook_trigger_core.py tests/unit/triggers/test_webhook_migration.py tests/unit/triggers/test_webhook_repositories.py tests/unit/triggers/test_webhook_repositories_properties.py`（All checks passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

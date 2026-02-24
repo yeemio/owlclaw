@@ -22,8 +22,8 @@
   - 复用项目数据库基础设施（PostgreSQL + SQLAlchemy + Alembic）
   - _需求：所有需求的基础_
 
-- [ ] 2. 实现数据模型和持久化层
-  - [ ] 2.1 创建数据库迁移脚本
+- [x] 2. 实现数据模型和持久化层
+  - [x] 2.1 创建数据库迁移脚本
     - 实现 webhook_endpoints 表结构
     - 实现 webhook_events 表结构
     - 实现 idempotency_keys 表结构
@@ -32,7 +32,7 @@
     - 添加必要的索引和约束
     - _需求：1.1, 6.5, 9.1_
 
-  - [ ] 2.2 实现数据访问层（Repository 模式）
+  - [x] 2.2 实现数据访问层（Repository 模式）
     - 实现 EndpointRepository（CRUD 操作）
     - 实现 EventRepository（日志记录和查询）
     - 实现 IdempotencyRepository（键存储和查询）
@@ -40,7 +40,7 @@
     - 实现 ExecutionRepository（执行记录管理）
     - _需求：1.1, 1.3, 6.5, 9.1_
 
-  - [ ]* 2.3 编写数据访问层的属性测试
+  - [x]* 2.3 编写数据访问层的属性测试
     - **属性 2：端点查询返回所有已注册端点**
     - **属性 22：事件日志持久化往返**
     - **验证需求：1.3, 6.5**
