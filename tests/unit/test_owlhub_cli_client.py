@@ -196,6 +196,28 @@ def test_cli_search_include_draft_option(tmp_path: Path, monkeypatch, capsys) ->
     assert "draft-skill@1.0.0 [draft]" in second.out
 
 
+def test_cli_install_verbose_shows_progress_steps(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(["skill", "install", "entry-monitor", "--verbose"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "Step 1/3" in captured.out
+    assert "Step 2/3" in captured.out
+    assert "Step 3/3" in captured.out
+
+
+def test_cli_install_quiet_suppresses_non_error_output(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(["skill", "install", "entry-monitor", "--quiet"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "Installed:" not in captured.out
+
+
 def test_cli_update_reports_no_updates(tmp_path: Path, monkeypatch, capsys) -> None:
     archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
     index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")

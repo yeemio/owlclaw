@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（39/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（44/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 36.2） |
-| 批次状态 | **已完成（部分）**。完成 checksum 全链路校验（发布生成/校验 + 安装拒绝不匹配）并补齐测试。 |
-| 已完成项 | 1) `owlhub/api/routes/skills.py` 新增发布 checksum 解析逻辑：本地包自动计算、提供值与本地包不一致时拒绝、远程 URL 无 checksum 时拒绝、无下载地址时生成 manifest checksum；2) 发布写入 index 时保证 `checksum` 字段始终落值；3) 新增 `tests/unit/test_owlhub_api_checksums.py` 覆盖 checksum 自动生成/拒绝分支；4) 复用 `test_owlhub_cli_client.py` 校验安装阶段 checksum mismatch 拒绝；5) 回填 `owlhub/tasks.md` Task 36.2 并同步进度 `owlhub 38/42`。 |
-| 下一待执行 | `owlhub` Task 36.3（Write security tests）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/api/routes/skills.py tests/unit/test_owlhub_api_checksums.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_api_checksums.py tests/unit/test_owlhub_cli_client.py -q -k "publish_generates_checksum or publish_rejects_mismatched_checksum or publish_rejects_remote_package_without_checksum or publish_generates_manifest_checksum_without_download_url or install_rejects_checksum_mismatch"` -> 5 passed；`poetry run pytest tests/unit/test_owlhub_api_security_hardening.py tests/unit/test_owlhub_api_auth.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_moderation.py tests/unit/test_owlhub_observability.py tests/integration/test_owlhub_phase3_flow.py -q` -> 26 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 36.3） |
+| 批次状态 | **已完成（部分）**。完成安全测试收敛（限流/鉴权绕过/SQL 注入样式输入/XSS 转义/checksum 篡改）。 |
+| 已完成项 | 1) 扩展 `tests/unit/test_owlhub_api_security_hardening.py`：新增 SQL 注入样式标识拒绝测试、伪造 Bearer token 绕过失败测试；2) 扩展 `tests/unit/test_owlhub_site_generator.py`：新增脚本注入内容转义测试；3) 修复 `owlhub/site/generator.py` 详情页文件名 slug 安全化（避免非法字符导致生成失败）；4) 结合 `tests/unit/test_owlhub_api_checksums.py` 与 `tests/unit/test_owlhub_cli_client.py` 覆盖 checksum 篡改拒绝；5) 回填 `owlhub/tasks.md` Task 36（含 36.3）并同步进度 `owlhub 39/42`。 |
+| 下一待执行 | `owlhub` Task 37（User experience improvements）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/site/generator.py tests/unit/test_owlhub_site_generator.py tests/unit/test_owlhub_api_security_hardening.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_site_generator.py tests/unit/test_owlhub_api_security_hardening.py tests/unit/test_owlhub_api_checksums.py tests/unit/test_owlhub_cli_client.py -q -k "generated_html_escapes_script_content or sql_injection or auth_bypass or install_rejects_checksum_mismatch"` -> 4 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
