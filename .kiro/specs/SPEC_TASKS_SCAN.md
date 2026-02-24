@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（1/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（4/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-work langchain 增量） |
-| 批次状态 | **已完成**。`integrations-langchain` 进度推进到（25/50），并完成针对性审校修复（mypy）。 |
-| 已完成项 | 1) 合并 `codex-work` 新增提交（streaming、examples、docs、metrics、integration tests）；2) 修复审校发现的类型问题（`app.py`、`langchain/adapter.py`）；3) 执行变更范围静态检查与测试。 |
-| 下一待执行 | 继续跟进 `integrations-langchain` 余下任务（25/50），并同步审校 `e2e-validation` 后续提交。 |
-| 验收快照 | `poetry run ruff check owlclaw/integrations/langchain owlclaw/app.py ...` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/langchain owlclaw/app.py --hide-error-context --no-error-summary` -> `Success`；`poetry run pytest tests/unit/integrations/test_langchain_examples.py tests/unit/integrations/test_langchain_health.py tests/unit/integrations/test_langchain_metrics.py tests/unit/integrations/test_langchain_stream.py tests/unit/test_app_langchain.py tests/integration/test_langchain_integration.py -q` -> `16 passed`。 |
+| 当前批次 | spec 循环（e2e-validation Task 4.2 Mionyee 执行逻辑） |
+| 批次状态 | **进行中**。完成 Mionyee 任务执行链路（cron→agent→skills→governance→hatchet）与失败降级路径，`e2e-validation` 维持 **4/19**（顶层任务 4 未收口）。 |
+| 已完成项 | 1) `ExecutionEngine` 新增 `configure_mionyee_components()` 与 `execute_mionyee_task()`；2) `execute_scenario()` 在 `MIONYEE_TASK` 且无 runner 时自动走组件链路；3) `tests/e2e/test_execution_engine.py` 新增 Mionyee 成功/失败用例；4) `e2e-validation/tasks.md` 勾选 4.2。 |
+| 下一待执行 | 继续 `e2e-validation` Task 4.3/4.4（属性 1 与属性 2：完整流程与轨迹完整性）。 |
+| 验收快照 | `poetry run pytest tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py -q` -> `17 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 6 source files`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

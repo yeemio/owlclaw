@@ -52,26 +52,26 @@
     - **属性 15: 场景导入导出往返**
     - **验证需求: 4.5**
 
-- [ ] 3. 实现数据收集器
-  - [ ] 3.1 实现 DataCollector 类
+- [x] 3. 实现数据收集器
+  - [x] 3.1 实现 DataCollector 类
     - 实现 startCollection、recordEvent、recordMetric、recordError、stopCollection 方法
     - 实现事件和指标的内存缓冲
     - 实现执行轨迹的记录逻辑
     - _需求: 1.4, 2.2, 6.1, 6.2_
   
-  - [ ]* 3.2 编写数据收集的单元测试
+  - [x]* 3.2 编写数据收集的单元测试
     - 测试事件记录的正确性
     - 测试指标收集的完整性
     - _需求: 1.4, 6.1_
 
 - [ ] 4. 实现执行引擎
-  - [ ] 4.1 实现 ExecutionEngine 类基础功能
+  - [x] 4.1 实现 ExecutionEngine 类基础功能
     - 实现 executeScenario 方法框架
     - 实现与被测系统的集成接口（Cron Trigger、Agent Runtime 等）
     - 实现执行轨迹记录
     - _需求: 1.1, 1.2, 1.3, 3.1_
   
-  - [ ] 4.2 实现 Mionyee 任务执行逻辑
+  - [x] 4.2 实现 Mionyee 任务执行逻辑
     - 实现 executeMionyeeTask 方法
     - 集成 Cron Trigger 触发逻辑
     - 集成 Agent Runtime 调用
