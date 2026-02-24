@@ -1,0 +1,20 @@
+[
+  {
+    "scenario_id": "error-injection-timeout",
+    "name": "timeout injection",
+    "scenario_type": "integration",
+    "input_data": {
+      "inject_component": "agent_runtime",
+      "inject_error": "timeout"
+    }
+  },
+  {
+    "scenario_id": "error-injection-network",
+    "name": "network failure injection",
+    "scenario_type": "integration",
+    "input_data": {
+      "inject_component": "governance_layer",
+      "inject_error": "network_failure"
+    }
+  }
+]

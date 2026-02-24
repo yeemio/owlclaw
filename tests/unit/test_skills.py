@@ -99,6 +99,28 @@ def test_skill_load_full_content_lazy(tmp_path):
     assert "name: lazy" not in content
 
 
+def test_skills_loader_clear_all_full_content_cache(tmp_path):
+    """clear_all_full_content_cache() clears cached content for all loaded skills."""
+    for name in ("alpha", "beta"):
+        (tmp_path / name).mkdir()
+        (tmp_path / name / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: Skill {name}\n---\n\n# Body {name}",
+            encoding="utf-8",
+        )
+
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    for skill in loader.list_skills():
+        assert skill.load_full_content()
+
+    cleared = loader.clear_all_full_content_cache()
+    assert cleared == 2
+
+    for skill in loader.list_skills():
+        # After clearing cache, content should still be retrievable via reload.
+        assert f"# Body {skill.name}" in skill.load_full_content()
+
+
 def test_skill_to_dict(tmp_path):
     """Skill.to_dict() serializes metadata without full content."""
     skill_dir = tmp_path / "dict"

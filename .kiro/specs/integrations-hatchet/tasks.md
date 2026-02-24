@@ -10,7 +10,7 @@
 
 **后续与数据库相关的工作**须遵循数据库规范：使用 **`owlclaw db` CLI** 进行初始化与迁移（见 `docs/DATABASE_ARCHITECTURE.md`、`.cursor/rules/owlclaw_database.mdc`）；OwlClaw 业务表通过 Alembic 管理，Hatchet 仅使用 hatchet database、不操作 owlclaw database。
 
-**跳过测试与验收**：`tests/integration/test_hatchet_integration.py::test_hatchet_durable_task_aio_sleep_for_mock` 在 mock_run 下为 **SKIP**（aio_sleep_for 需 durable event listener，仅真实 Worker 具备）。完成 Task 7.2.3 或 7.2.4 后，须用真实 Hatchet Worker 跑通该用例并更新文档/去掉 skip。
+**跳过测试与验收**：`tests/integration/test_hatchet_integration.py::test_hatchet_durable_task_aio_sleep_for_mock` 在 mock_run 下为 **SKIP**（aio_sleep_for 需 durable event listener，仅真实 Worker 具备）。已补充真实 Worker 重启恢复 E2E（`test_hatchet_durable_task_worker_restart_recovery_real_e2e`）作为对应验收路径。
 
 ## Task 0: 契约与文档
 
@@ -137,9 +137,9 @@
 - [x] 7.2 持久化定时测试
   - [x] 7.2.1 创建使用 ctx.aio_sleep_for() 的任务（HatchetClient.durable_task + 集成测试 test_hatchet_durable_task_aio_sleep_for_mock）
   - [x] 7.2.2 验证定时状态持久化（通过 durable_task 注册与 aio_mock_run 验证任务体执行；真实持久化依赖 Hatchet Server）
-  - [ ] 7.2.3 模拟 Worker 重启（需真实 Server + Worker，建议手动验证或 E2E）
-  - [ ] 7.2.4 验证定时恢复（同上，建议手动验证）
-  - **测试备注**：`tests/integration/test_hatchet_integration.py::test_hatchet_durable_task_aio_sleep_for_mock` 在 mock_run 下为 **SKIP**（SDK 无 durable event listener）。完成 7.2.3 或 7.2.4 后，用真实 Hatchet Worker 跑通该用例并更新 skip 逻辑或改为 E2E 验收。
+  - [x] 7.2.3 模拟 Worker 重启（真实 Server + Worker：`test_hatchet_durable_task_worker_restart_recovery_real_e2e` 使用子进程终止/重启 worker）
+  - [x] 7.2.4 验证定时恢复（同用例通过 run status 轮询验证任务重启后最终成功）
+  - **测试备注**：`tests/integration/test_hatchet_integration.py::test_hatchet_durable_task_aio_sleep_for_mock` 在 mock_run 下保持 **SKIP**（SDK 无 durable event listener）；真实恢复能力由专用 E2E 用例验收。
 
 - [x] 7.3 Cron 触发器测试
   - [x] 7.3.1 注册 Cron 任务
@@ -195,7 +195,7 @@
 
 - [x] 11.1 轻量性能测试（无服务器）
   - [x] 11.1.1 测试 Config 加载与 schedule_task 校验路径耗时
-  - [ ] 11.1.2 可选：1000 任务调度吞吐（需真实 Hatchet 环境）
+  - [x] 11.1.2 可选：1000 任务调度吞吐（真实环境门控：`HATCHET_RUN_PERF_1000=1`）
 
 - [x] 11.2 并发执行测试
   - [x] 11.2.1 测试 10 个并发任务

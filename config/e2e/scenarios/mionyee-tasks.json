@@ -1,0 +1,29 @@
+[
+  {
+    "scenario_id": "mionyee-task-1",
+    "name": "mionyee task 1",
+    "scenario_type": "mionyee_task",
+    "input_data": {
+      "symbol": "AAPL",
+      "action": "entry_check"
+    }
+  },
+  {
+    "scenario_id": "mionyee-task-2",
+    "name": "mionyee task 2",
+    "scenario_type": "mionyee_task",
+    "input_data": {
+      "symbol": "MSFT",
+      "action": "risk_review"
+    }
+  },
+  {
+    "scenario_id": "mionyee-task-3",
+    "name": "mionyee task 3",
+    "scenario_type": "mionyee_task",
+    "input_data": {
+      "symbol": "NVDA",
+      "action": "position_adjust"
+    }
+  }
+]

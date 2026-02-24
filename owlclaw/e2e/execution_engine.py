@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import uuid
 from collections.abc import Awaitable, Callable
@@ -15,12 +16,23 @@ ScenarioRunner = Callable[[TestScenario], dict[str, Any] | Awaitable[dict[str, A
 ComponentFn = Callable[[dict[str, Any]], dict[str, Any] | Awaitable[dict[str, Any]]]
 
 
+class ComponentExecutionError(RuntimeError):
+    """Structured component failure used for error propagation tracking."""
+
+    def __init__(self, component: str, error_type: str, message: str) -> None:
+        super().__init__(message)
+        self.component = component
+        self.error_type = error_type
+
+
 class ExecutionEngine:
     """Execute test scenarios and capture execution trace."""
 
     def __init__(self, runner: ScenarioRunner | None = None) -> None:
         self._runner = runner
         self._collector = DataCollector()
+        self._injected_errors: dict[str, str] = {}
+        self._resource_locks: dict[str, asyncio.Lock] = {}
         self._cron_trigger: ComponentFn | None = None
         self._agent_runtime: ComponentFn | None = None
         self._skills_system: ComponentFn | None = None
@@ -42,6 +54,71 @@ class ExecutionEngine:
         self._skills_system = skills_system
         self._governance_layer = governance_layer
         self._hatchet_integration = hatchet_integration
+
+    def inject_error(self, component: str, error_type: str) -> None:
+        """Inject one error type for a given component."""
+        component_name = component.strip().lower()
+        allowed_components = {
+            "cron_trigger",
+            "agent_runtime",
+            "skills_system",
+            "governance_layer",
+            "hatchet_integration",
+        }
+        if component_name not in allowed_components:
+            raise ValueError(f"unsupported component: {component}")
+
+        normalized_error_type = error_type.strip().lower()
+        allowed_error_types = {"timeout", "network_failure", "resource_exhausted"}
+        if normalized_error_type not in allowed_error_types:
+            raise ValueError(f"unsupported error type: {error_type}")
+        self._injected_errors[component_name] = normalized_error_type
+
+    def cleanup(self) -> None:
+        """Reset injected failures and temporary execution resources."""
+        self._injected_errors.clear()
+        self._resource_locks.clear()
+        self._collector = DataCollector()
+        self._cron_trigger = None
+        self._agent_runtime = None
+        self._skills_system = None
+        self._governance_layer = None
+        self._hatchet_integration = None
+
+    async def execute_scenarios_concurrently(
+        self,
+        scenarios: list[TestScenario],
+        *,
+        max_concurrency: int = 5,
+    ) -> list[ExecutionResult]:
+        """Execute scenarios concurrently with queueing and per-resource locking."""
+        if max_concurrency <= 0:
+            raise ValueError("max_concurrency must be positive")
+
+        queue: asyncio.Queue[TestScenario] = asyncio.Queue()
+        for scenario in scenarios:
+            queue.put_nowait(scenario)
+
+        results: list[ExecutionResult] = []
+        results_lock = asyncio.Lock()
+
+        async def worker() -> None:
+            while True:
+                try:
+                    scenario = queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    return
+                resource_key = self._scenario_resource_key(scenario)
+                resource_lock = self._resource_locks.setdefault(resource_key, asyncio.Lock())
+                async with resource_lock:
+                    result = await self.execute_scenario(scenario)
+                async with results_lock:
+                    results.append(result)
+                queue.task_done()
+
+        worker_count = min(max_concurrency, max(1, len(scenarios)))
+        await asyncio.gather(*(worker() for _ in range(worker_count)))
+        return results
 
     async def execute_scenario(self, scenario: TestScenario) -> ExecutionResult:
         """Execute one scenario and return normalized result."""
@@ -143,8 +220,8 @@ class ExecutionEngine:
                 "output": output,
                 "traces": snapshot.traces,
                 "resource_usage": snapshot.resource_usage,
-                },
-            )
+            },
+        )
 
     async def execute_mionyee_task(
         self,
@@ -153,26 +230,63 @@ class ExecutionEngine:
     ) -> dict[str, Any]:
         """Execute mionyee task flow through integrated components."""
         payload: dict[str, Any] = {"task_id": task_id, "params": params or {}}
+        propagation_path: list[str] = []
+        recovery_started = datetime.now(timezone.utc)
         try:
             cron_out = await self._invoke_component("cron_trigger", self._cron_trigger, payload)
+            propagation_path.append("cron_trigger")
             payload["cron"] = cron_out
 
             agent_out = await self._invoke_component("agent_runtime", self._agent_runtime, payload)
+            propagation_path.append("agent_runtime")
             payload["agent"] = agent_out
 
             skills_out = await self._invoke_component("skills_system", self._skills_system, payload)
+            propagation_path.append("skills_system")
             payload["skills"] = skills_out
 
             governance_out = await self._invoke_component("governance_layer", self._governance_layer, payload)
+            propagation_path.append("governance_layer")
             payload["governance"] = governance_out
 
             hatchet_out = await self._invoke_component("hatchet_integration", self._hatchet_integration, payload)
+            propagation_path.append("hatchet_integration")
             payload["hatchet"] = hatchet_out
-        except Exception as exc:
+        except ComponentExecutionError as exc:
+            recovery_finished = datetime.now(timezone.utc)
+            recovery_time_ms = max(0.0, (recovery_finished - recovery_started).total_seconds() * 1000.0)
+            self._collector.record_event(
+                event_type="recovery.attempted",
+                message="recovery_not_implemented",
+                data={
+                    "failed_component": exc.component,
+                    "error_type": exc.error_type,
+                    "propagation_path": propagation_path,
+                    "recovery_time_ms": recovery_time_ms,
+                },
+            )
             return {
                 "status": "error",
                 "task_id": task_id,
                 "error": str(exc),
+                "failed_component": exc.component,
+                "error_type": exc.error_type,
+                "error_propagation": propagation_path,
+                "recovery_time_ms": recovery_time_ms,
+                "recovered": False,
+            }
+        except Exception as exc:
+            recovery_finished = datetime.now(timezone.utc)
+            recovery_time_ms = max(0.0, (recovery_finished - recovery_started).total_seconds() * 1000.0)
+            return {
+                "status": "error",
+                "task_id": task_id,
+                "error": str(exc),
+                "failed_component": "unknown",
+                "error_type": "execution_error",
+                "error_propagation": propagation_path,
+                "recovery_time_ms": recovery_time_ms,
+                "recovered": False,
             }
 
         skills_invoked = skills_out.get("skills", []) if isinstance(skills_out, dict) else []
@@ -194,15 +308,50 @@ class ExecutionEngine:
         fn: ComponentFn | None,
         payload: dict[str, Any],
     ) -> dict[str, Any]:
-        self._collector.record_event(event_type=f"{name}.start", data={"task_id": payload.get("task_id")})
+        component_input = dict(payload)
+        self._collector.record_event(
+            event_type=f"{name}.start",
+            data={"task_id": payload.get("task_id"), "input": component_input},
+        )
+        injected_error_type = self._injected_errors.get(name)
+        if injected_error_type is not None:
+            if injected_error_type == "timeout":
+                raise ComponentExecutionError(name, injected_error_type, f"{name} timed out")
+            if injected_error_type == "network_failure":
+                raise ComponentExecutionError(name, injected_error_type, f"{name} network failure")
+            raise ComponentExecutionError(name, injected_error_type, f"{name} resource exhausted")
         if fn is None:
             result: dict[str, Any] = {"status": "simulated"}
         else:
-            maybe_result = fn(payload)
-            invoked = await maybe_result if inspect.isawaitable(maybe_result) else maybe_result
-            if not isinstance(invoked, dict):
-                raise TypeError(f"{name} must return dict")
-            result = dict(invoked)
-        self._collector.record_event(event_type=f"{name}.complete", data={"result": result})
-        self._collector.record_trace({"phase": name, "result": result})
+            try:
+                maybe_result = fn(payload)
+                invoked = await maybe_result if inspect.isawaitable(maybe_result) else maybe_result
+                if not isinstance(invoked, dict):
+                    raise TypeError(f"{name} must return dict")
+                result = dict(invoked)
+            except ComponentExecutionError:
+                raise
+            except TimeoutError as exc:
+                raise ComponentExecutionError(name, "timeout", str(exc)) from exc
+            except ConnectionError as exc:
+                raise ComponentExecutionError(name, "network_failure", str(exc)) from exc
+            except Exception as exc:
+                raise ComponentExecutionError(name, "component_failure", str(exc)) from exc
+        self._collector.record_event(
+            event_type=f"{name}.complete",
+            data={"task_id": payload.get("task_id"), "output": result},
+        )
+        self._collector.record_trace(
+            {
+                "phase": name,
+                "input": component_input,
+                "output": result,
+            }
+        )
         return result
+
+    def _scenario_resource_key(self, scenario: TestScenario) -> str:
+        resource = scenario.input_data.get("resource")
+        if isinstance(resource, str) and resource.strip():
+            return resource
+        return scenario.scenario_id

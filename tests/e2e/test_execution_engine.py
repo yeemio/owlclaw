@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
+import time
+
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from owlclaw.e2e.execution_engine import ExecutionEngine
 from owlclaw.e2e.models import ExecutionStatus, ScenarioType
@@ -119,3 +124,315 @@ class TestExecutionEngine:
         output = result.metadata["output"]
         assert output["status"] == "error"
         assert "cron failed" in output["error"]
+        assert output["failed_component"] == "cron_trigger"
+        assert output["error_type"] == "component_failure"
+        assert output["recovered"] is False
+
+    @pytest.mark.asyncio
+    async def test_inject_error_for_component(self) -> None:
+        engine = ExecutionEngine()
+        engine.inject_error("cron_trigger", "timeout")
+        scenario = E2ETestScenario(
+            scenario_id="m3",
+            name="mionyee task with injected error",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+        )
+
+        result = await engine.execute_scenario(scenario)
+        assert result.status == ExecutionStatus.ERROR
+        output = result.metadata["output"]
+        assert output["status"] == "error"
+        assert output["failed_component"] == "cron_trigger"
+        assert output["error_type"] == "timeout"
+        assert output["error_propagation"] == []
+        assert output["recovery_time_ms"] >= 0.0
+
+    @pytest.mark.asyncio
+    async def test_cleanup_removes_error_injection(self) -> None:
+        engine = ExecutionEngine()
+        engine.inject_error("agent_runtime", "network_failure")
+        engine.cleanup()
+        scenario = E2ETestScenario(
+            scenario_id="m4",
+            name="mionyee task after cleanup",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+        )
+
+        result = await engine.execute_scenario(scenario)
+        assert result.status == ExecutionStatus.PASSED
+        assert result.metadata["output"]["status"] == "passed"
+
+    def test_inject_error_rejects_unknown_inputs(self) -> None:
+        engine = ExecutionEngine()
+        with pytest.raises(ValueError):
+            engine.inject_error("unknown_component", "timeout")
+        with pytest.raises(ValueError):
+            engine.inject_error("cron_trigger", "unknown_error")
+
+    @pytest.mark.asyncio
+    async def test_execute_scenarios_concurrently_returns_all_results(self) -> None:
+        async def runner(scenario: E2ETestScenario) -> dict[str, object]:
+            await asyncio.sleep(0.001)
+            return {"status": "passed", "scenario_id": scenario.scenario_id}
+
+        engine = ExecutionEngine(runner=runner)
+        scenarios = [
+            E2ETestScenario(scenario_id=f"c-{index}", name=f"c-{index}", scenario_type=ScenarioType.INTEGRATION)
+            for index in range(5)
+        ]
+        results = await engine.execute_scenarios_concurrently(scenarios, max_concurrency=3)
+        assert len(results) == 5
+        assert {result.scenario_id for result in results} == {scenario.scenario_id for scenario in scenarios}
+
+
+class TestExecutionEngineProperties:
+    @settings(max_examples=100, deadline=None)
+    @given(
+        task_id=st.sampled_from(["1", "2", "3"]),
+        params=st.recursive(
+            st.none() | st.booleans() | st.integers() | st.text(max_size=20),
+            lambda children: st.lists(children, max_size=5)
+            | st.dictionaries(st.text(min_size=1, max_size=10), children, max_size=5),
+            max_leaves=20,
+        ),
+    )
+    @pytest.mark.asyncio
+    async def test_property_mionyee_flow_contains_all_components(
+        self,
+        task_id: str,
+        params: object,
+    ) -> None:
+        """Property 1: flow includes cron->agent->skills->governance->hatchet."""
+        scenario = E2ETestScenario(
+            scenario_id=task_id,
+            name=f"task-{task_id}",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+            input_data={"payload": params},
+        )
+        engine = ExecutionEngine()
+        result = await engine.execute_scenario(scenario)
+        assert result.status == ExecutionStatus.PASSED
+
+        traces = result.metadata["traces"]
+        phases = {trace.get("phase") for trace in traces}
+        assert "cron_trigger" in phases
+        assert "agent_runtime" in phases
+        assert "skills_system" in phases
+        assert "governance_layer" in phases
+        assert "hatchet_integration" in phases
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        task_id=st.sampled_from(["1", "2", "3"]),
+        params=st.recursive(
+            st.none() | st.booleans() | st.integers() | st.text(max_size=20),
+            lambda children: st.lists(children, max_size=5)
+            | st.dictionaries(st.text(min_size=1, max_size=10), children, max_size=5),
+            max_leaves=20,
+        ),
+    )
+    @pytest.mark.asyncio
+    async def test_property_execution_trace_contains_input_and_output(
+        self,
+        task_id: str,
+        params: object,
+    ) -> None:
+        """Property 2: each component trace includes input and output."""
+        scenario = E2ETestScenario(
+            scenario_id=task_id,
+            name=f"task-{task_id}",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+            input_data={"payload": params},
+        )
+        engine = ExecutionEngine()
+        result = await engine.execute_scenario(scenario)
+        assert result.status == ExecutionStatus.PASSED
+
+        component_phases = {
+            "cron_trigger",
+            "agent_runtime",
+            "skills_system",
+            "governance_layer",
+            "hatchet_integration",
+        }
+        traces = [trace for trace in result.metadata["traces"] if trace.get("phase") in component_phases]
+        assert len(traces) == 5
+        for trace in traces:
+            assert "input" in trace
+            assert "output" in trace
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        component=st.sampled_from(
+            ["cron_trigger", "agent_runtime", "skills_system", "governance_layer", "hatchet_integration"]
+        ),
+        error_type=st.sampled_from(["timeout", "network_failure", "resource_exhausted"]),
+    )
+    @pytest.mark.asyncio
+    async def test_property_error_injection_supported_for_all_components(
+        self,
+        component: str,
+        error_type: str,
+    ) -> None:
+        """Property 24: all supported error types are injectable for all components."""
+        scenario = E2ETestScenario(
+            scenario_id="error-inject",
+            name="error injection",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+        )
+        engine = ExecutionEngine()
+        engine.inject_error(component, error_type)
+        result = await engine.execute_scenario(scenario)
+
+        assert result.status == ExecutionStatus.ERROR
+        output = result.metadata["output"]
+        assert output["status"] == "error"
+        assert output["failed_component"] == component
+        assert output["error_type"] == error_type
+        assert output["recovery_time_ms"] >= 0.0
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        component=st.sampled_from(
+            ["cron_trigger", "agent_runtime", "skills_system", "governance_layer", "hatchet_integration"]
+        ),
+        params=st.dictionaries(st.text(min_size=1, max_size=10), st.integers(), max_size=5),
+    )
+    @pytest.mark.asyncio
+    async def test_property_error_handling_records_propagation_and_recovery(
+        self,
+        component: str,
+        params: dict[str, int],
+    ) -> None:
+        """Property 25: error handling records propagation path and recovery timing."""
+        scenario = E2ETestScenario(
+            scenario_id="error-handling",
+            name="error handling",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+            input_data={"payload": params},
+        )
+        engine = ExecutionEngine()
+        engine.inject_error(component, "network_failure")
+        result = await engine.execute_scenario(scenario)
+
+        assert result.status == ExecutionStatus.ERROR
+        output = result.metadata["output"]
+        assert output["recovered"] is False
+        assert isinstance(output["error_propagation"], list)
+        assert output["recovery_time_ms"] >= 0.0
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        component=st.sampled_from(
+            ["cron_trigger", "agent_runtime", "skills_system", "governance_layer", "hatchet_integration"]
+        ),
+        error_type=st.sampled_from(["timeout", "network_failure", "resource_exhausted"]),
+    )
+    @pytest.mark.asyncio
+    async def test_property_cleanup_clears_test_data_and_temp_resources(
+        self,
+        component: str,
+        error_type: str,
+    ) -> None:
+        """Property 14: cleanup removes injected faults and restores executable state."""
+        scenario = E2ETestScenario(
+            scenario_id="cleanup",
+            name="cleanup",
+            scenario_type=ScenarioType.MIONYEE_TASK,
+        )
+        engine = ExecutionEngine()
+        engine.inject_error(component, error_type)
+        engine.cleanup()
+        result = await engine.execute_scenario(scenario)
+
+        assert result.status == ExecutionStatus.PASSED
+        assert result.metadata["output"]["status"] == "passed"
+
+    @settings(max_examples=100, deadline=None)
+    @given(task_count=st.integers(min_value=1, max_value=8))
+    @pytest.mark.asyncio
+    async def test_property_concurrent_execution_correctness(
+        self,
+        task_count: int,
+    ) -> None:
+        """Property 27: concurrent execution returns complete and consistent result set."""
+
+        async def runner(scenario: E2ETestScenario) -> dict[str, object]:
+            await asyncio.sleep(0.001)
+            return {"status": "passed", "scenario_id": scenario.scenario_id}
+
+        engine = ExecutionEngine(runner=runner)
+        scenarios = [
+            E2ETestScenario(scenario_id=f"q-{index}", name=f"q-{index}", scenario_type=ScenarioType.INTEGRATION)
+            for index in range(task_count)
+        ]
+        concurrent_results = await engine.execute_scenarios_concurrently(scenarios, max_concurrency=4)
+        serial_results = [await engine.execute_scenario(scenario) for scenario in scenarios]
+
+        assert {item.scenario_id for item in concurrent_results} == {item.scenario_id for item in serial_results}
+
+    @settings(max_examples=100, deadline=None)
+    @given(task_count=st.integers(min_value=3, max_value=8))
+    @pytest.mark.asyncio
+    async def test_property_concurrent_performance_not_worse_than_serial_baseline(
+        self,
+        task_count: int,
+    ) -> None:
+        """Property 28: concurrent run time stays within serial baseline."""
+
+        async def runner(_: E2ETestScenario) -> dict[str, object]:
+            await asyncio.sleep(0.003)
+            return {"status": "passed"}
+
+        engine = ExecutionEngine(runner=runner)
+        scenarios = [
+            E2ETestScenario(scenario_id=f"p-{index}", name=f"p-{index}", scenario_type=ScenarioType.INTEGRATION)
+            for index in range(task_count)
+        ]
+
+        start_serial = time.perf_counter()
+        for scenario in scenarios:
+            await engine.execute_scenario(scenario)
+        serial_elapsed = time.perf_counter() - start_serial
+
+        start_concurrent = time.perf_counter()
+        await engine.execute_scenarios_concurrently(scenarios, max_concurrency=task_count)
+        concurrent_elapsed = time.perf_counter() - start_concurrent
+
+        assert concurrent_elapsed <= serial_elapsed * 1.8
+
+    @settings(max_examples=100, deadline=None)
+    @given(task_count=st.integers(min_value=2, max_value=8))
+    @pytest.mark.asyncio
+    async def test_property_resource_competition_is_serialized(self, task_count: int) -> None:
+        """Property 29: shared-resource scenarios are serialized via resource lock."""
+        running = 0
+        max_running = 0
+        counter_lock = asyncio.Lock()
+
+        async def runner(_: E2ETestScenario) -> dict[str, object]:
+            nonlocal running
+            nonlocal max_running
+            async with counter_lock:
+                running += 1
+                if running > max_running:
+                    max_running = running
+            await asyncio.sleep(0.001)
+            async with counter_lock:
+                running -= 1
+            return {"status": "passed"}
+
+        engine = ExecutionEngine(runner=runner)
+        scenarios = [
+            E2ETestScenario(
+                scenario_id=f"r-{index}",
+                name=f"r-{index}",
+                scenario_type=ScenarioType.INTEGRATION,
+                input_data={"resource": "shared-resource"},
+            )
+            for index in range(task_count)
+        ]
+        results = await engine.execute_scenarios_concurrently(scenarios, max_concurrency=task_count)
+
+        assert len(results) == task_count
+        assert max_running == 1
