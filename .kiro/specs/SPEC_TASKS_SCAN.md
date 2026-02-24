@@ -88,35 +88,35 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（27/27） | skills + registry |
-| database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（9/9） | SQLAlchemy Base、engine、session、异常、Alembic |
-| cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（16/16） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（19/19） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | ✅ 三层齐全，已完成（52/52） | 内建工具 |
-| governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（95/95） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | ✅ 三层齐全，已完成（19/19） | cron 触发器 |
-| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 三层齐全，已完成（37/37） | Hatchet 集成 |
-| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（37/37） | litellm 集成（config、routing、fallback、errors、mock_mode） |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108） | skills + registry |
+| database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
+| cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
+| agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
+| agent-tools | `.kiro/specs/agent-tools/` | ✅ 三层齐全，已完成（139/139） | 内建工具 |
+| governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
+| triggers-cron | `.kiro/specs/triggers-cron/` | ✅ 三层齐全，已完成（117/117） | cron 触发器 |
+| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 三层齐全，已完成（147/147） | Hatchet 集成 |
+| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（63/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
-| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（20/20） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（50/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/37） | AST 扫描器 |
+| skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（4/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
-| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（0/12） | GitHub Actions CI（lint + test） |
+| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（0/41） | GitHub Actions CI（lint + test） |
 
 ---
 
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：mcp-server Task 1.1~1.2） |
-| 批次状态 | **已完成**。mcp-server 文档前置任务（需求收敛 + 设计落地）已收口。 |
-| 已完成项 | 1) 回填 `mcp-server/tasks.md` 的 1.1.1~1.2.2；2) 修正依赖条目中的换行转义漂移；3) 同步 SPEC 索引进度至 `mcp-server (4/12)`。 |
-| 下一待执行 | `mcp-server` Task 2.1.1（实现核心能力与注册流程）与 2.1.2（最小端到端验证）。 |
-| 验收快照 | 文档对齐完成：`requirements/design/tasks` 一致；代码基线沿用上一批次验收快照（`ruff check .` + `pytest -x` 通过）。 |
+| 当前批次 | orchestrate（合并 review-work → main；同步各 worktree；更新进度） |
+| 批次状态 | **已完成**。review-work 合并到 main（fast-forward）；所有 worktree 已同步；进度校准完成。 |
+| 已完成项 | 1) 合并 review-work → main（triggers-queue Task 7~17 + e2e-validation Task 16~18 + mypy 修复）；2) e2e-validation 19/19 全部完成（✅）；3) mcp-server 4/12（Task 1.1~1.2 文档前置完成）；4) 功能清单 e2e 两项打勾。 |
+| 下一待执行 | `codex-work`：`triggers-queue` Task 18（Kafka 适配器，已在分支进行中）→ Task 19~25，然后 `triggers-webhook` Task 2+；`codex-gpt-work`：`mcp-server` Task 2.1.1+（核心能力注册实现）。 |
+| 验收快照 | review-work 合并前：`ruff check .` All checks passed；`mypy owlclaw/` no issues in 128 files。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
