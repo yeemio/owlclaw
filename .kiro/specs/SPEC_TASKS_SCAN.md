@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.1（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-23
+> **最后更新**: 2026-02-24
 
 ---
 
@@ -35,22 +35,21 @@
 - [x] `.cursor/rules/owlclaw_database.mdc` — 数据库编码规范（tenant_id、SQLAlchemy、Alembic、pgvector） → 编码规则（已完成）
 - [x] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status/revision/rollback/backup/restore/check` 已实现并通过测试） → spec: cli-db
 - [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移 + 属性测试） → spec: database-core
-- [ ] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
-- [ ] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
+- [x] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
+- [x] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
 - [x] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule、remember、recall 已实现） → spec: agent-tools
-- [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
+- [x] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [x] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
 - [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
 - [x] `owlclaw.governance.ledger` — 执行记录 → spec: governance
 - [x] `owlclaw.governance.router` — task_type → 模型路由 → spec: governance
 - [ ] `owlclaw.triggers.cron` — Cron 触发器（核心 MVP：数据模型/注册表/装饰器/Hatchet 集成/执行引擎） → spec: triggers-cron
-- [ ] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet  
-  **验收备注**：集成测试 `test_hatchet_durable_task_aio_sleep_for_mock` 当前为 **SKIP**（mock_run 下无 durable event listener）。完成 integrations-hatchet Task 7.2.3/7.2.4（真实 Worker 重启/定时恢复）后，需用真实 Hatchet Worker 跑通该用例并视情况去掉 skip。
+- [x] `owlclaw.integrations.hatchet` — Hatchet 直接集成（MIT，持久执行 + cron + 调度） → spec: integrations-hatchet
 - [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [ ] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
-- [ ] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
-- [ ] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
+- [x] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
+- [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
 
@@ -89,35 +88,35 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108） | skills + registry |
-| database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
-| cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
-| agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
-| agent-tools | `.kiro/specs/agent-tools/` | ✅ 三层齐全，已完成（139/139） | 内建工具 |
-| governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（173/173） | visibility + ledger + router |
-| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（116/117） | cron 触发器（仅剩真实 Hatchet 外部 E2E 验收） |
-| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | 🟡 三层齐全，进行中（144/147） | Hatchet 集成 |
-| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（128/128） | litellm 集成（config、routing、fallback、errors、mock_mode） |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（27/27） | skills + registry |
+| database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（9/9） | SQLAlchemy Base、engine、session、异常、Alembic |
+| cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（16/16） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
+| agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（19/19） | runtime + heartbeat + function calling |
+| agent-tools | `.kiro/specs/agent-tools/` | ✅ 三层齐全，已完成（52/52） | 内建工具 |
+| governance | `.kiro/specs/governance/` | ✅ 三层齐全，已完成（95/95） | visibility + ledger + router |
+| triggers-cron | `.kiro/specs/triggers-cron/` | 🟡 三层齐全，进行中（18/19） | cron 触发器（仅剩真实 Hatchet 外部 E2E 验收） |
+| integrations-hatchet | `.kiro/specs/integrations-hatchet/` | ✅ 三层齐全，已完成（37/37） | Hatchet 集成 |
+| integrations-llm | `.kiro/specs/integrations-llm/` | ✅ 三层齐全，已完成（37/37） | litellm 集成（config、routing、fallback、errors、mock_mode） |
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/89） | 消息队列触发器 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/19） | mionyee 端到端验证 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
-| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（0/66） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（0/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（0/20） | Langfuse tracing |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（0/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（92/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
+| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（25/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/37） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（0/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
-| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（0/41） | GitHub Actions CI（lint + test） |
+| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（0/12） | GitHub Actions CI（lint + test） |
 
 ---
 
@@ -142,13 +141,13 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（triggers-cron Task 13~15 收口） |
-| 批次状态 | **部分完成**。Task 13~15 已实现并验收，`triggers-cron` 进度更新为 **116/117**；仅剩 Task 16 的“真实 Hatchet 实例 E2E”外部依赖验证。 |
-| 已完成项 | 1) 配置与加载：扩展 `owlclaw/config/models.py`（cron 治理/重试/通知 + hatchet api_token）、`CronTriggerRegistry.apply_settings()` 与 `OwlClaw.configure()` 联动；2) 生命周期：新增 `OwlClaw.start()/stop()/health_status()` 与 `CronTriggerRegistry.wait_for_all_tasks()`；3) 部署：新增 `deploy/Dockerfile.owlclaw`、`deploy/docker-compose.cron.yml`、`deploy/prometheus.yml`、`deploy/k8s/*`；4) 文档与示例：新增 `docs/CRON_TRIGGERS.md` 和 `examples/cron/*`；5) 测试：新增 `tests/integration/test_triggers_cron_e2e.py`、`tests/integration/test_triggers_cron_performance.py` 并补齐相关 unit tests。 |
-| 下一待执行 | Task 16：在可用 `HATCHET_API_TOKEN` + 真实 Hatchet 服务环境下执行端到端验证并更新最终验收结论。 |
-| 验收快照 | `poetry run ruff check ...`（本批变更文件） -> `All checks passed!`；`poetry run pytest tests/unit/test_config_models.py tests/unit/test_config_manager.py tests/unit/test_app_configure.py tests/unit/test_app.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_performance_helpers.py tests/integration/test_triggers_cron_e2e.py tests/integration/test_triggers_cron_performance.py -q` -> `102 passed`。 |
-| 阻塞项 | `triggers-cron` Task 16 的“使用真实 Hatchet 实例运行端到端测试”需要外部 token 与在线服务，当前环境不可控。 |
+| 最后更新 | 2026-02-24 |
+| 当前批次 | spec 规范化（SPEC_TASKS_SCAN 事实对齐） |
+| 批次状态 | **已完成**。完成 `SPEC_TASKS_SCAN` 与各 spec `tasks.md` 统计口径对齐，并同步功能清单勾选状态。 |
+| 已完成项 | 1) 重新统计 `.kiro/specs/*/tasks.md` 的 `[x]/[ ]`；2) 更新 Spec 索引的进度数字与完成/进行中状态；3) 修正 Phase 1 功能清单中已完成模块（runtime/heartbeat、integrations-hatchet、security、configuration）勾选。 |
+| 下一待执行 | 审校并合并 `codex-work`（integrations-langchain）与 `codex-gpt-work`（integrations-langfuse/skill-templates）待审变更，然后回填对应 spec 进度。 |
+| 验收快照 | 统计命令：`Get-ChildItem .kiro/specs -Directory ... Select-String '^- \\[( |x|X)\\]'`；文档一致性复核：`rg -n \"Spec 索引|Checkpoint|Phase 1\" .kiro/specs/SPEC_TASKS_SCAN.md`。 |
+| 阻塞项 | 无（文档规范化层面）；功能实现层面的外部依赖仍见各 spec 独立阻塞记录。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
@@ -161,6 +160,6 @@
 3. **顺序约束**：database-core、cli-db 必须先于 governance（Ledger）、agent 持久化 Memory 完成并验收（见上文「依赖与顺序」）
 4. 功能清单须 ⊇ 各 spec 的 tasks.md 中的所有 task
 5. 新增 spec 时须同步更新 Spec 索引表
-6. **跳过测试的验收**：清单中标注「验收备注」的项，若含当前 SKIP 的测试，在完成备注所指的后续工作后，须跑通该测试并更新文档（见「功能清单」中 integrations-hatchet 备注）
+6. **跳过测试的验收**：若某功能在 spec 中记录了 SKIP/外部依赖测试，后续具备条件时必须回补真实环境验收并更新本清单
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
 
