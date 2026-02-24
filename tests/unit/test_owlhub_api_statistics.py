@@ -118,6 +118,11 @@ def test_statistics_endpoint_and_export_formats(tmp_path: Path) -> None:
         assert csv_export.status_code == 200
         assert "text/csv" in csv_export.headers["content-type"]
         assert "skill_name" in csv_export.text
+
+        metrics = client.get("/metrics")
+        assert metrics.status_code == 200
+        assert 'owlhub_skill_downloads_total{publisher="acme",skill="entry-monitor"} 1' in metrics.text
+        assert 'owlhub_skill_installs_total{publisher="acme",skill="entry-monitor"} 1' in metrics.text
     finally:
         _restore_env(old)
 

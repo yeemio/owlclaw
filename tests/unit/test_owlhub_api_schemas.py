@@ -102,7 +102,12 @@ def test_app_health_and_search_endpoints() -> None:
     client = TestClient(app)
     health = client.get("/health")
     search = client.get("/api/v1/skills")
+    metrics = client.get("/metrics")
     assert health.status_code == 200
     assert health.json()["status"] == "ok"
+    assert "checks" in health.json()
     assert search.status_code == 200
     assert search.json()["total"] == 0
+    assert metrics.status_code == 200
+    assert "owlhub_api_requests_total" in metrics.text
+    assert "owlhub_api_error_rate" in metrics.text

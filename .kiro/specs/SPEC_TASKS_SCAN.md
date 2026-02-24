@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（106/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（107/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 31.1） |
-| 批次状态 | **已完成（部分）**。完成结构化日志接入（API 请求时延、publish/install 操作、异常堆栈），并通过日志回归测试。 |
-| 已完成项 | 1) 更新 `owlclaw/owlhub/api/app.py`：新增 JSON 结构化 API 请求日志（method/path/status_code/duration_ms），支持 `OWLHUB_LOG_LEVEL`，并在中间件异常路径记录 `logger.exception`；2) 更新 `owlclaw/owlhub/api/routes/skills.py`：新增 `skill_publish` / `skill_state_update` / `skill_takedown` 结构化操作日志；3) 更新 `owlclaw/cli/skill_hub.py`：新增 `skill_install` / `skill_publish` 结构化日志和失败场景 `logger.exception`；4) 更新 `tests/unit/test_owlhub_api_publish.py`：新增请求日志与 publish 日志断言；5) 更新 `tests/unit/test_owlhub_cli_client.py`：新增 install/publish CLI 日志断言；6) 回填 `owlhub/tasks.md` 的 Task 31.1。 |
-| 下一待执行 | `owlhub` Task 31.2（metrics and health checks）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/skills.py owlclaw/cli/skill_hub.py tests/unit/test_owlhub_api_publish.py tests/unit/test_owlhub_cli_client.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/skills.py owlclaw/cli/skill_hub.py` -> success；`poetry run pytest tests/unit/test_owlhub_api_publish.py tests/unit/test_owlhub_cli_client.py tests/unit/test_owlhub_api_routes.py -q` -> 32 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 31.2） |
+| 批次状态 | **已完成（部分）**。完成指标与健康检查能力（`/metrics` Prometheus 输出 + `/health` 依赖检查详情）并接入请求级指标采集。 |
+| 已完成项 | 1) 新增 `owlclaw/owlhub/api/metrics.py`：实现内存指标采集与 Prometheus 文本导出（请求总量、错误总量、错误率、分路由计数、延迟 sum/count、skill download/install 指标、DB pool 指标）；2) 更新 `owlclaw/owlhub/api/app.py`：中间件接入指标记录，新增 `/metrics` 端点，增强 `/health` 返回依赖检查详情（index/review/statistics/blacklist）；3) 更新 `tests/unit/test_owlhub_api_schemas.py`：新增 `/metrics` 与 health checks 字段断言；4) 更新 `tests/unit/test_owlhub_api_statistics.py`：新增 skill download/install 指标输出断言；5) 回填 `owlhub/tasks.md` 的 Task 31.2。 |
+| 下一待执行 | `owlhub` Task 31.3（tests for observability）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/api/metrics.py owlclaw/owlhub/api/app.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_statistics.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/api/metrics.py owlclaw/owlhub/api/app.py` -> success；`poetry run pytest tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_statistics.py tests/unit/test_owlhub_api_auth.py tests/unit/test_owlhub_api_publish.py -q` -> 20 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
