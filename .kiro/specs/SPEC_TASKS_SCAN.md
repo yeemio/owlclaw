@@ -112,7 +112,7 @@
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/37） | AST 扫描器 |
-| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（0/12） | owlclaw-mcp |
+| mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（4/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/12） | AI 辅助迁移工具 |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 19） |
-| 批次状态 | **已完成**。e2e-validation 全部任务收口（19/19）。 |
-| 已完成项 | 1) 完成最终检查点 Task 19 并回填勾选；2) 全量测试通过（`1213 passed, 25 skipped`）；3) 修复 e2e 模块 `UTC` 类型兼容问题（`ab_test.py`、`shadow_mode.py`、`report_generator.py`）。 |
-| 下一待执行 | `mcp-server` Task 1（按分配进入下一个未完成 spec）。 |
-| 验收快照 | `poetry run ruff check .` -> all checks passed；`poetry run pytest -x` -> 1213 passed, 25 skipped；`poetry run mypy --follow-imports=skip owlclaw/e2e/ab_test.py owlclaw/e2e/shadow_mode.py owlclaw/e2e/report_generator.py` -> success（全仓 mypy 仍受 `triggers/queue/trigger.py:129` 既有问题影响）。 |
+| 当前批次 | spec loop（codex-gpt-work：mcp-server Task 1.1~1.2） |
+| 批次状态 | **已完成**。mcp-server 文档前置任务（需求收敛 + 设计落地）已收口。 |
+| 已完成项 | 1) 回填 `mcp-server/tasks.md` 的 1.1.1~1.2.2；2) 修正依赖条目中的换行转义漂移；3) 同步 SPEC 索引进度至 `mcp-server (4/12)`。 |
+| 下一待执行 | `mcp-server` Task 2.1.1（实现核心能力与注册流程）与 2.1.2（最小端到端验证）。 |
+| 验收快照 | 文档对齐完成：`requirements/design/tasks` 一致；代码基线沿用上一批次验收快照（`ruff check .` + `pytest -x` 通过）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
