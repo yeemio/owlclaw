@@ -11,6 +11,7 @@ from typing import Any
 
 from owlclaw.integrations.langchain.config import LangChainConfig
 from owlclaw.integrations.langchain.errors import ErrorHandler
+from owlclaw.integrations.langchain.privacy import PrivacyMasker
 from owlclaw.integrations.langchain.retry import RetryPolicy, calculate_backoff_delay, should_retry
 from owlclaw.integrations.langchain.schema import SchemaBridge
 from owlclaw.integrations.langchain.trace import TraceManager
@@ -51,6 +52,7 @@ class LangChainAdapter:
         self._schema_bridge = schema_bridge or SchemaBridge()
         self._trace_manager = trace_manager or TraceManager(config)
         self._error_handler = error_handler or ErrorHandler()
+        self._privacy_masker = PrivacyMasker(config.privacy.mask_patterns)
 
     def register_runnable(self, runnable: Any, config: RunnableConfig) -> None:
         """Register runnable as capability handler."""
@@ -277,11 +279,21 @@ class LangChainAdapter:
     ) -> None:
         context_dict = context if isinstance(context, dict) else {}
         duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+        input_payload = (
+            self._privacy_masker.mask_data(input_data)
+            if self._config.privacy.mask_inputs
+            else input_data
+        )
+        output_payload = (
+            self._privacy_masker.mask_data(output_data)
+            if self._config.privacy.mask_outputs
+            else output_data
+        )
         payload = {
             "event_type": "langchain_execution",
             "capability_name": config.name,
-            "input": input_data,
-            "output": output_data,
+            "input": input_payload,
+            "output": output_payload,
             "status": status,
             "duration_ms": duration_ms,
             "error_message": error_message,
@@ -311,8 +323,8 @@ class LangChainAdapter:
             run_id=run_id,
             capability_name=config.name,
             task_type="langchain_execution",
-            input_params=input_data,
-            output_result=output_data,
+            input_params=input_payload,
+            output_result=output_payload,
             decision_reasoning=str(governance_result.get("reason", "")) or None,
             execution_time_ms=duration_ms,
             llm_model="langchain",
