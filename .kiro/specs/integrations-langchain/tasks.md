@@ -201,21 +201,21 @@
     - 测试自定义模式脱敏
     - _需求：NFR-5_
 
-- [ ] 14. 实现 OwlClawApp 集成
-  - [ ] 14.1 在 OwlClawApp 中添加 LangChain 支持
+- [x] 14. 实现 OwlClawApp 集成
+  - [x] 14.1 在 OwlClawApp 中添加 LangChain 支持
     - 在 `OwlClawApp` 类中添加 `_langchain_adapter` 属性
     - 实现 `register_langchain_runnable` 方法
     - 实现装饰器支持（扩展 `@app.handler`）
     - 在应用初始化时加载 LangChain 配置
     - _需求：FR-3_
   
-  - [ ]* 14.2 编写集成测试
+  - [x]* 14.2 编写集成测试
     - 测试注册 Runnable
     - 测试执行 Runnable
     - 测试装饰器注册
     - _需求：FR-3_
 
-- [ ] 15. 检查点 - 确保集成测试通过
+- [x] 15. 检查点 - 确保集成测试通过
   - 确保所有测试通过，如有问题请询问用户
 
 - [ ] 16. 实现版本检查
