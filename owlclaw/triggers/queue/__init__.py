@@ -1,11 +1,11 @@
 """Queue trigger core models, parsers, and adapter contracts."""
 
-from owlclaw.triggers.queue.config import QueueTriggerConfig, validate_config
+from owlclaw.triggers.queue.config import QueueTriggerConfig, load_queue_trigger_config, validate_config
 from owlclaw.triggers.queue.idempotency import IdempotencyStore, MockIdempotencyStore, RedisIdempotencyStore
 from owlclaw.triggers.queue.models import MessageEnvelope, RawMessage
 from owlclaw.triggers.queue.parsers import BinaryParser, JSONParser, MessageParser, ParseError, TextParser
 from owlclaw.triggers.queue.protocols import QueueAdapter
-from owlclaw.triggers.queue.trigger import GovernanceDecision, ProcessResult, QueueTrigger
+from owlclaw.triggers.queue.trigger import GovernanceDecision, ProcessResult, QueueTrigger, QueueTriggerMetrics
 
 __all__ = [
     "IdempotencyStore",
@@ -18,10 +18,12 @@ __all__ = [
     "GovernanceDecision",
     "QueueAdapter",
     "QueueTriggerConfig",
+    "QueueTriggerMetrics",
     "RawMessage",
     "RedisIdempotencyStore",
     "TextParser",
     "ProcessResult",
     "QueueTrigger",
+    "load_queue_trigger_config",
     "validate_config",
 ]
