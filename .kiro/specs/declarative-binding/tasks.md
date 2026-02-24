@@ -57,13 +57,13 @@
   - [x] 4.8 单元测试：active GET/POST、shadow 拦截、超时重试、response mapping
   - [x] 4.9 集成测试：使用 httpx mock 的完整调用链路
 
-- [ ] **Task 5**: BindingTool 与 Ledger 集成
-  - [ ] 5.1 实现 `tool.py`：BindingTool 类
-  - [ ] 5.2 实现 `__call__()` 方法（executor 分发 + 计时）
-  - [ ] 5.3 实现 Ledger 记录（tool_name、binding_type、mode、parameters、result_summary、elapsed_ms、status）
-  - [ ] 5.4 实现 `_summarize()` 结果摘要（截断长响应）
-  - [ ] 5.5 错误处理：executor 异常时记录 Ledger 并重新抛出
-  - [ ] 5.6 单元测试：正常调用、错误记录、Ledger 集成
+- [x] **Task 5**: BindingTool 与 Ledger 集成
+  - [x] 5.1 实现 `tool.py`：BindingTool 类
+  - [x] 5.2 实现 `__call__()` 方法（executor 分发 + 计时）
+  - [x] 5.3 实现 Ledger 记录（tool_name、binding_type、mode、parameters、result_summary、elapsed_ms、status）
+  - [x] 5.4 实现 `_summarize()` 结果摘要（截断长响应）
+  - [x] 5.5 错误处理：executor 异常时记录 Ledger 并重新抛出
+  - [x] 5.6 单元测试：正常调用、错误记录、Ledger 集成
 
 - [ ] **Task 6**: Skills Loader 扩展 — binding 检测与自动注册
   - [ ] 6.1 扩展 `SkillsLoader._parse_skill_file()` 检测 tools_schema 中的 binding 字段

@@ -12,6 +12,7 @@ from owlclaw.capabilities.bindings.schema import (
     parse_binding_config,
     validate_binding_config,
 )
+from owlclaw.capabilities.bindings.tool import BindingTool
 
 __all__ = [
     "BindingConfig",
@@ -20,6 +21,7 @@ __all__ = [
     "CredentialResolver",
     "HTTPBindingConfig",
     "HTTPBindingExecutor",
+    "BindingTool",
     "QueueBindingConfig",
     "RetryConfig",
     "SQLBindingConfig",
