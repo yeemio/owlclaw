@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（2/26） | 声明式工具绑定（Task 0/1 已完成：契约文档 + schema/data model） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（4/26） | 声明式工具绑定（Task 0~3 已完成：契约/schema + CredentialResolver + Executor Registry） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（32/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: declarative-binding Task 0/1） |
-| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 2/26。 |
-| 已完成项 | 1) 完成 `declarative-binding` Task 0（requirements/design/tasks 对齐）；2) 新增语言无关契约文件 `.kiro/specs/declarative-binding/binding.schema.json`；3) 在 design 中补齐 `tools` 简化语法与 `prerequisites` 规范；4) 完成 Task 1（新增 `owlclaw/capabilities/bindings/`、schema 数据模型、解析与验证函数、单元测试）。 |
-| 下一待执行 | `codex-work`：继续 `declarative-binding` Task 2（CredentialResolver）和 Task 3（Executor 抽象与注册表）。 |
-| 验收快照 | 本批验证：`ruff` + `pytest tests/unit/capabilities/test_bindings_schema.py` 通过。 |
+| 当前批次 | coding loop（codex-work: declarative-binding Task 2/3） |
+| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 4/26。 |
+| 已完成项 | 1) 完成 Task 2：新增 `CredentialResolver`（os.environ/.env/owlclaw.yaml secrets 三级解析、递归解析、secret 启发式检测、缺失变量显式错误）；2) 完成 Task 3：新增 `BindingExecutor` 抽象与 `BindingExecutorRegistry`（register/get/list_types，未知类型错误含可用列表）；3) 新增单测覆盖 credential 与 executor 核心行为。 |
+| 下一待执行 | `codex-work`：进入 `declarative-binding` Task 4（HTTPBinding Executor）并补 4.8/4.9 测试。 |
+| 验收快照 | 本批验证：`ruff` + `pytest tests/unit/capabilities/test_bindings_credential.py tests/unit/capabilities/test_bindings_executor.py` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -31,20 +31,20 @@
   - [x] 1.7 实现 schema 验证函数（必填字段、类型检查、credential 引用格式）
   - [x] 1.8 单元测试：schema 解析、验证、round-trip 序列化
 
-- [ ] **Task 2**: CredentialResolver
-  - [ ] 2.1 实现 `credential.py`：CredentialResolver 类
-  - [ ] 2.2 实现 `resolve()` 方法（`${ENV_VAR}` → 实际值）
-  - [ ] 2.3 实现 `resolve_dict()` 方法（递归解析嵌套 dict）
-  - [ ] 2.4 实现 `contains_potential_secret()` 静态方法（启发式检测明文密钥）
-  - [ ] 2.5 支持多来源：os.environ → .env 文件 → owlclaw.yaml secrets
-  - [ ] 2.6 缺失变量时抛出 ValueError（明确错误信息）
-  - [ ] 2.7 单元测试：正常解析、缺失变量、嵌套 dict、secret 检测
+- [x] **Task 2**: CredentialResolver
+  - [x] 2.1 实现 `credential.py`：CredentialResolver 类
+  - [x] 2.2 实现 `resolve()` 方法（`${ENV_VAR}` → 实际值）
+  - [x] 2.3 实现 `resolve_dict()` 方法（递归解析嵌套 dict）
+  - [x] 2.4 实现 `contains_potential_secret()` 静态方法（启发式检测明文密钥）
+  - [x] 2.5 支持多来源：os.environ → .env 文件 → owlclaw.yaml secrets
+  - [x] 2.6 缺失变量时抛出 ValueError（明确错误信息）
+  - [x] 2.7 单元测试：正常解析、缺失变量、嵌套 dict、secret 检测
 
-- [ ] **Task 3**: Binding Executor 抽象与注册表
-  - [ ] 3.1 实现 `executor.py`：BindingExecutor ABC（execute、validate_config、supported_modes）
-  - [ ] 3.2 实现 BindingExecutorRegistry（register、get、list_types）
-  - [ ] 3.3 未知类型时抛出 ValueError（含可用类型列表）
-  - [ ] 3.4 单元测试：注册、获取、未知类型错误
+- [x] **Task 3**: Binding Executor 抽象与注册表
+  - [x] 3.1 实现 `executor.py`：BindingExecutor ABC（execute、validate_config、supported_modes）
+  - [x] 3.2 实现 BindingExecutorRegistry（register、get、list_types）
+  - [x] 3.3 未知类型时抛出 ValueError（含可用类型列表）
+  - [x] 3.4 单元测试：注册、获取、未知类型错误
 
 - [ ] **Task 4**: HTTPBinding Executor（MVP 核心）
   - [ ] 4.1 实现 `http_executor.py`：HTTPBindingExecutor 类
