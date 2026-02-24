@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（13/26） | 声明式工具绑定（Task 0~12 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（15/26） | 声明式工具绑定（Task 0~14 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -152,10 +152,10 @@
 |------|---|
 | 最后更新 | 2026-02-24 |
 | 当前批次 | review-work（持续合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
-| 批次状态 | **进行中（本批）**。已推进 `declarative-binding` 到 Task 12、`cli-scan` 全量收口，以及 `owlhub` 到 Task 36.2。 |
-| 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）+ BindingTool/Ledger + Skills 自动注册 + CLI validate 扩展 + Queue/SQL Executor + Shadow 报告链路 + 安全集成（InputSanitizer/DataMasker/risk_level）+ 治理集成（visibility/budget/rate limit）；2) `cli-scan` 收口（Task 1~20 完成，80/80）；3) 保持并修复 `serialization.py` 的 mypy/ruff 兼容写法，避免类型回退；4) 合并 `codex-gpt-work` 批次：`owlhub` Phase 3 集成流与文档、CI/CD 部署流程、checksum 全链路校验与安全加固；5) 定向回归通过：`ruff` + `mypy` + `pytest`（`cli_scan`、`bindings`、`owlhub` 关键路径）。 |
-| 下一待执行 | 1) 推进 `declarative-binding` Task 13（SKILL.md 书写门槛降低）；2) 推进 `owlhub` Task 36.3（security tests）与剩余收尾任务；3) 继续保持 `review-work` 与两条开发分支差异归零。 |
-| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(13/26)，`owlhub` 🟡(38/42)，`triggers-signal` ✅(15/15)。 |
+| 批次状态 | **进行中（本批）**。已推进 `declarative-binding` 到 Task 14、`cli-scan` 全量收口，以及 `owlhub` 到 Task 36.2。 |
+| 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）+ BindingTool/Ledger + Skills 自动注册 + CLI validate 扩展 + Queue/SQL Executor + Shadow 报告链路 + 安全集成（InputSanitizer/DataMasker/risk_level）+ 治理集成（visibility/budget/rate limit）+ HTTP reference examples（active/shadow/shell）；2) `cli-scan` 收口（Task 1~20 完成，80/80）；3) 保持并修复 `serialization.py` 的 mypy/ruff 兼容写法，避免类型回退；4) 合并 `codex-gpt-work` 批次：`owlhub` Phase 3 集成流与文档、CI/CD 部署流程、checksum 全链路校验与安全加固；5) 定向回归通过：`ruff` + `mypy` + `pytest`（`cli_scan`、`bindings`、`owlhub` 关键路径）。 |
+| 下一待执行 | 1) 推进 `declarative-binding` Task 15（examples 索引、模板库、init 默认模板联动）；2) 推进 `owlhub` Task 36.3（security tests）与剩余收尾任务；3) 继续保持 `review-work` 与两条开发分支差异归零。 |
+| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(15/26)，`owlhub` 🟡(38/42)，`triggers-signal` ✅(15/15)。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

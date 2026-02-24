@@ -19,9 +19,7 @@ from owlclaw.templates.skills.models import TemplateCategory
 
 DEFAULT_SKILL_TEMPLATE = """---
 name: {name}
-description: Description for {name}.
-metadata: {{}}
-owlclaw: {{}}
+description: {description}
 ---
 
 # Instructions
@@ -114,7 +112,8 @@ def _normalize_skill_name(raw_name: str) -> str:
 
 
 def init_command(
-    name: Annotated[str, typer.Option("--name", help="Skill name. Required for default template.", is_flag=False)] = "",
+    name: Annotated[str, typer.Option("--name", help="Skill name.", is_flag=False)] = "",
+    description: Annotated[str, typer.Option("--description", help="Skill description for minimal mode.", is_flag=False)] = "",
     path: Annotated[str, typer.Option("--output", "--path", "-o", "-p", help="Output directory.", is_flag=False)] = ".",
     template: Annotated[
         str,
@@ -136,6 +135,13 @@ def init_command(
         str,
         typer.Option("--param", help="Template parameters as key=value, comma-separated (e.g. skill_name=X,skill_description=Y).", is_flag=False),
     ] = "",
+    no_minimal: Annotated[
+        bool,
+        typer.Option(
+            "--no-minimal",
+            help="Disable default minimal scaffold and use template wizard when --template is not set.",
+        ),
+    ] = False,
     force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite existing SKILL.md if present.")] = False,
 ) -> None:
     """Create a new Skill directory and SKILL.md from template or default scaffold."""
@@ -157,12 +163,30 @@ def init_command(
             if any(e.severity == "error" for e in errs):
                 raise typer.Exit(1)
 
-    # Legacy default template (no template library)
-    use_default = template == "default"
-    if use_default and name.strip():
-        normalized_name = _normalize_skill_name(name.strip())
+    # Minimal mode is the default scaffold. Template mode is enabled only with explicit non-default template.
+    use_template_library = bool(template and template != "default")
+    if not use_template_library and (params_file or param.strip()):
+        typer.echo(
+            "Error: --params-file/--param require --template in non-minimal mode.",
+            err=True,
+        )
+        raise typer.Exit(2)
+
+    use_minimal = not use_template_library and (not no_minimal or template == "default")
+
+    if use_minimal:
+        if name.strip():
+            skill_name_input = name.strip()
+            skill_description_input = description.strip() or f"Description for {name.strip()}."
+        else:
+            skill_name_input = typer.prompt("Skill name")
+            skill_description_input = description.strip() or typer.prompt("Skill description")
+        normalized_name = _normalize_skill_name(skill_name_input)
         if not normalized_name:
             typer.echo("Error: --name must contain at least one alphanumeric character.", err=True)
+            raise typer.Exit(2)
+        if not skill_description_input.strip():
+            typer.echo("Error: description must be a non-empty string.", err=True)
             raise typer.Exit(2)
         skill_dir = base / normalized_name
         skill_file = skill_dir / "SKILL.md"
@@ -170,15 +194,11 @@ def init_command(
             typer.echo(f"Error: {skill_file} already exists. Use --force to overwrite.", err=True)
             raise typer.Exit(2)
         skill_dir.mkdir(parents=True, exist_ok=True)
-        content = DEFAULT_SKILL_TEMPLATE.format(name=normalized_name)
+        content = DEFAULT_SKILL_TEMPLATE.format(name=normalized_name, description=skill_description_input.strip())
         skill_file.write_text(content, encoding="utf-8")
         _validate_generated_skill(skill_file)
         typer.echo(f"Created: {skill_file}")
         return
-
-    if use_default and not name.strip():
-        typer.echo("Error: provide --name for default template (e.g. owlclaw skill init --name myname).", err=True)
-        raise typer.Exit(2)
 
     # Template library mode
     templates_dir = get_default_templates_dir()

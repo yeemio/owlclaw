@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any
 
 import yaml  # type: ignore[import-untyped]
 
+from owlclaw.capabilities.tool_schema import extract_tools_schema
+
 logger = logging.getLogger(__name__)
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _FRONTMATTER_PATTERN = re.compile(r"^---\r?\n(.*?)\r?\n---(?:\r?\n(.*))?$", re.DOTALL)
@@ -294,11 +296,12 @@ class SkillsLoader:
         metadata = frontmatter_map.get("metadata", {})
         if not isinstance(metadata, dict):
             metadata = {}
-        tools_schema = metadata.get("tools_schema")
-        if tools_schema is not None and not isinstance(tools_schema, dict):
-            logger.warning("Skill file %s metadata.tools_schema must be a mapping", file_path)
-            metadata = dict(metadata)
-            metadata["tools_schema"] = {}
+        tools_schema, tool_errors = extract_tools_schema(frontmatter_map)
+        if tool_errors:
+            for error in tool_errors:
+                logger.warning("Skill file %s invalid tool declaration: %s", file_path, error)
+        metadata = dict(metadata)
+        metadata["tools_schema"] = tools_schema
         owlclaw_config = frontmatter_map.get("owlclaw", {})
         if not isinstance(owlclaw_config, dict):
             owlclaw_config = {}
