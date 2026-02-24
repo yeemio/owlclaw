@@ -72,6 +72,37 @@ class LangChainAdapter:
         handler = self._create_handler(runnable, config)
         self._register_handler(config.name, handler)
 
+    def health_status(self) -> dict[str, Any]:
+        """Return health status for LangChain integration."""
+        try:
+            check_langchain_version(
+                min_version=self._config.min_version,
+                max_version=self._config.max_version,
+            )
+            langchain_available = True
+            reason = ""
+        except Exception as exc:
+            langchain_available = False
+            reason = str(exc)
+
+        try:
+            self._config.validate()
+            config_valid = True
+        except Exception:
+            config_valid = False
+
+        tracing_enabled = bool(self._config.tracing.enabled)
+        langfuse_enabled = bool(self._config.tracing.langfuse_integration)
+        status = "healthy" if (langchain_available and config_valid) else "degraded"
+        return {
+            "status": status,
+            "langchain_available": langchain_available,
+            "config_valid": config_valid,
+            "tracing_enabled": tracing_enabled,
+            "langfuse_enabled": langfuse_enabled,
+            "reason": reason,
+        }
+
     def _create_handler(self, runnable: Any, config: RunnableConfig):
         """Create wrapped capability handler."""
 

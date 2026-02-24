@@ -648,6 +648,11 @@ class OwlClaw:
             "governance_enabled": self._ledger is not None,
         }
 
+    def langchain_health_status(self) -> dict[str, Any]:
+        """Return LangChain integration health summary."""
+        adapter = self._get_langchain_adapter()
+        return adapter.health_status()
+
     def run(self) -> None:
         """Start the OwlClaw application.
 
