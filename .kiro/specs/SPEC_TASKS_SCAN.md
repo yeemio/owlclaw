@@ -102,7 +102,7 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（5/72） | webhook 触发器（Task 0 Protocol-first + Task 2/3/4/5 已完成） |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（6/72） | webhook 触发器（Task 0 Protocol-first + Task 2/3/4/5/6 已完成） |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-webhook Task 2/3/4 + Task 5 checkpoint） |
-| 批次状态 | **已完成（本批）**。完成 Task 2（持久化层）+ Task 3（WebhookEndpointManager）+ Task 4（RequestValidator）+ Task 5（核心组件测试检查点）。 |
-| 已完成项 | 1) 新增 Alembic 迁移 `004_webhook_trigger_core.py`（五张 webhook 表 + tenant 索引）；2) 新增 ORM 模型与 SQLAlchemy Repository + InMemory Repository；3) 新增 `WebhookEndpointManager`（create/get/update/delete/list/validate）；4) 新增 `RequestValidator`（端点存在性校验、Bearer/HMAC/Basic 验证、格式验证）；5) 新增并通过属性测试与单元测试（Property 1/2/3/4/5/6/7）。 |
-| 下一待执行 | `codex-work`：`triggers-webhook` Task 6（PayloadTransformer）→ Task 7（GovernanceClient）→ Task 8（ExecutionTrigger）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/webhook/manager.py owlclaw/triggers/webhook/validator.py owlclaw/triggers/webhook/types.py owlclaw/triggers/webhook/__init__.py owlclaw/triggers/webhook/persistence/repositories.py tests/unit/triggers/test_webhook_manager.py tests/unit/triggers/test_webhook_manager_properties.py tests/unit/triggers/test_webhook_request_validator.py tests/unit/triggers/test_webhook_request_validator_properties.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_webhook_manager.py tests/unit/triggers/test_webhook_manager_properties.py tests/unit/triggers/test_webhook_request_validator.py tests/unit/triggers/test_webhook_request_validator_properties.py -q`（15 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（26 passed, 201 deselected）。 |
+| 当前批次 | coding loop（codex-work: triggers-webhook Task 6） |
+| 批次状态 | **已完成（本批）**。完成 Task 6（6.1~6.4）：PayloadTransformer 解析与转换引擎、属性测试和单元测试。 |
+| 已完成项 | 1) 新增 `PayloadTransformer`（JSON/XML/Form 解析、`parse_safe` 400 错误映射）；2) 新增转换规则模型 `TransformationRule`/`FieldMapping`；3) 实现 JSONPath 子集提取、类型转换、默认值、受限表达式自定义逻辑、目标 schema 校验；4) 新增属性测试覆盖 Property 8/9/10；5) 新增单元测试覆盖复杂嵌套 JSON、XML 命名空间、特殊字符、转换边界与安全表达式校验。 |
+| 下一待执行 | `codex-work`：`triggers-webhook` Task 7（GovernanceClient）→ Task 8（ExecutionTrigger）→ Task 9 检查点。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/webhook/transformer.py owlclaw/triggers/webhook/types.py owlclaw/triggers/webhook/__init__.py tests/unit/triggers/test_webhook_transformer.py tests/unit/triggers/test_webhook_transformer_properties.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_webhook_transformer.py tests/unit/triggers/test_webhook_transformer_properties.py -q`（9 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（35 passed, 201 deselected）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

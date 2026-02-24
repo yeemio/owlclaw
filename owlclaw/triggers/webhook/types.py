@@ -106,6 +106,28 @@ class ParsedPayload:
 
 
 @dataclass(slots=True)
+class FieldMapping:
+    """Field mapping definition from payload to agent input."""
+
+    source: str
+    target: str
+    transform: Literal["string", "number", "boolean", "date", "json"] | None = None
+    default: Any = None
+
+
+@dataclass(slots=True)
+class TransformationRule:
+    """Payload-to-agent transformation rule."""
+
+    id: str
+    name: str
+    target_agent_id: str
+    mappings: list[FieldMapping]
+    target_schema: dict[str, Any] | None = None
+    custom_logic: str | None = None
+
+
+@dataclass(slots=True)
 class AgentInput:
     """Execution payload passed to AgentRuntime."""
 
