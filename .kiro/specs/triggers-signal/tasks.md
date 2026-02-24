@@ -78,12 +78,12 @@
 
 ### Phase 3：Agent Runtime 集成
 
-- [ ] **Task 10**: Agent Runtime paused 状态检查
+- [x] **Task 10**: Agent Runtime paused 状态检查
   - Cron/Heartbeat 触发前检查 paused 状态
   - paused 时跳过 Run 并记录 status=SKIPPED
   - Signal.TRIGGER 不受 paused 影响
 
-- [ ] **Task 11**: Instruction 注入到 Agent Run
+- [x] **Task 11**: Instruction 注入到 Agent Run
   - Run 启动时 consume_instructions()
   - 注入到 STM 的固定区
   - 消费后标记 consumed=True

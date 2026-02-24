@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     from owlclaw.governance.ledger import Ledger
     from owlclaw.governance.router import Router
     from owlclaw.governance.visibility import VisibilityFilter
+    from owlclaw.triggers.signal import AgentStateManager, PendingInstruction
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,7 @@ class AgentRuntime:
         builtin_tools: BuiltInTools | None = None,
         router: Router | None = None,
         ledger: Ledger | None = None,
+        signal_state_manager: AgentStateManager | None = None,
         model: str = _DEFAULT_MODEL,
         config: dict[str, Any] | None = None,
         config_path: str | None = None,
@@ -128,6 +130,7 @@ class AgentRuntime:
         self.builtin_tools = builtin_tools
         self._router = router
         self._ledger = ledger
+        self._signal_state_manager = signal_state_manager
         self.model = model
         base_config = dict(DEFAULT_RUNTIME_CONFIG)
         user_config = dict(config or {})
@@ -443,6 +446,17 @@ class AgentRuntime:
             context.focus,
         )
 
+        if await self._should_skip_paused_run(context):
+            self._reset_builtin_tool_budget(context.run_id)
+            self._release_skill_content_cache()
+            return {
+                "status": "skipped",
+                "run_id": context.run_id,
+                "reason": "agent_paused",
+            }
+
+        await self._inject_operator_instructions(context)
+
         if context.trigger == "heartbeat" and self._heartbeat_checker is not None:
             has_events = self._heartbeat_payload_has_events(context.payload)
             if not has_events:
@@ -537,6 +551,39 @@ class AgentRuntime:
         )
         self._update_trace(trace, status="success", output=result)
         return {"status": "completed", "run_id": context.run_id, **result}
+
+    async def _should_skip_paused_run(self, context: AgentRunContext) -> bool:
+        """Return True when autonomous triggers should be skipped due to paused state."""
+        if self._signal_state_manager is None:
+            return False
+        if context.trigger == "signal_manual":
+            return False
+        trigger_type = str(context.payload.get("trigger_type", "")).strip().lower()
+        is_autonomous = context.trigger == "heartbeat" or trigger_type == "cron"
+        if not is_autonomous:
+            return False
+        state = await self._signal_state_manager.get(self.agent_id, context.tenant_id)
+        return bool(state.paused)
+
+    async def _inject_operator_instructions(self, context: AgentRunContext) -> None:
+        """Consume pending instructions and add them to run context payload."""
+        if self._signal_state_manager is None:
+            return
+        instructions = await self._signal_state_manager.consume_instructions(self.agent_id, context.tenant_id)
+        if not instructions:
+            return
+        context.payload = dict(context.payload)
+        context.payload["operator_instructions"] = [self._instruction_to_payload(item) for item in instructions]
+
+    @staticmethod
+    def _instruction_to_payload(instruction: PendingInstruction) -> dict[str, Any]:
+        return {
+            "content": instruction.content,
+            "operator": instruction.operator,
+            "source": instruction.source.value,
+            "created_at": instruction.created_at.isoformat(),
+            "expires_at": instruction.expires_at.isoformat(),
+        }
 
     def _reset_builtin_tool_budget(self, run_id: str) -> None:
         """Reset built-in tool run budget after each run to avoid state growth."""

@@ -113,7 +113,7 @@
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（13/17） | Signal 触发器（Task 0-9 已完成） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（15/17） | Signal 触发器（Task 0-11 已完成） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-signal Task 9） |
-| 批次状态 | **进行中（本批）**。`triggers-signal` 已推进至 13/17。 |
-| 已完成项 | 1) 新增 `owlclaw.triggers.signal.mcp.register_signal_mcp_tools()`，向 CapabilityRegistry 注册 `owlclaw_pause/resume/trigger/instruct` 四个 MCP 工具；2) 四个工具统一构造 `Signal(source=MCP)` 并走 `SignalRouter.dispatch()`；3) 增加 MCP 单测覆盖 tools/list + tools/call 的信号链路。 |
-| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 10/11（runtime paused 检查 + instruction 注入）→ Task 12/13/14（测试与文档收口）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/signal/mcp.py owlclaw/triggers/signal/__init__.py tests/unit/test_mcp_server.py`（All checks passed）；`poetry run pytest tests/unit/test_mcp_server.py tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py -q`（36 passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-signal Task 9/10/11） |
+| 批次状态 | **进行中（本批）**。`triggers-signal` 已推进至 15/17。 |
+| 已完成项 | 1) Task 9：新增 `register_signal_mcp_tools()`，提供 `owlclaw_pause/resume/trigger/instruct` 四个 MCP 工具并统一走 `SignalRouter.dispatch()`；2) Task 10：`AgentRuntime` 增加 paused 检查，`cron/heartbeat` 自动触发在 paused 状态返回 `status=skipped, reason=agent_paused`，`signal_manual` 不受影响；3) Task 11：Run 启动前消费 pending instructions 并注入 `context.payload.operator_instructions`。 |
+| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 12（单元测试覆盖率收口）→ Task 13（集成测试）→ Task 14（文档）。 |
+| 验收快照 | `poetry run ruff check owlclaw/agent/runtime/runtime.py owlclaw/app.py owlclaw/triggers/signal/mcp.py owlclaw/triggers/signal/__init__.py tests/unit/agent/test_runtime.py tests/unit/test_mcp_server.py`（All checks passed）；`poetry run pytest tests/unit/agent/test_runtime.py tests/unit/test_app.py tests/unit/test_mcp_server.py tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py -q`（128 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
