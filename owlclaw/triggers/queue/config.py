@@ -10,6 +10,8 @@ from typing import Any, Literal, cast
 
 import yaml  # type: ignore[import-untyped]
 
+from owlclaw.triggers.queue.security import redact_sensitive_data
+
 AckPolicy = Literal["ack", "nack", "requeue", "dlq"]
 ParserType = Literal["json", "text", "binary"]
 VALID_ACK_POLICIES: set[str] = {"ack", "nack", "requeue", "dlq"}
@@ -32,6 +34,28 @@ class QueueTriggerConfig:
     parser_type: ParserType = "json"
     event_name_header: str = "x-event-name"
     focus: str | None = None
+    adapter_config: dict[str, Any] | None = None
+
+    def __repr__(self) -> str:
+        """Return safe representation with sensitive fields redacted."""
+        safe_adapter = redact_sensitive_data(self.adapter_config) if self.adapter_config is not None else None
+        return (
+            "QueueTriggerConfig("
+            f"queue_name={self.queue_name!r}, "
+            f"consumer_group={self.consumer_group!r}, "
+            f"concurrency={self.concurrency!r}, "
+            f"ack_policy={self.ack_policy!r}, "
+            f"max_retries={self.max_retries!r}, "
+            f"retry_backoff_base={self.retry_backoff_base!r}, "
+            f"retry_backoff_multiplier={self.retry_backoff_multiplier!r}, "
+            f"idempotency_window={self.idempotency_window!r}, "
+            f"enable_dedup={self.enable_dedup!r}, "
+            f"parser_type={self.parser_type!r}, "
+            f"event_name_header={self.event_name_header!r}, "
+            f"focus={self.focus!r}, "
+            f"adapter_config={safe_adapter!r}"
+            ")"
+        )
 
 
 def validate_config(config: QueueTriggerConfig) -> list[str]:
@@ -133,6 +157,9 @@ def load_queue_trigger_config(config_path: str) -> QueueTriggerConfig:
     if not isinstance(config_map, dict):
         raise ValueError("queue_trigger section must be a mapping")
     config_dict = cast(dict[str, Any], config_map)
+    adapter_config = config_dict.get("adapter")
+    if adapter_config is not None and not isinstance(adapter_config, dict):
+        raise ValueError("adapter section must be a mapping")
 
     config = QueueTriggerConfig(
         queue_name=_require_str(config_dict, "queue_name", ""),
@@ -147,6 +174,7 @@ def load_queue_trigger_config(config_path: str) -> QueueTriggerConfig:
         parser_type=cast(ParserType, _require_str(config_dict, "parser_type", "json")),
         event_name_header=_require_str(config_dict, "event_name_header", "x-event-name"),
         focus=(None if config_dict.get("focus") is None else str(config_dict.get("focus"))),
+        adapter_config=cast(dict[str, Any] | None, adapter_config),
     )
 
     errors = validate_config(config)

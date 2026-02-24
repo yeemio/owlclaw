@@ -1,0 +1,59 @@
+# Queue Trigger configuration template
+# Supports: kafka / rabbitmq / sqs / mock
+
+queue_trigger:
+  # Core runtime
+  queue_name: agent-events
+  consumer_group: owlclaw-agents
+  concurrency: 4
+
+  # Message parsing and routing
+  parser_type: json           # json | text | binary
+  event_name_header: x-event-name
+  focus: null                 # Optional: limit to a Skill focus
+
+  # Ack / retry
+  ack_policy: requeue         # ack | nack | requeue | dlq
+  max_retries: 3
+  retry_backoff_base: 1.0
+  retry_backoff_multiplier: 2.0
+
+  # Dedup / idempotency
+  enable_dedup: true
+  idempotency_window: 3600    # seconds
+
+  # Adapter selection
+  adapter:
+    type: kafka               # kafka | rabbitmq | sqs | mock
+
+    # Kafka example (aiokafka)
+    kafka:
+      bootstrap_servers: ${KAFKA_BOOTSTRAP_SERVERS}
+      topic: ${KAFKA_TOPIC}
+      consumer_group: ${KAFKA_CONSUMER_GROUP}
+      dlq_topic: ${KAFKA_DLQ_TOPIC}
+      security_protocol: ${KAFKA_SECURITY_PROTOCOL}
+      sasl_mechanism: ${KAFKA_SASL_MECHANISM}
+      sasl_username: ${KAFKA_USERNAME}
+      sasl_password: ${KAFKA_PASSWORD}
+
+    # RabbitMQ example (aio-pika)
+    rabbitmq:
+      url: ${RABBITMQ_URL}
+      queue_name: ${RABBITMQ_QUEUE}
+      exchange: ${RABBITMQ_EXCHANGE}
+      routing_key: ${RABBITMQ_ROUTING_KEY}
+      dlq_queue: ${RABBITMQ_DLQ_QUEUE}
+
+    # AWS SQS example (aioboto3)
+    sqs:
+      region: ${AWS_REGION}
+      queue_url: ${SQS_QUEUE_URL}
+      dlq_url: ${SQS_DLQ_URL}
+      access_key_id: ${AWS_ACCESS_KEY_ID}
+      secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+      session_token: ${AWS_SESSION_TOKEN}
+
+    # Mock adapter example (local / CI)
+    mock:
+      enabled: true
