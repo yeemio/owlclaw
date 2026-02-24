@@ -1,6 +1,6 @@
 """Queue trigger core models, parsers, and adapter contracts."""
 
-from owlclaw.triggers.queue.config import QueueTriggerConfig, validate_config
+from owlclaw.triggers.queue.config import QueueTriggerConfig, load_queue_trigger_config, validate_config
 from owlclaw.triggers.queue.idempotency import IdempotencyStore, MockIdempotencyStore, RedisIdempotencyStore
 from owlclaw.triggers.queue.models import MessageEnvelope, RawMessage
 from owlclaw.triggers.queue.parsers import BinaryParser, JSONParser, MessageParser, ParseError, TextParser
@@ -24,5 +24,6 @@ __all__ = [
     "TextParser",
     "ProcessResult",
     "QueueTrigger",
+    "load_queue_trigger_config",
     "validate_config",
 ]

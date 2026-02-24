@@ -102,7 +102,7 @@
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（84/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（59/89） | 消息队列触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（62/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-gpt-work：e2e-validation Task 18） |
-| 批次状态 | **已完成**。`codex-gpt-work` Task 18 审校通过并合并，回归验收通过。 |
-| 已完成项 | 1) 合并 `codex-gpt-work` Task 18.1~18.3（A/B 测试、显著性检验、自动权重调整）；2) 同步回填 `e2e-validation/tasks.md` 勾选；3) 修正 `ab_test.py` 的 Python 3.10 兼容性。 |
-| 下一待执行 | `codex-gpt-work` 继续 `e2e-validation` Task 19（最终检查点：完整测试套件与覆盖率验收）；`codex-work` 继续 `triggers-webhook` Task 2。 |
-| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e`（All checks passed）；`poetry run pytest tests/e2e/test_ab_test.py tests/e2e/test_shadow_mode.py tests/e2e/test_replay_engine.py tests/e2e/test_report_generator.py tests/e2e/test_test_isolation.py -q`（21 passed）。 |
+| 当前批次 | review loop（审校 codex-work：triggers-queue Task 17） |
+| 批次状态 | **已完成**。`codex-work` Task 17 审校通过并合并，验收通过。 |
+| 已完成项 | 1) 合并 `codex-work` Task 17.1~17.3（YAML 配置加载校验、环境变量替换、属性测试与单元测试）；2) 统一 `SPEC_TASKS_SCAN` 统计口径为真实 `tasks.md` 进度。 |
+| 下一待执行 | `codex-work` 继续 `triggers-queue` Task 18（Kafka 适配器）与 `triggers-webhook` Task 2；`codex-gpt-work` 继续 `e2e-validation` Task 19。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/queue/config.py owlclaw/triggers/queue/__init__.py tests/unit/triggers/test_queue_config.py tests/unit/triggers/test_queue_config_properties.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_queue_config.py tests/unit/triggers/test_queue_config_properties.py -q`（10 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
