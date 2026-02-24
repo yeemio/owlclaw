@@ -240,8 +240,8 @@ The implementation follows a bottom-up approach: core data models → parser com
     - **Property 16: Parallel Error Handling**
     - **Validates: Requirements 8.6**
 
-- [ ] 13. Implement incremental scanning
-  - [ ] 13.1 Implement IncrementalScanner class
+- [x] 13. Implement incremental scanning
+  - [x] 13.1 Implement IncrementalScanner class
     - Write `get_changed_files()` using git diff
     - Write `load_cache()` to load previous scan results
     - Write `save_cache()` to persist scan results
@@ -249,17 +249,17 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Handle file additions, modifications, and deletions
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
   
-  - [ ] 13.2 Implement ScanCache class
+  - [x] 13.2 Implement ScanCache class
     - Store cache in `.owlclaw-scan-cache.json`
     - Include file paths, modification times, and scan results
     - Handle cache invalidation
     - _Requirements: 7.2, 7.3, 7.6_
   
-  - [ ]* 13.3 Write property test for incremental scan correctness
+  - [x]* 13.3 Write property test for incremental scan correctness
     - **Property 14: Incremental Scan Correctness**
     - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
   
-  - [ ]* 13.4 Write unit tests for incremental scanning
+  - [x]* 13.4 Write unit tests for incremental scanning
     - Test scan → modify → incremental scan
     - Test scan → delete file → incremental scan
     - Test scan → add file → incremental scan

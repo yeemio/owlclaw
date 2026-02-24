@@ -5,6 +5,7 @@ from owlclaw.cli.scan.dependency import CyclicDependencyDetector, Dependency, De
 from owlclaw.cli.scan.discovery import FileDiscovery
 from owlclaw.cli.scan.docstring import DocstringParser
 from owlclaw.cli.scan.extractor import SignatureExtractor
+from owlclaw.cli.scan.incremental import IncrementalScanner, ScanCache
 from owlclaw.cli.scan.models import (
     ComplexityLevel,
     ComplexityScore,
@@ -48,6 +49,7 @@ __all__ = [
     "FunctionSignature",
     "ImportInfo",
     "ImportType",
+    "IncrementalScanner",
     "InferredType",
     "Parameter",
     "ParameterKind",
@@ -57,6 +59,7 @@ __all__ = [
     "ScanMetadata",
     "ScanResult",
     "ScanConfig",
+    "ScanCache",
     "ProjectScanner",
     "SignatureExtractor",
     "TypeSource",

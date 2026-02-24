@@ -120,7 +120,7 @@
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（48/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11/12/12.1~12.3 已完成） |
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（53/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11/12/12.1~12.3/13/13.1~13.4 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: cli-scan Task 12/12.1~12.3） |
-| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 48/143。 |
-| 已完成项 | 1) 新增 `ParallelExecutor`（基于 `multiprocessing.Pool`）与 `ParallelTaskResult`；2) 支持 CPU 自动探测与 worker 数配置；3) 保持并行输出顺序与输入一致；4) 增加 worker 异常隔离（错误落入结果而不中断批次）；5) 新增属性测试覆盖并行确定性与并行错误处理。 |
-| 下一待执行 | `codex-work`：进入 `cli-scan` Task 13（IncrementalScanner + ScanCache）并补 13.3/13.4 测试。 |
-| 验收快照 | `poetry run ruff check owlclaw/cli/scan tests/unit/cli_scan`（All checks passed）；`poetry run pytest tests/unit/cli_scan -q`（30 passed）。 |
+| 当前批次 | coding loop（codex-work: cli-scan Task 13/13.1~13.4） |
+| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 53/143。 |
+| 已完成项 | 1) 新增 `ScanCache`（`.owlclaw-scan-cache.json`）并实现 cache load/save；2) 新增 `IncrementalScanner`（changed files 解析、cache 读写、结果合并）；3) 变更识别支持 `git diff --name-only HEAD` 与 mtime 回退路径；4) 结果合并支持新增/修改/删除文件场景；5) 新增属性测试与单测覆盖增量正确性与 scan→modify/delete/add 工作流。 |
+| 下一待执行 | `codex-work`：进入 `cli-scan` Task 14（配置管理）并补 14.2~14.4 测试。 |
+| 验收快照 | `poetry run ruff check owlclaw/cli/scan tests/unit/cli_scan`（All checks passed）；`poetry run pytest tests/unit/cli_scan -q`（32 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
