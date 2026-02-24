@@ -120,7 +120,7 @@
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（26/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7 已完成） |
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（33/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: cli-scan Task 6/6.1~6.3 + Checkpoint 7） |
-| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 26/143。 |
-| 已完成项 | 1) 新增 `ComplexityCalculator`，实现 cyclomatic/cognitive/LOC/SLOC/参数数/嵌套深度计算；2) 增加复杂度等级映射（SIMPLE/MEDIUM/COMPLEX）；3) 新增属性测试验证复杂度指标完整性；4) 新增单测覆盖线性函数、嵌套分支循环、复杂度等级判定；5) 完成 analyzer 阶段 checkpoint（Task 7）。 |
-| 下一待执行 | `codex-work`：进入 `cli-scan` Task 8（DependencyAnalyzer + CyclicDependencyDetector）并补 8.3~8.6 测试。 |
-| 验收快照 | `poetry run ruff check owlclaw/cli/scan tests/unit/cli_scan`（All checks passed）；`poetry run pytest tests/unit/cli_scan -q`（19 passed）。 |
+| 当前批次 | coding loop（codex-work: cli-scan Task 8/8.1~8.6） |
+| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 33/143。 |
+| 已完成项 | 1) 新增 `DependencyAnalyzer`（import 提取、调用提取、本地依赖边构建、图聚合）；2) 新增 `CyclicDependencyDetector`（Tarjan SCC 检测循环依赖）；3) 增加导入分类逻辑（stdlib/local/third_party）；4) 新增属性测试覆盖函数调用检测、导入分类、循环检测；5) 新增单测覆盖同模块调用、导入函数调用、对象方法调用与循环依赖场景。 |
+| 下一待执行 | `codex-work`：进入 `cli-scan` Task 9（FileDiscovery）并补 9.2/9.3 属性测试。 |
+| 验收快照 | `poetry run ruff check owlclaw/cli/scan tests/unit/cli_scan`（All checks passed）；`poetry run pytest tests/unit/cli_scan -q`（23 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
