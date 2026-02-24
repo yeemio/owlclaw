@@ -65,12 +65,12 @@
   - [x] 5.5 错误处理：executor 异常时记录 Ledger 并重新抛出
   - [x] 5.6 单元测试：正常调用、错误记录、Ledger 集成
 
-- [ ] **Task 6**: Skills Loader 扩展 — binding 检测与自动注册
-  - [ ] 6.1 扩展 `SkillsLoader._parse_skill_file()` 检测 tools_schema 中的 binding 字段
-  - [ ] 6.2 实现 `auto_register_binding_tools()` 函数
-  - [ ] 6.3 @handler 优先级：已有 @handler 的工具不被 binding 覆盖
-  - [ ] 6.4 扩展 `OwlClaw.mount_skills()` 调用 auto_register_binding_tools
-  - [ ] 6.5 集成测试：Skills 加载 → binding 检测 → BindingTool 注册 → 调用
+- [x] **Task 6**: Skills Loader 扩展 — binding 检测与自动注册
+  - [x] 6.1 扩展 `SkillsLoader._parse_skill_file()` 检测 tools_schema 中的 binding 字段
+  - [x] 6.2 实现 `auto_register_binding_tools()` 函数
+  - [x] 6.3 @handler 优先级：已有 @handler 的工具不被 binding 覆盖
+  - [x] 6.4 扩展 `OwlClaw.mount_skills()` 调用 auto_register_binding_tools
+  - [x] 6.5 集成测试：Skills 加载 → binding 检测 → BindingTool 注册 → 调用
 
 - [ ] **Task 7**: `owlclaw skill validate` 扩展 — binding 验证 + 安全审计
   - [ ] 7.1 扩展 validate 命令检测 binding schema 格式

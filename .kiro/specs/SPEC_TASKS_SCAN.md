@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（6/26） | 声明式工具绑定（Task 0~5 已完成：契约/schema + Resolver/Registry + HTTP Executor + BindingTool/Ledger） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（7/26） | 声明式工具绑定（Task 0~6 已完成：契约/schema + Resolver/Registry + HTTP Executor + BindingTool/Ledger + Skills 自动注册） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（32/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: declarative-binding Task 5） |
-| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 6/26。 |
-| 已完成项 | 1) 完成 Task 5：新增 `BindingTool`（executor 分发、调用计时、结果摘要、异常重抛）；2) 接入 Ledger 记录（tool_name、binding_type、mode、parameters、result_summary、elapsed_ms、status）；3) 新增单测覆盖成功调用、异常记录、摘要截断。 |
-| 下一待执行 | `codex-work`：进入 `declarative-binding` Task 6（Skills Loader 扩展，binding 检测与自动注册）。 |
-| 验收快照 | 本批验证：`pytest tests/unit/capabilities/test_bindings_tool.py tests/unit/capabilities/test_bindings_executor.py tests/unit/capabilities/test_bindings_schema.py tests/unit/capabilities/test_bindings_credential.py tests/unit/capabilities/test_bindings_http_executor.py tests/integration/test_bindings_http_executor_integration.py -q`（22 passed）+ `ruff check` 通过。 |
+| 当前批次 | coding loop（codex-work: declarative-binding Task 6） |
+| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 7/26。 |
+| 已完成项 | 1) 完成 Task 6：新增 `auto_register_binding_tools()`，在 `mount_skills()` 自动检测并注册 binding 工具；2) 实现 `@handler` 覆盖自动 BindingTool（handler 优先）；3) `SkillsLoader` 增加 `metadata.tools_schema` 结构检测；4) 新增集成测试覆盖加载→注册→调用完整链路。 |
+| 下一待执行 | `codex-work`：进入 `declarative-binding` Task 7（`owlclaw skill validate` 扩展：binding 验证 + 安全审计）。 |
+| 验收快照 | 本批验证：`pytest tests/unit/capabilities/test_bindings_tool.py tests/integration/test_bindings_skills_loader_integration.py tests/unit/test_app.py tests/unit/test_skills.py tests/unit/test_registry.py -q`（73 passed）+ `ruff check` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
