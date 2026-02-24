@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, TemplateNotFound
 
 from owlclaw.templates.skills.exceptions import (

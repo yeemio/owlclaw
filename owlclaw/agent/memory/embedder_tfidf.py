@@ -14,7 +14,7 @@ class TFIDFEmbedder(EmbeddingProvider):
         if dimensions <= 0:
             raise ValueError("dimensions must be > 0")
         try:
-            from sklearn.feature_extraction.text import HashingVectorizer
+            from sklearn.feature_extraction.text import HashingVectorizer  # type: ignore[import-untyped]
         except ImportError as exc:  # pragma: no cover - import error path is env-specific
             raise RuntimeError("TFIDFEmbedder requires scikit-learn. Install with `poetry add scikit-learn`.") from exc
         self._dimensions = dimensions

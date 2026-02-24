@@ -7,8 +7,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-import yaml
-from croniter import croniter
+import yaml  # type: ignore[import-untyped]
+from croniter import croniter  # type: ignore[import-untyped]
 from jinja2 import Environment
 
 from owlclaw.templates.skills.models import ValidationError

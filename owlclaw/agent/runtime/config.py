@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 DEFAULT_RUNTIME_CONFIG: dict[str, Any] = {
     "model": "gpt-4o-mini",

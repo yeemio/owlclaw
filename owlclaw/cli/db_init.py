@@ -10,13 +10,13 @@ import typer
 from typer.models import OptionInfo
 
 try:
-    import asyncpg
+    import asyncpg  # type: ignore[import-untyped]
 except ImportError:
     asyncpg = None
 
 try:
-    import psycopg2
-    from psycopg2 import errors as psycopg2_errors
+    import psycopg2  # type: ignore[import-untyped]
+    from psycopg2 import errors as psycopg2_errors  # type: ignore[import-untyped]
 except ImportError:
     psycopg2 = None
     psycopg2_errors = None

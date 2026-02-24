@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
@@ -36,9 +36,9 @@ def _substitute_env(value: str) -> str:
     return pattern.sub(repl, value)
 
 
-def _substitute_env_dict(data: dict) -> dict:
+def _substitute_env_dict(data: dict[str, Any]) -> dict[str, Any]:
     """Recursively substitute ${VAR} in string values."""
-    out = {}
+    out: dict[str, Any] = {}
     for k, v in data.items():
         if isinstance(v, dict):
             out[k] = _substitute_env_dict(v)
@@ -189,7 +189,7 @@ class HatchetClient:
                 raise RuntimeError("Must call connect() before registering tasks")
             if cron is not None:
                 _validate_cron(cron)
-            task_name = name or getattr(func, "__name__", "anonymous")
+            task_name = str(name or getattr(func, "__name__", "anonymous")).strip() or "anonymous"
             on_crons = [cron] if cron else None
             from datetime import timedelta
             exec_timeout = timedelta(seconds=timeout) if timeout else timedelta(seconds=60)
@@ -220,7 +220,7 @@ class HatchetClient:
                 raise RuntimeError("Must call connect() before registering tasks")
             if cron is not None:
                 _validate_cron(cron)
-            task_name = name or getattr(func, "__name__", "anonymous")
+            task_name = str(name or getattr(func, "__name__", "anonymous")).strip() or "anonymous"
             on_crons = [cron] if cron else None
             exec_timeout = timedelta(seconds=timeout) if timeout else timedelta(seconds=60)
             standalone = self._hatchet.durable_task(
