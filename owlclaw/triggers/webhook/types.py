@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal
 
 AuthMethodType = Literal["bearer", "hmac", "basic"]
@@ -156,3 +156,26 @@ class ExecutionResult:
     completed_at: datetime | None = None
     output: Any = None
     error: dict[str, Any] | None = None
+
+
+@dataclass(slots=True)
+class GovernanceContext:
+    """Execution context passed to governance checks."""
+
+    tenant_id: str
+    endpoint_id: str
+    agent_id: str
+    request_id: str
+    source_ip: str | None = None
+    user_agent: str | None = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(slots=True)
+class GovernanceDecision:
+    """Governance evaluation outcome."""
+
+    allowed: bool
+    status_code: int = 200
+    reason: str | None = None
+    policy_limits: dict[str, Any] = field(default_factory=dict)

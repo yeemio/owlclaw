@@ -1,5 +1,6 @@
 """Webhook trigger core types and contracts."""
 
+from owlclaw.triggers.webhook.governance import GovernanceClient
 from owlclaw.triggers.webhook.manager import WebhookEndpointManager
 from owlclaw.triggers.webhook.transformer import PayloadTransformer
 from owlclaw.triggers.webhook.types import (
@@ -11,6 +12,8 @@ from owlclaw.triggers.webhook.types import (
     ExecutionResult,
     ExecutionStatus,
     FieldMapping,
+    GovernanceContext,
+    GovernanceDecision,
     HttpRequest,
     ParsedPayload,
     RetryPolicy,
@@ -30,6 +33,9 @@ __all__ = [
     "ExecutionResult",
     "ExecutionStatus",
     "FieldMapping",
+    "GovernanceClient",
+    "GovernanceContext",
+    "GovernanceDecision",
     "HttpRequest",
     "PayloadTransformer",
     "ParsedPayload",
