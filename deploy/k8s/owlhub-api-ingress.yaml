@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: owlhub-api
+  labels:
+    app: owlhub-api
+spec:
+  rules:
+    - host: owlhub.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: owlhub-api
+                port:
+                  number: 80
