@@ -7,7 +7,6 @@ from typing import Any
 
 import yaml
 
-
 DEFAULT_RUNTIME_CONFIG: dict[str, Any] = {
     "model": "gpt-4o-mini",
     "max_function_calls": 50,
@@ -36,7 +35,7 @@ def validate_runtime_config(config: dict[str, Any]) -> dict[str, Any]:
     for field in float_positive_fields:
         if field in normalized:
             value = normalized[field]
-            if isinstance(value, bool) or not isinstance(value, (int, float)) or float(value) <= 0:
+            if isinstance(value, bool) or not isinstance(value, int | float) or float(value) <= 0:
                 raise ValueError(f"{field} must be a positive number")
             normalized[field] = float(value)
 

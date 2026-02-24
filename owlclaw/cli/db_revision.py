@@ -144,7 +144,7 @@ def revision_command(
         return
     script = scripts[0]
     revision_id = getattr(script, "revision", None)
-    if isinstance(revision_id, (list, tuple)):
+    if isinstance(revision_id, list | tuple):
         revision_id = revision_id[0] if revision_id else None
     rev_path = getattr(script, "path", None)
     if rev_path is None and revision_id:

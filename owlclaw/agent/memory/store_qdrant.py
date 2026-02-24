@@ -52,7 +52,7 @@ def _parse_bool(raw: Any, default: bool = False) -> bool:
             return True
         if normalized in {"0", "false", "no", "off", ""}:
             return False
-    if isinstance(raw, (int, float)):
+    if isinstance(raw, int | float):
         return raw != 0
     return default
 
@@ -63,7 +63,7 @@ def _parse_tags(raw: Any) -> list[str]:
     if isinstance(raw, str):
         normalized = raw.strip()
         return [normalized] if normalized else []
-    if isinstance(raw, (list, tuple, set)):
+    if isinstance(raw, list | tuple | set):
         return [str(tag) for tag in raw if str(tag).strip()]
     return []
 

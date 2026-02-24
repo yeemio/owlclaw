@@ -9,6 +9,7 @@ Requires:
 from __future__ import annotations
 
 import os
+from contextlib import suppress
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -203,10 +204,8 @@ async def test_langfuse_trace_created():
         resp = await client.complete(messages)
     assert resp.content == "Mocked reply"
     # Flush Langfuse so trace is sent (SDK may buffer)
-    try:
+    with suppress(Exception):
         client._langfuse.flush()
-    except Exception:
-        pass
     # If we get here without exception, trace creation path ran; server may still reject if down
     assert client._langfuse is not None
 
@@ -252,7 +251,5 @@ async def test_langfuse_data_recorded():
     assert resp.completion_tokens == 50
     # cost = (100/1000)*0.0001 + (50/1000)*0.0002 = 0.00001 + 0.00001 = 0.00002
     assert resp.cost == pytest.approx(0.00002, abs=1e-8)
-    try:
+    with suppress(Exception):
         client._langfuse.flush()
-    except Exception:
-        pass
