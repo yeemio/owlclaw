@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-work 中） |
-| 批次状态 | 进行中。正在审查并合并 `codex-work`（triggers-queue Task 7~11），随后继续审查 `codex-gpt-work`。 |
-| 已完成项 | 1) 完成常规质量扫描并修复测试基线稳定性（Docker 缺失场景 skip + 性能阈值抖动修复）；2) 已开始 `codex-work` 审校合并流程并解决文档冲突。 |
-| 下一待执行 | 完成 `codex-work` 合并后执行 queue 触发器测试回归，再审校并合并 `codex-gpt-work` 的 e2e-validation 新增实现。 |
-| 验收快照 | 待本轮审校结束统一回填（含分支专属测试与合并后回归测试）。 |
+| 当前批次 | review loop（审校 codex-gpt-work 中） |
+| 批次状态 | 进行中。`codex-work` 已完成审校合并；当前正在审查 `codex-gpt-work` 的 e2e-validation 增量实现。 |
+| 已完成项 | 1) 完成常规质量扫描并修复测试基线稳定性（Docker 缺失场景 skip + 性能阈值抖动修复）；2) 审校并合并 `codex-work`（triggers-queue Task 7~11）。 |
+| 下一待执行 | 完成 `codex-gpt-work` 合并后执行 e2e 测试回归与全量测试抽检，并回填最终 Checkpoint。 |
+| 验收快照 | 待 `codex-gpt-work` 审校完成后统一回填。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

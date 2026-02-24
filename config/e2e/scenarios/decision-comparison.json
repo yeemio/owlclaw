@@ -1,0 +1,20 @@
+[
+  {
+    "scenario_id": "decision-comparison-1",
+    "name": "agent vs cron comparison",
+    "scenario_type": "mionyee_task",
+    "input_data": {
+      "symbol": "AAPL",
+      "action": "entry_check"
+    }
+  },
+  {
+    "scenario_id": "decision-comparison-2",
+    "name": "agent vs cron comparison 2",
+    "scenario_type": "mionyee_task",
+    "input_data": {
+      "symbol": "TSLA",
+      "action": "exit_check"
+    }
+  }
+]

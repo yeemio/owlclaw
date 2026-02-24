@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import uuid
 from collections.abc import Awaitable, Callable
@@ -31,6 +32,7 @@ class ExecutionEngine:
         self._runner = runner
         self._collector = DataCollector()
         self._injected_errors: dict[str, str] = {}
+        self._resource_locks: dict[str, asyncio.Lock] = {}
         self._cron_trigger: ComponentFn | None = None
         self._agent_runtime: ComponentFn | None = None
         self._skills_system: ComponentFn | None = None
@@ -75,12 +77,48 @@ class ExecutionEngine:
     def cleanup(self) -> None:
         """Reset injected failures and temporary execution resources."""
         self._injected_errors.clear()
+        self._resource_locks.clear()
         self._collector = DataCollector()
         self._cron_trigger = None
         self._agent_runtime = None
         self._skills_system = None
         self._governance_layer = None
         self._hatchet_integration = None
+
+    async def execute_scenarios_concurrently(
+        self,
+        scenarios: list[TestScenario],
+        *,
+        max_concurrency: int = 5,
+    ) -> list[ExecutionResult]:
+        """Execute scenarios concurrently with queueing and per-resource locking."""
+        if max_concurrency <= 0:
+            raise ValueError("max_concurrency must be positive")
+
+        queue: asyncio.Queue[TestScenario] = asyncio.Queue()
+        for scenario in scenarios:
+            queue.put_nowait(scenario)
+
+        results: list[ExecutionResult] = []
+        results_lock = asyncio.Lock()
+
+        async def worker() -> None:
+            while True:
+                try:
+                    scenario = queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    return
+                resource_key = self._scenario_resource_key(scenario)
+                resource_lock = self._resource_locks.setdefault(resource_key, asyncio.Lock())
+                async with resource_lock:
+                    result = await self.execute_scenario(scenario)
+                async with results_lock:
+                    results.append(result)
+                queue.task_done()
+
+        worker_count = min(max_concurrency, max(1, len(scenarios)))
+        await asyncio.gather(*(worker() for _ in range(worker_count)))
+        return results
 
     async def execute_scenario(self, scenario: TestScenario) -> ExecutionResult:
         """Execute one scenario and return normalized result."""
@@ -311,3 +349,9 @@ class ExecutionEngine:
             }
         )
         return result
+
+    def _scenario_resource_key(self, scenario: TestScenario) -> str:
+        resource = scenario.input_data.get("resource")
+        if isinstance(resource, str) and resource.strip():
+            return resource
+        return scenario.scenario_id

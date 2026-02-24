@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import time
+
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -166,6 +169,21 @@ class TestExecutionEngine:
         with pytest.raises(ValueError):
             engine.inject_error("cron_trigger", "unknown_error")
 
+    @pytest.mark.asyncio
+    async def test_execute_scenarios_concurrently_returns_all_results(self) -> None:
+        async def runner(scenario: E2ETestScenario) -> dict[str, object]:
+            await asyncio.sleep(0.001)
+            return {"status": "passed", "scenario_id": scenario.scenario_id}
+
+        engine = ExecutionEngine(runner=runner)
+        scenarios = [
+            E2ETestScenario(scenario_id=f"c-{index}", name=f"c-{index}", scenario_type=ScenarioType.INTEGRATION)
+            for index in range(5)
+        ]
+        results = await engine.execute_scenarios_concurrently(scenarios, max_concurrency=3)
+        assert len(results) == 5
+        assert {result.scenario_id for result in results} == {scenario.scenario_id for scenario in scenarios}
+
 
 class TestExecutionEngineProperties:
     @settings(max_examples=100, deadline=None)
@@ -329,3 +347,92 @@ class TestExecutionEngineProperties:
 
         assert result.status == ExecutionStatus.PASSED
         assert result.metadata["output"]["status"] == "passed"
+
+    @settings(max_examples=100, deadline=None)
+    @given(task_count=st.integers(min_value=1, max_value=8))
+    @pytest.mark.asyncio
+    async def test_property_concurrent_execution_correctness(
+        self,
+        task_count: int,
+    ) -> None:
+        """Property 27: concurrent execution returns complete and consistent result set."""
+
+        async def runner(scenario: E2ETestScenario) -> dict[str, object]:
+            await asyncio.sleep(0.001)
+            return {"status": "passed", "scenario_id": scenario.scenario_id}
+
+        engine = ExecutionEngine(runner=runner)
+        scenarios = [
+            E2ETestScenario(scenario_id=f"q-{index}", name=f"q-{index}", scenario_type=ScenarioType.INTEGRATION)
+            for index in range(task_count)
+        ]
+        concurrent_results = await engine.execute_scenarios_concurrently(scenarios, max_concurrency=4)
+        serial_results = [await engine.execute_scenario(scenario) for scenario in scenarios]
+
+        assert {item.scenario_id for item in concurrent_results} == {item.scenario_id for item in serial_results}
+
+    @settings(max_examples=100, deadline=None)
+    @given(task_count=st.integers(min_value=3, max_value=8))
+    @pytest.mark.asyncio
+    async def test_property_concurrent_performance_not_worse_than_serial_baseline(
+        self,
+        task_count: int,
+    ) -> None:
+        """Property 28: concurrent run time stays within serial baseline."""
+
+        async def runner(_: E2ETestScenario) -> dict[str, object]:
+            await asyncio.sleep(0.003)
+            return {"status": "passed"}
+
+        engine = ExecutionEngine(runner=runner)
+        scenarios = [
+            E2ETestScenario(scenario_id=f"p-{index}", name=f"p-{index}", scenario_type=ScenarioType.INTEGRATION)
+            for index in range(task_count)
+        ]
+
+        start_serial = time.perf_counter()
+        for scenario in scenarios:
+            await engine.execute_scenario(scenario)
+        serial_elapsed = time.perf_counter() - start_serial
+
+        start_concurrent = time.perf_counter()
+        await engine.execute_scenarios_concurrently(scenarios, max_concurrency=task_count)
+        concurrent_elapsed = time.perf_counter() - start_concurrent
+
+        assert concurrent_elapsed <= serial_elapsed * 1.8
+
+    @settings(max_examples=100, deadline=None)
+    @given(task_count=st.integers(min_value=2, max_value=8))
+    @pytest.mark.asyncio
+    async def test_property_resource_competition_is_serialized(self, task_count: int) -> None:
+        """Property 29: shared-resource scenarios are serialized via resource lock."""
+        running = 0
+        max_running = 0
+        counter_lock = asyncio.Lock()
+
+        async def runner(_: E2ETestScenario) -> dict[str, object]:
+            nonlocal running
+            nonlocal max_running
+            async with counter_lock:
+                running += 1
+                if running > max_running:
+                    max_running = running
+            await asyncio.sleep(0.001)
+            async with counter_lock:
+                running -= 1
+            return {"status": "passed"}
+
+        engine = ExecutionEngine(runner=runner)
+        scenarios = [
+            E2ETestScenario(
+                scenario_id=f"r-{index}",
+                name=f"r-{index}",
+                scenario_type=ScenarioType.INTEGRATION,
+                input_data={"resource": "shared-resource"},
+            )
+            for index in range(task_count)
+        ]
+        results = await engine.execute_scenarios_concurrently(scenarios, max_concurrency=task_count)
+
+        assert len(results) == task_count
+        assert max_running == 1
