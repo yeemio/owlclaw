@@ -14,8 +14,11 @@ from owlclaw.triggers.queue.idempotency import IdempotencyStore
 from owlclaw.triggers.queue.models import MessageEnvelope, RawMessage
 from owlclaw.triggers.queue.parsers import BinaryParser, JSONParser, MessageParser, ParseError, TextParser
 from owlclaw.triggers.queue.protocols import QueueAdapter
+from owlclaw.triggers.queue.security import SensitiveDataLogFilter, redact_error_message
 
 logger = logging.getLogger(__name__)
+if not any(isinstance(item, SensitiveDataLogFilter) for item in logger.filters):
+    logger.addFilter(SensitiveDataLogFilter())
 
 
 @dataclass(slots=True)
@@ -249,13 +252,19 @@ class QueueTrigger:
         except ParseError as exc:
             self._failed_count += 1
             self._metrics.record_failure()
-            await self.adapter.send_to_dlq(raw_message, reason=str(exc))
-            logger.warning("Queue parse error message_id=%s trace_id=%s error=%s", raw_message.message_id, trace_id, exc)
+            safe_error = redact_error_message(exc)
+            await self.adapter.send_to_dlq(raw_message, reason=safe_error)
+            logger.warning(
+                "Queue parse error message_id=%s trace_id=%s error=%s",
+                raw_message.message_id,
+                trace_id,
+                safe_error,
+            )
             return ProcessResult(
                 message_id=raw_message.message_id,
                 status="parse_error",
                 trace_id=trace_id,
-                detail=str(exc),
+                detail=safe_error,
             )
 
         status, agent_run_id = await self._process_envelope(raw_message, envelope, trace_id)
@@ -460,6 +469,7 @@ class QueueTrigger:
                     break
                 backoff_seconds = self._compute_backoff_seconds(attempt)
                 self._metrics.record_retry()
+                safe_error = redact_error_message(exc)
                 logger.warning(
                     "Queue message %s trace_id=%s trigger retry %s/%s after %.3fs: %s",
                     envelope.message_id,
@@ -467,7 +477,7 @@ class QueueTrigger:
                     attempt + 1,
                     self.config.max_retries,
                     backoff_seconds,
-                    exc,
+                    safe_error,
                 )
                 await asyncio.sleep(backoff_seconds)
         if last_error is not None:
@@ -481,7 +491,8 @@ class QueueTrigger:
     async def _handle_processing_error(self, raw_message: RawMessage, error: Exception) -> None:
         """Handle runtime processing failures by configured ack policy."""
         trace_id = f"queue-{raw_message.message_id}"
-        logger.warning("Queue message %s trace_id=%s failed: %s", raw_message.message_id, trace_id, error)
+        safe_error = redact_error_message(error)
+        logger.warning("Queue message %s trace_id=%s failed: %s", raw_message.message_id, trace_id, safe_error)
         policy = self.config.ack_policy
         if policy == "ack":
             await self.adapter.ack(raw_message)
@@ -492,7 +503,7 @@ class QueueTrigger:
         if policy == "requeue":
             await self.adapter.nack(raw_message, requeue=True)
             return
-        await self.adapter.send_to_dlq(raw_message, reason=str(error))
+        await self.adapter.send_to_dlq(raw_message, reason=safe_error)
 
     @staticmethod
     def _extract_agent_run_id(trigger_result: Any | None) -> str | None:

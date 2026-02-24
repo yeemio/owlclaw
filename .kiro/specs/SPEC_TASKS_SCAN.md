@@ -102,7 +102,7 @@
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（67/89） | 消息队列触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（68/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-queue Task 20~21） |
-| 批次状态 | **已完成**。Task 20（核心检查点）与 Task 21（端到端集成测试 21.1~21.4）已完成并通过验收。 |
-| 已完成项 | 1) Task 20：执行 queue 核心功能测试检查点；2) Task 21.1：完整消息处理链路 e2e（解析/幂等/治理/触发/Ledger/ACK）；3) Task 21.2：幂等 e2e（重复消息只执行一次）；4) Task 21.3：重试 e2e（退避时序与耗尽后 DLQ）；5) Task 21.4：错误场景 e2e（解析失败/治理拒绝/执行失败后继续处理）。 |
-| 下一待执行 | `codex-work`：`triggers-queue` Task 22（日志安全）→ Task 23（配置模板与文档）→ Task 24（Mock 验证脚本）→ Task 25（最终检查点）；之后切换 `triggers-webhook` Task 2+。 |
-| 验收快照 | `poetry run pytest tests/integration/test_queue_trigger_e2e.py -q`（4 passed）；`poetry run pytest tests/unit/triggers -k queue tests/integration/test_queue_trigger_e2e.py tests/integration/test_queue_kafka_adapter_integration.py -q`（67 passed, 1 skipped）；`poetry run ruff check tests/integration/test_queue_trigger_e2e.py`（All checks passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-queue Task 22） |
+| 批次状态 | **已完成**。Task 22（日志安全）已完成并通过验收。 |
+| 已完成项 | 1) Task 22.1：新增凭证脱敏工具（文本/结构化数据）与日志过滤器；`QueueTriggerConfig.__repr__` 对敏感字段脱敏；触发器错误与 DLQ reason 统一脱敏；2) Task 22.2：新增 Property 23（凭证安全性）属性测试；3) Task 22.3：新增日志安全单元测试（filter、repr、错误路径）。 |
+| 下一待执行 | `codex-work`：`triggers-queue` Task 23（配置模板与文档）→ Task 24（Mock 验证脚本）→ Task 25（最终检查点）；之后切换 `triggers-webhook` Task 2+。 |
+| 验收快照 | `poetry run pytest tests/unit/triggers/test_queue_log_security.py tests/unit/triggers/test_queue_log_security_properties.py -q`（7 passed）；`poetry run pytest tests/unit/triggers -k queue tests/integration/test_queue_trigger_e2e.py tests/integration/test_queue_kafka_adapter_integration.py -q`（74 passed, 1 skipped）；`poetry run ruff check owlclaw/triggers/queue/security.py owlclaw/triggers/queue/config.py owlclaw/triggers/queue/trigger.py owlclaw/triggers/queue/__init__.py tests/unit/triggers/test_queue_log_security.py tests/unit/triggers/test_queue_log_security_properties.py`（All checks passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
