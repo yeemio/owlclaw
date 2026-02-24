@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -103,3 +104,89 @@ async def test_stdio_line_parser_returns_parse_error(tmp_path: Path) -> None:
     line = await server.process_stdio_line("{invalid-json")
     payload = json.loads(line)
     assert payload["error"]["code"] == -32700
+
+
+@pytest.mark.asyncio
+async def test_request_validation_and_param_errors(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+    server = McpProtocolServer.from_app(app)
+
+    invalid_version = await server.handle_message({"jsonrpc": "1.0", "id": 1, "method": "tools/list"})
+    assert invalid_version["error"]["code"] == -32600
+
+    missing_method = await server.handle_message({"jsonrpc": "2.0", "id": 2})
+    assert missing_method["error"]["code"] == -32600
+
+    invalid_params = await server.handle_message(
+        {"jsonrpc": "2.0", "id": 3, "method": "tools/list", "params": "not-dict"}
+    )
+    assert invalid_params["error"]["code"] == -32602
+
+    missing_uri = await server.handle_message({"jsonrpc": "2.0", "id": 4, "method": "resources/read", "params": {}})
+    assert missing_uri["error"]["code"] == -32602
+
+
+@pytest.mark.asyncio
+async def test_tool_and_resource_specific_errors(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+    server = McpProtocolServer.from_app(app)
+
+    invalid_tool_name = await server.handle_message(
+        {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "", "arguments": {}}}
+    )
+    assert invalid_tool_name["error"]["code"] == -32602
+
+    invalid_arguments = await server.handle_message(
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "echo-tool", "arguments": []}}
+    )
+    assert invalid_arguments["error"]["code"] == -32602
+
+    missing_resource = await server.handle_message(
+        {"jsonrpc": "2.0", "id": 3, "method": "resources/read", "params": {"uri": "skill://x/y"}}
+    )
+    assert missing_resource["error"]["code"] == -32002
+
+
+@pytest.mark.asyncio
+async def test_from_app_requires_mounted_skills() -> None:
+    app = OwlClaw("no-skills")
+    with pytest.raises(ValueError):
+        McpProtocolServer.from_app(app)
+
+
+@pytest.mark.asyncio
+async def test_stdio_line_parser_rejects_non_object_json(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+    server = McpProtocolServer.from_app(app)
+    line = await server.process_stdio_line('["not","object"]')
+    payload = json.loads(line)
+    assert payload["error"]["code"] == -32600
+
+
+def test_annotation_to_schema_branches(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+    server = McpProtocolServer.from_app(app)
+
+    assert server._annotation_to_schema(float)["type"] == "number"
+    assert server._annotation_to_schema(bool)["type"] == "boolean"
+    assert server._annotation_to_schema(list[int])["type"] == "array"
+    assert server._annotation_to_schema(dict[str, int])["type"] == "object"
+    assert server._annotation_to_schema(tuple[int, int])["type"] == "array"
+    assert server._annotation_to_schema(Any)["type"] == "object"
+    union_schema = server._annotation_to_schema(str | int)
+    assert "oneOf" in union_schema
+    optional_schema = server._annotation_to_schema(str | None)
+    assert optional_schema.get("nullable") is True
+
+
+def test_build_input_schema_ignores_session_and_varargs(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+    server = McpProtocolServer.from_app(app)
+
+    def handler(session: dict[str, Any], name: str, *args: Any, **kwargs: Any) -> dict[str, str]:
+        """Short doc."""
+        return {"ok": name}
+
+    schema = server._build_input_schema(handler)
+    assert "session" not in schema["properties"]
+    assert "name" in schema["properties"]
