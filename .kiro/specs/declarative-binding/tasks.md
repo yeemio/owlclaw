@@ -136,11 +136,11 @@
   - [x] 14.5 创建"无 binding 无 handler"示例（body 含 curl 命令，Agent 通过 shell 工具执行）
   - [x] 14.6 编写 README 说明三种 skill 模式（binding / @handler / shell 指令）
 
-- [ ] **Task 15**: 文档更新
-  - [ ] 15.1 更新 `examples/` 索引 README 包含 binding 示例
-  - [ ] 15.2 更新 SKILL.md 模板库（skill-templates）增加 binding 示例模板
-  - [ ] 15.3 更新 `owlclaw skill init` 生成的模板包含 binding 字段注释
-  - [ ] 15.4 更新 `owlclaw skill init` 默认模板为"最小可用"版本
+- [x] **Task 15**: 文档更新
+  - [x] 15.1 更新 `examples/` 索引 README 包含 binding 示例
+  - [x] 15.2 更新 SKILL.md 模板库（skill-templates）增加 binding 示例模板
+  - [x] 15.3 更新 `owlclaw skill init` 生成的模板包含 binding 字段注释
+  - [x] 15.4 更新 `owlclaw skill init` 默认模板为"最小可用"版本
 
 ### Phase 5：cli-migrate 自动生成（P1，依赖 cli-migrate spec）
 

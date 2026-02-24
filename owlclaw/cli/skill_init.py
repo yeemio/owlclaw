@@ -25,6 +25,18 @@ description: {description}
 # Instructions
 
 Describe when and how to use this skill.
+
+Optional binding snippet (uncomment when needed):
+
+```yaml
+# tools:
+#   fetch-data:
+#     id: string
+#     binding:
+#       type: http
+#       method: GET
+#       url: https://api.example.com/items/{{id}}
+```
 """
 
 
