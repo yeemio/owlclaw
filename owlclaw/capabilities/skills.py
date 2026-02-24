@@ -315,3 +315,15 @@ class SkillsLoader:
     def list_skills(self) -> list[Skill]:
         """List all loaded Skills."""
         return list(self.skills.values())
+
+    def clear_all_full_content_cache(self) -> int:
+        """Clear full content cache for all loaded skills.
+
+        Returns:
+            Number of skills whose cache was cleared.
+        """
+        cleared = 0
+        for skill in self.skills.values():
+            skill.clear_full_content_cache()
+            cleared += 1
+        return cleared
