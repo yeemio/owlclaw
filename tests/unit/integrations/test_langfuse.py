@@ -57,6 +57,14 @@ class _FakeLangfuseSDK:
         self.flush_count += 1
 
 
+class _FailingLangfuseSDK(_FakeLangfuseSDK):
+    def generation(self, **kwargs: Any) -> _FakeObservation:
+        raise RuntimeError("generation failed")
+
+    def span(self, **kwargs: Any) -> _FakeObservation:
+        raise RuntimeError("span failed")
+
+
 class TestLangfuseClient:
     def test_init_with_injected_client(self) -> None:
         sdk = _FakeLangfuseSDK()
@@ -161,6 +169,102 @@ class TestLangfuseClient:
         assert sdk.generations[0]["usage"]["total_tokens"] == 18
         assert sdk.spans[0]["input"]["tool_name"] == "query_state"
 
+    @settings(max_examples=100, deadline=None)
+    @given(
+        prompt_tokens=st.integers(min_value=0, max_value=10000),
+        completion_tokens=st.integers(min_value=0, max_value=10000),
+        latency_ms=st.floats(min_value=0, max_value=5000, allow_nan=False, allow_infinity=False),
+    )
+    def test_property_llm_span_content_integrity(
+        self,
+        prompt_tokens: int,
+        completion_tokens: int,
+        latency_ms: float,
+    ) -> None:
+        sdk = _FakeLangfuseSDK()
+        client = LangfuseClient(LangfuseConfig(enabled=True, client=sdk))
+        total_tokens = prompt_tokens + completion_tokens
+        span_id = client.create_llm_span(
+            trace_id="trace-1",
+            span_name="llm",
+            data=LLMSpanData(
+                model="gpt-4o-mini",
+                prompt=[{"role": "user", "content": "hello"}],
+                response="ok",
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
+                cost_usd=TokenCalculator.calculate_cost("gpt-4o-mini", prompt_tokens, completion_tokens),
+                latency_ms=latency_ms,
+                status="success",
+            ),
+        )
+        assert span_id
+        payload = sdk.generations[-1]
+        assert payload["usage"]["prompt_tokens"] == prompt_tokens
+        assert payload["usage"]["completion_tokens"] == completion_tokens
+        assert payload["usage"]["total_tokens"] == total_tokens
+        assert payload["metadata"]["latency_ms"] == latency_ms
+
+    def test_property_llm_span_error_degrades_to_none(self) -> None:
+        sdk = _FailingLangfuseSDK()
+        client = LangfuseClient(LangfuseConfig(enabled=True, client=sdk))
+        span_id = client.create_llm_span(
+            trace_id="trace-1",
+            span_name="llm",
+            data=LLMSpanData(
+                model="gpt-4o-mini",
+                prompt=[{"role": "user", "content": "x"}],
+                response="y",
+                prompt_tokens=1,
+                completion_tokens=1,
+                total_tokens=2,
+                cost_usd=0.0,
+                latency_ms=1.0,
+                status="success",
+            ),
+        )
+        assert span_id is None
+
+    @settings(max_examples=100, deadline=None)
+    @given(duration_ms=st.floats(min_value=0, max_value=10000, allow_nan=False, allow_infinity=False))
+    def test_property_tool_span_content_integrity(self, duration_ms: float) -> None:
+        sdk = _FakeLangfuseSDK()
+        client = LangfuseClient(LangfuseConfig(enabled=True, client=sdk))
+        span_id = client.create_tool_span(
+            trace_id="trace-1",
+            span_name="tool",
+            data=ToolSpanData(
+                tool_name="remember",
+                arguments={"content": "hello"},
+                result={"stored": True},
+                duration_ms=duration_ms,
+                status="success",
+            ),
+            parent_span_id="parent-1",
+        )
+        assert span_id
+        payload = sdk.spans[-1]
+        assert payload["parent_observation_id"] == "parent-1"
+        assert payload["metadata"]["duration_ms"] == duration_ms
+        assert payload["input"]["tool_name"] == "remember"
+
+    def test_property_tool_span_error_degrades_to_none(self) -> None:
+        sdk = _FailingLangfuseSDK()
+        client = LangfuseClient(LangfuseConfig(enabled=True, client=sdk))
+        span_id = client.create_tool_span(
+            trace_id="trace-1",
+            span_name="tool",
+            data=ToolSpanData(
+                tool_name="remember",
+                arguments={"content": "x"},
+                result={"ok": True},
+                duration_ms=10.0,
+                status="success",
+            ),
+        )
+        assert span_id is None
+
 
 class TestConfigAndHelpers:
     @settings(max_examples=100, deadline=None)
@@ -230,6 +334,41 @@ class TestConfigAndHelpers:
         assert email not in masked
         assert phone not in masked
 
+    @settings(max_examples=100, deadline=None)
+    @given(secret=st.from_regex(r"(?:sk|pk)-[A-Za-z0-9_-]{12,}", fullmatch=True))
+    def test_property_secret_masking(self, secret: str) -> None:
+        masked = PrivacyMasker.mask(f"token={secret}", LangfuseConfig(mask_inputs=True))
+        assert secret not in masked
+        assert "[MASKED_API_KEY]" in masked
+
+    @settings(max_examples=100, deadline=None)
+    @given(code=st.from_regex(r"[A-Z]{6}[0-9]{4}", fullmatch=True))
+    def test_property_custom_masking(self, code: str) -> None:
+        cfg = LangfuseConfig(mask_inputs=True, custom_mask_patterns=[r"[A-Z]{6}[0-9]{4}"])
+        masked = PrivacyMasker.mask(f"code={code}", cfg)
+        assert code not in masked
+        assert "[MASKED_CUSTOM]" in masked
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        data=st.recursive(
+            st.one_of(st.text(max_size=20), st.integers(), st.booleans()),
+            lambda children: st.one_of(
+                st.lists(children, max_size=5),
+                st.dictionaries(st.text(min_size=1, max_size=8), children, max_size=5),
+            ),
+            max_leaves=10,
+        )
+    )
+    def test_property_masking_preserves_structure(self, data: Any) -> None:
+        cfg = LangfuseConfig(mask_inputs=True)
+        masked = PrivacyMasker.mask(data, cfg)
+        assert type(masked) is type(data)
+        if isinstance(data, dict):
+            assert set(masked.keys()) == set(data.keys())
+        if isinstance(data, list):
+            assert len(masked) == len(data)
+
     def test_trace_context_roundtrip(self) -> None:
         ctx = TraceContext(trace_id="trace-1", parent_span_id="span-1", metadata={"x": 1})
         TraceContext.set_current(ctx)
@@ -238,3 +377,28 @@ class TestConfigAndHelpers:
         assert current.trace_id == "trace-1"
         child = current.with_parent_span("span-2")
         assert child.parent_span_id == "span-2"
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        trace_id=st.from_regex(r"trace-[a-z0-9]{1,8}", fullmatch=True),
+        parent_span_id=st.none() | st.from_regex(r"span-[a-z0-9]{1,8}", fullmatch=True),
+    )
+    def test_property_trace_context_propagation(self, trace_id: str, parent_span_id: str | None) -> None:
+        ctx = TraceContext(trace_id=trace_id, parent_span_id=parent_span_id)
+        TraceContext.set_current(ctx)
+        current = TraceContext.get_current()
+        assert current is not None
+        assert current.trace_id == trace_id
+        child = current.with_parent_span("span-child")
+        assert child.trace_id == trace_id
+        assert child.parent_span_id == "span-child"
+
+    def test_validate_config_invalid_custom_pattern(self) -> None:
+        cfg = LangfuseConfig(
+            enabled=True,
+            public_key="pk",
+            secret_key="sk",
+            custom_mask_patterns=["["],
+        )
+        errors = validate_config(cfg)
+        assert any("invalid custom mask pattern" in error for error in errors)

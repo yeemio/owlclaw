@@ -107,7 +107,7 @@
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
-| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（20/66） | Langfuse tracing |
+| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（42/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（0/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（integrations-langfuse 基础模块 1~4 + 部分 6/7/8/9） |
-| 批次状态 | **进行中**。新增 `owlclaw.integrations.langfuse` 基础能力并完成首批属性测试，`integrations-langfuse` 进度更新为 **20/66**。 |
-| 已完成项 | 1) 新增 `owlclaw/integrations/langfuse.py`（LangfuseConfig/TraceMetadata/LLMSpanData/ToolSpanData/SpanType）；2) 实现 `LangfuseClient` 初始化、采样、trace 生命周期、LLM/tool span、flush；3) 实现 `TokenCalculator`、`TraceContext`、`PrivacyMasker` 以及配置加载/校验函数；4) 新增 `tests/unit/integrations/test_langfuse.py`（含 100 次迭代属性测试）；5) 更新 `owlclaw/integrations/__init__.py` 导出。 |
-| 下一待执行 | 继续 integrations-langfuse：优先完成 6.2/6.3、7.2/7.3/7.4、8.2、9.2~9.5，并开始 runtime/llm/tools 集成任务（11~13）。 |
-| 验收快照 | `poetry run pytest tests/unit/integrations/test_langfuse.py -q` -> `12 passed`；`poetry run ruff check owlclaw/integrations/langfuse.py tests/unit/integrations/test_langfuse.py owlclaw/integrations/__init__.py` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/langfuse.py` -> `Success: no issues found in 1 source file`。 |
+| 当前批次 | spec 循环（integrations-langfuse 模块化收敛：6/7/8/9/14 属性测试补齐） |
+| 批次状态 | **进行中**。完成 Langfuse span/context/privacy/config 相关属性测试，`integrations-langfuse` 进度更新为 **42/66**。 |
+| 已完成项 | 1) 完成 LLM Span 与 Tool Span 的完整性/错误降级属性测试（6.2/6.3/7.2/7.3）及父子 span 结构验证（7.4）；2) 完成 TraceContext 传递属性测试（8.2）；3) 完成 PII/密钥/自定义规则/结构保留脱敏属性测试（9.2~9.5）；4) 完成配置加载与验证实现及测试（14.1/14.2）；5) 勾选 checkpoint 5 与 checkpoint 10。 |
+| 下一待执行 | 开始 runtime/llm/tools 实际集成任务（11~13），并补齐 15/18/19/20 阶段验证与文档。 |
+| 验收快照 | `poetry run pytest tests/unit/integrations/test_langfuse.py tests/unit/integrations/test_llm.py -q` -> `52 passed`；`poetry run ruff check owlclaw/integrations tests/unit/integrations` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/langfuse.py` -> `Success: no issues found in 1 source file`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
