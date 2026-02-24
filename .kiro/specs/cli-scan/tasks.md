@@ -144,32 +144,32 @@ The implementation follows a bottom-up approach: core data models → parser com
 - [x] 7. Checkpoint - Ensure analyzer tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Implement dependency analyzer
-  - [ ] 8.1 Implement DependencyAnalyzer class
+- [x] 8. Implement dependency analyzer
+  - [x] 8.1 Implement DependencyAnalyzer class
     - Write `extract_imports()` to parse import statements
     - Write `extract_calls()` to find function calls in AST
     - Classify imports as STDLIB, THIRD_PARTY, or LOCAL using `importlib.util.find_spec()`
     - Build dependency graph with nodes and edges
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
   
-  - [ ] 8.2 Implement CyclicDependencyDetector
+  - [x] 8.2 Implement CyclicDependencyDetector
     - Implement Tarjan's algorithm for strongly connected components
     - Detect and report circular dependencies
     - _Requirements: 5.5, 5.6_
   
-  - [ ]* 8.3 Write property test for function call detection
+  - [x]* 8.3 Write property test for function call detection
     - **Property 10: Function Call Detection**
     - **Validates: Requirements 5.1**
   
-  - [ ]* 8.4 Write property test for import classification
+  - [x]* 8.4 Write property test for import classification
     - **Property 11: Import Classification**
     - **Validates: Requirements 5.3, 5.4**
   
-  - [ ]* 8.5 Write property test for cycle detection
+  - [x]* 8.5 Write property test for cycle detection
     - **Property 12: Cycle Detection**
     - **Validates: Requirements 5.5**
   
-  - [ ]* 8.6 Write unit tests for dependency analysis
+  - [x]* 8.6 Write unit tests for dependency analysis
     - Test function calls within same module
     - Test imported function calls
     - Test method calls on objects

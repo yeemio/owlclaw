@@ -1,6 +1,7 @@
 """Core models for cli-scan."""
 
 from owlclaw.cli.scan.complexity import ComplexityCalculator
+from owlclaw.cli.scan.dependency import CyclicDependencyDetector, Dependency, DependencyAnalyzer, DependencyGraph
 from owlclaw.cli.scan.docstring import DocstringParser
 from owlclaw.cli.scan.extractor import SignatureExtractor
 from owlclaw.cli.scan.models import (
@@ -31,6 +32,10 @@ __all__ = [
     "ComplexityLevel",
     "ComplexityScore",
     "Confidence",
+    "CyclicDependencyDetector",
+    "Dependency",
+    "DependencyAnalyzer",
+    "DependencyGraph",
     "DecoratorInfo",
     "DocstringParser",
     "DocstringStyle",
