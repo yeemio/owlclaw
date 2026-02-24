@@ -190,23 +190,23 @@
     - 测试幂等性存储失败降级
     - _需求：6.1, 6.2, 6.3_
 
-- [ ] 11. 实现治理层集成
-  - [ ] 11.1 在 _process_message 中添加治理层校验
+- [x] 11. 实现治理层集成
+  - [x] 11.1 在 _process_message 中添加治理层校验
     - 实现 governance.check_permission 调用
     - 实现执行上下文构建（source、queue、message_id、tenant_id）
     - 实现治理拒绝处理（_handle_governance_rejection）
     - _需求：7.1, 7.4, 4.5_
   
-  - [ ] 11.2 实现 _handle_governance_rejection 方法
+  - [x] 11.2 实现 _handle_governance_rejection 方法
     - 实现拒绝原因记录到 Ledger
     - 实现根据 ack_policy 处理消息（ack 或 dlq）
     - _需求：4.5, 7.4_
   
-  - [ ]* 11.3 为治理层集成编写属性测试
+  - [x]* 11.3 为治理层集成编写属性测试
     - **属性 10：治理层集成与拒绝处理**
     - **验证需求：4.5, 7.1, 7.4**
   
-  - [ ]* 11.4 为治理层集成编写单元测试
+  - [x]* 11.4 为治理层集成编写单元测试
     - 测试治理层允许执行
     - 测试治理层拒绝执行
     - 测试治理层不可用降级

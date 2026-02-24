@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from owlclaw.triggers.queue.config import QueueTriggerConfig, validate_config
@@ -24,6 +25,15 @@ class ProcessResult:
     status: str
     trace_id: str
     detail: str | None = None
+
+
+@dataclass(slots=True)
+class GovernanceDecision:
+    """Normalized governance decision used by queue trigger."""
+
+    allowed: bool
+    reason: str = ""
+    policies: dict[str, Any] | None = None
 
 
 class QueueTrigger:
@@ -170,6 +180,11 @@ class QueueTrigger:
         trace_id: str,
     ) -> None:
         """Process a parsed envelope and apply basic ack policy behavior."""
+        governance_decision = await self._check_governance(envelope)
+        if not governance_decision.allowed:
+            await self._handle_governance_rejection(raw_message, envelope, governance_decision, trace_id)
+            return
+
         if self.config.enable_dedup and self.idempotency_store is not None:
             dedup_key = envelope.dedup_key or envelope.message_id
             try:
@@ -201,6 +216,103 @@ class QueueTrigger:
                 logger.exception("Idempotency write failed for key %s", dedup_key)
 
         await self.adapter.ack(raw_message)
+
+    async def _check_governance(self, envelope: MessageEnvelope) -> GovernanceDecision:
+        """Run governance permission check when governance hook is provided."""
+        if self.governance is None:
+            return GovernanceDecision(allowed=True)
+        check_permission = getattr(self.governance, "check_permission", None)
+        if not callable(check_permission):
+            return GovernanceDecision(allowed=True)
+
+        context = {
+            "source": "queue",
+            "queue": self.config.queue_name,
+            "message_id": envelope.message_id,
+            "tenant_id": envelope.tenant_id or "default",
+            "event_name": envelope.event_name or "queue_message",
+        }
+        try:
+            result = await check_permission(context)
+        except Exception:
+            logger.exception("Governance check failed for message %s", envelope.message_id)
+            return GovernanceDecision(allowed=True)
+
+        if isinstance(result, bool):
+            return GovernanceDecision(allowed=result)
+        if isinstance(result, dict):
+            return GovernanceDecision(
+                allowed=bool(result.get("allowed", True)),
+                reason=str(result.get("reason", "")),
+                policies=result.get("policies"),
+            )
+        allowed = bool(getattr(result, "allowed", True))
+        reason = str(getattr(result, "reason", ""))
+        policies = getattr(result, "policies", None)
+        if policies is not None and not isinstance(policies, dict):
+            policies = None
+        return GovernanceDecision(allowed=allowed, reason=reason, policies=policies)
+
+    async def _handle_governance_rejection(
+        self,
+        raw_message: RawMessage,
+        envelope: MessageEnvelope,
+        decision: GovernanceDecision,
+        trace_id: str,
+    ) -> None:
+        """Handle governance rejection with ledger audit and ack policy behavior."""
+        self._failed_count += 1
+        await self._record_governance_rejection(envelope, decision, trace_id)
+
+        reason = decision.reason or "governance_rejected"
+        policy = self.config.ack_policy
+        if policy == "dlq":
+            await self.adapter.send_to_dlq(raw_message, reason=reason)
+            return
+        if policy == "requeue":
+            await self.adapter.nack(raw_message, requeue=True)
+            return
+        if policy == "nack":
+            await self.adapter.nack(raw_message, requeue=False)
+            return
+        await self.adapter.ack(raw_message)
+
+    async def _record_governance_rejection(
+        self,
+        envelope: MessageEnvelope,
+        decision: GovernanceDecision,
+        trace_id: str,
+    ) -> None:
+        """Record governance rejection when ledger is available."""
+        if self.ledger is None:
+            return
+        record_execution = getattr(self.ledger, "record_execution", None)
+        if not callable(record_execution):
+            return
+        try:
+            await record_execution(
+                tenant_id=envelope.tenant_id or "default",
+                agent_id="queue-trigger",
+                run_id=trace_id,
+                capability_name="queue_trigger",
+                task_type="queue_trigger",
+                input_params={
+                    "message_id": envelope.message_id,
+                    "queue": self.config.queue_name,
+                    "event_name": envelope.event_name,
+                },
+                output_result=None,
+                decision_reasoning=decision.reason or "governance_rejected",
+                execution_time_ms=0,
+                llm_model="none",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="blocked",
+                error_message=decision.reason or "governance_rejected",
+            )
+        except Exception:
+            logger.exception("Failed to record governance rejection for message %s", envelope.message_id)
 
     async def _trigger_agent(self, envelope: MessageEnvelope, trace_id: str) -> None:
         """Trigger AgentRuntime if configured; otherwise no-op."""

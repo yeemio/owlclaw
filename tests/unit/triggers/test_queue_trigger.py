@@ -50,6 +50,27 @@ class _ExistsFailStore(MockIdempotencyStore):
         raise RuntimeError(f"exists failed: {key}")
 
 
+class _FakeGovernance:
+    def __init__(self, result: object) -> None:
+        self.result = result
+        self.calls: list[dict[str, object]] = []
+        self.raise_error = False
+
+    async def check_permission(self, context: dict[str, object]) -> object:
+        self.calls.append(context)
+        if self.raise_error:
+            raise RuntimeError("governance offline")
+        return self.result
+
+
+class _FakeLedger:
+    def __init__(self) -> None:
+        self.records: list[dict[str, object]] = []
+
+    async def record_execution(self, **kwargs: object) -> None:
+        self.records.append(kwargs)
+
+
 def _raw_message(
     *,
     message_id: str,
@@ -275,3 +296,54 @@ async def test_queue_trigger_idempotency_record_uses_config_ttl() -> None:
     await trigger.stop()
 
     assert store.last_ttl == 123
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_governance_reject_routes_to_dlq_and_records_ledger() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    governance = _FakeGovernance({"allowed": False, "reason": "blocked-by-policy"})
+    ledger = _FakeLedger()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1", ack_policy="dlq"),
+        adapter=adapter,
+        agent_runtime=runtime,
+        governance=governance,
+        ledger=ledger,
+    )
+    msg = _raw_message(message_id="g-1", body=b'{"id":"1"}')
+
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 0
+    assert adapter.get_dlq() == [("g-1", "blocked-by-policy")]
+    assert len(governance.calls) == 1
+    assert governance.calls[0]["queue"] == "orders"
+    assert len(ledger.records) == 1
+    assert ledger.records[0]["status"] == "blocked"
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_governance_unavailable_fails_open() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    governance = _FakeGovernance({"allowed": True})
+    governance.raise_error = True
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        adapter=adapter,
+        agent_runtime=runtime,
+        governance=governance,
+    )
+    msg = _raw_message(message_id="g-open", body=b'{"id":"1"}')
+
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 1
+    assert adapter.get_acked() == ["g-open"]

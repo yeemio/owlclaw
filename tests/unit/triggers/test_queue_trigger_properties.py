@@ -19,6 +19,11 @@ class _CountingRuntime:
         return {"run_id": f"run-{self.calls}"}
 
 
+class _RejectGovernance:
+    async def check_permission(self, context: dict[str, object]) -> dict[str, object]:
+        return {"allowed": False, "reason": f"blocked:{context['message_id']}"}
+
+
 def _raw_message(message_id: str, body: bytes, headers: dict[str, str] | None = None) -> RawMessage:
     return RawMessage(
         message_id=message_id,
@@ -149,5 +154,34 @@ def test_property_dedup_counter_matches_duplicate_count(dedup_keys: list[str]) -
         health = await trigger.health_check()
         assert runtime.calls == unique_count
         assert health["dedup_hits"] == duplicate_count
+
+    asyncio.run(_run())
+
+
+@given(policy=st.sampled_from(["ack", "nack", "requeue", "dlq"]))
+@settings(max_examples=20, deadline=None)
+def test_property_governance_rejection_respects_ack_policy(policy: str) -> None:
+    """Feature: triggers-queue, Property 10: 治理层拒绝处理遵循 ack_policy."""
+
+    async def _run() -> None:
+        adapter = MockQueueAdapter()
+        trigger = QueueTrigger(
+            config=QueueTriggerConfig(queue_name="q", consumer_group="g", ack_policy=policy),
+            adapter=adapter,
+            governance=_RejectGovernance(),
+        )
+        adapter.enqueue(_raw_message("gov-1", b'{"id":1}'))
+        await trigger.start()
+        await _flush_queue(adapter)
+        await trigger.stop()
+
+        if policy == "ack":
+            assert adapter.get_acked() == ["gov-1"]
+        elif policy == "nack":
+            assert adapter.get_nacked() == [("gov-1", False)]
+        elif policy == "requeue":
+            assert ("gov-1", True) in adapter.get_nacked()
+        else:
+            assert adapter.get_dlq() == [("gov-1", "blocked:gov-1")]
 
     asyncio.run(_run())
