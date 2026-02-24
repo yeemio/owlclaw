@@ -1,6 +1,6 @@
 """Event triggers — cron, webhook, queue, db_change, api_call, file."""
 
-from owlclaw.triggers.api import APITriggerConfig, APITriggerServer
+from owlclaw.triggers.api import APITriggerConfig, APITriggerServer, api_call
 from owlclaw.triggers.cron import (
     CronExecution,
     CronTriggerConfig,
@@ -24,5 +24,6 @@ __all__ = [
     "QueueTriggerConfig",
     "RawMessage",
     "WebhookEndpoint",
+    "api_call",
     "db_change",
 ]

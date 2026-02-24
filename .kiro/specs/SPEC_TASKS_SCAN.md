@@ -105,7 +105,7 @@
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（6/13） | API 调用触发器（Task 0/1/2/3 已完成） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（9/13） | API 调用触发器（Task 0-6 已完成） |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-api Task 0/1/2/3） |
-| 批次状态 | **进行中（本批）**。已完成 `triggers-api` 协议契约与服务基础层（Task 0/1/2/3）。 |
-| 已完成项 | 1) 新增协议契约文档：`openapi.yaml` + `api_trigger_registration.schema.json` + `PROTOCOL_NOTES.md`（同步/异步语义与错误码）；2) 新建 `owlclaw/triggers/api/` 模块：`config.py`、`auth.py`、`handler.py`、`server.py`、`__init__.py`；3) 实现 `APITriggerServer` 动态注册、CORS、同步/异步响应骨架、uvicorn 生命周期（延迟导入）；4) 实现 `APIKeyAuthProvider` 与 `BearerTokenAuthProvider`。 |
-| 下一待执行 | `codex-work`：继续 `triggers-api` Task 4（请求处理管道：sanitizer/governance/ledger）→ Task 5（sync/async 结果查询）→ Task 6（`@app.api` + `app.trigger(api_call(...))`）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/api owlclaw/triggers/__init__.py tests/unit/triggers/test_api.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_api.py tests/unit/triggers/test_db_change.py -q`（15 passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-api Task 4/5/6） |
+| 批次状态 | **进行中（本批）**。`triggers-api` 已推进到 9/13（Task 0-6 完成）。 |
+| 已完成项 | 1) Task 4：请求处理管道完成（auth→payload parse→sanitizer→governance gate→ledger）；2) Task 5：同步/异步响应与 `/runs/{run_id}/result` 查询端点完成（202 + Location，408 超时）；3) Task 6：`@app.api(...)` 装饰器与 `app.trigger(api_call(...))` 接入完成，已绑定 `app.start()/stop()` 生命周期。 |
+| 下一待执行 | `codex-work`：继续 `triggers-api` Task 7（单测补齐）→ Task 8（httpx/TestClient 集成测试）→ Task 9（安全测试）→ Task 10（文档）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/api owlclaw/app.py owlclaw/triggers/__init__.py tests/unit/triggers/test_api.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_api.py tests/unit/triggers/test_db_change.py -q`（19 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

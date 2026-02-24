@@ -37,19 +37,19 @@
   - 认证失败 → 401 JSON 响应
   - 认证类型通过配置切换
 
-- [ ] **Task 4**: 实现请求处理管道
+- [x] **Task 4**: 实现请求处理管道
   - 请求体解析（JSON body / query params / path params）
   - InputSanitizer 集成（security spec）
   - GovernanceGate 集成（rate limit → 429, budget → 503）
   - Ledger 记录（请求来源、认证身份、处理结果）
 
-- [ ] **Task 5**: 实现同步/异步响应模式
+- [x] **Task 5**: 实现同步/异步响应模式
   - 同步模式：await Agent Run result + 超时控制（408）
   - 异步模式：返回 202 + run_id + Location header
   - 内建 `/runs/{run_id}/result` 查询端点
   - 配置默认模式 + 每端点覆盖
 
-- [ ] **Task 6**: 实现装饰器 + 函数调用 API
+- [x] **Task 6**: 实现装饰器 + 函数调用 API
   - `@app.api()` 装饰器（fallback handler 绑定）
   - `app.trigger(api_call(...))` 函数调用风格
   - 与 APITriggerServer 注册集成
