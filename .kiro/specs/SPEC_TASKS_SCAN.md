@@ -107,7 +107,7 @@
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（20/20） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（16/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（25/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-gpt-work e2e/langfuse 增量） |
-| 批次状态 | **已完成**。`integrations-langfuse` 已收口（20/20），e2e-validation 启动（1/19），并通过针对性审校验收。 |
-| 已完成项 | 1) 合并 `codex-gpt-work` 新增提交（Langfuse 文档/配置/集成测试 + e2e 场景管理器基础模块）；2) 回填 `integrations-langfuse` 和 `e2e-validation` 进度；3) 执行变更范围静态检查与测试。 |
-| 下一待执行 | 继续审校 `codex-work` / `codex-gpt-work` 新增提交并回填进度；达到批次收口后再由主工作树合并。 |
-| 验收快照 | `poetry run ruff check ...`（变更相关文件）-> `All checks passed!`；`poetry run mypy owlclaw/e2e owlclaw/integrations/langfuse.py --hide-error-context --no-error-summary` -> `Success`；`poetry run pytest tests/e2e/test_models.py tests/e2e/test_scenario_manager.py tests/unit/integrations/test_langfuse.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py tests/integration/test_langfuse_integration.py -q` -> `152 passed`。 |
+| 当前批次 | review loop（审校 codex-work langchain 增量） |
+| 批次状态 | **已完成**。`integrations-langchain` 进度推进到（25/50），并完成针对性审校修复（mypy）。 |
+| 已完成项 | 1) 合并 `codex-work` 新增提交（streaming、examples、docs、metrics、integration tests）；2) 修复审校发现的类型问题（`app.py`、`langchain/adapter.py`）；3) 执行变更范围静态检查与测试。 |
+| 下一待执行 | 继续跟进 `integrations-langchain` 余下任务（25/50），并同步审校 `e2e-validation` 后续提交。 |
+| 验收快照 | `poetry run ruff check owlclaw/integrations/langchain owlclaw/app.py ...` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/langchain owlclaw/app.py --hide-error-context --no-error-summary` -> `Success`；`poetry run pytest tests/unit/integrations/test_langchain_examples.py tests/unit/integrations/test_langchain_health.py tests/unit/integrations/test_langchain_metrics.py tests/unit/integrations/test_langchain_stream.py tests/unit/test_app_langchain.py tests/integration/test_langchain_integration.py -q` -> `16 passed`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
