@@ -66,7 +66,7 @@
 - [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
 - [x] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
 - [x] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
-- [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
+- [x] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
@@ -113,7 +113,7 @@
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（16/17） | Signal 触发器（Task 0-11/14 已完成） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | ✅ 三层齐全，已完成（17/17） | Signal 触发器（Task 0-14 全完成） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-signal Task 9/10/11/14） |
-| 批次状态 | **进行中（本批）**。`triggers-signal` 已推进至 16/17。 |
-| 已完成项 | 1) Task 9：新增 `register_signal_mcp_tools()`，提供 `owlclaw_pause/resume/trigger/instruct` 四个 MCP 工具并统一走 `SignalRouter.dispatch()`；2) Task 10：`AgentRuntime` 增加 paused 检查，`cron/heartbeat` 自动触发在 paused 状态返回 `status=skipped, reason=agent_paused`，`signal_manual` 不受影响；3) Task 11：Run 启动前消费 pending instructions 并注入 `context.payload.operator_instructions`；4) Task 14：新增 `docs/triggers/signal.md`（使用指南、CLI 参考、MCP 集成、人工介入最佳实践）。 |
-| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 12（单元测试覆盖率收口）→ Task 13（集成测试）。 |
-| 验收快照 | 代码验收：`poetry run ruff check owlclaw/agent/runtime/runtime.py owlclaw/app.py owlclaw/triggers/signal/mcp.py owlclaw/triggers/signal/__init__.py tests/unit/agent/test_runtime.py tests/unit/test_mcp_server.py`（All checks passed）；`poetry run pytest tests/unit/agent/test_runtime.py tests/unit/test_app.py tests/unit/test_mcp_server.py tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py -q`（128 passed）。文档验收：`docs/triggers/signal.md`。 |
+| 当前批次 | coding loop（codex-work: triggers-signal Task 9-14） |
+| 批次状态 | **已完成**。`triggers-signal` 已收口至 17/17。 |
+| 已完成项 | 1) Task 9：新增 `register_signal_mcp_tools()`，提供 `owlclaw_pause/resume/trigger/instruct` 四个 MCP 工具并统一走 `SignalRouter.dispatch()`；2) Task 10：`AgentRuntime` 增加 paused 检查，`cron/heartbeat` 自动触发在 paused 状态返回 `status=skipped, reason=agent_paused`，`signal_manual` 不受影响；3) Task 11：Run 启动前消费 pending instructions 并注入 `context.payload.operator_instructions`；4) Task 12：新增 DB 分支单测并完成覆盖率收口（signal 包 91%）；5) Task 13：新增 `tests/integration/test_signal_flow_integration.py` 覆盖 CLI/API/pause-resume/instruct 注入四条集成链路；6) Task 14：新增 `docs/triggers/signal.md`（使用指南、CLI 参考、MCP 集成、人工介入最佳实践）。 |
+| 下一待执行 | `codex-work`：转入 `cli-scan`（0/143）或按最新分配继续 `declarative-binding` 相关实现。 |
+| 验收快照 | `poetry run ruff check tests/integration/test_signal_flow_integration.py tests/unit/triggers/test_signal_state_db_mock.py`（All checks passed）；`poetry run pytest tests/integration/test_signal_flow_integration.py tests/unit/agent/test_runtime.py tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py tests/unit/test_mcp_server.py tests/unit/triggers/test_signal_state_db_mock.py -q`（121 passed）；`poetry run pytest tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py tests/unit/test_mcp_server.py tests/unit/triggers/test_signal_state_db_mock.py --cov=owlclaw.triggers.signal --cov-report=term-missing -q`（TOTAL 91%）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
