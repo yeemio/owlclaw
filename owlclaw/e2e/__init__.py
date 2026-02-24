@@ -9,6 +9,7 @@ from owlclaw.e2e.models import (
     TestScenario,
     ValidationConfig,
 )
+from owlclaw.e2e.scenario_manager import TestScenarioManager
 
 __all__ = [
     "ExecutionEvent",
@@ -17,6 +18,7 @@ __all__ = [
     "ScenarioExecutionEngine",
     "ScenarioType",
     "TestScenario",
+    "TestScenarioManager",
     "TestScenarioRepository",
     "ValidationConfig",
 ]

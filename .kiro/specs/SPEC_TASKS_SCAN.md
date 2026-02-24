@@ -101,7 +101,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（1/85） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（4/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（e2e-validation Task 1 启动 + scan 状态规范化） |
-| 批次状态 | **进行中**。完成 `e2e-validation` 起步任务（1/85），并修复 `SPEC_TASKS_SCAN` 功能清单与 Spec 索引的已完成状态漂移。 |
-| 已完成项 | 1) 新增 `owlclaw/e2e/` 核心结构与接口：`models.py`（TestScenario/ExecutionResult/ValidationConfig）和 `interfaces.py`（repository/execution protocol）；2) 新增 `tests/e2e/test_models.py` 基础约束测试；3) `e2e-validation/tasks.md` 勾选 Task 1；4) 功能清单中 `agent-runtime`、`heartbeat`、`security`、`configuration` 改为已完成，保持与索引事实一致。 |
-| 下一待执行 | 继续 `e2e-validation` Task 2（TestScenarioManager CRUD + 属性测试）。 |
-| 验收快照 | `poetry run pytest tests/e2e/test_models.py -q` -> `3 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 3 source files`。 |
+| 当前批次 | spec 循环（e2e-validation Task 2 CRUD+属性测试） |
+| 批次状态 | **进行中**。完成 `TestScenarioManager` 的 CRUD 与配置校验实现，`e2e-validation` 进度推进到 **4/85**。 |
+| 已完成项 | 1) 新增 `owlclaw/e2e/scenario_manager.py`：场景创建/读取/更新/删除、校验、可选 JSON 持久化；2) 新增 `tests/e2e/test_scenario_manager.py`：单元测试 + 属性 11（CRUD 往返）+ 属性 12（无效配置拒绝）；3) `e2e-validation/tasks.md` 勾选 2.1/2.2/2.3。 |
+| 下一待执行 | 继续 `e2e-validation` Task 2.4/2.5（场景导入导出与往返属性测试）。 |
+| 验收快照 | `poetry run pytest tests/e2e/test_models.py tests/e2e/test_scenario_manager.py -q` -> `7 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_models.py tests/e2e/test_scenario_manager.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 4 source files`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
