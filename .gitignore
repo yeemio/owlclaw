@@ -19,6 +19,7 @@ poetry.lock
 # IDE
 .idea/
 .vscode/
+.codex/
 *.swp
 *.swo
 
