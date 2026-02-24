@@ -29,6 +29,7 @@ from owlclaw.cli.scan.models import (
 from owlclaw.cli.scan.parallel import ParallelExecutor, ParallelTaskResult
 from owlclaw.cli.scan.parser import ASTParser
 from owlclaw.cli.scan.scanner import ProjectScanner, ScanConfig
+from owlclaw.cli.scan.serialization import JSONSerializer, ResultSerializer, SchemaValidator, YAMLSerializer
 from owlclaw.cli.scan.type_inference import TypeInferencer
 
 __all__ = [
@@ -58,12 +59,16 @@ __all__ = [
     "ParallelExecutor",
     "ParallelTaskResult",
     "ParsedDocstring",
+    "ResultSerializer",
     "ScanMetadata",
     "ScanResult",
     "ScanConfig",
     "ScanCache",
+    "JSONSerializer",
     "ProjectScanner",
+    "SchemaValidator",
     "SignatureExtractor",
     "TypeSource",
     "TypeInferencer",
+    "YAMLSerializer",
 ]

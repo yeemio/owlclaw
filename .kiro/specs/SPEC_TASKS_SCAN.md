@@ -120,7 +120,7 @@
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（59/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11/12/12.1~12.3/13/13.1~13.4/14/14.1~14.4/15 已完成） |
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（65/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11/12/12.1~12.3/13/13.1~13.4/14/14.1~14.4/15/16/16.1~16.5 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: cli-scan Task 14/14.1~14.4 + Checkpoint 15） |
-| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 59/143。 |
-| 已完成项 | 1) 新增 `ConfigManager`，支持 `.owlclaw-scan.yaml` 解析与默认值回填；2) 实现配置字段校验（类型、范围、glob 规则）；3) 支持配置对象 `to_dict/from_dict` 与 YAML dump/load round-trip；4) 新增属性测试覆盖配置 round-trip 与验证行为；5) 新增单测覆盖有效配置、无配置默认值、非法字段与非法 glob；6) 完成配置/增量阶段 checkpoint（Task 15）。 |
-| 下一待执行 | `codex-work`：进入 `cli-scan` Task 16（序列化与输出）并补 16.5 属性测试。 |
-| 验收快照 | `poetry run ruff check owlclaw/cli/scan tests/unit/cli_scan`（All checks passed）；`poetry run pytest tests/unit/cli_scan -q`（36 passed）。 |
+| 当前批次 | coding loop（codex-work: cli-scan Task 16/16.1~16.5） |
+| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 65/143。 |
+| 已完成项 | 1) 新增序列化接口 `ResultSerializer`；2) 实现 `JSONSerializer` 与 `YAMLSerializer`；3) 新增 `SchemaValidator` 校验输出 payload 结构；4) 新增属性测试覆盖输出 schema 合规性；5) 新增单测覆盖 JSON/YAML 序列化后的反序列化形状校验。 |
+| 下一待执行 | `codex-work`：进入 `cli-scan` Task 17（CLI interface）并补命令处理测试。 |
+| 验收快照 | `poetry run ruff check owlclaw/cli/scan tests/unit/cli_scan`（All checks passed）；`poetry run pytest tests/unit/cli_scan -q`（38 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
