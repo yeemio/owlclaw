@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import datetime, timezone
 
 import pytest
@@ -10,9 +11,10 @@ from owlclaw.triggers.queue import MockIdempotencyStore, QueueTrigger, QueueTrig
 
 
 class _FakeRuntime:
-    def __init__(self, *, should_fail: bool = False) -> None:
+    def __init__(self, *, should_fail: bool = False, fail_times: int = 0) -> None:
         self.calls: list[dict[str, object]] = []
         self.should_fail = should_fail
+        self.fail_times = fail_times
 
     async def trigger_event(
         self,
@@ -31,6 +33,9 @@ class _FakeRuntime:
             }
         )
         if self.should_fail:
+            raise RuntimeError("runtime unavailable")
+        if self.fail_times > 0:
+            self.fail_times -= 1
             raise RuntimeError("runtime unavailable")
         return {"run_id": "run-1"}
 
@@ -147,6 +152,11 @@ async def test_queue_trigger_process_and_dedup() -> None:
     assert runtime.calls[0]["event_name"] == "order_created"
     assert runtime.calls[0]["focus"] == "ops"
     assert runtime.calls[0]["tenant_id"] == "t-1"
+    payload = runtime.calls[0]["payload"]
+    assert isinstance(payload, dict)
+    assert payload["message_id"] == "m-1"
+    assert payload["source"] == "orders"
+    assert payload["trace_id"] == "queue-m-1"
     assert adapter.get_acked() == ["m-1"]
 
     adapter.enqueue(msg)
@@ -192,6 +202,85 @@ async def test_queue_trigger_ack_policy_requeue_on_runtime_error() -> None:
     await trigger.stop()
 
     assert ("m-requeue", True) in adapter.get_nacked()
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_retries_then_succeeds() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime(fail_times=2)
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            max_retries=2,
+            retry_backoff_base=0.001,
+        ),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+    msg = _raw_message(message_id="m-retry", body=b'{"id":"1"}')
+
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 3
+    assert adapter.get_acked() == ["m-retry"]
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_retry_exhausted_routes_by_ack_policy() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime(should_fail=True)
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            max_retries=2,
+            retry_backoff_base=0.001,
+            ack_policy="dlq",
+        ),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+    msg = _raw_message(message_id="m-dlq", body=b'{"id":"1"}')
+
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 3
+    assert adapter.get_dlq()
+    assert adapter.get_dlq()[0][0] == "m-dlq"
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_retry_logs_each_retry(caplog: pytest.LogCaptureFixture) -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime(should_fail=True)
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            max_retries=2,
+            retry_backoff_base=0.001,
+            ack_policy="ack",
+        ),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+    msg = _raw_message(message_id="m-log", body=b'{"id":"1"}')
+
+    caplog.set_level(logging.WARNING)
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    retry_logs = [r for r in caplog.records if "trigger retry" in r.message]
+    assert len(retry_logs) == 2
 
 
 @pytest.mark.asyncio
@@ -296,6 +385,21 @@ async def test_queue_trigger_idempotency_record_uses_config_ttl() -> None:
     await trigger.stop()
 
     assert store.last_ttl == 123
+
+
+def test_queue_trigger_backoff_formula() -> None:
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            retry_backoff_base=0.5,
+            retry_backoff_multiplier=3.0,
+        ),
+        adapter=MockQueueAdapter(),
+    )
+    assert trigger._compute_backoff_seconds(0) == pytest.approx(0.5)
+    assert trigger._compute_backoff_seconds(1) == pytest.approx(1.5)
+    assert trigger._compute_backoff_seconds(2) == pytest.approx(4.5)
 
 
 @pytest.mark.asyncio

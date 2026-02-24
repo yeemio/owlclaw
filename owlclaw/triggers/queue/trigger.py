@@ -198,7 +198,7 @@ class QueueTrigger:
                 return
 
         try:
-            await self._trigger_agent(envelope, trace_id)
+            await self._trigger_agent_with_retry(envelope, trace_id)
         except Exception as exc:
             self._failed_count += 1
             await self._handle_processing_error(raw_message, exc)
@@ -314,8 +314,8 @@ class QueueTrigger:
         except Exception:
             logger.exception("Failed to record governance rejection for message %s", envelope.message_id)
 
-    async def _trigger_agent(self, envelope: MessageEnvelope, trace_id: str) -> None:
-        """Trigger AgentRuntime if configured; otherwise no-op."""
+    async def _trigger_agent_with_retry(self, envelope: MessageEnvelope, trace_id: str) -> None:
+        """Trigger AgentRuntime with retry and exponential backoff."""
         if self.agent_runtime is None:
             return
         trigger_event = getattr(self.agent_runtime, "trigger_event", None)
@@ -329,12 +329,37 @@ class QueueTrigger:
             "received_at": envelope.received_at.isoformat(),
             "trace_id": trace_id,
         }
-        await trigger_event(
-            event_name=envelope.event_name or "queue_message",
-            payload=payload,
-            focus=self.config.focus,
-            tenant_id=envelope.tenant_id or "default",
-        )
+        last_error: Exception | None = None
+        max_attempts = self.config.max_retries + 1
+        for attempt in range(max_attempts):
+            try:
+                await trigger_event(
+                    event_name=envelope.event_name or "queue_message",
+                    payload=payload,
+                    focus=self.config.focus,
+                    tenant_id=envelope.tenant_id or "default",
+                )
+                return
+            except Exception as exc:
+                last_error = exc
+                if attempt >= self.config.max_retries:
+                    break
+                backoff_seconds = self._compute_backoff_seconds(attempt)
+                logger.warning(
+                    "Queue message %s trigger retry %s/%s after %.3fs: %s",
+                    envelope.message_id,
+                    attempt + 1,
+                    self.config.max_retries,
+                    backoff_seconds,
+                    exc,
+                )
+                await asyncio.sleep(backoff_seconds)
+        if last_error is not None:
+            raise last_error
+
+    def _compute_backoff_seconds(self, attempt: int) -> float:
+        """Compute exponential backoff delay for retry attempt."""
+        return self.config.retry_backoff_base * (self.config.retry_backoff_multiplier**attempt)
 
     async def _handle_processing_error(self, raw_message: RawMessage, error: Exception) -> None:
         """Handle runtime processing failures by configured ack policy."""

@@ -24,6 +24,44 @@ class _RejectGovernance:
         return {"allowed": False, "reason": f"blocked:{context['message_id']}"}
 
 
+class _FailNTimesRuntime:
+    def __init__(self, fail_times: int) -> None:
+        self.fail_times = fail_times
+        self.calls = 0
+
+    async def trigger_event(self, **_: object) -> dict[str, object]:
+        self.calls += 1
+        if self.fail_times > 0:
+            self.fail_times -= 1
+            raise RuntimeError("transient failure")
+        return {"run_id": f"run-{self.calls}"}
+
+
+class _CaptureRuntime:
+    def __init__(self) -> None:
+        self.last_event_name: str | None = None
+        self.last_payload: dict[str, object] | None = None
+        self.last_tenant_id: str | None = None
+
+    async def trigger_event(
+        self,
+        *,
+        event_name: str,
+        payload: dict[str, object],
+        focus: str | None = None,
+        tenant_id: str = "default",
+    ) -> dict[str, object]:
+        self.last_event_name = event_name
+        self.last_payload = payload
+        self.last_tenant_id = tenant_id
+        return {"run_id": "run-1", "focus": focus}
+
+
+class _AlwaysFailRuntime:
+    async def trigger_event(self, **_: object) -> dict[str, object]:
+        raise RuntimeError("boom")
+
+
 def _raw_message(message_id: str, body: bytes, headers: dict[str, str] | None = None) -> RawMessage:
     return RawMessage(
         message_id=message_id,
@@ -183,5 +221,110 @@ def test_property_governance_rejection_respects_ack_policy(policy: str) -> None:
             assert ("gov-1", True) in adapter.get_nacked()
         else:
             assert adapter.get_dlq() == [("gov-1", "blocked:gov-1")]
+
+    asyncio.run(_run())
+
+
+@given(
+    fail_times=st.integers(min_value=0, max_value=5),
+    max_retries=st.integers(min_value=0, max_value=5),
+)
+@settings(max_examples=20, deadline=None)
+def test_property_retry_attempts_are_bounded(fail_times: int, max_retries: int) -> None:
+    """Feature: triggers-queue, Property 12: 重试次数有界且符合配置."""
+
+    async def _run() -> None:
+        adapter = MockQueueAdapter()
+        runtime = _FailNTimesRuntime(fail_times=fail_times)
+        trigger = QueueTrigger(
+            config=QueueTriggerConfig(
+                queue_name="q",
+                consumer_group="g",
+                max_retries=max_retries,
+                retry_backoff_base=0.0001,
+            ),
+            adapter=adapter,
+            agent_runtime=runtime,
+        )
+
+        adapter.enqueue(_raw_message("retry-1", b'{"id":1}'))
+        await trigger.start()
+        await _flush_queue(adapter)
+        await trigger.stop()
+
+        expected_attempts = min(max_retries + 1, fail_times + 1)
+        assert runtime.calls == expected_attempts
+
+    asyncio.run(_run())
+
+
+@given(
+    event_name=st.one_of(st.none(), st.text(min_size=1, max_size=12)),
+    tenant_id=st.one_of(st.none(), st.text(min_size=1, max_size=12)),
+)
+@settings(max_examples=20, deadline=None)
+def test_property_trigger_event_context_and_routing(event_name: str | None, tenant_id: str | None) -> None:
+    """Feature: triggers-queue, Property 8+9: 上下文传递与事件路由正确性."""
+
+    async def _run() -> None:
+        adapter = MockQueueAdapter()
+        runtime = _CaptureRuntime()
+        headers: dict[str, str] = {}
+        if event_name is not None:
+            headers["x-event-name"] = event_name
+        if tenant_id is not None:
+            headers["x-tenant-id"] = tenant_id
+
+        trigger = QueueTrigger(
+            config=QueueTriggerConfig(queue_name="q", consumer_group="g"),
+            adapter=adapter,
+            agent_runtime=runtime,
+        )
+        adapter.enqueue(_raw_message("ctx-1", b'{"id":1}', headers=headers))
+        await trigger.start()
+        await _flush_queue(adapter)
+        await trigger.stop()
+
+        assert runtime.last_payload is not None
+        assert runtime.last_payload["message_id"] == "ctx-1"
+        assert runtime.last_payload["source"] == "q"
+        assert "received_at" in runtime.last_payload
+        assert runtime.last_event_name == (event_name if event_name is not None else "queue_message")
+        assert runtime.last_tenant_id == (tenant_id if tenant_id is not None else "default")
+
+    asyncio.run(_run())
+
+
+@given(policy=st.sampled_from(["ack", "nack", "requeue", "dlq"]))
+@settings(max_examples=20, deadline=None)
+def test_property_processing_error_respects_ack_policy(policy: str) -> None:
+    """Feature: triggers-queue, Property 11+13: 错误策略与重试耗尽处理."""
+
+    async def _run() -> None:
+        adapter = MockQueueAdapter()
+        trigger = QueueTrigger(
+            config=QueueTriggerConfig(
+                queue_name="q",
+                consumer_group="g",
+                ack_policy=policy,
+                max_retries=0,
+            ),
+            adapter=adapter,
+            agent_runtime=_AlwaysFailRuntime(),
+        )
+        adapter.enqueue(_raw_message("err-1", b'{"id":1}'))
+        await trigger.start()
+        await _flush_queue(adapter)
+        await trigger.stop()
+
+        if policy == "ack":
+            assert adapter.get_acked() == ["err-1"]
+        elif policy == "nack":
+            assert adapter.get_nacked() == [("err-1", False)]
+        elif policy == "requeue":
+            assert ("err-1", True) in adapter.get_nacked()
+        else:
+            assert adapter.get_dlq()
+            assert adapter.get_dlq()[0][0] == "err-1"
 
     asyncio.run(_run())
