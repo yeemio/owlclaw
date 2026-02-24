@@ -48,6 +48,15 @@ class EndpointConfig:
 
 
 @dataclass(slots=True)
+class EndpointFilter:
+    """Filter options for listing webhook endpoints."""
+
+    tenant_id: str = "default"
+    target_agent_id: str | None = None
+    enabled: bool | None = None
+
+
+@dataclass(slots=True)
 class WebhookEndpoint:
     """Registered webhook endpoint."""
 

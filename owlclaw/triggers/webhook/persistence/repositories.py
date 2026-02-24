@@ -155,11 +155,21 @@ class InMemoryEndpointRepository:
         self._items[endpoint.id] = endpoint
         return endpoint
 
+    async def get(self, endpoint_id: UUID) -> WebhookEndpointModel | None:
+        return self._items.get(endpoint_id)
+
     async def list(self, *, tenant_id: str, enabled: bool | None = None) -> list[WebhookEndpointModel]:
         items = [item for item in self._items.values() if item.tenant_id == tenant_id]
         if enabled is not None:
             items = [item for item in items if item.enabled == enabled]
         return sorted(items, key=lambda item: item.created_at)
+
+    async def update(self, endpoint: WebhookEndpointModel) -> WebhookEndpointModel:
+        self._items[endpoint.id] = endpoint
+        return endpoint
+
+    async def delete(self, endpoint_id: UUID) -> None:
+        self._items.pop(endpoint_id, None)
 
 
 class InMemoryEventRepository:

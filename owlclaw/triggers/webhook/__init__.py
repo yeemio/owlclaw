@@ -1,9 +1,11 @@
 """Webhook trigger core types and contracts."""
 
+from owlclaw.triggers.webhook.manager import WebhookEndpointManager
 from owlclaw.triggers.webhook.types import (
     AgentInput,
     AuthMethod,
     EndpointConfig,
+    EndpointFilter,
     ExecutionOptions,
     ExecutionResult,
     ExecutionStatus,
@@ -17,6 +19,7 @@ from owlclaw.triggers.webhook.types import (
 __all__ = [
     "AgentInput",
     "AuthMethod",
+    "EndpointFilter",
     "EndpointConfig",
     "ExecutionOptions",
     "ExecutionResult",
@@ -26,4 +29,5 @@ __all__ = [
     "ValidationError",
     "ValidationResult",
     "WebhookEndpoint",
+    "WebhookEndpointManager",
 ]
