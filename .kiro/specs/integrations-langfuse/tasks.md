@@ -178,7 +178,7 @@
   - 确保所有测试通过，如有问题请询问用户
 
 - [ ] 11. 集成到 Agent Runtime
-  - [ ] 11.1 修改 AgentRuntime 以支持 Langfuse 追踪
+  - [x] 11.1 修改 AgentRuntime 以支持 Langfuse 追踪
     - 在 `owlclaw/agent/runtime/runtime.py` 中导入 Langfuse 模块
     - 在 `__init__` 方法中初始化 `LangfuseClient`
     - 在 `run` 方法开始时创建 trace
@@ -188,7 +188,7 @@
     - 处理异常情况（记录错误到 trace）
     - _需求：FR-4.1, FR-4.2_
   
-  - [ ]* 11.2 为 Agent Runtime 集成编写单元测试
+  - [x]* 11.2 为 Agent Runtime 集成编写单元测试
     - 测试 trace 自动创建
     - 测试 trace 自动结束
     - 测试异常情况下的 trace 记录

@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from pydantic import ValidationError
 
+from owlclaw.integrations.langfuse import TraceContext
 from owlclaw.integrations.llm import (
     AuthenticationError,
     ContextWindowExceededError,
@@ -20,6 +21,7 @@ from owlclaw.integrations.llm import (
     TaskTypeRouting,
     TokenEstimator,
     ToolsConverter,
+    acompletion,
 )
 
 
@@ -569,3 +571,47 @@ def _fake_litellm_response(content: str, tool_calls: list, pt: int, ct: int) -> 
     choice = type("Choice", (), {"message": msg})()
     resp = type("Response", (), {"choices": [choice], "usage": Usage(pt, ct)})()
     return resp
+
+
+@pytest.mark.asyncio
+async def test_acompletion_records_langfuse_generation_when_trace_context_present() -> None:
+    recorded: list[dict[str, object]] = []
+
+    class _Trace:
+        def generation(self, **kwargs: object) -> None:
+            recorded.append(kwargs)
+
+    ctx = TraceContext(trace_id="trace-1", metadata={"langfuse_trace": _Trace()})
+    TraceContext.set_current(ctx)
+    try:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock:
+            mock.return_value = _fake_litellm_response("ok", [], 10, 5)
+            await acompletion(model="gpt-4o-mini", messages=[{"role": "user", "content": "Hi"}])
+    finally:
+        TraceContext.set_current(None)
+
+    assert len(recorded) == 1
+    assert recorded[0]["metadata"]["status"] == "success"
+    assert recorded[0]["usage"]["total_tokens"] == 15
+
+
+@pytest.mark.asyncio
+async def test_acompletion_records_error_generation_on_failure() -> None:
+    recorded: list[dict[str, object]] = []
+
+    class _Trace:
+        def generation(self, **kwargs: object) -> None:
+            recorded.append(kwargs)
+
+    ctx = TraceContext(trace_id="trace-1", metadata={"langfuse_trace": _Trace()})
+    TraceContext.set_current(ctx)
+    try:
+        with patch("litellm.acompletion", new_callable=AsyncMock) as mock:
+            mock.side_effect = RuntimeError("llm failed")
+            with pytest.raises(RuntimeError, match="llm failed"):
+                await acompletion(model="gpt-4o-mini", messages=[{"role": "user", "content": "Hi"}])
+    finally:
+        TraceContext.set_current(None)
+
+    assert len(recorded) == 1
+    assert recorded[0]["metadata"]["status"] == "error"
