@@ -143,12 +143,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（triggers-cron Task 13~15 收口） |
-| 批次状态 | **部分完成**。Task 13~15 已实现并验收，`triggers-cron` 进度更新为 **116/117**；仅剩 Task 16 的“真实 Hatchet 实例 E2E”外部依赖验证。 |
-| 已完成项 | 1) 配置与加载：扩展 `owlclaw/config/models.py`（cron 治理/重试/通知 + hatchet api_token）、`CronTriggerRegistry.apply_settings()` 与 `OwlClaw.configure()` 联动；2) 生命周期：新增 `OwlClaw.start()/stop()/health_status()` 与 `CronTriggerRegistry.wait_for_all_tasks()`；3) 部署：新增 `deploy/Dockerfile.owlclaw`、`deploy/docker-compose.cron.yml`、`deploy/prometheus.yml`、`deploy/k8s/*`；4) 文档与示例：新增 `docs/CRON_TRIGGERS.md` 和 `examples/cron/*`；5) 测试：新增 `tests/integration/test_triggers_cron_e2e.py`、`tests/integration/test_triggers_cron_performance.py` 并补齐相关 unit tests。 |
-| 下一待执行 | Task 16：在可用 `HATCHET_API_TOKEN` + 真实 Hatchet 服务环境下执行端到端验证并更新最终验收结论。 |
-| 验收快照 | `poetry run ruff check ...`（本批变更文件） -> `All checks passed!`；`poetry run pytest tests/unit/test_config_models.py tests/unit/test_config_manager.py tests/unit/test_app_configure.py tests/unit/test_app.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_performance_helpers.py tests/integration/test_triggers_cron_e2e.py tests/integration/test_triggers_cron_performance.py -q` -> `102 passed`。 |
-| 阻塞项 | `triggers-cron` Task 16 的“使用真实 Hatchet 实例运行端到端测试”需要外部 token 与在线服务，当前环境不可控。 |
+| 当前批次 | spec 循环（triggers-cron Task 16 验收尝试） |
+| 批次状态 | **阻塞**。Task 16 剩余外部依赖项未满足，`triggers-cron` 维持 **116/117**。 |
+| 已完成项 | 执行 Task 16 可本地完成部分：1) 单元测试 + 覆盖率：`941 passed, 2 skipped`，总覆盖率 `77%`；2) 全量集成测试：`54 passed, 7 skipped`；3) cron 性能测试：`2 passed`（触发延迟/并发场景）；4) 文档完整性复核：`docs/CRON_TRIGGERS.md`、`deploy/*`、`examples/cron/*`。 |
+| 下一待执行 | 提供有效 `HATCHET_API_TOKEN` 并接入真实 Hatchet 服务后，重跑 `tests/integration/test_hatchet_integration.py` 完成最终 E2E 验收。 |
+| 验收快照 | `poetry run pytest tests/unit/ --cov=owlclaw --cov-report=term -q` -> `941 passed, 2 skipped`, `TOTAL 77%`；`poetry run pytest tests/integration/ -q` -> `54 passed, 7 skipped`；`poetry run pytest tests/integration/test_triggers_cron_performance.py -q` -> `2 passed`；`poetry run pytest tests/integration/test_hatchet_integration.py -q -rs` -> `2 skipped (HATCHET_API_TOKEN not set)`。 |
+| 阻塞项 | 1) 外部依赖：缺少 `HATCHET_API_TOKEN` 导致真实 Hatchet E2E 被跳过；2) 覆盖率门槛：项目全局覆盖率当前 `77%`，低于 Task 16 文档阈值 `80%`。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

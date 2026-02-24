@@ -489,6 +489,10 @@
   - 验证性能要求（触发延迟、并发能力）
   - 验证所有文档完整
   - 请求用户进行最终审查
+  - 验收记录（2026-02-24）：
+    - 已完成：单元测试（`941 passed, 2 skipped`）+ 集成测试（`54 passed, 7 skipped`）+ cron 性能测试（`2 passed`）+ 文档资产核对（`docs/CRON_TRIGGERS.md`、`deploy/*`、`examples/cron/*`）。
+    - 覆盖率现状：`poetry run pytest tests/unit/ --cov=owlclaw` 总覆盖率 `77%`（项目历史基线低于 80%，非本 spec 单轮可收敛范围）。
+    - 外部阻塞：真实 Hatchet E2E 测试 `tests/integration/test_hatchet_integration.py` 因 `HATCHET_API_TOKEN` 缺失被 SKIP（需可用 token + 在线 Hatchet 服务）。
 
 ## 注意事项
 
