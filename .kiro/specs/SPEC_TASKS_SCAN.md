@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（34/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（35/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（44/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 33） |
-| 批次状态 | **已完成（部分）**。新增 Phase 3 集成测试，覆盖发布审核、统计导出、黑名单治理与依赖安装链路。 |
-| 已完成项 | 1) 新增 `tests/integration/test_owlhub_phase3_flow.py`；2) 覆盖 publish→review→approve→audit 查询链路；3) 覆盖 statistics record→query→admin export 与权限约束（非 admin 导出拒绝）；4) 覆盖 API 发布依赖技能 + CLI 依赖安装 + 黑名单后隐藏/拦截行为；5) 回填 `owlhub/tasks.md` Task 33 并同步进度 `owlhub 34/42`。 |
-| 下一待执行 | `owlhub` Task 34（Update documentation for Phase 3）。 |
-| 验收快照 | `poetry run ruff check tests/integration/test_owlhub_phase3_flow.py` -> all checks passed；`poetry run pytest tests/integration/test_owlhub_phase3_flow.py -q` -> 3 passed；`poetry run pytest tests/integration/test_owlhub_dependency_installation.py tests/integration/test_owlhub_cli_api_compatibility.py -q` -> 2 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 34） |
+| 批次状态 | **已完成（部分）**。补齐 Phase 3 文档（API、鉴权、部署、迁移、监控、安全、架构图、Python 客户端示例）。 |
+| 已完成项 | 1) 新增 `docs/owlhub/phase3.md`；2) 文档化 OpenAPI/Swagger 入口与核心 API 端点示例；3) 文档化 Bearer/API Key 鉴权与角色授权流程；4) 文档化 Docker/Kubernetes/CI-CD 部署流程（含迁移和 smoke tests）；5) 文档化当前数据持久化边界与 Alembic 迁移命令；6) 增加监控排障与安全最佳实践；7) 增加 Python API client 示例；8) 回填 `owlhub/tasks.md` Task 34 并同步进度 `owlhub 35/42`。 |
+| 下一待执行 | `owlhub` Task 35（Checkpoint - Phase 3 Complete）。 |
+| 验收快照 | `poetry run pytest tests/integration/test_owlhub_phase3_flow.py -q` -> 3 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
