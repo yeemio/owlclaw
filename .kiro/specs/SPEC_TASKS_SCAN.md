@@ -102,7 +102,7 @@
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（70/89） | 消息队列触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（76/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-gpt-work：mcp-server Task 2.1.1~2.1.2） |
-| 批次状态 | **已完成**。`codex-gpt-work` 的 mcp-server Task 2.1.1~2.1.2 已审校通过并合并，验收通过。 |
-| 已完成项 | 1) 合并 `McpProtocolServer` 最小能力实现与 `from_app()` 注册流程；2) 回填 `mcp-server/tasks.md` 的 Task 2.1.1~2.1.2 与验收项；3) 保持 `triggers-queue` 进度不回退（70/89）。 |
-| 下一待执行 | `mcp-server` 剩余验收项：`3.3 单元测试覆盖率 >80%`、`3.4 文档完整`；并行继续 `codex-work` 的 `triggers-queue` Task 20+。 |
-| 验收快照 | `poetry run ruff check owlclaw/mcp tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 132 source files）；`poetry run pytest tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py -q`（5 passed）。 |
+| 当前批次 | review loop（审校 codex-work：triggers-queue Task 20~21） |
+| 批次状态 | **已完成**。`codex-work` Task 20~21 已审校通过并合并，验收通过。 |
+| 已完成项 | 1) 新增 `tests/integration/test_queue_trigger_e2e.py`，覆盖完整链路、幂等、重试、错误恢复场景；2) `triggers-queue/tasks.md` 已回填 Task 20、21.1~21.4；3) 进度校准：`triggers-queue 76/89`、`mcp-server 10/12`。 |
+| 下一待执行 | `codex-work` 继续 `triggers-queue` Task 22（日志安全）→ Task 23（配置模板与文档）→ Task 24（Mock 验证脚本）→ Task 25（最终检查点）；`codex-gpt-work` 继续 `mcp-server` Task 3.3（单测覆盖率）与 3.4（文档完整）。 |
+| 验收快照 | `poetry run ruff check tests/integration/test_queue_trigger_e2e.py`（All checks passed）；`poetry run pytest tests/integration/test_queue_trigger_e2e.py -q`（4 passed）；`poetry run ruff check owlclaw/mcp tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 132 source files）；`poetry run pytest tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py -q`（5 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
