@@ -299,22 +299,22 @@ This implementation plan breaks down the OwlHub feature into three progressive p
   - Configure custom domain if needed
   - _Requirements: 8.2_
 
-- [ ] 14. Add CLI update command
-  - [ ] 14.1 Implement `update` command in CLI
+- [x] 14. Add CLI update command
+  - [x] 14.1 Implement `update` command in CLI
     - Check installed skills against index for newer versions
     - Support updating single skill or all skills
     - Update lock file after successful updates
     - Display update summary (what was updated, versions)
     - _Requirements: 3.3_
 
-  - [ ]* 14.2 Write unit tests for update command
+  - [x]* 14.2 Write unit tests for update command
     - Test update detection when newer version exists
     - Test no-op when already on latest version
     - Test update of single skill vs all skills
     - Test lock file update after upgrade
     - _Requirements: 3.3_
 
-  - [ ]* 14.3 Write property test for version update detection
+  - [x]* 14.3 Write property test for version update detection
     - **Property 10: 版本更新检测**
     - **Validates: Requirements 3.3**
     - Install old version, publish new version, verify update command detects it

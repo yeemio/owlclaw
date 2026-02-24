@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
 
+from packaging.version import InvalidVersion, Version
+
 from owlclaw.owlhub.indexer.builder import IndexBuilder
 from owlclaw.owlhub.validator import Validator
 
@@ -130,6 +132,38 @@ class OwlHubClient:
         skills = data.get("skills", [])
         return skills if isinstance(skills, list) else []
 
+    def update(self, name: str | None = None) -> list[dict[str, str]]:
+        """Update one installed skill (or all) to latest indexed version."""
+        installed = self.list_installed()
+        if not installed:
+            return []
+
+        updates: list[dict[str, str]] = []
+        for item in installed:
+            skill_name = str(item.get("name", "")).strip()
+            current_version = str(item.get("version", "")).strip()
+            if not skill_name:
+                continue
+            if name and skill_name != name:
+                continue
+
+            latest = self._resolve_latest_version(skill_name)
+            if latest is None:
+                continue
+            if _compare_version(latest.version, current_version) <= 0:
+                continue
+
+            self.install(name=skill_name, version=latest.version)
+            updates.append(
+                {
+                    "name": skill_name,
+                    "from_version": current_version,
+                    "to_version": latest.version,
+                }
+            )
+
+        return updates
+
     def validate_local(self, path: Path) -> bool:
         """Validate a local skill package path."""
         structure = self.validator.validate_structure(path)
@@ -159,6 +193,14 @@ class OwlHubClient:
     def _validate_install(self, installed_path: Path) -> None:
         if not any(installed_path.rglob("SKILL.md")):
             raise ValueError("installed package missing SKILL.md")
+
+    def _resolve_latest_version(self, name: str) -> SearchResult | None:
+        candidates = self.search(query=name)
+        matched = [item for item in candidates if item.name == name]
+        if not matched:
+            return None
+        matched.sort(key=lambda item: _version_sort_key(item.version))
+        return matched[-1]
 
     def _write_lock(self, selected: SearchResult, target: Path) -> None:
         existing = {"version": "1.0", "generated_at": "", "skills": []}
@@ -190,3 +232,20 @@ class OwlHubClient:
         }
         self.lock_file.parent.mkdir(parents=True, exist_ok=True)
         self.lock_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _version_sort_key(version_text: str) -> tuple[int, Version | str]:
+    try:
+        return (1, Version(version_text))
+    except InvalidVersion:
+        return (0, version_text)
+
+
+def _compare_version(left: str, right: str) -> int:
+    left_key = _version_sort_key(left)
+    right_key = _version_sort_key(right)
+    if left_key > right_key:
+        return 1
+    if left_key < right_key:
+        return -1
+    return 0

@@ -170,6 +170,23 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         )
         return True
 
+    if sub == "update":
+        from owlclaw.cli.skill_hub import update_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill update")
+        parser.add_argument("name", nargs="?", default="")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        update_command(
+            name=ns.name,
+            index_url=ns.index_url,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
     print(f"Error: unknown skill subcommand: {sub}", file=sys.stderr)
     raise SystemExit(2)
 

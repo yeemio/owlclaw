@@ -73,3 +73,21 @@ def installed_command(
         return
     for item in installed:
         typer.echo(f"{item.get('name')}@{item.get('version')} ({item.get('publisher')})")
+
+
+def update_command(
+    name: str = typer.Argument("", help="Optional skill name to update."),
+    index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json.", is_flag=False),
+    install_dir: str = typer.Option(
+        "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
+    ),
+    lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
+) -> None:
+    """Update one skill or all installed skills."""
+    client = _create_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
+    changes = client.update(name=name or None)
+    if not changes:
+        typer.echo("No updates available.")
+        return
+    for change in changes:
+        typer.echo(f"Updated: {change['name']} {change['from_version']} -> {change['to_version']}")

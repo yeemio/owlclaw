@@ -78,6 +78,45 @@ def _build_index_file(
     return index_file
 
 
+def _build_multi_version_index(
+    base: Path,
+    archives: list[tuple[Path, str]],
+    *,
+    name: str,
+    publisher: str,
+) -> Path:
+    skills = []
+    for archive_path, version in archives:
+        checksum = IndexBuilder().calculate_checksum(archive_path)
+        skills.append(
+            {
+                "manifest": {
+                    "name": name,
+                    "publisher": publisher,
+                    "version": version,
+                    "description": f"{name} description",
+                    "license": "MIT",
+                    "tags": ["demo"],
+                    "dependencies": {},
+                },
+                "download_url": str(archive_path),
+                "checksum": checksum,
+                "published_at": "2026-02-24T00:00:00+00:00",
+                "updated_at": "2026-02-24T00:00:00+00:00",
+                "version_state": "released",
+            }
+        )
+    index = {
+        "version": "1.0",
+        "generated_at": "2026-02-24T00:00:00+00:00",
+        "total_skills": len(skills),
+        "skills": skills,
+    }
+    index_file = base / "index.json"
+    index_file.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
+    return index_file
+
+
 def test_cli_search_install_and_installed_flow(tmp_path: Path, monkeypatch) -> None:
     archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
     _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
@@ -123,6 +162,18 @@ def test_cli_search_with_tag_mode_option(tmp_path: Path, monkeypatch, capsys) ->
     assert "entry-monitor@1.0.0" in captured.out
 
 
+def test_cli_update_reports_no_updates(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "skill-lock.json")
+    client.install(name="entry-monitor")
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(["skill", "update"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "No updates available." in captured.out
+
+
 def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:
     archive = _build_skill_archive(tmp_path, name="bad-skill", publisher="acme", version="1.0.0")
     index_file = _build_index_file(tmp_path, archive, name="bad-skill", publisher="acme", version="1.0.0")
@@ -153,6 +204,34 @@ def test_tag_filter_supports_and_or(tmp_path: Path) -> None:
     or_results = client.search(query="entry", tags=["trading", "missing"], tag_mode="or")
     assert len(and_results) == 0
     assert len(or_results) == 1
+
+
+def test_update_noop_when_latest_installed(tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    lock_file = tmp_path / "skill-lock.json"
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=lock_file)
+    client.install(name="entry-monitor")
+    updates = client.update()
+    assert updates == []
+
+
+def test_update_upgrades_to_latest_version(tmp_path: Path) -> None:
+    old_archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    new_archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.1.0")
+    index_file = _build_multi_version_index(
+        tmp_path,
+        [(old_archive, "1.0.0"), (new_archive, "1.1.0")],
+        name="entry-monitor",
+        publisher="acme",
+    )
+    lock_file = tmp_path / "skill-lock.json"
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=lock_file)
+    client.install(name="entry-monitor", version="1.0.0")
+    changes = client.update("entry-monitor")
+    assert len(changes) == 1
+    assert changes[0]["from_version"] == "1.0.0"
+    assert changes[0]["to_version"] == "1.1.0"
 
 
 @settings(max_examples=100, deadline=None)
@@ -246,3 +325,31 @@ def test_property_21_tag_based_retrieval(tag_a: str, tag_b: str, query_tag: str)
             assert any(item.name == "tag-skill" for item in results)
         else:
             assert all(item.name != "tag-skill" for item in results)
+
+
+@settings(max_examples=100, deadline=None)
+@given(
+    major=st.integers(min_value=0, max_value=2),
+    minor_old=st.integers(min_value=0, max_value=8),
+)
+def test_property_10_version_update_detection(major: int, minor_old: int) -> None:
+    """Property 10: update detects and applies newer version."""
+    with tempfile.TemporaryDirectory() as workdir:
+        root = Path(workdir)
+        old_version = f"{major}.{minor_old}.0"
+        new_version = f"{major}.{minor_old + 1}.0"
+        old_archive = _build_skill_archive(root, name="update-skill", publisher="acme", version=old_version)
+        new_archive = _build_skill_archive(root, name="update-skill", publisher="acme", version=new_version)
+        index_file = _build_multi_version_index(
+            root,
+            [(old_archive, old_version), (new_archive, new_version)],
+            name="update-skill",
+            publisher="acme",
+        )
+        lock_file = root / "skill-lock.json"
+        client = OwlHubClient(index_url=str(index_file), install_dir=root / "skills", lock_file=lock_file)
+        client.install(name="update-skill", version=old_version)
+        updates = client.update("update-skill")
+        assert len(updates) == 1
+        assert updates[0]["from_version"] == old_version
+        assert updates[0]["to_version"] == new_version
