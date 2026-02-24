@@ -31,7 +31,7 @@ The implementation follows a bottom-up approach: core data models → parser com
   - **Property 18: YAML Serialization Round-Trip**
   - **Validates: Requirements 9.2, 14.4**
 
-- [ ] 2. Implement AST parser and signature extraction
+- [x] 2. Implement AST parser and signature extraction
   - [x] 2.1 Implement ASTParser class
     - Write `parse_file()` method using `ast.parse()`
     - Write `extract_functions()` to find module-level functions
@@ -48,7 +48,7 @@ The implementation follows a bottom-up approach: core data models → parser com
     - **Property 3: Syntax Error Resilience**
     - **Validates: Requirements 1.5, 11.6**
   
-  - [ ] 2.4 Implement SignatureExtractor class
+  - [x] 2.4 Implement SignatureExtractor class
     - Extract function name, module, qualname
     - Parse parameters from `func_node.args`
     - Extract type annotations using `ast.unparse()`
@@ -57,15 +57,15 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Detect async functions and generators
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
   
-  - [ ]* 2.5 Write property test for complete signature extraction
+  - [x]* 2.5 Write property test for complete signature extraction
     - **Property 4: Complete Signature Extraction**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
   
-  - [ ]* 2.6 Write property test for signature round-trip consistency
+  - [x]* 2.6 Write property test for signature round-trip consistency
     - **Property 5: Signature Round-Trip Consistency**
     - **Validates: Requirements 13.4**
   
-  - [ ]* 2.7 Write unit tests for signature extraction edge cases
+  - [x]* 2.7 Write unit tests for signature extraction edge cases
     - Test function with no parameters
     - Test function with *args and **kwargs
     - Test function with complex type hints (Union, Optional, Generic)
@@ -73,7 +73,7 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Test generator function with yield
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 3. Checkpoint - Ensure parser tests pass
+- [x] 3. Checkpoint - Ensure parser tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Implement docstring parser
