@@ -4,15 +4,29 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, cast
+from typing import Annotated, Any, cast
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import ValidationError
 
-from owlclaw.owlhub.api.schemas import SkillDetail, SkillSearchItem, SkillSearchResponse, VersionInfo
+from owlclaw.owlhub.api.auth import Principal, get_current_principal
+from owlclaw.owlhub.api.schemas import (
+    PublishRequest,
+    PublishResponse,
+    SkillDetail,
+    SkillSearchItem,
+    SkillSearchResponse,
+    UpdateStateRequest,
+    VersionInfo,
+)
+from owlclaw.owlhub.review import ReviewStatus
+from owlclaw.owlhub.schema import VersionState
 
 router = APIRouter(prefix="/api/v1/skills", tags=["skills"])
+current_principal_type = Annotated[Principal, Depends(get_current_principal)]
 
 
 @lru_cache(maxsize=1)
@@ -27,6 +41,13 @@ def _iter_skills() -> list[dict]:
     data = _load_index()
     skills = data.get("skills", [])
     return skills if isinstance(skills, list) else []
+
+
+def _save_index(data: dict[str, Any]) -> None:
+    index_path = Path(os.getenv("OWLHUB_INDEX_PATH", "./index.json")).resolve()
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _load_index.cache_clear()
 
 
 @router.get("", response_model=SkillSearchResponse)
@@ -131,6 +152,160 @@ def get_skill_versions(publisher: str, name: str) -> list[VersionInfo]:
     ]
 
 
+@router.post("", response_model=PublishResponse)
+def publish_skill(
+    payload: dict[str, Any],
+    request: Request,
+    principal: current_principal_type,
+) -> PublishResponse:
+    try:
+        request_payload = PublishRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    publisher = request_payload.publisher.strip()
+    skill_name = request_payload.skill_name.strip()
+    version = request_payload.version.strip()
+    metadata_dict = request_payload.metadata if isinstance(request_payload.metadata, dict) else {}
+
+    if not _principal_allowed_for_publisher(principal, publisher):
+        raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
+
+    manifest_payload = {
+        "name": skill_name,
+        "version": version,
+        "publisher": publisher,
+        "description": str(metadata_dict.get("description", "")).strip(),
+        "license": str(metadata_dict.get("license", "")).strip(),
+        "tags": metadata_dict.get("tags", []),
+        "dependencies": metadata_dict.get("dependencies", {}),
+    }
+
+    validator = request.app.state.validator
+    validation = validator.validate_manifest(manifest_payload)
+    review_system = request.app.state.review_system
+    review = review_system.submit_manifest_for_review(
+        manifest=manifest_payload,
+        skill_name=skill_name,
+        version=version,
+        publisher=publisher,
+    )
+    if not validation.is_valid or review.status == ReviewStatus.REJECTED:
+        errors = [{"field": err.field, "message": err.message} for err in validation.errors]
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "manifest validation failed", "review_id": review.review_id, "errors": errors},
+        )
+
+    now = datetime.now(timezone.utc).isoformat()
+    state = str(metadata_dict.get("version_state", VersionState.RELEASED.value)).strip().lower()
+    if state not in {member.value for member in VersionState}:
+        raise HTTPException(status_code=422, detail="invalid version state")
+
+    index_data = _load_index()
+    skills = index_data.get("skills", [])
+    if not isinstance(skills, list):
+        skills = []
+    entry = {
+        "manifest": manifest_payload,
+        "version_state": state,
+        "published_at": now,
+        "updated_at": now,
+        "download_url": str(metadata_dict.get("download_url", "")),
+        "checksum": str(metadata_dict.get("checksum", "")),
+        "statistics": metadata_dict.get("statistics", {})
+        if isinstance(metadata_dict.get("statistics", {}), dict)
+        else {"total_downloads": 0, "downloads_last_30d": 0},
+    }
+    replaced = False
+    for idx, existing in enumerate(skills):
+        manifest = existing.get("manifest", {})
+        if (
+            str(manifest.get("publisher", "")) == publisher
+            and str(manifest.get("name", "")) == skill_name
+            and str(manifest.get("version", "")) == version
+        ):
+            skills[idx] = entry
+            replaced = True
+            break
+    if not replaced:
+        skills.append(entry)
+    index_data["skills"] = skills
+    index_data["total_skills"] = len(skills)
+    index_data["generated_at"] = now
+    _save_index(index_data)
+
+    audit = request.app.state.audit_logger
+    audit.log(
+        event_type="publish",
+        principal=principal,
+        details={
+            "publisher": publisher,
+            "skill_name": skill_name,
+            "version": version,
+            "review_id": review.review_id,
+        },
+    )
+    return PublishResponse(accepted=True, review_id=review.review_id, status=review.status.value)
+
+
+@router.put("/{publisher}/{name}/versions/{version}/state", response_model=dict[str, Any])
+def update_skill_state(
+    publisher: str,
+    name: str,
+    version: str,
+    payload: dict[str, Any],
+    request: Request,
+    principal: current_principal_type,
+) -> dict[str, Any]:
+    if not _principal_allowed_for_publisher(principal, publisher):
+        raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
+    try:
+        request_payload = UpdateStateRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    state = request_payload.state.strip().lower()
+    if state not in {member.value for member in VersionState}:
+        raise HTTPException(status_code=422, detail="invalid version state")
+
+    index_data = _load_index()
+    skills = index_data.get("skills", [])
+    if not isinstance(skills, list):
+        skills = []
+    target: dict[str, Any] | None = None
+    for entry in skills:
+        manifest = entry.get("manifest", {})
+        if (
+            str(manifest.get("publisher", "")) == publisher
+            and str(manifest.get("name", "")) == name
+            and str(manifest.get("version", "")) == version
+        ):
+            target = entry
+            break
+    if target is None:
+        raise HTTPException(status_code=404, detail="skill version not found")
+
+    old_state = str(target.get("version_state", VersionState.RELEASED.value))
+    target["version_state"] = state
+    target["updated_at"] = datetime.now(timezone.utc).isoformat()
+    index_data["skills"] = skills
+    index_data["total_skills"] = len(skills)
+    _save_index(index_data)
+
+    audit = request.app.state.audit_logger
+    audit.log(
+        event_type="state_update",
+        principal=principal,
+        details={
+            "publisher": publisher,
+            "skill_name": name,
+            "version": version,
+            "from_state": old_state,
+            "to_state": state,
+        },
+    )
+    return {"updated": True, "publisher": publisher, "skill_name": name, "version": version, "state": state}
+
+
 def _is_skill(entry: dict, publisher: str, name: str) -> bool:
     manifest = entry.get("manifest", {})
     return str(manifest.get("publisher", "")) == publisher and str(manifest.get("name", "")) == name
@@ -159,3 +334,13 @@ def _find_updated_at(publisher: str, name: str, version: str) -> str:
         ):
             return str(entry.get("updated_at", ""))
     return ""
+
+
+def _principal_allowed_for_publisher(principal: Principal, publisher: str) -> bool:
+    if principal.role == "admin":
+        return True
+    target = publisher.strip().lower()
+    identity = principal.user_id.strip().lower()
+    if identity == target:
+        return True
+    return ":" in identity and identity.split(":", 1)[1] == target

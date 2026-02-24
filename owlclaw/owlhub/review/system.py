@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from owlclaw.owlhub.validator import Validator
 
@@ -45,25 +46,48 @@ class ReviewSystem:
         structure_result = self.validator.validate_structure(skill_path)
         if not structure_result.is_valid:
             comments = "; ".join(error.message for error in structure_result.errors) or "structure validation failed"
-            record = self._build_record(
+            return self._store_submission(
                 skill_name=skill_name,
                 version=version,
                 publisher=publisher,
                 status=ReviewStatus.REJECTED,
                 comments=comments,
             )
-            self._write_record(record)
-            return record
 
-        record = self._build_record(
+        return self._store_submission(
             skill_name=skill_name,
             version=version,
             publisher=publisher,
             status=ReviewStatus.PENDING,
             comments="automated validation passed",
         )
-        self._write_record(record)
-        return record
+
+    def submit_manifest_for_review(
+        self,
+        *,
+        manifest: dict[str, Any],
+        skill_name: str,
+        version: str,
+        publisher: str,
+    ) -> ReviewRecord:
+        """Submit one manifest payload for automated validation and review."""
+        manifest_result = self.validator.validate_manifest(manifest)
+        if not manifest_result.is_valid:
+            comments = "; ".join(error.message for error in manifest_result.errors) or "manifest validation failed"
+            return self._store_submission(
+                skill_name=skill_name,
+                version=version,
+                publisher=publisher,
+                status=ReviewStatus.REJECTED,
+                comments=comments,
+            )
+        return self._store_submission(
+            skill_name=skill_name,
+            version=version,
+            publisher=publisher,
+            status=ReviewStatus.PENDING,
+            comments="automated validation passed",
+        )
 
     def approve(self, *, review_id: str, reviewer: str, comments: str = "") -> ReviewRecord:
         """Approve one pending review record."""
@@ -138,6 +162,25 @@ class ReviewSystem:
     def _write_record(self, record: ReviewRecord) -> None:
         file_path = self.storage_dir / f"{record.review_id}.json"
         file_path.write_text(json.dumps(asdict(record), ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _store_submission(
+        self,
+        *,
+        skill_name: str,
+        version: str,
+        publisher: str,
+        status: ReviewStatus,
+        comments: str,
+    ) -> ReviewRecord:
+        record = self._build_record(
+            skill_name=skill_name,
+            version=version,
+            publisher=publisher,
+            status=status,
+            comments=comments,
+        )
+        self._write_record(record)
+        return record
 
 
 def _record_from_dict(payload: dict[str, str]) -> ReviewRecord:

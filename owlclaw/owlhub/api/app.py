@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from owlclaw.owlhub.api.audit import AuditLogger, create_audit_router
 from owlclaw.owlhub.api.auth import (
     AuthManager,
     Principal,
@@ -17,6 +20,8 @@ from owlclaw.owlhub.api.auth import (
     get_current_principal,
 )
 from owlclaw.owlhub.api.routes.skills import router as skills_router
+from owlclaw.owlhub.review import ReviewSystem
+from owlclaw.owlhub.validator import Validator
 
 current_principal_type = Annotated[Principal, Depends(get_current_principal)]
 
@@ -36,6 +41,11 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    validator = Validator()
+    review_dir = Path(os.getenv("OWLHUB_REVIEW_DIR", "./.owlhub/reviews")).resolve()
+    app.state.validator = validator
+    app.state.review_system = ReviewSystem(storage_dir=review_dir, validator=validator)
+    app.state.audit_logger = AuditLogger()
     app.state.auth_manager = AuthManager()
 
     @app.middleware("http")
@@ -56,5 +66,6 @@ def create_app() -> FastAPI:
 
     app.include_router(create_auth_router(app.state.auth_manager))
     app.include_router(skills_router)
+    app.include_router(create_audit_router(app.state.audit_logger))
 
     return app

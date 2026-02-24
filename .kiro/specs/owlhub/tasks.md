@@ -469,8 +469,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Send unauthenticated publish requests, verify 401 responses
     - _Requirements: 5.1_
 
-- [ ] 23. Implement skill publishing endpoints
-  - [ ] 23.1 Create publish and update endpoints
+- [x] 23. Implement skill publishing endpoints
+  - [x] 23.1 Create publish and update endpoints
     - Implement `POST /api/v1/skills` for publishing new skills
     - Implement `PUT /api/v1/skills/{publisher}/{name}/versions/{version}/state` for state updates
     - Validate publisher matches authenticated user
@@ -478,14 +478,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Trigger review workflow on publish
     - _Requirements: 1.1, 1.4, 5.1, 7.1_
 
-  - [ ] 23.2 Implement audit logging for publish operations
+  - [x] 23.2 Implement audit logging for publish operations
     - Create `owlhub/api/audit.py` with audit logging
     - Log publisher identity, timestamp, changes for all publish operations
     - Store audit logs in database or separate audit log file
     - Provide audit log query API for admins
     - _Requirements: 5.2_
 
-  - [ ]* 23.3 Write unit tests for publish endpoints
+  - [x]* 23.3 Write unit tests for publish endpoints
     - Test successful skill publication
     - Test version state updates
     - Test publisher validation (can only publish own skills)
@@ -493,7 +493,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test audit log creation
     - _Requirements: 1.1, 1.4, 5.1, 5.2, 7.1_
 
-  - [ ]* 23.4 Write property tests for publishing
+  - [x]* 23.4 Write property tests for publishing
     - **Property 1: 版本发布与检索** (API version)
     - **Validates: Requirements 1.1**
     - Publish random skills via API, verify retrieval

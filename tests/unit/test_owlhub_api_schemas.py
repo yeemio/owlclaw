@@ -11,6 +11,7 @@ from owlclaw.owlhub.api.schemas import (
     SkillDetail,
     SkillSearchItem,
     SkillSearchResponse,
+    UpdateStateRequest,
     VersionInfo,
 )
 
@@ -39,9 +40,11 @@ def test_schema_validation_with_valid_data() -> None:
         version="1.0.0",
         metadata={"license": "MIT"},
     )
+    update_state = UpdateStateRequest(state="released")
     assert response.total == 1
     assert detail.versions[0].version == "1.0.0"
     assert publish.publisher == "acme"
+    assert update_state.state == "released"
 
 
 def test_schema_validation_with_invalid_data() -> None:

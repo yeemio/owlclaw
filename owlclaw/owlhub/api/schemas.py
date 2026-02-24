@@ -64,3 +64,9 @@ class PublishResponse(BaseModel):
     accepted: bool
     review_id: str
     status: str
+
+
+class UpdateStateRequest(BaseModel):
+    """Request body for version state updates."""
+
+    state: str

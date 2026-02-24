@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（68/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（73/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 22.1~22.4） |
-| 批次状态 | **已完成**。认证鉴权（OAuth code exchange + JWT + API key + middleware + rate limit）已落地并通过测试。 |
-| 已完成项 | 1) 新增 `owlclaw/owlhub/api/auth.py`：GitHub code 交换、JWT 生成/校验、API key 管理、session 存储、认证工具；2) 更新 `owlclaw/owlhub/api/app.py`：接入 auth router、写请求认证中间件、受保护写端点 `POST /api/v1/skills/publish-probe`；3) 新增 `tests/unit/test_owlhub_api_auth.py`：OAuth2/JWT/API key/未授权拒绝 + Property 14；4) 完成 22.2 的 RBAC 基础与 per-identity rate limit；5) 回填 `owlhub/tasks.md` 的 Task 22、22.1、22.2、22.3、22.4。 |
-| 下一待执行 | `owlhub` Task 23（skill publishing endpoints + 审计）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/api/auth.py owlclaw/owlhub/api/app.py tests/unit/test_owlhub_api_auth.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/api/auth.py owlclaw/owlhub/api/app.py` -> success；`poetry run pytest tests/unit/test_owlhub_api_auth.py tests/unit/test_owlhub_api_routes.py tests/unit/test_owlhub_api_schemas.py -q` -> 11 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 23.1~23.4） |
+| 批次状态 | **已完成**。发布与状态更新 API、审计日志与管理员查询接口已落地并通过测试。 |
+| 已完成项 | 1) 新增 `owlclaw/owlhub/api/audit.py`：JSONL 审计记录与管理员查询 API；2) 更新 `owlclaw/owlhub/api/app.py`：注入 `Validator` / `ReviewSystem` / `AuditLogger`，挂载 audit router；3) 更新 `owlclaw/owlhub/api/routes/skills.py`：实现 `POST /api/v1/skills` 与 `PUT /api/v1/skills/{publisher}/{name}/versions/{version}/state`，接入发布者校验、Validator 校验、Review 提交流程与审计记录；4) 更新 `owlclaw/owlhub/review/system.py`：新增 manifest 级审核提交流程；5) 新增 `tests/unit/test_owlhub_api_publish.py`：覆盖发布成功、状态更新、发布者鉴权、校验失败、Property 1 与 Property 15；6) 回填 `owlhub/tasks.md` 的 Task 23、23.1、23.2、23.3、23.4。 |
+| 下一待执行 | `owlhub` Task 24（real-time statistics service）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/skills.py owlclaw/owlhub/api/audit.py owlclaw/owlhub/review/system.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_publish.py tests/unit/test_owlhub_api_routes.py tests/unit/test_owlhub_api_auth.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/skills.py owlclaw/owlhub/api/audit.py owlclaw/owlhub/review/system.py` -> success；`poetry run pytest tests/unit/test_owlhub_api_publish.py tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_routes.py tests/unit/test_owlhub_api_auth.py tests/unit/test_owlhub_review_system.py` -> 21 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
