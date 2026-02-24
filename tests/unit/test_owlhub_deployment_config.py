@@ -132,3 +132,30 @@ def test_owlhub_k8s_ingress_routes_root_to_owlhub_service() -> None:
     service = path["backend"]["service"]
     assert service["name"] == "owlhub-api"
     assert service["port"]["number"] == 80
+
+
+def test_owlhub_api_deploy_workflow_contains_migration_and_smoke_checks() -> None:
+    payload = _load_yaml(".github/workflows/owlhub-api-deploy.yml")
+    assert payload["name"] == "owlhub-api-deploy"
+
+    jobs = payload["jobs"]
+    assert "build-image" in jobs
+    assert "deploy-staging" in jobs
+    assert "deploy-production" in jobs
+
+    staging = jobs["deploy-staging"]
+    production = jobs["deploy-production"]
+    assert staging["environment"]["name"] == "owlhub-staging"
+    assert production["environment"]["name"] == "owlhub-production"
+
+    staging_steps = staging["steps"]
+    production_steps = production["steps"]
+    assert any(step.get("name") == "Run database migrations" for step in staging_steps)
+    assert any(step.get("name") == "Run database migrations" for step in production_steps)
+    assert any(step.get("name") == "Smoke tests" for step in staging_steps)
+    assert any(step.get("name") == "Smoke tests" for step in production_steps)
+
+    staging_migration = next(step for step in staging_steps if step.get("name") == "Run database migrations")
+    production_migration = next(step for step in production_steps if step.get("name") == "Run database migrations")
+    assert "alembic -c alembic.ini upgrade head" in staging_migration["run"]
+    assert "alembic -c alembic.ini upgrade head" in production_migration["run"]
