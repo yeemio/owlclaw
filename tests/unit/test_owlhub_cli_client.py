@@ -287,6 +287,66 @@ def test_network_retry_for_remote_index(monkeypatch, tmp_path: Path) -> None:
     assert attempts["count"] == 3
 
 
+def test_remote_index_cache_hit_and_no_cache(tmp_path: Path, monkeypatch) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    payload = index_file.read_text(encoding="utf-8")
+    attempts = {"count": 0}
+
+    def fake_urlopen(request_or_url, timeout: int):  # noqa: ARG001
+        _ = request_or_url
+        attempts["count"] += 1
+        return _FakeResponse(payload)
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    cached_client = OwlHubClient(
+        index_url="http://hub.local/index.json",
+        install_dir=tmp_path / "skills",
+        lock_file=tmp_path / "lock-cached.json",
+    )
+    cached_client.search(query="entry")
+    cached_client.search(query="entry")
+    assert attempts["count"] == 1
+
+    attempts["count"] = 0
+    bypass_client = OwlHubClient(
+        index_url="http://hub.local/index.json",
+        install_dir=tmp_path / "skills",
+        lock_file=tmp_path / "lock-no-cache.json",
+        no_cache=True,
+    )
+    bypass_client.search(query="entry")
+    bypass_client.search(query="entry")
+    assert attempts["count"] == 2
+
+
+def test_cache_clear_command_removes_cached_files(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    payload = index_file.read_text(encoding="utf-8")
+
+    def fake_urlopen(request_or_url, timeout: int):  # noqa: ARG001
+        _ = request_or_url
+        return _FakeResponse(payload)
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    lock_file = tmp_path / "skill-lock.json"
+    client = OwlHubClient(
+        index_url="http://hub.local/index.json",
+        install_dir=tmp_path / "skills",
+        lock_file=lock_file,
+    )
+    client.search(query="entry")
+    assert any(client.cache_dir.iterdir())
+
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(["skill", "cache-clear"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "Cache cleared:" in captured.out
+    assert list(client.cache_dir.iterdir()) == []
+
+
 def test_install_rollback_on_validation_failure(tmp_path: Path) -> None:
     bad_archive = tmp_path / "broken-1.0.0.tar.gz"
     with tarfile.open(bad_archive, "w:gz") as archive:

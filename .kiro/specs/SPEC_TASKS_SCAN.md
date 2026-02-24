@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（102/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（103/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 29.1~29.3） |
-| 批次状态 | **已完成**。错误处理与恢复机制已覆盖网络重试、安装回滚、`--force` 覆盖安装与异常消息增强，并通过测试。 |
-| 已完成项 | 1) 更新 `owlclaw/owlhub/client.py`：新增网络请求重试与退避、安装失败回滚（目录清理）、隐藏/校验失败时 `force` 覆盖、安装异常上下文消息；2) 更新 `owlclaw/cli/api_client.py`：透传 `force/no_deps` 到 index 安装流程；3) 更新 `owlclaw/cli/skill_hub.py`：安装命令新增 `--force`；4) 更新 `owlclaw/cli/__init__.py`：argparse 分发支持 `--force`；5) 更新 `tests/unit/test_owlhub_cli_client.py`：新增远程索引重试、安装失败回滚、`force` 覆盖安装测试；6) 回填 `owlhub/tasks.md` 的 Task 29、29.1、29.2、29.3。 |
-| 下一待执行 | `owlhub` Task 30（caching and performance optimizations）。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/client.py owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py tests/unit/test_owlhub_cli_client.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/client.py owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py` -> success；`poetry run pytest tests/unit/test_owlhub_cli_client.py tests/unit/test_cli_resolver.py tests/integration/test_owlhub_dependency_installation.py tests/unit/test_cli_api_client.py tests/integration/test_owlhub_cli_api_compatibility.py -q` -> 29 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 30.1） |
+| 批次状态 | **已完成（部分）**。完成缓存层落地（索引/包/API GET 缓存 + `--no-cache` + `cache-clear`），并补齐缓存命中/旁路测试。 |
+| 已完成项 | 1) 更新 `owlclaw/owlhub/client.py`：新增 index/package 缓存、TTL 校验、缓存目录管理与 `clear_cache()`；2) 更新 `owlclaw/cli/api_client.py`：新增 API GET 缓存与 TTL 校验；3) 更新 `owlclaw/cli/skill_hub.py`、`owlclaw/cli/__init__.py`、`owlclaw/cli/skill.py`：新增 `--no-cache` 透传与 `owlclaw skill cache-clear` 命令；4) 更新 `tests/unit/test_owlhub_cli_client.py`：新增远程索引缓存命中/`no_cache` 旁路测试与 `cache-clear` 命令测试；5) 更新 `tests/unit/test_cli_api_client.py`：新增 API GET 缓存命中/`no_cache` 旁路测试；6) 回填 `owlhub/tasks.md` 的 Task 30.1。 |
+| 下一待执行 | `owlhub` Task 30.2（Optimize database queries）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/client.py owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py tests/unit/test_owlhub_cli_client.py tests/unit/test_cli_api_client.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/client.py owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py` -> success；`poetry run pytest tests/unit/test_owlhub_cli_client.py tests/unit/test_cli_api_client.py tests/integration/test_owlhub_cli_api_compatibility.py -q` -> 27 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

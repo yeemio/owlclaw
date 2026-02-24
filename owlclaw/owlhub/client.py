@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import tarfile
@@ -40,7 +41,16 @@ class SearchResult:
 class OwlHubClient:
     """Read OwlHub index and perform local install/update operations."""
 
-    def __init__(self, *, index_url: str, install_dir: Path, lock_file: Path):
+    def __init__(
+        self,
+        *,
+        index_url: str,
+        install_dir: Path,
+        lock_file: Path,
+        cache_dir: Path | None = None,
+        cache_ttl_seconds: int = 3600,
+        no_cache: bool = False,
+    ):
         self.index_url = index_url
         self.install_dir = install_dir
         self.lock_file = lock_file
@@ -49,6 +59,10 @@ class OwlHubClient:
         self.last_install_warning: str | None = None
         self.retry_attempts = 3
         self.retry_backoff_seconds = 0.1
+        self.cache_dir = cache_dir or (self.lock_file.parent / ".owlhub-cache")
+        self.cache_ttl_seconds = max(0, cache_ttl_seconds)
+        self.no_cache = no_cache
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def search(
         self,
@@ -183,8 +197,13 @@ class OwlHubClient:
     def _load_index(self) -> dict[str, Any]:
         parsed = urllib.parse.urlparse(self.index_url)
         if parsed.scheme in {"http", "https"}:
+            cache_file = self.cache_dir / f"index-{_sha256(self.index_url)}.json"
+            if not self.no_cache and _is_cache_fresh(cache_file, ttl_seconds=self.cache_ttl_seconds):
+                return cast(dict[str, Any], json.loads(cache_file.read_text(encoding="utf-8")))
             with self._urlopen_with_retry(self.index_url, timeout=30) as response:
                 payload = response.read().decode("utf-8")
+            if not self.no_cache:
+                cache_file.write_text(payload, encoding="utf-8")
             return cast(dict[str, Any], json.loads(payload))
         path = Path(self.index_url.replace("file://", "")).resolve()
         return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
@@ -192,8 +211,14 @@ class OwlHubClient:
     def _download(self, url: str) -> Path:
         parsed = urllib.parse.urlparse(url)
         if parsed.scheme in {"http", "https"}:
+            cache_file = self.cache_dir / f"pkg-{_sha256(url)}.pkg"
+            if not self.no_cache and _is_cache_fresh(cache_file, ttl_seconds=self.cache_ttl_seconds):
+                return cache_file
             with self._urlopen_with_retry(url, timeout=60) as response:
                 data = response.read()
+            if not self.no_cache:
+                cache_file.write_bytes(data)
+                return cache_file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pkg") as handle:
                 handle.write(data)
                 return Path(handle.name)
@@ -265,6 +290,17 @@ class OwlHubClient:
                     break
                 time.sleep(self.retry_backoff_seconds * attempt)
         raise ValueError(f"network request failed after retries: {target}") from last_error
+
+    def clear_cache(self) -> int:
+        """Clear all cached index/package files and return removed count."""
+        removed = 0
+        if not self.cache_dir.exists():
+            return removed
+        for item in self.cache_dir.glob("*"):
+            if item.is_file():
+                item.unlink(missing_ok=True)
+                removed += 1
+        return removed
 
     def _write_lock(self, selected: SearchResult, target: Path) -> None:
         existing = {"version": "1.0", "generated_at": "", "skills": []}
@@ -338,3 +374,16 @@ def _find_source_entry(index_data: dict[str, Any], selected: SearchResult) -> di
         ):
             return entry if isinstance(entry, dict) else None
     return None
+
+
+def _is_cache_fresh(path: Path, *, ttl_seconds: int) -> bool:
+    if not path.exists():
+        return False
+    if ttl_seconds <= 0:
+        return False
+    age = time.time() - path.stat().st_mtime
+    return age <= ttl_seconds
+
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
