@@ -204,6 +204,60 @@ class LangChainAdapter:
             return await coroutine
         return await asyncio.wait_for(coroutine, timeout=timeout_seconds)
 
+    async def execute_stream(
+        self,
+        runnable: Any,
+        input_data: dict[str, Any],
+        context: Any,
+        config: RunnableConfig,
+    ):
+        """Execute runnable in streaming mode and yield OwlClaw event payloads."""
+        span = None
+        if config.enable_tracing:
+            span = self._trace_manager.create_span(
+                name=f"langchain_stream_{config.name}",
+                input_data=input_data,
+                context=context if isinstance(context, dict) else None,
+            )
+
+        governance_result = await self._validate_governance(config.name, context)
+        if not governance_result.get("allowed", True):
+            status_code = int(governance_result.get("status_code", 403))
+            reason = str(governance_result.get("reason", "capability denied by governance policy"))
+            yield self._error_handler.create_error_response(
+                error_type="PolicyDeniedError" if status_code == 403 else "RateLimitError",
+                message=reason,
+                status_code=status_code,
+                details={"capability": config.name},
+            ) | {"type": "error"}
+            return
+
+        transformed_input = self._schema_bridge.transform_input(input_data, config.input_transformer)
+        chunks: list[Any] = []
+        try:
+            if callable(getattr(runnable, "astream", None)):
+                async for chunk in runnable.astream(transformed_input):
+                    chunks.append(chunk)
+                    yield {"type": "chunk", "data": chunk}
+            elif callable(getattr(runnable, "stream", None)):
+                for chunk in runnable.stream(transformed_input):
+                    chunks.append(chunk)
+                    yield {"type": "chunk", "data": chunk}
+            else:
+                raise TypeError(
+                    f"Unsupported stream runnable type: {type(runnable).__name__}. "
+                    "Runnable must implement stream() or astream()."
+                )
+            final_output = self._schema_bridge.transform_output(chunks, config.output_transformer)
+            if span is not None:
+                span.end(output=final_output)
+            yield {"type": "final", "data": final_output}
+        except Exception as exc:
+            if span is not None:
+                span.record_error(exc)
+                span.end(output={"error": str(exc)})
+            yield {"type": "error", "error": self._error_handler.map_exception(exc)["error"]}
+
     @staticmethod
     def _as_coroutine(runnable: Any, input_data: Any) -> Any:
         if callable(getattr(runnable, "ainvoke", None)):
