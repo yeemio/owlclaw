@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（10/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：mcp-server 终轮验收 3.3~3.4） |
-| 批次状态 | **已完成**。mcp-server 全部任务收口（12/12）。 |
-| 已完成项 | 1) 补充 MCP 单测分支覆盖（请求校验/错误码/类型映射/schema 分支）；2) 覆盖率提升至 `owlclaw.mcp=96%`；3) 新增文档 `docs/MCP_SERVER.md`，明确 MVP 能力边界与使用方式；4) 回填 `mcp-server/tasks.md` 剩余验收项并标记完成。 |
-| 下一待执行 | 按分配进入 `owlhub` Task 1（需求与设计前置）或 `examples` Task 1（示例基线）。 |
-| 验收快照 | `poetry run pytest tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py --cov=owlclaw.mcp --cov-report=term-missing -q` -> 11 passed, 96% cover；`poetry run ruff check owlclaw/mcp tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py` -> all checks passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 3.1~3.4） |
+| 批次状态 | **已完成**。Index Builder/Crawler 与单元/属性测试已落地。 |
+| 已完成项 | 1) 新增 `owlclaw/owlhub/indexer/crawler.py`（仓库扫描与 SKILL frontmatter 解析）；2) 新增 `owlclaw/owlhub/indexer/builder.py`（index 生成、checksum、仓库聚合）；3) 新增 `tests/unit/test_owlhub_index_builder.py` 覆盖 Task 3.3 与属性 1/3/16；4) 回填 `owlhub/tasks.md` 的 Task 3、3.1、3.2、3.3、3.4。 |
+| 下一待执行 | `owlhub` Task 4（CLI Client：search/install/list/validate）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py -q` -> 14 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
