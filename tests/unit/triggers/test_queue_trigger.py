@@ -35,6 +35,21 @@ class _FakeRuntime:
         return {"run_id": "run-1"}
 
 
+class _CapturingStore(MockIdempotencyStore):
+    def __init__(self) -> None:
+        super().__init__()
+        self.last_ttl: int | None = None
+
+    async def set(self, key: str, value: object, ttl: int) -> None:
+        self.last_ttl = ttl
+        await super().set(key, value, ttl)
+
+
+class _ExistsFailStore(MockIdempotencyStore):
+    async def exists(self, key: str) -> bool:
+        raise RuntimeError(f"exists failed: {key}")
+
+
 def _raw_message(
     *,
     message_id: str,
@@ -194,3 +209,69 @@ async def test_queue_trigger_consume_loop_recovers_after_process_exception() -> 
     await trigger.stop()
 
     assert calls["count"] >= 2
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_dedup_key_falls_back_to_message_id() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    store = MockIdempotencyStore()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        adapter=adapter,
+        agent_runtime=runtime,
+        idempotency_store=store,
+    )
+
+    msg = _raw_message(message_id="same-id", body=b'{"id":"1"}')
+    adapter.enqueue(msg)
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 1
+    assert await store.exists("same-id") is True
+    assert adapter.get_acked() == ["same-id", "same-id"]
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_idempotency_exists_failure_degrades_to_processing() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        adapter=adapter,
+        agent_runtime=runtime,
+        idempotency_store=_ExistsFailStore(),
+    )
+    msg = _raw_message(message_id="m-1", body=b'{"id":"1"}')
+
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 1
+    assert adapter.get_acked() == ["m-1"]
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_idempotency_record_uses_config_ttl() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    store = _CapturingStore()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1", idempotency_window=123),
+        adapter=adapter,
+        agent_runtime=runtime,
+        idempotency_store=store,
+    )
+    msg = _raw_message(message_id="ttl-1", body=b'{"id":"1"}')
+
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert store.last_ttl == 123

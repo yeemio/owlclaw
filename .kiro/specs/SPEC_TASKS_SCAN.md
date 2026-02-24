@@ -102,7 +102,7 @@
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（3/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/17） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（8/25） | 消息队列触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（10/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-queue runtime core） |
-| 批次状态 | **已完成（本批）**。完成 QueueTrigger 核心类与消费循环（Task 7-8），修复 requeue 场景下事件循环饥饿导致的测试超时问题，并补齐对应属性/单元测试。 |
-| 已完成项 | 1) `triggers-queue` Task 7（7.1~7.4）；2) `triggers-queue` Task 8（8.1~8.4）；3) 新增配置非法校验、消费循环异常恢复等单测。 |
-| 下一待执行 | `triggers-webhook` Task 2（数据模型与持久化层）；`triggers-queue` Task 9（检查点）与 Task 10（幂等性检查接入到消息主流程）。 |
-| 验收快照 | `poetry run pytest tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py -q`（9 passed）；`poetry run ruff check owlclaw/triggers/queue/trigger.py tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py`（All checks passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-queue idempotency flow） |
+| 批次状态 | **已完成（本批）**。完成 QueueTrigger 幂等性主流程（Task 10），补齐 dedup key 回退、去重计数准确性、TTL 应用与存储异常降级测试。 |
+| 已完成项 | 1) `triggers-queue` Task 10（10.1~10.4）；2) 新增幂等性属性测试（Property 15/17）与单元测试（重复跳过、键生成、存储失败降级、TTL 传递）。 |
+| 下一待执行 | `triggers-webhook` Task 2（数据模型与持久化层）；`triggers-queue` Task 11（治理层集成）与 Task 12（Agent 触发与重试）。 |
+| 验收快照 | `poetry run pytest tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py -q`（13 passed）；`poetry run ruff check tests/unit/triggers/test_queue_trigger.py tests/unit/triggers/test_queue_trigger_properties.py`（All checks passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
