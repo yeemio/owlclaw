@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审批 codex-work：triggers-queue Task 24~25） |
-| 批次状态 | **已完成**。Queue Trigger spec 全量收口（89/89），Mock 验证脚本与最终检查点通过。 |
-| 已完成项 | 1) 合并 `codex-work` 的 Task 24：新增 `scripts/test_queue_trigger.py` 与 `docs/triggers/queue_validation.md`；2) Task 25 验收通过（队列相关单元/集成/类型/静态检查）；3) 回填 `triggers-queue/tasks.md` 完成态并将功能清单、Spec 索引改为完成。 |
-| 下一待执行 | `codex-work` 切换 `triggers-webhook` Task 2+；`codex-gpt-work` 继续 `owlhub` Task 4（CLI Client：search/install/list/validate）。 |
-| 验收快照 | `poetry run python scripts/test_queue_trigger.py`（PASSED）；`poetry run pytest tests/unit/triggers -k queue tests/integration/test_queue_trigger_e2e.py tests/integration/test_queue_kafka_adapter_integration.py -q`（74 passed, 1 skipped）；`poetry run ruff check scripts/test_queue_trigger.py owlclaw/triggers/queue tests/unit/triggers tests/integration/test_queue_trigger_e2e.py tests/integration/test_queue_kafka_adapter_integration.py`（All checks passed）；`poetry run mypy owlclaw/triggers/queue`（Success: no issues found in 8 source files）。 |
+| 当前批次 | review loop（架构决策收敛：Protocol-first） |
+| 批次状态 | **已完成**。已将“面向所有业务系统”的定位固化为架构约束：协议优先于语言 SDK。 |
+| 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.11（Protocol-first）；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加强制约束（先契约后 SDK）；3) 保持 `triggers-queue` 完成态（89/89）及 scan 计数一致。 |
+| 下一待执行 | `codex-work` 优先推进 `triggers-webhook`/`triggers-api`/`triggers-signal` 的协议契约与测试（按 Protocol-first）；`codex-gpt-work` 继续 `owlhub` Task 4（CLI Client）。 |
+| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.2（含 §4.11）；`.cursor` 架构规则已加入 Protocol-first 强制条款；Spec scan checkpoint 已同步下一步执行顺序。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
