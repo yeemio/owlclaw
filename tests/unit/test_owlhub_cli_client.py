@@ -249,6 +249,52 @@ metadata:
     assert "Published: review_id=r1 status=pending" in captured.out
 
 
+def test_cli_install_and_publish_emit_structured_logs(tmp_path: Path, monkeypatch, capsys, caplog) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    skill_dir = tmp_path / "skill-publish"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: "entry-monitor"
+publisher: "acme"
+description: "entry monitor skill"
+license: "MIT"
+metadata:
+  version: "1.0.0"
+---
+# entry-monitor
+""",
+        encoding="utf-8",
+    )
+
+    def fake_urlopen(request: Request, timeout: int):  # noqa: ARG001
+        _ = request
+        return _FakeResponse(json.dumps({"accepted": True, "review_id": "r1", "status": "pending"}))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.chdir(tmp_path)
+    caplog.set_level("INFO")
+
+    install_handled = _dispatch_skill_command(["skill", "install", "entry-monitor"])
+    assert install_handled is True
+    publish_handled = _dispatch_skill_command(
+        [
+            "skill",
+            "publish",
+            str(skill_dir),
+            "--api-base-url",
+            "http://hub.local",
+            "--api-token",
+            "token-123",
+        ]
+    )
+    assert publish_handled is True
+    _ = capsys.readouterr()
+    assert '"event": "skill_install"' in caplog.text
+    assert '"event": "skill_publish"' in caplog.text
+
+
 def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:
     archive = _build_skill_archive(tmp_path, name="bad-skill", publisher="acme", version="1.0.0")
     index_file = _build_index_file(tmp_path, archive, name="bad-skill", publisher="acme", version="1.0.0")

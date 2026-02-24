@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import json
+import logging
 from pathlib import Path
 
 import typer
 
 from owlclaw.cli.api_client import SkillHubApiClient
 from owlclaw.owlhub import OwlHubClient
+
+logger = logging.getLogger(__name__)
 
 
 def _create_index_client(index_url: str, install_dir: str, lock_file: str, *, no_cache: bool = False) -> OwlHubClient:
@@ -89,8 +93,26 @@ def install_command(
     try:
         installed_path = client.install(name=name, version=version or None, no_deps=no_deps, force=force)
     except Exception as exc:
+        logger.exception(
+            "Skill install failed: %s",
+            json.dumps({"event": "skill_install_error", "name": name, "version": version or "latest"}, ensure_ascii=False),
+        )
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1) from exc
+    logger.info(
+        "%s",
+        json.dumps(
+            {
+                "event": "skill_install",
+                "name": name,
+                "version": version or "latest",
+                "path": str(installed_path),
+                "mode": mode,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+    )
     if client.last_install_warning:
         typer.echo(f"Warning: {client.last_install_warning}")
     typer.echo(f"Installed: {name} -> {installed_path}")
@@ -175,8 +197,26 @@ def publish_command(
     try:
         result = client.publish(skill_path=Path(path).resolve())
     except Exception as exc:
+        logger.exception(
+            "Skill publish failed: %s",
+            json.dumps({"event": "skill_publish_error", "path": str(Path(path).resolve()), "mode": mode}, ensure_ascii=False),
+        )
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1) from exc
+    logger.info(
+        "%s",
+        json.dumps(
+            {
+                "event": "skill_publish",
+                "path": str(Path(path).resolve()),
+                "mode": mode,
+                "review_id": result.get("review_id", ""),
+                "status": result.get("status", ""),
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+    )
     typer.echo(f"Published: review_id={result.get('review_id', '')} status={result.get('status', '')}")
 
 

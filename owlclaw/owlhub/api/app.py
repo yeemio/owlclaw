@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
+import logging
 import os
+import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Annotated
@@ -29,6 +32,20 @@ from owlclaw.owlhub.statistics import StatisticsTracker
 from owlclaw.owlhub.validator import Validator
 
 current_principal_type = Annotated[Principal, Depends(get_current_principal)]
+logger = logging.getLogger(__name__)
+
+
+def _resolve_log_level() -> int:
+    level_name = os.getenv("OWLHUB_LOG_LEVEL", "INFO").strip().upper()
+    level = getattr(logging, level_name, logging.INFO)
+    return int(level)
+
+
+def _log_json(level: int, event: str, **fields: object) -> None:
+    if not logger.isEnabledFor(level):
+        return
+    payload = {"event": event, **fields}
+    logger.log(level, "%s", json.dumps(payload, ensure_ascii=False, sort_keys=True))
 
 
 def create_app() -> FastAPI:
@@ -56,14 +73,42 @@ def create_app() -> FastAPI:
     app.state.statistics_tracker = StatisticsTracker(storage_path=statistics_db)
     app.state.blacklist_manager = BlacklistManager(path=blacklist_db)
     app.state.auth_manager = AuthManager()
+    app.state.log_level = _resolve_log_level()
 
     @app.middleware("http")
     async def authz_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        started = time.perf_counter()
+        method = request.method
+        path = request.url.path
         try:
             enforce_write_auth(request)
         except HTTPException as exc:
+            _log_json(
+                app.state.log_level,
+                "api_request",
+                method=method,
+                path=path,
+                status_code=exc.status_code,
+                duration_ms=round((time.perf_counter() - started) * 1000.0, 3),
+            )
             return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-        return await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception:
+            logger.exception(
+                "Unhandled API exception: %s",
+                json.dumps({"event": "api_request_error", "method": method, "path": path}, ensure_ascii=False),
+            )
+            raise
+        _log_json(
+            app.state.log_level,
+            "api_request",
+            method=method,
+            path=path,
+            status_code=response.status_code,
+            duration_ms=round((time.perf_counter() - started) * 1000.0, 3),
+        )
+        return response
 
     @app.get("/health")
     def health() -> dict[str, str]:
