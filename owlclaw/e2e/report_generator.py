@@ -185,9 +185,9 @@ class ReportGenerator:
     def generate_replay_report(self, replay_result: ReplayResult) -> dict[str, Any]:
         """Generate report for historical replay comparison results."""
         return {
-            "id": f"replay-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}",
+            "id": f"replay-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
             "title": "E2E Historical Replay Report",
-            "generated_at": datetime.now(UTC).isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "summary": {
                 "total_events": replay_result.total_events,
                 "consistency_rate": replay_result.consistency_rate,

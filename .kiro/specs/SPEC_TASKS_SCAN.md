@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（17/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（18/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 17.1~17.4） |
-| 批次状态 | **已完成**。Shadow Mode 链路与 migration_weight 协同已落地，Task 17 全部收口。 |
-| 已完成项 | 1) 新增 `owlclaw/e2e/shadow_mode.py`：拦截器、实时对比、仪表板指标与权重控制；2) 新增 `tests/e2e/test_shadow_mode.py` 覆盖核心行为；3) 回填 Task 17.1~17.4 与顶层 Task 17。 |
-| 下一待执行 | `e2e-validation` Task 18.1（ABTestRunner）~18.3（自动 migration_weight 调整）。 |
-| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 70 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 18.1~18.3） |
+| 批次状态 | **已完成**。A/B 测试随机分组、显著性检验与 migration_weight 自动调节已落地，Task 18 全部收口。 |
+| 已完成项 | 1) 新增 `owlclaw/e2e/ab_test.py`：`ABTestRunner`、结果模型与统计检验逻辑；2) 新增 `tests/e2e/test_ab_test.py` 覆盖分组、检验与回退调整；3) 回填 Task 18.1~18.3 与顶层 Task 18；4) 修复 `owlclaw/e2e/report_generator.py` 中 `UTC` 未定义问题。 |
+| 下一待执行 | `e2e-validation` Task 19（最终检查点：完整测试套件与覆盖率验收）。 |
+| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 73 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -352,14 +352,14 @@
     - 质量下降自动回退 migration_weight
     - _需求: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
 
-- [ ] 18. 实现 A/B 测试（需求 11）
-  - [ ] 18.1 实现 ABTestRunner
+- [x] 18. 实现 A/B 测试（需求 11）
+  - [x] 18.1 实现 ABTestRunner
     - 基于 migration_weight 的随机分组
     - Agent 组和 fallback 组的指标记录
-  - [ ] 18.2 实现统计显著性检验
+  - [x] 18.2 实现统计显著性检验
     - t-test / chi-square 检验
     - 自动判断 Agent 组是否优于 fallback 组
-  - [ ] 18.3 实现自动 migration_weight 调整
+  - [x] 18.3 实现自动 migration_weight 调整
     - 基于 A/B 结果自动提升或回退 weight
     - Agent 组显著劣于 fallback 组时自动告警 + 回退
     - _需求: 11.1, 11.2, 11.3, 11.4, 11.5_
