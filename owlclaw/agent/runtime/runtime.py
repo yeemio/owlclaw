@@ -112,6 +112,7 @@ class AgentRuntime:
         builtin_tools: BuiltInTools | None = None,
         router: Router | None = None,
         ledger: Ledger | None = None,
+        signal_state_manager: Any | None = None,
         model: str = _DEFAULT_MODEL,
         config: dict[str, Any] | None = None,
         config_path: str | None = None,
@@ -128,6 +129,7 @@ class AgentRuntime:
         self.builtin_tools = builtin_tools
         self._router = router
         self._ledger = ledger
+        self._signal_state_manager = signal_state_manager
         self.model = model
         base_config = dict(DEFAULT_RUNTIME_CONFIG)
         user_config = dict(config or {})
@@ -412,7 +414,100 @@ class AgentRuntime:
             focus=focus,
             tenant_id=normalized_tenant_id,
         )
+        await self._inject_pending_signal_instructions(context)
+        if normalized_event_name != "signal_manual":
+            paused = await self._is_agent_paused(normalized_tenant_id)
+            if paused:
+                await self._record_paused_skip(context)
+                return {
+                    "status": "skipped",
+                    "run_id": context.run_id,
+                    "reason": "agent_paused",
+                }
         return await self.run(context)
+
+    async def _is_agent_paused(self, tenant_id: str) -> bool:
+        if self._signal_state_manager is None:
+            return False
+        try:
+            state = await self._signal_state_manager.get(self.agent_id, tenant_id)
+        except Exception:
+            logger.debug("Signal state get failed", exc_info=True)
+            return False
+        return bool(getattr(state, "paused", False))
+
+    async def _inject_pending_signal_instructions(self, context: AgentRunContext) -> None:
+        if self._signal_state_manager is None:
+            return
+        try:
+            consumed = await self._signal_state_manager.consume_instructions(
+                self.agent_id,
+                context.tenant_id,
+            )
+        except Exception:
+            logger.debug("Signal instruction consume failed", exc_info=True)
+            return
+        if not consumed:
+            return
+        context.payload["signal_instructions"] = [
+            {
+                "content": str(getattr(item, "content", "")),
+                "operator": str(getattr(item, "operator", "")),
+                "source": str(getattr(getattr(item, "source", ""), "value", getattr(item, "source", ""))),
+                "created_at": str(getattr(item, "created_at", "")),
+                "expires_at": str(getattr(item, "expires_at", "")),
+            }
+            for item in consumed
+        ]
+        await self._record_instruction_consumption(context, count=len(consumed))
+
+    async def _record_paused_skip(self, context: AgentRunContext) -> None:
+        if self._ledger is None:
+            return
+        try:
+            await self._ledger.record_execution(
+                tenant_id=context.tenant_id,
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                capability_name="signal.pause_guard",
+                task_type="signal",
+                input_params={"trigger": context.trigger},
+                output_result={"status": "skipped", "reason": "agent_paused"},
+                decision_reasoning="paused guard in runtime",
+                execution_time_ms=0,
+                llm_model="",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="skipped",
+                error_message=None,
+            )
+        except Exception:
+            logger.debug("Ledger paused skip record failed", exc_info=True)
+
+    async def _record_instruction_consumption(self, context: AgentRunContext, *, count: int) -> None:
+        if self._ledger is None:
+            return
+        try:
+            await self._ledger.record_execution(
+                tenant_id=context.tenant_id,
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                capability_name="signal.consume_instructions",
+                task_type="signal",
+                input_params={"trigger": context.trigger},
+                output_result={"consumed_count": count},
+                decision_reasoning="runtime instruction injection",
+                execution_time_ms=0,
+                llm_model="",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="success",
+                error_message=None,
+            )
+        except Exception:
+            logger.debug("Ledger instruction consumption record failed", exc_info=True)
 
     # ------------------------------------------------------------------
     # Core run method
