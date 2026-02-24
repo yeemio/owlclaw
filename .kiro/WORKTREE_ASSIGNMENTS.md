@@ -161,16 +161,16 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| triggers-webhook | 1/69 | `owlclaw/triggers/webhook.py`, `tests/unit/triggers/test_webhook*.py` |
-| triggers-queue | 20/89 | `owlclaw/triggers/queue.py`, `tests/unit/triggers/test_queue*.py` |
-| triggers-db-change | 0/11 | `owlclaw/triggers/db_change.py`, `tests/unit/triggers/test_db_change*.py` |
-| triggers-api | 0/10 | `owlclaw/triggers/api.py`, `tests/unit/triggers/test_api*.py` |
-| triggers-signal | 0/14 | `owlclaw/triggers/signal.py`, `tests/unit/triggers/test_signal*.py` |
-| cli-scan | 0/143 | `owlclaw/cli/scan.py`, `tests/unit/test_cli_scan*.py` |
+| triggers-webhook | 2/72 🟡 | `owlclaw/triggers/webhook.py`, `tests/unit/triggers/test_webhook*.py` |
+| triggers-queue | 89/89 ✅ | `owlclaw/triggers/queue.py`, `tests/unit/triggers/test_queue*.py` |
+| triggers-db-change | 0/11 🟡 | `owlclaw/triggers/db_change.py`, `tests/unit/triggers/test_db_change*.py` |
+| triggers-api | 0/13 🟡 | `owlclaw/triggers/api.py`, `tests/unit/triggers/test_api*.py` |
+| triggers-signal | 17/17 ✅ | `owlclaw/triggers/signal.py`, `tests/unit/triggers/test_signal*.py` |
+| cli-scan | 44/143 🟡 | `owlclaw/cli/scan/`, `tests/unit/cli_scan/` |
 
-**前置条件**：integrations-hatchet(37/37 ✅) + integrations-langchain(50/50 ✅) + triggers-cron(19/19 ✅) 已全部完成。
+**前置条件**：integrations-hatchet ✅ + integrations-langchain ✅ + triggers-cron ✅ + triggers-queue ✅ + triggers-signal ✅ 已全部完成。
 
-**下一任务（当前完成后）**：全部收口后进入 Phase 3（release/ci-setup）。
+**下一任务（当前完成后）**：triggers-webhook + triggers-db-change + triggers-api + cli-scan 全部收口后进入 Phase 3（release/ci-setup）。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -192,17 +192,17 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| e2e-validation | 26/85 | `tests/integration/test_e2e*.py`, `tests/integration/test_mionyee*.py` |
-| mcp-server | 0/12 | `owlclaw_mcp/**`, `tests/unit/test_mcp*.py` |
-| owlhub | 0/143 | `owlclaw/owlhub/**`, `tests/unit/test_owlhub*.py` |
-| examples | 0/12 | `examples/**`, `tests/unit/test_examples*.py` |
-| cli-migrate | 0/12 | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
-| ci-setup | 0/41 | `.github/workflows/**` |
-| release | 0/32 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
+| e2e-validation | 85/85 ✅ | `tests/integration/test_e2e*.py`, `tests/integration/test_mionyee*.py` |
+| mcp-server | 12/12 ✅ | `owlclaw_mcp/**`, `tests/unit/test_mcp*.py` |
+| owlhub | 32/42 🟡 | `owlclaw/owlhub/**`, `tests/unit/test_owlhub*.py` |
+| examples | 0/12 🟡 | `examples/**`, `tests/unit/test_examples*.py` |
+| cli-migrate | 0/24 🟡 | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
+| ci-setup | 0/12 🟡 | `.github/workflows/**` |
+| release | 0/32 🟡 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
 
-**前置条件**：skill-templates(56/56 ✅) + integrations-langfuse(20/20 ✅) + integrations-langchain(50/50 ✅) 已完成。
+**前置条件**：skill-templates ✅ + integrations-langfuse ✅ + integrations-langchain ✅ + e2e-validation ✅ + mcp-server ✅ 已完成。
 
-**下一任务（当前完成后）**：全部收口即完成 Phase 2/3，项目进入发布阶段。
+**下一任务（当前完成后）**：owlhub + examples + cli-migrate + ci-setup + release 全部收口即完成 Phase 2/3，项目进入发布阶段。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
