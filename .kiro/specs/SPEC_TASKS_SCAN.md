@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：mcp-server 终轮验收 3.3~3.4） |
-| 批次状态 | **已完成**。mcp-server 全部任务收口（12/12）。 |
-| 已完成项 | 1) 补充 MCP 单测分支覆盖（请求校验/错误码/类型映射/schema 分支）；2) 覆盖率提升至 `owlclaw.mcp=96%`；3) 新增文档 `docs/MCP_SERVER.md`，明确 MVP 能力边界与使用方式；4) 回填 `mcp-server/tasks.md` 剩余验收项并标记完成。 |
+| 当前批次 | review loop（常规审校：无待审分支增量） |
+| 批次状态 | **已完成**。`codex-work` 与 `codex-gpt-work` 均无新提交，执行常规质量扫描通过。 |
+| 已完成项 | 1) 分支扫描：`review-work..codex-work`、`review-work..codex-gpt-work` 均为空；2) 全局静态检查通过；3) Checkpoint 状态回填为“等待下一批编码提交”。 |
 | 下一待执行 | `codex-work` 继续 `triggers-queue` Task 22（日志安全）→ Task 23（配置模板与文档）→ Task 24（Mock 验证脚本）→ Task 25（最终检查点）；`codex-gpt-work` 按分配进入 `owlhub` Task 1（需求与设计前置）。 |
-| 验收快照 | `poetry run pytest tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py --cov=owlclaw.mcp --cov-report=term-missing -q` -> 11 passed, 96% cover；`poetry run ruff check owlclaw/mcp tests/unit/test_mcp_server.py tests/integration/test_mcp_server_integration.py` -> all checks passed；`poetry run pytest tests/integration/test_queue_trigger_e2e.py -q`（4 passed）。 |
+| 验收快照 | `poetry run ruff check .`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 132 source files）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
