@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（12/26） | 声明式工具绑定（Task 0~11 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全集成） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（13/26） | 声明式工具绑定（Task 0~12 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: declarative-binding Task 11） |
-| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 12/26。 |
-| 已完成项 | 1) 完成 Task 11：`BindingTool` 执行链增加 InputSanitizer 参数清洗与 DataMasker 结果脱敏；2) 增加 SQL 写操作 risk_level 联动（低风险直接拒绝，高/critical 走确认门控）；3) `skills` 自动注册时透传 skill 的 `risk_level/requires_confirmation` 到 BindingTool；4) 新增安全单测覆盖输入清洗、输出脱敏、risk 联动。 |
-| 下一待执行 | `codex-work`：进入 `declarative-binding` Task 12（治理集成：visibility/budget/rate limiting）。 |
-| 验收快照 | 本批验证：`pytest tests/unit/capabilities/test_bindings_tool.py tests/unit/capabilities/test_bindings_tool_security.py tests/integration/test_bindings_skills_loader_integration.py tests/integration/test_bindings_shadow_report_integration.py -q`（10 passed）+ `ruff check` 通过。 |
+| 当前批次 | coding loop（codex-work: declarative-binding Task 12） |
+| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 13/26。 |
+| 已完成项 | 1) 完成 Task 12：修复 Registry 对 BindingTool 的元数据回退，确保 binding 工具进入治理可见性视图；2) BindingTool 自动携带 task_type/constraints/focus/risk 元数据；3) 新增治理集成测试验证 BindingTool 参与 visibility、budget、rate limit 约束链路。 |
+| 下一待执行 | `codex-work`：进入 `declarative-binding` Task 13（SKILL.md 书写门槛降低）。 |
+| 验收快照 | 本批验证：`pytest tests/unit/capabilities/test_bindings_governance.py tests/unit/test_registry.py tests/unit/capabilities/test_bindings_tool_security.py tests/integration/test_bindings_skills_loader_integration.py -q`（40 passed）+ `ruff check` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

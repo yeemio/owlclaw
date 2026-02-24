@@ -386,6 +386,9 @@ def auto_register_binding_tools(
                 ledger=ledger,
                 risk_level=skill.risk_level,
                 requires_confirmation=skill.requires_confirmation,
+                task_type=skill.task_type,
+                constraints=skill.constraints,
+                focus=skill.focus,
             )
             registry.register_handler(tool_name, tool)
             registered.append(tool_name)
