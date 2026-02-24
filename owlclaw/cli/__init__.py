@@ -31,6 +31,9 @@ def _register_subapps() -> None:
     _SUBAPPS_REGISTERED = True
 
 
+_register_subapps()
+
+
 @app.command("init")
 def init_command(
     path: str = typer.Option(".", "--path", help="Output directory"),
