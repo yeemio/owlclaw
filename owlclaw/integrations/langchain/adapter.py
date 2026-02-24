@@ -7,7 +7,7 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from owlclaw.integrations.langchain.config import LangChainConfig
 from owlclaw.integrations.langchain.errors import ErrorHandler
@@ -88,7 +88,7 @@ class LangChainAdapter:
             reason = str(exc)
 
         try:
-            self._config.validate()
+            self._config.validate_semantics()
             config_valid = True
         except Exception:
             config_valid = False
@@ -479,5 +479,5 @@ class LangChainAdapter:
             session["context"] = context
         result = invoke_handler(fallback_name, session=session)
         if asyncio.iscoroutine(result):
-            return await result
-        return result
+            return cast(dict[str, Any], await result)
+        return cast(dict[str, Any], result)
