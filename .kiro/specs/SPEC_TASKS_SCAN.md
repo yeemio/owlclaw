@@ -101,7 +101,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（84/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -145,7 +145,7 @@
 | 最后更新 | 2026-02-24 |
 | 当前批次 | review loop（常规审校：无待审分支增量） |
 | 批次状态 | **已完成**。`codex-work` 与 `codex-gpt-work` 均无新提交，常规质量扫描通过。 |
-| 已完成项 | 1) 审批并合并 `codex-work` Task 22（日志安全）；2) 审批并合并 `codex-work` Task 23（配置模板与文档）；3) 分支增量扫描确认两条编码分支均已追平。 |
+| 已完成项 | 1) 审批并合并 `codex-work` Task 22（日志安全）；2) 审批并合并 `codex-work` Task 23（配置模板与文档）；3) 分支增量扫描确认两条编码分支均已追平；4) 历史完成项审计并修正 `e2e-validation` 进度口径（`19/19` → `85/85`）。 |
 | 下一待执行 | `codex-work` 继续 `triggers-queue` Task 24（Mock 验证脚本）→ Task 25（最终检查点）；`codex-gpt-work` 继续 `owlhub` Task 1。 |
 | 验收快照 | `poetry run ruff check .`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found in 133 source files）。 |
 | 阻塞项 | 无。 |
