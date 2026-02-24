@@ -64,6 +64,7 @@ def _build_index_file(
     version: str,
     tags: list[str] | None = None,
     version_state: str = "released",
+    dependencies: dict[str, str] | None = None,
 ) -> Path:
     checksum = IndexBuilder().calculate_checksum(archive_path)
     index = {
@@ -79,7 +80,7 @@ def _build_index_file(
                     "description": f"{name} description",
                     "license": "MIT",
                     "tags": tags if tags is not None else ["demo"],
-                    "dependencies": {},
+                    "dependencies": dependencies if dependencies is not None else {},
                 },
                 "download_url": str(archive_path),
                 "checksum": checksum,

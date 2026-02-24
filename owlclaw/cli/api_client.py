@@ -54,9 +54,9 @@ class SkillHubApiClient:
                     raise
         return self.index_client.search(query=query, tags=tags, tag_mode=tag_mode, include_draft=include_draft)
 
-    def install(self, *, name: str, version: str | None = None) -> Path:
+    def install(self, *, name: str, version: str | None = None, no_deps: bool = False) -> Path:
         """Install skill using static index client."""
-        target = self.index_client.install(name=name, version=version)
+        target = self.index_client.install(name=name, version=version, no_deps=no_deps)
         self.last_install_warning = self.index_client.last_install_warning
         return target
 
@@ -113,6 +113,7 @@ class SkillHubApiClient:
                     version_state=str(item.get("version_state", "released")),
                     download_url="",
                     checksum="",
+                    dependencies={},
                 )
             )
         return results

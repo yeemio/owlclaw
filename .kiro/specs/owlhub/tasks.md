@@ -629,29 +629,29 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Verify backward compatibility maintained
     - _Requirements: 8.4_
 
-- [ ] 28. Implement dependency resolution
-  - [ ] 28.1 Create dependency resolver
+- [x] 28. Implement dependency resolution
+  - [x] 28.1 Create dependency resolver
     - Create `owlclaw/cli/resolver.py` with dependency resolution logic
     - Implement topological sort for dependency order
     - Detect circular dependencies and report errors
     - Resolve version constraints using semantic versioning
     - _Requirements: 3.1, 4.4_
 
-  - [ ] 28.2 Integrate resolver into install command
+  - [x] 28.2 Integrate resolver into install command
     - Automatically resolve and install dependencies
     - Display dependency tree before installation
     - Add `--no-deps` flag to skip dependency installation
     - Update lock file with full dependency graph
     - _Requirements: 3.1, 3.4_
 
-  - [ ]* 28.3 Write unit tests for dependency resolver
+  - [x]* 28.3 Write unit tests for dependency resolver
     - Test simple dependency chain resolution
     - Test circular dependency detection
     - Test version constraint resolution
     - Test missing dependency error handling
     - _Requirements: 3.1, 4.4_
 
-  - [ ]* 28.4 Write integration test for dependency installation
+  - [x]* 28.4 Write integration test for dependency installation
     - Test installing skill with dependencies
     - Test dependency tree display
     - Test lock file includes all dependencies

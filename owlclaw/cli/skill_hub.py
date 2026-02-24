@@ -53,6 +53,7 @@ def search_command(
 def install_command(
     name: str = typer.Argument(..., help="Skill name to install."),
     version: str = typer.Option("", "--version", help="Exact version to install.", is_flag=False),
+    no_deps: bool = typer.Option(False, "--no-deps", help="Skip dependency installation."),
     mode: str = typer.Option("auto", "--mode", help="Hub mode: auto/index/api.", is_flag=False),
     api_base_url: str = typer.Option("", "--api-base-url", help="OwlHub API base URL.", is_flag=False),
     api_token: str = typer.Option("", "--api-token", help="OwlHub API token.", is_flag=False),
@@ -63,14 +64,24 @@ def install_command(
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
 ) -> None:
     """Install one skill from OwlHub index."""
+    index_client = _create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
     client = SkillHubApiClient(
-        index_client=_create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file),
+        index_client=index_client,
         api_base_url=api_base_url,
         api_token=api_token,
         mode=mode,
     )
+    if not no_deps:
+        candidates = index_client.search(query=name, include_draft=True)
+        selected = [item for item in candidates if item.name == name and (not version or item.version == version)]
+        if selected:
+            dependencies = selected[-1].dependencies
+            if dependencies:
+                typer.echo("Dependencies:")
+                for dep_name, constraint in sorted(dependencies.items()):
+                    typer.echo(f"  - {dep_name} ({constraint})")
     try:
-        installed_path = client.install(name=name, version=version or None)
+        installed_path = client.install(name=name, version=version or None, no_deps=no_deps)
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1) from exc

@@ -15,6 +15,7 @@ from typing import Any, cast
 
 from packaging.version import InvalidVersion, Version
 
+from owlclaw.cli.resolver import DependencyResolver
 from owlclaw.owlhub.indexer.builder import IndexBuilder
 from owlclaw.owlhub.validator import Validator
 
@@ -31,6 +32,7 @@ class SearchResult:
     version_state: str
     download_url: str
     checksum: str
+    dependencies: dict[str, str]
 
 
 class OwlHubClient:
@@ -94,13 +96,16 @@ class OwlHubClient:
                     version_state=version_state,
                     download_url=str(entry.get("download_url", "")),
                     checksum=str(entry.get("checksum", "")),
+                    dependencies=manifest.get("dependencies", {})
+                    if isinstance(manifest.get("dependencies", {}), dict)
+                    else {},
                 )
             )
 
         results.sort(key=lambda item: (item.name, item.version), reverse=False)
         return results
 
-    def install(self, *, name: str, version: str | None = None) -> Path:
+    def install(self, *, name: str, version: str | None = None, no_deps: bool = False) -> Path:
         """Install one skill by name and optional exact version."""
         candidates = self.search(query=name)
         matched = [item for item in candidates if item.name == name]
@@ -109,34 +114,13 @@ class OwlHubClient:
         if not matched:
             raise ValueError(f"skill not found: {name}{'@' + version if version else ''}")
         selected = sorted(matched, key=lambda item: item.version)[-1]
-        self.last_install_warning = None
-        source_entry = _find_source_entry(self._load_index(), selected)
-        if source_entry is not None and _is_hidden_entry(source_entry):
-            raise ValueError(f"skill {selected.publisher}/{selected.name} is blocked by moderation policy")
-        if selected.version_state == "deprecated":
-            self.last_install_warning = f"skill {selected.name}@{selected.version} is deprecated"
-
-        downloaded = self._download(selected.download_url)
-        actual_checksum = self.index_builder.calculate_checksum(downloaded)
-        if selected.checksum and actual_checksum != selected.checksum:
-            raise ValueError("checksum verification failed")
-
+        plan = [selected]
+        if not no_deps:
+            resolver = DependencyResolver(get_candidates=self._list_candidates_by_name)
+            plan = [node.result for node in resolver.resolve(root=selected)]
         target = self.install_dir / selected.name / selected.version
-        if target.exists():
-            shutil.rmtree(target)
-        target.mkdir(parents=True, exist_ok=True)
-
-        if tarfile.is_tarfile(downloaded):
-            with tarfile.open(downloaded, "r:*") as archive:
-                archive.extractall(target)
-        else:
-            if downloaded.is_dir():
-                shutil.copytree(downloaded, target, dirs_exist_ok=True)
-            else:
-                shutil.copy2(downloaded, target / downloaded.name)
-
-        self._validate_install(target)
-        self._write_lock(selected, target)
+        for item in plan:
+            target = self._install_one(item)
         return target
 
     def list_installed(self) -> list[dict[str, Any]]:
@@ -216,6 +200,40 @@ class OwlHubClient:
             return None
         matched.sort(key=lambda item: _version_sort_key(item.version))
         return matched[-1]
+
+    def _list_candidates_by_name(self, name: str) -> list[SearchResult]:
+        return self.search(query=name, include_draft=True)
+
+    def _install_one(self, selected: SearchResult) -> Path:
+        self.last_install_warning = None
+        source_entry = _find_source_entry(self._load_index(), selected)
+        if source_entry is not None and _is_hidden_entry(source_entry):
+            raise ValueError(f"skill {selected.publisher}/{selected.name} is blocked by moderation policy")
+        if selected.version_state == "deprecated":
+            self.last_install_warning = f"skill {selected.name}@{selected.version} is deprecated"
+
+        downloaded = self._download(selected.download_url)
+        actual_checksum = self.index_builder.calculate_checksum(downloaded)
+        if selected.checksum and actual_checksum != selected.checksum:
+            raise ValueError("checksum verification failed")
+
+        target = self.install_dir / selected.name / selected.version
+        if target.exists():
+            shutil.rmtree(target)
+        target.mkdir(parents=True, exist_ok=True)
+
+        if tarfile.is_tarfile(downloaded):
+            with tarfile.open(downloaded, "r:*") as archive:
+                archive.extractall(target)
+        else:
+            if downloaded.is_dir():
+                shutil.copytree(downloaded, target, dirs_exist_ok=True)
+            else:
+                shutil.copy2(downloaded, target / downloaded.name)
+
+        self._validate_install(target)
+        self._write_lock(selected, target)
+        return target
 
     def _write_lock(self, selected: SearchResult, target: Path) -> None:
         existing = {"version": "1.0", "generated_at": "", "skills": []}

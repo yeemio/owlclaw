@@ -118,7 +118,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/73） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（93/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（98/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -150,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 27.1~27.4） |
-| 批次状态 | **已完成**。CLI API 模式、自动回退、token 管理与 publish 命令已落地，并完成兼容性测试。 |
-| 已完成项 | 1) 新增 `owlclaw/cli/api_client.py`：实现 API/index 双模式客户端（`mode=auto|index|api`）、`search` API 调用、失败自动回退、token header、`publish()`；2) 更新 `owlclaw/cli/skill_hub.py`：search/install/installed/update 接入统一客户端并新增 `publish` 命令；3) 更新 `owlclaw/cli/skill.py`：注册 `owlclaw skill publish`；4) 更新 `owlclaw/cli/__init__.py`：argparse 分发增加 `--mode` / `--api-base-url` / `--api-token` 与 `publish` 子命令；5) 新增 `tests/unit/test_cli_api_client.py`：覆盖 API 模式、自动回退、token 认证与 publish 请求；6) 更新 `tests/unit/test_owlhub_cli_client.py`：新增 CLI publish 命令测试；7) 新增 `tests/integration/test_owlhub_cli_api_compatibility.py`：Property 26（CLI index 模式与 API 模式兼容）。 |
-| 下一待执行 | `owlhub` Task 28（dependency resolution）。 |
-| 验收快照 | `poetry run ruff check owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/skill.py owlclaw/cli/__init__.py tests/unit/test_cli_api_client.py tests/unit/test_owlhub_cli_client.py tests/integration/test_owlhub_cli_api_compatibility.py` -> all checks passed；`poetry run mypy owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/skill.py owlclaw/cli/__init__.py` -> success；`poetry run pytest tests/unit/test_cli_api_client.py tests/unit/test_owlhub_cli_client.py tests/integration/test_owlhub_cli_api_compatibility.py -q` -> 21 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 28.1~28.4） |
+| 批次状态 | **已完成**。依赖解析（拓扑排序/约束/循环检测）与 CLI 安装链路已打通，并通过单元与集成测试。 |
+| 已完成项 | 1) 新增 `owlclaw/cli/resolver.py`：实现 `DependencyResolver`（`^`/`~`/范围约束、循环检测、缺失依赖报错、拓扑安装顺序）；2) 更新 `owlclaw/owlhub/client.py`：`SearchResult` 增加 `dependencies`，`install()` 集成依赖解析并支持 `no_deps`；3) 更新 `owlclaw/cli/skill_hub.py`：`install` 增加 `--no-deps` 并展示依赖树；4) 更新 `owlclaw/cli/__init__.py`：argparse 分发支持 `--no-deps`；5) 新增 `tests/unit/test_cli_resolver.py`：覆盖依赖链、循环、约束选择、缺失依赖；6) 新增 `tests/integration/test_owlhub_dependency_installation.py`：覆盖依赖安装与 `--no-deps` 行为；7) 回填 `owlhub/tasks.md` 的 Task 28、28.1、28.2、28.3、28.4。 |
+| 下一待执行 | `owlhub` Task 29（error handling and recovery）。 |
+| 验收快照 | `poetry run ruff check owlclaw/cli/resolver.py owlclaw/owlhub/client.py owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py tests/unit/test_cli_resolver.py tests/integration/test_owlhub_dependency_installation.py tests/unit/test_owlhub_cli_client.py` -> all checks passed；`poetry run mypy owlclaw/cli/resolver.py owlclaw/owlhub/client.py owlclaw/cli/api_client.py owlclaw/cli/skill_hub.py owlclaw/cli/__init__.py` -> success；`poetry run pytest tests/unit/test_cli_resolver.py tests/integration/test_owlhub_dependency_installation.py tests/unit/test_owlhub_cli_client.py tests/unit/test_cli_api_client.py tests/integration/test_owlhub_cli_api_compatibility.py -q` -> 26 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
