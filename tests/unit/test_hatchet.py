@@ -8,8 +8,10 @@ from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig, _substitu
 def test_hatchet_config_defaults(monkeypatch):
     """HatchetConfig has expected defaults (single-instance multi-DB: hatchet database)."""
     monkeypatch.delenv("HATCHET_SERVER_URL", raising=False)
+    monkeypatch.delenv("HATCHET_GRPC_TLS_STRATEGY", raising=False)
     config = HatchetConfig()
     assert config.server_url == "http://localhost:7077"
+    assert config.grpc_tls_strategy == "tls"
     assert config.namespace == "owlclaw"
     assert config.mode == "production"
     assert config.max_concurrent_tasks == 10
@@ -68,6 +70,13 @@ hatchet:
 """, encoding="utf-8")
     config = HatchetConfig.from_yaml(config_file)
     assert config.namespace == "from-env"
+
+
+def test_hatchet_config_grpc_tls_strategy_from_env(monkeypatch):
+    """HatchetConfig reads grpc_tls_strategy from environment when unset."""
+    monkeypatch.setenv("HATCHET_GRPC_TLS_STRATEGY", "none")
+    config = HatchetConfig()
+    assert config.grpc_tls_strategy == "none"
 
 
 def test_substitute_env_dict(monkeypatch):
@@ -170,3 +179,38 @@ def test_hatchet_cron_validation():
         _validate_cron("invalid")
     _validate_cron("0 9 * * 1-5")
     _validate_cron("0 */5 * * * *")
+
+
+def test_hatchet_start_worker_adds_sigquit_fallback(monkeypatch):
+    """start_worker() adds SIGQUIT fallback on platforms without SIGQUIT."""
+    import owlclaw.integrations.hatchet as hatchet_module
+
+    class FakeSignal:
+        SIGTERM = 15
+
+    class FakeWorker:
+        def __init__(self):
+            self.started = False
+
+        def start(self):
+            self.started = True
+
+    class FakeHatchet:
+        def __init__(self):
+            self.worker_obj = FakeWorker()
+
+        def worker(self, name, slots, workflows):  # noqa: ARG002
+            return self.worker_obj
+
+    fake_signal = FakeSignal()
+    monkeypatch.setattr(hatchet_module, "signal", fake_signal)
+
+    client = HatchetClient(HatchetConfig(api_token="ey.fake.token"))
+    fake_hatchet = FakeHatchet()
+    client._hatchet = fake_hatchet
+    client._workflows["demo"] = object()
+
+    client.start_worker()
+
+    assert getattr(fake_signal, "SIGQUIT", None) == fake_signal.SIGTERM
+    assert fake_hatchet.worker_obj.started is True
