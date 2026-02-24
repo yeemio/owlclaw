@@ -10,7 +10,13 @@ import pytest
 
 from owlclaw import OwlClaw
 from owlclaw.mcp import McpProtocolServer
-from owlclaw.triggers.signal import SignalResult
+from owlclaw.triggers.signal import (
+    AgentStateManager,
+    SignalResult,
+    SignalRouter,
+    default_handlers,
+    register_signal_mcp_tools,
+)
 
 
 def _create_test_app(tmp_path: Path) -> OwlClaw:
@@ -242,3 +248,41 @@ async def test_mcp_signal_tool_dispatches_to_signal_router(tmp_path: Path) -> No
     assert payload["run_id"] == "run-1"
     assert captured["signal"].agent_id == "a1"
     assert captured["signal"].tenant_id == "t1"
+
+
+@pytest.mark.asyncio
+async def test_register_signal_mcp_tools_via_registry(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+    assert app.registry is not None
+
+    class _Runtime:
+        async def trigger_event(
+            self,
+            event_name: str,
+            payload: dict[str, Any],
+            focus: str | None = None,
+            tenant_id: str = "default",
+        ) -> dict[str, Any]:
+            _ = (event_name, payload, focus, tenant_id)
+            return {"run_id": "run-mcp-registry"}
+
+    state = AgentStateManager(max_pending_instructions=4)
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=_Runtime()))
+    register_signal_mcp_tools(registry=app.registry, router=router)
+
+    server = McpProtocolServer.from_app(app)
+    tools_response = await server.handle_message({"jsonrpc": "2.0", "id": 21, "method": "tools/list"})
+    tool_names = {item["name"] for item in tools_response["result"]["tools"]}
+    assert {"owlclaw_pause", "owlclaw_resume", "owlclaw_trigger", "owlclaw_instruct"} <= tool_names
+
+    trigger_response = await server.handle_message(
+        {
+            "jsonrpc": "2.0",
+            "id": 22,
+            "method": "tools/call",
+            "params": {"name": "owlclaw_trigger", "arguments": {"agent_id": "agent-a", "message": "run"}},
+        }
+    )
+    payload = json.loads(trigger_response["result"]["content"][0]["text"])
+    assert payload["status"] == "triggered"
+    assert payload["run_id"] == "run-mcp-registry"

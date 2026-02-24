@@ -7,7 +7,7 @@ import logging
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from owlclaw.agent import AgentRuntime
 from owlclaw.capabilities.knowledge import KnowledgeInjector
@@ -31,6 +31,7 @@ from owlclaw.triggers.db_change import (
     DBChangeTriggerRegistration,
     PostgresNotifyAdapter,
 )
+from owlclaw.triggers.signal import AgentStateManager
 
 logger = logging.getLogger(__name__)
 
@@ -405,10 +406,10 @@ class OwlClaw:
         self,
         *,
         path: str,
-        method: str = "POST",
+        method: Literal["GET", "POST", "PUT", "PATCH", "DELETE"] = "POST",
         event_name: str | None = None,
         tenant_id: str = "default",
-        response_mode: str = "async",
+        response_mode: Literal["sync", "async"] = "async",
         sync_timeout_seconds: int = 60,
         focus: str | None = None,
         auth_required: bool = True,
@@ -421,7 +422,7 @@ class OwlClaw:
         def decorator(fn: Callable) -> Callable:
             config = APITriggerConfig(
                 path=path,
-                method=method.upper(),
+                method=cast(Literal["GET", "POST", "PUT", "PATCH", "DELETE"], method.upper()),
                 event_name=event_name or fn.__name__,
                 tenant_id=tenant_id,
                 response_mode=response_mode,
@@ -842,6 +843,18 @@ class OwlClaw:
             ledger=self._ledger,
             hatchet_client=hatchet_client,
         )
+        signal_cfg: dict[str, Any] = {}
+        triggers_cfg = self._config.get("triggers")
+        if isinstance(triggers_cfg, dict):
+            candidate = triggers_cfg.get("signal")
+            if isinstance(candidate, dict):
+                signal_cfg = candidate
+        max_pending = signal_cfg.get("max_pending_instructions", 10)
+        try:
+            max_pending_instructions = max(1, int(max_pending))
+        except (TypeError, ValueError):
+            max_pending_instructions = 10
+        signal_state_manager = AgentStateManager(max_pending_instructions=max_pending_instructions)
         return AgentRuntime(
             agent_id=self.name,
             app_dir=resolved_app_dir,
@@ -851,6 +864,7 @@ class OwlClaw:
             builtin_tools=builtin_tools,
             router=self._router,
             ledger=self._ledger,
+            signal_state_manager=signal_state_manager,
         )
 
     async def start(
