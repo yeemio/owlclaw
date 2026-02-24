@@ -213,8 +213,10 @@ class TemplateRenderer:
         """Convert to kebab-case (lowercase, spaces/underscores to hyphens)."""
         if not isinstance(text, str):
             text = str(text)
-        text = re.sub(r"[^\w\s-]", "", text)
+        text = text.lower()
+        text = re.sub(r"[^a-z0-9\s_-]", "", text)
         text = re.sub(r"[\s_]+", "-", text)
+        text = re.sub(r"-+", "-", text)
         return text.strip("-").lower()
 
     @staticmethod
@@ -222,6 +224,8 @@ class TemplateRenderer:
         """Convert to snake_case (lowercase, spaces/hyphens to underscores)."""
         if not isinstance(text, str):
             text = str(text)
-        text = re.sub(r"[^\w\s_-]", "", text)
+        text = text.lower()
+        text = re.sub(r"[^a-z0-9\s_-]", "", text)
         text = re.sub(r"[\s-]+", "_", text)
+        text = re.sub(r"_+", "_", text)
         return text.strip("_").lower()

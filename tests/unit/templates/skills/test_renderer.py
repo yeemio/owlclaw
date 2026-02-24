@@ -1,5 +1,6 @@
 """Unit tests for owlclaw.templates.skills.renderer (skill-templates Task 3)."""
 
+import re
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -459,3 +460,68 @@ owner: {{ owner }}
             with pytest.raises(ParameterValueError) as exc_info:
                 rdr.render("monitoring/health-check", {"format": invalid_value})
             assert exc_info.value.param_name == "format"
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        skill_name=st.from_regex(r"[a-z][a-z0-9-]{0,20}", fullmatch=True),
+        interval=st.integers(min_value=1, max_value=3600),
+    )
+    def test_property_template_render_is_idempotent(self, skill_name: str, interval: int) -> None:
+        parameters = [
+            {"name": "skill_name", "type": "str", "description": "name", "required": True},
+            {"name": "interval", "type": "int", "description": "interval", "required": True},
+        ]
+        template = _build_renderer_template(
+            parameters=parameters,
+            body_lines=["name: {{ skill_name }}", "interval: {{ interval }}"],
+        )
+        with TemporaryDirectory() as tmp_dir:
+            reg = _make_registry(Path(tmp_dir), template)
+            rdr = TemplateRenderer(reg)
+            params = {"skill_name": skill_name, "interval": interval}
+            out1 = rdr.render("monitoring/health-check", params)
+            out2 = rdr.render("monitoring/health-check", params)
+            assert out1 == out2
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        skill_name=st.from_regex(r"[a-z][a-z0-9-]{0,20}", fullmatch=True),
+        owner=st.from_regex(r"[a-z][a-z0-9_-]{0,20}", fullmatch=True),
+    )
+    def test_property_render_replaces_all_jinja_placeholders(self, skill_name: str, owner: str) -> None:
+        parameters = [
+            {"name": "skill_name", "type": "str", "description": "name", "required": True},
+            {"name": "owner", "type": "str", "description": "owner", "required": True},
+        ]
+        template = _build_renderer_template(
+            parameters=parameters,
+            body_lines=["name: {{ skill_name }}", "owner: {{ owner }}", "# {{ skill_name }} by {{ owner }}"],
+        )
+        with TemporaryDirectory() as tmp_dir:
+            reg = _make_registry(Path(tmp_dir), template)
+            rdr = TemplateRenderer(reg)
+            rendered = rdr.render("monitoring/health-check", {"skill_name": skill_name, "owner": owner})
+            assert "{{" not in rendered
+            assert "}}" not in rendered
+            assert "{%" not in rendered
+            assert "%}" not in rendered
+
+    @settings(max_examples=100, deadline=None)
+    @given(text=st.text(max_size=60))
+    def test_property_kebab_case_conversion(self, text: str) -> None:
+        converted = TemplateRenderer._kebab_case(text)
+        assert converted == converted.lower()
+        assert "-" not in converted[:1]
+        if converted:
+            assert "-" not in converted[-1:]
+            assert re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", converted) is not None
+
+    @settings(max_examples=100, deadline=None)
+    @given(text=st.text(max_size=60))
+    def test_property_snake_case_conversion(self, text: str) -> None:
+        converted = TemplateRenderer._snake_case(text)
+        assert converted == converted.lower()
+        assert "_" not in converted[:1]
+        if converted:
+            assert "_" not in converted[-1:]
+            assert re.fullmatch(r"[a-z0-9]+(?:_[a-z0-9]+)*", converted) is not None
