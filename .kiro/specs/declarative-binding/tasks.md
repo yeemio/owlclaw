@@ -99,11 +99,11 @@
   - [x] 9.6 实现 shadow 模式（写操作只记录）
   - [x] 9.7 单元测试：参数化查询、read_only、string interpolation 拒绝、max_rows
 
-- [ ] **Task 10**: Shadow 模式 → 对比报告
-  - [ ] 10.1 shadow 执行结果写入 Ledger 并标记 `mode=shadow`
-  - [ ] 10.2 实现 shadow 结果查询 API（按 tool_name、时间范围）
-  - [ ] 10.3 与 `e2e-validation` report_generator 集成（shadow 数据作为对比输入）
-  - [ ] 10.4 集成测试：shadow 调用 → Ledger → 查询 → 报告
+- [x] **Task 10**: Shadow 模式 → 对比报告
+  - [x] 10.1 shadow 执行结果写入 Ledger 并标记 `mode=shadow`
+  - [x] 10.2 实现 shadow 结果查询 API（按 tool_name、时间范围）
+  - [x] 10.3 与 `e2e-validation` report_generator 集成（shadow 数据作为对比输入）
+  - [x] 10.4 集成测试：shadow 调用 → Ledger → 查询 → 报告
 
 ### Phase 3：安全与治理（P1）
 

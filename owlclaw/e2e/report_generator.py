@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
+from owlclaw.capabilities.bindings.shadow import ShadowExecutionRecord
 from owlclaw.e2e.models import ExecutionResult
 from owlclaw.e2e.replay import ReplayResult
 
@@ -230,6 +231,71 @@ class ReportGenerator:
                 },
             ],
             "recommendations": ["Review medium/high deviation events before production rollout."],
+        }
+
+    def generate_shadow_comparison_report(
+        self,
+        *,
+        tool_name: str,
+        shadow_results: list[ShadowExecutionRecord],
+    ) -> dict[str, Any]:
+        """Generate report for binding shadow executions."""
+        total = len(shadow_results)
+        by_status: dict[str, int] = {}
+        avg_elapsed = 0.0
+        if total > 0:
+            avg_elapsed = sum(item.elapsed_ms for item in shadow_results) / total
+        for item in shadow_results:
+            key = item.status or "unknown"
+            by_status[key] = by_status.get(key, 0) + 1
+
+        timeline = [
+            {
+                "run_id": item.run_id,
+                "created_at": item.created_at.isoformat() if item.created_at is not None else None,
+                "elapsed_ms": item.elapsed_ms,
+                "status": item.status,
+                "result_summary": item.result_summary,
+                "parameters": item.parameters,
+            }
+            for item in shadow_results
+        ]
+
+        return {
+            "id": f"shadow-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}",
+            "title": "Binding Shadow Comparison Report",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "summary": {
+                "tool_name": tool_name,
+                "total_shadow_runs": total,
+                "average_elapsed_ms": avg_elapsed,
+                "status_distribution": by_status,
+            },
+            "sections": [
+                {
+                    "title": "shadow_timeline",
+                    "content": "Shadow-mode execution timeline for declarative binding tool.",
+                    "data": timeline,
+                    "charts": ["shadow_latency_chart"],
+                }
+            ],
+            "charts": [
+                {
+                    "id": "shadow_latency_chart",
+                    "type": "line",
+                    "title": "Shadow Execution Latency",
+                    "data": {
+                        "labels": [str(idx + 1) for idx in range(total)],
+                        "values": [item.elapsed_ms for item in shadow_results],
+                    },
+                    "options": {"y_axis": "ms"},
+                }
+            ],
+            "recommendations": (
+                ["Shadow runs look healthy; consider increasing migration_weight."]
+                if total >= 5 and by_status.get("error", 0) == 0
+                else ["Collect more shadow samples before rollout."]
+            ),
         }
 
     def export_report(self, report: dict[str, Any], format_name: str) -> str:

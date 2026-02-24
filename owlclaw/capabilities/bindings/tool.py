@@ -71,12 +71,13 @@ class BindingTool:
         try:
             result = await executor.execute(self.binding_config, kwargs)
             elapsed_ms = int((time.monotonic() - start) * 1000)
+            status = self._derive_status(result)
             await self._record_ledger(
                 run_id=run_id,
                 parameters=kwargs,
                 result_summary=self._summarize(result),
                 elapsed_ms=elapsed_ms,
-                status="success",
+                status=status,
                 error_message=None,
             )
             return result
@@ -143,3 +144,10 @@ class BindingTool:
         if len(text) > max_length:
             return f"{text[:max_length]}...(truncated)"
         return text
+
+    @staticmethod
+    def _derive_status(result: dict[str, Any]) -> str:
+        raw = result.get("status")
+        if isinstance(raw, str) and raw.strip().lower() == "shadow":
+            return "shadow"
+        return "success"

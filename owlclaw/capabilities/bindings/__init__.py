@@ -13,6 +13,7 @@ from owlclaw.capabilities.bindings.schema import (
     parse_binding_config,
     validate_binding_config,
 )
+from owlclaw.capabilities.bindings.shadow import ShadowExecutionRecord, query_shadow_results
 from owlclaw.capabilities.bindings.sql_executor import SQLBindingExecutor
 from owlclaw.capabilities.bindings.tool import BindingTool
 
@@ -29,6 +30,8 @@ __all__ = [
     "RetryConfig",
     "SQLBindingConfig",
     "SQLBindingExecutor",
+    "ShadowExecutionRecord",
+    "query_shadow_results",
     "parse_binding_config",
     "validate_binding_config",
 ]

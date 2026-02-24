@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（10/26） | 声明式工具绑定（Task 0~9 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（11/26） | 声明式工具绑定（Task 0~10 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: declarative-binding Task 9） |
-| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 10/26。 |
-| 已完成项 | 1) 完成 Task 8：新增 `QueueBindingExecutor`（active/shadow、headers_mapping），并复用 `queue_adapters`（Kafka/Mock 增加统一 `publish()`）；2) 完成 Task 9：新增 `SQLBindingExecutor`（参数化绑定、read_only 保护、shadow 写操作模拟、max_rows 限制）；3) 单测覆盖 queue/sql executor 关键路径。 |
-| 下一待执行 | `codex-work`：进入 `declarative-binding` Task 10（Shadow 模式 → 对比报告）。 |
-| 验收快照 | 本批验证：`pytest tests/unit/capabilities/test_bindings_sql_executor.py tests/unit/capabilities/test_bindings_queue_executor.py tests/unit/capabilities/test_bindings_http_executor.py tests/unit/capabilities/test_bindings_tool.py tests/unit/capabilities/test_bindings_schema.py -q`（22 passed）+ `ruff check` 通过。 |
+| 当前批次 | coding loop（codex-work: declarative-binding Task 10） |
+| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 11/26。 |
+| 已完成项 | 1) 完成 Task 10：新增 `bindings.shadow` 查询 API（按 tool_name/时间范围查询 shadow 结果）；2) `BindingTool` 对 shadow 返回写入 Ledger `status=shadow` 且保留 `mode=shadow`；3) `e2e.report_generator` 新增 `generate_shadow_comparison_report()`；4) 新增集成测试覆盖 shadow 调用 → Ledger 查询 → 报告生成全链路。 |
+| 下一待执行 | `codex-work`：进入 `declarative-binding` Task 11（安全集成：InputSanitizer/DataMasker/risk_level）。 |
+| 验收快照 | 本批验证：`pytest tests/unit/capabilities/test_bindings_shadow_query.py tests/integration/test_bindings_shadow_report_integration.py tests/e2e/test_report_generator.py tests/unit/capabilities/test_bindings_tool.py -q`（13 passed）+ `ruff check` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
