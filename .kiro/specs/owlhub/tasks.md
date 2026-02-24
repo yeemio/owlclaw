@@ -714,7 +714,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Configure log levels via environment variables
     - _Requirements: NFR-1_
 
-  - [ ] 31.2 Add metrics and health checks
+  - [x] 31.2 Add metrics and health checks
     - Implement `/health` endpoint with dependency checks
     - Implement `/metrics` endpoint with Prometheus format
     - Track API request counts, latencies, error rates

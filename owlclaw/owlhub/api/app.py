@@ -12,7 +12,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from owlclaw.owlhub.api.audit import AuditLogger, create_audit_router
 from owlclaw.owlhub.api.auth import (
@@ -22,6 +22,7 @@ from owlclaw.owlhub.api.auth import (
     enforce_write_auth,
     get_current_principal,
 )
+from owlclaw.owlhub.api.metrics import MetricsCollector
 from owlclaw.owlhub.api.routes.blacklist import router as blacklist_router
 from owlclaw.owlhub.api.routes.reviews import router as reviews_router
 from owlclaw.owlhub.api.routes.skills import router as skills_router
@@ -74,6 +75,11 @@ def create_app() -> FastAPI:
     app.state.blacklist_manager = BlacklistManager(path=blacklist_db)
     app.state.auth_manager = AuthManager()
     app.state.log_level = _resolve_log_level()
+    app.state.metrics = MetricsCollector()
+    app.state.index_path = Path(os.getenv("OWLHUB_INDEX_PATH", "./index.json")).resolve()
+    app.state.review_dir = review_dir
+    app.state.statistics_db = statistics_db
+    app.state.blacklist_db = blacklist_db
 
     @app.middleware("http")
     async def authz_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
@@ -91,6 +97,12 @@ def create_app() -> FastAPI:
                 status_code=exc.status_code,
                 duration_ms=round((time.perf_counter() - started) * 1000.0, 3),
             )
+            app.state.metrics.record_request(
+                method=method,
+                path=path,
+                status_code=exc.status_code,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+            )
             return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
         try:
             response = await call_next(request)
@@ -99,20 +111,51 @@ def create_app() -> FastAPI:
                 "Unhandled API exception: %s",
                 json.dumps({"event": "api_request_error", "method": method, "path": path}, ensure_ascii=False),
             )
+            app.state.metrics.record_request(
+                method=method,
+                path=path,
+                status_code=500,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+            )
             raise
+        duration_ms = (time.perf_counter() - started) * 1000.0
         _log_json(
             app.state.log_level,
             "api_request",
             method=method,
             path=path,
             status_code=response.status_code,
-            duration_ms=round((time.perf_counter() - started) * 1000.0, 3),
+            duration_ms=round(duration_ms, 3),
         )
+        app.state.metrics.record_request(method=method, path=path, status_code=response.status_code, duration_ms=duration_ms)
         return response
 
     @app.get("/health")
-    def health() -> dict[str, str]:
-        return {"status": "ok"}
+    def health() -> dict[str, object]:
+        checks: dict[str, dict[str, str]] = {}
+        index_path = app.state.index_path
+        if index_path.exists():
+            checks["index"] = {"status": "ok", "detail": str(index_path)}
+        else:
+            checks["index"] = {"status": "warn", "detail": f"index file not found: {index_path}"}
+
+        for key, path in (
+            ("review_storage", app.state.review_dir),
+            ("statistics_storage", app.state.statistics_db),
+            ("blacklist_storage", app.state.blacklist_db),
+        ):
+            target = path if path.is_dir() else path.parent
+            if target.exists():
+                checks[key] = {"status": "ok", "detail": str(target)}
+            else:
+                checks[key] = {"status": "warn", "detail": f"path not found: {target}"}
+        return {"status": "ok", "checks": checks}
+
+    @app.get("/metrics")
+    def metrics() -> PlainTextResponse:
+        tracker = app.state.statistics_tracker
+        payload = app.state.metrics.export_prometheus(skill_stats=tracker.list_all_statistics())
+        return PlainTextResponse(payload, media_type="text/plain; version=0.0.4")
 
     @app.post("/api/v1/skills/publish-probe")
     def publish_probe(principal: current_principal_type) -> dict[str, str]:
