@@ -2,8 +2,9 @@
 {% block title %}OwlHub - Skills{% endblock %}
 {% block content %}
 <h1>Skill Catalog</h1>
+<p class="meta">Page {{ page_no }} / {{ total_pages }}</p>
 {% for skill in skills %}
-<article class="card">
+<article class="card" data-skill-id="{{ skill.publisher }}/{{ skill.name }}@{{ skill.version }}">
   <h2>{{ skill.name }} <span class="meta">@{{ skill.version }}</span></h2>
   <div class="meta">{{ skill.publisher }}</div>
   <p>{{ skill.description }}</p>
@@ -17,4 +18,11 @@
   <p><a href="/skills/{{ skill.publisher }}-{{ skill.name }}-{{ skill.version }}.html">Details</a></p>
 </article>
 {% endfor %}
+{% if prev_url or next_url %}
+<div class="card">
+  {% if prev_url %}<a href="{{ prev_url }}">Previous</a>{% endif %}
+  {% if prev_url and next_url %} · {% endif %}
+  {% if next_url %}<a href="{{ next_url }}">Next</a>{% endif %}
+</div>
+{% endif %}
 {% endblock %}

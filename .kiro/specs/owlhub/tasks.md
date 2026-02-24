@@ -214,7 +214,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test backward compatibility with Phase 1 index format
     - _Requirements: 2.1, 6.1, 8.4_
 
-- [ ] 10. Implement Static Site Generator
+- [x] 10. Implement Static Site Generator
   - [x] 10.1 Create `owlhub/site/generator.py` with SiteGenerator class
     - Set up Jinja2 templating environment
     - Implement page generation for skill list, detail, search
@@ -230,7 +230,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add responsive CSS for mobile compatibility
     - _Requirements: 2.1, 2.2, 2.3_
 
-  - [ ] 10.3 Create statistics dashboard page
+  - [x] 10.3 Create statistics dashboard page
     - Create dashboard.html template
     - Display top skills by downloads
     - Display recently updated skills
@@ -245,7 +245,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test template rendering with various data
     - _Requirements: 2.1, 2.3, 8.2_
 
-  - [ ]* 10.5 Write property tests for site generation
+  - [x]* 10.5 Write property tests for site generation
     - **Property 7: 技能详情完整性**
     - **Validates: Requirements 2.3**
     - Generate random skills, verify detail pages contain all required information

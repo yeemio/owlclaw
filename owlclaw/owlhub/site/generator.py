@@ -33,12 +33,19 @@ class SiteGenerator:
             lstrip_blocks=True,
         )
 
-    def generate(self, *, index_data: dict[str, Any], output_dir: Path, base_url: str = "https://owlhub.local") -> None:
+    def generate(
+        self,
+        *,
+        index_data: dict[str, Any],
+        output_dir: Path,
+        base_url: str = "https://owlhub.local",
+        page_size: int = 20,
+    ) -> None:
         """Generate index/detail/search pages, rss feed, sitemap and search metadata."""
         output_dir.mkdir(parents=True, exist_ok=True)
         skills = index_data.get("skills", [])
         generated_at = str(index_data.get("generated_at", ""))
-        pages = self._render_pages(skills=skills, generated_at=generated_at, output_dir=output_dir)
+        pages = self._render_pages(skills=skills, generated_at=generated_at, output_dir=output_dir, page_size=page_size)
 
         search_index_path = output_dir / "search-index.json"
         search_index = index_data.get("search_index", [])
@@ -50,19 +57,66 @@ class SiteGenerator:
         sitemap_path = output_dir / "sitemap.xml"
         sitemap_path.write_text(self._build_sitemap(pages=pages, base_url=base_url), encoding="utf-8")
 
-    def _render_pages(self, *, skills: list[dict[str, Any]], generated_at: str, output_dir: Path) -> list[SkillPage]:
+    def _render_pages(
+        self,
+        *,
+        skills: list[dict[str, Any]],
+        generated_at: str,
+        output_dir: Path,
+        page_size: int,
+    ) -> list[SkillPage]:
         pages: list[SkillPage] = []
         normalized_skills = [self._normalize_skill(item) for item in skills]
 
         index_template = self._env.get_template("index.html")
-        index_output = output_dir / "index.html"
-        index_output.write_text(index_template.render(skills=normalized_skills, generated_at=generated_at), encoding="utf-8")
-        pages.append(SkillPage(url_path="/index.html", file_path=index_output))
+        paged = self._paginate(normalized_skills, page_size=page_size)
+        pages_dir = output_dir / "pages"
+        pages_dir.mkdir(parents=True, exist_ok=True)
+        for page_no, page_skills in enumerate(paged, start=1):
+            file_path = output_dir / "index.html" if page_no == 1 else pages_dir / f"page-{page_no}.html"
+            prev_url = "/index.html" if page_no == 2 else f"/pages/page-{page_no - 1}.html"
+            next_url = f"/pages/page-{page_no + 1}.html"
+            file_path.write_text(
+                index_template.render(
+                    skills=page_skills,
+                    generated_at=generated_at,
+                    page_no=page_no,
+                    total_pages=len(paged),
+                    prev_url=prev_url if page_no > 1 else "",
+                    next_url=next_url if page_no < len(paged) else "",
+                ),
+                encoding="utf-8",
+            )
+            url_path = "/index.html" if page_no == 1 else f"/pages/page-{page_no}.html"
+            pages.append(SkillPage(url_path=url_path, file_path=file_path))
 
         search_template = self._env.get_template("search.html")
         search_output = output_dir / "search.html"
         search_output.write_text(search_template.render(skills=normalized_skills, generated_at=generated_at), encoding="utf-8")
         pages.append(SkillPage(url_path="/search.html", file_path=search_output))
+
+        dashboard_template = self._env.get_template("dashboard.html")
+        dashboard_output = output_dir / "dashboard.html"
+        top_skills = sorted(
+            normalized_skills,
+            key=lambda item: int(item.get("statistics", {}).get("total_downloads", 0)),
+            reverse=True,
+        )[:10]
+        recent_skills = sorted(
+            normalized_skills,
+            key=lambda item: str(item.get("statistics", {}).get("last_updated", "")),
+            reverse=True,
+        )[:10]
+        dashboard_output.write_text(
+            dashboard_template.render(
+                generated_at=generated_at,
+                top_skills=top_skills,
+                recent_skills=recent_skills,
+                total_skills=len(normalized_skills),
+            ),
+            encoding="utf-8",
+        )
+        pages.append(SkillPage(url_path="/dashboard.html", file_path=dashboard_output))
 
         detail_template = self._env.get_template("skill_detail.html")
         skills_dir = output_dir / "skills"
@@ -75,6 +129,14 @@ class SiteGenerator:
             pages.append(SkillPage(url_path=f"/skills/{file_name}", file_path=detail_path))
 
         return pages
+
+    @staticmethod
+    def _paginate(skills: list[dict[str, Any]], *, page_size: int) -> list[list[dict[str, Any]]]:
+        if page_size <= 0:
+            page_size = 20
+        if not skills:
+            return [[]]
+        return [skills[index : index + page_size] for index in range(0, len(skills), page_size)]
 
     @staticmethod
     def _normalize_skill(item: dict[str, Any]) -> dict[str, Any]:

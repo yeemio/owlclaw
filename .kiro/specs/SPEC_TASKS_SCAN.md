@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（31/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（34/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 10.1/10.2/10.4） |
-| 批次状态 | **部分完成**。Static Site Generator 核心与模板、单元测试已落地；Task 10.3（dashboard）与 10.5（属性测试）待完成。 |
-| 已完成项 | 1) 新增 `owlclaw/owlhub/site/generator.py` 与 `owlclaw/owlhub/site/__init__.py`；2) 新增模板 `base.html/index.html/search.html/skill_detail.html`（响应式布局 + 客户端搜索）；3) 生成产物覆盖 `index.html/search.html/skills/*.html/rss.xml/sitemap.xml/search-index.json`；4) 新增 `tests/unit/test_owlhub_site_generator.py`（页面、RSS、sitemap、search-index 验收）；5) 更新 `owlclaw/owlhub/__init__.py` 导出 `SiteGenerator`；6) 回填 `owlhub/tasks.md` 的 Task 10.1、10.2、10.4。 |
-| 下一待执行 | `owlhub` Task 10.3（statistics dashboard）→ Task 10.5（Static Site 属性测试）→ Task 11。 |
-| 验收快照 | `poetry run ruff check owlclaw/owlhub/site/generator.py owlclaw/owlhub/site/__init__.py owlclaw/owlhub/__init__.py tests/unit/test_owlhub_site_generator.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/site/generator.py` -> success；`poetry run pytest tests/unit/test_owlhub_site_generator.py -q` -> 3 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 10.3/10.5） |
+| 批次状态 | **已完成**。Static Site Generator（含 dashboard、分页、属性测试）已收口。 |
+| 已完成项 | 1) 更新 `owlclaw/owlhub/site/generator.py`：新增分页渲染（`index.html + /pages/page-N.html`）、`dashboard.html` 输出、sitemap 覆盖新增页面；2) 新增模板 `dashboard.html` 并更新 `index.html`（分页导航 + `data-skill-id`）；3) 增强 `tests/unit/test_owlhub_site_generator.py`，补 Property 7（详情完整性）与 Property 8（分页一致性）；4) 回填 `owlhub/tasks.md` 的 Task 10、10.3、10.5。 |
+| 下一待执行 | `owlhub` Task 11（Review System，Phase 2）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/site/generator.py owlclaw/owlhub/site/__init__.py tests/unit/test_owlhub_site_generator.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/site/generator.py` -> success；`poetry run pytest tests/unit/test_owlhub_site_generator.py -q` -> 5 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
