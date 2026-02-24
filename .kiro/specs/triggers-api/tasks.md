@@ -56,21 +56,21 @@
 
 ### Phase 2：测试与安全
 
-- [ ] **Task 7**: 单元测试
+- [x] **Task 7**: 单元测试
   - APITriggerConfig 验证
   - AuthProvider 各实现
   - 同步/异步响应路由逻辑
   - 超时处理
   - 目标覆盖率：> 90%
 
-- [ ] **Task 8**: 集成测试
+- [x] **Task 8**: 集成测试
   - httpx TestClient 测试 HTTP 端点
   - 认证成功/失败流程
   - 治理阻断流程（429/503）
   - 同步模式端到端：请求 → Agent Run → 响应
   - 异步模式端到端：请求 → 202 → 查询结果
 
-- [ ] **Task 9**: 安全测试
+- [x] **Task 9**: 安全测试
   - 无认证请求拒绝
   - Sanitization 注入防护
   - 大 payload 防护（body size limit）
@@ -78,7 +78,7 @@
 
 ### Phase 3：文档
 
-- [ ] **Task 10**: 文档
+- [x] **Task 10**: 文档
   - API 端点注册指南
   - 认证配置指南
   - 同步 vs 异步模式选择指南

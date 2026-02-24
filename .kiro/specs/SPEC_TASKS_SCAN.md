@@ -58,7 +58,7 @@
 - [x] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
 - [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
 - [x] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
-- [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
+- [x] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
@@ -105,7 +105,7 @@
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（9/13） | API 调用触发器（Task 0-6 已完成） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-api Task 4/5/6） |
-| 批次状态 | **进行中（本批）**。`triggers-api` 已推进到 9/13（Task 0-6 完成）。 |
-| 已完成项 | 1) Task 4：请求处理管道完成（auth→payload parse→sanitizer→governance gate→ledger）；2) Task 5：同步/异步响应与 `/runs/{run_id}/result` 查询端点完成（202 + Location，408 超时）；3) Task 6：`@app.api(...)` 装饰器与 `app.trigger(api_call(...))` 接入完成，已绑定 `app.start()/stop()` 生命周期。 |
-| 下一待执行 | `codex-work`：继续 `triggers-api` Task 7（单测补齐）→ Task 8（httpx/TestClient 集成测试）→ Task 9（安全测试）→ Task 10（文档）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/api owlclaw/app.py owlclaw/triggers/__init__.py tests/unit/triggers/test_api.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_api.py tests/unit/triggers/test_db_change.py -q`（19 passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-api Task 7/8/9/10） |
+| 批次状态 | **已完成（本批）**。`triggers-api` 全任务收口（13/13）。 |
+| 已完成项 | 1) 完成单元测试（配置校验、认证、sync/async、timeout、`@app.api` 与 `api_call`）；2) 完成集成测试（auth 成功/失败、governance 429、async 202 + 结果查询）；3) 完成安全测试（无认证拒绝、sanitization、大 payload 413、并发请求压力）；4) 完成文档（注册指南/认证指南/模式选择）。 |
+| 下一待执行 | `codex-work`：进入 `triggers-signal`（Task 0/1/2...）继续推进。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/api tests/unit/triggers/test_api.py tests/unit/triggers/test_api_security.py tests/integration/test_api_trigger_integration.py docs/api_trigger`（All checks passed）；`poetry run pytest tests/unit/triggers/test_api.py tests/unit/triggers/test_api_security.py tests/integration/test_api_trigger_integration.py -q`（17 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
