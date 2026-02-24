@@ -16,6 +16,8 @@
   - [ ] 0.2 确认 design.md 完整且包含所有组件设计
   - [ ] 0.3 确认 tasks.md 覆盖所有需求的实现
   - [ ] 0.4 定义 Binding Schema 的 JSON Schema（语言无关契约，供跨语言验证）
+  - [ ] 0.5 定义 `tools` 简化声明语法（YAML 内联，降低 JSON Schema 书写门槛）
+  - [ ] 0.6 定义 `prerequisites` 字段规范（env/bins/config/python_packages/os）
 
 ### Phase 1：核心基础设施（MVP — P0）
 
@@ -70,12 +72,14 @@
   - [ ] 6.4 扩展 `OwlClaw.mount_skills()` 调用 auto_register_binding_tools
   - [ ] 6.5 集成测试：Skills 加载 → binding 检测 → BindingTool 注册 → 调用
 
-- [ ] **Task 7**: `owlclaw skill validate` 扩展 — binding 验证
+- [ ] **Task 7**: `owlclaw skill validate` 扩展 — binding 验证 + 安全审计
   - [ ] 7.1 扩展 validate 命令检测 binding schema 格式
   - [ ] 7.2 验证必填字段（url for HTTP、topic for Queue、query for SQL）
   - [ ] 7.3 验证 credential 引用格式（`${ENV_VAR}` 而非明文）
   - [ ] 7.4 启发式检测明文密钥并发出警告
-  - [ ] 7.5 单元测试：有效/无效 binding 验证
+  - [ ] 7.5 验证 prerequisites 字段（env 变量是否存在、bins 是否在 PATH 中）
+  - [ ] 7.6 binding 声明 vs 实际一致性检查（声明的 ${ENV_VAR} 是否在 prerequisites.env 中）
+  - [ ] 7.7 单元测试：有效/无效 binding 验证、prerequisites 检查、一致性审计
 
 ### Phase 2：扩展执行器（P1）
 
@@ -115,19 +119,28 @@
   - [ ] 12.3 BindingTool 受 governance rate limiting 控制
   - [ ] 12.4 集成测试：visibility 过滤、budget 消耗、rate limiting
 
-### Phase 4：示例与文档（P2）
+### Phase 4：开发者体验 + 示例（P2）
 
-- [ ] **Task 13**: Reference Implementation
-  - [ ] 13.1 创建 `examples/binding-http/` 示例（HTTP binding 调用 REST API）
-  - [ ] 13.2 创建示例的 SKILL.md + metadata.json（含 binding 声明）
-  - [ ] 13.3 创建 mock HTTP server 用于示例运行
-  - [ ] 13.4 创建 shadow 模式对比示例
-  - [ ] 13.5 编写 README 说明 binding 使用方法
+- [ ] **Task 13**: SKILL.md 书写门槛降低
+  - [ ] 13.1 定义"最小可用 SKILL.md"规范：只需 name + description + body 即可工作
+  - [ ] 13.2 `owlclaw skill init` 增加极简模式（只问 name 和 description）
+  - [ ] 13.3 `tools` 简化声明：支持 YAML 内联的简化类型声明（`param: string` 替代完整 JSON Schema）
+  - [ ] 13.4 运行时自动将简化声明展开为完整 JSON Schema
+  - [ ] 13.5 编写 SKILL.md 书写指南（面向非技术用户，含最佳实践和常见模式）
 
-- [ ] **Task 14**: 文档更新
-  - [ ] 14.1 更新 `examples/` 索引 README 包含 binding 示例
-  - [ ] 14.2 更新 SKILL.md 模板库（skill-templates）增加 binding 示例模板
-  - [ ] 14.3 更新 `owlclaw skill init` 生成的模板包含 binding 字段注释
+- [ ] **Task 14**: Reference Implementation
+  - [ ] 14.1 创建 `examples/binding-http/` 示例（HTTP binding 调用 REST API）
+  - [ ] 14.2 创建示例的 SKILL.md（含 binding 声明 + 简化 tools 语法）
+  - [ ] 14.3 创建 mock HTTP server 用于示例运行
+  - [ ] 14.4 创建 shadow 模式对比示例
+  - [ ] 14.5 创建"无 binding 无 handler"示例（body 含 curl 命令，Agent 通过 shell 工具执行）
+  - [ ] 14.6 编写 README 说明三种 skill 模式（binding / @handler / shell 指令）
+
+- [ ] **Task 15**: 文档更新
+  - [ ] 15.1 更新 `examples/` 索引 README 包含 binding 示例
+  - [ ] 15.2 更新 SKILL.md 模板库（skill-templates）增加 binding 示例模板
+  - [ ] 15.3 更新 `owlclaw skill init` 生成的模板包含 binding 字段注释
+  - [ ] 15.4 更新 `owlclaw skill init` 默认模板为"最小可用"版本
 
 ## Backlog
 
@@ -135,6 +148,8 @@
 - [ ] 自定义 Binding 类型注册机制（Phase 3 里程碑）
 - [ ] OwlHub binding 模板（依赖 owlhub Phase 2）
 - [ ] GraphQL Binding Executor（社区需求驱动）
+- [ ] Skill 信任等级（trusted/untrusted，依赖 OwlHub 审核机制）
+- [ ] Skill 版本管理运行时支持（semver 比较、自动升级提示）
 
 ---
 
