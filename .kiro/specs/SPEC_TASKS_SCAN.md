@@ -61,7 +61,7 @@
 - [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
-- [ ] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
+- [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [ ] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
 - [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
@@ -107,7 +107,7 @@
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
-| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（44/66） | Langfuse tracing |
+| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（0/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（integrations-langfuse runtime context + llm trace hook） |
-| 批次状态 | **进行中**。完成 AgentRuntime TraceContext 生命周期与 `acompletion` 追踪挂钩，`integrations-langfuse` 进度更新为 **44/66**。 |
-| 已完成项 | 1) `AgentRuntime.run()` 在 trace 创建后设置 `TraceContext`，并在 finally 中恢复上下文（11.1）；2) `llm.acompletion()` 在存在 trace 上下文时自动记录成功/失败 generation 事件；3) built-in tool 执行链路补充 Langfuse span 完结记录；4) 新增单测覆盖 runtime trace context 生命周期和 `acompletion` 追踪行为（11.2）。 |
-| 下一待执行 | 继续 12/13（LLMClient.complete 与工具系统显式集成）及 15、18、19、20 的收口验证。 |
-| 验收快照 | `poetry run pytest tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py -q` -> `117 passed`；`poetry run ruff check owlclaw/integrations/llm.py owlclaw/agent/runtime/runtime.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/llm.py owlclaw/agent/runtime/runtime.py` -> `Success: no issues found in 2 source files`。 |
+| 当前批次 | spec 循环（integrations-langfuse 15/16/17/18/19/20 收口） |
+| 批次状态 | **已完成**。`integrations-langfuse` 已完成到 **66/66**，代码、测试、文档与配置样例已对齐。 |
+| 已完成项 | 1) 完成错误处理与降级（15）：增加进程退出 flush 与日志密钥脱敏；2) 完成配置示例（17）：新增 `config/langfuse.example.yaml` 并补齐 `.env.example`；3) 完成端到端集成测试（18）：新增 `tests/integration/test_langfuse_integration.py` 覆盖追踪链路、隐私脱敏与降级；4) 完成文档（19）：新增 `docs/integrations/langfuse.md` 并更新 `docs/ARCHITECTURE_ANALYSIS.md`；5) 完成最终检查点（20）。 |
+| 下一待执行 | 等待 review-work 审校；当前 worktree 按分配继续下一 spec。 |
+| 验收快照 | `poetry run pytest tests/unit/integrations/test_langfuse.py tests/integration/test_langfuse_integration.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py -q` -> `145 passed`；`poetry run pytest tests/unit/integrations/test_langfuse.py tests/integration/test_langfuse_integration.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py --cov=owlclaw.integrations.langfuse --cov=owlclaw.integrations.llm --cov=owlclaw.agent.runtime.runtime --cov-report=term-missing -q` -> `TOTAL 82%`；`poetry run ruff check owlclaw/integrations/langfuse.py tests/unit/integrations/test_langfuse.py tests/integration/test_langfuse_integration.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/langfuse.py owlclaw/integrations/llm.py owlclaw/agent/runtime/runtime.py` -> `Success: no issues found in 3 source files`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

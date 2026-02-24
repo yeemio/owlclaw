@@ -58,6 +58,11 @@ class _FakeLangfuseSDK:
 
 
 class _FailingLangfuseSDK(_FakeLangfuseSDK):
+    def trace(self, **kwargs: Any) -> _FakeObservation | None:
+        if "id" in kwargs:
+            raise RuntimeError("trace end failed")
+        raise RuntimeError("trace create failed")
+
     def generation(self, **kwargs: Any) -> _FakeObservation:
         raise RuntimeError("generation failed")
 
@@ -264,6 +269,83 @@ class TestLangfuseClient:
             ),
         )
         assert span_id is None
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        action=st.sampled_from(["create_trace", "end_trace", "create_llm_span", "create_tool_span", "flush"]),
+    )
+    def test_property_graceful_degradation(self, action: str) -> None:
+        sdk = _FailingLangfuseSDK()
+        client = LangfuseClient(
+            LangfuseConfig(
+                enabled=True,
+                public_key="pk-secret",
+                secret_key="sk-secret",
+                client=sdk,
+            )
+        )
+        if action == "create_trace":
+            assert (
+                client.create_trace("x", TraceMetadata(agent_id="a", run_id="r", trigger_type="cron")) is None
+            )
+        elif action == "end_trace":
+            client.end_trace("trace-1", output={"ok": True})
+        elif action == "create_llm_span":
+            assert (
+                client.create_llm_span(
+                    "trace-1",
+                    "llm",
+                    LLMSpanData(
+                        model="gpt-4o-mini",
+                        prompt=[],
+                        response="x",
+                        prompt_tokens=0,
+                        completion_tokens=0,
+                        total_tokens=0,
+                        cost_usd=0.0,
+                        latency_ms=1.0,
+                        status="error",
+                        error_message="x",
+                    ),
+                )
+                is None
+            )
+        elif action == "create_tool_span":
+            assert (
+                client.create_tool_span(
+                    "trace-1",
+                    "tool",
+                    ToolSpanData(
+                        tool_name="x",
+                        arguments={},
+                        result={},
+                        duration_ms=1.0,
+                        status="error",
+                        error_message="x",
+                    ),
+                )
+                is None
+            )
+        else:
+            client.flush()
+
+    def test_log_messages_do_not_leak_keys(self, caplog: pytest.LogCaptureFixture) -> None:
+        class _LeakySDK(_FakeLangfuseSDK):
+            def trace(self, **kwargs: Any) -> _FakeObservation | None:
+                raise RuntimeError("failed with key pk-secret and sk-secret")
+
+        cfg = LangfuseConfig(
+            enabled=True,
+            public_key="pk-secret",
+            secret_key="sk-secret",
+            client=_LeakySDK(),
+        )
+        client = LangfuseClient(cfg)
+        caplog.set_level("WARNING")
+        client.create_trace("x", TraceMetadata(agent_id="a", run_id="r", trigger_type="cron"))
+        joined = "\n".join(record.getMessage() for record in caplog.records)
+        assert "pk-secret" not in joined
+        assert "sk-secret" not in joined
 
 
 class TestConfigAndHelpers:

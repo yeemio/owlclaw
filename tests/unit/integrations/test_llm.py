@@ -202,6 +202,37 @@ class TestLLMClient:
             assert resp.completion_tokens == 5
 
     @pytest.mark.asyncio
+    async def test_complete_records_langfuse_trace_generation(self) -> None:
+        class _Trace:
+            def __init__(self) -> None:
+                self.generations: list[dict[str, object]] = []
+
+            def generation(self, **kwargs: object) -> None:
+                self.generations.append(kwargs)
+
+            def update(self, **kwargs: object) -> None:
+                return None
+
+        class _Langfuse:
+            def __init__(self) -> None:
+                self.traces: list[_Trace] = []
+
+            def trace(self, **kwargs: object) -> _Trace:
+                t = _Trace()
+                self.traces.append(t)
+                return t
+
+        c = LLMConfig.default_for_owlclaw()
+        client = LLMClient(c)
+        client._langfuse = _Langfuse()
+        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
+            mock.return_value = _fake_litellm_response("ok", [], 10, 5)
+            resp = await client.complete(messages=[{"role": "user", "content": "Hi"}], task_type="demo")
+        assert resp.content == "ok"
+        assert len(client._langfuse.traces) == 1
+        assert len(client._langfuse.traces[0].generations) == 1
+
+    @pytest.mark.asyncio
     async def test_complete_wraps_auth_error(self) -> None:
         c = LLMConfig.default_for_owlclaw()
         client = LLMClient(c)

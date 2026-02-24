@@ -1294,6 +1294,43 @@ Check entries.
         assert len(client.traces[0].spans) == 1
         assert any(update.get("status") == "success" for update in client.traces[0].spans[0].updates)
 
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_builtin_tool_execution_emits_langfuse_span(self, mock_llm, tmp_path) -> None:
+        tc = _make_tool_call("builtin_echo", {"x": 1})
+        mock_llm.side_effect = [_make_llm_response(tool_calls=[tc]), _make_llm_response("ok")]
+        client = _FakeLangfuseClient()
+
+        class _Builtin:
+            def is_builtin(self, name: str) -> bool:
+                return name == "builtin_echo"
+
+            async def execute(self, tool_name: str, arguments: dict[str, object], ctx: object) -> dict[str, object]:
+                return {"ok": True, "tool_name": tool_name, "arguments": arguments}
+
+            def get_tool_schemas(self) -> list[dict[str, object]]:
+                return [
+                    {
+                        "type": "function",
+                        "function": {"name": "builtin_echo", "description": "echo", "parameters": {"type": "object"}},
+                    }
+                ]
+
+            def reset_run_call_budget(self, run_id: str) -> None:
+                return None
+
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            builtin_tools=_Builtin(),
+            config={"langfuse": {"enabled": True, "client": client}},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert len(client.traces) == 1
+        assert len(client.traces[0].spans) == 1
+        assert any(update.get("status") == "success" for update in client.traces[0].spans[0].updates)
+
     async def test_setup_calls_error_notifier_on_failure(self, tmp_path) -> None:
         notified: list[dict[str, object]] = []
 
