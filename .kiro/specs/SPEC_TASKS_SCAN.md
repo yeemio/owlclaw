@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（常规审校：质量扫描 + 测试稳定性修复） |
-| 批次状态 | **已完成**。编码分支相对 `review-work` 无新增待审提交；本轮完成测试基线稳定性修复并通过全量回归。 |
-| 已完成项 | 1) 审核 `review-work..codex-work` 与 `review-work..codex-gpt-work`，确认无新增待审差异；2) 修复 `tests/integration/test_pgvector_store.py`：Docker 不可用时模块级 skip，避免环境缺失导致 ERROR；3) 修复 `tests/unit/test_capabilities_acceptance.py` 性能阈值抖动（100 skills 加载阈值由 5.0s 调整为 8.0s）；4) 完成全量质量校验（ruff/mypy/pytest）。 |
-| 下一待执行 | 编码侧继续 `triggers-webhook` Task 2 与 `triggers-queue` Task 7/8；并行推进 `e2e-validation` Task 7.1/7.4（ReportGenerator 与属性测试）。 |
-| 验收快照 | `poetry run ruff check .`（passed）；`poetry run mypy owlclaw/`（Success: no issues found in 118 source files）；`poetry run pytest tests/unit/test_capabilities_acceptance.py::test_perf_100_skills_load_time -q`（1 passed）；`poetry run pytest tests/integration/test_pgvector_store.py -q`（5 skipped）；`poetry run pytest -q`（1155 passed, 25 skipped）。 |
+| 当前批次 | review loop（审校 codex-work 中） |
+| 批次状态 | 进行中。正在审查并合并 `codex-work`（triggers-queue Task 7~11），随后继续审查 `codex-gpt-work`。 |
+| 已完成项 | 1) 完成常规质量扫描并修复测试基线稳定性（Docker 缺失场景 skip + 性能阈值抖动修复）；2) 已开始 `codex-work` 审校合并流程并解决文档冲突。 |
+| 下一待执行 | 完成 `codex-work` 合并后执行 queue 触发器测试回归，再审校并合并 `codex-gpt-work` 的 e2e-validation 新增实现。 |
+| 验收快照 | 待本轮审校结束统一回填（含分支专属测试与合并后回归测试）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
