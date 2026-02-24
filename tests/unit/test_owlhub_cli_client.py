@@ -12,6 +12,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from typer.testing import CliRunner
 
+from owlclaw.cli import _dispatch_skill_command
 from owlclaw.cli.skill import skill_app
 from owlclaw.owlhub import OwlHubClient
 from owlclaw.owlhub.indexer import IndexBuilder
@@ -39,7 +40,15 @@ metadata:
     return archive_path
 
 
-def _build_index_file(base: Path, archive_path: Path, *, name: str, publisher: str, version: str) -> Path:
+def _build_index_file(
+    base: Path,
+    archive_path: Path,
+    *,
+    name: str,
+    publisher: str,
+    version: str,
+    tags: list[str] | None = None,
+) -> Path:
     checksum = IndexBuilder().calculate_checksum(archive_path)
     index = {
         "version": "1.0",
@@ -53,7 +62,7 @@ def _build_index_file(base: Path, archive_path: Path, *, name: str, publisher: s
                     "version": version,
                     "description": f"{name} description",
                     "license": "MIT",
-                    "tags": ["demo"],
+                    "tags": tags if tags is not None else ["demo"],
                     "dependencies": {},
                 },
                 "download_url": str(archive_path),
@@ -80,6 +89,7 @@ def test_cli_search_install_and_installed_flow(tmp_path: Path, monkeypatch) -> N
     )
     assert result_search.exit_code == 0
     assert "entry-monitor@1.0.0" in result_search.output
+    assert "[demo]" in result_search.output
 
     result_install = runner.invoke(
         skill_app,
@@ -96,6 +106,23 @@ def test_cli_search_install_and_installed_flow(tmp_path: Path, monkeypatch) -> N
     assert "entry-monitor@1.0.0" in result_installed.output
 
 
+def test_cli_search_with_tag_mode_option(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(
+        tmp_path,
+        archive,
+        name="entry-monitor",
+        publisher="acme",
+        version="1.0.0",
+        tags=["trading", "monitor"],
+    )
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(["skill", "search", "--tags", "trading,missing", "--tag-mode", "or"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "entry-monitor@1.0.0" in captured.out
+
+
 def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:
     archive = _build_skill_archive(tmp_path, name="bad-skill", publisher="acme", version="1.0.0")
     index_file = _build_index_file(tmp_path, archive, name="bad-skill", publisher="acme", version="1.0.0")
@@ -109,6 +136,23 @@ def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:
         raise AssertionError("expected checksum verification failure")
     except ValueError as exc:
         assert "checksum" in str(exc)
+
+
+def test_tag_filter_supports_and_or(tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(
+        tmp_path,
+        archive,
+        name="entry-monitor",
+        publisher="acme",
+        version="1.0.0",
+        tags=["trading", "monitor"],
+    )
+    client = OwlHubClient(index_url=str(tmp_path / "index.json"), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    and_results = client.search(query="entry", tags=["trading", "missing"], tag_mode="and")
+    or_results = client.search(query="entry", tags=["trading", "missing"], tag_mode="or")
+    assert len(and_results) == 0
+    assert len(or_results) == 1
 
 
 @settings(max_examples=100, deadline=None)
@@ -181,3 +225,24 @@ def test_property_12_reject_invalid_package(name: str) -> None:
             raise AssertionError("expected missing SKILL.md failure")
         except ValueError as exc:
             assert "SKILL.md" in str(exc)
+
+
+@settings(max_examples=100, deadline=None)
+@given(
+    tag_a=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=6),
+    tag_b=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=6),
+    query_tag=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=6),
+)
+def test_property_21_tag_based_retrieval(tag_a: str, tag_b: str, query_tag: str) -> None:
+    """Property 21: retrieval by tag matches tag membership."""
+    with tempfile.TemporaryDirectory() as workdir:
+        root = Path(workdir)
+        archive = _build_skill_archive(root, name="tag-skill", publisher="acme", version="1.0.0")
+        tags = sorted({tag_a, tag_b})
+        index_file = _build_index_file(root, archive, name="tag-skill", publisher="acme", version="1.0.0", tags=tags)
+        client = OwlHubClient(index_url=str(index_file), install_dir=root / "skills", lock_file=root / "lock.json")
+        results = client.search(query="tag", tags=[query_tag], tag_mode="or")
+        if query_tag in tags:
+            assert any(item.name == "tag-skill" for item in results)
+        else:
+            assert all(item.name != "tag-skill" for item in results)

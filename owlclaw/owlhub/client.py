@@ -25,6 +25,7 @@ class SearchResult:
     publisher: str
     version: str
     description: str
+    tags: list[str]
     download_url: str
     checksum: str
 
@@ -39,11 +40,19 @@ class OwlHubClient:
         self.validator = Validator()
         self.index_builder = IndexBuilder()
 
-    def search(self, query: str = "", tags: list[str] | None = None) -> list[SearchResult]:
+    def search(
+        self,
+        query: str = "",
+        tags: list[str] | None = None,
+        tag_mode: str = "and",
+    ) -> list[SearchResult]:
         """Search skills by name/description and optional tags."""
         data = self._load_index()
         normalized_query = query.strip().lower()
         requested_tags = {tag.strip().lower() for tag in (tags or []) if tag.strip()}
+        normalized_mode = tag_mode.strip().lower()
+        if normalized_mode not in {"and", "or"}:
+            normalized_mode = "and"
 
         results: list[SearchResult] = []
         for entry in data.get("skills", []):
@@ -60,14 +69,18 @@ class OwlHubClient:
 
             if normalized_query and normalized_query not in f"{name} {description}".lower():
                 continue
-            if requested_tags and not requested_tags.issubset(skill_tags):
-                continue
+            if requested_tags:
+                if normalized_mode == "and" and not requested_tags.issubset(skill_tags):
+                    continue
+                if normalized_mode == "or" and requested_tags.isdisjoint(skill_tags):
+                    continue
             results.append(
                 SearchResult(
                     name=name,
                     publisher=publisher,
                     version=version,
                     description=description,
+                    tags=sorted(skill_tags),
                     download_url=str(entry.get("download_url", "")),
                     checksum=str(entry.get("checksum", "")),
                 )

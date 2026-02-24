@@ -55,6 +55,7 @@ def test_generate_site_pages_and_metadata(tmp_path: Path) -> None:
     assert (tmp_path / "sitemap.xml").exists()
     assert (tmp_path / "search-index.json").exists()
     assert (tmp_path / "dashboard.html").exists()
+    assert (tmp_path / "tags" / "monitor.html").exists()
 
 
 def test_generated_html_contains_skill_content(tmp_path: Path) -> None:
@@ -65,6 +66,7 @@ def test_generated_html_contains_skill_content(tmp_path: Path) -> None:
 
     assert "entry-monitor" in index_html
     assert "Monitor entries" in index_html
+    assert "Tags:" in index_html
     assert "Download package" in detail_html
 
 
@@ -88,16 +90,21 @@ def test_generated_rss_sitemap_and_search_index(tmp_path: Path) -> None:
 @given(
     name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-", min_size=1, max_size=12),
     publisher=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-", min_size=1, max_size=12),
-    version=st.text(alphabet="0123456789.", min_size=5, max_size=10),
+    major=st.integers(min_value=0, max_value=9),
+    minor=st.integers(min_value=0, max_value=9),
+    patch=st.integers(min_value=0, max_value=9),
     description=st.text(alphabet="abcdefghijklmnopqrstuvwxyz ", min_size=5, max_size=40),
 )
 def test_property_7_skill_detail_contains_required_fields(
     name: str,
     publisher: str,
-    version: str,
+    major: int,
+    minor: int,
+    patch: int,
     description: str,
 ) -> None:
     """Property 7: detail page contains required skill information."""
+    version = f"{major}.{minor}.{patch}"
     index = {
         "version": "1.0",
         "generated_at": "2026-02-24T00:00:00+00:00",

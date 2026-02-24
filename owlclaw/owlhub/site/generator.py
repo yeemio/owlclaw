@@ -67,6 +67,7 @@ class SiteGenerator:
     ) -> list[SkillPage]:
         pages: list[SkillPage] = []
         normalized_skills = [self._normalize_skill(item) for item in skills]
+        tag_cloud = self._build_tag_cloud(normalized_skills)
 
         index_template = self._env.get_template("index.html")
         paged = self._paginate(normalized_skills, page_size=page_size)
@@ -80,6 +81,7 @@ class SiteGenerator:
                 index_template.render(
                     skills=page_skills,
                     generated_at=generated_at,
+                    tag_cloud=tag_cloud,
                     page_no=page_no,
                     total_pages=len(paged),
                     prev_url=prev_url if page_no > 1 else "",
@@ -92,7 +94,10 @@ class SiteGenerator:
 
         search_template = self._env.get_template("search.html")
         search_output = output_dir / "search.html"
-        search_output.write_text(search_template.render(skills=normalized_skills, generated_at=generated_at), encoding="utf-8")
+        search_output.write_text(
+            search_template.render(skills=normalized_skills, generated_at=generated_at, tag_cloud=tag_cloud),
+            encoding="utf-8",
+        )
         pages.append(SkillPage(url_path="/search.html", file_path=search_output))
 
         dashboard_template = self._env.get_template("dashboard.html")
@@ -128,6 +133,19 @@ class SiteGenerator:
             detail_path.write_text(detail_template.render(skill=item, generated_at=generated_at), encoding="utf-8")
             pages.append(SkillPage(url_path=f"/skills/{file_name}", file_path=detail_path))
 
+        tag_template = self._env.get_template("tag.html")
+        tags_dir = output_dir / "tags"
+        tags_dir.mkdir(parents=True, exist_ok=True)
+        for tag_name in sorted(tag_cloud.keys()):
+            tag_skills = [item for item in normalized_skills if tag_name in item["tags"]]
+            slug = _slugify(tag_name)
+            tag_path = tags_dir / f"{slug}.html"
+            tag_path.write_text(
+                tag_template.render(generated_at=generated_at, tag=tag_name, skills=tag_skills),
+                encoding="utf-8",
+            )
+            pages.append(SkillPage(url_path=f"/tags/{slug}.html", file_path=tag_path))
+
         return pages
 
     @staticmethod
@@ -137,6 +155,15 @@ class SiteGenerator:
         if not skills:
             return [[]]
         return [skills[index : index + page_size] for index in range(0, len(skills), page_size)]
+
+    @staticmethod
+    def _build_tag_cloud(skills: list[dict[str, Any]]) -> dict[str, int]:
+        cloud: dict[str, int] = {}
+        for item in skills:
+            for tag in item.get("tags", []):
+                if isinstance(tag, str) and tag.strip():
+                    cloud[tag] = cloud.get(tag, 0) + 1
+        return dict(sorted(cloud.items(), key=lambda kv: (-kv[1], kv[0])))
 
     @staticmethod
     def _normalize_skill(item: dict[str, Any]) -> dict[str, Any]:
@@ -198,3 +225,7 @@ class SiteGenerator:
             f"{''.join(urls)}"
             "</urlset>"
         )
+
+
+def _slugify(value: str) -> str:
+    return "-".join(value.strip().lower().split())

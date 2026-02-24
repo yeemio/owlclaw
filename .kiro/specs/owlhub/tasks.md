@@ -274,19 +274,19 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Submit random skills for review, execute approve/reject, verify state transitions
     - _Requirements: 7.1, 7.4_
 
-- [ ] 12. Implement tagging and categorization
-  - [ ] 12.1 Add tag-based filtering to CLI search command
+- [x] 12. Implement tagging and categorization
+  - [x] 12.1 Add tag-based filtering to CLI search command
     - Support multiple tag filters with AND/OR logic
     - Display tags in search results
     - _Requirements: 2.1, 7.2_
 
-  - [ ] 12.2 Add tag browsing to static site
+  - [x] 12.2 Add tag browsing to static site
     - Create tag cloud on homepage
     - Create tag detail pages showing skills by tag
     - Add tag filtering to search interface
     - _Requirements: 2.1, 7.2_
 
-  - [ ]* 12.3 Write property test for tag-based retrieval
+  - [x]* 12.3 Write property test for tag-based retrieval
     - **Property 21: 标签分类检索**
     - **Validates: Requirements 7.2**
     - Generate skills with random tags, verify retrieval by tag works correctly

@@ -21,6 +21,7 @@ def search_command(
     query: str = typer.Option("", "--query", "-q", help="Search query.", is_flag=False),
     index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json.", is_flag=False),
     tags: str = typer.Option("", "--tags", help="Comma-separated tags filter.", is_flag=False),
+    tag_mode: str = typer.Option("and", "--tag-mode", help="Tag filter mode: and/or.", is_flag=False),
     install_dir: str = typer.Option(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
     ),
@@ -29,12 +30,13 @@ def search_command(
     """Search skills in OwlHub index."""
     client = _create_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
     tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
-    results = client.search(query=query, tags=tag_list)
+    results = client.search(query=query, tags=tag_list, tag_mode=tag_mode)
     if not results:
         typer.echo("No skills found.")
         return
     for item in results:
-        typer.echo(f"{item.name}@{item.version} ({item.publisher}) - {item.description}")
+        rendered_tags = ",".join(item.tags) if item.tags else "-"
+        typer.echo(f"{item.name}@{item.version} ({item.publisher}) [{rendered_tags}] - {item.description}")
 
 
 def install_command(

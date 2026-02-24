@@ -3,6 +3,16 @@
 {% block content %}
 <h1>Skill Catalog</h1>
 <p class="meta">Page {{ page_no }} / {{ total_pages }}</p>
+{% if tag_cloud %}
+<div class="card">
+  <strong>Tags:</strong>
+  <div class="tags">
+    {% for tag_name, count in tag_cloud.items() %}
+    <a class="tag" href="/tags/{{ tag_name | lower | replace(' ', '-') }}.html">{{ tag_name }} ({{ count }})</a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 {% for skill in skills %}
 <article class="card" data-skill-id="{{ skill.publisher }}/{{ skill.name }}@{{ skill.version }}">
   <h2>{{ skill.name }} <span class="meta">@{{ skill.version }}</span></h2>
@@ -13,7 +23,7 @@
     / Last 30d: {{ skill.statistics.downloads_last_30d or 0 }}
   </div>
   <div class="tags">
-    {% for tag in skill.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    {% for tag in skill.tags %}<a class="tag" href="/tags/{{ tag | lower | replace(' ', '-') }}.html">{{ tag }}</a>{% endfor %}
   </div>
   <p><a href="/skills/{{ skill.publisher }}-{{ skill.name }}-{{ skill.version }}.html">Details</a></p>
 </article>
