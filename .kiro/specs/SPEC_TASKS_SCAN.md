@@ -61,7 +61,7 @@
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
-- [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
+- [ ] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
 - [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
 - [ ] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
@@ -100,14 +100,14 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（1/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（3/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（20/20） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（25/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（integrations-langchain 收口） |
-| 批次状态 | **已完成**。`integrations-langchain` 全部任务完成（**101/101**）。 |
-| 已完成项 | 完成 LangChain 适配层（config/schema/errors/trace/adapter/retry/privacy/version/metrics）、OwlClaw API 接入、流式执行、治理与 Ledger 集成、容错降级与健康检查、示例与文档、E2E/性能验证，并收口全部验收清单。 |
-| 下一待执行 | 按分配推进下一 spec（例如 `e2e-validation`）。 |
-| 验收快照 | `poetry run pytest tests/unit/test_app_langchain.py tests/unit/integrations/test_langchain_config.py tests/unit/integrations/test_langchain_schema.py tests/unit/integrations/test_langchain_errors.py tests/unit/integrations/test_langchain_trace.py tests/unit/integrations/test_langchain_adapter.py tests/unit/integrations/test_langchain_retry.py tests/unit/integrations/test_langchain_governance_ledger.py tests/unit/integrations/test_langchain_privacy.py tests/unit/integrations/test_langchain_version.py tests/unit/integrations/test_langchain_stream.py tests/unit/integrations/test_langchain_examples.py tests/unit/integrations/test_langchain_health.py tests/unit/integrations/test_langchain_metrics.py tests/integration/test_langchain_integration.py -q` -> `58 passed`；`poetry run pytest ... --cov=owlclaw.integrations.langchain --cov-report=term -q` -> `TOTAL 90%`；`poetry run mypy owlclaw/integrations/langchain owlclaw/app.py` -> `Success`；`poetry run ruff check owlclaw/app.py owlclaw/integrations/langchain ... examples/langchain` -> `All checks passed!`；性能脚本：`sequential_rps=6537.63, sequential_avg_ms=0.153, concurrent_rps=1308.70`。 |
+| 当前批次 | review loop（审校 codex-gpt-work e2e execution engine） |
+| 批次状态 | **已完成**。完成 e2e execution engine 增量审校并通过验收；`e2e-validation` 进度对齐为 **3/19**。 |
+| 已完成项 | 1) 合并 `codex-gpt-work` 的 `ExecutionEngine`/`DataCollector` 增量；2) 验证 Mionyee 组件链路与失败降级；3) 修正 `SPEC_TASKS_SCAN` 进度口径与 `tasks.md` 一致。 |
+| 下一待执行 | 继续 `e2e-validation` Task 4.3/4.4（完整流程属性与轨迹完整性），并同步回填进度。 |
+| 验收快照 | `poetry run pytest tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py -q` -> `17 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 6 source files`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
