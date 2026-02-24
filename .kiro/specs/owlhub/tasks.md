@@ -320,20 +320,20 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Install old version, publish new version, verify update command detects it
     - _Requirements: 3.3_
 
-- [ ] 15. Implement version state management
-  - [ ] 15.1 Add version state support to IndexBuilder
+- [x] 15. Implement version state management
+  - [x] 15.1 Add version state support to IndexBuilder
     - Parse version state from SKILL.md or repository tags
     - Include state in index.json for each version
     - Support DRAFT, RELEASED, DEPRECATED states
     - _Requirements: 1.4_
 
-  - [ ] 15.2 Update CLI to respect version states
+  - [x] 15.2 Update CLI to respect version states
     - Filter out DRAFT versions in search results (unless --include-draft flag)
     - Show deprecation warnings when installing DEPRECATED versions
     - Display version state in `list` command output
     - _Requirements: 1.4_
 
-  - [ ]* 15.3 Write property test for version state management
+  - [x]* 15.3 Write property test for version state management
     - **Property 4: 版本状态管理**
     - **Validates: Requirements 1.4**
     - Generate versions with random states, verify queries return correct state

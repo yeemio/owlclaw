@@ -48,6 +48,7 @@ def _build_index_file(
     publisher: str,
     version: str,
     tags: list[str] | None = None,
+    version_state: str = "released",
 ) -> Path:
     checksum = IndexBuilder().calculate_checksum(archive_path)
     index = {
@@ -69,7 +70,7 @@ def _build_index_file(
                 "checksum": checksum,
                 "published_at": "2026-02-24T00:00:00+00:00",
                 "updated_at": "2026-02-24T00:00:00+00:00",
-                "version_state": "released",
+                "version_state": version_state,
             }
         ],
     }
@@ -128,6 +129,7 @@ def test_cli_search_install_and_installed_flow(tmp_path: Path, monkeypatch) -> N
     )
     assert result_search.exit_code == 0
     assert "entry-monitor@1.0.0" in result_search.output
+    assert "[released]" in result_search.output
     assert "[demo]" in result_search.output
 
     result_install = runner.invoke(
@@ -162,6 +164,21 @@ def test_cli_search_with_tag_mode_option(tmp_path: Path, monkeypatch, capsys) ->
     assert "entry-monitor@1.0.0" in captured.out
 
 
+def test_cli_search_include_draft_option(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="draft-skill", publisher="acme", version="1.0.0")
+    _build_index_file(tmp_path, archive, name="draft-skill", publisher="acme", version="1.0.0", version_state="draft")
+    monkeypatch.chdir(tmp_path)
+    hidden = _dispatch_skill_command(["skill", "search", "--query", "draft"])
+    assert hidden is True
+    first = capsys.readouterr()
+    assert "No skills found." in first.out
+
+    shown = _dispatch_skill_command(["skill", "search", "--query", "draft", "--include-draft"])
+    assert shown is True
+    second = capsys.readouterr()
+    assert "draft-skill@1.0.0 [draft]" in second.out
+
+
 def test_cli_update_reports_no_updates(tmp_path: Path, monkeypatch, capsys) -> None:
     archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
     index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
@@ -187,6 +204,40 @@ def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:
         raise AssertionError("expected checksum verification failure")
     except ValueError as exc:
         assert "checksum" in str(exc)
+
+
+def test_search_filters_draft_by_default(tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="draft-skill", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(
+        tmp_path,
+        archive,
+        name="draft-skill",
+        publisher="acme",
+        version="1.0.0",
+        version_state="draft",
+    )
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    hidden = client.search(query="draft")
+    visible = client.search(query="draft", include_draft=True)
+    assert hidden == []
+    assert len(visible) == 1
+    assert visible[0].version_state == "draft"
+
+
+def test_install_warns_for_deprecated(tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="old-skill", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(
+        tmp_path,
+        archive,
+        name="old-skill",
+        publisher="acme",
+        version="1.0.0",
+        version_state="deprecated",
+    )
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    client.install(name="old-skill")
+    assert client.last_install_warning is not None
+    assert "deprecated" in client.last_install_warning
 
 
 def test_tag_filter_supports_and_or(tmp_path: Path) -> None:

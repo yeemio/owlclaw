@@ -28,6 +28,7 @@ class SearchResult:
     version: str
     description: str
     tags: list[str]
+    version_state: str
     download_url: str
     checksum: str
 
@@ -41,12 +42,14 @@ class OwlHubClient:
         self.lock_file = lock_file
         self.validator = Validator()
         self.index_builder = IndexBuilder()
+        self.last_install_warning: str | None = None
 
     def search(
         self,
         query: str = "",
         tags: list[str] | None = None,
         tag_mode: str = "and",
+        include_draft: bool = False,
     ) -> list[SearchResult]:
         """Search skills by name/description and optional tags."""
         data = self._load_index()
@@ -63,6 +66,7 @@ class OwlHubClient:
             description = str(manifest.get("description", "")).strip()
             publisher = str(manifest.get("publisher", "")).strip()
             version = str(manifest.get("version", "")).strip()
+            version_state = str(entry.get("version_state", "released")).strip().lower()
             skill_tags = {
                 str(tag).strip().lower()
                 for tag in manifest.get("tags", [])
@@ -70,6 +74,8 @@ class OwlHubClient:
             }
 
             if normalized_query and normalized_query not in f"{name} {description}".lower():
+                continue
+            if not include_draft and version_state == "draft":
                 continue
             if requested_tags:
                 if normalized_mode == "and" and not requested_tags.issubset(skill_tags):
@@ -83,6 +89,7 @@ class OwlHubClient:
                     version=version,
                     description=description,
                     tags=sorted(skill_tags),
+                    version_state=version_state,
                     download_url=str(entry.get("download_url", "")),
                     checksum=str(entry.get("checksum", "")),
                 )
@@ -100,6 +107,9 @@ class OwlHubClient:
         if not matched:
             raise ValueError(f"skill not found: {name}{'@' + version if version else ''}")
         selected = sorted(matched, key=lambda item: item.version)[-1]
+        self.last_install_warning = None
+        if selected.version_state == "deprecated":
+            self.last_install_warning = f"skill {selected.name}@{selected.version} is deprecated"
 
         downloaded = self._download(selected.download_url)
         actual_checksum = self.index_builder.calculate_checksum(downloaded)
@@ -223,6 +233,7 @@ class OwlHubClient:
                 "download_url": selected.download_url,
                 "checksum": selected.checksum,
                 "install_path": str(target),
+                "version_state": selected.version_state,
             }
         )
         payload = {

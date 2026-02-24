@@ -22,6 +22,7 @@ def search_command(
     index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json.", is_flag=False),
     tags: str = typer.Option("", "--tags", help="Comma-separated tags filter.", is_flag=False),
     tag_mode: str = typer.Option("and", "--tag-mode", help="Tag filter mode: and/or.", is_flag=False),
+    include_draft: bool = typer.Option(False, "--include-draft", help="Include draft versions in results."),
     install_dir: str = typer.Option(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
     ),
@@ -30,13 +31,13 @@ def search_command(
     """Search skills in OwlHub index."""
     client = _create_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
     tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
-    results = client.search(query=query, tags=tag_list, tag_mode=tag_mode)
+    results = client.search(query=query, tags=tag_list, tag_mode=tag_mode, include_draft=include_draft)
     if not results:
         typer.echo("No skills found.")
         return
     for item in results:
         rendered_tags = ",".join(item.tags) if item.tags else "-"
-        typer.echo(f"{item.name}@{item.version} ({item.publisher}) [{rendered_tags}] - {item.description}")
+        typer.echo(f"{item.name}@{item.version} [{item.version_state}] ({item.publisher}) [{rendered_tags}] - {item.description}")
 
 
 def install_command(
@@ -55,6 +56,8 @@ def install_command(
     except Exception as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(1) from exc
+    if client.last_install_warning:
+        typer.echo(f"Warning: {client.last_install_warning}")
     typer.echo(f"Installed: {name} -> {installed_path}")
 
 
@@ -72,7 +75,8 @@ def installed_command(
         typer.echo("No installed skills.")
         return
     for item in installed:
-        typer.echo(f"{item.get('name')}@{item.get('version')} ({item.get('publisher')})")
+        state = item.get("version_state", "released")
+        typer.echo(f"{item.get('name')}@{item.get('version')} [{state}] ({item.get('publisher')})")
 
 
 def update_command(

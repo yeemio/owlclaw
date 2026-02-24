@@ -123,6 +123,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--tags", default="")
         parser.add_argument("--tag-mode", default="and")
+        parser.add_argument("--include-draft", action="store_true", default=False)
         parser.add_argument("--install-dir", default="./.owlhub/skills")
         parser.add_argument("--lock-file", default="./skill-lock.json")
         ns = parser.parse_args(sub_argv)
@@ -131,6 +132,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             index_url=ns.index_url,
             tags=ns.tags,
             tag_mode=ns.tag_mode,
+            include_draft=ns.include_draft,
             install_dir=ns.install_dir,
             lock_file=ns.lock_file,
         )

@@ -48,7 +48,7 @@ class IndexBuilder:
                 checksum=self._manifest_checksum(manifest),
                 published_at=published_at,
                 updated_at=published_at,
-                version_state=VersionState.RELEASED,
+                version_state=manifest.version_state if hasattr(manifest, "version_state") else VersionState.RELEASED,
             )
             payload = asdict(entry)
             payload["published_at"] = entry.published_at.astimezone(timezone.utc).isoformat()
