@@ -9,6 +9,7 @@ from owlclaw.triggers.cron import (
 )
 from owlclaw.triggers.db_change import DBChangeTriggerConfig, db_change
 from owlclaw.triggers.queue import MessageEnvelope, QueueTriggerConfig, RawMessage
+from owlclaw.triggers.signal import Signal, SignalResult, SignalRouter, SignalSource, SignalType
 from owlclaw.triggers.webhook import EndpointConfig, WebhookEndpoint
 
 __all__ = [
@@ -23,6 +24,11 @@ __all__ = [
     "MessageEnvelope",
     "QueueTriggerConfig",
     "RawMessage",
+    "Signal",
+    "SignalResult",
+    "SignalRouter",
+    "SignalSource",
+    "SignalType",
     "WebhookEndpoint",
     "api_call",
     "db_change",

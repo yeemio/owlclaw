@@ -106,7 +106,7 @@
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（4/17） | Signal 触发器（Task 0 + Task 1 已完成） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-api Task 7/8/9/10） |
-| 批次状态 | **已完成（本批）**。`triggers-api` 全任务收口（13/13）。 |
-| 已完成项 | 1) 完成单元测试（配置校验、认证、sync/async、timeout、`@app.api` 与 `api_call`）；2) 完成集成测试（auth 成功/失败、governance 429、async 202 + 结果查询）；3) 完成安全测试（无认证拒绝、sanitization、大 payload 413、并发请求压力）；4) 完成文档（注册指南/认证指南/模式选择）。 |
-| 下一待执行 | `codex-work`：进入 `triggers-signal`（Task 0/1/2...）继续推进。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/api tests/unit/triggers/test_api.py tests/unit/triggers/test_api_security.py tests/integration/test_api_trigger_integration.py docs/api_trigger`（All checks passed）；`poetry run pytest tests/unit/triggers/test_api.py tests/unit/triggers/test_api_security.py tests/integration/test_api_trigger_integration.py -q`（17 passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-signal Task 0/1） |
+| 批次状态 | **进行中（本批）**。已完成 `triggers-signal` 协议契约与核心模块结构（4/17）。 |
+| 已完成项 | 1) 新增 Signal 契约：`signal_request.schema.json`、`signal_response.schema.json`、`PROTOCOL_NOTES.md`；2) 新建 `owlclaw/triggers/signal/` 模块（models/config/state/handlers/router/__init__）；3) 新增单元测试覆盖 Signal 模型、状态管理、路由与默认 handlers。 |
+| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 2（AgentStateManager 持久化与迁移）→ Task 3（SignalRouter + Ledger）→ Task 4/5/6（handlers 完整化）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/signal owlclaw/triggers/__init__.py tests/unit/triggers/test_signal.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_signal.py -q`（5 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
