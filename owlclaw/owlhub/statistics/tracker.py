@@ -10,6 +10,7 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -170,10 +171,11 @@ class StatisticsTracker:
 
     @staticmethod
     def _normalize_repository(repository: str) -> tuple[str, str] | None:
-        if "/" in repository and not repository.startswith("http"):
-            owner, repo = repository.split("/", 1)
-            if owner and repo:
-                return (owner, repo)
+        normalized = repository.strip()
+        if not normalized:
+            return None
+        if Path(normalized).exists():
+            return None
         parsed = urllib.parse.urlparse(repository)
         if parsed.netloc != "github.com":
             return None

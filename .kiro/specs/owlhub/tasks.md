@@ -195,20 +195,20 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Simulate N download/install operations, verify counts reflect operations accurately
     - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 9. Enhance Index Builder with statistics and search metadata
-  - [ ] 9.1 Update IndexBuilder to include statistics in index.json
+- [x] 9. Enhance Index Builder with statistics and search metadata
+  - [x] 9.1 Update IndexBuilder to include statistics in index.json
     - Integrate StatisticsTracker to fetch download counts
     - Add statistics field to each skill entry
     - Include total_downloads, downloads_last_30d, last_updated
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ] 9.2 Generate search index metadata for lunr.js
+  - [x] 9.2 Generate search index metadata for lunr.js
     - Create searchable text from skill name, description, tags
     - Generate search index JSON for client-side search
     - Optimize index size for fast loading
     - _Requirements: 2.1, 2.2_
 
-  - [ ]* 9.3 Write unit tests for enhanced Index Builder
+  - [x]* 9.3 Write unit tests for enhanced Index Builder
     - Test statistics integration in index generation
     - Test search metadata generation
     - Test backward compatibility with Phase 1 index format

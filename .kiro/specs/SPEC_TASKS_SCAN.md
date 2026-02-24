@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（24/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（28/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 8.1~8.3） |
-| 批次状态 | **已完成**。Statistics Tracker（GitHub release 下载统计 + 缓存 + 本地事件聚合）与单元/属性测试已落地并通过验收。 |
-| 已完成项 | 1) 新增 `owlclaw/owlhub/statistics/tracker.py`（`SkillStatistics` + `StatisticsTracker`）；2) 实现 GitHub API 统计拉取、TTL 缓存、rate limit 错误处理；3) 实现本地 `record_download`/`record_install` 聚合；4) 新增 `tests/unit/test_owlhub_statistics.py` 覆盖 API 拉取、缓存、异常处理与 Property 18；5) 更新 `owlclaw/owlhub/__init__.py` 导出统计模块；6) 回填 `owlhub/tasks.md` 的 Task 8、8.1、8.2、8.3。 |
-| 下一待执行 | `owlhub` Task 9（增强 Index Builder：statistics + search metadata）。 |
-| 验收快照 | `poetry run mypy owlclaw/owlhub/statistics/tracker.py` -> success；`poetry run ruff check owlclaw/owlhub/statistics/tracker.py tests/unit/test_owlhub_statistics.py owlclaw/owlhub/__init__.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_statistics.py -q` -> 5 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 9.1~9.3） |
+| 批次状态 | **已完成**。Index Builder 已集成统计信息与搜索元数据，且通过单元测试与向后兼容验证。 |
+| 已完成项 | 1) 更新 `owlclaw/owlhub/indexer/builder.py`：注入 `StatisticsTracker`，为每个 skill entry 增加 `statistics` 字段；2) 新增顶层 `search_index` 元数据（`id/name/publisher/version/tags/search_text`）；3) 增强 `tests/unit/test_owlhub_index_builder.py`（统计集成、搜索元数据、向后兼容键集合）；4) 在 `tests/unit/test_owlhub_statistics.py` 增加本地路径误判保护回归测试；5) 回填 `owlhub/tasks.md` 的 Task 9、9.1、9.2、9.3。 |
+| 下一待执行 | `owlhub` Task 10（Static Site Generator）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/indexer/builder.py owlclaw/owlhub/statistics/tracker.py tests/unit/test_owlhub_index_builder.py tests/unit/test_owlhub_statistics.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/indexer/builder.py owlclaw/owlhub/statistics/tracker.py` -> success；`poetry run pytest tests/unit/test_owlhub_index_builder.py tests/unit/test_owlhub_statistics.py -q` -> 14 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

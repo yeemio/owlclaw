@@ -50,7 +50,7 @@ def test_get_statistics_fetches_github_downloads(monkeypatch) -> None:
     stats = tracker.get_statistics(
         skill_name="entry-monitor",
         publisher="acme",
-        repository="acme/entry-monitor",
+        repository="https://github.com/acme/entry-monitor",
     )
 
     assert stats.total_downloads == 20
@@ -70,8 +70,8 @@ def test_statistics_cache_reuses_previous_response(monkeypatch) -> None:
     monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
 
     tracker = StatisticsTracker(now_fn=lambda: now, cache_ttl_seconds=3600)
-    first = tracker.get_statistics(skill_name="entry", publisher="acme", repository="acme/entry")
-    second = tracker.get_statistics(skill_name="entry", publisher="acme", repository="acme/entry")
+    first = tracker.get_statistics(skill_name="entry", publisher="acme", repository="https://github.com/acme/entry")
+    second = tracker.get_statistics(skill_name="entry", publisher="acme", repository="https://github.com/acme/entry")
 
     assert first.total_downloads == 10
     assert second.total_downloads == 10
@@ -87,7 +87,20 @@ def test_get_statistics_handles_rate_limit(monkeypatch) -> None:
     monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
     tracker = StatisticsTracker(now_fn=lambda: now)
 
-    stats = tracker.get_statistics(skill_name="entry", publisher="acme", repository="acme/entry")
+    stats = tracker.get_statistics(skill_name="entry", publisher="acme", repository="https://github.com/acme/entry")
+    assert stats.total_downloads == 0
+    assert stats.downloads_last_30d == 0
+
+
+def test_get_statistics_skips_non_github_local_like_repository(monkeypatch) -> None:
+    now = datetime(2026, 2, 24, 0, 0, tzinfo=timezone.utc)
+
+    def fail_if_called(request: Request, timeout: int):  # noqa: ARG001
+        raise AssertionError("urlopen should not be called for non-GitHub local-like repository")
+
+    monkeypatch.setattr("urllib.request.urlopen", fail_if_called)
+    tracker = StatisticsTracker(now_fn=lambda: now)
+    stats = tracker.get_statistics(skill_name="entry", publisher="acme", repository="templates/skills")
     assert stats.total_downloads == 0
     assert stats.downloads_last_30d == 0
 
