@@ -78,8 +78,8 @@
 - [x] 5. 检查点 - 确保基础组件测试通过
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 6. 实现 TraceManager 组件
-  - [ ] 6.1 实现 Trace 管理
+- [x] 6. 实现 TraceManager 组件
+  - [x] 6.1 实现 Trace 管理
     - 定义 `TraceSpan` 数据类
     - 实现 `TraceManager` 类
     - 实现 `create_span` 方法创建 trace span
@@ -87,12 +87,12 @@
     - 实现 `_generate_trace_id` 方法生成 trace ID
     - _需求：FR-13, FR-14_
   
-  - [ ]* 6.2 为 Trace Span 创建编写属性测试
+  - [x]* 6.2 为 Trace Span 创建编写属性测试
     - **属性 9：Trace Span 创建**
     - **验证需求：FR-13.1**
 
-- [ ] 7. 实现 LangChainAdapter 核心功能
-  - [ ] 7.1 实现 Adapter 初始化和注册
+- [x] 7. 实现 LangChainAdapter 核心功能
+  - [x] 7.1 实现 Adapter 初始化和注册
     - 定义 `RunnableConfig` 数据类
     - 实现 `LangChainAdapter` 类
     - 实现 `__init__` 方法初始化适配器
@@ -100,16 +100,16 @@
     - 实现 `_create_handler` 方法创建 capability handler
     - _需求：FR-3, FR-4_
   
-  - [ ]* 7.2 为 Runnable 类型验证编写属性测试
+  - [x]* 7.2 为 Runnable 类型验证编写属性测试
     - **属性 1：Runnable 类型验证**
     - **验证需求：FR-3.4**
   
-  - [ ]* 7.3 为注册失败编写属性测试
+  - [x]* 7.3 为注册失败编写属性测试
     - **属性 2：注册失败错误信息**
     - **验证需求：FR-3.5**
 
-- [ ] 8. 实现 Runnable 执行逻辑
-  - [ ] 8.1 实现 execute 方法
+- [x] 8. 实现 Runnable 执行逻辑
+  - [x] 8.1 实现 execute 方法
     - 实现输入 schema 验证
     - 实现输入转换
     - 实现 trace span 创建
@@ -119,14 +119,14 @@
     - 实现 span 结束
     - _需求：FR-5, FR-6, FR-7, FR-13, FR-16, FR-17_
   
-  - [ ] 8.2 实现 _execute_with_timeout 方法
+  - [x] 8.2 实现 _execute_with_timeout 方法
     - 检测 Runnable 是否支持异步（ainvoke 方法）
     - 异步 Runnable 使用 ainvoke
     - 同步 Runnable 使用 run_in_executor
     - 应用超时控制
     - _需求：FR-7, FR-8_
   
-  - [ ]* 8.3 为异步检测编写属性测试
+  - [x]* 8.3 为异步检测编写属性测试
     - **属性 6：异步检测**
     - **验证需求：FR-7.1**
 

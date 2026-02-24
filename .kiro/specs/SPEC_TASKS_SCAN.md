@@ -108,7 +108,7 @@
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（0/66） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（14/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（25/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（92/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
@@ -144,10 +144,10 @@
 |------|---|
 | 最后更新 | 2026-02-24 |
 | 当前批次 | spec 循环（integrations-langchain Task 1-5 基础组件） |
-| 批次状态 | **进行中**。完成 `integrations-langchain` 基础模块与基础测试（**14/101**）。 |
-| 已完成项 | 新增 `owlclaw/integrations/langchain/{__init__,config,schema,errors}.py`；新增可选依赖声明（`pyproject.toml` extras: `langchain`）；完成配置加载、Schema 验证与错误处理组件及对应单测/属性测试。 |
-| 下一待执行 | `integrations-langchain` Task 6（TraceManager）→ Task 7（Adapter 注册）→ Task 8（执行逻辑）。 |
-| 验收快照 | `poetry run pytest tests/unit/integrations/test_langchain_config.py tests/unit/integrations/test_langchain_schema.py tests/unit/integrations/test_langchain_errors.py -q` -> `13 passed`；`poetry run ruff check owlclaw/integrations/langchain tests/unit/integrations/test_langchain_config.py tests/unit/integrations/test_langchain_schema.py tests/unit/integrations/test_langchain_errors.py` -> `All checks passed!` |
+| 批次状态 | **进行中**。完成 `integrations-langchain` 基础模块 + TraceManager + Adapter 执行主链（**25/101**）。 |
+| 已完成项 | 新增 `owlclaw/integrations/langchain/{__init__,config,schema,errors,trace,adapter}.py`；新增可选依赖声明（`pyproject.toml` extras: `langchain`）；完成配置加载、Schema 验证、错误处理、Trace 管理、Runnable 注册与执行（含超时）及对应单测/属性测试。 |
+| 下一待执行 | `integrations-langchain` Task 9（重试机制）→ Task 10（核心检查点）→ Task 11/12（Governance + Ledger 集成）。 |
+| 验收快照 | `poetry run pytest tests/unit/integrations/test_langchain_config.py tests/unit/integrations/test_langchain_schema.py tests/unit/integrations/test_langchain_errors.py tests/unit/integrations/test_langchain_trace.py tests/unit/integrations/test_langchain_adapter.py -q` -> `25 passed`；`poetry run ruff check owlclaw/integrations/langchain tests/unit/integrations/test_langchain_adapter.py tests/unit/integrations/test_langchain_trace.py tests/unit/integrations/test_langchain_config.py tests/unit/integrations/test_langchain_schema.py tests/unit/integrations/test_langchain_errors.py` -> `All checks passed!` |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

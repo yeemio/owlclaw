@@ -14,6 +14,7 @@ class ErrorHandler:
 
     EXCEPTION_MAPPING: dict[str, tuple[str, int]] = {
         "ValueError": ("ValidationError", 400),
+        "SchemaValidationError": ("ValidationError", 400),
         "TimeoutError": ("TimeoutError", 504),
         "RateLimitError": ("RateLimitError", 429),
         "APIError": ("ExternalServiceError", 502),
