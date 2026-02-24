@@ -5,11 +5,11 @@ import os
 from urllib.parse import urlsplit, urlunsplit
 
 import typer
-from typer.models import OptionInfo
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine
 from rich.console import Console
 from rich.table import Table
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine
+from typer.models import OptionInfo
 
 from owlclaw.db import ConfigurationError, get_engine
 
@@ -50,18 +50,19 @@ def _format_size(size_bytes: int) -> str:
     """Format byte count as human-readable size."""
     if size_bytes is None or size_bytes < 0:
         return "—"
+    n = float(size_bytes)
     for unit in ("B", "KB", "MB", "GB", "TB"):
-        if size_bytes < 1024:
-            return f"{size_bytes:.1f} {unit}"
-        size_bytes /= 1024
-    return f"{size_bytes:.1f} PB"
+        if n < 1024:
+            return f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} PB"
 
 
 async def _collect_status_info(engine: AsyncEngine, url: str) -> dict:
     """Collect DB version, extensions, table stats, disk usage, migration revision."""
     from alembic.config import Config
-    from alembic.script import ScriptDirectory
     from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
 
     info: dict = {
         "connection": _mask_url(url),
@@ -168,8 +169,8 @@ def status_command(
     ),
 ) -> None:
     """Show database connection, version, extensions, table stats, and migration status."""
-    database_url = _normalize_optional_str_option(database_url)
-    url = database_url or os.environ.get("OWLCLAW_DATABASE_URL")
+    normalized_database_url = _normalize_optional_str_option(database_url)
+    url = normalized_database_url or os.environ.get("OWLCLAW_DATABASE_URL")
     if not url or not url.strip():
         typer.echo("Error: Set OWLCLAW_DATABASE_URL or pass --database-url.", err=True)
         raise typer.Exit(2)

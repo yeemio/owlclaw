@@ -86,13 +86,15 @@ class HatchetRuntimeBridge:
         """Trigger an immediate Hatchet run for this runtime task."""
         if not hasattr(self.hatchet, "run_task_now"):
             raise RuntimeError("hatchet client does not support run_task_now")
-        return await self.hatchet.run_task_now(self.task_name, **kwargs)
+        run_id = await self.hatchet.run_task_now(self.task_name, **kwargs)
+        return str(run_id)
 
     async def schedule_task(self, delay_seconds: int, **kwargs: Any) -> str:
         """Schedule a runtime run after delay_seconds."""
         if not hasattr(self.hatchet, "schedule_task"):
             raise RuntimeError("hatchet client does not support schedule_task")
-        return await self.hatchet.schedule_task(self.task_name, delay_seconds, **kwargs)
+        run_id = await self.hatchet.schedule_task(self.task_name, delay_seconds, **kwargs)
+        return str(run_id)
 
     async def schedule_cron(
         self,
@@ -103,12 +105,13 @@ class HatchetRuntimeBridge:
         """Create a Hatchet cron trigger for this runtime task."""
         if not hasattr(self.hatchet, "schedule_cron"):
             raise RuntimeError("hatchet client does not support schedule_cron")
-        return await self.hatchet.schedule_cron(
+        run_id = await self.hatchet.schedule_cron(
             workflow_name=self.task_name,
             cron_name=cron_name,
             expression=expression,
             input_data=input_data,
         )
+        return str(run_id)
 
     async def send_signal(self, run_id: str, signal_name: str, payload: dict[str, Any] | None = None) -> Any:
         """Send a signal to a running Hatchet task if client supports it."""

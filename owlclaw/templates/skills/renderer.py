@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, TemplateNotFound
 
 from owlclaw.templates.skills.exceptions import (
@@ -92,7 +92,7 @@ class TemplateRenderer:
         param_defs: list[TemplateParameter],
     ) -> dict[str, Any]:
         """Convert parameter values to expected types."""
-        result = {}
+        result: dict[str, Any] = {}
         for p in param_defs:
             if p.name not in params:
                 continue
@@ -213,8 +213,10 @@ class TemplateRenderer:
         """Convert to kebab-case (lowercase, spaces/underscores to hyphens)."""
         if not isinstance(text, str):
             text = str(text)
-        text = re.sub(r"[^\w\s-]", "", text)
+        text = text.lower()
+        text = re.sub(r"[^a-z0-9\s_-]", "", text)
         text = re.sub(r"[\s_]+", "-", text)
+        text = re.sub(r"-+", "-", text)
         return text.strip("-").lower()
 
     @staticmethod
@@ -222,6 +224,8 @@ class TemplateRenderer:
         """Convert to snake_case (lowercase, spaces/hyphens to underscores)."""
         if not isinstance(text, str):
             text = str(text)
-        text = re.sub(r"[^\w\s_-]", "", text)
+        text = text.lower()
+        text = re.sub(r"[^a-z0-9\s_-]", "", text)
         text = re.sub(r"[\s-]+", "_", text)
+        text = re.sub(r"_+", "_", text)
         return text.strip("_").lower()

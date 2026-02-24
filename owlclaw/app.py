@@ -72,6 +72,7 @@ class OwlClaw:
         # Cron triggers (Task 4.3)
         self.cron_registry: CronTriggerRegistry = CronTriggerRegistry(self)
         self._runtime: AgentRuntime | None = None
+        self._langchain_adapter: Any = None
 
     def mount_skills(self, path: str) -> None:
         """Mount Skills from a business application directory.
@@ -97,7 +98,21 @@ class OwlClaw:
 
         logger.info("Loaded %d Skills from %s", len(skills), normalized_path)
 
-    def handler(self, skill_name: str) -> Callable:
+    def handler(
+        self,
+        skill_name: str,
+        *,
+        runnable: Any | None = None,
+        description: str | None = None,
+        input_schema: dict[str, Any] | None = None,
+        output_schema: dict[str, Any] | None = None,
+        input_transformer: Callable[[dict[str, Any]], Any] | None = None,
+        output_transformer: Callable[[Any], Any] | None = None,
+        fallback: str | None = None,
+        retry_policy: dict[str, Any] | None = None,
+        timeout_seconds: int | None = None,
+        enable_tracing: bool = True,
+    ) -> Callable:
         """Decorator to register a capability handler associated with a Skill.
 
         The handler function is called when the Agent decides to invoke this capability
@@ -110,6 +125,28 @@ class OwlClaw:
             RuntimeError: If mount_skills() hasn't been called yet
         """
 
+        if runnable is not None:
+            if input_schema is None:
+                raise ValueError("input_schema is required when runnable is provided")
+            self.register_langchain_runnable(
+                name=skill_name,
+                runnable=runnable,
+                description=description or f"LangChain runnable for {skill_name}",
+                input_schema=input_schema,
+                output_schema=output_schema,
+                input_transformer=input_transformer,
+                output_transformer=output_transformer,
+                fallback=fallback,
+                retry_policy=retry_policy,
+                timeout_seconds=timeout_seconds,
+                enable_tracing=enable_tracing,
+            )
+
+            def passthrough(fn: Callable) -> Callable:
+                return fn
+
+            return passthrough
+
         def decorator(fn: Callable) -> Callable:
             if not self.registry:
                 raise RuntimeError(
@@ -121,6 +158,68 @@ class OwlClaw:
             return fn
 
         return decorator
+
+    def _get_langchain_adapter(self) -> Any:
+        """Build and cache LangChainAdapter using current app config."""
+        if self._langchain_adapter is not None:
+            return self._langchain_adapter
+
+        from owlclaw.integrations.langchain import LangChainAdapter, LangChainConfig
+
+        integrations_cfg = self._config.get("integrations", {})
+        langchain_cfg: dict[str, Any] = {}
+        if isinstance(integrations_cfg, dict):
+            candidate = integrations_cfg.get("langchain")
+            if isinstance(candidate, dict):
+                langchain_cfg = candidate
+        if not langchain_cfg:
+            candidate_root = self._config.get("langchain")
+            if isinstance(candidate_root, dict):
+                langchain_cfg = candidate_root
+
+        config = LangChainConfig.model_validate(langchain_cfg or {})
+        config.validate_semantics()
+        self._langchain_adapter = LangChainAdapter(self, config)
+        return self._langchain_adapter
+
+    def register_langchain_runnable(
+        self,
+        *,
+        name: str,
+        runnable: Any,
+        description: str,
+        input_schema: dict[str, Any],
+        output_schema: dict[str, Any] | None = None,
+        input_transformer: Callable[[dict[str, Any]], Any] | None = None,
+        output_transformer: Callable[[Any], Any] | None = None,
+        fallback: str | None = None,
+        retry_policy: dict[str, Any] | None = None,
+        timeout_seconds: int | None = None,
+        enable_tracing: bool = True,
+    ) -> None:
+        """Register LangChain runnable into capability registry."""
+        if not self.registry:
+            raise RuntimeError("Must call mount_skills() before registering LangChain runnables")
+        adapter = self._get_langchain_adapter()
+        from owlclaw.integrations.langchain import RunnableConfig, check_langchain_version
+
+        check_langchain_version()
+
+        adapter.register_runnable(
+            runnable=runnable,
+            config=RunnableConfig(
+                name=name,
+                description=description,
+                input_schema=input_schema,
+                output_schema=output_schema,
+                input_transformer=input_transformer,
+                output_transformer=output_transformer,
+                fallback=fallback,
+                retry_policy=retry_policy,
+                timeout_seconds=timeout_seconds,
+                enable_tracing=enable_tracing,
+            ),
+        )
 
     def cron(
         self,

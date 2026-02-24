@@ -62,22 +62,21 @@ def migrate_command(
     ),
 ) -> None:
     """Run schema migrations (Alembic upgrade)."""
-    target = _normalize_str_option(target, "head")
-    database_url = _normalize_optional_str_option(database_url)
-    dry_run = _normalize_bool_option(dry_run, False)
-    normalized_target = target.strip()
+    normalized_target = _normalize_str_option(target, "head").strip()
+    database_url_opt = _normalize_optional_str_option(database_url)
+    normalized_dry_run = _normalize_bool_option(dry_run, False)
     if not normalized_target:
         typer.echo("Error: --target must be a non-empty revision string.", err=True)
         raise typer.Exit(2)
-    url = database_url or os.environ.get("OWLCLAW_DATABASE_URL")
+    url = database_url_opt or os.environ.get("OWLCLAW_DATABASE_URL")
     if not url or not url.strip():
         typer.echo("Error: Set OWLCLAW_DATABASE_URL or pass --database-url.", err=True)
         raise typer.Exit(2)
     url = url.strip()
-    if database_url:
+    if database_url_opt:
         os.environ["OWLCLAW_DATABASE_URL"] = url
     alembic_cfg = Config("alembic.ini")
-    do_dry_run = bool(dry_run) or "--dry-run" in sys.argv
+    do_dry_run = bool(normalized_dry_run) or "--dry-run" in sys.argv
     if do_dry_run:
         command.current(alembic_cfg)
         command.heads(alembic_cfg)

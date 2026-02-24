@@ -16,7 +16,7 @@
 
 ## 任务列表
 
-- [ ] 1. 创建 Langfuse 集成模块基础结构
+- [x] 1. 创建 Langfuse 集成模块基础结构
   - 创建 `owlclaw/integrations/langfuse.py` 文件
   - 定义配置数据类 `LangfuseConfig`
   - 定义元数据数据类 `TraceMetadata`, `LLMSpanData`, `ToolSpanData`
@@ -24,78 +24,78 @@
   - 添加必要的导入和类型注解
   - _需求：FR-1, FR-2, FR-3, FR-13_
 
-- [ ] 2. 实现 LangfuseClient 核心功能
-  - [ ] 2.1 实现 LangfuseClient 初始化和连接管理
+- [x] 2. 实现 LangfuseClient 核心功能
+  - [x] 2.1 实现 LangfuseClient 初始化和连接管理
     - 实现 `__init__` 方法，接收 `LangfuseConfig`
     - 实现 `_initialize_client` 方法，初始化 Langfuse SDK 客户端
     - 实现降级逻辑：初始化失败时禁用客户端
     - 实现 `_should_sample` 方法，根据采样率决定是否创建 trace
     - _需求：FR-4.5, FR-13.1, FR-13.2, FR-13.3, FR-13.4_
   
-  - [ ]* 2.2 为 LangfuseClient 初始化编写属性测试
+  - [x]* 2.2 为 LangfuseClient 初始化编写属性测试
     - **属性 14：配置验证**
     - **验证需求：FR-13.2**
   
-  - [ ]* 2.3 为采样率编写属性测试
+  - [x]* 2.3 为采样率编写属性测试
     - **属性 15：采样率遵守**
     - **验证需求：FR-13.4**
 
-- [ ] 3. 实现 Trace 创建和管理
-  - [ ] 3.1 实现 `create_trace` 方法
+- [x] 3. 实现 Trace 创建和管理
+  - [x] 3.1 实现 `create_trace` 方法
     - 接收 trace 名称、元数据和标签
     - 调用 Langfuse SDK 创建 trace
     - 处理异常并降级（返回 None）
     - 返回 trace_id
     - _需求：FR-1.1, FR-1.2, FR-1.3, FR-1.4_
   
-  - [ ] 3.2 实现 `end_trace` 方法
+  - [x] 3.2 实现 `end_trace` 方法
     - 接收 trace_id、输出和元数据
     - 调用 Langfuse SDK 结束 trace
     - 处理异常并记录警告
     - _需求：FR-4.2_
   
-  - [ ] 3.3 实现 `flush` 方法
+  - [x] 3.3 实现 `flush` 方法
     - 刷新所有待上报的数据
     - 处理异常并记录警告
     - _需求：NFR-4.1_
   
-  - [ ]* 3.4 为 Trace 创建编写属性测试
+  - [x]* 3.4 为 Trace 创建编写属性测试
     - **属性 1：Trace 创建和内容完整性**
     - **验证需求：FR-1.1, FR-1.2, FR-1.3, FR-1.4**
   
-  - [ ]* 3.5 为 Trace 生命周期编写属性测试
+  - [x]* 3.5 为 Trace 生命周期编写属性测试
     - **属性 7：Trace 生命周期管理**
     - **验证需求：FR-4.2**
   
-  - [ ]* 3.6 为数据完整性编写属性测试
+  - [x]* 3.6 为数据完整性编写属性测试
     - **属性 21：数据完整性保证**
     - **验证需求：NFR-4.1**
 
-- [ ] 4. 实现 TokenCalculator 模块
-  - [ ] 4.1 实现 TokenCalculator 类
+- [x] 4. 实现 TokenCalculator 模块
+  - [x] 4.1 实现 TokenCalculator 类
     - 定义 `MODEL_PRICING` 定价表（包含 GPT-4、GPT-3.5、Claude 等模型）
     - 实现 `_normalize_model_name` 方法，标准化模型名称
     - 实现 `calculate_cost` 方法，根据 token 使用量和模型计算成本
     - 实现 `extract_tokens_from_response` 方法，从 LLM 响应中提取 token 数量
     - _需求：FR-6, FR-7_
   
-  - [ ]* 4.2 为 Token 提取编写属性测试
+  - [x]* 4.2 为 Token 提取编写属性测试
     - **属性 11：Token 提取正确性**
     - **验证需求：FR-6.1, FR-6.3**
   
-  - [ ]* 4.3 为成本计算编写属性测试
+  - [x]* 4.3 为成本计算编写属性测试
     - **属性 12：成本计算正确性**
     - **验证需求：FR-7.2**
   
-  - [ ]* 4.4 为成本聚合编写属性测试
+  - [x]* 4.4 为成本聚合编写属性测试
     - **属性 13：成本聚合正确性**
     - **验证需求：FR-8.1**
 
-- [ ] 5. 检查点 - 确保基础功能测试通过
+- [x] 5. 检查点 - 确保基础功能测试通过
   - 确保所有测试通过，如有问题请询问用户
 
-- [ ] 6. 实现 LLM Span 创建
-  - [ ] 6.1 实现 `create_llm_span` 方法
+- [x] 6. 实现 LLM Span 创建
+  - [x] 6.1 实现 `create_llm_span` 方法
     - 接收 trace_id、span 名称、LLM span 数据和父 span_id
     - 应用隐私脱敏（如果启用）
     - 调用 Langfuse SDK 创建 generation span
@@ -104,16 +104,16 @@
     - 返回 span_id
     - _需求：FR-2.1, FR-2.2, FR-2.3, FR-2.4_
   
-  - [ ]* 6.2 为 LLM Span 创建编写属性测试
+  - [x]* 6.2 为 LLM Span 创建编写属性测试
     - **属性 3：LLM Span 创建和内容完整性**
     - **验证需求：FR-2.1, FR-2.2, FR-2.3, FR-2.4**
   
-  - [ ]* 6.3 为 LLM 错误处理编写属性测试
+  - [x]* 6.3 为 LLM 错误处理编写属性测试
     - **属性 4：LLM 错误处理**
     - **验证需求：FR-2.5**
 
-- [ ] 7. 实现 Tool Span 创建
-  - [ ] 7.1 实现 `create_tool_span` 方法
+- [x] 7. 实现 Tool Span 创建
+  - [x] 7.1 实现 `create_tool_span` 方法
     - 接收 trace_id、span 名称、tool span 数据和父 span_id
     - 应用隐私脱敏（如果启用）
     - 调用 Langfuse SDK 创建 span
@@ -122,20 +122,20 @@
     - 返回 span_id
     - _需求：FR-3.1, FR-3.2, FR-3.3, FR-3.4_
   
-  - [ ]* 7.2 为 Tool Span 创建编写属性测试
+  - [x]* 7.2 为 Tool Span 创建编写属性测试
     - **属性 5：Tool Span 创建和内容完整性**
     - **验证需求：FR-3.1, FR-3.2, FR-3.3, FR-3.4**
   
-  - [ ]* 7.3 为 Tool 错误处理编写属性测试
+  - [x]* 7.3 为 Tool 错误处理编写属性测试
     - **属性 6：Tool 错误处理**
     - **验证需求：FR-3.5**
   
-  - [ ]* 7.4 为 Trace 嵌套结构编写属性测试
+  - [x]* 7.4 为 Trace 嵌套结构编写属性测试
     - **属性 2：Trace 嵌套结构**
     - **验证需求：FR-1.5**
 
-- [ ] 8. 实现 TraceContext 上下文管理
-  - [ ] 8.1 实现 TraceContext 数据类和上下文管理
+- [x] 8. 实现 TraceContext 上下文管理
+  - [x] 8.1 实现 TraceContext 数据类和上下文管理
     - 定义 `TraceContext` 数据类（trace_id、parent_span_id、metadata）
     - 使用 `contextvars` 定义 `_trace_context` 上下文变量
     - 实现 `get_current` 类方法，获取当前上下文
@@ -143,14 +143,14 @@
     - 实现 `with_parent_span` 方法，创建带有父 span 的新上下文
     - _需求：FR-5.1, FR-5.2, FR-5.3, FR-5.4_
   
-  - [ ]* 8.2 为 Context 传递编写属性测试
+  - [x]* 8.2 为 Context 传递编写属性测试
     - **属性 8：Context 在决策循环中传递**
     - **属性 9：Context 在 LLM 调用中可访问**
     - **属性 10：Context 在工具执行中可访问**
     - **验证需求：FR-5.1, FR-5.2, FR-5.3**
 
-- [ ] 9. 实现 PrivacyMasker 隐私脱敏
-  - [ ] 9.1 实现 PrivacyMasker 类
+- [x] 9. 实现 PrivacyMasker 隐私脱敏
+  - [x] 9.1 实现 PrivacyMasker 类
     - 定义 `PII_PATTERNS` 字典（邮箱、电话、SSN、信用卡）
     - 定义 `SECRET_PATTERNS` 字典（API key、Bearer token、密码）
     - 实现 `mask` 类方法，递归脱敏数据（字符串、字典、列表）
@@ -158,27 +158,27 @@
     - 支持自定义脱敏规则（正则表达式）
     - _需求：FR-14.1, FR-14.2, FR-14.3, FR-14.4, FR-14.5_
   
-  - [ ]* 9.2 为 PII 脱敏编写属性测试
+  - [x]* 9.2 为 PII 脱敏编写属性测试
     - **属性 16：PII 脱敏**
     - **验证需求：FR-14.2**
   
-  - [ ]* 9.3 为密钥脱敏编写属性测试
+  - [x]* 9.3 为密钥脱敏编写属性测试
     - **属性 17：密钥脱敏**
     - **验证需求：FR-14.3**
   
-  - [ ]* 9.4 为自定义脱敏规则编写属性测试
+  - [x]* 9.4 为自定义脱敏规则编写属性测试
     - **属性 18：自定义脱敏规则**
     - **验证需求：FR-14.4**
   
-  - [ ]* 9.5 为脱敏结构保留编写属性测试
+  - [x]* 9.5 为脱敏结构保留编写属性测试
     - **属性 19：脱敏结构保留**
     - **验证需求：FR-14.5**
 
-- [ ] 10. 检查点 - 确保核心模块测试通过
+- [x] 10. 检查点 - 确保核心模块测试通过
   - 确保所有测试通过，如有问题请询问用户
 
 - [ ] 11. 集成到 Agent Runtime
-  - [ ] 11.1 修改 AgentRuntime 以支持 Langfuse 追踪
+  - [x] 11.1 修改 AgentRuntime 以支持 Langfuse 追踪
     - 在 `owlclaw/agent/runtime/runtime.py` 中导入 Langfuse 模块
     - 在 `__init__` 方法中初始化 `LangfuseClient`
     - 在 `run` 方法开始时创建 trace
@@ -188,7 +188,7 @@
     - 处理异常情况（记录错误到 trace）
     - _需求：FR-4.1, FR-4.2_
   
-  - [ ]* 11.2 为 Agent Runtime 集成编写单元测试
+  - [x]* 11.2 为 Agent Runtime 集成编写单元测试
     - 测试 trace 自动创建
     - 测试 trace 自动结束
     - 测试异常情况下的 trace 记录
@@ -227,8 +227,8 @@
     - 测试执行时长记录
     - _需求：FR-3_
 
-- [ ] 14. 实现配置管理
-  - [ ] 14.1 实现配置加载和验证
+- [x] 14. 实现配置管理
+  - [x] 14.1 实现配置加载和验证
     - 创建 `load_langfuse_config` 函数，从 YAML 配置文件加载配置
     - 实现 `_replace_env_vars` 函数，替换配置中的环境变量（${VAR_NAME} 格式）
     - 实现 `validate_config` 函数，验证配置的合法性
@@ -237,7 +237,7 @@
     - 验证自定义脱敏规则（正则表达式）
     - _需求：FR-13.1, FR-13.2_
   
-  - [ ]* 14.2 为配置验证编写单元测试
+  - [x]* 14.2 为配置验证编写单元测试
     - 测试有效配置加载
     - 测试无效配置检测（缺少必需字段、无效数值范围）
     - 测试环境变量替换
