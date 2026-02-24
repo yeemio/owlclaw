@@ -1,0 +1,39 @@
+name: owlhub-build-index
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: "1.8.4"
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Build OwlHub index
+        run: |
+          poetry run python scripts/owlhub_build_index.py \
+            --output dist/owlhub/index.json \
+            --repos templates/skills
+
+      - name: Upload index artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: owlhub-index
+          path: dist/owlhub/index.json
+

@@ -93,8 +93,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Generate random files, calculate checksum → transfer → recalculate, verify match
     - _Requirements: 1.1, 1.3, 5.3_
 
-- [ ] 4. Implement CLI Client for skill management
-  - [ ] 4.1 Create `owlclaw/cli/skill.py` with CLI commands
+- [x] 4. Implement CLI Client for skill management
+  - [x] 4.1 Create `owlclaw/cli/skill.py` with CLI commands
     - Implement `search` command with query and tag filtering
     - Implement `install` command with version specification support
     - Implement `list` command to show installed skills
@@ -103,7 +103,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add rich output formatting for better UX
     - _Requirements: 2.1, 2.5, 3.1, 3.2, 4.5_
 
-  - [ ] 4.2 Implement skill installation logic
+  - [x] 4.2 Implement skill installation logic
     - Download skill package from download_url
     - Verify checksum before extraction
     - Extract to installation directory
@@ -111,14 +111,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Handle installation errors and rollback on failure
     - _Requirements: 3.1, 3.2, 3.5, 5.3_
 
-  - [ ] 4.3 Implement lock file management
+  - [x] 4.3 Implement lock file management
     - Create `skill-lock.json` schema with version, generated_at, skills
     - Implement lock file generation after installation
     - Implement lock file reading for reproducible installs
     - Store resolved versions, URLs, and checksums
     - _Requirements: 3.4_
 
-  - [ ]* 4.4 Write unit tests for CLI Client
+  - [x]* 4.4 Write unit tests for CLI Client
     - Test search with no results
     - Test install of already installed skill
     - Test install of non-existent version
@@ -127,7 +127,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test installation rollback on validation failure
     - _Requirements: 2.1, 3.1, 3.2, 3.4, 3.5_
 
-  - [ ]* 4.5 Write property tests for CLI Client
+  - [x]* 4.5 Write property tests for CLI Client
     - **Property 6: 多维度搜索**
     - **Validates: Requirements 2.1, 2.2**
     - Generate random skill sets and queries, verify results match and are sorted correctly
@@ -142,15 +142,15 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Generate invalid skill packages, verify installation rejected and state unchanged
     - _Requirements: 2.1, 2.2, 3.1, 3.2, 3.4, 3.5_
 
-- [ ] 5. Set up GitHub Actions workflow for index publishing
-  - Create `.github/workflows/build-index.yml`
+- [x] 5. Set up GitHub Actions workflow for index publishing
+  - Create `.github/workflows/owlhub-build-index.yml`
   - Configure workflow to run Index Builder on schedule (hourly)
   - Configure workflow to run on manual trigger
   - Publish generated index.json to GitHub Pages
   - Add workflow for validating PRs that add new skills
   - _Requirements: 8.1, 8.2_
 
-- [ ]* 5.1 Write integration test for Phase 1 end-to-end flow
+- [x]* 5.1 Write integration test for Phase 1 end-to-end flow
   - Test complete publish flow: create skill → validate → build index → publish
   - Test complete install flow: search → download → validate → install → lock
   - Verify index.json is accessible and parseable by CLI
