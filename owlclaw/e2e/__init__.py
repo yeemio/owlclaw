@@ -1,6 +1,7 @@
 """E2E validation package exports."""
 
 from owlclaw.e2e.data_collector import CollectedData, DataCollector
+from owlclaw.e2e.execution_engine import ExecutionEngine
 from owlclaw.e2e.interfaces import ScenarioExecutionEngine, TestScenarioRepository
 from owlclaw.e2e.models import (
     ExecutionEvent,
@@ -18,6 +19,7 @@ __all__ = [
     "ExecutionStatus",
     "CollectedData",
     "DataCollector",
+    "ExecutionEngine",
     "ScenarioExecutionEngine",
     "ScenarioType",
     "TestScenario",

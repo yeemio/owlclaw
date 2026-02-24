@@ -65,7 +65,7 @@
     - _需求: 1.4, 6.1_
 
 - [ ] 4. 实现执行引擎
-  - [ ] 4.1 实现 ExecutionEngine 类基础功能
+  - [x] 4.1 实现 ExecutionEngine 类基础功能
     - 实现 executeScenario 方法框架
     - 实现与被测系统的集成接口（Cron Trigger、Agent Runtime 等）
     - 实现执行轨迹记录
