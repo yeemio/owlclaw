@@ -795,7 +795,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add dependency vulnerability scanning to CI
     - _Requirements: 5.1, 5.3, 5.4_
 
-  - [ ] 36.2 Implement checksum verification throughout
+  - [x] 36.2 Implement checksum verification throughout
     - Verify checksums on all skill downloads
     - Generate checksums for all published skills
     - Store checksums in database and index
