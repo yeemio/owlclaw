@@ -163,10 +163,14 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|------|---------|
 | triggers-webhook | 0/17 | `owlclaw/triggers/webhook.py`, `tests/unit/triggers/test_webhook*.py` |
 | triggers-queue | 0/25 | `owlclaw/triggers/queue.py`, `tests/unit/triggers/test_queue*.py` |
+| triggers-db-change | 0/11 | `owlclaw/triggers/db_change.py`, `tests/unit/triggers/test_db_change*.py` |
+| triggers-api | 0/10 | `owlclaw/triggers/api.py`, `tests/unit/triggers/test_api*.py` |
+| triggers-signal | 0/14 | `owlclaw/triggers/signal.py`, `tests/unit/triggers/test_signal*.py` |
+| cli-scan | 0/37 | `owlclaw/cli/scan.py`, `tests/unit/test_cli_scan*.py` |
 
 **前置条件**：integrations-hatchet(37/37 ✅) + integrations-langchain(50/50 ✅) + triggers-cron(19/19 ✅) 已全部完成。
 
-**下一任务（当前完成后）**：triggers-webhook + triggers-queue 收口后 → **triggers-db-change** (0/11) + **triggers-api** (0/10)。
+**下一任务（当前完成后）**：全部收口后进入 Phase 3（release/ci-setup）。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -190,10 +194,15 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|------|---------|
 | e2e-validation | 3/19 | `tests/integration/test_e2e*.py`, `tests/integration/test_mionyee*.py` |
 | mcp-server | 0/12 | `owlclaw_mcp/**`, `tests/unit/test_mcp*.py` |
+| owlhub | 0/42 | `owlclaw/owlhub/**`, `tests/unit/test_owlhub*.py` |
+| examples | 0/12 | `examples/**`, `tests/unit/test_examples*.py` |
+| cli-migrate | 0/12 | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
+| ci-setup | 0/12 | `.github/workflows/**` |
+| release | 0/32 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
 
 **前置条件**：skill-templates(56/56 ✅) + integrations-langfuse(20/20 ✅) + integrations-langchain(50/50 ✅) 已完成。
 
-**下一任务（当前完成后）**：e2e-validation + mcp-server 收口后 → **owlhub** (0/42) + **cli-scan** (0/37)。
+**下一任务（当前完成后）**：全部收口即完成 Phase 2/3，项目进入发布阶段。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -236,6 +245,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-23 | codex-work：追加 integrations-langchain | triggers-cron(117/117) 已完成，等待审校；提前分配 Phase 2 任务 |
 | 2026-02-23 | codex-work：hatchet+langchain+cron 全完成 → triggers-webhook + triggers-queue | Phase 1 全部完成，进入 Phase 2 触发器族 |
 | 2026-02-23 | codex-gpt-work：skill-templates+langfuse+langchain 全完成 → e2e-validation + mcp-server | Phase 1/2 integrations 完成，进入 e2e 与 mcp |
+| 2026-02-23 | 全量分配：codex-work 追加 triggers-db-change/api/signal + cli-scan | 一次分完所有剩余 spec，减少统筹轮次 |
+| 2026-02-23 | 全量分配：codex-gpt-work 追加 owlhub + examples + cli-migrate + ci-setup + release | 同上 |
 
 ---
 
@@ -245,9 +256,6 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 1 + Phase 2 integrations 全部完成 ✅**
 
-**Phase 2 剩余待分配**：
-- triggers-db-change (0/11)、triggers-api (0/10)、triggers-signal (0/14)
-- owlhub (0/42)、cli-scan (0/37)、examples (0/12)
+**全部 spec 已分配完毕 ✅**
 
-**Phase 3**（后续）：
-- cli-migrate (0/12)、release (0/32)、ci-setup (0/12)
+剩余 13 个 spec 已全部分配到两个编码 worktree，无待分配项。
