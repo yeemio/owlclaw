@@ -98,11 +98,11 @@
   - Instruction TTL 过期逻辑
   - 目标覆盖率：> 90%
 
-- [ ] **Task 13**: 集成测试
-  - CLI → SignalRouter → State 变更 全流程
-  - HTTP API → SignalRouter → State 变更 全流程
-  - pause → cron 不触发 → resume → cron 恢复
-  - instruct → Agent Run → STM 包含指令
+- [x] **Task 13**: 集成测试
+  - [x] CLI → SignalRouter → State 变更 全流程
+  - [x] HTTP API → SignalRouter → State 变更 全流程
+  - [x] pause → cron 不触发 → resume → cron 恢复
+  - [x] instruct → Agent Run → STM 包含指令
 
 - [x] **Task 14**: 文档
   - [x] Signal 系统使用指南
