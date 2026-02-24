@@ -6,7 +6,7 @@ from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
-from owlclaw.owlhub.schema import SkillManifest
+from owlclaw.owlhub.schema import SkillManifest, VersionState
 
 
 class SkillRepositoryCrawler:
@@ -44,10 +44,16 @@ class SkillRepositoryCrawler:
         if not isinstance(description, str) or not description.strip():
             return None
         version = "0.1.0"
+        version_state = VersionState.RELEASED
         if isinstance(metadata, dict):
             meta_version = metadata.get("version")
             if isinstance(meta_version, str) and meta_version.strip():
                 version = meta_version.strip()
+            raw_state = str(metadata.get("state", metadata.get("version_state", "released"))).strip().lower()
+            if raw_state == VersionState.DRAFT.value:
+                version_state = VersionState.DRAFT
+            elif raw_state == VersionState.DEPRECATED.value:
+                version_state = VersionState.DEPRECATED
 
         publisher = skill_file.parent.parent.name or "unknown"
         return SkillManifest(
@@ -59,5 +65,5 @@ class SkillRepositoryCrawler:
             tags=[],
             dependencies={},
             repository=str(skill_file.parent),
+            version_state=version_state,
         )
-

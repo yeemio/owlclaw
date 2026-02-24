@@ -115,6 +115,80 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         )
         return True
 
+    if sub == "search":
+        from owlclaw.cli.skill_hub import search_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill search")
+        parser.add_argument("--query", "-q", default="")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--tags", default="")
+        parser.add_argument("--tag-mode", default="and")
+        parser.add_argument("--include-draft", action="store_true", default=False)
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        search_command(
+            query=ns.query,
+            index_url=ns.index_url,
+            tags=ns.tags,
+            tag_mode=ns.tag_mode,
+            include_draft=ns.include_draft,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
+    if sub == "install":
+        from owlclaw.cli.skill_hub import install_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill install")
+        parser.add_argument("name")
+        parser.add_argument("--version", default="")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        install_command(
+            name=ns.name,
+            version=ns.version,
+            index_url=ns.index_url,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
+    if sub == "installed":
+        from owlclaw.cli.skill_hub import installed_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill installed")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        installed_command(
+            index_url=ns.index_url,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
+    if sub == "update":
+        from owlclaw.cli.skill_hub import update_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill update")
+        parser.add_argument("name", nargs="?", default="")
+        parser.add_argument("--index-url", default="./index.json")
+        parser.add_argument("--install-dir", default="./.owlhub/skills")
+        parser.add_argument("--lock-file", default="./skill-lock.json")
+        ns = parser.parse_args(sub_argv)
+        update_command(
+            name=ns.name,
+            index_url=ns.index_url,
+            install_dir=ns.install_dir,
+            lock_file=ns.lock_file,
+        )
+        return True
+
     print(f"Error: unknown skill subcommand: {sub}", file=sys.stderr)
     raise SystemExit(2)
 

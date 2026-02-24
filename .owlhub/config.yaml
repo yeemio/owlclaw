@@ -1,0 +1,6 @@
+index_url: "./index.json"
+repositories:
+  - "templates/skills"
+update_interval: "1h"
+install_dir: "./.owlhub/skills"
+lock_file: "./skill-lock.json"

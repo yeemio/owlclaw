@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from owlclaw.owlhub.indexer import IndexBuilder, SkillRepositoryCrawler
+from owlclaw.owlhub.statistics import SkillStatistics
 
 
 def _write_skill(root: Path, publisher: str, name: str, version: str, description: str) -> Path:
@@ -35,6 +37,39 @@ def test_build_index_with_single_skill(tmp_path: Path) -> None:
     assert index["version"] == "1.0"
     assert index["total_skills"] == 1
     assert index["skills"][0]["manifest"]["name"] == "entry-monitor"
+    assert "search_index" in index
+
+
+def test_build_index_includes_statistics(tmp_path: Path) -> None:
+    class _StaticStatsTracker:
+        def get_statistics(self, *, skill_name: str, publisher: str, repository: str | None = None) -> SkillStatistics:
+            _ = (skill_name, publisher, repository)
+            return SkillStatistics(
+                skill_name="entry-monitor",
+                publisher="acme",
+                total_downloads=33,
+                downloads_last_30d=7,
+                total_installs=0,
+                active_installs=0,
+                last_updated=datetime(2026, 2, 24, 0, 0, tzinfo=timezone.utc),
+            )
+
+    _write_skill(tmp_path, "acme", "entry-monitor", "1.0.0", "Monitor entry opportunities.")
+    builder = IndexBuilder(SkillRepositoryCrawler(), statistics_tracker=_StaticStatsTracker())
+    index = builder.build_index([str(tmp_path)])
+    statistics = index["skills"][0]["statistics"]
+    assert statistics["total_downloads"] == 33
+    assert statistics["downloads_last_30d"] == 7
+
+
+def test_build_index_generates_search_metadata(tmp_path: Path) -> None:
+    _write_skill(tmp_path, "acme", "entry-monitor", "1.0.0", "Monitor entry opportunities.")
+    builder = IndexBuilder(SkillRepositoryCrawler())
+    index = builder.build_index([str(tmp_path)])
+    search_items = index["search_index"]
+    assert len(search_items) == 1
+    assert search_items[0]["id"] == "acme/entry-monitor@1.0.0"
+    assert "monitor" in search_items[0]["search_text"]
 
 
 def test_build_index_handles_invalid_skill_frontmatter(tmp_path: Path) -> None:
@@ -44,6 +79,12 @@ def test_build_index_handles_invalid_skill_frontmatter(tmp_path: Path) -> None:
     builder = IndexBuilder(SkillRepositoryCrawler())
     index = builder.build_index([str(tmp_path)])
     assert index["total_skills"] == 0
+
+
+def test_build_index_backward_compatibility_keys(tmp_path: Path) -> None:
+    _write_skill(tmp_path, "acme", "entry-monitor", "1.0.0", "Monitor entry opportunities.")
+    index = IndexBuilder().build_index([str(tmp_path)])
+    assert {"version", "generated_at", "total_skills", "skills"}.issubset(index.keys())
 
 
 @settings(max_examples=100)
