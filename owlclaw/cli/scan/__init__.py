@@ -19,8 +19,10 @@ from owlclaw.cli.scan.models import (
     ScanResult,
     TypeSource,
 )
+from owlclaw.cli.scan.parser import ASTParser
 
 __all__ = [
+    "ASTParser",
     "ComplexityLevel",
     "ComplexityScore",
     "Confidence",
