@@ -90,14 +90,14 @@
   - [x] 8.4 实现 shadow 模式（只记录不发送）
   - [x] 8.5 单元测试：active publish、shadow 拦截、headers mapping
 
-- [ ] **Task 9**: SQLBinding Executor
-  - [ ] 9.1 实现 `sql_executor.py`：SQLBindingExecutor 类
-  - [ ] 9.2 实现参数化查询（强制 `:param` 占位符）
-  - [ ] 9.3 实现 read_only 强制（默认 true）
-  - [ ] 9.4 实现 max_rows 限制
-  - [ ] 9.5 validate_config 拒绝字符串拼接模式（%、f-string）
-  - [ ] 9.6 实现 shadow 模式（写操作只记录）
-  - [ ] 9.7 单元测试：参数化查询、read_only、string interpolation 拒绝、max_rows
+- [x] **Task 9**: SQLBinding Executor
+  - [x] 9.1 实现 `sql_executor.py`：SQLBindingExecutor 类
+  - [x] 9.2 实现参数化查询（强制 `:param` 占位符）
+  - [x] 9.3 实现 read_only 强制（默认 true）
+  - [x] 9.4 实现 max_rows 限制
+  - [x] 9.5 validate_config 拒绝字符串拼接模式（%、f-string）
+  - [x] 9.6 实现 shadow 模式（写操作只记录）
+  - [x] 9.7 单元测试：参数化查询、read_only、string interpolation 拒绝、max_rows
 
 - [ ] **Task 10**: Shadow 模式 → 对比报告
   - [ ] 10.1 shadow 执行结果写入 Ledger 并标记 `mode=shadow`
