@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -26,12 +28,16 @@ class SkillHubApiClient:
         api_token: str = "",
         mode: str = "auto",
         timeout_seconds: int = 15,
+        cache_ttl_seconds: int = 3600,
+        no_cache: bool = False,
     ) -> None:
         self.index_client = index_client
         self.api_base_url = api_base_url.strip().rstrip("/")
         self.api_token = api_token.strip()
         self.mode = mode.strip().lower() if mode.strip() else "auto"
         self.timeout_seconds = timeout_seconds
+        self.cache_ttl_seconds = max(0, cache_ttl_seconds)
+        self.no_cache = no_cache
         self.validator = Validator()
         self.last_install_warning: str | None = None
 
@@ -54,9 +60,16 @@ class SkillHubApiClient:
                     raise
         return self.index_client.search(query=query, tags=tags, tag_mode=tag_mode, include_draft=include_draft)
 
-    def install(self, *, name: str, version: str | None = None, no_deps: bool = False) -> Path:
+    def install(
+        self,
+        *,
+        name: str,
+        version: str | None = None,
+        no_deps: bool = False,
+        force: bool = False,
+    ) -> Path:
         """Install skill using static index client."""
-        target = self.index_client.install(name=name, version=version, no_deps=no_deps)
+        target = self.index_client.install(name=name, version=version, no_deps=no_deps, force=force)
         self.last_install_warning = self.index_client.last_install_warning
         return target
 
@@ -129,9 +142,14 @@ class SkillHubApiClient:
         if self.api_token:
             headers["Authorization"] = f"Bearer {self.api_token}"
         request = urllib.request.Request(target, data=data, method=method, headers=headers)
+        cache_file = self.index_client.cache_dir / f"api-{_sha256(target)}.json"
+        if method.upper() == "GET" and not self.no_cache and _is_cache_fresh(cache_file, ttl_seconds=self.cache_ttl_seconds):
+            return json.loads(cache_file.read_text(encoding="utf-8"))
         try:
             with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
                 raw = response.read().decode("utf-8")
+            if method.upper() == "GET" and not self.no_cache:
+                cache_file.write_text(raw, encoding="utf-8")
             return json.loads(raw) if raw.strip() else {}
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="ignore")
@@ -152,3 +170,14 @@ def _read_manifest(path: Path) -> dict[str, Any]:
     if isinstance(metadata, dict) and "version" in metadata and "version" not in frontmatter:
         frontmatter["version"] = metadata["version"]
     return frontmatter
+
+
+def _is_cache_fresh(path: Path, *, ttl_seconds: int) -> bool:
+    if not path.exists() or ttl_seconds <= 0:
+        return False
+    age = time.time() - path.stat().st_mtime
+    return age <= ttl_seconds
+
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()

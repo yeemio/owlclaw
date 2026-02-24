@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（29/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（30/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/37） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -153,9 +153,9 @@
 | 最后更新 | 2026-02-24 |
 | 当前批次 | review-work（合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
 | 批次状态 | **已完成（可放行）**。两条开发分支均已合并到 `review-work` 并通过质量门。 |
-| 已完成项 | 1) 合并 `codex-work`（signal 持久化状态、admin API、CLI 信号流）；2) 修复合并后类型问题（`result.rowcount` 与 `uvicorn` 可选依赖导入）；3) 验证通过：`ruff` + `mypy` + `pytest`（signal 相关 25 passed, 1 skipped）；4) 合并 `codex-gpt-work`（owlhub moderation、CLI API 模式、依赖解析/安装图）；5) 验证通过：`ruff` + `mypy` + `pytest`（新增 owlhub/cli 相关 32 passed）；6) 补齐 `triggers-signal` Task 9（MCP 工具：pause/resume/trigger/instruct）并新增单测；7) 补齐 `triggers-signal` Task 10/11（runtime paused guard + 指令注入 + ledger 记录）并新增单测；8) 新增 Signal 使用文档（CLI/MCP/最佳实践）并完成 Task 14；9) 完成 `triggers-signal` Task 13 集成流（CLI/API/paused guard/instruction injection）；10) 完成 `triggers-signal` Task 12（单测补齐 DB 分支，模块覆盖率 94%）；11) 更新 SPEC_TASKS_SCAN 为事实进度（signal 15/15、owlhub 29/42 等）。 |
-| 下一待执行 | 1) 推进 `declarative-binding` Phase 1（Task 0-7）；2) 推进 `owlhub` 剩余任务（29/42 → 完成）；3) 准备 `review-work -> main` 汇总合并说明。 |
-| 验收快照 | 本轮审校后：`triggers-webhook` ✅、`triggers-api` ✅、`triggers-db-change` ✅、`triggers-signal` ✅(15/15)、`owlhub` 🟡(29/42)。 |
+| 已完成项 | 1) 合并 `codex-work`（signal 持久化状态、admin API、CLI 信号流）；2) 修复合并后类型问题（`result.rowcount` 与 `uvicorn` 可选依赖导入）；3) 验证通过：`ruff` + `mypy` + `pytest`（signal 相关 25 passed, 1 skipped）；4) 合并 `codex-gpt-work`（owlhub moderation、CLI API 模式、依赖解析/安装图）；5) 验证通过：`ruff` + `mypy` + `pytest`（新增 owlhub/cli 相关 32 passed）；6) 补齐 `triggers-signal` Task 9（MCP 工具：pause/resume/trigger/instruct）并新增单测；7) 补齐 `triggers-signal` Task 10/11（runtime paused guard + 指令注入 + ledger 记录）并新增单测；8) 新增 Signal 使用文档（CLI/MCP/最佳实践）并完成 Task 14；9) 完成 `triggers-signal` Task 13 集成流（CLI/API/paused guard/instruction injection）；10) 完成 `triggers-signal` Task 12（单测补齐 DB 分支，模块覆盖率 94%）；11) 合并 `codex-gpt-work` 最新批次（owlhub 缓存控制、cache clear、安装重试恢复），回归通过；12) 更新 SPEC_TASKS_SCAN 为事实进度（signal 15/15、owlhub 30/42 等）。 |
+| 下一待执行 | 1) 推进 `declarative-binding` Phase 1（Task 0-7）；2) 推进 `owlhub` 剩余任务（30/42 → 完成）；3) 准备 `review-work -> main` 汇总合并说明。 |
+| 验收快照 | 本轮审校后：`triggers-webhook` ✅、`triggers-api` ✅、`triggers-db-change` ✅、`triggers-signal` ✅(15/15)、`owlhub` 🟡(30/42)。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

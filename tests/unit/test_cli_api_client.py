@@ -111,3 +111,47 @@ metadata:
     assert called["auth"] == "Bearer token-123"
     assert called["name"] == "entry-monitor"
     assert response["review_id"] == "r1"
+
+
+def test_api_get_cache_hit_and_no_cache_bypass(tmp_path: Path, monkeypatch) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    index_client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    attempts = {"count": 0}
+
+    def fake_urlopen(request: Request, timeout: int):  # noqa: ARG001
+        _ = request
+        attempts["count"] += 1
+        payload = {
+            "total": 1,
+            "page": 1,
+            "page_size": 20,
+            "items": [
+                {
+                    "name": "entry-monitor",
+                    "publisher": "acme",
+                    "version": "1.0.1",
+                    "description": "remote",
+                    "tags": ["x"],
+                    "version_state": "released",
+                }
+            ],
+        }
+        return _FakeResponse(json.dumps(payload))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    cached_client = SkillHubApiClient(index_client=index_client, api_base_url="http://hub.local", mode="api")
+    cached_client.search(query="entry")
+    cached_client.search(query="entry")
+    assert attempts["count"] == 1
+
+    attempts["count"] = 0
+    no_cache_client = SkillHubApiClient(
+        index_client=index_client,
+        api_base_url="http://hub.local",
+        mode="api",
+        no_cache=True,
+    )
+    no_cache_client.search(query="entry")
+    no_cache_client.search(query="entry")
+    assert attempts["count"] == 2
