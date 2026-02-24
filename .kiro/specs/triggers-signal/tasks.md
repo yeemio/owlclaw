@@ -91,12 +91,12 @@
 
 ### Phase 4：测试
 
-- [ ] **Task 12**: 单元测试
-  - Signal 数据模型验证
-  - 各 Handler 逻辑（pause/resume/trigger/instruct）
-  - AgentStateManager CRUD
-  - Instruction TTL 过期逻辑
-  - 目标覆盖率：> 90%
+- [x] **Task 12**: 单元测试
+  - [x] Signal 数据模型验证
+  - [x] 各 Handler 逻辑（pause/resume/trigger/instruct）
+  - [x] AgentStateManager CRUD
+  - [x] Instruction TTL 过期逻辑
+  - [x] 目标覆盖率：> 90%
 
 - [x] **Task 13**: 集成测试
   - [x] CLI → SignalRouter → State 变更 全流程
