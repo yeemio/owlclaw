@@ -70,7 +70,7 @@
   - 请求体验证（Pydantic）
   - 与 API 触发器共享 Starlette 服务
 
-- [ ] **Task 9**: 实现 MCP Server 集成
+- [x] **Task 9**: 实现 MCP Server 集成
   - `owlclaw_pause` MCP tool → Signal(type=PAUSE, source=MCP)
   - `owlclaw_resume` MCP tool → Signal(type=RESUME, source=MCP)
   - `owlclaw_trigger` MCP tool → Signal(type=TRIGGER, source=MCP)

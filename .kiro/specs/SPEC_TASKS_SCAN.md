@@ -62,10 +62,10 @@
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
-- [ ] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
+- [x] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
 - [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
-- [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
-- [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
+- [x] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
+- [x] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
@@ -109,11 +109,11 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（2/72） | webhook 触发器（Task 0 Protocol-first 已勾，+3 subtasks） |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
-| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
+| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（13/17） | Signal 触发器（Task 0-9 已完成） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（cli-migrate 与 declarative-binding 打通 + 文档全面更新） |
-| 批次状态 | **已完成**。核心洞察：cli-migrate 的 Scanner 模块（OpenAPIScanner/ORMScanner/CronScanner）已具备自动发现存量系统能力，不需要新增 connections 概念或 Skill Pack 层。关键变化：cli-migrate 输出从仅 @handler 代码扩展为同时支持 binding SKILL.md 生成。 |
-| 已完成项 | 1) `ARCHITECTURE_ANALYSIS` 更新至 v4.5（§4.12 补充：cli-migrate 作为 Binding 自动生成路径，取代 connections 概念和 Skill Pack 方案；完整链路：IT 运行命令 → 自动生成 binding SKILL.md → 业务用户填写自然语言 → Agent 调用）；2) `declarative-binding` spec 更新（requirements +R12/R13，design +BindingGenerator 组件，tasks +Phase 5 共 4 个 Task/18 个子任务，总计 105 子任务）；3) `cli-migrate` spec 更新（requirements +R16/R17 binding 输出模式，design +BindingGenerator 数据流，tasks +§4 binding 输出模式 12 个子任务，总计 24 子任务）；4) `owlclaw_architecture.mdc` 更新（cli-migrate 与 binding 联动规则）；5) `owlclaw_core.mdc` 更新（关键规则速查增加 cli-migrate 自动生成）；6) SPEC_TASKS_SCAN 功能清单、Spec 索引、Checkpoint 全部同步。 |
-| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐 → Task 1-7。Phase 5（cli-migrate 联动）依赖 Phase 1 完成后启动。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.5；`declarative-binding` spec（13 个需求 + 9 个组件 + 19 个 task + backlog）；`cli-migrate` spec（17 个需求 + 8 个组件 + 9 个任务组）；`owlclaw_architecture.mdc` 和 `owlclaw_core.mdc` 规则已同步。 |
+| 当前批次 | coding loop（codex-work: triggers-signal Task 9） |
+| 批次状态 | **进行中（本批）**。`triggers-signal` 已推进至 13/17。 |
+| 已完成项 | 1) 新增 `owlclaw.triggers.signal.mcp.register_signal_mcp_tools()`，向 CapabilityRegistry 注册 `owlclaw_pause/resume/trigger/instruct` 四个 MCP 工具；2) 四个工具统一构造 `Signal(source=MCP)` 并走 `SignalRouter.dispatch()`；3) 增加 MCP 单测覆盖 tools/list + tools/call 的信号链路。 |
+| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 10/11（runtime paused 检查 + instruction 注入）→ Task 12/13/14（测试与文档收口）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/signal/mcp.py owlclaw/triggers/signal/__init__.py tests/unit/test_mcp_server.py`（All checks passed）；`poetry run pytest tests/unit/test_mcp_server.py tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py -q`（36 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

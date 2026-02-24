@@ -10,6 +10,7 @@ import pytest
 
 from owlclaw import OwlClaw
 from owlclaw.mcp import McpProtocolServer
+from owlclaw.triggers.signal import AgentStateManager, SignalRouter, default_handlers, register_signal_mcp_tools
 
 
 def _create_test_app(tmp_path: Path) -> OwlClaw:
@@ -190,3 +191,66 @@ def test_build_input_schema_ignores_session_and_varargs(tmp_path: Path) -> None:
     schema = server._build_input_schema(handler)
     assert "session" not in schema["properties"]
     assert "name" in schema["properties"]
+
+
+@pytest.mark.asyncio
+async def test_mcp_signal_tools_registration_and_call(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+
+    class _Runtime:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        async def trigger_event(
+            self,
+            event_name: str,
+            payload: dict[str, Any],
+            focus: str | None = None,
+            tenant_id: str = "default",
+        ) -> dict[str, Any]:
+            self.calls.append(
+                {
+                    "event_name": event_name,
+                    "payload": payload,
+                    "focus": focus,
+                    "tenant_id": tenant_id,
+                }
+            )
+            return {"run_id": "run-mcp-1"}
+
+    runtime = _Runtime()
+    router = SignalRouter(handlers=default_handlers(state=AgentStateManager(max_pending_instructions=4), runtime=runtime))
+    assert app.registry is not None
+    register_signal_mcp_tools(registry=app.registry, router=router)
+
+    server = McpProtocolServer.from_app(app)
+    tools_response = await server.handle_message({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
+    tool_names = {item["name"] for item in tools_response["result"]["tools"]}
+    assert {"owlclaw_pause", "owlclaw_resume", "owlclaw_trigger", "owlclaw_instruct"} <= tool_names
+
+    pause_response = await server.handle_message(
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "owlclaw_pause", "arguments": {"agent_id": "agent-a"}},
+        }
+    )
+    pause_payload = json.loads(pause_response["result"]["content"][0]["text"])
+    assert pause_payload["status"] == "paused"
+
+    trigger_response = await server.handle_message(
+        {
+            "jsonrpc": "2.0",
+            "id": 3,
+            "method": "tools/call",
+            "params": {
+                "name": "owlclaw_trigger",
+                "arguments": {"agent_id": "agent-a", "message": "now", "focus": "urgent"},
+            },
+        }
+    )
+    trigger_payload = json.loads(trigger_response["result"]["content"][0]["text"])
+    assert trigger_payload["status"] == "triggered"
+    assert trigger_payload["run_id"] == "run-mcp-1"
+    assert runtime.calls[0]["payload"]["source"] == "mcp"
