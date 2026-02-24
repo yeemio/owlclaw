@@ -15,6 +15,8 @@ from owlclaw.e2e.report_generator import ReportGenerator
 class TestOrchestrator:
     """Coordinate validation runs across e2e components."""
 
+    __test__ = False
+
     def __init__(
         self,
         *,

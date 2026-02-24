@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 13.1~13.2） |
-| 批次状态 | **已完成**。E2E Python CLI 与配置管理已落地，支持配置文件加载与环境变量覆盖。 |
-| 已完成项 | 1) 新增 `owlclaw/e2e/cli.py`：支持 full/mionyee/comparison/integration/performance/concurrency 模式；2) 新增 `owlclaw/e2e/configuration.py`：JSON 配置加载 + `OWLCLAW_E2E_*` 覆盖；3) 新增 `tests/e2e/test_e2e_cli.py` 覆盖 CLI 和配置；4) Task 13.1、13.2 与顶层 Task 13 回填为已完成。 |
-| 下一待执行 | `e2e-validation` Task 14.1~14.6（端到端场景测试补齐）。 |
-| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 56 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 14.1~14.3） |
+| 批次状态 | **已完成**。mionyee 三任务端到端测试已补齐并通过。 |
+| 已完成项 | 1) 新增 `tests/e2e/test_e2e_mionyee_tasks.py`，覆盖 Task1/2/3 的完整链路断言；2) 修复 `TestOrchestrator` pytest 误收集（`__test__ = False`）；3) 回填 Task 14.1~14.3 为已完成。 |
+| 下一待执行 | `e2e-validation` Task 14.4（决策对比 E2E）~14.6（并发场景 E2E）。 |
+| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 59 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
