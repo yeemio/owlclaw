@@ -57,6 +57,38 @@ class TestScenarioManager:
         """List all scenarios."""
         return list(self._scenarios.values())
 
+    def export_scenarios(self, scenario_ids: list[str] | None = None) -> str:
+        """Export selected scenarios as JSON text."""
+        if scenario_ids is None:
+            selected = self.list_scenarios()
+        else:
+            selected = []
+            for scenario_id in scenario_ids:
+                scenario = self.get_scenario(scenario_id)
+                if scenario is None:
+                    raise KeyError(f"Scenario '{scenario_id}' not found")
+                selected.append(scenario)
+        payload = [scenario.model_dump(mode="json") for scenario in selected]
+        return json.dumps(payload, ensure_ascii=False)
+
+    def import_scenarios(self, data: str) -> list[str]:
+        """Import scenarios from JSON text and upsert by scenario_id."""
+        parsed = json.loads(data)
+        if not isinstance(parsed, list):
+            raise ValueError("Scenario import payload must be a list")
+
+        imported_ids: list[str] = []
+        for item in parsed:
+            scenario = TestScenario.model_validate(item)
+            errors = self.validate_scenario(scenario)
+            if errors:
+                raise ValueError("; ".join(errors))
+            self._scenarios[scenario.scenario_id] = scenario
+            imported_ids.append(scenario.scenario_id)
+
+        self._persist()
+        return imported_ids
+
     @staticmethod
     def validate_scenario(scenario: TestScenario) -> list[str]:
         """Validate a normalized scenario model."""
