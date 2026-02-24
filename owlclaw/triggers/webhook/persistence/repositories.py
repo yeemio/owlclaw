@@ -70,6 +70,36 @@ class EventRepository:
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def query(
+        self,
+        *,
+        tenant_id: str,
+        endpoint_id: UUID | None = None,
+        request_id: str | None = None,
+        event_type: str | None = None,
+        status: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> list[WebhookEventModel]:
+        stmt = select(WebhookEventModel).where(WebhookEventModel.tenant_id == tenant_id)
+        if endpoint_id is not None:
+            stmt = stmt.where(WebhookEventModel.endpoint_id == endpoint_id)
+        if request_id is not None:
+            stmt = stmt.where(WebhookEventModel.request_id == request_id)
+        if event_type is not None:
+            stmt = stmt.where(WebhookEventModel.event_type == event_type)
+        if status is not None:
+            stmt = stmt.where(WebhookEventModel.status == status)
+        if start_time is not None:
+            stmt = stmt.where(WebhookEventModel.timestamp >= start_time)
+        if end_time is not None:
+            stmt = stmt.where(WebhookEventModel.timestamp <= end_time)
+        stmt = stmt.order_by(WebhookEventModel.timestamp.asc()).offset(max(0, offset)).limit(max(1, limit))
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
 
 class IdempotencyRepository:
     """Repository for webhook idempotency keys."""
@@ -185,6 +215,35 @@ class InMemoryEventRepository:
     async def list_by_request_id(self, *, tenant_id: str, request_id: str) -> list[WebhookEventModel]:
         items = [item for item in self._items if item.tenant_id == tenant_id and item.request_id == request_id]
         return sorted(items, key=lambda item: item.timestamp)
+
+    async def query(
+        self,
+        *,
+        tenant_id: str,
+        endpoint_id: UUID | None = None,
+        request_id: str | None = None,
+        event_type: str | None = None,
+        status: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        offset: int = 0,
+        limit: int = 50,
+    ) -> list[WebhookEventModel]:
+        items = [item for item in self._items if item.tenant_id == tenant_id]
+        if endpoint_id is not None:
+            items = [item for item in items if item.endpoint_id == endpoint_id]
+        if request_id is not None:
+            items = [item for item in items if item.request_id == request_id]
+        if event_type is not None:
+            items = [item for item in items if item.event_type == event_type]
+        if status is not None:
+            items = [item for item in items if item.status == status]
+        if start_time is not None:
+            items = [item for item in items if item.timestamp >= start_time]
+        if end_time is not None:
+            items = [item for item in items if item.timestamp <= end_time]
+        ordered = sorted(items, key=lambda item: item.timestamp)
+        return ordered[max(0, offset) : max(0, offset) + max(1, limit)]
 
 
 class InMemoryIdempotencyRepository:

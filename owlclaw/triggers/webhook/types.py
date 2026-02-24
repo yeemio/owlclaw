@@ -9,6 +9,7 @@ from typing import Any, Literal
 AuthMethodType = Literal["bearer", "hmac", "basic"]
 ExecutionMode = Literal["sync", "async"]
 ExecutionStatus = Literal["accepted", "running", "completed", "failed"]
+EventType = Literal["request", "validation", "transformation", "execution"]
 
 
 @dataclass(slots=True)
@@ -179,3 +180,36 @@ class GovernanceDecision:
     status_code: int = 200
     reason: str | None = None
     policy_limits: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class EventFilter:
+    """Filter options for querying webhook events."""
+
+    tenant_id: str = "default"
+    endpoint_id: str | None = None
+    request_id: str | None = None
+    event_type: EventType | None = None
+    status: str | None = None
+    start_time: datetime | None = None
+    end_time: datetime | None = None
+    page: int = 1
+    page_size: int = 50
+
+
+@dataclass(slots=True)
+class WebhookEventRecord:
+    """Normalized webhook event record used by EventLogger."""
+
+    id: str
+    endpoint_id: str
+    event_type: EventType
+    timestamp: datetime
+    request_id: str
+    source_ip: str | None = None
+    user_agent: str | None = None
+    duration_ms: int | None = None
+    status: str | None = None
+    data: dict[str, Any] | None = None
+    error: dict[str, Any] | None = None
+    tenant_id: str = "default"

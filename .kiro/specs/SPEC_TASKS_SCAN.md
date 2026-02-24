@@ -102,7 +102,7 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（9/72） | webhook 触发器（Task 0 Protocol-first + Task 2/3/4/5/6/7/8/9 已完成） |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（10/72） | webhook 触发器（Task 0 Protocol-first + Task 2/3/4/5/6/7/8/9/10 已完成） |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-webhook Task 8 + Task 9 checkpoint） |
-| 批次状态 | **已完成（本批）**。完成 Task 8（8.1~8.6）与 Task 9 检查点：ExecutionTrigger 幂等、重试、执行状态与测试收口。 |
-| 已完成项 | 1) 新增 `ExecutionTrigger`（check_idempotency/record_idempotency/trigger/get_execution_status）；2) 实现同步/异步触发、超时处理与运行时不可用失败映射（503）；3) 实现指数退避重试与可重试错误判定；4) 增加并发幂等锁保证同幂等键并发下只执行一次；5) 新增属性测试覆盖 Property 11/12/14/17/18/27/28/29；6) 新增单元测试覆盖并发幂等、重试延迟、同步超时、执行结果缓存。 |
-| 下一待执行 | `codex-work`：`triggers-webhook` Task 10（EventLogger）→ Task 11（MonitoringService）→ Task 12（HTTP 接入层）。 |
-| 验收快照 | `poetry run ruff check owlclaw/triggers/webhook/execution.py owlclaw/triggers/webhook/__init__.py tests/unit/triggers/test_webhook_execution.py tests/unit/triggers/test_webhook_execution_properties.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_webhook_execution.py tests/unit/triggers/test_webhook_execution_properties.py -q`（12 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（53 passed, 201 deselected）。 |
+| 当前批次 | coding loop（codex-work: triggers-webhook Task 10） |
+| 批次状态 | **已完成（本批）**。完成 Task 10（10.1~10.4）：EventLogger 记录/查询接口、属性测试与单元测试。 |
+| 已完成项 | 1) 新增 `EventLogger`（log_request/log_validation/log_transformation/log_execution/query_events）；2) 扩展事件类型 `WebhookEventRecord` 与 `EventFilter`；3) 扩展 EventRepository/InMemoryEventRepository 支持多条件查询与分页；4) 新增属性测试覆盖 Property 19/20/21/22/30；5) 新增单元测试覆盖生命周期日志完整性、过滤分页、错误详情保留。 |
+| 下一待执行 | `codex-work`：`triggers-webhook` Task 11（MonitoringService）→ Task 12（HTTP 接入层）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/webhook/event_logger.py owlclaw/triggers/webhook/types.py owlclaw/triggers/webhook/__init__.py owlclaw/triggers/webhook/persistence/repositories.py tests/unit/triggers/test_webhook_event_logger.py tests/unit/triggers/test_webhook_event_logger_properties.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_webhook_event_logger.py tests/unit/triggers/test_webhook_event_logger_properties.py -q`（8 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（61 passed, 201 deselected）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

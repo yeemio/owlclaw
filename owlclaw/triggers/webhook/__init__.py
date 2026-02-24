@@ -1,5 +1,6 @@
 """Webhook trigger core types and contracts."""
 
+from owlclaw.triggers.webhook.event_logger import EventLogger, build_event
 from owlclaw.triggers.webhook.execution import ExecutionTrigger
 from owlclaw.triggers.webhook.governance import GovernanceClient
 from owlclaw.triggers.webhook.manager import WebhookEndpointManager
@@ -9,6 +10,8 @@ from owlclaw.triggers.webhook.types import (
     AuthMethod,
     EndpointConfig,
     EndpointFilter,
+    EventFilter,
+    EventType,
     ExecutionOptions,
     ExecutionResult,
     ExecutionStatus,
@@ -22,6 +25,7 @@ from owlclaw.triggers.webhook.types import (
     ValidationError,
     ValidationResult,
     WebhookEndpoint,
+    WebhookEventRecord,
 )
 from owlclaw.triggers.webhook.validator import RequestValidator
 
@@ -30,6 +34,9 @@ __all__ = [
     "AuthMethod",
     "EndpointFilter",
     "EndpointConfig",
+    "EventFilter",
+    "EventLogger",
+    "EventType",
     "ExecutionOptions",
     "ExecutionResult",
     "ExecutionStatus",
@@ -46,6 +53,8 @@ __all__ = [
     "TransformationRule",
     "ValidationError",
     "ValidationResult",
+    "WebhookEventRecord",
     "WebhookEndpoint",
     "WebhookEndpointManager",
+    "build_event",
 ]
