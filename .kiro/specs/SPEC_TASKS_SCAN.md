@@ -60,7 +60,7 @@
 - [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
-- [ ] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
+- [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [ ] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
 - [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
@@ -100,13 +100,13 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（1/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
-| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（11/20） | Langfuse tracing |
+| integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（20/20） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（16/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（codex-work + codex-gpt-work 审校收口） |
-| 批次状态 | **已完成**。两个编码分支均已完成审校合并，并通过全仓静态检查与测试回归。 |
-| 已完成项 | 1) 合并 `codex-work`（integrations-langchain）并修复审校发现的类型问题；2) 合并 `codex-gpt-work`（integrations-langfuse + skill-templates）并回填 spec 进度；3) 完成全仓回归：`ruff`/`mypy`/`pytest`。 |
-| 下一待执行 | 主 worktree 合并 `review-work` 到 `main`，并通知各编码 worktree 执行 `git merge main` 同步。 |
-| 验收快照 | `poetry run ruff check .` -> `All checks passed!`；`poetry run mypy owlclaw/ --hide-error-context --no-error-summary` -> `Success`；`poetry run pytest -q` -> `1101 passed, 9 skipped`。 |
+| 当前批次 | review loop（审校 codex-gpt-work e2e/langfuse 增量） |
+| 批次状态 | **已完成**。`integrations-langfuse` 已收口（20/20），e2e-validation 启动（1/19），并通过针对性审校验收。 |
+| 已完成项 | 1) 合并 `codex-gpt-work` 新增提交（Langfuse 文档/配置/集成测试 + e2e 场景管理器基础模块）；2) 回填 `integrations-langfuse` 和 `e2e-validation` 进度；3) 执行变更范围静态检查与测试。 |
+| 下一待执行 | 继续审校 `codex-work` / `codex-gpt-work` 新增提交并回填进度；达到批次收口后再由主工作树合并。 |
+| 验收快照 | `poetry run ruff check ...`（变更相关文件）-> `All checks passed!`；`poetry run mypy owlclaw/e2e owlclaw/integrations/langfuse.py --hide-error-context --no-error-summary` -> `Success`；`poetry run pytest tests/e2e/test_models.py tests/e2e/test_scenario_manager.py tests/unit/integrations/test_langfuse.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py tests/integration/test_langfuse_integration.py -q` -> `152 passed`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
