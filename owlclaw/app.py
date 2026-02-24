@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import os
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
@@ -14,7 +15,22 @@ from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.capabilities.skills import SkillsLoader
 from owlclaw.config import ConfigManager
 from owlclaw.governance.visibility import CapabilityView
+from owlclaw.security.sanitizer import InputSanitizer
+from owlclaw.triggers.api import (
+    APIKeyAuthProvider,
+    APITriggerConfig,
+    APITriggerRegistration,
+    APITriggerServer,
+    BearerTokenAuthProvider,
+    GovernanceDecision,
+)
 from owlclaw.triggers.cron import CronTriggerRegistry
+from owlclaw.triggers.db_change import (
+    DBChangeTriggerConfig,
+    DBChangeTriggerManager,
+    DBChangeTriggerRegistration,
+    PostgresNotifyAdapter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +46,60 @@ def _dict_to_capability_view(d: dict[str, Any]) -> CapabilityView:
         risk_level=d.get("risk_level") or "low",
         requires_confirmation=d.get("requires_confirmation"),
     )
+
+
+class _AllowAllGovernance:
+    async def allow_trigger(self, event_name: str, tenant_id: str) -> bool:  # noqa: ARG002
+        return True
+
+
+class _APIGovernanceBridge:
+    def __init__(self, app: OwlClaw) -> None:
+        self._app = app
+
+    async def evaluate_request(
+        self,
+        event_name: str,
+        tenant_id: str,
+        payload: dict[str, Any],  # noqa: ARG002
+    ) -> GovernanceDecision:
+        if self._app._governance_config is None:
+            return GovernanceDecision(allowed=True)
+
+        limits = self._app._governance_config.get("api_limits", {})
+        if not isinstance(limits, dict):
+            return GovernanceDecision(allowed=True)
+
+        blocked_events = limits.get("blocked_events", [])
+        if isinstance(blocked_events, list) and event_name in blocked_events:
+            return GovernanceDecision(allowed=False, status_code=429, reason="rate_limited")
+
+        blocked_tenants = limits.get("blocked_tenants", [])
+        if isinstance(blocked_tenants, list) and tenant_id in blocked_tenants:
+            return GovernanceDecision(allowed=False, status_code=503, reason="budget_exhausted")
+
+        return GovernanceDecision(allowed=True)
+
+
+class _RuntimeProxy:
+    def __init__(self, app: OwlClaw) -> None:
+        self._app = app
+
+    async def trigger_event(
+        self,
+        event_name: str,
+        payload: dict[str, Any],
+        focus: str | None = None,
+        tenant_id: str = "default",
+    ) -> Any:
+        if self._app._runtime is None:
+            raise RuntimeError("Agent runtime is not started; call app.start() before consuming trigger events.")
+        return await self._app._runtime.trigger_event(
+            event_name=event_name,
+            payload=payload,
+            focus=focus,
+            tenant_id=tenant_id,
+        )
 
 
 class OwlClaw:
@@ -71,6 +141,8 @@ class OwlClaw:
 
         # Cron triggers (Task 4.3)
         self.cron_registry: CronTriggerRegistry = CronTriggerRegistry(self)
+        self.db_change_manager: DBChangeTriggerManager | None = None
+        self.api_trigger_server: APITriggerServer | None = None
         self._runtime: AgentRuntime | None = None
         self._langchain_adapter: Any = None
 
@@ -288,6 +360,179 @@ class OwlClaw:
             return wrapper
 
         return decorator
+
+    def db_change(
+        self,
+        *,
+        channel: str,
+        event_name: str | None = None,
+        tenant_id: str = "default",
+        debounce_seconds: float | None = None,
+        batch_size: int | None = None,
+        max_buffer_events: int = 1000,
+        max_payload_bytes: int = 7900,
+        focus: str | None = None,
+    ) -> Callable:
+        """Decorator to register a db-change trigger with fallback handler."""
+
+        from functools import wraps
+
+        def decorator(fn: Callable) -> Callable:
+            cfg = DBChangeTriggerConfig(
+                tenant_id=tenant_id,
+                channel=channel,
+                event_name=event_name or fn.__name__,
+                agent_id=self.name,
+                debounce_seconds=debounce_seconds,
+                batch_size=batch_size,
+                max_buffer_events=max_buffer_events,
+                max_payload_bytes=max_payload_bytes,
+                focus=focus,
+            )
+            self._ensure_db_change_manager().register(cfg, handler=fn)
+
+            @wraps(fn)
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
+                if inspect.iscoroutinefunction(fn):
+                    return await fn(*args, **kwargs)
+                return fn(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+    def api(
+        self,
+        *,
+        path: str,
+        method: str = "POST",
+        event_name: str | None = None,
+        tenant_id: str = "default",
+        response_mode: str = "async",
+        sync_timeout_seconds: int = 60,
+        focus: str | None = None,
+        auth_required: bool = True,
+        description: str | None = None,
+    ) -> Callable:
+        """Decorator to register an API trigger endpoint with fallback handler."""
+
+        from functools import wraps
+
+        def decorator(fn: Callable) -> Callable:
+            config = APITriggerConfig(
+                path=path,
+                method=method.upper(),
+                event_name=event_name or fn.__name__,
+                tenant_id=tenant_id,
+                response_mode=response_mode,
+                sync_timeout_seconds=sync_timeout_seconds,
+                focus=focus,
+                auth_required=auth_required,
+                description=description or (fn.__doc__ or "").strip() or None,
+            )
+            self._ensure_api_trigger_server().register(config, fallback=fn)
+
+            @wraps(fn)
+            async def wrapper(*args: Any, **kwargs: Any) -> Any:
+                if inspect.iscoroutinefunction(fn):
+                    return await fn(*args, **kwargs)
+                return fn(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
+
+    def trigger(self, registration: DBChangeTriggerRegistration | APITriggerRegistration) -> None:
+        """Register a trigger using function-call style API."""
+
+        if isinstance(registration, DBChangeTriggerRegistration):
+            self._ensure_db_change_manager().register(registration.config)
+            return
+        if isinstance(registration, APITriggerRegistration):
+            self._ensure_api_trigger_server().register(registration.config)
+            return
+        raise TypeError(f"Unsupported trigger registration type: {type(registration).__name__}")
+
+    def _ensure_db_change_manager(self) -> DBChangeTriggerManager:
+        if self.db_change_manager is not None:
+            return self.db_change_manager
+        dsn = self._resolve_db_change_dsn()
+        adapter = PostgresNotifyAdapter(dsn=dsn, reconnect_interval=self._resolve_db_change_reconnect_interval())
+        self.db_change_manager = DBChangeTriggerManager(
+            adapter=adapter,
+            governance=_AllowAllGovernance(),
+            agent_runtime=_RuntimeProxy(self),
+            ledger=self if self._ledger is not None else None,
+        )
+        return self.db_change_manager
+
+    def _resolve_db_change_dsn(self) -> str:
+        triggers_cfg = self._config.get("triggers", {})
+        db_change_cfg: dict[str, Any] = {}
+        if isinstance(triggers_cfg, dict):
+            candidate = triggers_cfg.get("db_change")
+            if isinstance(candidate, dict):
+                db_change_cfg = candidate
+        dsn = db_change_cfg.get("dsn") or db_change_cfg.get("database_url") or os.getenv("OWLCLAW_DATABASE_URL")
+        if not isinstance(dsn, str) or not dsn.strip():
+            raise RuntimeError(
+                "db_change requires database dsn; set triggers.db_change.dsn or OWLCLAW_DATABASE_URL before registration"
+            )
+        return dsn.strip()
+
+    def _resolve_db_change_reconnect_interval(self) -> float:
+        triggers_cfg = self._config.get("triggers", {})
+        if isinstance(triggers_cfg, dict):
+            db_change_cfg = triggers_cfg.get("db_change")
+            if isinstance(db_change_cfg, dict):
+                value = db_change_cfg.get("reconnect_interval", 30.0)
+                if isinstance(value, int | float) and value > 0:
+                    return float(value)
+        return 30.0
+
+    def _ensure_api_trigger_server(self) -> APITriggerServer:
+        if self.api_trigger_server is not None:
+            return self.api_trigger_server
+        config = self._resolve_api_trigger_config()
+        auth_provider = self._build_api_auth_provider(config)
+        sanitizer = InputSanitizer() if config.get("sanitize_input", True) else None
+        governance_gate = _APIGovernanceBridge(self)
+        self.api_trigger_server = APITriggerServer(
+            host=str(config.get("host", "0.0.0.0")),
+            port=int(config.get("port", 8080)),
+            auth_provider=auth_provider,
+            agent_runtime=_RuntimeProxy(self),
+            governance_gate=governance_gate,
+            sanitizer=sanitizer,
+            ledger=self if self._ledger is not None else None,
+            agent_id=self.name,
+            max_body_bytes=int(config.get("max_body_bytes", 1024 * 1024)),
+            cors_origins=list(config.get("cors_origins", ["*"])),
+        )
+        return self.api_trigger_server
+
+    def _resolve_api_trigger_config(self) -> dict[str, Any]:
+        triggers_cfg = self._config.get("triggers", {})
+        if isinstance(triggers_cfg, dict):
+            api_cfg = triggers_cfg.get("api")
+            if isinstance(api_cfg, dict):
+                return dict(api_cfg)
+        return {}
+
+    @staticmethod
+    def _build_api_auth_provider(config: dict[str, Any]) -> APIKeyAuthProvider | BearerTokenAuthProvider | None:
+        auth_type = str(config.get("auth_type", "none")).strip().lower()
+        if auth_type == "api_key":
+            keys = config.get("api_keys", [])
+            if isinstance(keys, list):
+                return APIKeyAuthProvider({str(item) for item in keys if str(item).strip()})
+            return APIKeyAuthProvider(set())
+        if auth_type == "bearer":
+            tokens = config.get("bearer_tokens", [])
+            if isinstance(tokens, list):
+                return BearerTokenAuthProvider({str(item) for item in tokens if str(item).strip()})
+            return BearerTokenAuthProvider(set())
+        return None
 
     def state(self, name: str) -> Callable:
         """Decorator to register a state provider.
@@ -630,11 +875,19 @@ class OwlClaw:
                 ledger=self._ledger,
                 tenant_id=tenant_id,
             )
+        if self.db_change_manager is not None:
+            await self.db_change_manager.start()
+        if self.api_trigger_server is not None:
+            await self.api_trigger_server.start()
         self._runtime = runtime
         return runtime
 
     async def stop(self) -> None:
         """Stop governance and wait for cron in-flight tasks."""
+        if self.api_trigger_server is not None:
+            await self.api_trigger_server.stop()
+        if self.db_change_manager is not None:
+            await self.db_change_manager.stop()
         await self.stop_governance()
         await self.cron_registry.wait_for_all_tasks()
         self._runtime = None
@@ -645,6 +898,8 @@ class OwlClaw:
             "app": self.name,
             "runtime_initialized": bool(self._runtime and self._runtime.is_initialized),
             "cron": self.cron_registry.get_health_status(),
+            "db_change_registered_channels": len(self.db_change_manager._states) if self.db_change_manager else 0,  # noqa: SLF001
+            "api_registered_endpoints": len(self.api_trigger_server._configs) if self.api_trigger_server else 0,  # noqa: SLF001
             "governance_enabled": self._ledger is not None,
         }
 

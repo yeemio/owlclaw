@@ -109,7 +109,31 @@ cli-migrate 是 OwlClaw 的 AI 辅助迁移工具，旨在帮助已有业务系�
 - `HandlerGenerator`: @handler 注册代码生成器
 - `TriggerGenerator`: Trigger 配置生成器
 - `SKILLGenerator`: SKILL.md 文档生成器
+- `BindingGenerator`: Declarative Binding SKILL.md 生成器（新增，详见 `declarative-binding` spec）
 - `TemplateSelector`: 模板选择器
+
+**BindingGenerator 数据流**（`--output-mode binding` 时替代 HandlerGenerator）：
+
+```
+OpenAPIScanner.scan_spec() → List[APIEndpoint]
+    │
+    └── BindingGenerator.generate_from_openapi(endpoint)
+        ├── operationId/summary → SKILL.md name
+        ├── description → SKILL.md description
+        ├── parameters + requestBody → tools_schema + binding (type=http)
+        ├── security schemes → ${ENV_VAR} headers + prerequisites.env
+        ├── response schema → response_mapping
+        └── 生成 body 含业务规则占位符
+
+ORMScanner.scan_orm_operations() → List[ORMOperation]
+    │
+    └── BindingGenerator.generate_from_orm(operation)
+        ├── model/table → SKILL.md name
+        ├── columns → 参数化 SQL 查询 + parameter_mapping
+        ├── operation_type → read_only flag
+        ├── connection → prerequisites.env
+        └── 生成 body 含数据访问规则占位符
+```
 
 #### 4. Reporter Module (报告器模块)
 
@@ -552,11 +576,12 @@ def test_dry_run_no_side_effects():
 
 ## References
 
-- [OwlClaw 架构分析](../../docs/ARCHITECTURE_ANALYSIS.md) §5.2.4 能力注册
+- [OwlClaw 架构分析](../../docs/ARCHITECTURE_ANALYSIS.md) §5.2.4 能力注册 + §4.12 Declarative Binding
 - [CLI Scan Spec](../cli-scan/)
+- [Declarative Binding Spec](../declarative-binding/) — BindingGenerator 的 binding schema 定义和验证规则
 - [Agent Skills 规范](https://agentskills.io)
 
 ---
 
 **维护者**：OwlClaw Team  
-**最后更新**：2026-02-22
+**最后更新**：2026-02-24

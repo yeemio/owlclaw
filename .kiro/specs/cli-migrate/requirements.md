@@ -226,9 +226,39 @@ cli-migrate 涉及多种代码解析和生成场景，需要特别关注解析�
 3. THE Pretty_Printer SHALL 将 SKILL.md 格式化为可读的 Markdown
 4. FOR ALL 生成的 SKILL.md，解析 frontmatter → 验证 → 重新生成 SHALL 产生等价的文档（round-trip property）
 
+### Requirement 16: Declarative Binding 输出模式
+
+**User Story:** 作为 IT 运维人员，我希望 cli-migrate 能直接生成包含 Declarative Binding 的 SKILL.md，这样业务系统可以零代码接入 OwlClaw Agent。
+
+#### Acceptance Criteria
+
+1. THE CLI_Migrate SHALL support `--output-mode` flag with values: `handler` (default), `binding`, `both`
+2. WHEN `--output-mode binding`, THE CLI_Migrate SHALL generate SKILL.md files with embedded binding declarations instead of @handler Python code
+3. FOR OpenAPI endpoints, THE generated SKILL.md SHALL contain HTTP Binding (type=http, method, url template with `${ENV_VAR}`, headers, response_mapping)
+4. FOR ORM operations, THE generated SKILL.md SHALL contain SQL Binding (type=sql, parameterized query, read_only=true by default)
+5. FOR cron tasks, THE generated SKILL.md SHALL contain HTTP Binding pointing to the task's execution endpoint (if applicable)
+6. THE generated SKILL.md SHALL include `prerequisites.env` listing all required environment variables extracted from security schemes and connection strings
+7. THE generated SKILL.md body SHALL contain a placeholder section prompting the business user to fill in business rules and decision guidance in natural language
+8. WHEN `--output-mode both`, THE CLI_Migrate SHALL generate both @handler code AND binding SKILL.md for each resource
+9. ALL generated binding SKILL.md SHALL pass `owlclaw skill validate` without errors
+10. THE generated binding SHALL use `${ENV_VAR}` references for all credentials — no plaintext secrets
+
+### Requirement 17: BindingGenerator 组件
+
+**User Story:** 作为工具开发者，我需要一个专门的 BindingGenerator 组件来将扫描结果转换为 binding SKILL.md，这样生成逻辑与现有的 HandlerGenerator 和 SKILLGenerator 保持一致的架构。
+
+#### Acceptance Criteria
+
+1. THE BindingGenerator SHALL be a new class in the Generator Module, alongside HandlerGenerator and SKILLGenerator
+2. THE BindingGenerator SHALL implement `generate_from_openapi(endpoint: APIEndpoint) -> BindingGenerationResult`
+3. THE BindingGenerator SHALL implement `generate_from_orm(operation: ORMOperation) -> BindingGenerationResult`
+4. THE BindingGenerationResult SHALL include: skill_path, skill_content, binding_type, tools_count, prerequisites, warnings
+5. THE BindingGenerator SHALL reuse the existing Jinja2 template engine for SKILL.md generation
+6. FOR ALL generated SQL bindings, THE BindingGenerator SHALL enforce parameterized queries (`:param` placeholders)
+
 ---
 
 **维护者**: OwlClaw 核心团队  
-**最后更新**: 2026-02-22  
+**最后更新**: 2026-02-24  
 **优先级**: P1  
-**预估工作量**: 4-6 天
+**预估工作量**: 5-7 天（含 binding 输出模式）

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://owlclaw.dev/schemas/triggers/signal_request.schema.json",
+  "title": "Signal Request",
+  "type": "object",
+  "required": ["type", "source", "agent_id", "tenant_id", "operator"],
+  "properties": {
+    "type": {"type": "string", "enum": ["pause", "resume", "trigger", "instruct"]},
+    "source": {"type": "string", "enum": ["cli", "api", "mcp"]},
+    "agent_id": {"type": "string", "minLength": 1},
+    "tenant_id": {"type": "string", "minLength": 1},
+    "operator": {"type": "string", "minLength": 1},
+    "message": {"type": "string"},
+    "focus": {"type": ["string", "null"]},
+    "ttl_seconds": {"type": "integer", "minimum": 1, "maximum": 86400, "default": 3600}
+  },
+  "additionalProperties": false
+}

@@ -17,10 +17,10 @@
 
 ## 进度概览
 
-- **总任务数**：6
+- **总任务数**：9（含 binding 输出模式 3 个新任务组）
 - **已完成**：0
 - **进行中**：0
-- **未开始**：6
+- **未开始**：9
 
 ---
 
@@ -62,12 +62,36 @@
 
 ---
 
-## 4. 依赖与阻塞
+## 4. Binding 输出模式（与 declarative-binding spec 联动）
 
-### 4.1 依赖
-- CLI 框架\n- 规则库（待确认）
+### 4.1 BindingGenerator 实现
+- [ ] 4.1.1 实现 BindingGenerator 类（与 HandlerGenerator/SKILLGenerator 并列）
+- [ ] 4.1.2 实现 `generate_from_openapi()`：OpenAPI endpoint → HTTP Binding SKILL.md
+- [ ] 4.1.3 实现 `generate_from_orm()`：ORM operation → SQL Binding SKILL.md
+- [ ] 4.1.4 实现 security schemes → `${ENV_VAR}` + prerequisites.env 映射
+- [ ] 4.1.5 实现 response schema → response_mapping 映射
+- [ ] 4.1.6 生成的 SKILL.md 通过 `owlclaw skill validate` 验证
 
-### 4.2 阻塞
+### 4.2 CLI 集成
+- [ ] 4.2.1 扩展 `owlclaw migrate scan` 增加 `--output-mode` 参数（handler/binding/both）
+- [ ] 4.2.2 `--output-mode binding` 时调用 BindingGenerator
+- [ ] 4.2.3 `--output-mode both` 时同时生成 @handler 和 binding SKILL.md
+
+### 4.3 测试
+- [ ] 4.3.1 单元测试：OpenAPI → HTTP Binding SKILL.md 生成
+- [ ] 4.3.2 单元测试：ORM → SQL Binding SKILL.md 生成
+- [ ] 4.3.3 集成测试：端到端 scan → generate → validate → load
+
+---
+
+## 5. 依赖与阻塞
+
+### 5.1 依赖
+- CLI 框架
+- `declarative-binding` spec（Binding Schema 定义）
+- `cli-scan` spec（AST 扫描器，PythonFunctionScanner 复用）
+
+### 5.2 阻塞
 - 无
 
 ---
@@ -86,4 +110,4 @@
 ---
 
 **维护者**：平台研发  
-**最后更新**：2026-02-22
+**最后更新**：2026-02-24

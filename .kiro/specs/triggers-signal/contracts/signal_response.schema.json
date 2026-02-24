@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://owlclaw.dev/schemas/triggers/signal_response.schema.json",
+  "title": "Signal Response",
+  "type": "object",
+  "required": ["status"],
+  "properties": {
+    "status": {"type": "string", "enum": ["paused", "resumed", "triggered", "instruction_queued", "already_paused", "already_running", "error"]},
+    "message": {"type": ["string", "null"]},
+    "run_id": {"type": ["string", "null"]},
+    "error_code": {"type": ["string", "null"], "enum": [null, "bad_request", "unauthorized", "rate_limited", "service_unavailable", "timeout"]}
+  },
+  "additionalProperties": false
+}
