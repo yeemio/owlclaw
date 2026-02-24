@@ -31,6 +31,11 @@ def _register_subapps() -> None:
     _SUBAPPS_REGISTERED = True
 
 
+# Keep subcommands registered for direct `CliRunner.invoke(app, ...)` usage in tests
+# and library callers that import the Typer app object without going through main().
+_register_subapps()
+
+
 @app.command("init")
 def init_command(
     path: str = typer.Option(".", "--path", help="Output directory"),
