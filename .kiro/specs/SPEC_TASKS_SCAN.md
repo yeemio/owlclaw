@@ -101,8 +101,8 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（5/19） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/17） | webhook 触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（6/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-gpt-work e2e-validation 属性测试） |
-| 批次状态 | **已完成**。`e2e-validation` 已完成 Task 4.3/4.4 并合并到 `review-work`。 |
-| 已完成项 | 1) 审校 `codex-gpt-work` 提交 `9d4e72b`（ExecutionEngine 轨迹 input/output + Hypothesis 属性测试）；2) 合并 `codex-gpt-work` 到 `review-work`；3) 回填 `e2e-validation` 进度到 `5/19`。 |
-| 下一待执行 | 继续 `e2e-validation` Task 4.5/4.6（错误注入与属性测试），并同步更新执行轨迹验收。 |
-| 验收快照 | `poetry run pytest tests/e2e/test_execution_engine.py -q`（7 passed）；`poetry run pytest tests/unit/test_skills.py tests/e2e/test_execution_engine.py -q`（29 passed）；`poetry run ruff check owlclaw/capabilities/skills.py owlclaw/e2e/execution_engine.py tests/unit/test_skills.py tests/e2e/test_execution_engine.py`（passed）。 |
+| 当前批次 | review loop（审校 codex-work triggers-webhook/queue 基础能力） |
+| 批次状态 | **已完成**。`codex-work` 的 triggers 基础任务审校通过并合并到 `review-work`。 |
+| 已完成项 | 1) `triggers-webhook` Task 1（核心类型与目录骨架）；2) `triggers-queue` Task 1-6（解析/封装/适配器/幂等存储 + 属性测试）；3) 同步回填 Spec 索引进度（webhook `1/17`，queue `6/25`）。 |
+| 下一待执行 | 审校并合并 `codex-gpt-work` 新增 e2e-validation 提交（Task 4.5-4.8、6.3-6.5）。 |
+| 验收快照 | `poetry run pytest tests/unit/triggers/test_queue_idempotency.py tests/unit/triggers/test_queue_models.py tests/unit/triggers/test_queue_parsers.py tests/unit/triggers/test_queue_properties.py tests/unit/triggers/test_queue_mock_adapter.py tests/unit/triggers/test_webhook_types.py -q`（14 passed）；`poetry run ruff check owlclaw/triggers/queue owlclaw/triggers/webhook tests/unit/triggers/test_queue_idempotency.py tests/unit/triggers/test_queue_models.py tests/unit/triggers/test_queue_parsers.py tests/unit/triggers/test_queue_properties.py tests/unit/triggers/test_queue_mock_adapter.py tests/unit/triggers/test_webhook_types.py`（passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
