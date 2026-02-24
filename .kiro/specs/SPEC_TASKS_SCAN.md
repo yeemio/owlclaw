@@ -61,7 +61,7 @@
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
-- [ ] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
+- [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
 - [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
 - [ ] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
 - [ ] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
@@ -107,7 +107,7 @@
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（20/20） | Langfuse tracing |
-| integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（25/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
+| integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（50/50） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（56/56） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（审校 codex-gpt-work e2e execution engine） |
-| 批次状态 | **已完成**。完成 e2e execution engine 增量审校并通过验收；`e2e-validation` 进度对齐为 **3/19**。 |
-| 已完成项 | 1) 合并 `codex-gpt-work` 的 `ExecutionEngine`/`DataCollector` 增量；2) 验证 Mionyee 组件链路与失败降级；3) 修正 `SPEC_TASKS_SCAN` 进度口径与 `tasks.md` 一致。 |
+| 当前批次 | review loop（审校 codex-work langchain 文档收口） |
+| 批次状态 | **已完成**。`integrations-langchain` 任务清单达到 **50/50** 并完成审校合并。 |
+| 已完成项 | 1) 合并 `codex-work` 的 langchain tasks 收口提交；2) 更新 Phase 2 中 langchain 模块勾选状态；3) 回填 Spec 索引进度到 `50/50`。 |
 | 下一待执行 | 继续 `e2e-validation` Task 4.3/4.4（完整流程属性与轨迹完整性），并同步回填进度。 |
-| 验收快照 | `poetry run pytest tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py -q` -> `17 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_execution_engine.py tests/e2e/test_data_collector.py tests/e2e/test_scenario_manager.py tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 6 source files`。 |
+| 验收快照 | 一致性核对：`Get-ChildItem .kiro/specs -Directory ...` -> `integrations-langchain: 50/50`；文档复核：`rg -n \"integrations-langchain|Phase 2|Checkpoint\" .kiro/specs/SPEC_TASKS_SCAN.md`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
