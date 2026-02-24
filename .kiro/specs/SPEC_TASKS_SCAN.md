@@ -120,7 +120,7 @@
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（3/143） | AST 扫描器（Task 1/1.1/1.2 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-signal Task 9-14） |
-| 批次状态 | **已完成**。`triggers-signal` 已收口至 17/17。 |
-| 已完成项 | 1) Task 9：新增 `register_signal_mcp_tools()`，提供 `owlclaw_pause/resume/trigger/instruct` 四个 MCP 工具并统一走 `SignalRouter.dispatch()`；2) Task 10：`AgentRuntime` 增加 paused 检查，`cron/heartbeat` 自动触发在 paused 状态返回 `status=skipped, reason=agent_paused`，`signal_manual` 不受影响；3) Task 11：Run 启动前消费 pending instructions 并注入 `context.payload.operator_instructions`；4) Task 12：新增 DB 分支单测并完成覆盖率收口（signal 包 91%）；5) Task 13：新增 `tests/integration/test_signal_flow_integration.py` 覆盖 CLI/API/pause-resume/instruct 注入四条集成链路；6) Task 14：新增 `docs/triggers/signal.md`（使用指南、CLI 参考、MCP 集成、人工介入最佳实践）。 |
-| 下一待执行 | `codex-work`：转入 `cli-scan`（0/143）或按最新分配继续 `declarative-binding` 相关实现。 |
-| 验收快照 | `poetry run ruff check tests/integration/test_signal_flow_integration.py tests/unit/triggers/test_signal_state_db_mock.py`（All checks passed）；`poetry run pytest tests/integration/test_signal_flow_integration.py tests/unit/agent/test_runtime.py tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py tests/unit/test_mcp_server.py tests/unit/triggers/test_signal_state_db_mock.py -q`（121 passed）；`poetry run pytest tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py tests/unit/test_mcp_server.py tests/unit/triggers/test_signal_state_db_mock.py --cov=owlclaw.triggers.signal --cov-report=term-missing -q`（TOTAL 91%）。 |
+| 当前批次 | coding loop（codex-work: cli-scan Task 1/1.1/1.2） |
+| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 3/143。 |
+| 已完成项 | 1) 新建 `owlclaw/cli/scan/` 包与核心模型模块（FunctionSignature/Parameter/ParsedDocstring/ComplexityScore/ScanResult 等）；2) 定义核心枚举（ParameterKind、DocstringStyle、ComplexityLevel、ImportType、Confidence、TypeSource）；3) 实现 ScanResult JSON/YAML 序列化与反序列化；4) 新增属性测试验证 JSON/YAML round-trip。 |
+| 下一待执行 | `codex-work`：继续 `cli-scan` Task 2（AST parser + signature extractor）并补 2.2~2.7 测试。 |
+| 验收快照 | `poetry run ruff check owlclaw/cli/scan/__init__.py owlclaw/cli/scan/models.py tests/unit/cli_scan/test_models_properties.py`（All checks passed）；`poetry run pytest tests/unit/cli_scan/test_models_properties.py -q`（2 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
