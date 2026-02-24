@@ -1,6 +1,7 @@
 """E2E validation package exports."""
 
 from owlclaw.e2e.comparison_engine import ComparisonEngine
+from owlclaw.e2e.configuration import E2EConfig, load_e2e_config
 from owlclaw.e2e.data_collector import CollectedData, DataCollector
 from owlclaw.e2e.execution_engine import ExecutionEngine
 from owlclaw.e2e.interfaces import ScenarioExecutionEngine, TestScenarioRepository
@@ -38,4 +39,6 @@ __all__ = [
     "Threshold",
     "IsolationContext",
     "TestEnvironmentIsolation",
+    "E2EConfig",
+    "load_e2e_config",
 ]

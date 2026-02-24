@@ -100,7 +100,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（12/19） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（13/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/17） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/25） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 12） |
-| 批次状态 | **已完成**。Task 12 检查点通过，e2e 模块静态检查与测试均成功。 |
-| 已完成项 | 1) 执行 `poetry run ruff check owlclaw/e2e tests/e2e` 通过；2) 执行 `poetry run pytest tests/e2e -q` 通过（53 passed）；3) 回填 Task 12 为已完成。 |
-| 下一待执行 | `e2e-validation` Task 13.1（命令行接口）与 Task 13.2（配置管理）。 |
-| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 53 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：e2e-validation Task 13.1~13.2） |
+| 批次状态 | **已完成**。E2E Python CLI 与配置管理已落地，支持配置文件加载与环境变量覆盖。 |
+| 已完成项 | 1) 新增 `owlclaw/e2e/cli.py`：支持 full/mionyee/comparison/integration/performance/concurrency 模式；2) 新增 `owlclaw/e2e/configuration.py`：JSON 配置加载 + `OWLCLAW_E2E_*` 覆盖；3) 新增 `tests/e2e/test_e2e_cli.py` 覆盖 CLI 和配置；4) Task 13.1、13.2 与顶层 Task 13 回填为已完成。 |
+| 下一待执行 | `e2e-validation` Task 14.1~14.6（端到端场景测试补齐）。 |
+| 验收快照 | `poetry run ruff check owlclaw/e2e tests/e2e` -> all checks passed；`poetry run pytest tests/e2e -q` -> 56 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
