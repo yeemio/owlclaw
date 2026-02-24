@@ -25,7 +25,7 @@
   - 设置测试框架（pytest）和属性测试库（hypothesis）
   - _需求：所有需求的基础_
 
-- [ ] 2. 实现消息解析器
+- [x] 2. 实现消息解析器
   - [x] 2.1 实现 MessageParser 基类和具体解析器
     - 实现 JSONParser（JSON 消息解析）
     - 实现 TextParser（文本消息解析）
@@ -33,7 +33,7 @@
     - 实现 ParseError 异常类
     - _需求：3.3_
   
-  - [ ]* 2.2 为消息解析编写属性测试
+  - [x]* 2.2 为消息解析编写属性测试
     - **属性 3：多格式消息解析**
     - **验证需求：3.3**
   
@@ -43,14 +43,14 @@
     - 测试空消息体
     - _需求：3.4_
 
-- [ ] 3. 实现 MessageEnvelope 和消息封装
+- [x] 3. 实现 MessageEnvelope 和消息封装
   - [x] 3.1 实现 MessageEnvelope 数据类
     - 定义所有必需字段（message_id、payload、headers、received_at、source）
     - 定义可选字段（dedup_key、event_name、tenant_id）
     - 实现 from_raw_message 类方法
     - _需求：3.1, 3.2_
   
-  - [ ]* 3.2 为消息封装编写属性测试
+  - [x]* 3.2 为消息封装编写属性测试
     - **属性 2：消息封装完整性**
     - **验证需求：3.1, 3.2**
   
