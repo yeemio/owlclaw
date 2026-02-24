@@ -120,7 +120,7 @@
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（32/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（71/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11/12/12.1~12.3/13/13.1~13.4/14/14.1~14.4/15/16/16.1~16.5/17/17.1~17.5 已完成） |
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（80/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11/12/12.1~12.3/13/13.1~13.4/14/14.1~14.4/15/16/16.1~16.5/17/17.1~17.5/18/18.1~18.2/19/19.1~19.4/20 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: cli-scan Task 17/17.1~17.5） |
-| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 71/143。 |
-| 已完成项 | 1) 完成 cli-scan Task 1~16 全部条目；2) 完成 Task 17（CLI interface），新增 `owlclaw scan` 与 `owlclaw scan config validate` 分发与处理；3) 新增 `scan_cli` 输出格式化与统计展示；4) 本轮回归通过：`ruff` + `pytest tests/unit/cli_scan`（40 passed）。 |
-| 下一待执行 | `codex-work`：推进 `cli-scan` Task 18（错误处理与恢复）以及 Task 19（集成与端到端测试）。 |
-| 验收快照 | 当前：`cli-scan` 🟡(71/143)，`triggers-signal` ✅(15/15)，`owlhub` 🟡(32/42)。 |
+| 当前批次 | coding loop（codex-work: cli-scan Task 18/19/20 收口） |
+| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 80/143。 |
+| 已完成项 | 1) 完成 Task 18（错误处理与恢复）并补 Property 26；2) 完成 Task 19（4 条集成测试：全量扫描、增量流程、CLI 调用、错误场景）；3) 完成 Task 20 checkpoint（lint/type/tests/coverage）；4) 修复 `owlclaw.cli` 顶层导入副作用，改为子命令惰性注册，避免覆盖模式下 ORM 重复注册。 |
+| 下一待执行 | `codex-work`：进入后续未完成批次（Task 21+ / 其余 backlog），并按优先级推进。 |
+| 验收快照 | `poetry run ruff check .`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found）；`poetry run pytest tests/unit/cli_scan tests/integration/test_cli_scan_integration.py --cov=owlclaw.cli.scan --cov-report=term-missing -q`（45 passed，TOTAL 91%）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

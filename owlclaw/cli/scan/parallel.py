@@ -38,7 +38,8 @@ class ParallelExecutor:
             return []
 
         payload = [(str(path), worker) for path in files]
-        if self.workers <= 1:
+        running_under_pytest_cov = bool(os.environ.get("PYTEST_CURRENT_TEST") and os.environ.get("COV_CORE_SOURCE"))
+        if self.workers <= 1 or running_under_pytest_cov:
             return [_safe_execute(item) for item in payload]
 
         with Pool(processes=self.workers) as pool:

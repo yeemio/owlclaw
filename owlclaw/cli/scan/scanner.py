@@ -89,16 +89,23 @@ class ProjectScanner:
 
         imports = self.dependency_analyzer.extract_imports(tree) if self.config.analyze_dependencies else []
         functions: list[FunctionScanResult] = []
+        errors: list[str] = []
         for node in tree.body:
             if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
-                functions.extend(self._scan_function(node, module))
+                try:
+                    functions.extend(self._scan_function(node, module))
+                except Exception as exc:  # pragma: no cover - defensive boundary
+                    errors.append(f"function_scan_error:{node.name}:{exc}")
             elif isinstance(node, ast.ClassDef):
                 for member in node.body:
                     if isinstance(member, ast.FunctionDef | ast.AsyncFunctionDef):
                         qualname = f"{node.name}.{member.name}"
-                        functions.extend(self._scan_function(member, module, qualname=qualname))
+                        try:
+                            functions.extend(self._scan_function(member, module, qualname=qualname))
+                        except Exception as exc:  # pragma: no cover - defensive boundary
+                            errors.append(f"method_scan_error:{qualname}:{exc}")
 
-        return FileScanResult(file_path=str(file_path), functions=functions, imports=imports, errors=[])
+        return FileScanResult(file_path=str(file_path), functions=functions, imports=imports, errors=errors)
 
     def _scan_function(
         self,
