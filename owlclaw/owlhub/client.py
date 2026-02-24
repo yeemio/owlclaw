@@ -18,7 +18,6 @@ from typing import Any, cast
 
 from packaging.version import InvalidVersion, Version
 
-from owlclaw.cli.resolver import DependencyResolver
 from owlclaw.owlhub.indexer.builder import IndexBuilder
 from owlclaw.owlhub.validator import Validator
 
@@ -142,6 +141,8 @@ class OwlHubClient:
         selected = sorted(matched, key=lambda item: item.version)[-1]
         plan = [selected]
         if not no_deps:
+            from owlclaw.cli.resolver import DependencyResolver
+
             resolver = DependencyResolver(get_candidates=lambda dep_name: self._list_candidates_by_name(dep_name, include_hidden=force))
             plan = [node.result for node in resolver.resolve(root=selected)]
         target = self.install_dir / selected.name / selected.version

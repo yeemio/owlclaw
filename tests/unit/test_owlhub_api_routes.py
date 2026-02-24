@@ -77,6 +77,7 @@ def test_read_only_endpoints(tmp_path: Path, monkeypatch) -> None:
     search = client.get("/api/v1/skills", params={"query": "entry", "tags": "trading", "sort_by": "downloads"})
     assert search.status_code == 200
     assert search.json()["total"] == 2
+    assert search.json()["items"][0]["version"] == "1.1.0"
 
     detail = client.get("/api/v1/skills/acme/entry-monitor")
     assert detail.status_code == 200

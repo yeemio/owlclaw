@@ -65,6 +65,7 @@ def search_skills(
     normalized_query = query.strip().lower()
 
     items: list[SkillSearchItem] = []
+    sort_values: dict[tuple[str, str, str], int | str] = {}
     for entry in _iter_skills():
         manifest = entry.get("manifest", {})
         name = str(manifest.get("name", "")).strip()
@@ -79,6 +80,13 @@ def search_skills(
             continue
         if requested_tags and not requested_tags.issubset(lowered_tags):
             continue
+        skill_key = (publisher, name, version)
+        if sort_by == "downloads":
+            stats = entry.get("statistics", {})
+            downloads = int(stats.get("total_downloads", 0)) if isinstance(stats, dict) else 0
+            sort_values[skill_key] = downloads
+        elif sort_by == "updated_at":
+            sort_values[skill_key] = str(entry.get("updated_at", ""))
         items.append(
             SkillSearchItem(
                 name=name,
@@ -91,17 +99,9 @@ def search_skills(
         )
 
     if sort_by == "downloads":
-        items.sort(
-            key=lambda item: int(
-                _find_statistics(item.publisher, item.name, item.version).get("total_downloads", 0)
-            ),
-            reverse=True,
-        )
+        items.sort(key=lambda item: int(sort_values.get((item.publisher, item.name, item.version), 0)), reverse=True)
     elif sort_by == "updated_at":
-        items.sort(
-            key=lambda item: str(_find_updated_at(item.publisher, item.name, item.version)),
-            reverse=True,
-        )
+        items.sort(key=lambda item: str(sort_values.get((item.publisher, item.name, item.version), "")), reverse=True)
     else:
         items.sort(key=lambda item: (item.name, item.version))
 
@@ -381,35 +381,6 @@ def takedown_skill(
 def _is_skill(entry: dict, publisher: str, name: str) -> bool:
     manifest = entry.get("manifest", {})
     return str(manifest.get("publisher", "")) == publisher and str(manifest.get("name", "")) == name
-
-
-def _find_statistics(publisher: str, name: str, version: str) -> dict:
-    for entry in _iter_skills():
-        if _is_hidden(entry=entry):
-            continue
-        manifest = entry.get("manifest", {})
-        if (
-            str(manifest.get("publisher", "")) == publisher
-            and str(manifest.get("name", "")) == name
-            and str(manifest.get("version", "")) == version
-        ):
-            stats = entry.get("statistics", {})
-            return stats if isinstance(stats, dict) else {}
-    return {}
-
-
-def _find_updated_at(publisher: str, name: str, version: str) -> str:
-    for entry in _iter_skills():
-        if _is_hidden(entry=entry):
-            continue
-        manifest = entry.get("manifest", {})
-        if (
-            str(manifest.get("publisher", "")) == publisher
-            and str(manifest.get("name", "")) == name
-            and str(manifest.get("version", "")) == version
-        ):
-            return str(entry.get("updated_at", ""))
-    return ""
 
 
 def _principal_allowed_for_publisher(principal: Principal, publisher: str) -> bool:
