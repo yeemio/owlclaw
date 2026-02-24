@@ -7,6 +7,7 @@ import json
 import tarfile
 import tempfile
 from pathlib import Path
+from urllib.request import Request
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -18,6 +19,20 @@ from owlclaw.owlhub import OwlHubClient
 from owlclaw.owlhub.indexer import IndexBuilder
 
 runner = CliRunner()
+
+
+class _FakeResponse:
+    def __init__(self, payload: str):
+        self._payload = payload.encode("utf-8")
+
+    def read(self) -> bytes:
+        return self._payload
+
+    def __enter__(self) -> _FakeResponse:
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        return None
 
 
 def _build_skill_archive(base: Path, *, name: str, publisher: str, version: str) -> Path:
@@ -189,6 +204,47 @@ def test_cli_update_reports_no_updates(tmp_path: Path, monkeypatch, capsys) -> N
     assert handled is True
     captured = capsys.readouterr()
     assert "No updates available." in captured.out
+
+
+def test_cli_publish_command_via_api(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="entry-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(tmp_path, archive, name="entry-monitor", publisher="acme", version="1.0.0")
+    skill_dir = tmp_path / "skill-publish"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: "entry-monitor"
+publisher: "acme"
+description: "entry monitor skill"
+license: "MIT"
+metadata:
+  version: "1.0.0"
+---
+# entry-monitor
+""",
+        encoding="utf-8",
+    )
+
+    def fake_urlopen(request: Request, timeout: int):  # noqa: ARG001
+        _ = request
+        return _FakeResponse(json.dumps({"accepted": True, "review_id": "r1", "status": "pending"}))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(
+        [
+            "skill",
+            "publish",
+            str(skill_dir),
+            "--api-base-url",
+            "http://hub.local",
+            "--api-token",
+            "token-123",
+        ]
+    )
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "Published: review_id=r1 status=pending" in captured.out
 
 
 def test_install_rejects_checksum_mismatch(tmp_path: Path) -> None:

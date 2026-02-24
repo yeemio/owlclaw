@@ -599,29 +599,29 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Take down random skills, verify hidden from public but accessible to existing users
     - _Requirements: 5.4, 7.3_
 
-- [ ] 27. Update CLI to support API mode
-  - [ ] 27.1 Add API client to CLI
+- [x] 27. Update CLI to support API mode
+  - [x] 27.1 Add API client to CLI
     - Create `owlclaw/cli/api_client.py` for API communication
     - Support both static index mode and API mode via configuration
     - Implement authentication token management for API mode
     - Add automatic fallback to static index if API unavailable
     - _Requirements: 8.3, 8.4_
 
-  - [ ] 27.2 Add publish command to CLI
+  - [x] 27.2 Add publish command to CLI
     - Implement `owlclaw skill publish <path>` command
     - Validate skill package locally before publishing
     - Authenticate with API and upload skill metadata
     - Display publish status and review information
     - _Requirements: 1.1, 5.1_
 
-  - [ ]* 27.3 Write unit tests for API client
+  - [x]* 27.3 Write unit tests for API client
     - Test API mode vs static index mode selection
     - Test authentication token handling
     - Test fallback behavior on API failure
     - Test publish command flow
     - _Requirements: 8.3, 8.4_
 
-  - [ ]* 27.4 Write integration test for CLI API compatibility
+  - [x]* 27.4 Write integration test for CLI API compatibility
     - **Property 26: 阶段间向后兼容性** (complete test)
     - **Validates: Requirements 8.4**
     - Test Phase 1 CLI with Phase 2 index

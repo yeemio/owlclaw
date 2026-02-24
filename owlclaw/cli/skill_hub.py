@@ -6,10 +6,11 @@ from pathlib import Path
 
 import typer
 
+from owlclaw.cli.api_client import SkillHubApiClient
 from owlclaw.owlhub import OwlHubClient
 
 
-def _create_client(index_url: str, install_dir: str, lock_file: str) -> OwlHubClient:
+def _create_index_client(index_url: str, install_dir: str, lock_file: str) -> OwlHubClient:
     return OwlHubClient(
         index_url=index_url,
         install_dir=Path(install_dir).resolve(),
@@ -23,13 +24,22 @@ def search_command(
     tags: str = typer.Option("", "--tags", help="Comma-separated tags filter.", is_flag=False),
     tag_mode: str = typer.Option("and", "--tag-mode", help="Tag filter mode: and/or.", is_flag=False),
     include_draft: bool = typer.Option(False, "--include-draft", help="Include draft versions in results."),
+    mode: str = typer.Option("auto", "--mode", help="Hub mode: auto/index/api.", is_flag=False),
+    api_base_url: str = typer.Option("", "--api-base-url", help="OwlHub API base URL.", is_flag=False),
+    api_token: str = typer.Option("", "--api-token", help="OwlHub API token.", is_flag=False),
     install_dir: str = typer.Option(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
     ),
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
 ) -> None:
     """Search skills in OwlHub index."""
-    client = _create_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
+    index_client = _create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
+    client = SkillHubApiClient(
+        index_client=index_client,
+        api_base_url=api_base_url,
+        api_token=api_token,
+        mode=mode,
+    )
     tag_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
     results = client.search(query=query, tags=tag_list, tag_mode=tag_mode, include_draft=include_draft)
     if not results:
@@ -43,6 +53,9 @@ def search_command(
 def install_command(
     name: str = typer.Argument(..., help="Skill name to install."),
     version: str = typer.Option("", "--version", help="Exact version to install.", is_flag=False),
+    mode: str = typer.Option("auto", "--mode", help="Hub mode: auto/index/api.", is_flag=False),
+    api_base_url: str = typer.Option("", "--api-base-url", help="OwlHub API base URL.", is_flag=False),
+    api_token: str = typer.Option("", "--api-token", help="OwlHub API token.", is_flag=False),
     index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json.", is_flag=False),
     install_dir: str = typer.Option(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
@@ -50,7 +63,12 @@ def install_command(
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
 ) -> None:
     """Install one skill from OwlHub index."""
-    client = _create_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
+    client = SkillHubApiClient(
+        index_client=_create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file),
+        api_base_url=api_base_url,
+        api_token=api_token,
+        mode=mode,
+    )
     try:
         installed_path = client.install(name=name, version=version or None)
     except Exception as exc:
@@ -62,6 +80,9 @@ def install_command(
 
 
 def installed_command(
+    mode: str = typer.Option("auto", "--mode", help="Hub mode: auto/index/api.", is_flag=False),
+    api_base_url: str = typer.Option("", "--api-base-url", help="OwlHub API base URL.", is_flag=False),
+    api_token: str = typer.Option("", "--api-token", help="OwlHub API token.", is_flag=False),
     index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json.", is_flag=False),
     install_dir: str = typer.Option(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
@@ -69,7 +90,12 @@ def installed_command(
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
 ) -> None:
     """List installed skills from lock file."""
-    client = _create_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
+    client = SkillHubApiClient(
+        index_client=_create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file),
+        api_base_url=api_base_url,
+        api_token=api_token,
+        mode=mode,
+    )
     installed = client.list_installed()
     if not installed:
         typer.echo("No installed skills.")
@@ -81,6 +107,9 @@ def installed_command(
 
 def update_command(
     name: str = typer.Argument("", help="Optional skill name to update."),
+    mode: str = typer.Option("auto", "--mode", help="Hub mode: auto/index/api.", is_flag=False),
+    api_base_url: str = typer.Option("", "--api-base-url", help="OwlHub API base URL.", is_flag=False),
+    api_token: str = typer.Option("", "--api-token", help="OwlHub API token.", is_flag=False),
     index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json.", is_flag=False),
     install_dir: str = typer.Option(
         "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
@@ -88,10 +117,41 @@ def update_command(
     lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
 ) -> None:
     """Update one skill or all installed skills."""
-    client = _create_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file)
+    client = SkillHubApiClient(
+        index_client=_create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file),
+        api_base_url=api_base_url,
+        api_token=api_token,
+        mode=mode,
+    )
     changes = client.update(name=name or None)
     if not changes:
         typer.echo("No updates available.")
         return
     for change in changes:
         typer.echo(f"Updated: {change['name']} {change['from_version']} -> {change['to_version']}")
+
+
+def publish_command(
+    path: str = typer.Argument(".", help="Skill package directory path."),
+    mode: str = typer.Option("api", "--mode", help="Hub mode: auto/index/api.", is_flag=False),
+    api_base_url: str = typer.Option("", "--api-base-url", help="OwlHub API base URL.", is_flag=False),
+    api_token: str = typer.Option("", "--api-token", help="OwlHub API token.", is_flag=False),
+    index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json.", is_flag=False),
+    install_dir: str = typer.Option(
+        "./.owlhub/skills", "--install-dir", help="Install directory for skills.", is_flag=False
+    ),
+    lock_file: str = typer.Option("./skill-lock.json", "--lock-file", help="Lock file path.", is_flag=False),
+) -> None:
+    """Publish one local skill to OwlHub API."""
+    client = SkillHubApiClient(
+        index_client=_create_index_client(index_url=index_url, install_dir=install_dir, lock_file=lock_file),
+        api_base_url=api_base_url,
+        api_token=api_token,
+        mode=mode,
+    )
+    try:
+        result = client.publish(skill_path=Path(path).resolve())
+    except Exception as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(f"Published: review_id={result.get('review_id', '')} status={result.get('status', '')}")
