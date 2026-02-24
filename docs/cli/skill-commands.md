@@ -8,6 +8,9 @@
 | `owlclaw skill validate` | 验证 SKILL.md 文件 |
 | `owlclaw skill list` | 列出目录中的 Skills |
 | `owlclaw skill templates` | 列出模板库中的模板 |
+| `owlclaw skill search` | 从 OwlHub 索引搜索技能 |
+| `owlclaw skill install` | 从 OwlHub 索引安装技能 |
+| `owlclaw skill installed` | 从 lock 文件列出已安装技能 |
 
 ---
 
@@ -146,3 +149,53 @@ A: 用逗号分隔，如 `--param "endpoints=/a,/b,/c"`。
 
 **Q: 验证失败常见原因？**  
 A: `name` 需为 kebab-case；frontmatter 需为有效 YAML；body 需包含至少一个 `##` 标题。
+
+---
+
+## owlclaw skill search
+
+从 `index.json` 搜索技能（支持关键词和 tag 过滤）。
+
+### 用法
+
+```bash
+owlclaw skill search [--query <text>] [--tags <tag1,tag2>] [--index-url <path-or-url>]
+```
+
+### 示例
+
+```bash
+owlclaw skill search --query monitor
+owlclaw skill search --query entry --tags trading,signal --index-url ./index.json
+```
+
+---
+
+## owlclaw skill install
+
+按名称安装技能，可指定版本。安装后自动写入 `skill-lock.json`。
+
+### 用法
+
+```bash
+owlclaw skill install <name> [--version <semver>] [--index-url <path-or-url>]
+```
+
+### 示例
+
+```bash
+owlclaw skill install entry-monitor
+owlclaw skill install entry-monitor --version 1.0.0 --index-url ./index.json
+```
+
+---
+
+## owlclaw skill installed
+
+读取 lock 文件，输出已安装技能列表。
+
+### 用法
+
+```bash
+owlclaw skill installed [--lock-file <path>]
+```

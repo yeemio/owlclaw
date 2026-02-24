@@ -111,7 +111,7 @@
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（18/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（20/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 4.1~5.1） |
-| 批次状态 | **已完成**。CLI Client、安装校验与 lock 管理、索引构建 workflow、Phase 1 端到端集成验证已落地并通过验收。 |
-| 已完成项 | 1) 新增 `owlclaw/owlhub/client.py`（索引读取、搜索、安装、lock 文件）；2) 新增 `owlclaw/cli/skill_hub.py` 并扩展 `skill` 子命令 `search/install/installed`；3) 更新 `owlclaw/cli/__init__.py` argparse 分发；4) 新增 `tests/unit/test_owlhub_cli_client.py` 覆盖 Task 4.4 与属性 6/9/11/12；5) 新增 `scripts/owlhub_build_index.py` 与 `.github/workflows/owlhub-build-index.yml`（Task 5）；6) 新增 `tests/integration/test_owlhub_phase1_flow.py`（Task 5.1）；7) 回填 `owlhub/tasks.md` 的 Task 4、4.1、4.2、4.3、4.4、4.5、5、5.1。 |
-| 下一待执行 | `owlhub` Task 6（Phase 1 配置与文档）→ Task 7（Phase 1 Checkpoint）。 |
-| 验收快照 | `poetry run ruff check owlclaw/cli/skill_hub.py owlclaw/owlhub/client.py tests/unit/test_owlhub_cli_client.py tests/integration/test_owlhub_phase1_flow.py scripts/owlhub_build_index.py` -> all checks passed；`poetry run pytest tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py tests/unit/test_owlhub_cli_client.py -q` -> 20 passed；`poetry run pytest tests/integration/test_owlhub_phase1_flow.py -q` -> 1 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 6~7） |
+| 批次状态 | **已完成**。Phase 1 配置/文档与 Checkpoint 验收已完成。 |
+| 已完成项 | 1) 新增 `.owlhub/config.yaml`（`index_url/repositories/update_interval/install_dir/lock_file`）；2) 新增 `docs/owlhub/phase1.md`（Phase 1 架构图、配置、技能包结构、index schema、CLI 用法）；3) 更新 `docs/cli/skill-commands.md` 增补 `search/install/installed` 文档；4) 回填 `owlhub/tasks.md` 的 Task 6、7。 |
+| 下一待执行 | `owlhub` Task 8（Statistics Tracker，Phase 2 起点）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_owlhub_schema.py tests/unit/test_owlhub_validator.py tests/unit/test_owlhub_index_builder.py tests/unit/test_owlhub_cli_client.py tests/integration/test_owlhub_phase1_flow.py -q -rA` -> 21 passed；`poetry run python scripts/owlhub_build_index.py --output <tmp>/dist/index.json --repos <tmp>/repos` -> generated index with 1 skills。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
