@@ -75,6 +75,7 @@ class ValidationError:
 
     code: str
     message: str
+    status_code: int | None = None
     details: dict[str, Any] | None = None
 
 
@@ -84,6 +85,14 @@ class ValidationResult:
 
     valid: bool
     error: ValidationError | None = None
+
+
+@dataclass(slots=True)
+class HttpRequest:
+    """Normalized inbound HTTP request used by webhook validation layer."""
+
+    headers: dict[str, str]
+    body: str = ""
 
 
 @dataclass(slots=True)

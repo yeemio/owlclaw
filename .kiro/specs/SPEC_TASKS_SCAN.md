@@ -102,7 +102,7 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（2/72） | webhook 触发器（Task 0 Protocol-first 已勾，+3 subtasks） |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（5/72） | webhook 触发器（Task 0 Protocol-first + Task 2/3/4/5 已完成） |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（合并 review-work → main；Protocol-first 影响评估；spec 补充 Task 0） |
-| 批次状态 | **已完成**。架构决策 4.11 落地；受影响 spec 已补充 Protocol-first 前置任务。 |
-| 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.11（Protocol-first）；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加强制约束（先契约后 SDK）；3) 保持 `triggers-queue` 完成态（89/89）及 scan 计数一致。 |
-| 下一待执行 | `codex-work` 优先推进 `triggers-webhook`/`triggers-api`/`triggers-signal` 的协议契约与测试（按 Protocol-first）；`codex-gpt-work` 继续 `owlhub` Task 4（CLI Client）。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.2（含 §4.11）；`.cursor` 架构规则已加入 Protocol-first 强制条款；Spec scan checkpoint 已同步下一步执行顺序。 |
+| 当前批次 | coding loop（codex-work: triggers-webhook Task 2/3/4 + Task 5 checkpoint） |
+| 批次状态 | **已完成（本批）**。完成 Task 2（持久化层）+ Task 3（WebhookEndpointManager）+ Task 4（RequestValidator）+ Task 5（核心组件测试检查点）。 |
+| 已完成项 | 1) 新增 Alembic 迁移 `004_webhook_trigger_core.py`（五张 webhook 表 + tenant 索引）；2) 新增 ORM 模型与 SQLAlchemy Repository + InMemory Repository；3) 新增 `WebhookEndpointManager`（create/get/update/delete/list/validate）；4) 新增 `RequestValidator`（端点存在性校验、Bearer/HMAC/Basic 验证、格式验证）；5) 新增并通过属性测试与单元测试（Property 1/2/3/4/5/6/7）。 |
+| 下一待执行 | `codex-work`：`triggers-webhook` Task 6（PayloadTransformer）→ Task 7（GovernanceClient）→ Task 8（ExecutionTrigger）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/webhook/manager.py owlclaw/triggers/webhook/validator.py owlclaw/triggers/webhook/types.py owlclaw/triggers/webhook/__init__.py owlclaw/triggers/webhook/persistence/repositories.py tests/unit/triggers/test_webhook_manager.py tests/unit/triggers/test_webhook_manager_properties.py tests/unit/triggers/test_webhook_request_validator.py tests/unit/triggers/test_webhook_request_validator_properties.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_webhook_manager.py tests/unit/triggers/test_webhook_manager_properties.py tests/unit/triggers/test_webhook_request_validator.py tests/unit/triggers/test_webhook_request_validator_properties.py -q`（15 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（26 passed, 201 deselected）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

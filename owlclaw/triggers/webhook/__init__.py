@@ -9,12 +9,14 @@ from owlclaw.triggers.webhook.types import (
     ExecutionOptions,
     ExecutionResult,
     ExecutionStatus,
+    HttpRequest,
     ParsedPayload,
     RetryPolicy,
     ValidationError,
     ValidationResult,
     WebhookEndpoint,
 )
+from owlclaw.triggers.webhook.validator import RequestValidator
 
 __all__ = [
     "AgentInput",
@@ -24,7 +26,9 @@ __all__ = [
     "ExecutionOptions",
     "ExecutionResult",
     "ExecutionStatus",
+    "HttpRequest",
     "ParsedPayload",
+    "RequestValidator",
     "RetryPolicy",
     "ValidationError",
     "ValidationResult",
