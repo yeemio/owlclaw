@@ -193,8 +193,8 @@ The implementation follows a bottom-up approach: core data models → parser com
     - **Property 20: Configuration Pattern Filtering**
     - **Validates: Requirements 10.2, 10.3**
 
-- [ ] 10. Implement scanner engine core
-  - [ ] 10.1 Implement ProjectScanner class
+- [x] 10. Implement scanner engine core
+  - [x] 10.1 Implement ProjectScanner class
     - Write `scan()` method to orchestrate scanning
     - Write `_scan_file()` to scan individual files
     - Integrate ASTParser, SignatureExtractor, DocstringParser, ComplexityCalculator, DependencyAnalyzer
@@ -202,25 +202,25 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Handle file system errors gracefully
     - _Requirements: 1.1, 1.2, 1.3, 1.5, 11.1, 11.6_
   
-  - [ ] 10.2 Implement ScanConfig class
+  - [x] 10.2 Implement ScanConfig class
     - Define configuration options (paths, patterns, features, thresholds)
     - Apply feature toggles (extract_docstrings, calculate_complexity, analyze_dependencies)
     - Apply complexity threshold filtering
     - _Requirements: 10.1, 10.4, 10.5_
   
-  - [ ]* 10.3 Write property test for complexity threshold filtering
+  - [x]* 10.3 Write property test for complexity threshold filtering
     - **Property 21: Complexity Threshold Filtering**
     - **Validates: Requirements 10.4**
   
-  - [ ]* 10.4 Write property test for feature toggle respect
+  - [x]* 10.4 Write property test for feature toggle respect
     - **Property 22: Feature Toggle Respect**
     - **Validates: Requirements 10.5**
   
-  - [ ]* 10.5 Write property test for error logging completeness
+  - [x]* 10.5 Write property test for error logging completeness
     - **Property 25: Error Logging Completeness**
     - **Validates: Requirements 11.1**
 
-- [ ] 11. Checkpoint - Ensure scanner core tests pass
+- [x] 11. Checkpoint - Ensure scanner core tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 12. Implement parallel processing
