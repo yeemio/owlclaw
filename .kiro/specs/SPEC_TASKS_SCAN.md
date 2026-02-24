@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（2/26） | 声明式工具绑定（Task 0/1 已完成：契约文档 + schema/data model） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（32/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: cli-scan 完结 + spec 规范化） |
-| 批次状态 | **已完成（本批）**。`cli-scan` 已完成并验收。 |
-| 已完成项 | 1) 完成 Task 1~20（含属性测试、集成测试、最终 checkpoint）；2) `owlclaw scan`/`scan config validate` CLI 接入完成；3) 完成 `ruff`/`mypy`/`pytest+coverage` 验收；4) 清理 `.kiro/specs/cli-scan/tasks.md` 的重复损坏尾段，恢复单一真源文档。 |
-| 下一待执行 | `codex-work`：切换到下一个进行中 spec（建议优先 `declarative-binding` 或 `owlhub`）。 |
-| 验收快照 | `poetry run ruff check .`（All checks passed）；`poetry run mypy owlclaw/`（Success: no issues found）；`poetry run pytest tests/unit/cli_scan tests/integration/test_cli_scan_integration.py --cov=owlclaw.cli.scan --cov-report=term-missing -q`（45 passed，TOTAL 91%）。 |
+| 当前批次 | coding loop（codex-work: declarative-binding Task 0/1） |
+| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 2/26。 |
+| 已完成项 | 1) 完成 `declarative-binding` Task 0（requirements/design/tasks 对齐）；2) 新增语言无关契约文件 `.kiro/specs/declarative-binding/binding.schema.json`；3) 在 design 中补齐 `tools` 简化语法与 `prerequisites` 规范；4) 完成 Task 1（新增 `owlclaw/capabilities/bindings/`、schema 数据模型、解析与验证函数、单元测试）。 |
+| 下一待执行 | `codex-work`：继续 `declarative-binding` Task 2（CredentialResolver）和 Task 3（Executor 抽象与注册表）。 |
+| 验收快照 | 本批验证：`ruff` + `pytest tests/unit/capabilities/test_bindings_schema.py` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
