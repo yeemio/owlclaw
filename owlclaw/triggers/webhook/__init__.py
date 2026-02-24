@@ -4,9 +4,11 @@ from owlclaw.triggers.webhook.event_logger import EventLogger, build_event
 from owlclaw.triggers.webhook.execution import ExecutionTrigger
 from owlclaw.triggers.webhook.governance import GovernanceClient
 from owlclaw.triggers.webhook.manager import WebhookEndpointManager
+from owlclaw.triggers.webhook.monitoring import MonitoringService
 from owlclaw.triggers.webhook.transformer import PayloadTransformer
 from owlclaw.triggers.webhook.types import (
     AgentInput,
+    AlertRecord,
     AuthMethod,
     EndpointConfig,
     EndpointFilter,
@@ -18,7 +20,11 @@ from owlclaw.triggers.webhook.types import (
     FieldMapping,
     GovernanceContext,
     GovernanceDecision,
+    HealthCheckResult,
+    HealthStatusSnapshot,
     HttpRequest,
+    MetricRecord,
+    MetricStats,
     ParsedPayload,
     RetryPolicy,
     TransformationRule,
@@ -31,6 +37,7 @@ from owlclaw.triggers.webhook.validator import RequestValidator
 
 __all__ = [
     "AgentInput",
+    "AlertRecord",
     "AuthMethod",
     "EndpointFilter",
     "EndpointConfig",
@@ -46,6 +53,11 @@ __all__ = [
     "GovernanceContext",
     "GovernanceDecision",
     "HttpRequest",
+    "HealthCheckResult",
+    "HealthStatusSnapshot",
+    "MetricRecord",
+    "MetricStats",
+    "MonitoringService",
     "PayloadTransformer",
     "ParsedPayload",
     "RequestValidator",

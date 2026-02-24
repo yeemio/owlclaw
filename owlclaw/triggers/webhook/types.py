@@ -213,3 +213,54 @@ class WebhookEventRecord:
     data: dict[str, Any] | None = None
     error: dict[str, Any] | None = None
     tenant_id: str = "default"
+
+
+@dataclass(slots=True)
+class MetricRecord:
+    """Single monitoring sample."""
+
+    name: str
+    value: float
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    tags: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class MetricStats:
+    """Aggregated monitoring metrics."""
+
+    request_count: int
+    success_rate: float
+    failure_rate: float
+    avg_response_time: float
+    p95_response_time: float
+    p99_response_time: float
+
+
+@dataclass(slots=True)
+class HealthCheckResult:
+    """One health check result."""
+
+    name: str
+    status: Literal["pass", "fail"]
+    message: str | None = None
+
+
+@dataclass(slots=True)
+class HealthStatusSnapshot:
+    """Health summary of webhook service dependencies."""
+
+    status: Literal["healthy", "degraded", "unhealthy"]
+    checks: list[HealthCheckResult]
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass(slots=True)
+class AlertRecord:
+    """Monitoring alert payload."""
+
+    name: str
+    severity: Literal["warning", "critical"]
+    message: str
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    tags: dict[str, str] = field(default_factory=dict)
