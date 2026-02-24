@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
+import uuid
 from dataclasses import dataclass
 from typing import Any
 
@@ -83,6 +85,7 @@ class LangChainAdapter:
         config: RunnableConfig,
     ) -> dict[str, Any]:
         """Execute runnable with validation, trace, and error mapping."""
+        started_at = time.perf_counter()
         span = None
         if config.enable_tracing:
             span = self._trace_manager.create_span(
@@ -93,16 +96,57 @@ class LangChainAdapter:
 
         retry_policy = self._build_retry_policy(config.retry_policy)
         last_error: Exception | None = None
+        attempts = 0
+        governance_result = await self._validate_governance(config.name, context)
+        if not governance_result.get("allowed", True):
+            status_code = int(governance_result.get("status_code", 403))
+            reason = str(governance_result.get("reason", "capability denied by governance policy"))
+            payload = self._error_handler.create_error_response(
+                error_type="PolicyDeniedError" if status_code == 403 else "RateLimitError",
+                message=reason,
+                status_code=status_code,
+                details={"capability": config.name},
+            )
+            headers = governance_result.get("headers")
+            if isinstance(headers, dict):
+                payload["headers"] = headers
+            await self._record_execution(
+                context=context,
+                config=config,
+                input_data=input_data,
+                output_data=None,
+                status="blocked",
+                error_message=reason,
+                started_at=started_at,
+                span=span,
+                attempts=attempts,
+                governance_result=governance_result,
+            )
+            return payload
+
         try:
             self._schema_bridge.validate_input(input_data, config.input_schema)
             transformed_input = self._schema_bridge.transform_input(input_data, config.input_transformer)
 
             for attempt in range(1, retry_policy.max_attempts + 1):
+                attempts = attempt
                 try:
                     result = await self._execute_with_timeout(runnable, transformed_input, config.timeout_seconds)
                     transformed_output = self._schema_bridge.transform_output(result, config.output_transformer)
                     if span is not None:
                         span.end(output=transformed_output)
+                    await self._record_execution(
+                        context=context,
+                        config=config,
+                        input_data=input_data,
+                        output_data=transformed_output,
+                        status="success",
+                        error_message=None,
+                        started_at=started_at,
+                        span=span,
+                        attempts=attempts,
+                        governance_result=governance_result,
+                    )
                     return transformed_output
                 except Exception as exc:
                     last_error = exc
@@ -124,6 +168,18 @@ class LangChainAdapter:
             if span is not None:
                 span.record_error(effective_error)
                 span.end(output={"error": str(effective_error)})
+            await self._record_execution(
+                context=context,
+                config=config,
+                input_data=input_data,
+                output_data=None,
+                status="error",
+                error_message=str(effective_error),
+                started_at=started_at,
+                span=span,
+                attempts=attempts or 1,
+                governance_result=governance_result,
+            )
             if config.fallback:
                 return await self._error_handler.handle_fallback(
                     config.fallback,
@@ -189,3 +245,82 @@ class LangChainAdapter:
             backoff_multiplier=float(raw_policy.get("backoff_multiplier", 2.0)),
             retryable_errors=list(raw_policy.get("retryable_errors", [])),
         )
+
+    async def _validate_governance(self, capability_name: str, context: Any) -> dict[str, Any]:
+        validator = getattr(self._app, "validate_capability_execution", None)
+        if not callable(validator):
+            return {"allowed": True}
+        payload = {
+            "capability_name": capability_name,
+            "context": context if isinstance(context, dict) else {},
+        }
+        result = validator(**payload)
+        if asyncio.iscoroutine(result):
+            result = await result
+        if isinstance(result, dict):
+            return result
+        return {"allowed": bool(result)}
+
+    async def _record_execution(
+        self,
+        *,
+        context: Any,
+        config: RunnableConfig,
+        input_data: dict[str, Any],
+        output_data: dict[str, Any] | None,
+        status: str,
+        error_message: str | None,
+        started_at: float,
+        span: Any | None,
+        attempts: int,
+        governance_result: dict[str, Any],
+    ) -> None:
+        context_dict = context if isinstance(context, dict) else {}
+        duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+        payload = {
+            "event_type": "langchain_execution",
+            "capability_name": config.name,
+            "input": input_data,
+            "output": output_data,
+            "status": status,
+            "duration_ms": duration_ms,
+            "error_message": error_message,
+            "trace_id": getattr(span, "trace_id", context_dict.get("trace_id")),
+            "span_id": getattr(span, "span_id", None),
+            "user_id": context_dict.get("user_id"),
+            "agent_id": context_dict.get("agent_id"),
+            "attempts": attempts,
+            "governance": governance_result,
+        }
+
+        record_langchain = getattr(self._app, "record_langchain_execution", None)
+        if callable(record_langchain):
+            result = record_langchain(payload)
+            if asyncio.iscoroutine(result):
+                await result
+            return
+
+        record_execution = getattr(self._app, "record_execution", None)
+        if not callable(record_execution):
+            return
+
+        run_id = str(context_dict.get("run_id") or uuid.uuid4())
+        result = record_execution(
+            tenant_id=str(context_dict.get("tenant_id", "default")),
+            agent_id=str(context_dict.get("agent_id", "unknown")),
+            run_id=run_id,
+            capability_name=config.name,
+            task_type="langchain_execution",
+            input_params=input_data,
+            output_result=output_data,
+            decision_reasoning=str(governance_result.get("reason", "")) or None,
+            execution_time_ms=duration_ms,
+            llm_model="langchain",
+            llm_tokens_input=0,
+            llm_tokens_output=0,
+            estimated_cost=0.0,
+            status=status,
+            error_message=error_message,
+        )
+        if asyncio.iscoroutine(result):
+            await result
