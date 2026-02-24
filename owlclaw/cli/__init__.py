@@ -483,6 +483,7 @@ def _dispatch_trigger_command(argv: list[str]) -> bool:
     if sub != "template":
         print(f"Error: unknown trigger subcommand: {sub}", file=sys.stderr)
         raise SystemExit(2)
+
     if len(sub_argv) < 1:
         _print_help_and_exit(["trigger", "template"])
 
@@ -510,6 +511,44 @@ def _dispatch_trigger_command(argv: list[str]) -> bool:
         force=ns.force,
     )
     print(f"Generated: {target}")
+    return True
+
+
+def _dispatch_scan_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw scan ...` via argparse."""
+    if not argv or argv[0] != "scan":
+        return False
+
+    if len(argv) >= 3 and argv[1] == "config" and argv[2] == "validate":
+        from owlclaw.cli.scan_cli import validate_scan_config_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw scan config validate")
+        parser.add_argument("--path", default=".")
+        parser.add_argument("--config", default="")
+        ns = parser.parse_args(argv[3:])
+        validate_scan_config_command(path=ns.path, config=ns.config)
+        return True
+
+    from owlclaw.cli.scan_cli import run_scan_command
+
+    parser = argparse.ArgumentParser(add_help=False, prog="owlclaw scan")
+    parser.add_argument("--path", default=".")
+    parser.add_argument("--format", dest="format_name", choices=["json", "yaml"], default="json")
+    parser.add_argument("--output", default="")
+    parser.add_argument("--incremental", action="store_true", default=False)
+    parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--config", default="")
+    parser.add_argument("--verbose", "-v", action="store_true", default=False)
+    ns = parser.parse_args(argv[1:])
+    run_scan_command(
+        path=ns.path,
+        format_name=ns.format_name,
+        output=ns.output,
+        incremental=ns.incremental,
+        workers=ns.workers,
+        config=ns.config,
+        verbose=ns.verbose,
+    )
     return True
 
 
@@ -894,6 +933,11 @@ def _main_impl() -> None:
         raise SystemExit(e.exit_code) from None
     try:
         if _dispatch_trigger_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_scan_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None
