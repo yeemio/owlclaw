@@ -76,8 +76,8 @@ The implementation follows a bottom-up approach: core data models → parser com
 - [x] 3. Checkpoint - Ensure parser tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Implement docstring parser
-  - [ ] 4.1 Implement DocstringParser class
+- [x] 4. Implement docstring parser
+  - [x] 4.1 Implement DocstringParser class
     - Write `detect_style()` to identify Google/NumPy/reStructuredText styles
     - Parse Google-style docstrings (Args:, Returns:, Raises:)
     - Parse NumPy-style docstrings (Parameters, Returns, Raises with underlines)
@@ -86,15 +86,15 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Preserve original formatting and indentation
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
   
-  - [ ]* 4.2 Write property test for docstring preservation
+  - [x]* 4.2 Write property test for docstring preservation
     - **Property 6: Docstring Extraction Preservation**
     - **Validates: Requirements 3.1, 3.5**
   
-  - [ ]* 4.3 Write property test for structured docstring parsing
+  - [x]* 4.3 Write property test for structured docstring parsing
     - **Property 7: Structured Docstring Parsing**
     - **Validates: Requirements 3.3, 3.4**
   
-  - [ ]* 4.4 Write unit tests for docstring parsing
+  - [x]* 4.4 Write unit tests for docstring parsing
     - Test Google-style docstring
     - Test NumPy-style docstring
     - Test reStructuredText-style docstring
@@ -102,8 +102,8 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Test missing docstring
     - _Requirements: 3.2, 3.3, 3.4_
 
-- [ ] 5. Implement type inference
-  - [ ] 5.1 Implement TypeInferencer class
+- [x] 5. Implement type inference
+  - [x] 5.1 Implement TypeInferencer class
     - Write `infer_parameter_type()` to infer from default values
     - Write `infer_return_type()` to infer from return statements
     - Infer from assignments in function body
@@ -112,11 +112,11 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Return "unknown" for uninferrable types
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
   
-  - [ ]* 5.2 Write property test for type inference from defaults
+  - [x]* 5.2 Write property test for type inference from defaults
     - **Property 8: Type Inference from Defaults**
     - **Validates: Requirements 4.1**
   
-  - [ ]* 5.3 Write property test for type inference fallback
+  - [x]* 5.3 Write property test for type inference fallback
     - **Property 9: Type Inference Fallback**
     - **Validates: Requirements 4.5**
 
