@@ -11,6 +11,7 @@ from typing import Any
 
 from owlclaw.integrations.langchain.config import LangChainConfig
 from owlclaw.integrations.langchain.errors import ErrorHandler
+from owlclaw.integrations.langchain.metrics import MetricsCollector
 from owlclaw.integrations.langchain.privacy import PrivacyMasker
 from owlclaw.integrations.langchain.retry import RetryPolicy, calculate_backoff_delay, should_retry
 from owlclaw.integrations.langchain.schema import SchemaBridge
@@ -54,6 +55,7 @@ class LangChainAdapter:
         self._trace_manager = trace_manager or TraceManager(config)
         self._error_handler = error_handler or ErrorHandler(fallback_executor=self._invoke_fallback)
         self._privacy_masker = PrivacyMasker(config.privacy.mask_patterns)
+        self._metrics = MetricsCollector()
 
     def register_runnable(self, runnable: Any, config: RunnableConfig) -> None:
         """Register runnable as capability handler."""
@@ -160,6 +162,12 @@ class LangChainAdapter:
                 attempts=attempts,
                 governance_result=governance_result,
             )
+            duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+            self._metrics.record_execution(
+                capability=config.name,
+                status="blocked",
+                duration_ms=duration_ms,
+            )
             return payload
 
         try:
@@ -184,6 +192,13 @@ class LangChainAdapter:
                         span=span,
                         attempts=attempts,
                         governance_result=governance_result,
+                    )
+                    duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+                    self._metrics.record_execution(
+                        capability=config.name,
+                        status="success",
+                        duration_ms=duration_ms,
+                        retry_count=max(0, attempts - 1),
                     )
                     return transformed_output
                 except Exception as exc:
@@ -218,6 +233,15 @@ class LangChainAdapter:
                 attempts=attempts or 1,
                 governance_result=governance_result,
             )
+            duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+            self._metrics.record_execution(
+                capability=config.name,
+                status="error",
+                duration_ms=duration_ms,
+                error_type=type(effective_error).__name__,
+                fallback_used=bool(config.fallback),
+                retry_count=max(0, attempts - 1),
+            )
             if config.fallback:
                 return await self._error_handler.handle_fallback(
                     config.fallback,
@@ -226,6 +250,15 @@ class LangChainAdapter:
                     effective_error,
                 )
             return self._error_handler.map_exception(effective_error)
+
+    def metrics(self, format: str = "json") -> dict[str, Any] | str:
+        """Export collected metrics as JSON (default) or Prometheus text format."""
+        normalized = format.strip().lower()
+        if normalized == "json":
+            return self._metrics.export_json()
+        if normalized in {"prom", "prometheus", "text"}:
+            return self._metrics.export_prometheus()
+        raise ValueError("format must be one of: json, prom, prometheus, text")
 
     async def _execute_with_timeout(self, runnable: Any, input_data: Any, timeout_seconds: int | None) -> Any:
         """Execute runnable with async preference and timeout support."""
