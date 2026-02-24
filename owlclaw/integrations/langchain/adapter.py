@@ -7,10 +7,11 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 from owlclaw.integrations.langchain.config import LangChainConfig
 from owlclaw.integrations.langchain.errors import ErrorHandler
+from owlclaw.integrations.langchain.metrics import MetricsCollector
 from owlclaw.integrations.langchain.privacy import PrivacyMasker
 from owlclaw.integrations.langchain.retry import RetryPolicy, calculate_backoff_delay, should_retry
 from owlclaw.integrations.langchain.schema import SchemaBridge
@@ -52,8 +53,9 @@ class LangChainAdapter:
         self._config = config
         self._schema_bridge = schema_bridge or SchemaBridge()
         self._trace_manager = trace_manager or TraceManager(config)
-        self._error_handler = error_handler or ErrorHandler()
+        self._error_handler = error_handler or ErrorHandler(fallback_executor=self._invoke_fallback)
         self._privacy_masker = PrivacyMasker(config.privacy.mask_patterns)
+        self._metrics = MetricsCollector()
 
     def register_runnable(self, runnable: Any, config: RunnableConfig) -> None:
         """Register runnable as capability handler."""
@@ -71,6 +73,37 @@ class LangChainAdapter:
 
         handler = self._create_handler(runnable, config)
         self._register_handler(config.name, handler)
+
+    def health_status(self) -> dict[str, Any]:
+        """Return health status for LangChain integration."""
+        try:
+            check_langchain_version(
+                min_version=self._config.min_version,
+                max_version=self._config.max_version,
+            )
+            langchain_available = True
+            reason = ""
+        except Exception as exc:
+            langchain_available = False
+            reason = str(exc)
+
+        try:
+            self._config.validate_semantics()
+            config_valid = True
+        except Exception:
+            config_valid = False
+
+        tracing_enabled = bool(self._config.tracing.enabled)
+        langfuse_enabled = bool(self._config.tracing.langfuse_integration)
+        status = "healthy" if (langchain_available and config_valid) else "degraded"
+        return {
+            "status": status,
+            "langchain_available": langchain_available,
+            "config_valid": config_valid,
+            "tracing_enabled": tracing_enabled,
+            "langfuse_enabled": langfuse_enabled,
+            "reason": reason,
+        }
 
     def _create_handler(self, runnable: Any, config: RunnableConfig):
         """Create wrapped capability handler."""
@@ -129,6 +162,12 @@ class LangChainAdapter:
                 attempts=attempts,
                 governance_result=governance_result,
             )
+            duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+            self._metrics.record_execution(
+                capability=config.name,
+                status="blocked",
+                duration_ms=duration_ms,
+            )
             return payload
 
         try:
@@ -153,6 +192,13 @@ class LangChainAdapter:
                         span=span,
                         attempts=attempts,
                         governance_result=governance_result,
+                    )
+                    duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+                    self._metrics.record_execution(
+                        capability=config.name,
+                        status="success",
+                        duration_ms=duration_ms,
+                        retry_count=max(0, attempts - 1),
                     )
                     return transformed_output
                 except Exception as exc:
@@ -187,6 +233,15 @@ class LangChainAdapter:
                 attempts=attempts or 1,
                 governance_result=governance_result,
             )
+            duration_ms = max(0, int((time.perf_counter() - started_at) * 1000))
+            self._metrics.record_execution(
+                capability=config.name,
+                status="error",
+                duration_ms=duration_ms,
+                error_type=type(effective_error).__name__,
+                fallback_used=bool(config.fallback),
+                retry_count=max(0, attempts - 1),
+            )
             if config.fallback:
                 return await self._error_handler.handle_fallback(
                     config.fallback,
@@ -197,6 +252,15 @@ class LangChainAdapter:
             return self._error_handler.map_exception(effective_error)
         raise RuntimeError("LangChain adapter execution finished without result")
 
+    def metrics(self, format: str = "json") -> dict[str, Any] | str:
+        """Export collected metrics as JSON (default) or Prometheus text format."""
+        normalized = format.strip().lower()
+        if normalized == "json":
+            return self._metrics.export_json()
+        if normalized in {"prom", "prometheus", "text"}:
+            return self._metrics.export_prometheus()
+        raise ValueError("format must be one of: json, prom, prometheus, text")
+
     async def _execute_with_timeout(self, runnable: Any, input_data: Any, timeout_seconds: int | None) -> Any:
         """Execute runnable with async preference and timeout support."""
         self._validate_runnable(runnable)
@@ -204,6 +268,60 @@ class LangChainAdapter:
         if timeout_seconds is None:
             return await coroutine
         return await asyncio.wait_for(coroutine, timeout=timeout_seconds)
+
+    async def execute_stream(
+        self,
+        runnable: Any,
+        input_data: dict[str, Any],
+        context: Any,
+        config: RunnableConfig,
+    ):
+        """Execute runnable in streaming mode and yield OwlClaw event payloads."""
+        span = None
+        if config.enable_tracing:
+            span = self._trace_manager.create_span(
+                name=f"langchain_stream_{config.name}",
+                input_data=input_data,
+                context=context if isinstance(context, dict) else None,
+            )
+
+        governance_result = await self._validate_governance(config.name, context)
+        if not governance_result.get("allowed", True):
+            status_code = int(governance_result.get("status_code", 403))
+            reason = str(governance_result.get("reason", "capability denied by governance policy"))
+            yield self._error_handler.create_error_response(
+                error_type="PolicyDeniedError" if status_code == 403 else "RateLimitError",
+                message=reason,
+                status_code=status_code,
+                details={"capability": config.name},
+            ) | {"type": "error"}
+            return
+
+        transformed_input = self._schema_bridge.transform_input(input_data, config.input_transformer)
+        chunks: list[Any] = []
+        try:
+            if callable(getattr(runnable, "astream", None)):
+                async for chunk in runnable.astream(transformed_input):
+                    chunks.append(chunk)
+                    yield {"type": "chunk", "data": chunk}
+            elif callable(getattr(runnable, "stream", None)):
+                for chunk in runnable.stream(transformed_input):
+                    chunks.append(chunk)
+                    yield {"type": "chunk", "data": chunk}
+            else:
+                raise TypeError(
+                    f"Unsupported stream runnable type: {type(runnable).__name__}. "
+                    "Runnable must implement stream() or astream()."
+                )
+            final_output = self._schema_bridge.transform_output(chunks, config.output_transformer)
+            if span is not None:
+                span.end(output=final_output)
+            yield {"type": "final", "data": final_output}
+        except Exception as exc:
+            if span is not None:
+                span.record_error(exc)
+                span.end(output={"error": str(exc)})
+            yield {"type": "error", "error": self._error_handler.map_exception(exc)["error"]}
 
     @staticmethod
     def _as_coroutine(runnable: Any, input_data: Any) -> Any:
@@ -342,3 +460,24 @@ class LangChainAdapter:
         )
         if asyncio.iscoroutine(result):
             await result
+
+    async def _invoke_fallback(
+        self,
+        fallback_name: str,
+        input_data: dict[str, Any],
+        context: Any,
+        error: Exception,
+    ) -> dict[str, Any]:
+        registry = getattr(self._app, "registry", None)
+        invoke_handler = getattr(registry, "invoke_handler", None)
+        if not callable(invoke_handler):
+            raise RuntimeError("fallback capability cannot be invoked: app.registry.invoke_handler unavailable")
+
+        session: dict[str, Any] = dict(input_data)
+        session["_original_error"] = str(error)
+        if isinstance(context, dict):
+            session["context"] = context
+        result = invoke_handler(fallback_name, session=session)
+        if asyncio.iscoroutine(result):
+            return cast(dict[str, Any], await result)
+        return cast(dict[str, Any], result)

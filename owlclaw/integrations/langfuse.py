@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import atexit
 import logging
 import os
 import random
@@ -216,6 +217,8 @@ class LangfuseClient:
         self._client: Any | None = None
         self._init_error: str | None = None
         self._initialize_client()
+        if self.enabled:
+            atexit.register(self.flush)
 
     @property
     def enabled(self) -> bool:
@@ -250,7 +253,14 @@ class LangfuseClient:
         except Exception as exc:
             self._enabled = False
             self._init_error = str(exc)
-            logger.warning("Failed to initialize Langfuse client: %s", exc)
+            logger.warning("Failed to initialize Langfuse client: %s", self._safe_error_message(exc))
+
+    def _safe_error_message(self, error: Exception | str) -> str:
+        text = str(error)
+        for secret in (self.config.public_key, self.config.secret_key):
+            if secret:
+                text = text.replace(secret, "[REDACTED]")
+        return text
 
     def _should_sample(self) -> bool:
         rate = self.config.sampling_rate
@@ -282,7 +292,7 @@ class LangfuseClient:
             )
             return str(getattr(trace, "id", None) or "")
         except Exception as exc:
-            logger.warning("Failed to create trace: %s", exc)
+            logger.warning("Failed to create trace: %s", self._safe_error_message(exc))
             return None
 
     def end_trace(self, trace_id: str, output: Any | None = None, metadata: dict[str, Any] | None = None) -> None:
@@ -294,7 +304,7 @@ class LangfuseClient:
         try:
             client.trace(id=trace_id, output=output, metadata=metadata or {})
         except Exception as exc:
-            logger.warning("Failed to end trace: %s", exc)
+            logger.warning("Failed to end trace: %s", self._safe_error_message(exc))
 
     def create_llm_span(
         self,
@@ -336,7 +346,7 @@ class LangfuseClient:
             )
             return str(getattr(generation, "id", None) or "")
         except Exception as exc:
-            logger.warning("Failed to create LLM span: %s", exc)
+            logger.warning("Failed to create LLM span: %s", self._safe_error_message(exc))
             return None
 
     def create_tool_span(
@@ -372,7 +382,7 @@ class LangfuseClient:
             )
             return str(getattr(span, "id", None) or "")
         except Exception as exc:
-            logger.warning("Failed to create tool span: %s", exc)
+            logger.warning("Failed to create tool span: %s", self._safe_error_message(exc))
             return None
 
     def flush(self) -> None:
@@ -384,7 +394,7 @@ class LangfuseClient:
         try:
             flush_fn()
         except Exception as exc:
-            logger.warning("Failed to flush Langfuse client: %s", exc)
+            logger.warning("Failed to flush Langfuse client: %s", self._safe_error_message(exc))
 
 
 def _replace_env_vars(value: Any) -> Any:

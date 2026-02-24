@@ -6,7 +6,7 @@ import inspect
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from owlclaw.agent import AgentRuntime
 from owlclaw.capabilities.knowledge import KnowledgeInjector
@@ -647,6 +647,16 @@ class OwlClaw:
             "cron": self.cron_registry.get_health_status(),
             "governance_enabled": self._ledger is not None,
         }
+
+    def langchain_health_status(self) -> dict[str, Any]:
+        """Return LangChain integration health summary."""
+        adapter = self._get_langchain_adapter()
+        return cast(dict[str, Any], adapter.health_status())
+
+    def langchain_metrics(self, format: str = "json") -> dict[str, Any] | str:
+        """Export LangChain metrics in JSON or Prometheus format."""
+        adapter = self._get_langchain_adapter()
+        return cast(dict[str, Any] | str, adapter.metrics(format=format))
 
     def run(self) -> None:
         """Start the OwlClaw application.
