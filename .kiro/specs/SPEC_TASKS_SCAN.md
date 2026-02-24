@@ -120,7 +120,7 @@
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/105） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
-| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（12/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3 已完成） |
+| cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（17/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: cli-scan Task 2 + Checkpoint 3） |
-| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 12/143。 |
-| 已完成项 | 1) 实现 `ASTParser` 与语法/I/O 错误结构化记录；2) 实现 `SignatureExtractor`（参数种类、默认值、注解、装饰器、异步/生成器检测、qualname/module）；3) 新增属性测试：合法 Python 解析、语法错误韧性、完整签名提取、签名一致性；4) 新增边界单测覆盖无参数、`*args/**kwargs`、复杂类型提示、async、generator；5) 完成 parser 阶段 checkpoint（Task 3）。 |
-| 下一待执行 | `codex-work`：进入 `cli-scan` Task 4（DocstringParser）并补 4.2~4.4 测试。 |
-| 验收快照 | `poetry run ruff check owlclaw/cli/scan tests/unit/cli_scan`（All checks passed）；`poetry run pytest tests/unit/cli_scan -q`（7 passed）。 |
+| 当前批次 | coding loop（codex-work: cli-scan Task 4/4.1~4.4） |
+| 批次状态 | **进行中（本批）**。`cli-scan` 已推进至 17/143。 |
+| 已完成项 | 1) 新增 `DocstringParser`，支持 Google/NumPy/reStructuredText 风格识别与结构化提取；2) 支持 summary/description/parameters/returns/raises/examples 解析；3) 保留 docstring 原文到 `ParsedDocstring.raw`；4) 新增属性测试验证原文保留与结构化字段提取；5) 新增单测覆盖 Google、NumPy、reST、代码示例与缺失 docstring 场景。 |
+| 下一待执行 | `codex-work`：进入 `cli-scan` Task 5（TypeInferencer）并补 5.2/5.3 属性测试。 |
+| 验收快照 | `poetry run ruff check owlclaw/cli/scan tests/unit/cli_scan`（All checks passed）；`poetry run pytest tests/unit/cli_scan -q`（12 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
