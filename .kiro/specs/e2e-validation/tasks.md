@@ -21,7 +21,7 @@
 
 ## 任务
 
-- [ ] 1. 设置项目结构和核心接口
+- [x] 1. 设置项目结构和核心接口
   - 创建 Python 项目结构（`owlclaw/e2e/`、`tests/e2e/`、`config/`）
   - 配置 Python 质量工具（ruff、mypy）
   - 安装依赖：hypothesis（属性测试）、pytest（单元/集成测试）

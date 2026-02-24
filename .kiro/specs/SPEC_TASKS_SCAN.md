@@ -35,10 +35,10 @@
 - [x] `.cursor/rules/owlclaw_database.mdc` — 数据库编码规范（tenant_id、SQLAlchemy、Alembic、pgvector） → 编码规则（已完成）
 - [x] `owlclaw.cli.db` — 数据库运维 CLI（`owlclaw db init/migrate/status/revision/rollback/backup/restore/check` 已实现并通过测试） → spec: cli-db
 - [x] `owlclaw.db` — SQLAlchemy 基础设施（Base、engine、session、异常、Alembic 占位迁移 + 属性测试） → spec: database-core
-- [ ] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
-- [ ] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
+- [x] `owlclaw.agent.runtime` — Agent 运行时 MVP（SOUL.md 身份加载、IdentityLoader、AgentRunContext、trigger_event） → spec: agent-runtime
+- [x] `owlclaw.agent.runtime` — function calling 决策循环（litellm.acompletion、工具路由、max_iterations） → spec: agent-runtime
 - [x] `owlclaw.agent.tools` — 内建工具（query_state、log_decision、schedule_once、cancel_schedule、remember、recall 已实现） → spec: agent-tools
-- [ ] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
+- [x] `owlclaw.agent.heartbeat` — Heartbeat 机制（无事不调 LLM） → spec: agent-runtime
 - [x] `owlclaw.agent.memory` — 记忆系统（STM + LTM + pgvector 向量搜索 + Snapshot + 生命周期管理） → spec: **agent-memory**（独立 spec，解锁 remember/recall）
 - [x] `owlclaw.governance.visibility` — 能力可见性过滤（约束/预算/熔断/限流） → spec: governance
 - [x] `owlclaw.governance.ledger` — 执行记录 → spec: governance
@@ -49,8 +49,8 @@
 - [x] `owlclaw.integrations.llm` — litellm 集成（config、routing、fallback、错误处理、mock_mode） → spec: integrations-llm
 - [x] `owlclaw.cli.skill` — Skills CLI（`owlclaw skill init/validate/list`，纯本地操作） → spec: cli-skill
 - [x] SKILL.md 模板库 — 分类模板（monitoring/analysis/workflow/integration/report） → spec: skill-templates
-- [ ] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
-- [ ] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
+- [x] `owlclaw.security` — 安全模型（Prompt Injection 防护 / 高风险操作确认 / 数据脱敏） → spec: security
+- [x] `owlclaw.config` — 统一配置系统（owlclaw.yaml + Pydantic + 环境变量覆盖 + 热更新） → spec: configuration
 - [ ] mionyee 3 个任务端到端验证 → spec: e2e-validation
 - [ ] 决策质量对比测试：v3 Agent vs 原始 cron → spec: e2e-validation
 
@@ -101,7 +101,7 @@
 | **security** | `.kiro/specs/security/` | ✅ 三层齐全，已完成（44/44） | Prompt Injection 防护 + 高风险操作确认 + 数据脱敏 |
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
-| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（0/85） | mionyee 端到端验证 |
+| e2e-validation | `.kiro/specs/e2e-validation/` | 🟡 三层齐全，进行中（1/85） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（0/69） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（0/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec 循环（integrations-langfuse 15/16/17/18/19/20 收口） |
-| 批次状态 | **已完成**。`integrations-langfuse` 已完成到 **66/66**，代码、测试、文档与配置样例已对齐。 |
-| 已完成项 | 1) 完成错误处理与降级（15）：增加进程退出 flush 与日志密钥脱敏；2) 完成配置示例（17）：新增 `config/langfuse.example.yaml` 并补齐 `.env.example`；3) 完成端到端集成测试（18）：新增 `tests/integration/test_langfuse_integration.py` 覆盖追踪链路、隐私脱敏与降级；4) 完成文档（19）：新增 `docs/integrations/langfuse.md` 并更新 `docs/ARCHITECTURE_ANALYSIS.md`；5) 完成最终检查点（20）。 |
-| 下一待执行 | 等待 review-work 审校；当前 worktree 按分配继续下一 spec。 |
-| 验收快照 | `poetry run pytest tests/unit/integrations/test_langfuse.py tests/integration/test_langfuse_integration.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py -q` -> `145 passed`；`poetry run pytest tests/unit/integrations/test_langfuse.py tests/integration/test_langfuse_integration.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py --cov=owlclaw.integrations.langfuse --cov=owlclaw.integrations.llm --cov=owlclaw.agent.runtime.runtime --cov-report=term-missing -q` -> `TOTAL 82%`；`poetry run ruff check owlclaw/integrations/langfuse.py tests/unit/integrations/test_langfuse.py tests/integration/test_langfuse_integration.py tests/unit/integrations/test_llm.py tests/unit/agent/test_runtime.py` -> `All checks passed!`；`poetry run mypy owlclaw/integrations/langfuse.py owlclaw/integrations/llm.py owlclaw/agent/runtime/runtime.py` -> `Success: no issues found in 3 source files`。 |
+| 当前批次 | spec 循环（e2e-validation Task 1 启动 + scan 状态规范化） |
+| 批次状态 | **进行中**。完成 `e2e-validation` 起步任务（1/85），并修复 `SPEC_TASKS_SCAN` 功能清单与 Spec 索引的已完成状态漂移。 |
+| 已完成项 | 1) 新增 `owlclaw/e2e/` 核心结构与接口：`models.py`（TestScenario/ExecutionResult/ValidationConfig）和 `interfaces.py`（repository/execution protocol）；2) 新增 `tests/e2e/test_models.py` 基础约束测试；3) `e2e-validation/tasks.md` 勾选 Task 1；4) 功能清单中 `agent-runtime`、`heartbeat`、`security`、`configuration` 改为已完成，保持与索引事实一致。 |
+| 下一待执行 | 继续 `e2e-validation` Task 2（TestScenarioManager CRUD + 属性测试）。 |
+| 验收快照 | `poetry run pytest tests/e2e/test_models.py -q` -> `3 passed`；`poetry run ruff check owlclaw/e2e tests/e2e/test_models.py` -> `All checks passed!`；`poetry run mypy owlclaw/e2e` -> `Success: no issues found in 3 source files`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
