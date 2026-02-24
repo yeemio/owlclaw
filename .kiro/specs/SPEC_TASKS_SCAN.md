@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/26） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛 + cli-migrate 自动生成） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（35/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（36/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（44/143） | AST 扫描器（Task 1/1.1/1.2/2/2.1~2.7/3/4/4.1~4.4/5/5.1~5.3/6/6.1~6.3/7/8/8.1~8.6/9/9.1~9.3/10/10.1~10.5/11 已完成） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | spec loop（codex-gpt-work：owlhub Task 34） |
-| 批次状态 | **已完成（部分）**。补齐 Phase 3 文档（API、鉴权、部署、迁移、监控、安全、架构图、Python 客户端示例）。 |
-| 已完成项 | 1) 新增 `docs/owlhub/phase3.md`；2) 文档化 OpenAPI/Swagger 入口与核心 API 端点示例；3) 文档化 Bearer/API Key 鉴权与角色授权流程；4) 文档化 Docker/Kubernetes/CI-CD 部署流程（含迁移和 smoke tests）；5) 文档化当前数据持久化边界与 Alembic 迁移命令；6) 增加监控排障与安全最佳实践；7) 增加 Python API client 示例；8) 回填 `owlhub/tasks.md` Task 34 并同步进度 `owlhub 35/42`。 |
-| 下一待执行 | `owlhub` Task 35（Checkpoint - Phase 3 Complete）。 |
-| 验收快照 | `poetry run pytest tests/integration/test_owlhub_phase3_flow.py -q` -> 3 passed。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 35） |
+| 批次状态 | **已完成（部分）**。完成 Phase 3 checkpoint 验收（测试、迁移头、鉴权、可观测性、CLI 双模式兼容）。 |
+| 已完成项 | 1) 运行 OwlHub Phase 1/2/3 + API + 观测 + 部署 + 兼容性回归测试并全部通过；2) 验证鉴权与授权链路（auth/moderation/review/statistics）可用；3) 验证 `/health` 与 `/metrics` 相关行为覆盖在现有测试中通过；4) 验证 CLI 静态索引与 API 模式关键流程测试通过；5) 验证 Alembic 迁移链存在有效 head（`005_signal_state`）；6) 回填 `owlhub/tasks.md` Task 35 并同步进度 `owlhub 36/42`。 |
+| 下一待执行 | `owlhub` Task 36.1（Security hardening - Implement security best practices）。 |
+| 验收快照 | `poetry run pytest tests/unit/test_owlhub_api_schemas.py tests/unit/test_owlhub_api_auth.py tests/unit/test_owlhub_api_moderation.py tests/unit/test_owlhub_observability.py tests/unit/test_owlhub_deployment_config.py tests/integration/test_owlhub_phase1_flow.py tests/integration/test_owlhub_phase2_flow.py tests/integration/test_owlhub_phase3_flow.py tests/integration/test_owlhub_dependency_installation.py tests/integration/test_owlhub_cli_api_compatibility.py -q` -> 34 passed；`poetry run pytest tests/unit/test_owlhub_cli_client.py -q -k "cli_search_install_and_installed_flow or cli_publish_command_via_api"` -> 2 passed；`poetry run alembic -c alembic.ini heads` -> `005_signal_state (head)`。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
