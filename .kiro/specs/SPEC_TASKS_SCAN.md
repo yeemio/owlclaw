@@ -142,12 +142,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | review loop（合并 codex-gpt-work：integrations-langfuse + skill-templates） |
-| 批次状态 | **进行中**。已完成冲突解决与 spec 进度回填，正在执行审校验收。 |
-| 已完成项 | 1) `skill-templates` 进度更新为完成（56/56）；2) `integrations-langfuse` 进度更新为（11/20）；3) 保持 `SPEC_TASKS_SCAN` 与本地 `tasks.md` 统计口径一致。 |
-| 下一待执行 | 完成 `codex-gpt-work` 审校测试并提交合并；随后做一次全仓回归。 |
-| 验收快照 | 统计命令：`Get-ChildItem .kiro/specs -Directory ... Select-String '^- \\[( |x|X)\\]'`；冲突复核：`rg -n \"^<<<<<<<|^=======|^>>>>>>>\" .kiro/specs/SPEC_TASKS_SCAN.md`。 |
-| 阻塞项 | 无（当前为常规合并审校流程）。 |
+| 当前批次 | review loop（codex-work + codex-gpt-work 审校收口） |
+| 批次状态 | **已完成**。两个编码分支均已完成审校合并，并通过全仓静态检查与测试回归。 |
+| 已完成项 | 1) 合并 `codex-work`（integrations-langchain）并修复审校发现的类型问题；2) 合并 `codex-gpt-work`（integrations-langfuse + skill-templates）并回填 spec 进度；3) 完成全仓回归：`ruff`/`mypy`/`pytest`。 |
+| 下一待执行 | 主 worktree 合并 `review-work` 到 `main`，并通知各编码 worktree 执行 `git merge main` 同步。 |
+| 验收快照 | `poetry run ruff check .` -> `All checks passed!`；`poetry run mypy owlclaw/ --hide-error-context --no-error-summary` -> `Success`；`poetry run pytest -q` -> `1101 passed, 9 skipped`。 |
+| 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
