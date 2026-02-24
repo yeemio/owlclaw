@@ -2315,3 +2315,10 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 > **最后更新**: 2026-02-22
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`
 > **文档维护**: 本文档应随架构决策变化持续更新。
+
+## LangChain Integration Update (2026-02-24)
+
+- 新增 `owlclaw/integrations/langchain/` 适配层：config/schema/errors/trace/adapter/retry/privacy/version。
+- `OwlClaw` 提供 `register_langchain_runnable` 与 `@app.handler(..., runnable=...)` 注册入口。
+- 执行链路统一纳入治理校验、审计记录、隐私脱敏与流式输出转换。
+- 依赖策略保持可选安装：`pip install "owlclaw[langchain]"`。
