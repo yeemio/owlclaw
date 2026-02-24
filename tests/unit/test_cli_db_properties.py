@@ -7,9 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from hypothesis import given
-from hypothesis import HealthCheck
-from hypothesis import settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from owlclaw.cli.db_backup import backup_command

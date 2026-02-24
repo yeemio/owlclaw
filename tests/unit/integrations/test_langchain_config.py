@@ -66,7 +66,7 @@ langchain:
 def test_config_validate_rejects_invalid_semver_order() -> None:
     config = LangChainConfig(min_version="0.3.0", max_version="0.1.0")
     with pytest.raises(ValueError, match="min_version"):
-        config.validate()
+        config.validate_semantics()
 
 
 def test_config_from_yaml_missing_file_raises() -> None:

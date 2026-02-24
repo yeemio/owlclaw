@@ -414,6 +414,7 @@ def _dispatch_db_revision(argv: list[str]) -> bool:
     if "--help" in argv or "-h" in argv:
         _print_help_and_exit(["db", "revision"])
     import argparse
+
     from owlclaw.cli.db_revision import revision_command
     parser = argparse.ArgumentParser(prog="owlclaw db revision")
     parser.add_argument("-m", "--message", default="", help="Revision message")

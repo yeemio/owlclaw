@@ -110,19 +110,18 @@ def revision_command(
     """Create a new migration script (autogenerate from models or empty template)."""
     message = (_normalize_optional_str_option(message) or "").strip()
     empty = _normalize_bool_option(empty_template, False)
-    database_url = _normalize_optional_str_option(database_url)
+    database_url_opt = _normalize_optional_str_option(database_url)
     if not message.strip():
         message = "empty" if empty else ""
     if not empty and not message.strip():
         typer.echo("Error: --message / -m is required when not using --empty.", err=True)
         raise typer.Exit(2)
-    database_url = _normalize_optional_str_option(database_url)
-    url = (database_url or os.environ.get("OWLCLAW_DATABASE_URL") or "").strip()
+    url = (database_url_opt or os.environ.get("OWLCLAW_DATABASE_URL") or "").strip()
     # Require URL only for autogenerate (not for --empty)
     if not empty and not url:
         typer.echo("Error: OWLCLAW_DATABASE_URL or --database-url required for autogenerate.", err=True)
         raise typer.Exit(2)
-    if database_url:
+    if database_url_opt:
         os.environ["OWLCLAW_DATABASE_URL"] = url
     cfg = Config("alembic.ini")
     try:
@@ -144,7 +143,7 @@ def revision_command(
         return
     script = scripts[0]
     revision_id = getattr(script, "revision", None)
-    if isinstance(revision_id, (list, tuple)):
+    if isinstance(revision_id, list | tuple):
         revision_id = revision_id[0] if revision_id else None
     rev_path = getattr(script, "path", None)
     if rev_path is None and revision_id:

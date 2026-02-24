@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from jsonschema import Draft7Validator
-from jsonschema.exceptions import ValidationError as JSONSchemaValidationError
+from jsonschema import Draft7Validator  # type: ignore[import-untyped]
+from jsonschema.exceptions import ValidationError as JSONSchemaValidationError  # type: ignore[import-untyped]
 
 
 class SchemaValidationError(ValueError):

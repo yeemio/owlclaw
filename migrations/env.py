@@ -7,10 +7,9 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 
-from owlclaw.db import Base
-
 # Import models so their tables are attached to Base.metadata for Alembic
 from owlclaw.agent.memory.store_pgvector import MemoryEntryORM  # noqa: F401
+from owlclaw.db import Base
 from owlclaw.governance.ledger import LedgerRecord  # noqa: F401
 
 config = context.config

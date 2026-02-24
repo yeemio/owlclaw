@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, cast
 
 import click
 import typer
@@ -48,14 +48,19 @@ def _load_params_file(path: Path) -> dict[str, Any]:
     """Load params from JSON or YAML file."""
     import json
 
-    import yaml
+    import yaml  # type: ignore[import-untyped]
 
     content = path.read_text(encoding="utf-8")
+    loaded: Any
     if path.suffix.lower() in (".json",):
-        return json.loads(content)
-    if path.suffix.lower() in (".yaml", ".yml"):
-        return yaml.safe_load(content) or {}
-    raise ValueError(f"Unsupported params file format: {path.suffix}")
+        loaded = json.loads(content)
+    elif path.suffix.lower() in (".yaml", ".yml"):
+        loaded = yaml.safe_load(content) or {}
+    else:
+        raise ValueError(f"Unsupported params file format: {path.suffix}")
+    if not isinstance(loaded, dict):
+        raise ValueError("params file must contain an object")
+    return cast(dict[str, Any], loaded)
 
 
 def _run_interactive_wizard(
@@ -193,12 +198,12 @@ def init_command(
     non_interactive = bool(params_file or param.strip())
 
     if params_file:
-        p = Path(params_file)
-        if not p.exists():
-            typer.echo(f"Error: params file not found: {p}", err=True)
+        params_path = Path(params_file)
+        if not params_path.exists():
+            typer.echo(f"Error: params file not found: {params_path}", err=True)
             raise typer.Exit(2)
         try:
-            loaded = _load_params_file(p)
+            loaded = _load_params_file(params_path)
         except Exception as e:
             typer.echo(f"Error: cannot load params file: {e}", err=True)
             raise typer.Exit(2) from e
@@ -233,22 +238,22 @@ def init_command(
         template_id = template
         missing_required: list[str] = []
         # Prompt for missing required params
-        for p in meta.parameters:
-            if p.required and p.name not in params:
+        for param_def in meta.parameters:
+            if param_def.required and param_def.name not in params:
                 if non_interactive:
-                    missing_required.append(p.name)
+                    missing_required.append(param_def.name)
                     continue
-                default_val = p.default
-                if p.name == "skill_name" and name.strip():
+                default_val = param_def.default
+                if param_def.name == "skill_name" and name.strip():
                     default_val = name
-                prompt_text = p.description or p.name
+                prompt_text = param_def.description or param_def.name
                 if default_val is not None:
                     val = typer.prompt(prompt_text, default=str(default_val))
                 else:
                     val = typer.prompt(prompt_text)
-                params[p.name] = val
-            elif not p.required and p.default is not None and p.name not in params:
-                params[p.name] = p.default
+                params[param_def.name] = val
+            elif not param_def.required and param_def.default is not None and param_def.name not in params:
+                params[param_def.name] = param_def.default
         if missing_required:
             typer.echo(
                 "Error: missing required template parameters in non-interactive mode: "

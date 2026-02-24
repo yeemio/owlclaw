@@ -250,6 +250,7 @@ class LangChainAdapter:
                     effective_error,
                 )
             return self._error_handler.map_exception(effective_error)
+        raise RuntimeError("LangChain adapter execution finished without result")
 
     def metrics(self, format: str = "json") -> dict[str, Any] | str:
         """Export collected metrics as JSON (default) or Prometheus text format."""

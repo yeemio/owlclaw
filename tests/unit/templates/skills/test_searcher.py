@@ -1,6 +1,10 @@
 """Unit tests for owlclaw.templates.skills.searcher (skill-templates Task 6)."""
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from owlclaw.templates.skills import TemplateCategory, TemplateRegistry, TemplateSearcher
 
@@ -118,3 +122,95 @@ class TestTemplateSearcher:
         searcher = TemplateSearcher(reg)
         assert searcher.recommend(limit=0) == []
         assert searcher.recommend(limit=-1) == []
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        templates=st.lists(
+            st.tuples(
+                st.sampled_from([c.value for c in TemplateCategory]),
+                st.from_regex(r"[A-Z][a-z]{2,12}", fullmatch=True),
+                st.text(min_size=5, max_size=40),
+                st.lists(st.from_regex(r"[a-z]{3,10}", fullmatch=True), min_size=0, max_size=3, unique=True),
+            ),
+            min_size=1,
+            max_size=12,
+            unique_by=lambda t: (t[0], t[1]),
+        ),
+        query=st.text(min_size=1, max_size=10).filter(lambda q: bool(q.strip())),
+    )
+    def test_property_search_results_sorted_by_relevance(
+        self,
+        templates: list[tuple[str, str, str, list[str]]],
+        query: str,
+    ) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            reg = _make_registry(Path(tmp_dir), templates)
+            results = TemplateSearcher(reg).search(query, limit=20)
+            for idx in range(len(results) - 1):
+                assert results[idx].score >= results[idx + 1].score
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        templates=st.lists(
+            st.tuples(
+                st.sampled_from([c.value for c in TemplateCategory]),
+                st.from_regex(r"[A-Z][a-z]{2,12}", fullmatch=True),
+                st.text(min_size=5, max_size=40),
+                st.lists(st.from_regex(r"[a-z]{3,10}", fullmatch=True), min_size=0, max_size=3, unique=True),
+            ),
+            min_size=1,
+            max_size=12,
+            unique_by=lambda t: (t[0], t[1]),
+        )
+    )
+    def test_property_search_results_are_unique(self, templates: list[tuple[str, str, str, list[str]]]) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            reg = _make_registry(Path(tmp_dir), templates)
+            results = TemplateSearcher(reg).search("a", limit=20)
+            ids = [r.template.id for r in results]
+            assert len(ids) == len(set(ids))
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        target_category=st.sampled_from(list(TemplateCategory)),
+        names=st.lists(st.from_regex(r"[A-Z][a-z]{2,10}", fullmatch=True), min_size=1, max_size=8, unique=True),
+    )
+    def test_property_category_filtering(self, target_category: TemplateCategory, names: list[str]) -> None:
+        templates: list[tuple[str, str, str, list[str]]] = []
+        for name in names:
+            templates.append((target_category.value, f"{name} Health", "health monitor", ["health"]))
+            templates.append(("analysis", f"{name} Data", "data analyzer", ["data"]))
+        with TemporaryDirectory() as tmp_dir:
+            reg = _make_registry(Path(tmp_dir), templates)
+            results = TemplateSearcher(reg).search("health", category=target_category, limit=50)
+            assert all(r.template.category == target_category for r in results)
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        tag=st.from_regex(r"[a-z]{3,10}", fullmatch=True),
+        other_tag=st.from_regex(r"[a-z]{3,10}", fullmatch=True),
+    )
+    def test_property_tag_filtering(self, tag: str, other_tag: str) -> None:
+        templates = [
+            ("monitoring", "Health Check", "monitor health", [tag]),
+            ("monitoring", "Metric Watch", "monitor metric", [other_tag]),
+        ]
+        with TemporaryDirectory() as tmp_dir:
+            reg = _make_registry(Path(tmp_dir), templates)
+            results = TemplateSearcher(reg).search("monitor", tags=[tag], limit=20)
+            assert all(tag in r.template.tags for r in results)
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        keyword=st.from_regex(r"[a-z]{3,10}", fullmatch=True),
+        category=st.sampled_from(list(TemplateCategory)),
+    )
+    def test_property_search_coverage(self, keyword: str, category: TemplateCategory) -> None:
+        templates = [
+            (category.value, "Target Skill", f"This template handles {keyword} workflows", [keyword]),
+            ("monitoring", "Other Skill", "No related text", ["other"]),
+        ]
+        with TemporaryDirectory() as tmp_dir:
+            reg = _make_registry(Path(tmp_dir), templates)
+            results = TemplateSearcher(reg).search(keyword, limit=20)
+            assert any(r.template.id == f"{category.value}/target-skill" for r in results)

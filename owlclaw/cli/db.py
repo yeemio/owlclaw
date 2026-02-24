@@ -2,10 +2,10 @@
 
 import typer
 
+from owlclaw.cli.db_check import check_command
 from owlclaw.cli.db_init import init_command
 from owlclaw.cli.db_migrate import migrate_command
 from owlclaw.cli.db_status import status_command
-from owlclaw.cli.db_check import check_command
 
 db_app = typer.Typer(
     name="db",

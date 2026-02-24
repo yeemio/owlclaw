@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field
 
 _ENV_PATTERN = re.compile(r"\$\{([^}]+)\}")
@@ -53,7 +53,7 @@ class LangChainConfig(BaseModel):
         section = raw.get("langchain", raw)
         section = cls._replace_env_vars(section)
         config = cls.model_validate(section)
-        config.validate()
+        config.validate_semantics()
         return config
 
     @staticmethod
@@ -67,7 +67,7 @@ class LangChainConfig(BaseModel):
             return _ENV_PATTERN.sub(lambda m: os.getenv(m.group(1), ""), value)
         return value
 
-    def validate(self) -> None:
+    def validate_semantics(self) -> None:
         """Validate semantic constraints not covered by field-level validation."""
         min_parts = self._parse_semver(self.min_version)
         max_parts = self._parse_semver(self.max_version)

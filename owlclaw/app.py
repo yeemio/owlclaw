@@ -178,7 +178,7 @@ class OwlClaw:
                 langchain_cfg = candidate_root
 
         config = LangChainConfig.model_validate(langchain_cfg or {})
-        config.validate()
+        config.validate_semantics()
         self._langchain_adapter = LangChainAdapter(self, config)
         return self._langchain_adapter
 

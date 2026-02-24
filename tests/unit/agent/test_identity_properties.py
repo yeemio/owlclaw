@@ -6,8 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from hypothesis import given
-from hypothesis import settings
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from owlclaw.agent.runtime.identity import IdentityLoader
@@ -39,8 +38,8 @@ async def test_property_identity_load_completeness(soul: str, bullet_a: str, bul
         await loader.load()
         identity = loader.get_identity()
         assert identity["soul"].strip() == soul.strip()
-        assert f"- {bullet_a}" in identity["capabilities_summary"]
-        assert f"- {bullet_b}" in identity["capabilities_summary"]
+        assert f"- {bullet_a.strip()}" in identity["capabilities_summary"]
+        assert f"- {bullet_b.strip()}" in identity["capabilities_summary"]
         assert "Constraints" not in identity["capabilities_summary"]
 
 
