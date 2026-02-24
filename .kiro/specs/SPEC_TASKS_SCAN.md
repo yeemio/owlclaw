@@ -95,7 +95,7 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108），backlog +7 运行时增强 | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（108/108） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -116,9 +116,9 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/87） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展 + DX 降门槛） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（0/73） | 声明式工具绑定（HTTP/Queue/SQL 执行器 + shadow + Ledger + Skills 扩展） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（11/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（88/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -150,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（OpenClaw 对标分析 → DX 降门槛 + 运行时增强补充） |
-| 批次状态 | **已完成**。OpenClaw 深度对标完成；SKILL.md 书写门槛问题已识别并补充到 spec；运行时增强 7 项已加入 capabilities-skills backlog。 |
-| 已完成项 | 1) OpenClaw 深度对标分析（SKILL.md 模型、ClawHub 生态、Lobster 工作流、50+ 内置 Skills）；2) `ARCHITECTURE_ANALYSIS` 更新至 v4.4（§4.12 补充 OpenClaw 对标：书写门槛、Prerequisites、简化语法、三种执行模式、Session Snapshot）；3) `declarative-binding` requirements 新增 R9/R10/R11（Prerequisites + 简化 Tools 语法 + 最小可用规范）；4) `declarative-binding` tasks 新增 Task 0.5/0.6、Task 7.5/7.6/7.7、Task 13（DX 降门槛）、Task 14/15 重组（共 87 子任务）；5) `capabilities-skills` backlog 新增 7 项运行时增强（Prerequisites/Session Snapshot/Token Budget/优先级覆盖/Enable-Disable/环境变量注入/热重载）。 |
-| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐（含简化语法 + prerequisites 规范）→ Task 1-7。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` v4.4（含 OpenClaw 对标补充）；`declarative-binding` spec 三层齐全（requirements 11 个需求 + design 8 个组件 + tasks 15 个 task + backlog）；`capabilities-skills` backlog 新增 7 项运行时增强。 |
+| 当前批次 | spec loop（codex-gpt-work：owlhub Task 26.1~26.4） |
+| 批次状态 | **已完成**。黑名单管理与下架治理功能已落地，搜索/安装过滤已接入并通过测试。 |
+| 已完成项 | 1) 新增 `owlclaw/owlhub/models/blacklist.py` 与 `owlclaw/owlhub/models/__init__.py`：实现 `BlacklistEntry` 与 `BlacklistManager` 持久化模型；2) 新增 `owlclaw/owlhub/api/routes/blacklist.py`：实现 admin-only 黑名单增删查接口；3) 更新 `owlclaw/owlhub/api/app.py`：注入 `BlacklistManager` 并挂载 blacklist router；4) 更新 `owlclaw/owlhub/api/routes/skills.py`：读路径接入黑名单/下架过滤，新增 `POST /api/v1/skills/{publisher}/{name}/takedown`，记录下架原因与时间戳并写审计；5) 更新 `owlclaw/owlhub/client.py`：安装与搜索流程支持 moderation 隐藏/阻断；6) 更新 `owlclaw/owlhub/api/schemas.py`：新增 `TakedownRequest`；7) 新增 `tests/unit/test_owlhub_api_moderation.py`：覆盖黑名单增删、搜索过滤、安装阻断、下架隐藏、已安装保留与 Property 17/22；8) 回填 `owlhub/tasks.md` 的 Task 26、26.1、26.2、26.3、26.4。 |
+| 下一待执行 | `owlhub` Task 27（CLI support API mode）。 |
+| 验收快照 | `poetry run ruff check owlclaw/owlhub/models/blacklist.py owlclaw/owlhub/models/__init__.py owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/blacklist.py owlclaw/owlhub/api/routes/skills.py owlclaw/owlhub/client.py tests/unit/test_owlhub_api_moderation.py` -> all checks passed；`poetry run mypy owlclaw/owlhub/models/blacklist.py owlclaw/owlhub/api/app.py owlclaw/owlhub/api/routes/blacklist.py owlclaw/owlhub/api/routes/skills.py owlclaw/owlhub/client.py` -> success；`poetry run pytest tests/unit/test_owlhub_api_moderation.py tests/unit/test_owlhub_api_routes.py tests/unit/test_owlhub_cli_client.py tests/unit/test_owlhub_api_publish.py tests/unit/test_owlhub_api_auth.py -q` -> 35 passed。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

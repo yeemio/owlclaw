@@ -20,6 +20,7 @@ from owlclaw.owlhub.api.schemas import (
     SkillSearchItem,
     SkillSearchResponse,
     SkillStatisticsResponse,
+    TakedownRequest,
     UpdateStateRequest,
     VersionInfo,
 )
@@ -53,6 +54,7 @@ def _save_index(data: dict[str, Any]) -> None:
 
 @router.get("", response_model=SkillSearchResponse)
 def search_skills(
+    request: Request,
     query: str = "",
     tags: str = "",
     sort_by: str = Query("name", pattern="^(name|updated_at|downloads)$"),
@@ -67,6 +69,8 @@ def search_skills(
         manifest = entry.get("manifest", {})
         name = str(manifest.get("name", "")).strip()
         publisher = str(manifest.get("publisher", "")).strip()
+        if _is_hidden(entry=entry, request=request):
+            continue
         version = str(manifest.get("version", "")).strip()
         description = str(manifest.get("description", "")).strip()
         skill_tags = [tag for tag in manifest.get("tags", []) if isinstance(tag, str)]
@@ -108,8 +112,8 @@ def search_skills(
 
 
 @router.get("/{publisher}/{name}", response_model=SkillDetail)
-def get_skill_detail(publisher: str, name: str) -> SkillDetail:
-    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name)]
+def get_skill_detail(publisher: str, name: str, request: Request) -> SkillDetail:
+    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name) and not _is_hidden(entry=entry, request=request)]
     if not entries:
         raise HTTPException(status_code=404, detail="skill not found")
 
@@ -137,8 +141,8 @@ def get_skill_detail(publisher: str, name: str) -> SkillDetail:
 
 
 @router.get("/{publisher}/{name}/versions", response_model=list[VersionInfo])
-def get_skill_versions(publisher: str, name: str) -> list[VersionInfo]:
-    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name)]
+def get_skill_versions(publisher: str, name: str, request: Request) -> list[VersionInfo]:
+    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name) and not _is_hidden(entry=entry, request=request)]
     if not entries:
         raise HTTPException(status_code=404, detail="skill not found")
     entries.sort(key=lambda entry: str(entry.get("manifest", {}).get("version", "")))
@@ -155,7 +159,7 @@ def get_skill_versions(publisher: str, name: str) -> list[VersionInfo]:
 
 @router.get("/{publisher}/{name}/statistics", response_model=SkillStatisticsResponse)
 def get_skill_statistics(publisher: str, name: str, request: Request) -> SkillStatisticsResponse:
-    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name)]
+    entries = [entry for entry in _iter_skills() if _is_skill(entry, publisher, name) and not _is_hidden(entry=entry, request=request)]
     if not entries:
         raise HTTPException(status_code=404, detail="skill not found")
     entries.sort(key=lambda entry: str(entry.get("manifest", {}).get("version", "")))
@@ -195,6 +199,8 @@ def publish_skill(
 
     if not _principal_allowed_for_publisher(principal, publisher):
         raise HTTPException(status_code=403, detail="publisher does not match authenticated user")
+    if request.app.state.blacklist_manager.is_blocked(publisher=publisher, skill_name=skill_name):
+        raise HTTPException(status_code=403, detail="publisher or skill is blacklisted")
 
     manifest_payload = {
         "name": skill_name,
@@ -332,6 +338,46 @@ def update_skill_state(
     return {"updated": True, "publisher": publisher, "skill_name": name, "version": version, "state": state}
 
 
+@router.post("/{publisher}/{name}/takedown", response_model=dict[str, Any])
+def takedown_skill(
+    publisher: str,
+    name: str,
+    payload: dict[str, Any],
+    request: Request,
+    principal: current_principal_type,
+) -> dict[str, Any]:
+    if principal.role != "admin":
+        raise HTTPException(status_code=403, detail="admin role required")
+    try:
+        request_payload = TakedownRequest.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    index_data = _load_index()
+    skills = index_data.get("skills", [])
+    if not isinstance(skills, list):
+        skills = []
+    now = datetime.now(timezone.utc).isoformat()
+    affected = 0
+    for entry in skills:
+        manifest = entry.get("manifest", {})
+        if str(manifest.get("publisher", "")) == publisher and str(manifest.get("name", "")) == name:
+            entry["takedown"] = {"is_taken_down": True, "reason": request_payload.reason.strip(), "timestamp": now}
+            entry["updated_at"] = now
+            affected += 1
+    if affected == 0:
+        raise HTTPException(status_code=404, detail="skill not found")
+    index_data["skills"] = skills
+    index_data["total_skills"] = len(skills)
+    _save_index(index_data)
+    request.app.state.audit_logger.log(
+        event_type="takedown",
+        principal=principal,
+        details={"publisher": publisher, "skill_name": name, "reason": request_payload.reason.strip()},
+    )
+    return {"takedown": True, "publisher": publisher, "skill_name": name, "reason": request_payload.reason.strip()}
+
+
 def _is_skill(entry: dict, publisher: str, name: str) -> bool:
     manifest = entry.get("manifest", {})
     return str(manifest.get("publisher", "")) == publisher and str(manifest.get("name", "")) == name
@@ -339,6 +385,8 @@ def _is_skill(entry: dict, publisher: str, name: str) -> bool:
 
 def _find_statistics(publisher: str, name: str, version: str) -> dict:
     for entry in _iter_skills():
+        if _is_hidden(entry=entry):
+            continue
         manifest = entry.get("manifest", {})
         if (
             str(manifest.get("publisher", "")) == publisher
@@ -352,6 +400,8 @@ def _find_statistics(publisher: str, name: str, version: str) -> dict:
 
 def _find_updated_at(publisher: str, name: str, version: str) -> str:
     for entry in _iter_skills():
+        if _is_hidden(entry=entry):
+            continue
         manifest = entry.get("manifest", {})
         if (
             str(manifest.get("publisher", "")) == publisher
@@ -370,3 +420,18 @@ def _principal_allowed_for_publisher(principal: Principal, publisher: str) -> bo
     if identity == target:
         return True
     return ":" in identity and identity.split(":", 1)[1] == target
+
+
+def _is_hidden(*, entry: dict[str, Any], request: Request | None = None) -> bool:
+    manifest = entry.get("manifest", {})
+    publisher = str(manifest.get("publisher", ""))
+    skill_name = str(manifest.get("name", ""))
+    takedown = entry.get("takedown", {})
+    if isinstance(takedown, dict) and bool(takedown.get("is_taken_down", False)):
+        return True
+    if bool(entry.get("is_taken_down", False)):
+        return True
+    if request is None:
+        return False
+    manager = request.app.state.blacklist_manager
+    return bool(manager.is_blocked(publisher=publisher, skill_name=skill_name))

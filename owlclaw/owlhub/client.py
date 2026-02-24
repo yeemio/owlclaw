@@ -65,6 +65,8 @@ class OwlHubClient:
             name = str(manifest.get("name", "")).strip()
             description = str(manifest.get("description", "")).strip()
             publisher = str(manifest.get("publisher", "")).strip()
+            if _is_hidden_entry(entry):
+                continue
             version = str(manifest.get("version", "")).strip()
             version_state = str(entry.get("version_state", "released")).strip().lower()
             skill_tags = {
@@ -108,6 +110,9 @@ class OwlHubClient:
             raise ValueError(f"skill not found: {name}{'@' + version if version else ''}")
         selected = sorted(matched, key=lambda item: item.version)[-1]
         self.last_install_warning = None
+        source_entry = _find_source_entry(self._load_index(), selected)
+        if source_entry is not None and _is_hidden_entry(source_entry):
+            raise ValueError(f"skill {selected.publisher}/{selected.name} is blocked by moderation policy")
         if selected.version_state == "deprecated":
             self.last_install_warning = f"skill {selected.name}@{selected.version} is deprecated"
 
@@ -260,3 +265,27 @@ def _compare_version(left: str, right: str) -> int:
     if left_key < right_key:
         return -1
     return 0
+
+
+def _is_hidden_entry(entry: dict[str, Any]) -> bool:
+    takedown = entry.get("takedown", {})
+    if isinstance(takedown, dict) and bool(takedown.get("is_taken_down", False)):
+        return True
+    if bool(entry.get("is_taken_down", False)):
+        return True
+    return bool(entry.get("blacklisted", False))
+
+
+def _find_source_entry(index_data: dict[str, Any], selected: SearchResult) -> dict[str, Any] | None:
+    skills = index_data.get("skills", [])
+    if not isinstance(skills, list):
+        return None
+    for entry in skills:
+        manifest = entry.get("manifest", {})
+        if (
+            str(manifest.get("publisher", "")) == selected.publisher
+            and str(manifest.get("name", "")) == selected.name
+            and str(manifest.get("version", "")) == selected.version
+        ):
+            return entry if isinstance(entry, dict) else None
+    return None

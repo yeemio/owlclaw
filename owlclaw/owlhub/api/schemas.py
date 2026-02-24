@@ -106,3 +106,9 @@ class ReviewRecordResponse(BaseModel):
     status: str
     comments: str
     reviewed_at: datetime
+
+
+class TakedownRequest(BaseModel):
+    """Request body for skill takedown operations."""
+
+    reason: str

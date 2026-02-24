@@ -566,15 +566,15 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Submit random appeals, verify records are saved with complete information
     - _Requirements: 7.1, 7.4, 7.5_
 
-- [ ] 26. Implement blacklist and moderation features
-  - [ ] 26.1 Create blacklist management
+- [x] 26. Implement blacklist and moderation features
+  - [x] 26.1 Create blacklist management
     - Create `owlhub/models/blacklist.py` with Blacklist model
     - Implement blacklist API endpoints (admin-only)
     - Add blacklist checking to search and install flows
     - Support blacklisting by skill name or publisher
     - _Requirements: 5.4, 7.3_
 
-  - [ ] 26.2 Implement skill takedown functionality
+  - [x] 26.2 Implement skill takedown functionality
     - Implement `POST /api/v1/skills/{publisher}/{name}/takedown` endpoint
     - Mark skills as taken down without deleting data
     - Hide taken down skills from public index and search
@@ -582,7 +582,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Record takedown reason and timestamp
     - _Requirements: 7.3_
 
-  - [ ]* 26.3 Write unit tests for blacklist and takedown
+  - [x]* 26.3 Write unit tests for blacklist and takedown
     - Test blacklist addition and removal
     - Test blacklist filtering in search
     - Test blacklist blocking in install
@@ -590,7 +590,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test takedown preservation for existing installs
     - _Requirements: 5.4, 7.3_
 
-  - [ ]* 26.4 Write property tests for blacklist filtering
+  - [x]* 26.4 Write property tests for blacklist filtering
     - **Property 17: 黑名单过滤**
     - **Validates: Requirements 5.4**
     - Add random skills to blacklist, verify they don't appear in search/install
