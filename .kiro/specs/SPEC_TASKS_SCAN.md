@@ -55,7 +55,7 @@
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
-- [ ] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
+- [x] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
 - [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
 - [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
 - [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
@@ -102,7 +102,7 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（17/72） | webhook 触发器（Task 0 Protocol-first + Task 2~17 已完成） |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
@@ -143,11 +143,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-webhook Task 15/16/17） |
-| 批次状态 | **已完成（本批）**。完成 Task 15（端到端集成与最终测试）+ Task 16（文档与部署）+ Task 17（最终检查点）。 |
-| 已完成项 | 1) 新增主应用装配层 `WebhookApplication` 与 `build_webhook_application`（启动/关闭、DI、健康状态）；2) 新增 `WebhookDatabaseManager`（迁移版本执行、种子数据加载、版本状态查询）；3) 新增端到端集成测试（完整处理链路、多端点、并发幂等、重试、治理拒绝）；4) 新增性能测试（高请求量基线）；5) 新增文档 `docs/webhook/API.md`、`docs/webhook/DEPLOYMENT.md`、`docs/webhook/OPERATIONS.md`。 |
-| 下一待执行 | `codex-work`：继续 `triggers-webhook` Task 18+（安全审计、生产化增强）或按分配切换至下一个 spec。 |
-| 验收快照 | `poetry run pytest tests/integration/test_webhook_e2e.py tests/integration/test_webhook_performance.py -q`（6 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（79 passed, 201 deselected）；`poetry run ruff check owlclaw/triggers/webhook tests/unit/triggers/test_webhook_* tests/integration/test_webhook_*`（已在分批校验中通过）。 |
+| 当前批次 | coding loop（codex-work: triggers-webhook final close） |
+| 批次状态 | **已完成（收口）**。`triggers-webhook/tasks.md` 已达 `72/72`，无未勾选项。 |
+| 已完成项 | 1) 完成端点管理/验证/转换/治理/执行/日志/监控/HTTP 网关/配置管理；2) 完成端到端集成与性能测试；3) 完成 API/部署/运维文档；4) 功能清单与 tasks 状态已对齐为完成态。 |
+| 下一待执行 | `codex-work`：按任务分配切换到下一个未完成 spec（如 `triggers-db-change` / `triggers-api` / `triggers-signal` / `cli-scan`）。 |
+| 验收快照 | `poetry run pytest tests/integration/test_webhook_e2e.py tests/integration/test_webhook_performance.py -q`（6 passed）；`poetry run pytest tests/unit/triggers -k webhook -q`（79 passed, 201 deselected）；`poetry run ruff check owlclaw/triggers/webhook tests/unit/triggers tests/integration`（All checks passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
