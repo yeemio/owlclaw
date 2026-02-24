@@ -22,6 +22,7 @@ from owlclaw.cli.scan.models import (
     TypeSource,
 )
 from owlclaw.cli.scan.parser import ASTParser
+from owlclaw.cli.scan.type_inference import TypeInferencer
 
 __all__ = [
     "ASTParser",
@@ -44,4 +45,5 @@ __all__ = [
     "ScanResult",
     "SignatureExtractor",
     "TypeSource",
+    "TypeInferencer",
 ]

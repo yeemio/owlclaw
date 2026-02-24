@@ -102,8 +102,8 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Test missing docstring
     - _Requirements: 3.2, 3.3, 3.4_
 
-- [ ] 5. Implement type inference
-  - [ ] 5.1 Implement TypeInferencer class
+- [x] 5. Implement type inference
+  - [x] 5.1 Implement TypeInferencer class
     - Write `infer_parameter_type()` to infer from default values
     - Write `infer_return_type()` to infer from return statements
     - Infer from assignments in function body
@@ -112,11 +112,11 @@ The implementation follows a bottom-up approach: core data models → parser com
     - Return "unknown" for uninferrable types
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
   
-  - [ ]* 5.2 Write property test for type inference from defaults
+  - [x]* 5.2 Write property test for type inference from defaults
     - **Property 8: Type Inference from Defaults**
     - **Validates: Requirements 4.1**
   
-  - [ ]* 5.3 Write property test for type inference fallback
+  - [x]* 5.3 Write property test for type inference fallback
     - **Property 9: Type Inference Fallback**
     - **Validates: Requirements 4.5**
 

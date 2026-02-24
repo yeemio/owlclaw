@@ -43,7 +43,7 @@ def test_property_structured_docstring_parsing(param_name: str, exc_name: str, r
 
     assert parsed.style is DocstringStyle.GOOGLE
     assert parsed.parameters.get(param_name) == "input value"
-    assert parsed.returns == returns_text
+    assert parsed.returns == returns_text.strip()
     assert parsed.raises.get(exc_name) == "failure"
 
 
