@@ -112,7 +112,7 @@
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（11/17） | Signal 触发器（Task 0/1/2/3/4/5/6/7 已完成） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（12/17） | Signal 触发器（Task 0/1/2/3/4/5/6/7/8 已完成） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
@@ -150,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | coding loop（codex-work: triggers-signal Task 4/7） |
-| 批次状态 | **进行中（本批）**。`triggers-signal` 已推进至 11/17。 |
-| 已完成项 | 1) Task 4：`PauseHandler`/`ResumeHandler` 增加可注入回调（用于暂停/恢复 cron 触发流）并补充单测；2) Task 7：新增 `owlclaw agent` CLI 子命令（pause/resume/trigger/instruct/status）走统一 `SignalRouter.dispatch()`；3) CLI 参数与 spec 对齐，支持 `--agent-id`（兼容 `--agent`）。 |
-| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 8（HTTP API）→ Task 9（MCP 集成）→ Task 10/11（runtime 集成）→ Task 12/13/14（测试与文档收口）。 |
-| 验收快照 | `poetry run ruff check owlclaw/cli/__init__.py owlclaw/cli/agent_signal.py owlclaw/triggers/signal/handlers.py tests/unit/triggers/test_signal.py tests/unit/test_cli_agent_signal.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_signal.py tests/unit/test_cli_agent_signal.py -q`（12 passed）。 |
+| 当前批次 | coding loop（codex-work: triggers-signal Task 4/7/8） |
+| 批次状态 | **进行中（本批）**。`triggers-signal` 已推进至 12/17。 |
+| 已完成项 | 1) Task 4：`PauseHandler`/`ResumeHandler` 增加可注入回调（用于暂停/恢复 cron 触发流）并补充单测；2) Task 7：新增 `owlclaw agent` CLI 子命令（pause/resume/trigger/instruct/status）走统一 `SignalRouter.dispatch()`；3) Task 8：新增 `POST /admin/signal`（Bearer 鉴权、Pydantic 校验、复用 API Trigger Starlette 服务）并补单测。 |
+| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 9（MCP 集成）→ Task 10/11（runtime 集成）→ Task 12/13/14（测试与文档收口）。 |
+| 验收快照 | `poetry run ruff check owlclaw/cli/__init__.py owlclaw/cli/agent_signal.py owlclaw/triggers/signal/handlers.py owlclaw/triggers/signal/api.py owlclaw/triggers/api/server.py tests/unit/triggers/test_signal.py tests/unit/triggers/test_api.py tests/unit/test_cli_agent_signal.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_api.py tests/unit/triggers/test_signal.py tests/unit/test_cli_agent_signal.py -q`（25 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

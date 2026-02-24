@@ -64,7 +64,7 @@
   - `owlclaw agent status [--agent-id <id>]`
   - 所有命令构造 Signal 对象 → SignalRouter.dispatch()
 
-- [ ] **Task 8**: 实现 HTTP API 入口
+- [x] **Task 8**: 实现 HTTP API 入口
   - POST `/admin/signal` 通用 Signal 端点
   - 认证中间件（Bearer Token）
   - 请求体验证（Pydantic）

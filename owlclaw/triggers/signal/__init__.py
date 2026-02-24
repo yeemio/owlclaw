@@ -1,5 +1,6 @@
 """Signal trigger package."""
 
+from owlclaw.triggers.signal.api import SignalAPIRequest, register_signal_admin_route
 from owlclaw.triggers.signal.config import SignalTriggerConfig
 from owlclaw.triggers.signal.handlers import (
     BaseSignalHandler,
@@ -25,6 +26,7 @@ __all__ = [
     "PendingInstructionORM",
     "ResumeHandler",
     "Signal",
+    "SignalAPIRequest",
     "SignalResult",
     "SignalRouter",
     "SignalSource",
@@ -32,4 +34,5 @@ __all__ = [
     "SignalType",
     "TriggerHandler",
     "default_handlers",
+    "register_signal_admin_route",
 ]

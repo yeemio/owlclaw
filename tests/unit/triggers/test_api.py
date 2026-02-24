@@ -18,6 +18,7 @@ from owlclaw.triggers.api import (
     api_call,
 )
 from owlclaw.triggers.api.auth import APIKeyAuthProvider, BearerTokenAuthProvider
+from owlclaw.triggers.signal import AgentStateManager, SignalRouter, default_handlers
 
 
 @dataclass
@@ -220,3 +221,55 @@ def test_app_api_decorator_and_trigger_registration() -> None:
     assert app.api_trigger_server is not None
     assert "POST:/api/v1/decorator" in app.api_trigger_server._configs  # noqa: SLF001
     assert "POST:/api/v1/function" in app.api_trigger_server._configs  # noqa: SLF001
+
+
+def test_api_trigger_server_register_signal_admin_success() -> None:
+    runtime = _Runtime()
+    state = AgentStateManager(max_pending_instructions=4)
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=runtime))
+    server = APITriggerServer(auth_provider=BearerTokenAuthProvider({"token-1"}), agent_runtime=runtime)
+    server.register_signal_admin(signal_router=router, require_auth=True)
+
+    with TestClient(server.app) as client:
+        response = client.post(
+            "/admin/signal",
+            headers={"Authorization": "Bearer token-1"},
+            json={"type": "pause", "agent_id": "a1", "tenant_id": "default"},
+        )
+    assert response.status_code == 200
+    assert response.json()["status"] == "paused"
+
+
+def test_api_trigger_server_signal_admin_requires_auth() -> None:
+    runtime = _Runtime()
+    state = AgentStateManager(max_pending_instructions=4)
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=runtime))
+    server = APITriggerServer(auth_provider=BearerTokenAuthProvider({"token-1"}), agent_runtime=runtime)
+    server.register_signal_admin(signal_router=router, require_auth=True)
+
+    with TestClient(server.app) as client:
+        response = client.post("/admin/signal", json={"type": "pause", "agent_id": "a1"})
+    assert response.status_code == 401
+
+
+def test_api_trigger_server_signal_admin_payload_validation() -> None:
+    runtime = _Runtime()
+    state = AgentStateManager(max_pending_instructions=4)
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=runtime))
+    server = APITriggerServer(auth_provider=BearerTokenAuthProvider({"token-1"}), agent_runtime=runtime)
+    server.register_signal_admin(signal_router=router, require_auth=True)
+
+    with TestClient(server.app) as client:
+        bad_instruct = client.post(
+            "/admin/signal",
+            headers={"Authorization": "Bearer token-1"},
+            json={"type": "instruct", "agent_id": "a1", "message": "   "},
+        )
+        bad_payload = client.post(
+            "/admin/signal",
+            headers={"Authorization": "Bearer token-1"},
+            json={"type": "pause"},
+        )
+
+    assert bad_instruct.status_code == 400
+    assert bad_payload.status_code == 400

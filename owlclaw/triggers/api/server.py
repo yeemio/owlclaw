@@ -22,6 +22,8 @@ from owlclaw.security.sanitizer import InputSanitizer
 from owlclaw.triggers.api.auth import AuthProvider
 from owlclaw.triggers.api.config import APITriggerConfig
 from owlclaw.triggers.api.handler import parse_request_payload
+from owlclaw.triggers.signal.api import register_signal_admin_route
+from owlclaw.triggers.signal.router import SignalRouter
 
 
 class AgentRuntimeProtocol(Protocol):
@@ -105,6 +107,7 @@ class APITriggerServer:
         self._server: Any | None = None
         self._server_task: asyncio.Task[None] | None = None
         self._runs: dict[str, dict[str, Any]] = {}
+        self._signal_admin_registered: bool = False
         origins = cors_origins if cors_origins is not None else ["*"]
         self._app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
         self._app.router.routes.append(Route("/runs/{run_id}/result", endpoint=self._get_run_result, methods=["GET"]))
@@ -180,6 +183,25 @@ class APITriggerServer:
 
         self._app.router.routes.append(Route(config.path, endpoint=endpoint, methods=[config.method]))
         self._configs[route_key] = config
+
+    def register_signal_admin(
+        self,
+        *,
+        signal_router: SignalRouter,
+        path: str = "/admin/signal",
+        require_auth: bool = True,
+    ) -> None:
+        """Register POST /admin/signal on the same Starlette service."""
+        if self._signal_admin_registered:
+            raise ValueError("Signal admin route already registered")
+        register_signal_admin_route(
+            app_routes=self._app.router.routes,
+            router=signal_router,
+            auth_provider=self._auth_provider,
+            require_auth=require_auth,
+            path=path,
+        )
+        self._signal_admin_registered = True
 
     async def start(self) -> None:
         if self._server_task is not None:
