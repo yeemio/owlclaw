@@ -20,7 +20,7 @@ def _scenario_strategy() -> st.SearchStrategy[E2ETestScenario]:
             min_size=1,
             max_size=20,
         ),
-        name=st.text(min_size=1, max_size=50),
+        name=st.text(min_size=1, max_size=50).filter(lambda s: bool(s.strip())),
         description=st.text(max_size=100),
         scenario_type=st.sampled_from(list(ScenarioType)),
         input_data=st.dictionaries(st.text(min_size=1, max_size=10), st.integers(), max_size=5),
@@ -58,6 +58,21 @@ class TestScenarioManagerUnit:
         }
         errors = E2EScenarioManager.validate_scenario_payload(payload)
         assert errors
+
+    def test_export_import_roundtrip(self) -> None:
+        manager = E2EScenarioManager()
+        s1 = E2ETestScenario(scenario_id="s1", name="one", scenario_type=ScenarioType.INTEGRATION)
+        s2 = E2ETestScenario(scenario_id="s2", name="two", scenario_type=ScenarioType.PERFORMANCE)
+        manager.create_scenario(s1)
+        manager.create_scenario(s2)
+
+        exported = manager.export_scenarios(["s1", "s2"])
+        other = E2EScenarioManager()
+        imported_ids = other.import_scenarios(exported)
+
+        assert imported_ids == ["s1", "s2"]
+        assert other.get_scenario("s1") == s1
+        assert other.get_scenario("s2") == s2
 
 
 class TestScenarioManagerProperties:
@@ -99,3 +114,27 @@ class TestScenarioManagerProperties:
         }
         errors = E2EScenarioManager.validate_scenario_payload(payload)
         assert len(errors) >= 1
+
+    @settings(max_examples=100, deadline=None)
+    @given(
+        scenarios=st.lists(
+            _scenario_strategy(),
+            min_size=1,
+            max_size=10,
+            unique_by=lambda s: s.scenario_id,
+        )
+    )
+    def test_property_export_import_roundtrip(self, scenarios: list[E2ETestScenario]) -> None:
+        """Property 15: exported and imported collections stay equivalent."""
+        manager = E2EScenarioManager()
+        for scenario in scenarios:
+            manager.create_scenario(scenario)
+
+        exported = manager.export_scenarios()
+        other = E2EScenarioManager()
+        imported_ids = other.import_scenarios(exported)
+
+        assert set(imported_ids) == {s.scenario_id for s in scenarios}
+        actual_by_id = {s.scenario_id: s for s in other.list_scenarios()}
+        expected_by_id = {s.scenario_id: s for s in scenarios}
+        assert actual_by_id == expected_by_id
