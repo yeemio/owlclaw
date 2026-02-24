@@ -83,12 +83,12 @@
 
 ### Phase 2：扩展执行器（P1）
 
-- [ ] **Task 8**: QueueBinding Executor
-  - [ ] 8.1 实现 `queue_executor.py`：QueueBindingExecutor 类
-  - [ ] 8.2 复用 `owlclaw/integrations/queue_adapters/` 的 Kafka 适配器
-  - [ ] 8.3 实现 headers_mapping 参数替换
-  - [ ] 8.4 实现 shadow 模式（只记录不发送）
-  - [ ] 8.5 单元测试：active publish、shadow 拦截、headers mapping
+- [x] **Task 8**: QueueBinding Executor
+  - [x] 8.1 实现 `queue_executor.py`：QueueBindingExecutor 类
+  - [x] 8.2 复用 `owlclaw/integrations/queue_adapters/` 的 Kafka 适配器
+  - [x] 8.3 实现 headers_mapping 参数替换
+  - [x] 8.4 实现 shadow 模式（只记录不发送）
+  - [x] 8.5 单元测试：active publish、shadow 拦截、headers mapping
 
 - [ ] **Task 9**: SQLBinding Executor
   - [ ] 9.1 实现 `sql_executor.py`：SQLBindingExecutor 类

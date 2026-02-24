@@ -119,6 +119,18 @@ class KafkaQueueAdapter:
             headers=self._encode_headers(headers),
         )
 
+    async def publish(self, topic: str, message: bytes, headers: dict[str, str] | None = None) -> None:
+        """Publish a message payload to the given topic."""
+        if self._producer is None:
+            await self.connect()
+        if self._producer is None:
+            raise RuntimeError("Kafka producer is not initialized")
+        await self._producer.send_and_wait(
+            topic,
+            message,
+            headers=self._encode_headers(headers or {}),
+        )
+
     async def close(self) -> None:
         """Close Kafka producer/consumer."""
         if self._consumer is not None:
