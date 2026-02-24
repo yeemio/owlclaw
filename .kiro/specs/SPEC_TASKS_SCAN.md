@@ -61,10 +61,10 @@
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
-- [ ] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
+- [x] `owlclaw.triggers.webhook` — Webhook 触发器 → spec: triggers-webhook
 - [x] `owlclaw.triggers.queue` — 消息队列触发器 → spec: triggers-queue
-- [ ] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
-- [ ] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
+- [x] `owlclaw.triggers.db_change` — 数据库变更触发器（PostgreSQL NOTIFY/LISTEN + CDC 预留） → spec: triggers-db-change
+- [x] `owlclaw.triggers.api` — API 调用触发器（REST 端点 → Agent Run） → spec: triggers-api
 - [ ] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
@@ -108,11 +108,11 @@
 | **agent-memory** | `.kiro/specs/agent-memory/` | ✅ 三层齐全，已完成（18/18） | Agent Memory 子系统（STM/LTM/Snapshot/向量检索/生命周期） |
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（85/85） | mionyee 端到端验证 |
-| triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（2/72） | webhook 触发器（Task 0 Protocol-first 已勾，+3 subtasks） |
+| triggers-webhook | `.kiro/specs/triggers-webhook/` | ✅ 三层齐全，已完成（72/72） | webhook 触发器 |
 | triggers-queue | `.kiro/specs/triggers-queue/` | ✅ 三层齐全，已完成（89/89） | 消息队列触发器 |
-| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
-| **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/13） | API 调用触发器（Task 0 Protocol-first 待做，+3 subtasks） |
-| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/17） | Signal 触发器（Task 0 Protocol-first 待做，+3 subtasks） |
+| **triggers-db-change** | `.kiro/specs/triggers-db-change/` | ✅ 三层齐全，已完成（11/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
+| **triggers-api** | `.kiro/specs/triggers-api/` | ✅ 三层齐全，已完成（13/13） | API 调用触发器（Task 0-10 全完成） |
+| **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（5/17） | Signal 触发器（Task 0/1/3 已完成） |
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
@@ -150,11 +150,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（架构决策 4.12 Declarative Binding 落地；新建 spec；功能清单更新） |
-| 批次状态 | **已完成**。架构决策 4.12 落地；`declarative-binding` spec 三层文档已创建；功能清单已更新。 |
-| 已完成项 | 1) 在 `docs/ARCHITECTURE_ANALYSIS.md` 新增决策 4.12（Declarative Binding：声明式工具绑定），文档版本升至 v4.3；2) 在 `.cursor/rules/owlclaw_architecture.mdc` 增加 Declarative Binding 强制约束；3) 新建 `.kiro/specs/declarative-binding/` 三层文档（requirements/design/tasks，共 73 个子任务）；4) 功能清单新增 Phase 1.5 声明式工具绑定条目；5) Spec 索引新增 declarative-binding 条目。 |
-| 下一待执行 | `declarative-binding` Phase 1（核心基础设施 MVP）：Task 0 契约对齐 → Task 1 Schema → Task 2 CredentialResolver → Task 3 Executor 注册表 → Task 4 HTTPBinding → Task 5 BindingTool → Task 6 Skills Loader 扩展 → Task 7 CLI validate 扩展。同时 `codex-work` 继续 `triggers-webhook`/`triggers-api`/`triggers-signal`；`codex-gpt-work` 继续 `owlhub`。 |
-| 验收快照 | 文档规约验收：`ARCHITECTURE_ANALYSIS` 已更新至 v4.3（含 §4.12 完整 binding schema 设计、业界参考、集成架构图、里程碑）；`.cursor` 架构规则已加入 Declarative Binding 强制条款；`declarative-binding` spec 三层齐全（requirements 8 个需求 + design 8 个组件 + tasks 14 个 task + backlog）。 |
+| 当前批次 | coding loop（codex-work: triggers-signal Task 3） |
+| 批次状态 | **进行中（本批）**。`triggers-signal` 已完成 Task 0/1/3，当前 5/17。 |
+| 已完成项 | 1) 完成 Signal 协议契约（request/response schema + 协议说明）；2) 完成 `owlclaw/triggers/signal/` 核心模块骨架（models/config/state/handlers/router）；3) `SignalRouter` 已接入权限验证、错误处理与 Ledger 审计；4) 新增单元测试覆盖模型、状态管理、路由授权与审计。 |
+| 下一待执行 | `codex-work`：继续 `triggers-signal` Task 2（AgentStateManager 持久化 + Alembic 迁移）→ Task 4/5/6（pause/resume/trigger/instruct handlers 完整化）→ Task 7（CLI 命令）。 |
+| 验收快照 | `poetry run ruff check owlclaw/triggers/signal tests/unit/triggers/test_signal.py`（All checks passed）；`poetry run pytest tests/unit/triggers/test_signal.py -q`（7 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

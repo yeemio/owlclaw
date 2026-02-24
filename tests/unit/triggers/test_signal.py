@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
 import pytest
 
@@ -20,6 +21,39 @@ from owlclaw.triggers.signal.handlers import default_handlers
 class _Runtime:
     async def trigger_event(self, event_name: str, payload: dict, focus: str | None = None, tenant_id: str = "default") -> dict:  # noqa: ARG002
         return {"run_id": "run-1"}
+
+
+class _Authorizer:
+    def __init__(self, allowed: bool) -> None:
+        self.allowed = allowed
+
+    async def authorize(self, signal: Signal) -> tuple[bool, str | None]:  # noqa: ARG002
+        return self.allowed, None if self.allowed else "denied"
+
+
+class _Ledger:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def record_execution(
+        self,
+        tenant_id: str,
+        agent_id: str,
+        run_id: str,
+        capability_name: str,
+        task_type: str,
+        input_params: dict,
+        output_result: dict | None,
+        decision_reasoning: str | None,
+        execution_time_ms: int,
+        llm_model: str,
+        llm_tokens_input: int,
+        llm_tokens_output: int,
+        estimated_cost: Decimal,
+        status: str,
+        error_message: str | None = None,
+    ) -> None:
+        self.calls += 1
 
 
 def _signal(kind: SignalType) -> Signal:
@@ -90,3 +124,26 @@ async def test_router_unknown_signal_returns_error() -> None:
     result = await router.dispatch(_signal(SignalType.RESUME))
     assert result.status == "error"
     assert result.error_code == "bad_request"
+
+
+@pytest.mark.asyncio
+async def test_router_authorization_and_ledger_recording() -> None:
+    async def _handler(signal: Signal) -> SignalResult:  # noqa: ARG001
+        return SignalResult(status="paused")
+
+    ledger = _Ledger()
+    router = SignalRouter(handlers={SignalType.PAUSE: _handler}, authorizer=_Authorizer(True), ledger=ledger)
+    result = await router.dispatch(_signal(SignalType.PAUSE))
+    assert result.status == "paused"
+    assert ledger.calls == 1
+
+
+@pytest.mark.asyncio
+async def test_router_authorization_blocked() -> None:
+    async def _handler(signal: Signal) -> SignalResult:  # noqa: ARG001
+        return SignalResult(status="paused")
+
+    router = SignalRouter(handlers={SignalType.PAUSE: _handler}, authorizer=_Authorizer(False))
+    result = await router.dispatch(_signal(SignalType.PAUSE))
+    assert result.status == "error"
+    assert result.error_code == "unauthorized"

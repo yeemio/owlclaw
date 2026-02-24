@@ -31,7 +31,7 @@
   - 实现 `cleanup_expired_instructions()` 过期清理
   - 确保 `tenant_id` 隔离
 
-- [ ] **Task 3**: 实现 `SignalRouter` 统一分发
+- [x] **Task 3**: 实现 `SignalRouter` 统一分发
   - Signal 接收 + 权限验证
   - 按 SignalType 分发到对应 Handler
   - Ledger 记录所有 Signal 操作
