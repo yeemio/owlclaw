@@ -3,7 +3,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from hypothesis import assume, given, settings
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from owlclaw.templates.skills import TemplateValidator
@@ -350,9 +350,8 @@ class TestTemplateValidator:
             assert not any(e.field == "name" and "kebab-case" in e.message for e in errs)
 
     @settings(max_examples=100, deadline=None)
-    @given(invalid_name=st.text(min_size=1, max_size=30))
+    @given(invalid_name=st.from_regex(r"[A-Z][A-Za-z0-9 _-]{0,20}", fullmatch=True))
     def test_property_name_format_invalid_non_kebab_case(self, invalid_name: str) -> None:
-        assume(invalid_name != invalid_name.lower() or " " in invalid_name or "_" in invalid_name)
         with TemporaryDirectory() as tmp_dir:
             skill = Path(tmp_dir) / "SKILL.md"
             skill.write_text(

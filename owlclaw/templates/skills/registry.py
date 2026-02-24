@@ -6,7 +6,7 @@ import logging
 import re
 from pathlib import Path
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from owlclaw.templates.skills.exceptions import TemplateNotFoundError
 from owlclaw.templates.skills.models import (

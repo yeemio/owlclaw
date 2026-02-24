@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, TemplateNotFound
 
 from owlclaw.templates.skills.exceptions import (
@@ -92,7 +92,7 @@ class TemplateRenderer:
         param_defs: list[TemplateParameter],
     ) -> dict[str, Any]:
         """Convert parameter values to expected types."""
-        result = {}
+        result: dict[str, Any] = {}
         for p in param_defs:
             if p.name not in params:
                 continue
