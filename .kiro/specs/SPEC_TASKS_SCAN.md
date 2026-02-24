@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.1（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-23
+> **最后更新**: 2026-02-24
 
 ---
 
@@ -110,7 +110,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | 🟡 三层齐全，进行中（0/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | 🟡 三层齐全，进行中（0/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（92/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
+| skill-templates | `.kiro/specs/skill-templates/` | 🟡 三层齐全，进行中（97/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（0/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | 🟡 三层齐全，进行中（0/143） | AST 扫描器 |
 | mcp-server | `.kiro/specs/mcp-server/` | 🟡 三层齐全，进行中（0/12） | owlclaw-mcp |
@@ -142,13 +142,13 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-23 |
-| 当前批次 | spec 循环（triggers-cron Task 13~15 收口） |
-| 批次状态 | **部分完成**。Task 13~15 已实现并验收，`triggers-cron` 进度更新为 **116/117**；仅剩 Task 16 的“真实 Hatchet 实例 E2E”外部依赖验证。 |
-| 已完成项 | 1) 配置与加载：扩展 `owlclaw/config/models.py`（cron 治理/重试/通知 + hatchet api_token）、`CronTriggerRegistry.apply_settings()` 与 `OwlClaw.configure()` 联动；2) 生命周期：新增 `OwlClaw.start()/stop()/health_status()` 与 `CronTriggerRegistry.wait_for_all_tasks()`；3) 部署：新增 `deploy/Dockerfile.owlclaw`、`deploy/docker-compose.cron.yml`、`deploy/prometheus.yml`、`deploy/k8s/*`；4) 文档与示例：新增 `docs/CRON_TRIGGERS.md` 和 `examples/cron/*`；5) 测试：新增 `tests/integration/test_triggers_cron_e2e.py`、`tests/integration/test_triggers_cron_performance.py` 并补齐相关 unit tests。 |
-| 下一待执行 | Task 16：在可用 `HATCHET_API_TOKEN` + 真实 Hatchet 服务环境下执行端到端验证并更新最终验收结论。 |
-| 验收快照 | `poetry run ruff check ...`（本批变更文件） -> `All checks passed!`；`poetry run pytest tests/unit/test_config_models.py tests/unit/test_config_manager.py tests/unit/test_app_configure.py tests/unit/test_app.py tests/unit/triggers/test_cron_validation.py tests/unit/triggers/test_cron_performance_helpers.py tests/integration/test_triggers_cron_e2e.py tests/integration/test_triggers_cron_performance.py -q` -> `102 passed`。 |
-| 阻塞项 | `triggers-cron` Task 16 的“使用真实 Hatchet 实例运行端到端测试”需要外部 token 与在线服务，当前环境不可控。 |
+| 最后更新 | 2026-02-24 |
+| 当前批次 | spec 循环（skill-templates Task 2.2/2.3/2.4/2.6/2.7 属性测试） |
+| 批次状态 | **已完成**。完成 `TemplateRegistry` 的 5 项属性测试并通过验收，`skill-templates` 进度更新为 **97/149**。 |
+| 已完成项 | 1) 新增属性测试：模板注册完整性（2.2）；2) 模板元数据完整性（2.3）；3) 模板分类正确性（2.4）；4) 模板列表完整性（2.6）；5) 模板参数定义完整性（2.7）。 |
+| 下一待执行 | 继续 `skill-templates` 未完成属性测试（优先 3.3~3.6：参数验证相关属性测试）。 |
+| 验收快照 | `poetry run pytest tests/unit/templates/skills/test_registry.py -q` -> `20 passed`；`poetry run ruff check tests/unit/templates/skills/test_registry.py` -> `All checks passed!`。 |
+| 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
