@@ -69,10 +69,10 @@
 - [x] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
-- [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
+- [x] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
 - [x] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
-- [ ] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
-- [ ] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
+- [x] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
+- [x] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
 - [x] `owlclaw-mcp` — MCP Server（OpenClaw 通道，只读查询为主） → spec: mcp-server  
   说明：MVP 先落地于 `owlclaw/mcp/`（协议处理 + tools/resources + stdio 处理 + e2e 验证）；后续按 release 计划补独立 `owlclaw-mcp/` 打包形态。
 - [ ] 非交易场景 examples（至少 2 个） → spec: examples
@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（8/26） | 声明式工具绑定（Task 0~7 已完成：契约/schema + Resolver/Registry + HTTP Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -152,10 +152,10 @@
 |------|---|
 | 最后更新 | 2026-02-24 |
 | 当前批次 | review-work（持续合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
-| 批次状态 | **进行中（本批）**。已推进 `declarative-binding` 到 Task 7、`cli-scan` 全量收口，以及 `owlhub` 到 Task 36.2。 |
-| 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）+ BindingTool/Ledger + Skills 自动注册 + CLI validate 扩展；2) `cli-scan` 收口（Task 1~20 完成，80/80）；3) 保持并修复 `serialization.py` 的 mypy/ruff 兼容写法，避免类型回退；4) 合并 `codex-gpt-work` 批次：`owlhub` Phase 3 集成流与文档、CI/CD 部署流程、checksum 全链路校验与安全加固；5) 定向回归通过：`ruff` + `mypy` + `pytest`（`cli_scan`、`bindings`、`owlhub` 关键路径）。 |
-| 下一待执行 | 1) 推进 `declarative-binding` Task 8（QueueBinding Executor）；2) 推进 `owlhub` Task 36.3（security tests）与剩余收尾任务；3) 继续保持 `review-work` 与两条开发分支差异归零。 |
-| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(8/26)，`owlhub` 🟡(38/42)，`triggers-signal` ✅(15/15)。 |
+| 批次状态 | **进行中（本批）**。`owlhub` 已推进至最终发布准备，剩余生产环境部署项待外部条件。 |
+| 已完成项 | 1) `owlhub` 完成 Task 32/33/34/35/36/37/38/39；2) 通过全量回归：`pytest`（1620 passed）、`ruff`、`mypy`；3) 补齐发布验证文档、示例技能校验与发布产物构建；4) 修复 CLI 子应用注册回归（`runner.invoke(app, ...)` 场景）。 |
+| 下一待执行 | 1) 推进 `declarative-binding` Task 8（QueueBinding Executor）；2) 在具备生产凭据后执行 `owlhub` Task 40.4 实际部署与监控验收；3) 继续保持 `review-work` 与两条开发分支差异归零。 |
+| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(8/26)，`owlhub` 🟡(41/42)，`triggers-signal` ✅(15/15)。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
