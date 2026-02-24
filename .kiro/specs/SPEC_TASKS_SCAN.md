@@ -102,7 +102,7 @@
 | **configuration** | `.kiro/specs/configuration/` | ✅ 三层齐全，已完成（12/12） | 统一配置系统（owlclaw.yaml + Pydantic + 环境变量） |
 | e2e-validation | `.kiro/specs/e2e-validation/` | ✅ 三层齐全，已完成（19/19） | mionyee 端到端验证 |
 | triggers-webhook | `.kiro/specs/triggers-webhook/` | 🟡 三层齐全，进行中（1/69） | webhook 触发器 |
-| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（63/89） | 消息队列触发器 |
+| triggers-queue | `.kiro/specs/triggers-queue/` | 🟡 三层齐全，进行中（65/89） | 消息队列触发器 |
 | **triggers-db-change** | `.kiro/specs/triggers-db-change/` | 🟡 三层齐全，进行中（0/11） | 数据库变更触发器（NOTIFY/LISTEN + CDC） |
 | **triggers-api** | `.kiro/specs/triggers-api/` | 🟡 三层齐全，进行中（0/10） | API 调用触发器 |
 | **triggers-signal** | `.kiro/specs/triggers-signal/` | 🟡 三层齐全，进行中（0/14） | Signal 触发器（人工介入：暂停/恢复/指令注入） |
@@ -142,11 +142,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-24 |
-| 当前批次 | orchestrate（合并 review-work → main；同步各 worktree；更新进度） |
-| 批次状态 | **已完成**。review-work 合并到 main（fast-forward）；所有 worktree 已同步；进度校准完成。 |
-| 已完成项 | 1) 合并 review-work → main（triggers-queue Task 7~17 + e2e-validation Task 16~18 + mypy 修复）；2) e2e-validation 19/19 全部完成（✅）；3) mcp-server 4/12（Task 1.1~1.2 文档前置完成）；4) 功能清单 e2e 两项打勾。 |
-| 下一待执行 | `codex-work`：`triggers-queue` Task 18（Kafka 适配器，已在分支进行中）→ Task 19~25，然后 `triggers-webhook` Task 2+；`codex-gpt-work`：`mcp-server` Task 2.1.1+（核心能力注册实现）。 |
-| 验收快照 | review-work 合并前：`ruff check .` All checks passed；`mypy owlclaw/` no issues in 128 files。 |
+| 当前批次 | coding loop（codex-work: triggers-queue Task 18~19） |
+| 批次状态 | **已完成**。Task 18（Kafka 适配器）与 Task 19（依赖缺失错误处理）已完成并通过验收。 |
+| 已完成项 | 1) Task 18.1~18.3：新增 `KafkaQueueAdapter` + 属性测试 + testcontainers 集成测试（环境不可用时 skip）；2) Task 19.1~19.2：新增 `ensure_adapter_dependency`（kafka/rabbitmq/sqs/mock）及缺失依赖安装提示单测。 |
+| 下一待执行 | `codex-work`：`triggers-queue` Task 20（核心检查点）→ Task 21（端到端集成测试）→ Task 22~25；之后切换 `triggers-webhook` Task 2+。 |
+| 验收快照 | `poetry run pytest tests/unit/triggers/test_queue_kafka_adapter.py tests/unit/triggers/test_queue_kafka_adapter_properties.py tests/integration/test_queue_kafka_adapter_integration.py -q`（6 passed, 1 skipped）；`poetry run pytest tests/unit/triggers/test_queue_adapter_dependencies.py -q`（6 passed）；`poetry run pytest tests/unit/triggers -k queue -q`（63 passed）；`poetry run ruff check owlclaw/integrations/queue_adapters/kafka.py owlclaw/integrations/queue_adapters/dependencies.py owlclaw/integrations/queue_adapters/__init__.py tests/unit/triggers/test_queue_kafka_adapter.py tests/unit/triggers/test_queue_kafka_adapter_properties.py tests/unit/triggers/test_queue_adapter_dependencies.py tests/integration/test_queue_kafka_adapter_integration.py`（All checks passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
