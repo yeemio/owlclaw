@@ -169,4 +169,4 @@
 - [x] **Skill 优先级/覆盖**：定义三层优先级（workspace > managed/installed > bundled），同名 Skill 高优先级覆盖低优先级。为 OwlHub 上线后的 Skill 冲突做准备。
 - [x] **Skill Enable/Disable 运行时控制**：支持在 owlclaw.yaml 中 `skills.entries.<name>.enabled: false` 禁用特定 Skill，不删除文件。参考 OpenClaw 的 `skills.entries` 配置。
 - [x] **Skill 环境变量注入生命周期**：Agent Run 开始时注入 Skill 声明的环境变量，Run 结束后恢复原始环境。参考 OpenClaw 的 per-run env injection。
-- [ ] **Skills Watcher（热重载）**：监听 Skills 目录文件变更，自动刷新 Skills 列表（带 debounce）。已在 design.md 未来扩展中提及，提升为正式 backlog。
+- [x] **Skills Watcher（热重载）**：监听 Skills 目录文件变更，自动刷新 Skills 列表（带 debounce）。已在 design.md 未来扩展中提及，提升为正式 backlog。

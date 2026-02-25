@@ -102,7 +102,11 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
+<<<<<<< Updated upstream
 | capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（108/115） | skills + registry |
+=======
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（115/115） | skills + registry |
+>>>>>>> Stashed changes
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -160,12 +164,21 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
+<<<<<<< Updated upstream
 | 当前批次 | 统筹轮次：合并 review-work（6 commits）→ main；同步所有子 worktree；解决 codex-work 18 文件冲突 + codex-gpt-work 1 文件冲突 |
 | 批次状态 | **完成**。review-work 已合并到 main，所有子 worktree 已同步。 |
 | 已完成项 | 1) review-work 合并：test-infra Task 3/9.1~9.3 完成（unit 0 skip + CI/本地 compose 同源）；2) 单测修复：queue_log_security 字段级断言；3) codex-work 冲突解决（18 文件）；4) codex-gpt-work 冲突解决（SPEC_TASKS_SCAN）；5) local-devenv：codex-gpt-work 推进 Task 4/6/8/9（db status 验证 + Windows asyncpg fallback）。 |
 | 下一待执行 | 1) codex-work：test-infra Task 4/6/9.4/11；2) codex-gpt-work：local-devenv Task 1/2/3/5/7 + owlhub Task 40.4 收尾；3) capabilities-skills 108/115 剩余 7 tasks（backlog 性质）；4) release 外部平台依赖（需人工凭据）。 |
 | 验收快照 | repo-hygiene ✅(7/7)，local-devenv 🟡(4/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，integrations-llm ✅(128/128)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) 本机 Docker Engine 未运行，阻塞 local-devenv Task 1/2/3 与部分 test-infra 实地验收；2) Windows 环境无 `make`，阻塞 local-devenv Task 5；3) release/owlhub 余项包含外部平台与人工决策动作（PyPI token、GitHub 开源）；4) capabilities-skills 剩余 7 tasks 为 backlog 性质，不阻塞主线。 |
+=======
+| 当前批次 | review-work 审校续航：test-infra/本地开发环境阻塞量化 + 扫描总览状态回写（对齐各 spec 当前任务面） |
+| 批次状态 | **进行中**。本轮已完成 test-infra 的关键前置闭环（unit 0 skip），并持续推进 CI/本地一致性验收。 |
+| 已完成项 | 1) test-infra：Task 3 完成（`1530 passed, 0 skipped`）；Task 9.1~9.3 完成（CI 与本地 test compose 同源 `deploy/init-test-db.sql`）；2) capabilities-skills：新增 Skill prerequisites 加载门控（env/bins/config/python_packages/os）与单测覆盖；3) capabilities-skills：新增 Session Skill Snapshot（run 内技能/能力视图冻结，run 结束释放）与 runtime 单测覆盖；4) capabilities-skills：新增 `owlclaw.yaml` skills.entries enable/disable 门控与单测覆盖；5) capabilities-skills：新增 Token Impact 报告（per-skill/total/dropped）并接入 runtime token budget 裁剪；6) capabilities-skills：新增 Skill 环境变量注入生命周期（run 注入/结束恢复）与 runtime 单测覆盖；7) capabilities-skills：新增 Skill 冲突优先级覆盖（workspace > managed/installed > bundled）与单测覆盖；8) capabilities-skills：新增 Skills Watcher（轮询+debounce 热重载）与单测覆盖；9) 单测修复：`test_queue_log_security_properties` 改为字段级断言并通过；10) 扫描文档修正：Checkpoint 去除过期 `33/37, 37/56, 137/143` 旧口径。 |
+| 下一待执行 | 1) test-infra：Task 4.2（<60s，当前约 `353s`）、Task 6.3、Task 9.4、Task 11（含 CI matrix 与覆盖率门槛最终验收）；2) local-devenv：Task 1.4/2.4/3.8/5.4/7.2/10.*（需 Docker Engine + make 条件）；3) owlhub：Task 19 决策确认与 Task 40.4 外部部署；4) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
+| 验收快照 | repo-hygiene ✅(7/7)，local-devenv 🟡(4/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) 本机 Docker Engine 未运行，阻塞 local-devenv 与部分 test-infra 实地验收；2) Windows 环境无 `make`，阻塞 local-devenv Task 5.4；3) release/owlhub 余项包含外部平台与人工决策动作。 |
+>>>>>>> Stashed changes
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

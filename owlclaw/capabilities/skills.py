@@ -9,6 +9,9 @@ import os
 import platform
 import re
 import shutil
+import threading
+import time
+from collections.abc import Callable
 from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -578,3 +581,85 @@ def auto_register_binding_tools(
             registry.register_handler(tool_name, tool)
             registered.append(tool_name)
     return registered
+
+
+class SkillsWatcher:
+    """Lightweight file watcher with polling + debounce for SKILL.md changes."""
+
+    def __init__(
+        self,
+        skills_loader: SkillsLoader,
+        *,
+        poll_interval_seconds: float = 1.0,
+        debounce_seconds: float = 0.5,
+    ) -> None:
+        self.skills_loader = skills_loader
+        self.poll_interval_seconds = max(0.1, float(poll_interval_seconds))
+        self.debounce_seconds = max(0.0, float(debounce_seconds))
+        self._callbacks: list[Callable[[list[Skill]], None]] = []
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._last_applied_fingerprint: tuple[tuple[str, int, int], ...] | None = None
+        self._last_reload_monotonic: float = 0.0
+
+    def watch(self, callback: Callable[[list[Skill]], None]) -> None:
+        """Register callback called after successful reload."""
+        if callable(callback):
+            self._callbacks.append(callback)
+
+    def start(self) -> None:
+        """Start background polling thread."""
+        if self._thread is not None and self._thread.is_alive():
+            return
+        self._stop_event.clear()
+        self._thread = threading.Thread(target=self._loop, name="skills-watcher", daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        """Stop background polling thread."""
+        self._stop_event.set()
+        if self._thread is not None:
+            self._thread.join(timeout=max(1.0, self.poll_interval_seconds * 2))
+        self._thread = None
+
+    def _loop(self) -> None:
+        while not self._stop_event.is_set():
+            try:
+                self.poll_once()
+            except Exception:
+                logger.debug("skills watcher poll failed", exc_info=True)
+            self._stop_event.wait(self.poll_interval_seconds)
+
+    def _collect_fingerprint(self) -> tuple[tuple[str, int, int], ...]:
+        base = self.skills_loader.base_path
+        if not base.exists() or not base.is_dir():
+            return tuple()
+        rows: list[tuple[str, int, int]] = []
+        for file_path in sorted(base.rglob("SKILL.md")):
+            try:
+                stat = file_path.stat()
+            except OSError:
+                continue
+            rows.append((str(file_path), int(stat.st_mtime_ns), int(stat.st_size)))
+        return tuple(rows)
+
+    def poll_once(self) -> bool:
+        """Poll once; return True when reload occurred."""
+        current = self._collect_fingerprint()
+        if self._last_applied_fingerprint is None:
+            self._last_applied_fingerprint = current
+            return False
+        if current == self._last_applied_fingerprint:
+            return False
+        now = time.monotonic()
+        if now - self._last_reload_monotonic < self.debounce_seconds:
+            return False
+        skills = self.skills_loader.scan()
+        self._last_applied_fingerprint = current
+        self._last_reload_monotonic = now
+        for callback in self._callbacks:
+            try:
+                callback(skills)
+            except Exception:
+                logger.debug("skills watcher callback failed", exc_info=True)
+        return True
