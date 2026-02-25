@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 codex-work ci-setup + codex-gpt-work owlhub gate → review-work → main |
-| 批次状态 | **完成**。codex-work（6 commits ci-setup）+ codex-gpt-work（3 commits owlhub gate）均已合并到 main。 |
-| 已完成项 | 1) 合并 codex-work：ci-setup Task 1~10（GitHub Actions lint/test/build/release workflows + pre-commit + dependabot + .releaserc.json + pyproject.toml 工具链配置 + CI 文档 + 配置测试）；2) 合并 codex-gpt-work：owlhub release_gate 模块（owlclaw/owlhub/release_gate.py + scripts/owlhub_release_gate.py + tests）+ OwlHub gate CLI 命名决策提案文档；3) ci-setup 进度更新为 10/12（Task 11 远程验证 + Task 12 Final Checkpoint 待外部 GitHub 环境）。 |
-| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12)；2) codex-work 推进 ci-setup Task 11/12 或转向 release；3) 架构层确认 OwlHub gate CLI 命名（见 docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md）。 |
-| 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(0/32)，全仓测试门禁待验证（新 pyproject.toml 配置）。 |
+| 当前批次 | review-work 审校收口轮次（分支同步 + 文档状态校准） |
+| 批次状态 | **完成**。`main` / `review-work` / `codex-work` / `codex-gpt-work` 当前无差异，审校闭环完成。 |
+| 已完成项 | 1) 完成 `codex-work`（ci-setup）与 `codex-gpt-work`（owlhub gate）合并收口并同步到 `main`；2) 校准 `SPEC_TASKS_SCAN` 中 declarative-binding / owlhub / ci-setup 进度与当前任务口径；3) 完成全仓门禁复核：`ruff check .`、`mypy owlclaw/`、`pytest` 分组复跑通过（unit: 1488 passed, 2 skipped；integration+e2e: 159 passed, 26 skipped；tests 根目录其余: 9 passed）。 |
+| 下一待执行 | 1) `examples`（0/12）实现与验收；2) `cli-migrate` 主 spec（0/24）推进；3) `ci-setup` Task 11/12（外部 GitHub 环境验证）与 `release`（0/32）启动。 |
+| 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(0/32)，全仓门禁 ✅。 |
 | 阻塞项 | 1) ci-setup Task 11（需实际 GitHub Actions 运行环境）；2) owlhub Task 40.4（外部生产部署）；3) OwlHub gate CLI 命名待架构决策。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
