@@ -171,7 +171,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
-**当前任务**：release(22/32) 外部平台动作阻塞中。**新分配**：repo-hygiene(0/7) + test-infra(0/11)。
+**当前任务**：repo-hygiene(33/37) 收尾 + test-infra(32/52) 剩余 Task 3/4/6/9/11。
 
 **下一任务（当前完成后）**：capabilities-skills 收尾（108/115）。
 
@@ -205,9 +205,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ 已完成。
 
-**当前任务**：release(22/32) 外部平台动作阻塞中。**新分配**：local-devenv(0/10) + capabilities-skills 收尾(108/115)。
+**当前任务**：local-devenv(37/56) 剩余 Task 1/2/3/5/7 + owlhub 收尾(137/143)。
 
-**下一任务（当前完成后）**：全部收口即完成 Phase 2/3/4，项目进入发布阶段。
+**下一任务（当前完成后）**：capabilities-skills 收尾（108/115），全部收口后项目进入发布阶段。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -255,6 +255,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-25 | declarative-binding ✅(26/26) 收口；owlhub 更新为 41/42（Task 40.4 外部阻塞）；codex-work 转向协助 ci-setup/release | 统筹轮次合并 review-work |
 | 2026-02-25 | ci-setup ✅(12/12)；examples ✅(14/14)；cli-migrate ✅(24/24)；release 22/32；owlhub 41/42 | 统筹轮次合并 review-work（50+ commits） |
 | 2026-02-25 | 新建 local-devenv/test-infra/repo-hygiene spec；分配：codex-work→repo-hygiene+test-infra，codex-gpt-work→local-devenv+capabilities-skills | 统筹轮次：开发基础设施统一规划 |
+| 2026-02-25 | 负载再平衡：review-work 已完成 repo-hygiene(33/37)+local-devenv(37/56)+test-infra(32/52)部分；codex-gpt-work 无工作→重分配 local-devenv剩余+owlhub收尾；codex-work→repo-hygiene收尾+test-infra剩余 | 统筹轮次：负载均衡 |
 
 ---
 
