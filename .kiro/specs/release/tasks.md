@@ -60,7 +60,7 @@
 ## 3. 自动化发布（1 天）
 
 ### 3.1 GitHub Actions
-- [ ] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
+- [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
 - [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
 
