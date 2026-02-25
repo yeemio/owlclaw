@@ -102,7 +102,7 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（108/115） | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | ✅ 三层齐全，已完成（115/115） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -125,7 +125,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（26/26） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（40/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（137/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库；release gate 已实现，Task 40.4 外部阻塞） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | ✅ 三层齐全，已完成（14/14） | 示例（非交易场景、LangChain、3 行业 Skills、mionyee-trading 完整示例、批量验证脚本、CI 接入、文档对齐全部完成） |
@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | codex-gpt-work：local-devenv 全量收口 + test-infra 验收推进（Task 6.3/9.4/11.2） |
-| 批次状态 | **进行中**。local-devenv 已完成（10/10）；test-infra 已推进到 9/11，剩余为性能门槛与外部 CI 验收。 |
-| 已完成项 | 1) local-devenv：Task 3.8 完成（`docker compose -f docker-compose.dev.yml --profile full up -d` 后 `owlclaw-db/redis/hatchet-lite/langfuse` 全部 healthy）；2) local-devenv：Task 7.2/10.1 完成（同一会话完成 quickstart 与 unit+integration 验证，`1646 passed, 12 skipped`）；3) local-devenv：Task 5.4/10.3 完成（安装 `ezwinports.make` 后 `make help` 与 `make test-unit` 通过，`1544 passed`）；4) local-devenv：Task 10.4 完成（新增 env 覆盖自动校验测试并通过）；5) test-infra：Task 6.3/9.4/11.2 完成（`make test-int` 结果 `102 passed, 12 skipped`）。 |
-| 下一待执行 | 1) test-infra：Task 4.2、Task 11.1、Task 11.3、Task 11.4；2) owlhub：Task 19 决策确认与 Task 40.4 外部部署；3) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
-| 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，integrations-llm ✅(128/128)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra：11.1 受 `<60s` 性能门槛阻塞（当前 `tests/unit` 约 `404.82s`）；2) test-infra：11.3 需外部 CI matrix 结果；3) test-infra：11.4 覆盖率门槛未达（本地 `--cov-fail-under=90` 总覆盖率 `71.88%`）；4) release/owlhub 余项包含外部平台与人工决策动作。 |
+| 当前批次 | codex-gpt-work：local-devenv 收口 + test-infra 验收推进 |
+| 批次状态 | **进行中**。local-devenv 已完成（10/10）；test-infra 已推进到 9/11，剩余为性能门槛与外部 CI/覆盖率验收。 |
+| 已完成项 | 1) capabilities-skills ✅(115/115)：prerequisites 门控、session snapshot、token impact、enable/disable、env 注入生命周期、source-priority 覆盖、Skills Watcher 热重载；2) local-devenv ✅(10/10)：baseline assets、compose 稳定性、db status + Windows asyncpg fallback、env 覆盖验证、验收完成；3) test-infra：Task 6.3/9.4/11.2 完成（本机 `make test-int` 通过，`102 passed, 12 skipped`）。 |
+| 下一待执行 | 1) test-infra：Task 4.2、Task 11.1、Task 11.3、Task 11.4；2) owlhub：Task 40.4 外部部署；3) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
+| 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra：11.1 受 `<60s` 性能门槛阻塞（当前 `tests/unit` 约 `353s`）；2) test-infra：11.3 需外部 CI matrix 结果；3) test-infra：11.4 覆盖率门槛未达（本地 `--cov-fail-under=90` 总覆盖率 `71.88%`）；4) release/owlhub 余项含外部平台与人工决策动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

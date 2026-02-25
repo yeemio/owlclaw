@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from owlclaw.capabilities.skills import SkillsLoader
+from owlclaw.capabilities.skills import SkillsLoader, SkillsWatcher
 
 
 def test_skills_loader_scan_discovers_skill_md(tmp_path):
@@ -484,6 +484,33 @@ tools:
     params = skill.metadata["tools_schema"]["check-stock"]["parameters"]
     assert params["properties"] == {"sku": {"type": "string"}}
     assert params["required"] == ["sku"]
+
+
+def test_skills_watcher_poll_once_reload_and_callback(tmp_path):
+    skill_a = tmp_path / "a"
+    skill_a.mkdir()
+    (skill_a / "SKILL.md").write_text(
+        "---\nname: a\ndescription: A\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    watcher = SkillsWatcher(loader, debounce_seconds=0.0)
+    observed: list[list[str]] = []
+    watcher.watch(lambda skills: observed.append(sorted(skill.name for skill in skills)))
+
+    # Initial baseline poll should not trigger reload.
+    assert watcher.poll_once() is False
+
+    skill_b = tmp_path / "b"
+    skill_b.mkdir()
+    (skill_b / "SKILL.md").write_text(
+        "---\nname: b\ndescription: B\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    assert watcher.poll_once() is True
+    assert observed
+    assert observed[-1] == ["a", "b"]
 
 
 def test_skills_loader_prerequisites_env_missing_skips_skill(tmp_path, monkeypatch):

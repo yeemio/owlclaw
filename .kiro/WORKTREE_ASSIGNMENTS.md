@@ -171,9 +171,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
-**当前任务**：test-infra(7/11) 剩余 Task 4/6/9.4/11。
+**当前任务**：test-infra(7/11) 剩余 Task 4/6/9.4/11（Docker/CI 验收为主）。
 
-**下一任务（当前完成后）**：capabilities-skills 收尾（108/115）。
+**下一任务（当前完成后）**：capabilities-skills ✅(115/115) 已全部完成，无需接续。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -197,17 +197,18 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|------|---------|
 | e2e-validation | 85/85 ✅ | `tests/integration/test_e2e*.py` |
 | mcp-server | 12/12 ✅ | `owlclaw_mcp/**` |
-| owlhub | 41/42 🟡 | Task 40.4 外部阻塞（生产部署） |
-| examples | 0/12 🟡 | `examples/**`, `tests/unit/test_examples*.py` |
-| cli-migrate | 0/24 🟡 | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
-| ci-setup | 12/12 🟡 | `.github/workflows/**` |
-| release | 0/32 🟡 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
+| owlhub | 137/143 🟡 | Task 40.4 外部阻塞（生产部署）+ release gate 已实现 |
+| examples | 14/14 ✅ | `examples/**`, `tests/unit/test_examples*.py` |
+| cli-migrate | 24/24 ✅ | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
+| ci-setup | 12/12 ✅ | `.github/workflows/**` |
+| release | 25/32 🟡 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
+| local-devenv | 10/10 ✅ | `docker-compose.*.yml`, `Makefile`, `.env.example`, `docs/DEVELOPMENT.md` |
 
-**前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ 已完成。
+**前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ + local-devenv ✅ 已完成。
 
-**当前任务**：local-devenv(4/10) 剩余 Task 1/2/3/5/7（Docker 阻塞部分）+ owlhub 收尾(40/42 Task 40.4 外部阻塞)。
+**当前任务**：owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）+ release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）。
 
-**下一任务（当前完成后）**：capabilities-skills 收尾（108/115），全部收口后项目进入发布阶段。
+**下一任务（当前完成后）**：capabilities-skills ✅(115/115) 已全部完成。项目进入发布阶段，等人工提供 PyPI token。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -257,6 +258,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-25 | 新建 local-devenv/test-infra/repo-hygiene spec；分配：codex-work→repo-hygiene+test-infra，codex-gpt-work→local-devenv+capabilities-skills | 统筹轮次：开发基础设施统一规划 |
 | 2026-02-25 | 负载再平衡：review-work 已完成 repo-hygiene(33/37)+local-devenv(37/56)+test-infra(32/52)部分；codex-gpt-work 无工作→重分配 local-devenv剩余+owlhub收尾；codex-work→repo-hygiene收尾+test-infra剩余 | 统筹轮次：负载均衡 |
 | 2026-02-25 | 合并 review-work（6 commits：test-infra Task 3/9.1~9.3 + queue修复）→ main；repo-hygiene ✅(7/7)；test-infra 7/11；local-devenv 4/10；codex-work 任务更新为 test-infra Task 4/6/9.4/11 | 统筹轮次：review-work 合并 + 冲突解决 |
+| 2026-02-25 | 合并 review-work(11)+codex-gpt-work(11)+codex-work(5) → main；capabilities-skills ✅(115/115)；local-devenv ✅(10/10)；owlhub 137/143；release 25/32；test-infra 7/11 | 统筹轮次：三分支全合并 + 所有 worktree 同步 |
 
 ---
 
