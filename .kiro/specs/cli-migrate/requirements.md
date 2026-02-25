@@ -12,6 +12,8 @@
 
 cli-migrate 是 OwlClaw 的 AI 辅助迁移工具，旨在帮助已有业务系统（Brownfield）快速接入 OwlClaw 的 AI 自主能力。该工具通过扫描已有项目代码，识别可接入的业务函数和 API，自动生成 OwlClaw 接入代码（@handler 注册）和对应的 SKILL.md 文档（遵循 Agent Skills 规范），从而实现零改造或最小改造接入。
 
+> 说明（2026-02-25）：本轮交付聚焦 `migrate scan` 与 Declarative Binding 生成链路（见 `cli-migrate/tasks.md` 24 项）。其余扩展需求保留为后续阶段。
+
 根据 OwlClaw 的核心定位，cli-migrate 是实现"让已有业务系统获得 AI 自主能力"愿景的关键工具，降低业务开发者的接入门槛，使其无需深入学习 AI 框架即可让业务系统"活"起来。
 
 ## Glossary
