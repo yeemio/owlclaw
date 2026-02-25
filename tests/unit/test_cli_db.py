@@ -13,6 +13,10 @@ runner = CliRunner()
 
 def test_db_commands_registered():
     """owlclaw db has init, migrate, status (invoke without subcommand to see usage)."""
+    import os
+
+    os.environ.pop("OWLCLAW_DATABASE_URL", None)
+    os.environ.pop("DATABASE_URL", None)
     result = runner.invoke(app, ["db"])
     # Typer may show help or "Missing command"; either way db is registered
     assert result.exit_code != 0 or "db" in result.output
@@ -24,6 +28,10 @@ def test_db_commands_registered():
 
 def test_db_status_without_url():
     """status without OWLCLAW_DATABASE_URL exits 2."""
+    import os
+
+    os.environ.pop("OWLCLAW_DATABASE_URL", None)
+    os.environ.pop("DATABASE_URL", None)
     result = runner.invoke(app, ["db", "status"])
     assert result.exit_code == 2
     assert "OWLCLAW_DATABASE_URL" in result.output or "database-url" in result.output
@@ -31,6 +39,10 @@ def test_db_status_without_url():
 
 def test_db_migrate_without_url():
     """migrate without OWLCLAW_DATABASE_URL exits 2."""
+    import os
+
+    os.environ.pop("OWLCLAW_DATABASE_URL", None)
+    os.environ.pop("DATABASE_URL", None)
     result = runner.invoke(app, ["db", "migrate"])
     assert result.exit_code == 2
     assert "OWLCLAW_DATABASE_URL" in result.output or "database-url" in result.output

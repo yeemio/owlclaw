@@ -729,7 +729,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test error logging includes context
     - _Requirements: NFR-1_
 
-- [ ] 32. Create deployment configuration
+- [x] 32. Create deployment configuration
   - [x] 32.1 Create Docker configuration
     - Create `Dockerfile` for API service
     - Create `docker-compose.yml` for local development
@@ -833,8 +833,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test help text completeness
     - _Requirements: 2.5_
 
-- [ ] 38. Testing coverage and quality assurance
-  - [ ] 38.1 Achieve coverage targets
+- [x] 38. Testing coverage and quality assurance
+  - [x] 38.1 Achieve coverage targets
     - Run `poetry run pytest --cov=owlhub --cov=owlclaw/cli/skill` to measure coverage
     - Ensure overall coverage ≥ 75%
     - Ensure Validator, IndexBuilder, CLIClient coverage ≥ 85%
@@ -842,14 +842,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add tests for any uncovered code paths
     - _Requirements: All_
 
-  - [ ] 38.2 Run all property-based tests with sufficient iterations
+  - [x] 38.2 Run all property-based tests with sufficient iterations
     - Verify all 26 property tests run with ≥ 100 iterations
     - Fix any failures discovered by property tests
     - Use fixed seed for reproducibility in CI
     - Document any property test limitations
     - _Requirements: All_
 
-  - [ ] 38.3 Perform end-to-end testing
+  - [x] 38.3 Perform end-to-end testing
     - Test complete user journey: search → install → use → update
     - Test complete publisher journey: create → validate → publish → review
     - Test complete admin journey: review → approve/reject → moderate
@@ -857,8 +857,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Test performance under load
     - _Requirements: All_
 
-- [ ] 39. Documentation and examples
-  - [ ] 39.1 Create comprehensive user documentation
+- [x] 39. Documentation and examples
+  - [x] 39.1 Create comprehensive user documentation
     - Write getting started guide
     - Write skill author guide (how to create and publish skills)
     - Write CLI reference documentation
@@ -866,14 +866,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Write troubleshooting guide
     - _Requirements: 8.5_
 
-  - [ ] 39.2 Create example skills
+  - [x] 39.2 Create example skills
     - Create 2-3 example skills demonstrating best practices
     - Include examples with dependencies
     - Include examples with different tags and categories
     - Publish examples to test registry
     - _Requirements: 8.5_
 
-  - [ ] 39.3 Create architecture documentation
+  - [x] 39.3 Create architecture documentation
     - Document Phase 1, 2, 3 architectures with diagrams
     - Document migration paths between phases
     - Document design decisions and trade-offs
@@ -882,21 +882,21 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 8.5_
 
 - [ ] 40. Final validation and release preparation
-  - [ ] 40.1 Run full test suite
+  - [x] 40.1 Run full test suite
     - Run `poetry run pytest` and ensure all tests pass
     - Run `poetry run ruff check .` and fix any linting issues
     - Run `poetry run mypy owlclaw/ owlhub/` and fix type errors
     - Run property tests with high iteration count (1000+)
     - _Requirements: All_
 
-  - [ ] 40.2 Validate all requirements are met
+  - [x] 40.2 Validate all requirements are met
     - Review requirements document and verify each acceptance criterion
     - Verify all 8 requirements have corresponding tests
     - Verify all 26 correctness properties are tested
     - Verify NFR-1 (availability ≥ 99%) and NFR-2 (P95 < 500ms) are met
     - _Requirements: All_
 
-  - [ ] 40.3 Prepare release artifacts
+  - [x] 40.3 Prepare release artifacts
     - Tag release version following semantic versioning
     - Generate changelog from commit history
     - Build distribution packages with Poetry
@@ -909,6 +909,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Verify index is accessible and CLI works
     - Plan Phase 2 and Phase 3 rollout timeline
     - _Requirements: 8.1, 8.2_
+    - _Status note (2026-02-25): blocked by external production credentials/environment ownership; local production-like validation completed via integration tests and deployment smoke checks. Runbook + automation ready: `docs/owlhub/production_rollout.md`, `scripts/owlhub_release_gate.py`. CLI gate 命名已提交架构审校：`docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md`._
 
 ## Notes
 

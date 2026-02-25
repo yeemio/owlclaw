@@ -167,13 +167,13 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | triggers-api | 11/11 ✅ | — |
 | triggers-signal | 15/15 ✅ | — |
 | cli-scan | 80/80 ✅ | — |
-| declarative-binding | 16/26 🟡 | `owlclaw/capabilities/bindings/`, `tests/unit/capabilities/` |
+| declarative-binding | 26/26 ✅ | — |
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
-**当前任务**：declarative-binding（8/26 进行中）— 声明式工具绑定，与 cli-migrate 联动。
+**当前任务**：ci-setup(10/12) — Task 11 远程验证 + Task 12 Final Checkpoint，或转向 release。
 
-**下一任务（当前完成后）**：declarative-binding 收口后协助 ci-setup / release。
+**下一任务（当前完成后）**：release(0/32)。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -197,15 +197,15 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|------|---------|
 | e2e-validation | 85/85 ✅ | `tests/integration/test_e2e*.py` |
 | mcp-server | 12/12 ✅ | `owlclaw_mcp/**` |
-| owlhub | 38/42 🟡 | `owlclaw/owlhub/**`, `tests/unit/test_owlhub*.py` — ⚠️ 需先 git merge main 再推进 |
+| owlhub | 41/42 🟡 | Task 40.4 外部阻塞（生产部署） |
 | examples | 0/12 🟡 | `examples/**`, `tests/unit/test_examples*.py` |
 | cli-migrate | 0/24 🟡 | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
-| ci-setup | 0/12 🟡 | `.github/workflows/**` |
+| ci-setup | 10/12 🟡 | `.github/workflows/**` |
 | release | 0/32 🟡 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
 
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ 已完成。
 
-**当前任务**：owlhub(38/42) → examples → cli-migrate → ci-setup → release 依序推进。
+**当前任务**：owlhub(41/42，Task 40.4 外部阻塞) → examples(0/12) → cli-migrate(0/24) → ci-setup(0/12) → release(0/32) 依序推进。
 
 **下一任务（当前完成后）**：全部收口即完成 Phase 2/3，项目进入发布阶段。
 
@@ -252,6 +252,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-23 | codex-gpt-work：skill-templates+langfuse+langchain 全完成 → e2e-validation + mcp-server | Phase 1/2 integrations 完成，进入 e2e 与 mcp |
 | 2026-02-23 | 全量分配：codex-work 追加 triggers-db-change/api/signal + cli-scan | 一次分完所有剩余 spec，减少统筹轮次 |
 | 2026-02-23 | 全量分配：codex-gpt-work 追加 owlhub + examples + cli-migrate + ci-setup + release | 同上 |
+| 2026-02-25 | declarative-binding ✅(26/26) 收口；owlhub 更新为 41/42（Task 40.4 外部阻塞）；codex-work 转向协助 ci-setup/release | 统筹轮次合并 review-work |
 
 ---
 

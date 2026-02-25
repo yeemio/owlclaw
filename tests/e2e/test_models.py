@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
@@ -35,8 +35,8 @@ def test_execution_result_requires_non_negative_duration() -> None:
         ExecutionResult(
             scenario_id="s1",
             status=ExecutionStatus.PASSED,
-            started_at=datetime.now(UTC),
-            ended_at=datetime.now(UTC),
+            started_at=datetime.now(timezone.utc),
+            ended_at=datetime.now(timezone.utc),
             duration_ms=-1.0,
         )
 

@@ -27,6 +27,38 @@ Instead of building yet another agent framework from scratch, OwlClaw **combines
 > **Don't control the Agent — empower it.**
 > **Don't reinvent wheels — combine them.**
 
+## Architecture Overview (ASCII)
+
+```text
+Business App Skills (SKILL.md) + Handlers/State
+                 |
+                 v
+         +----------------------+
+         |   OwlClaw Runtime    |
+         | identity + memory    |
+         | governance + routing |
+         +----------+-----------+
+                    |
+      +-------------+------------------+
+      |                                |
+      v                                v
+  Integrations                     Trigger Layer
+  (LLM / Hatchet / Langfuse)       (cron / webhook / queue / signal / api)
+```
+
+## OwlClaw and LangChain/LangGraph
+
+OwlClaw is not a replacement for LangChain or LangGraph.
+
+| Capability | OwlClaw | LangChain / LangGraph |
+|-----------|---------|------------------------|
+| Agent runtime governance | Strong focus | Usually app-specific |
+| Existing business onboarding (SKILL.md) | First-class | Not primary |
+| Chain / graph orchestration | Integrates externally | Core strength |
+| Recommended usage | Runtime + governance layer | Workflow composition layer |
+
+Use OwlClaw for runtime governance and capability onboarding, then compose advanced chains/graphs with LangChain/LangGraph where needed.
+
 ## Quick Start
 
 ```python
@@ -201,6 +233,15 @@ poetry add owlclaw
 ## Architecture
 
 See [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md) for the complete architecture design.
+
+## Useful Links
+
+- Architecture: [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md)
+- Examples: [examples/](examples/)
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Release Runbook: [docs/RELEASE_RUNBOOK.md](docs/RELEASE_RUNBOOK.md)
+- License: [LICENSE](LICENSE)
 
 ## Development
 

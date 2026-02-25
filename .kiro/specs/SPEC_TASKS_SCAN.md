@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.5（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-24
+> **最后更新**: 2026-02-25
 
 ---
 
@@ -25,7 +25,7 @@
 - [x] 建立包结构（owlclaw / owlclaw-mcp）  
   说明：`owlclaw` 已存在；`owlclaw/mcp/` 已随 mcp-server spec 完成实现（12/12 ✅）。
 - [x] pyproject.toml + MIT LICENSE + README
-- [ ] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
+- [x] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
 
 ### Phase 1：Agent 核心（MVP）
 
@@ -55,10 +55,10 @@
 
 ### Phase 1.5：声明式工具绑定（决策 4.12）
 
-- [ ] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
+- [x] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
 - [x] `owlclaw.capabilities.skills` 扩展 — Skills Loader binding 检测与 BindingTool 自动注册 → spec: declarative-binding Task 6
 - [x] `owlclaw.cli.skill` 扩展 — `owlclaw skill validate` binding schema 验证 → spec: declarative-binding Task 7
-- [ ] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
+- [x] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
@@ -69,10 +69,10 @@
 - [x] `owlclaw.triggers.signal` — Signal 触发器（人工介入：暂停/恢复/强制触发/注入指令） → spec: triggers-signal
 - [x] `owlclaw.integrations.langfuse` — Langfuse tracing → spec: integrations-langfuse
 - [x] `owlclaw.integrations.langchain` — LangChain 生态标准接入（LLM 后端适配器 + 集成文档） → spec: integrations-langchain
-- [ ] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
+- [x] `owlclaw.cli.skill` — Skills CLI 扩展（`owlclaw skill search/install/publish`，依赖 OwlHub） → spec: cli-skill
 - [x] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
-- [ ] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
-- [ ] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
+- [x] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
+- [x] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
 - [x] `owlclaw-mcp` — MCP Server（OpenClaw 通道，只读查询为主） → spec: mcp-server  
   说明：MVP 先落地于 `owlclaw/mcp/`（协议处理 + tools/resources + stdio 处理 + e2e 验证）；后续按 release 计划补独立 `owlclaw-mcp/` 打包形态。
 - [ ] 非交易场景 examples（至少 2 个） → spec: examples
@@ -82,7 +82,7 @@
 ### Phase 3：开源发布 + Skills 生态
 
 - [ ] PyPI 发布 owlclaw + owlclaw-mcp → spec: release
-- [ ] GitHub 开源（MIT） → spec: release
+- [x] GitHub 开源（MIT） → spec: release
 - [ ] OwlHub 仓库公开（`owlclaw/owlhub`）+ 首批 10+ 行业 Skills → spec: owlhub
 - [ ] mionyee 完整接入示例 → spec: examples
 - [ ] `owlclaw.cli.migrate` — AI 辅助迁移工具 → spec: cli-migrate
@@ -117,15 +117,15 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（16/26） | 声明式工具绑定（Task 0~15 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（26/26） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
-| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
-| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（0/12） | GitHub Actions CI（lint + test） |
+| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
+| ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 
 ---
 
@@ -150,13 +150,13 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-24 |
-| 当前批次 | review-work（持续合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
-| 批次状态 | **进行中（本批）**。已完成一轮全仓门禁审校与回归；`codex-gpt-work` 新增 2 提交已审阅，当前结论为 **FIX_NEEDED（分支需先与 review-work/main 同步后再提审，避免回退已合并功能）**。 |
-| 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）+ BindingTool/Ledger + Skills 自动注册 + CLI validate 扩展 + Queue/SQL Executor + Shadow 报告链路 + 安全集成（InputSanitizer/DataMasker/risk_level）+ 治理集成（visibility/budget/rate limit）+ HTTP reference examples（active/shadow/shell）+ 文档/模板联动（examples 索引、binding-http-client 模板、skill init 默认最小模板注释）；2) `cli-scan` 收口（Task 1~20 完成，80/80）；3) 保持并修复 `serialization.py` 的 mypy/ruff 兼容写法，避免类型回退；4) 合并 `codex-gpt-work` 批次：`owlhub` Phase 3 集成流与文档、CI/CD 部署流程、checksum 全链路校验与安全加固；5) 顶层 CLI 回归修复：恢复 `CliRunner.invoke(app, ...)` 场景下 `db` 子命令注册（修复 `tests/unit/test_cli_db.py` 与 `tests/integration/test_cli_db_workflows.py` 失败）；6) 全量门禁通过：`ruff check .` + `mypy owlclaw/` + `pytest -q`（1640 passed, 28 skipped）。 |
-| 下一待执行 | 1) 要求 `codex-gpt-work` 先同步 `main/review-work` 并重提其 2 个提交（避免把 `declarative-binding` 已合并能力回退）；2) 继续监控并合并 `codex-work` 新提交；3) 审校重点转向 `declarative-binding` Task 16 与 `owlhub` 收尾任务。 |
-| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(16/26)，`owlhub` 🟡(38/42)，`triggers-signal` ✅(15/15)，全仓测试门禁 ✅（1640 passed）。 |
-| 阻塞项 | 无。 |
+| 最后更新 | 2026-02-25 |
+| 当前批次 | codex-work：release 收口（社区设置完成，发布链路待凭证） |
+| 批次状态 | **进行中**。release 已完成 25/32（社区渠道 5.1.* 已完成）。 |
+| 已完成项 | 1) 新增 `CHANGELOG.md`（v0.1.0 初始发布记录）；2) 新增 GitHub Issue 模板（Bug/Feature + config）；3) 执行敏感信息基线扫描，确认仅测试样例/文档占位命中；4) 完成 `.gitignore` 与 `.env.example` 发布前检查并在测试中固化；5) 完成 `pyproject.toml` 发布元数据核验、`[langchain]/[dev]` extras 对齐与 `owlclaw` CLI 入口确认；6) 新增 `owlclaw-mcp/` 独立构建配置（独立 pyproject + 入口）；7) 完成 README 发布面补齐（架构 ASCII、LangChain/LangGraph 互补、链接区）；8) 完成 CONTRIBUTING 的 PR 规范与代码风格补充；9) release workflow 改为 `v*` tag 触发并增加发布前 `poetry install + pytest` 步骤；10) 新增 `docs/RELEASE_RUNBOOK.md` 固化外部发布动作；11) 新增/扩展 `tests/unit/test_release_assets.py`，覆盖发布工件、文档与 release workflow 触发契约；12) CLI 增加 `owlclaw --version` 支持并完成 `owlclaw --version` / `owlclaw skill list` 运行验收；13) 本地执行 `poetry run python examples/basic_usage.py` 成功，完成 release 示例验收基线；14) GitHub 仓库侧完成 Discussions 启用、仓库 Public 化、Topics/Description 设置；15) release workflow 新增 `workflow_dispatch target=testpypi|pypi` 分流与 TestPyPI 发布路径。 |
+| 下一待执行 | 1) release 3.1.2/3.1.3（配置 `PYPI_TOKEN`/`TEST_PYPI_TOKEN` 并执行 TestPyPI）；2) release 4.1.1/4.1.2/4.1.4（首发 tag、PyPI 实装、GitHub Release 验证）；3) release 6.1 剩余项（PyPI 安装与 GitHub Release 含 changelog 验收）。 |
+| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(25/32)。 |
+| 阻塞项 | 1) owlhub Task 40.4（外部生产部署）；2) OwlHub gate CLI 命名待架构决策；3) release 发布凭证缺失（仓库 Secrets 当前为空）；4) `gh workflow run release.yml` 需 workflow 存在于默认分支，当前仅在 `codex-work`，待 review/merge 后才能触发 TestPyPI 实跑；5) 当前机器 clean-venv `pip` 存在 TLS/CA 异常，阻塞本地 PyPI 安装验收。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

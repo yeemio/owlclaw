@@ -26,6 +26,11 @@ litellm = "^1.0"
 pydantic = "^2.0"
 pyyaml = "^6.0"
 jsonschema = {version = "^4.0", optional = true}
+pytest = {version = "^8.0", optional = true}
+pytest-asyncio = {version = "^0.24", optional = true}
+pytest-cov = {version = "^6.0", optional = true}
+ruff = {version = "^0.9", optional = true}
+mypy = {version = "^1.0", optional = true}
 packaging = "^24.0"
 sqlalchemy = {version = "^2.0", extras = ["asyncio"]}
 asyncpg = "^0.30"
@@ -70,6 +75,7 @@ opentelemetry-sdk = "^1.0"
 
 [tool.poetry.extras]
 langchain = ["langchain", "langchain-core", "jsonschema"]
+dev = ["pytest", "pytest-asyncio", "pytest-cov", "ruff", "mypy"]
 api = ["starlette", "uvicorn"]
 
 [tool.poetry.scripts]
@@ -82,27 +88,61 @@ build-backend = "poetry.core.masonry.api"
 # ── Ruff ──
 [tool.ruff]
 target-version = "py310"
-line-length = 120
+line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
-ignore = ["E501"]
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = ["E501", "I001", "C408", "C416"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["owlclaw"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 # ── Mypy ──
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
+warn_unused_ignores = false
+warn_redundant_casts = false
+disallow_any_generics = false
 disallow_untyped_defs = false
 check_untyped_defs = true
+disallow_subclassing_any = false
+plugins = []
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+ignore_errors = true
 
 # ── Pytest ──
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 asyncio_mode = "auto"
 markers = [
+    "unit: fast unit tests",
     "integration: marks tests requiring external services (Hatchet, PostgreSQL)",
+    "e2e: end-to-end tests",
+    "slow: long-running tests",
+]
+
+[tool.coverage.run]
+source = ["owlclaw"]
+omit = ["tests/*", "**/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
 ]

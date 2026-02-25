@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -22,7 +22,7 @@ class TestDataCollector:
     def test_collects_events_metrics_and_errors(self) -> None:
         collector = DataCollector()
         collector.start_collection("run-1")
-        ts = datetime.now(UTC)
+        ts = datetime.now(timezone.utc)
         collector.record_event(
             event_type="cron.triggered",
             message="triggered",

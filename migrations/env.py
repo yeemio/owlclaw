@@ -13,11 +13,11 @@ from owlclaw.db import Base
 from owlclaw.governance.ledger import LedgerRecord  # noqa: F401
 from owlclaw.triggers.signal.persistence import AgentControlStateORM, PendingInstructionORM  # noqa: F401
 from owlclaw.triggers.webhook.persistence.models import (  # noqa: F401
-    WebhookEndpointORM,
-    WebhookEventORM,
-    WebhookExecutionORM,
-    WebhookIdempotencyKeyORM,
-    WebhookTransformationRuleORM,
+    WebhookEndpointModel,
+    WebhookEventModel,
+    WebhookExecutionModel,
+    WebhookIdempotencyKeyModel,
+    WebhookTransformationRuleModel,
 )
 
 config = context.config
