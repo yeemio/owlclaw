@@ -12,6 +12,7 @@
 | `binding-openapi-e2e/` | OpenAPI 到 binding SKILL.md 的端到端流程 | 中 |
 | `capabilities/` | 技能能力目录示例（entry-monitor/morning-decision） | 低 |
 | `owlhub_skills/` | OwlHub 示例技能（analytics/monitoring/workflow） | 低 |
+| `mionyee-trading/` | mionyee 三任务端到端示例（entry/morning/feedback） | 中 |
 | `skill_templates/` | 模板渲染与参数化示例（Python 脚本） | 低 |
 | `skill-templates/` | 模板工作流操作步骤示例（Markdown） | 低 |
 | `integrations_llm/` | LLM 集成调用与函数调用示例 | 中 |
