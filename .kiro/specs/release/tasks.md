@@ -14,14 +14,14 @@
 
 ## 进度概览
 
-- **总任务数**：19
-- **已完成**：11
+- **总任务数**：20
+- **已完成**：12
 - **进行中**：0
 - **未开始**：8
 
 ---
 
-## Task 清单（19）
+## Task 清单（20）
 
 ### 1. 打包元数据与构建资产（4/4）
 - [x] 1.1 `pyproject.toml` 包元数据完整（name/version/description/license/classifiers）
@@ -53,6 +53,9 @@
 - [ ] 6.1 远程 `pip install owlclaw` 验证通过（非本地源码路径）
 - [ ] 6.2 `owlclaw --version` 与 `owlclaw skill list` 在干净环境可运行
 - [ ] 6.3 发布版本与 changelog、tag、release 三方一致
+
+### 7. 预检自动化（新增本地收口）（1/1）
+- [x] 7.1 新增发布前预检脚本（`scripts/release_preflight.py`）并可执行通过
 
 ---
 
