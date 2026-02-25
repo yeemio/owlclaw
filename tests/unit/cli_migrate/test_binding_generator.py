@@ -102,3 +102,24 @@ def test_generate_from_orm_enforces_parameterized_read_only_query() -> None:
     assert "read_only: true" in result.skill_content
     assert "query: SELECT sku, qty FROM inventory_items WHERE sku = :sku" in result.skill_content
     assert "connection: ${READ_DB_DSN}" in result.skill_content
+
+
+def test_generate_from_orm_output_passes_skill_validate(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("READ_DB_DSN", "postgresql+psycopg://u:p@localhost:5432/app")
+    generator = BindingGenerator()
+    content = generator.generate_from_orm(
+        ORMOperation(
+            model_name="Order",
+            table_name="orders",
+            columns=["id", "status"],
+            filters=["id"],
+            connection_env="READ_DB_DSN",
+        )
+    ).skill_content
+    skill_dir = tmp_path / "orm-skill"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(content, encoding="utf-8")
+
+    result = runner.invoke(skill_app, ["validate", str(skill_dir)])
+    assert result.exit_code == 0
+    assert "OK:" in result.output
