@@ -46,12 +46,18 @@ def test_skills_context_cache_hits(tmp_path) -> None:
     rt.registry = MagicMock()
     rt.registry.handlers = {"skill-a": MagicMock()}
     rt.knowledge_injector = MagicMock()
-    rt.knowledge_injector.get_skills_knowledge.return_value = "skills"
+    mock_report = MagicMock()
+    mock_report.content = "skills"
+    mock_report.total_tokens = 10
+    mock_report.selected_skill_names = ["skill-a"]
+    mock_report.dropped_skill_names = []
+    mock_report.per_skill_tokens = {"skill-a": 10}
+    rt.knowledge_injector.get_skills_knowledge_report.return_value = mock_report
     ctx = AgentRunContext(agent_id="bot", trigger="cron")
     first = rt._build_skills_context(ctx)
     second = rt._build_skills_context(ctx)
     assert first == "skills" and second == "skills"
-    rt.knowledge_injector.get_skills_knowledge.assert_called_once()
+    rt.knowledge_injector.get_skills_knowledge_report.assert_called_once()
     metrics = rt.get_performance_metrics()
     assert metrics["skills_cache_hits"] >= 1
 
