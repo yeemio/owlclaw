@@ -55,10 +55,10 @@
 
 ### Phase 1.5：声明式工具绑定（决策 4.12）
 
-- [ ] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
+- [x] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
 - [x] `owlclaw.capabilities.skills` 扩展 — Skills Loader binding 检测与 BindingTool 自动注册 → spec: declarative-binding Task 6
 - [x] `owlclaw.cli.skill` 扩展 — `owlclaw skill validate` binding schema 验证 → spec: declarative-binding Task 7
-- [ ] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
+- [x] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（19/26） | 声明式工具绑定（Task 0~18 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + migrate `--output-mode binding|both` 集成） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（20/20） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + migrate `--output-mode binding|both` 集成 + 三角色工作流/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，进行中（38/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | coding loop（codex-work: declarative-binding Task 18） |
-| 批次状态 | **进行中（本批）**。`declarative-binding` 已推进至 19/26。 |
-| 已完成项 | 1) 新增 `owlclaw migrate scan` 分发与 `--output-mode handler|binding|both` 参数；2) 新增 `owlclaw/cli/migrate/scan_cli.py`，支持 OpenAPI/ORM 输入并输出 binding SKILL.md；3) `both` 模式可同时生成 handler stub + binding；4) 新增 CLI 集成测试（OpenAPI/ORM: 生成 → validate → SkillsLoader 扫描）。 |
-| 下一待执行 | `codex-work`：进入 Task 19（三种角色工作流文档与示例）。 |
-| 验收快照 | 当前：`declarative-binding` 🟡(19/26)；本批验证：`pytest tests/unit/cli_migrate/test_migrate_scan_cli.py tests/unit/test_cli_main.py -q`、`pytest tests/unit/cli_migrate -q`、`ruff check` 通过。 |
+| 当前批次 | coding loop（codex-work: declarative-binding 收口） |
+| 批次状态 | **已完成（本批）**。`declarative-binding` 已完成并收口。 |
+| 已完成项 | 1) 新增三角色工作流文档 `docs/DECLARATIVE_BINDING_WORKFLOWS.md`；2) 新增端到端示例 `examples/binding-openapi-e2e/`（OpenAPI + binding SKILL.md + README）；3) `owlclaw skill init` 新增 `--from-binding` 模式，从已有 binding SKILL.md 生成业务规则模板；4) 补充分发与单测覆盖（`test_cli_skill`/`test_cli_main`）。 |
+| 下一待执行 | `codex-work`：等待下一轮 spec 分配（建议 `ci-setup` / `release` 支援）。 |
+| 验收快照 | 当前：`declarative-binding` ✅(20/20)；本批验证：`pytest tests/unit/test_cli_skill.py tests/unit/test_cli_main.py tests/unit/cli_migrate -q`、`ruff check` 通过。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

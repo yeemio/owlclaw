@@ -55,6 +55,36 @@ def test_main_dispatches_skill_init_with_template_value(monkeypatch, tmp_path) -
     assert captured["path"] == str(tmp_path)
 
 
+def test_main_dispatches_skill_init_with_from_binding(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_init_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+        raise Exit(0)
+
+    monkeypatch.setattr("owlclaw.cli.skill_init.init_command", _fake_init_command)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "skill",
+            "init",
+            "--name",
+            "biz-rules",
+            "--from-binding",
+            str(tmp_path / "src" / "SKILL.md"),
+            "--output",
+            str(tmp_path),
+        ],
+    )
+    with contextlib.suppress(SystemExit):
+        cli_main.main()
+
+    assert captured["name"] == "biz-rules"
+    assert captured["from_binding"] == str(tmp_path / "src" / "SKILL.md")
+
+
 def test_main_converts_click_exit_to_system_exit(monkeypatch) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
 
