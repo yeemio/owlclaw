@@ -156,6 +156,7 @@ class AgentRuntime:
         self._visible_tools_cache: dict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = {}
         self._run_handler_names_snapshot: tuple[str, ...] | None = None
         self._run_capabilities_snapshot: list[dict[str, Any]] | None = None
+        self._run_env_restore: dict[str, str | None] = {}
         self._perf_metrics: dict[str, float] = {
             "llm_calls": 0.0,
             "tool_calls": 0.0,
@@ -540,6 +541,7 @@ class AgentRuntime:
             context.focus,
         )
         self._capture_run_skill_snapshot()
+        self._inject_skill_env_for_run()
 
         if context.trigger == "heartbeat" and self._heartbeat_checker is not None:
             has_events = self._heartbeat_payload_has_events(context.payload)
@@ -554,6 +556,7 @@ class AgentRuntime:
                 self._reset_builtin_tool_budget(context.run_id)
                 self._release_skill_content_cache()
                 self._clear_run_skill_snapshot()
+                self._restore_skill_env_after_run()
                 return {
                     "status": "skipped",
                     "run_id": context.run_id,
@@ -627,6 +630,7 @@ class AgentRuntime:
             self._reset_builtin_tool_budget(context.run_id)
             self._release_skill_content_cache()
             self._clear_run_skill_snapshot()
+            self._restore_skill_env_after_run()
             TraceContext.set_current(previous_trace_ctx)
 
         logger.info(
@@ -1407,6 +1411,53 @@ class AgentRuntime:
         """Release per-run frozen skill/capability snapshot."""
         self._run_handler_names_snapshot = None
         self._run_capabilities_snapshot = None
+
+    def _inject_skill_env_for_run(self) -> None:
+        """Inject environment variables declared by skills for current run."""
+        if self.registry is None:
+            return
+        loader = getattr(self.registry, "skills_loader", None)
+        if loader is None:
+            return
+        get_skill = getattr(loader, "get_skill", None)
+        if not callable(get_skill):
+            return
+        skill_names = (
+            list(self._run_handler_names_snapshot)
+            if self._run_handler_names_snapshot is not None
+            else list(getattr(self.registry, "handlers", {}).keys())
+        )
+        for skill_name in skill_names:
+            try:
+                skill = get_skill(skill_name)
+            except Exception:
+                logger.debug("Failed to resolve skill for env injection: %s", skill_name, exc_info=True)
+                continue
+            if skill is None:
+                continue
+            declared_env = getattr(skill, "owlclaw_config", {}).get("env")
+            if not isinstance(declared_env, dict):
+                continue
+            for raw_key, raw_value in declared_env.items():
+                if not isinstance(raw_key, str):
+                    continue
+                key = raw_key.strip()
+                if not key:
+                    continue
+                if key not in self._run_env_restore:
+                    self._run_env_restore[key] = os.environ.get(key)
+                os.environ[key] = str(raw_value)
+
+    def _restore_skill_env_after_run(self) -> None:
+        """Restore process env vars changed by _inject_skill_env_for_run."""
+        if not self._run_env_restore:
+            return
+        for key, previous in self._run_env_restore.items():
+            if previous is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = previous
+        self._run_env_restore.clear()
 
     def _skill_has_focus(self, skill_name: str, focus: str) -> bool:
         """Return True if the skill declares *focus* in owlclaw.focus.
