@@ -71,10 +71,10 @@
 
 ## Backlog
 
-- [ ] `.editorconfig` 统一编辑器配置（缩进、换行符）
-- [ ] `CODEOWNERS` 文件（指定各模块负责人）
-- [ ] 根目录 `Makefile`（协同 local-devenv spec）
-- [ ] `docs/` 目录 README（文档导航）
+- [x] `.editorconfig` 统一编辑器配置（缩进、换行符）
+- [x] `CODEOWNERS` 文件（指定各模块负责人）
+- [x] 根目录 `Makefile`（协同 local-devenv spec，已由 local-devenv spec 完成）
+- [x] `docs/` 目录 README（文档导航）
 
 ---
 
