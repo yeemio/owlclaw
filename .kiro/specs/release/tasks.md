@@ -108,7 +108,10 @@
 - examples spec 至少 2 个非交易示例完成
 
 ### 7.2 阻塞
-- 无（Phase 3 自然排序在 Phase 1/2 之后）
+- 外部平台操作待执行（非仓内可自动完成）：
+  - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
+  - TestPyPI 实际发布验证
+  - GitHub 仓库 Discussions/Public/Topics 设置
 
 ---
 

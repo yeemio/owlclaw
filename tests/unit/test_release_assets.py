@@ -94,6 +94,13 @@ def test_contributing_has_pr_and_style_guidance() -> None:
     assert "## Code Style" in payload
 
 
+def test_release_runbook_exists_for_external_steps() -> None:
+    payload = Path("docs/RELEASE_RUNBOOK.md").read_text(encoding="utf-8")
+    assert "Configure GitHub Secrets" in payload
+    assert "Dry-run To TestPyPI" in payload
+    assert "Production Release" in payload
+
+
 def test_release_workflow_is_tag_triggered() -> None:
     payload = yaml.safe_load(Path(".github/workflows/release.yml").read_text(encoding="utf-8"))
     on_cfg = payload.get("on", payload.get(True, {}))

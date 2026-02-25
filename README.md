@@ -240,6 +240,7 @@ See [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md) for the compl
 - Examples: [examples/](examples/)
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Release Runbook: [docs/RELEASE_RUNBOOK.md](docs/RELEASE_RUNBOOK.md)
 - License: [LICENSE](LICENSE)
 
 ## Development
