@@ -226,6 +226,11 @@ def test_main_dispatches_migrate_scan_with_output_mode(monkeypatch, tmp_path) ->
             "--output",
             str(tmp_path / "out"),
             "--dry-run",
+            "--report-json",
+            str(tmp_path / "r.json"),
+            "--report-md",
+            str(tmp_path / "r.md"),
+            "--force",
         ],
     )
     cli_main.main()
@@ -233,6 +238,9 @@ def test_main_dispatches_migrate_scan_with_output_mode(monkeypatch, tmp_path) ->
     assert captured["openapi"] == str(tmp_path / "openapi.yaml")
     assert captured["output"] == str(tmp_path / "out")
     assert captured["dry_run"] is True
+    assert captured["report_json"] == str(tmp_path / "r.json")
+    assert captured["report_md"] == str(tmp_path / "r.md")
+    assert captured["force"] is True
 
 
 def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
@@ -245,6 +253,9 @@ def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
     assert "Usage: owlclaw migrate scan [OPTIONS]" in out
     assert "--output-mode [handler|binding|both]" in out
     assert "--dry-run" in out
+    assert "--report-json" in out
+    assert "--report-md" in out
+    assert "--force" in out
 
 
 def test_main_release_gate_owlhub_help_uses_plain_help(monkeypatch, capsys) -> None:

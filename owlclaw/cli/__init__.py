@@ -612,6 +612,9 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
     parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
     parser.add_argument("--output", "--path", "-o", "-p", dest="output", default=".")
     parser.add_argument("--dry-run", action="store_true", default=False)
+    parser.add_argument("--report-json", default="")
+    parser.add_argument("--report-md", default="")
+    parser.add_argument("--force", action="store_true", default=False)
     ns = parser.parse_args(argv[2:])
     run_migrate_scan_command(
         openapi=ns.openapi,
@@ -619,6 +622,9 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
         output_mode=ns.output_mode,
         output=ns.output,
         dry_run=ns.dry_run,
+        report_json=ns.report_json,
+        report_md=ns.report_md,
+        force=ns.force,
     )
     return True
 
@@ -941,6 +947,9 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("                                 Output type (default: handler)")
         print("  --output, --path TEXT          Output directory (default: .)")
         print("  --dry-run                      Preview generated file paths without writing")
+        print("  --report-json TEXT             Report JSON path (default: <output>/migration_report.json)")
+        print("  --report-md TEXT               Report Markdown path (default: <output>/migration_report.md)")
+        print("  --force                        Overwrite existing target files")
         print("  --help                         Show this message and exit")
         sys.exit(0)
     if argv == ["trigger", "template"]:
