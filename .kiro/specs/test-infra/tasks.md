@@ -49,8 +49,8 @@
   - _Requirements: AC-3_
 
 - [ ] **Task 6**: integration/conftest.py 模块级 fixtures
-  - [ ] 6.1 添加 `db_engine` fixture（scope="module"，避免每个测试重建连接池）
-  - [ ] 6.2 添加 `run_migrations` fixture（scope="session"，确保 schema 最新）
+  - [x] 6.1 添加 `db_engine` fixture（scope="module"，避免每个测试重建连接池）
+  - [x] 6.2 添加 `run_migrations` fixture（scope="session"，确保 schema 最新）
   - [ ] 6.3 验证：集成测试之间数据不互相污染（事务回滚有效）
   - _Requirements: AC-3_
 
