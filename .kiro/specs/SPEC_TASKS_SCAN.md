@@ -151,12 +151,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | coding loop（codex-work: ci-setup Task 1~10） |
+| 当前批次 | coding loop（codex-work: ci-setup Task 1~10 + Task 11 预验收） |
 | 批次状态 | **进行中（本批）**。`ci-setup` 已推进至 10/12。 |
-| 已完成项 | 1) `pyproject.toml` 补齐 Ruff/MyPy/Pytest/Coverage 配置；2) 新增 `lint.yml`/`test.yml`/`build.yml`/`release.yml` 并替换旧 `ci.yml`；3) 新增 `.releaserc.json`、`.pre-commit-config.yaml`、`.github/dependabot.yml`、PR 模板；4) 新增 `docs/CI_SETUP.md` 与 `CONTRIBUTING.md` 更新；5) 新增 `tests/unit/ci/test_ci_configs.py` 校验 CI 配置。 |
-| 下一待执行 | `codex-work`：完成 Task 11（GitHub 端到端验证）与 Task 12（Final Checkpoint 收口）。 |
-| 验收快照 | 当前：`ci-setup` 🟡(10/12)；本批验证：`pytest tests/unit/ci/test_ci_configs.py -q`（7 passed）+ `pytest tests/unit/test_cli_main.py tests/unit/test_cli_skill.py -q`（43 passed, 2 skipped）。 |
-| 阻塞项 | `ci-setup` Task 11.1 需 GitHub 远端 PR/Actions 运行结果；`owlhub` Task 40.4 需生产凭据。 |
+| 已完成项 | 1) `pyproject.toml` 补齐 Ruff/MyPy/Pytest/Coverage 配置；2) 新增 `lint.yml`/`test.yml`/`build.yml`/`release.yml` 并替换旧 `ci.yml`；3) 新增 `.releaserc.json`、`.pre-commit-config.yaml`、`.github/dependabot.yml`、PR 模板；4) 新增 `docs/CI_SETUP.md` 与 `CONTRIBUTING.md` 更新；5) 新增 `tests/unit/ci/test_ci_configs.py` 校验 CI 配置；6) 完成 Task 11 预验收路径：`gh auth status` 可用、`gh workflow list`/`gh run list` 可执行，补充远端 smoke 验收命令。 |
+| 下一待执行 | `codex-work`：执行 Task 11.1（在远端创建测试 PR 并观察新 workflow 运行）后收口 Task 12。 |
+| 验收快照 | 当前：`ci-setup` 🟡(10/12)；本批验证：`pytest tests/unit/ci/test_ci_configs.py -q`（7 passed）+ `pytest tests/unit/test_cli_main.py tests/unit/test_cli_skill.py -q`（43 passed, 2 skipped）+ `gh workflow list`/`gh run list` 已连通。 |
+| 阻塞项 | `ci-setup` Task 11.1 需将当前分支推送到远端并触发真实 PR 工作流；`owlhub` Task 40.4 需生产凭据。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

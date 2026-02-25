@@ -112,6 +112,23 @@ gh run view <run-id> --log-failed
 gh run rerun <run-id>
 ```
 
+## 6.3 远端端到端验收（Task 11.1）
+
+新建测试分支并提交后，使用以下流程验证四条 workflow：
+
+```bash
+git checkout -b ci-smoke-check
+git push origin ci-smoke-check
+gh pr create --title "test(ci): smoke validation" --body "CI smoke validation"
+gh run list --limit 20
+gh run view <run-id> --log-failed
+```
+
+验收通过标准：
+
+- `Lint`、`Test (3.10/3.11/3.12)`、`Build` 全部通过
+- `Release` 不在 PR 场景触发
+
 ## 7. Commit 与 PR 规范
 
 Conventional Commits：
