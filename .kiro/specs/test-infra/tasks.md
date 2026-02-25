@@ -79,11 +79,11 @@
 
 ### Phase 6：文档（P1）
 
-- [ ] **Task 10**: docs/TESTING.md
-  - [ ] 10.1 创建 `docs/TESTING.md`，包含：
+- [x] **Task 10**: docs/TESTING.md
+  - [x] 10.1 创建 `docs/TESTING.md`，包含：
         测试分层说明、各层运行命令、如何添加新测试、外部服务 skip 说明
-  - [ ] 10.2 添加测试矩阵表格（哪些测试需要哪些服务）
-  - [ ] 10.3 覆盖率目标说明（unit ≥ 90%，overall ≥ 80%）
+  - [x] 10.2 添加测试矩阵表格（哪些测试需要哪些服务）
+  - [x] 10.3 覆盖率目标说明（unit ≥ 90%，overall ≥ 80%）
   - _Requirements: AC-6_
 
 ### Phase 7：验收（P0）
