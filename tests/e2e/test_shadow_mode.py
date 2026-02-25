@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -29,7 +29,7 @@ async def test_shadow_mode_interceptor_records_without_execution() -> None:
 @pytest.mark.asyncio
 async def test_shadow_comparator_dashboard_metrics() -> None:
     comparator = ShadowComparator()
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
 
     for index in range(8):
         capability = "check_entry_opportunity" if index < 7 else "different"
@@ -58,7 +58,7 @@ async def test_shadow_comparator_dashboard_metrics() -> None:
 @pytest.mark.asyncio
 async def test_migration_weight_controller_adjusts_weight() -> None:
     comparator = ShadowComparator()
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     for index in range(10):
         shadow = ShadowDecisionLog(
             agent_id="agent-b",

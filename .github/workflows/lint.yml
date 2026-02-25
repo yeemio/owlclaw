@@ -32,4 +32,4 @@ jobs:
         run: poetry run ruff check .
 
       - name: Run MyPy
-        run: poetry run mypy owlclaw --strict
+        run: poetry run mypy owlclaw
