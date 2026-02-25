@@ -18,9 +18,9 @@
 ## 进度概览
 
 - **总任务数**：32
-- **已完成**：22
+- **已完成**：25
 - **进行中**：0
-- **未开始**：10
+- **未开始**：7
 
 ---
 
@@ -71,6 +71,7 @@
 ### 4.1 首次发布
 - [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布
 - [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功
+  - 远程核验（2026-02-25）：临时虚拟环境执行 `pip install owlclaw` 返回 `No matching distribution found`，说明尚未发布到 PyPI
 - [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
   - 本地验证（2026-02-25）：`poetry run owlclaw --version` → `owlclaw 0.1.0`；`poetry run owlclaw skill list` 正常输出
 - [ ] 4.1.4 验证 GitHub Release 自动创建
@@ -80,9 +81,12 @@
 ## 5. 社区准备（0.5 天）
 
 ### 5.1 社区渠道
-- [ ] 5.1.1 启用 GitHub Discussions
-- [ ] 5.1.2 仓库设为 Public
-- [ ] 5.1.3 添加 Topics 和 Description
+- [x] 5.1.1 启用 GitHub Discussions  
+  - 远程核验（2026-02-25）：`gh api repos/yeemio/owlclaw` 返回 `has_discussions=true`
+- [x] 5.1.2 仓库设为 Public  
+  - 远程核验（2026-02-25）：`gh repo view yeemio/owlclaw --json visibility` 返回 `PUBLIC`
+- [x] 5.1.3 添加 Topics 和 Description  
+  - 远程核验（2026-02-25）：`gh repo view yeemio/owlclaw --json repositoryTopics,description` 返回非空 topics + description
 
 ---
 
@@ -112,7 +116,7 @@
 - 外部平台操作待执行（非仓内可自动完成）：
   - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
   - TestPyPI 实际发布验证
-  - GitHub 仓库 Discussions/Public/Topics 设置
+  - 生产发布 tag 与 GitHub Release 生成（需 main 分支发布流程）
 
 ---
 

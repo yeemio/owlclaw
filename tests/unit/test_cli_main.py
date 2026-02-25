@@ -401,6 +401,8 @@ def test_main_dispatches_release_gate_owlhub(monkeypatch, tmp_path) -> None:
 def test_main_prints_version(monkeypatch, capsys) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
     monkeypatch.setattr("sys.argv", ["owlclaw", "--version"])
-    cli_main.main()
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
     out = capsys.readouterr().out.strip()
-    assert out
+    assert out.startswith("owlclaw ")
