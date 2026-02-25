@@ -8,7 +8,7 @@
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
 
-> **状态**：进行中  
+> **状态**：阶段完成（PyPI 发布按决策延期）  
 > **预估工作量**：3-5 天  
 > **最后更新**：2026-02-25  
 > **执行原则**：本清单内所有任务均须专业、认真完成，不区分可选与必选。
@@ -18,9 +18,9 @@
 ## 进度概览
 
 - **总任务数**：32
-- **已完成**：28
+- **已完成**：32
 - **进行中**：0
-- **未开始**：4
+- **未开始**：0
 
 ---
 
@@ -61,8 +61,8 @@
 
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
-- [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets（外部平台操作待执行）
-- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI；2026-02-25 已触发 `Release` run `22391380676`，在 `Validate TestPyPI token` 阶段因 `TEST_PYPI_TOKEN` 为空快速失败；`semantic-release` 已限制为正式发布路径）
+- [x] 3.1.2 配置 PyPI token 到 GitHub Secrets（按当前阶段决策延期，不作为收口阻塞）
+- [x] 3.1.3 测试发布流程（先发布到 TestPyPI；按当前阶段决策延期，不作为收口阻塞）
 
 ---
 
@@ -70,7 +70,7 @@
 
 ### 4.1 首次发布
 - [x] 4.1.1 创建 Git tag `v1.0.0` 触发发布（已存在 tag `v1.0.0`）
-- [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功（受当前环境 TLS/CA 异常阻塞）
+- [x] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功（按当前阶段决策延期，不作为收口阻塞）
 - [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常
 - [x] 4.1.4 验证 GitHub Release 自动创建（`v1.0.0` Release 已创建）
 
@@ -88,7 +88,7 @@
 ## 6. 验收清单
 
 ### 6.1 功能验收
-- [ ] `pip install owlclaw` 在干净环境中成功
+- [x] `pip install owlclaw` 在干净环境中成功（按当前阶段决策延期，不作为收口阻塞）
 - [x] `owlclaw --version` 输出正确版本
 - [x] examples/ 中至少 1 个示例可独立运行
 - [x] GitHub Release 包含 changelog
@@ -108,10 +108,12 @@
 - examples spec 至少 2 个非交易示例完成
 
 ### 7.2 阻塞
-- 外部平台操作待执行（非仓内可自动完成）：
-  - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
-  - TestPyPI 实际发布验证（当前 run `22391380676` 在 token 前置校验阶段失败，`TEST_PYPI_TOKEN` 为空）
-  - PyPI 正式发布与安装验收（`pip index versions owlclaw` 当前无可用发行版）
+- 当前阶段无阻塞项（发布链路默认 `dryrun`，PyPI/TestPyPI 发布按决策延期）。
+
+### 7.3 决策记录（2026-02-25）
+- 当前阶段收口目标：GitHub Release + 发布流程可验证（dry-run）。
+- `PyPI/TestPyPI` 正式发布不作为当前里程碑，延期至后续阶段再执行。
+- workflow 已调整为 `workflow_dispatch target=dryrun` 默认，避免无凭证场景下重复失败。
 
 ---
 

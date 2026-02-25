@@ -7,11 +7,12 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "Publish target (testpypi for dry-run, pypi for production)"
+        description: "Publish target (dryrun recommended, testpypi/pypi for actual publish)"
         required: true
-        default: "testpypi"
+        default: "dryrun"
         type: choice
         options:
+          - dryrun
           - testpypi
           - pypi
 
@@ -81,6 +82,9 @@ jobs:
 
       - name: Build package
         run: python -m build
+
+      - name: Verify distribution metadata
+        run: twine check dist/*
 
       - name: Publish to TestPyPI
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi' }}

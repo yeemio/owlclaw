@@ -16,7 +16,13 @@ Path:
 
 ## 2. Dry-run To TestPyPI
 
-Preferred path: trigger release workflow manually with TestPyPI target:
+Preferred path for current stage: trigger release workflow with `dryrun` target (build + twine check, no upload):
+
+```bash
+gh workflow run release.yml -R yeemio/owlclaw -f target=dryrun
+```
+
+Optional path: trigger release workflow manually with TestPyPI target:
 
 ```bash
 gh workflow run release.yml -R yeemio/owlclaw -f target=testpypi
