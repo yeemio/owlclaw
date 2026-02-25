@@ -62,13 +62,19 @@ owlclaw release gate owlhub \
 
 ---
 
-## 4. 决策请求（给架构层）
+## 4. 决策结果（已落地）
 
-请确认以下命名规范：
+命名已按推荐方案落地并通过测试：
 
-1. 是否引入顶层域 `release`
-2. 发布闸门是否统一命名为 `release gate`
-3. 资源对象是否采用 `release gate <target>`（如 `owlhub`、后续 `mcp`）
+1. 引入顶层域 `release`
+2. 发布闸门统一命名 `release gate`
+3. 目标对象采用 `release gate <target>`，首个 target 为 `owlhub`
+
+当前可用命令：
+
+```bash
+owlclaw release gate owlhub --api-base-url <url> --index-url <url>
+```
 
 ---
 
@@ -87,4 +93,4 @@ owlclaw release gate owlhub \
 ## 6. 当前状态
 
 - 发布闸门能力可用（代码+脚本+测试已具备）
-- CLI 命名等待架构决策，不在本轮直接并入 `owlclaw skill`
+- CLI 命名已落地到顶层 `release` 域，不并入 `owlclaw skill`

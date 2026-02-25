@@ -20,6 +20,7 @@ def run_migrate_scan_command(
     orm: str = "",
     output_mode: str = "handler",
     output: str = ".",
+    dry_run: bool = False,
 ) -> None:
     mode = output_mode.strip().lower()
     if mode not in {"handler", "binding", "both"}:
@@ -40,11 +41,15 @@ def run_migrate_scan_command(
             result = generator.generate_from_openapi(endpoint)
             if mode in {"binding", "both"}:
                 target = output_dir / result.skill_name / "SKILL.md"
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(result.skill_content, encoding="utf-8")
+                if not dry_run:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(result.skill_content, encoding="utf-8")
                 endpoint_results.append(str(target))
             if mode in {"handler", "both"}:
-                endpoint_results.append(str(_write_handler_stub(output_dir, result.skill_name)))
+                if dry_run:
+                    endpoint_results.append(str(output_dir / "handlers" / f"{result.skill_name}.py"))
+                else:
+                    endpoint_results.append(str(_write_handler_stub(output_dir, result.skill_name)))
 
     if orm.strip():
         operations = _load_orm_operations(Path(orm))
@@ -52,16 +57,22 @@ def run_migrate_scan_command(
             result = generator.generate_from_orm(operation)
             if mode in {"binding", "both"}:
                 target = output_dir / result.skill_name / "SKILL.md"
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text(result.skill_content, encoding="utf-8")
+                if not dry_run:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(result.skill_content, encoding="utf-8")
                 orm_results.append(str(target))
             if mode in {"handler", "both"}:
-                orm_results.append(str(_write_handler_stub(output_dir, result.skill_name)))
+                if dry_run:
+                    orm_results.append(str(output_dir / "handlers" / f"{result.skill_name}.py"))
+                else:
+                    orm_results.append(str(_write_handler_stub(output_dir, result.skill_name)))
 
     generated = endpoint_results + orm_results
     if not generated:
         raise typer.Exit(2)
     typer.echo(f"generated={len(generated)}")
+    if dry_run:
+        typer.echo("dry_run=true")
     for path in generated:
         typer.echo(path)
 

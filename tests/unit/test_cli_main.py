@@ -225,12 +225,14 @@ def test_main_dispatches_migrate_scan_with_output_mode(monkeypatch, tmp_path) ->
             "binding",
             "--output",
             str(tmp_path / "out"),
+            "--dry-run",
         ],
     )
     cli_main.main()
     assert captured["output_mode"] == "binding"
     assert captured["openapi"] == str(tmp_path / "openapi.yaml")
     assert captured["output"] == str(tmp_path / "out")
+    assert captured["dry_run"] is True
 
 
 def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
@@ -242,3 +244,49 @@ def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
     out = capsys.readouterr().out
     assert "Usage: owlclaw migrate scan [OPTIONS]" in out
     assert "--output-mode [handler|binding|both]" in out
+    assert "--dry-run" in out
+
+
+def test_main_release_gate_owlhub_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "release", "gate", "owlhub", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw release gate owlhub [OPTIONS]" in out
+
+
+def test_main_dispatches_release_gate_owlhub(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_release_gate_owlhub_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.release_gate.release_gate_owlhub_command", _fake_release_gate_owlhub_command)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "release",
+            "gate",
+            "owlhub",
+            "--api-base-url",
+            "http://127.0.0.1:18080",
+            "--index-url",
+            "file:///tmp/index.json",
+            "--query",
+            "local",
+            "--work-dir",
+            str(tmp_path),
+            "--output",
+            str(tmp_path / "gate.json"),
+        ],
+    )
+    cli_main.main()
+    assert captured["api_base_url"] == "http://127.0.0.1:18080"
+    assert captured["index_url"] == "file:///tmp/index.json"
+    assert captured["query"] == "local"
+    assert captured["work_dir"] == str(tmp_path)
+    assert captured["output"] == str(tmp_path / "gate.json")
