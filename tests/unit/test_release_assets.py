@@ -107,3 +107,18 @@ def test_release_workflow_is_tag_triggered() -> None:
     push_cfg = on_cfg.get("push", {})
     tags = push_cfg.get("tags", [])
     assert "v*" in tags
+    dispatch_cfg = on_cfg.get("workflow_dispatch", {})
+    assert "inputs" in dispatch_cfg
+    target_cfg = dispatch_cfg["inputs"]["target"]
+    assert target_cfg["default"] == "testpypi"
+    assert "testpypi" in target_cfg["options"]
+    assert "pypi" in target_cfg["options"]
+
+
+def test_release_workflow_supports_testpypi_and_pypi_publish_steps() -> None:
+    payload = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+    assert "Publish to TestPyPI" in payload
+    assert "secrets.TEST_PYPI_TOKEN" in payload
+    assert "https://test.pypi.org/legacy/" in payload
+    assert "Publish to PyPI" in payload
+    assert "secrets.PYPI_TOKEN" in payload

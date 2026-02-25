@@ -5,6 +5,15 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Publish target (testpypi for dry-run, pypi for production)"
+        required: true
+        default: "testpypi"
+        type: choice
+        options:
+          - testpypi
+          - pypi
 
 jobs:
   release:
@@ -52,13 +61,22 @@ jobs:
       - name: Build package
         run: python -m build
 
+      - name: Publish to TestPyPI
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi' }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
       - name: Publish to PyPI
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: twine upload dist/*
 
       - name: Create GitHub Release
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

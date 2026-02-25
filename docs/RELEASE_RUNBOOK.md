@@ -16,7 +16,13 @@ Path:
 
 ## 2. Dry-run To TestPyPI
 
-Use a temporary version or pre-release tag for dry-run:
+Preferred path: trigger release workflow manually with TestPyPI target:
+
+```bash
+gh workflow run release.yml -R yeemio/owlclaw -f target=testpypi
+```
+
+Alternative manual upload:
 
 ```bash
 python -m build
@@ -44,6 +50,12 @@ git push origin v0.1.0
 
 Workflow: `.github/workflows/release.yml`
 
+Optional manual trigger to production:
+
+```bash
+gh workflow run release.yml -R yeemio/owlclaw -f target=pypi
+```
+
 Expected behavior:
 
 1. Install deps and run tests
@@ -63,8 +75,8 @@ owlclaw skill list
 
 ## 5. Community Settings
 
-Manual GitHub operations:
+Current state (2026-02-25):
 
-1. Enable Discussions
-2. Set repository visibility to Public
-3. Add Topics and repository Description
+1. Discussions enabled
+2. Repository visibility: Public
+3. Topics and Description configured
