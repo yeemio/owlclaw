@@ -23,7 +23,8 @@
   - [x] 2.2 挂载 `deploy/init-db.sql` 自动初始化 owlclaw 库
   - [x] 2.3 配置具名 volume `owlclaw_minimal_data` 持久化数据
   - [ ] 2.4 验证：启动后 `owlclaw db status` 显示连接正常  
-    - 当前阻塞（2026-02-25）：Windows + asyncpg 连接在 `owlclaw db status` 中出现 `WinError 64 / ConnectionDoesNotExistError`，compose 健康但 CLI 状态命令异常
+    - 进展（2026-02-25）：已在 `owlclaw.cli.db_status` 增加 async 探测失败时的 sync fallback（psycopg2）
+    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用），待恢复后实机复验
   - _Requirements: AC-1, AC-3_
 
 - [ ] **Task 3**: docker-compose.dev.yml — 全量开发环境

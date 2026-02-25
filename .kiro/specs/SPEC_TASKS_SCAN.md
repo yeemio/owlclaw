@@ -162,10 +162,10 @@
 | 最后更新 | 2026-02-25 |
 | 当前批次 | local-devenv 运行验收推进（Task 1.4 实测通过 + compose 运行冲突修正） |
 | 批次状态 | **进行中**。`local-devenv` 已完成 5/10，剩余主要为 CLI 状态命令与全量 dev 验收。 |
-| 已完成项 | 1) 验证 `docker-compose.test.yml`：Postgres healthy + `poetry run pytest tests/unit/ -q` 通过（1539 passed，2 skipped）；2) 移除 root compose 中固定 `container_name`，修复重复运行冲突；3) `docker-compose.dev.yml` 锁定 Hatchet Lite 版本 `v0.53.0`；4) `tests/unit/test_local_devenv_assets.py` 更新并通过（10 passed）。 |
+| 已完成项 | 1) 验证 `docker-compose.test.yml`：Postgres healthy + `poetry run pytest tests/unit/ -q` 通过（1539 passed，2 skipped）；2) 移除 root compose 中固定 `container_name`，修复重复运行冲突；3) `docker-compose.dev.yml` 锁定 Hatchet Lite 版本 `v0.53.0`；4) `tests/unit/test_local_devenv_assets.py` 更新并通过（10 passed）；5) 修复 `owlclaw db status`：async 探测失败时回退 sync 探测，并补 `tests/unit/test_cli_db.py` 覆盖（18 passed）。 |
 | 下一待执行 | 1) local-devenv Task 2.4：修复 Windows + asyncpg 下 `owlclaw db status` 的连接问题；2) local-devenv Task 3.8：完成 `docker compose -f docker-compose.dev.yml --profile full up -d` 全量 healthy 验证；3) local-devenv Task 5.4：补齐 Windows 下 `make help` 的等价验收路径；4) local-devenv Task 7.2 与 Task 10.* 完整流程验收。 |
 | 验收快照 | repo-hygiene 🟡(33/37)，local-devenv 🟡(5/10)，test-infra 🟡(32/52)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署；4) `owlclaw db status` 在 Windows + asyncpg 环境的连接异常；5) 本机无 `make`。 |
+| 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署；4) 本轮 Docker daemon 不可用，`local-devenv` 的 2.4/3.8/10.* 实机验收待恢复后执行；5) 本机无 `make`。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
