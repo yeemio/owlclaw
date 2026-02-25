@@ -8,7 +8,6 @@ import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 pytestmark = pytest.mark.requires_postgres
@@ -20,7 +19,7 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
         item.add_marker(pytest.mark.requires_postgres)
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def db_engine() -> AsyncEngine:
     """Module-scoped async DB engine for integration tests."""
     db_url = os.getenv("OWLCLAW_DATABASE_URL") or os.getenv("DATABASE_URL")
@@ -47,7 +46,7 @@ def run_migrations() -> None:
         pytest.skip(f"database migration unavailable in current environment: {exc}")
 
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="module")
 async def isolated_session(db_engine: AsyncEngine, run_migrations: None):
     """Per-test isolated session with rollback."""
     factory = async_sessionmaker(db_engine, expire_on_commit=False)
@@ -57,4 +56,3 @@ async def isolated_session(db_engine: AsyncEngine, run_migrations: None):
             yield session
         finally:
             await session.rollback()
-            await session.execute(text("select 1"))

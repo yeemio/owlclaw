@@ -59,16 +59,21 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     """Skip service-dependent tests when required services are unavailable."""
     hatchet_url = os.getenv("HATCHET_SERVER_URL", "http://localhost:17077")
     hatchet_host, hatchet_port = _host_port_from_url(hatchet_url, default_port=17077)
+    db_url = os.getenv("OWLCLAW_DATABASE_URL") or os.getenv("DATABASE_URL")
+    postgres_host, postgres_port = _host_port_from_url(
+        db_url or "postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test",
+        default_port=5432,
+    )
 
     service_available = {
-        "requires_postgres": _is_port_open("localhost", 5432),
+        "requires_postgres": _is_port_open(postgres_host, postgres_port),
         "requires_hatchet": _is_port_open(hatchet_host, hatchet_port),
         "requires_redis": _is_port_open("localhost", 6379),
         "requires_kafka": _is_port_open("localhost", 9092),
     }
 
     reasons = {
-        "requires_postgres": "PostgreSQL is not available on localhost:5432",
+        "requires_postgres": f"PostgreSQL is not available on {postgres_host}:{postgres_port}",
         "requires_hatchet": f"Hatchet is not available on {hatchet_host}:{hatchet_port}",
         "requires_redis": "Redis is not available on localhost:6379",
         "requires_kafka": "Kafka is not available on localhost:9092",

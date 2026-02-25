@@ -133,7 +133,7 @@
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4/6/9.4/11 待 Docker/CI 验收） |
+| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（8/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4/9.4/11 待 Docker/CI 验收） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（7/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
 
 ---
@@ -162,9 +162,9 @@
 | 最后更新 | 2026-02-25 |
 | 当前批次 | review-work 审校续航：同步 main 后继续推进 test-infra/release/owlhub 收尾与事实回写 |
 | 批次状态 | **进行中**。主干统筹合并已完成，当前聚焦剩余阻塞项闭环与验收。 |
-| 已完成项 | 1) capabilities-skills ✅(115/115)：prerequisites 门控、session snapshot、token impact、enable/disable、env 注入生命周期、source-priority 覆盖、Skills Watcher 热重载；2) local-devenv ✅(10/10)：baseline assets、compose 稳定性、db status + Windows asyncpg fallback、env 覆盖验证；3) owlhub release gate（Task 19 db infra）已实现；4) mionyee-trading 完整示例已落地；5) test-infra 已完成 7/11（含 unit 0 skip 前置与 CI/本地 test compose 同源化）；6) 本轮审校补充了 integration fixtures 在 DB/migration 不稳定时的优雅 skip。 |
-| 下一待执行 | 1) test-infra：Task 4.2（unit < 60s）、Task 6.3、Task 9.4、Task 11；2) owlhub：Task 40.4（外部部署阻塞）；3) release：Task 3.1.2/3.1.3/4.1.1/4.1.2/4.1.4（PyPI/TestPyPI/GitHub 发布外部动作）。 |
-| 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
+| 已完成项 | 1) capabilities-skills ✅(115/115)：prerequisites 门控、session snapshot、token impact、enable/disable、env 注入生命周期、source-priority 覆盖、Skills Watcher 热重载；2) local-devenv ✅(10/10)：baseline assets、compose 稳定性、db status + Windows asyncpg fallback、env 覆盖验证；3) owlhub release gate（Task 19 db infra）已实现；4) mionyee-trading 完整示例已落地；5) test-infra 已完成 8/11（含 unit 0 skip 前置与 CI/本地 test compose 同源化 + Task 6.3 实库隔离回滚验收通过）；6) 本轮修复了 integration Postgres 门控端口识别与 async fixture loop_scope 一致性问题。 |
+| 下一待执行 | 1) test-infra：Task 4.2（unit < 60s）、Task 9.4、Task 11；2) owlhub：Task 40.4（外部部署阻塞）；3) release：Task 3.1.2/3.1.3/4.1.1/4.1.2/4.1.4（PyPI/TestPyPI/GitHub 发布外部动作）。 |
+| 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(8/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra 仍有性能与环境门槛（unit <60s、Docker/CI 端到端验收）未闭环；2) release/owlhub 余项依赖外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
