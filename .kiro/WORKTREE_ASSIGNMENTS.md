@@ -161,13 +161,13 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| triggers-webhook | 18/18 ✅ | `owlclaw/triggers/webhook.py`, `tests/unit/triggers/test_webhook*.py` |
-| triggers-queue | 89/89 ✅ | `owlclaw/triggers/queue.py`, `tests/unit/triggers/test_queue*.py` |
-| triggers-db-change | 11/11 ✅ | `owlclaw/triggers/db_change.py`, `tests/unit/triggers/test_db_change*.py` |
-| triggers-api | 11/11 ✅ | `owlclaw/triggers/api.py`, `tests/unit/triggers/test_api*.py` |
-| triggers-signal | 15/15 ✅ | `owlclaw/triggers/signal.py`, `tests/unit/triggers/test_signal*.py` |
-| cli-scan | 80/80 ✅ | `owlclaw/cli/scan/`, `tests/unit/cli_scan/` |
-| declarative-binding | 8/26 🟡 | `owlclaw/capabilities/bindings/`, `tests/unit/capabilities/` |
+| triggers-webhook | 18/18 ✅ | — |
+| triggers-queue | 89/89 ✅ | — |
+| triggers-db-change | 11/11 ✅ | — |
+| triggers-api | 11/11 ✅ | — |
+| triggers-signal | 15/15 ✅ | — |
+| cli-scan | 80/80 ✅ | — |
+| declarative-binding | 16/26 🟡 | `owlclaw/capabilities/bindings/`, `tests/unit/capabilities/` |
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
@@ -197,7 +197,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|------|---------|
 | e2e-validation | 85/85 ✅ | `tests/integration/test_e2e*.py` |
 | mcp-server | 12/12 ✅ | `owlclaw_mcp/**` |
-| owlhub | 38/42 🟡 | `owlclaw/owlhub/**`, `tests/unit/test_owlhub*.py` |
+| owlhub | 38/42 🟡 | `owlclaw/owlhub/**`, `tests/unit/test_owlhub*.py` — ⚠️ 需先 git merge main 再推进 |
 | examples | 0/12 🟡 | `examples/**`, `tests/unit/test_examples*.py` |
 | cli-migrate | 0/24 🟡 | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
 | ci-setup | 0/12 🟡 | `.github/workflows/**` |
