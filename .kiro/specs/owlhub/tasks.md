@@ -367,7 +367,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 ## Phase 3: Service API Mode (Full Service)
 
 - [ ] 19. Set up database infrastructure
-  - _Status note (2026-02-25): pending architecture scope decision. Current implementation path shipped file-backed API/review/statistics flow for Phase 3 validation; DB-backed migration/model track remains open and must be explicitly approved before implementation._
+  - _Status note (2026-02-25): pending architecture scope decision. Current implementation path shipped file-backed API/review/statistics flow for Phase 3 validation; DB-backed migration/model track remains open and must be explicitly approved before implementation. Decision proposal: `docs/OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md`._
   - [ ] 19.1 Create database schema with Alembic migrations
     - Create `migrations/versions/` migration for skills table
     - Create migration for skill_versions table with foreign key
