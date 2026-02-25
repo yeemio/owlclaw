@@ -78,6 +78,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--params-file", dest="params_file", default="")
         parser.add_argument("--param", default="")
         parser.add_argument("--no-minimal", dest="no_minimal", action="store_true", default=False)
+        parser.add_argument("--from-binding", dest="from_binding", default="")
         parser.add_argument("--force", "-f", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         init_command(
@@ -89,6 +90,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             params_file=ns.params_file,
             param=ns.param,
             no_minimal=ns.no_minimal,
+            from_binding=ns.from_binding,
             force=ns.force,
         )
         return True
@@ -895,6 +897,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
     if argv == ["skill", "init"]:
         print("Usage: owlclaw skill init [OPTIONS]")
         print("\n  Scaffold a new SKILL.md in current directory.")
+        print("  --from-binding TEXT  Generate a business-rules template from existing binding SKILL.md")
         sys.exit(0)
     if argv == ["skill", "validate"]:
         print("Usage: owlclaw skill validate [OPTIONS] [DIR]")

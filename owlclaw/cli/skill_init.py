@@ -8,7 +8,9 @@ from typing import Annotated, Any, cast
 
 import click
 import typer
+import yaml  # type: ignore[import-untyped]
 
+from owlclaw.capabilities.tool_schema import extract_tools_schema
 from owlclaw.templates.skills import (
     TemplateRegistry,
     TemplateRenderer,
@@ -38,6 +40,8 @@ Optional binding snippet (uncomment when needed):
 #       url: https://api.example.com/items/{{id}}
 ```
 """
+
+_FRONTMATTER_PATTERN = re.compile(r"^---\r?\n(.*?)\r?\n---(?:\r?\n(.*))?$", re.DOTALL)
 
 
 def _parse_param_args(param_args: list[str]) -> dict[str, Any]:
@@ -123,6 +127,60 @@ def _normalize_skill_name(raw_name: str) -> str:
     return kebab
 
 
+def _resolve_skill_file(path: Path) -> Path:
+    if path.is_file():
+        return path
+    return path / "SKILL.md"
+
+
+def _load_frontmatter(skill_file: Path) -> dict[str, Any]:
+    content = skill_file.read_text(encoding="utf-8").lstrip("\ufeff")
+    match = _FRONTMATTER_PATTERN.match(content)
+    if not match:
+        raise ValueError(f"Invalid SKILL.md frontmatter format: {skill_file}")
+    frontmatter_raw = match.group(1)
+    payload = yaml.safe_load(frontmatter_raw)
+    if not isinstance(payload, dict):
+        raise ValueError(f"Frontmatter must be a mapping: {skill_file}")
+    return cast(dict[str, Any], payload)
+
+
+def _build_from_binding_content(skill_name: str, description: str, frontmatter: dict[str, Any]) -> str:
+    tools_schema, _errors = extract_tools_schema(frontmatter)
+    binding_tools: list[str] = []
+    for tool_name, tool_def in tools_schema.items():
+        if isinstance(tool_def, dict) and isinstance(tool_def.get("binding"), dict):
+            binding_tools.append(tool_name)
+    if not binding_tools:
+        raise ValueError("source SKILL.md does not contain binding tools")
+
+    metadata = frontmatter.get("metadata", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+    owlclaw_config = frontmatter.get("owlclaw", {})
+    if not isinstance(owlclaw_config, dict):
+        owlclaw_config = {}
+
+    output_frontmatter = {
+        "name": skill_name,
+        "description": description,
+        "metadata": metadata,
+        "owlclaw": owlclaw_config,
+    }
+    header = yaml.safe_dump(output_frontmatter, allow_unicode=True, sort_keys=False).strip()
+    tool_lines = "\n".join(f"- `{tool_name}`: describe when to call this tool." for tool_name in sorted(binding_tools))
+    body = (
+        "# Instructions\n\n"
+        "## Tool Decision Guide\n\n"
+        f"{tool_lines}\n\n"
+        "## Business Rules\n\n"
+        "1. Describe trigger conditions in natural language.\n"
+        "2. Define validation and risk checks before tool calls.\n"
+        "3. Define post-call actions and exception handling.\n"
+    )
+    return f"---\n{header}\n---\n\n{body}"
+
+
 def init_command(
     name: Annotated[str, typer.Option("--name", help="Skill name.", is_flag=False)] = "",
     description: Annotated[str, typer.Option("--description", help="Skill description for minimal mode.", is_flag=False)] = "",
@@ -154,6 +212,14 @@ def init_command(
             help="Disable default minimal scaffold and use template wizard when --template is not set.",
         ),
     ] = False,
+    from_binding: Annotated[
+        str,
+        typer.Option(
+            "--from-binding",
+            help="Generate a business-rules template from an existing binding SKILL.md path.",
+            is_flag=False,
+        ),
+    ] = "",
     force: Annotated[bool, typer.Option("--force", "-f", help="Overwrite existing SKILL.md if present.")] = False,
 ) -> None:
     """Create a new Skill directory and SKILL.md from template or default scaffold."""
@@ -174,6 +240,44 @@ def init_command(
                 typer.echo(f"{level}: {e.field}: {e.message}", err=True)
             if any(e.severity == "error" for e in errs):
                 raise typer.Exit(1)
+
+    if from_binding.strip():
+        source_path = Path(from_binding).resolve()
+        source_skill_file = _resolve_skill_file(source_path)
+        if not source_skill_file.exists():
+            typer.echo(f"Error: binding source SKILL.md not found: {source_skill_file}", err=True)
+            raise typer.Exit(2)
+        try:
+            source_frontmatter = _load_frontmatter(source_skill_file)
+        except Exception as e:
+            typer.echo(f"Error: failed to read binding source: {e}", err=True)
+            raise typer.Exit(2) from e
+
+        source_name = str(source_frontmatter.get("name", "")).strip() or "binding-skill"
+        normalized_name = _normalize_skill_name(name.strip() or source_name)
+        if not normalized_name:
+            typer.echo("Error: --name must contain at least one alphanumeric character.", err=True)
+            raise typer.Exit(2)
+        resolved_description = description.strip() or f"Business rules for {source_name}"
+        if not resolved_description:
+            typer.echo("Error: description must be a non-empty string.", err=True)
+            raise typer.Exit(2)
+
+        skill_dir = Path(path).resolve() / normalized_name
+        skill_file = skill_dir / "SKILL.md"
+        if skill_file.exists() and not force:
+            typer.echo(f"Error: {skill_file} already exists. Use --force to overwrite.", err=True)
+            raise typer.Exit(2)
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            content = _build_from_binding_content(normalized_name, resolved_description, source_frontmatter)
+        except Exception as e:
+            typer.echo(f"Error: failed to build from binding source: {e}", err=True)
+            raise typer.Exit(2) from e
+        skill_file.write_text(content, encoding="utf-8")
+        _validate_generated_skill(skill_file)
+        typer.echo(f"Created: {skill_file}")
+        return
 
     # Minimal mode is the default scaffold. Template mode is enabled only with explicit non-default template.
     use_template_library = bool(template and template != "default")

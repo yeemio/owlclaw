@@ -168,11 +168,11 @@
   - [x] 18.4 集成测试：OpenAPI 规范 → `--output-mode binding` → 生成 SKILL.md → validate → Agent 加载
   - [x] 18.5 集成测试：ORM 模型 → `--output-mode binding` → 生成 SKILL.md → validate → Agent 加载
 
-- [ ] **Task 19**: 三种角色工作流文档与示例
-  - [ ] 19.1 编写 IT 运维工作流文档（运行命令 + 配置环境变量）
-  - [ ] 19.2 编写业务用户工作流文档（自然语言编写 SKILL.md body）
-  - [ ] 19.3 创建端到端示例：OpenAPI → binding SKILL.md → 业务规则填写 → Agent 调用
-  - [ ] 19.4 `owlclaw skill init --from-binding` 模式：从已有 binding SKILL.md 生成业务规则模板
+- [x] **Task 19**: 三种角色工作流文档与示例
+  - [x] 19.1 编写 IT 运维工作流文档（运行命令 + 配置环境变量）
+  - [x] 19.2 编写业务用户工作流文档（自然语言编写 SKILL.md body）
+  - [x] 19.3 创建端到端示例：OpenAPI → binding SKILL.md → 业务规则填写 → Agent 调用
+  - [x] 19.4 `owlclaw skill init --from-binding` 模式：从已有 binding SKILL.md 生成业务规则模板
 
 ## Backlog
 
@@ -186,4 +186,4 @@
 ---
 
 **维护者**: OwlClaw 核心团队
-**最后更新**: 2026-02-24
+**最后更新**: 2026-02-25
