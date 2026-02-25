@@ -87,4 +87,5 @@ owlclaw release gate owlhub \
 ## 6. 当前状态
 
 - 发布闸门能力可用（代码+脚本+测试已具备）
-- CLI 命名等待架构决策，不在本轮直接并入 `owlclaw skill`
+- 命名决策已落地：`owlclaw release gate owlhub`
+- 已保持 `owlclaw skill` 命名空间不扩张

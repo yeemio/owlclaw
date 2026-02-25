@@ -1,8 +1,10 @@
 """CLI tools — owlclaw db, owlclaw skill, owlclaw scan, owlclaw migrate."""
 
 import argparse
+import json
 import sys
 from importlib.metadata import PackageNotFoundError, version as package_version
+from pathlib import Path
 
 import typer
 from click.exceptions import Exit as ClickExit
@@ -632,6 +634,51 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
     return True
 
 
+def _dispatch_release_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw release ...` via argparse."""
+    if not argv or argv[0] != "release":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["release"])
+
+    if argv[1] != "gate":
+        print(f"Error: unknown release subcommand: {argv[1]}", file=sys.stderr)
+        raise SystemExit(2)
+    if len(argv) < 3:
+        _print_help_and_exit(["release", "gate"])
+    target = argv[2].strip().lower()
+    if target != "owlhub":
+        print(f"Error: unknown release gate target: {argv[2]}", file=sys.stderr)
+        raise SystemExit(2)
+
+    from owlclaw.owlhub.release_gate import run_release_gate
+
+    parser = argparse.ArgumentParser(add_help=False, prog="owlclaw release gate owlhub")
+    parser.add_argument("--api-base-url", required=True)
+    parser.add_argument("--index-url", required=True)
+    parser.add_argument("--query", default="skill")
+    parser.add_argument("--work-dir", default=".owlhub/release-gate")
+    parser.add_argument("--output", default="")
+    ns = parser.parse_args(argv[3:])
+
+    report = run_release_gate(
+        api_base_url=ns.api_base_url,
+        index_url=ns.index_url,
+        query=ns.query,
+        work_dir=Path(ns.work_dir),
+    )
+    payload = report.as_dict()
+    text = json.dumps(payload, ensure_ascii=False, indent=2)
+    print(text)
+    if ns.output:
+        out = Path(ns.output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(f"{text}\n", encoding="utf-8")
+    if not report.passed:
+        raise SystemExit(1)
+    return True
+
+
 def _print_help_and_exit(argv: list[str]) -> None:
     """Print plain help when Typer/Rich make_metavar bug triggers (--help)."""
     argv = [a for a in argv if a not in ("--help", "-h")]
@@ -647,6 +694,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  skill  Create, validate, list Agent Skills (SKILL.md)")
         print("  trigger Trigger templates (db-change)")
         print("  migrate Migrate legacy APIs/models to OwlClaw assets")
+        print("  release Release workflows and gate checks")
         print("\n  owlclaw db --help   owlclaw skill --help")
         sys.exit(0)
     if argv == ["db"]:
@@ -887,6 +935,24 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  --output, --path TEXT          Output directory (default: .)")
         print("  --help                         Show this message and exit")
         sys.exit(0)
+    if argv == ["release"]:
+        print("Usage: owlclaw release [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Release workflow tooling.")
+        print("Commands:")
+        print("  gate  Run release gate checks")
+        print("\n  owlclaw release gate owlhub --help")
+        sys.exit(0)
+    if argv == ["release", "gate"] or argv == ["release", "gate", "owlhub"]:
+        print("Usage: owlclaw release gate owlhub [OPTIONS]")
+        print("\n  Run OwlHub release gate checks.")
+        print("Options:")
+        print("  --api-base-url TEXT   OwlHub API base URL (required)")
+        print("  --index-url TEXT      OwlHub index URL (required)")
+        print("  --query TEXT          Search query for CLI smoke check (default: skill)")
+        print("  --work-dir TEXT       Temporary work directory")
+        print("  --output TEXT         Optional report output path")
+        print("  --help                Show this message and exit")
+        sys.exit(0)
     if argv == ["trigger", "template"]:
         print("Usage: owlclaw trigger template [OPTIONS] TEMPLATE")
         print("\n  Generate trigger templates.")
@@ -931,6 +997,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  skill  Create, validate, list Agent Skills (SKILL.md)")
     print("  trigger Trigger templates (db-change)")
     print("  migrate Migrate legacy APIs/models to OwlClaw assets")
+    print("  release Release workflows and gate checks")
     sys.exit(0)
 
 
@@ -1091,6 +1158,11 @@ def _main_impl() -> None:
         raise SystemExit(e.exit_code) from None
     try:
         if _dispatch_migrate_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_release_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None

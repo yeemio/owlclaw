@@ -253,3 +253,59 @@ def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
     out = capsys.readouterr().out
     assert "Usage: owlclaw migrate scan [OPTIONS]" in out
     assert "--output-mode [handler|binding|both]" in out
+
+
+def test_main_dispatches_release_gate_owlhub(monkeypatch, tmp_path, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+
+    class _Report:
+        passed = True
+
+        @staticmethod
+        def as_dict() -> dict[str, object]:
+            return {"passed": True, "checks": [{"name": "api_health", "passed": True}]}
+
+    captured: dict[str, object] = {}
+
+    def _fake_run_release_gate(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+        return _Report()
+
+    monkeypatch.setattr("owlclaw.owlhub.release_gate.run_release_gate", _fake_run_release_gate)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "release",
+            "gate",
+            "owlhub",
+            "--api-base-url",
+            "https://hub.example.com",
+            "--index-url",
+            "https://hub.example.com/index.json",
+            "--query",
+            "entry",
+            "--work-dir",
+            str(tmp_path / "gate"),
+            "--output",
+            str(tmp_path / "report.json"),
+        ],
+    )
+    cli_main.main()
+
+    assert captured["api_base_url"] == "https://hub.example.com"
+    assert captured["index_url"] == "https://hub.example.com/index.json"
+    assert captured["query"] == "entry"
+    assert str(captured["work_dir"]).endswith("gate")
+    assert (tmp_path / "report.json").exists()
+    assert '"passed": true' in capsys.readouterr().out.lower()
+
+
+def test_main_release_gate_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "release", "gate", "owlhub", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw release gate owlhub [OPTIONS]" in out

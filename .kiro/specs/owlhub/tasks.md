@@ -366,28 +366,31 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 
 ## Phase 3: Service API Mode (Full Service)
 
-- [ ] 19. Set up database infrastructure
-  - [ ] 19.1 Create database schema with Alembic migrations
+- [x] 19. Set up database infrastructure
+  - [x] 19.1 Create database schema with Alembic migrations
     - Create `migrations/versions/` migration for skills table
     - Create migration for skill_versions table with foreign key
     - Create migration for skill_statistics table
     - Create migration for review_records table
     - Add indexes for common queries (name, publisher, tags)
+    - _Implemented: `migrations/versions/006_owlhub_core_tables.py`_
     - _Requirements: 1.1, 1.3, 6.1, 7.1_
 
-  - [ ] 19.2 Create SQLAlchemy models
-    - Create `owlhub/models/skill.py` with Skill model
-    - Create `owlhub/models/version.py` with SkillVersion model
-    - Create `owlhub/models/statistics.py` with SkillStatistics model
-    - Create `owlhub/models/review.py` with ReviewRecord model
+  - [x] 19.2 Create SQLAlchemy models
+    - Create `owlclaw/owlhub/models/skill.py` with Skill model
+    - Create `owlclaw/owlhub/models/version.py` with SkillVersion model
+    - Create `owlclaw/owlhub/models/statistics.py` with SkillStatistics model
+    - Create `owlclaw/owlhub/models/review.py` with ReviewRecord model
     - Add relationships and cascade rules
+    - _Implemented and exported via `owlclaw/owlhub/models/__init__.py`_
     - _Requirements: 1.1, 1.3, 6.1, 7.1_
 
-  - [ ]* 19.3 Write unit tests for database models
+  - [x]* 19.3 Write unit tests for database models
     - Test model creation and relationships
     - Test unique constraints (publisher + name)
     - Test cascade deletes
     - Test query performance with indexes
+    - _Implemented: `tests/unit/test_owlhub_db_models.py` + `tests/unit/test_migration_owlhub_core.py`_
     - _Requirements: 1.1, 1.3_
 
 - [x] 20. Implement FastAPI service foundation
@@ -909,7 +912,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Verify index is accessible and CLI works
     - Plan Phase 2 and Phase 3 rollout timeline
     - _Requirements: 8.1, 8.2_
-    - _Status note (2026-02-25): blocked by external production credentials/environment ownership; local production-like validation completed via integration tests and deployment smoke checks. Runbook + automation ready: `docs/owlhub/production_rollout.md`, `scripts/owlhub_release_gate.py`. CLI gate 命名已提交架构审校：`docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md`._
+    - _Status note (2026-02-25): blocked by external production credentials/environment ownership; local production-like validation completed via integration tests and deployment smoke checks. Runbook + automation ready: `docs/owlhub/production_rollout.md`, `scripts/owlhub_release_gate.py`. CLI gate 已落地：`owlclaw release gate owlhub`._
 
 ## Notes
 

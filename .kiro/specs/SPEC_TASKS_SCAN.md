@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（26/26） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（40/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | ✅ 三层齐全，已完成（12/12） | 示例（含业务 Skills 示例 + LangChain 集成示例 + mionyee 完整接入样例） |
@@ -151,12 +151,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | codex-work：examples + cli-migrate 收口与 spec 规范化 |
-| 批次状态 | **已完成（阶段性）**。examples 与 cli-migrate 已完成并通过相关测试；release 保持“PyPI 延期”策略不变。 |
-| 已完成项 | 1) 新增 `examples/mionyee-trading/` 完整示例（app/docs/skills）；2) 新增 `tests/unit/test_examples_mionyee.py`；3) 更新 `examples/README.md` 索引与目录一致；4) 通过 examples 与 cli-migrate 相关测试（12 passed）；5) 将 `examples/tasks.md` 规范化为 12 项并全部收口；6) 将 `cli-migrate/tasks.md` 规范化为 24 项并全部收口；7) 同步 `examples/cli-migrate` requirements/design 状态字段；8) 统一 SPEC_TASKS_SCAN 中 phase/spec/checkpoint 状态。 |
-| 下一待执行 | 1) 若后续恢复 PyPI 目标：配置 `PYPI_TOKEN`/`TEST_PYPI_TOKEN` 并执行正式发布链路；2) 若推进 owlhub 最终收口：处理 Task 19（Phase 3 DB）与 Task 40.4（生产部署）。 |
-| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，examples ✅(12/12)，cli-migrate ✅(24/24)，release ✅(32/32，阶段完成)，owlhub 🟡(40/42)。 |
-| 阻塞项 | 1) owlhub Task 19（Phase 3 数据库基础设施，待进入该阶段后实施）；2) owlhub Task 40.4（外部生产部署凭证/环境）；3) OwlHub gate CLI 命名待架构决策。 |
+| 当前批次 | codex-work：owlhub Task 19 落地（DB schema + ORM + tests） |
+| 批次状态 | **已完成（阶段性）**。owlhub Task 19 已实现并验收；examples/cli-migrate/release 状态保持完成。 |
+| 已完成项 | 1) 新增 `migrations/versions/006_owlhub_core_tables.py`（skills/skill_versions/skill_statistics/review_records）；2) 新增 `owlclaw/owlhub/models/{skill,version,statistics,review}.py`；3) 更新 `owlclaw/owlhub/models/__init__.py` 导出；4) 新增 `tests/unit/test_migration_owlhub_core.py`；5) 新增 `tests/unit/test_owlhub_db_models.py`；6) 新增 CLI 命令 `owlclaw release gate owlhub`（含 dispatch + help + 单测）；7) 同步 `.kiro/specs/owlhub/tasks.md` Task 19.1/19.2/19.3 为完成并修正模型路径。 |
+| 下一待执行 | 1) owlhub Task 40.4 生产部署（需外部凭证/环境 ownership）；2) 若后续恢复 PyPI 目标：配置 `PYPI_TOKEN`/`TEST_PYPI_TOKEN` 并执行正式发布链路。 |
+| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，examples ✅(12/12)，cli-migrate ✅(24/24)，release ✅(32/32，阶段完成)，owlhub 🟡(41/42)。 |
+| 阻塞项 | 1) owlhub Task 40.4（外部生产部署凭证/环境）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
