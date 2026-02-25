@@ -15,14 +15,16 @@
   - [x] 1.1 创建根目录 `docker-compose.test.yml`，使用 `pgvector/pgvector:pg16`
   - [x] 1.2 配置 `owlclaw_test` 数据库，含 healthcheck
   - [x] 1.3 添加 `CREATE EXTENSION IF NOT EXISTS vector;` 初始化步骤（与 CI test.yml 一致）
-  - [ ] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过
+  - [ ] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过  
+    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
   - _Requirements: AC-1, AC-2_
 
 - [ ] **Task 2**: docker-compose.minimal.yml — 最小依赖
   - [x] 2.1 创建根目录 `docker-compose.minimal.yml`，使用 `pgvector/pgvector:pg16`
   - [x] 2.2 挂载 `deploy/init-db.sql` 自动初始化 owlclaw 库
   - [x] 2.3 配置具名 volume `owlclaw_minimal_data` 持久化数据
-  - [ ] 2.4 验证：启动后 `owlclaw db status` 显示连接正常
+  - [ ] 2.4 验证：启动后 `owlclaw db status` 显示连接正常  
+    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
   - _Requirements: AC-1, AC-3_
 
 - [ ] **Task 3**: docker-compose.dev.yml — 全量开发环境
@@ -33,7 +35,8 @@
   - [x] 3.5 `deploy/init-db.sql` 扩展：增加 langfuse 数据库和用户创建
   - [x] 3.6 所有服务配置 healthcheck
   - [x] 3.7 顶部注释说明用途、启动命令、各服务端口
-  - [ ] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy
+  - [ ] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
+    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
   - _Requirements: AC-1, AC-6_
 
 ### Phase 2：环境变量与脚本（P0）
@@ -51,7 +54,8 @@
         `test`, `test-unit`, `test-int`, `lint`, `typecheck`
   - [x] 5.2 每个目标添加 `## 注释`（`make help` 可读）
   - [x] 5.3 Windows 兼容：检测 OS，提示使用 PowerShell 等价命令
-  - [ ] 5.4 验证：`make help` 输出所有目标说明
+  - [ ] 5.4 验证：`make help` 输出所有目标说明  
+    - 当前阻塞（2026-02-25）：本机无 `make` 命令（Windows 环境）
   - _Requirements: AC-3_
 
 - [x] **Task 6**: scripts/test-local.sh + scripts/test-local.ps1

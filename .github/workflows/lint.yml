@@ -33,3 +33,6 @@ jobs:
 
       - name: Run MyPy
         run: poetry run mypy owlclaw
+
+      - name: Run unit tests (no external services)
+        run: poetry run pytest tests/unit/ -q --tb=short

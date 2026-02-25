@@ -1,47 +1,36 @@
 #!/usr/bin/env bash
+# Local test runner for OwlClaw.
+# Usage:
+#   ./scripts/test-local.sh [--unit-only] [--keep-up]
+
 set -euo pipefail
 
-UNIT_ONLY=0
-KEEP_UP=0
+UNIT_ONLY=false
+KEEP_UP=false
 
 for arg in "$@"; do
   case "$arg" in
-    --unit-only)
-      UNIT_ONLY=1
-      ;;
-    --keep-up)
-      KEEP_UP=1
-      ;;
+    --unit-only) UNIT_ONLY=true ;;
+    --keep-up) KEEP_UP=true ;;
     *)
-      echo "Unknown argument: $arg" >&2
-      exit 1
+      echo "Unknown option: $arg"
+      echo "Usage: ./scripts/test-local.sh [--unit-only] [--keep-up]"
+      exit 2
       ;;
   esac
 done
 
 cleanup() {
-  if [ "$KEEP_UP" -eq 0 ]; then
-    docker compose -f docker-compose.test.yml down >/dev/null 2>&1 || true
+  if [[ "$KEEP_UP" == "false" ]]; then
+    docker compose -f docker-compose.test.yml down || true
   fi
 }
-
-if [ "$KEEP_UP" -eq 0 ]; then
-  trap cleanup EXIT
-fi
+trap cleanup EXIT
 
 docker compose -f docker-compose.test.yml up -d
 
-echo "Waiting for postgres healthcheck..."
-for _ in $(seq 1 30); do
-  status=$(docker inspect --format '{{json .State.Health.Status}}' "$(docker compose -f docker-compose.test.yml ps -q postgres)" 2>/dev/null || echo '"starting"')
-  if [ "$status" = '"healthy"' ]; then
-    break
-  fi
-  sleep 2
-done
-
-if [ "$UNIT_ONLY" -eq 1 ]; then
+if [[ "$UNIT_ONLY" == "true" ]]; then
   poetry run pytest tests/unit/ -q
 else
-  poetry run pytest tests/unit/ tests/integration/ -m "not e2e" -q
+  poetry run pytest tests/unit/ tests/integration/ -q
 fi

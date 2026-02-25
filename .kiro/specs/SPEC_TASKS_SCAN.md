@@ -94,7 +94,7 @@
 
 - [ ] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
 - [ ] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
-- [ ] 仓库卫生清理（根目录整洁、.gitignore 完整、deploy/ 文档化） → spec: repo-hygiene
+- [x] 仓库卫生清理（根目录整洁、.gitignore 完整、deploy/ 文档化） → spec: repo-hygiene
 
 ---
 
@@ -125,16 +125,16 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（26/26） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（40/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | ✅ 三层齐全，已完成（14/14） | 示例（非交易场景、LangChain、3 行业 Skills、mionyee-trading 完整示例、批量验证脚本、CI 接入、文档对齐全部完成） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | ✅ 三层齐全，已完成（24/24） | AI 辅助迁移工具（binding、dry-run、报告、冲突处理、Python 扫描与真实 handler 生成、配置校验与迁移向导全部完成） |
-| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（22/32） | PyPI + GitHub 发布 |
+| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | 🟡 三层齐全，进行中（4/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🆕 三层齐全，待执行（0/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐） |
-| **repo-hygiene** | `.kiro/specs/repo-hygiene/` | 🆕 三层齐全，待执行（0/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
+| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（6/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐） |
+| **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（7/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
 
 ---
 
@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | local-devenv Task 1~9 首轮实现与资产校验（开发基础设施统一） |
-| 批次状态 | **进行中**。`local-devenv` 已完成 4/10（Task 4/6/8/9 完成），其余主要为本机运行验收项。 |
-| 已完成项 | 1) 新增根目录 compose：`docker-compose.test.yml` / `docker-compose.minimal.yml` / `docker-compose.dev.yml`；2) 新增 `Makefile`、`scripts/test-local.sh`、`scripts/test-local.ps1`；3) 新增 `docs/DEVELOPMENT.md`、`docs/DEPLOYMENT.md`；4) 更新 `deploy/docker-compose.{lite,prod,cron}.yml` 到 pgvector/pg16 并统一头注释；5) 扩展 `deploy/init-db.sql`（新增 langfuse DB/role）；6) 新增 `tests/unit/test_local_devenv_assets.py`（10 passed）。 |
-| 下一待执行 | 1) local-devenv Task 1.4/2.4/3.8/5.4/7.2/10.*：在 Docker daemon 可用窗口完成端到端验收；2) test-infra Task 1（集成测试 skip 约定统一）；3) repo-hygiene Task 1（.gitignore 补充）；4) release 剩余 10 项（外部平台依赖）；5) owlhub Task 19 架构决策。 |
-| 验收快照 | examples ✅(14/14)，cli-migrate ✅(24/24)，ci-setup ✅(12/12)，release 🟡(22/32)，owlhub 🟡(41/42)，capabilities-skills 🟡(108/115)，declarative-binding ✅(26/26)，local-devenv 🟡(4/10)，test-infra 🆕(0/11)，repo-hygiene 🆕(0/7)。 |
-| 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署；4) 本轮本机 Docker daemon 不可用，local-devenv 运行验收项暂未完成。 |
+| 当前批次 | 统筹轮次：合并 review-work（local-devenv 37/56 + test-infra 32/52 + repo-hygiene 33/37）→ main；负载再平衡 |
+| 批次状态 | **完成**。review-work 大批成果合并到 main（31 文件，829 行新增）。 |
+| 已完成项 | 1) repo-hygiene 33/37：.gitignore 补充 + nul 清理 + scripts/README + deploy/README 更新 + compose 文件对齐；2) local-devenv 37/56：docker-compose.dev/minimal/test.yml + Makefile + .env.example + docs/DEVELOPMENT/DEPLOYMENT；3) test-infra 32/52：conftest skip 机制 + integration/conftest fixtures + CI test.yml 更新 + docs/TESTING；4) release 25/32；5) owlhub 137/143；6) capabilities-skills 108/115。 |
+| 下一待执行 | 1) codex-work：repo-hygiene 收尾(33→37) + test-infra Task 3/4/6/9/11；2) codex-gpt-work：local-devenv Task 1/2/3/5/7 + owlhub 收尾(137→143)；3) capabilities-skills 108/115 收尾；4) release 外部平台依赖（待人工凭据）。 |
+| 验收快照 | repo-hygiene 🟡(33/37)，local-devenv 🟡(37/56)，test-infra 🟡(32/52)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

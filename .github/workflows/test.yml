@@ -49,13 +49,26 @@ jobs:
           PGPASSWORD: postgres
         run: psql -h localhost -U postgres -d owlclaw_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
-      - name: Run tests with coverage
+      - name: Run unit tests with strict coverage
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test
           OWLCLAW_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test
         run: |
           poetry run pytest \
+            tests/unit/ \
             --cov=owlclaw \
+            --cov-report=term \
+            --cov-fail-under=90
+
+      - name: Run integration tests with appended coverage
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test
+          OWLCLAW_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test
+        run: |
+          poetry run pytest \
+            tests/integration/ \
+            --cov=owlclaw \
+            --cov-append \
             --cov-report=xml \
             --cov-report=term \
             --cov-fail-under=80

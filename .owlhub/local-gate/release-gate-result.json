@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-02-25T04:06:35.173314+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "api_health",
+      "passed": true,
+      "detail": "health endpoint returned status=ok"
+    },
+    {
+      "name": "api_metrics",
+      "passed": true,
+      "detail": "metrics endpoint returned prometheus payload"
+    },
+    {
+      "name": "index_access",
+      "passed": true,
+      "detail": "index loaded with 1 skills"
+    },
+    {
+      "name": "cli_search",
+      "passed": true,
+      "detail": "cli client search returned 1 results for query 'local'"
+    }
+  ]
+}

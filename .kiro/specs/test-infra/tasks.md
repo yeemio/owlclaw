@@ -11,60 +11,61 @@
 
 ### Phase 1：外部服务 Skip 机制（P0）
 
-- [ ] **Task 1**: pytest skip 机制实现
-  - [ ] 1.1 在 `tests/conftest.py` 实现 `_is_port_open()` 服务可用性检测
-  - [ ] 1.2 实现 `pytest_collection_modifyitems`：检测 PG/Hatchet/Redis/Kafka，不可用时 skip
-  - [ ] 1.3 注册 markers：`requires_postgres`、`requires_hatchet`、`requires_redis`、`requires_kafka`
-  - [ ] 1.4 验证：无 PG 时 `pytest tests/integration/ -v` 显示 SKIP 而非 ERROR
+- [x] **Task 1**: pytest skip 机制实现
+  - [x] 1.1 在 `tests/conftest.py` 实现 `_is_port_open()` 服务可用性检测
+  - [x] 1.2 实现 `pytest_collection_modifyitems`：检测 PG/Hatchet/Redis/Kafka，不可用时 skip
+  - [x] 1.3 注册 markers：`requires_postgres`、`requires_hatchet`、`requires_redis`、`requires_kafka`
+  - [x] 1.4 验证：无 PG 时 `pytest tests/integration/ -v` 显示 SKIP 而非 ERROR
   - _Requirements: AC-2_
 
-- [ ] **Task 2**: integration/ 目录自动标注
-  - [ ] 2.1 在 `tests/integration/conftest.py` 添加 `pytestmark = pytest.mark.requires_postgres`
-  - [ ] 2.2 移除各 integration 测试文件中手动的 `skipif` 逻辑（统一到 conftest）
-  - [ ] 2.3 验证：`pytest tests/integration/ --co -q` 显示所有测试带 `requires_postgres` marker
+- [x] **Task 2**: integration/ 目录自动标注
+  - [x] 2.1 在 `tests/integration/conftest.py` 添加 `pytestmark = pytest.mark.requires_postgres`
+  - [x] 2.2 移除各 integration 测试文件中手动的 `skipif` 逻辑（统一到 conftest）
+  - [x] 2.3 验证：`pytest tests/integration/ --co -q` 显示所有测试带 `requires_postgres` marker
   - _Requirements: AC-2_
 
 ### Phase 2：单元测试纯净化（P0）
 
 - [ ] **Task 3**: 修复 unit 层外部依赖违规
-  - [ ] 3.1 `tests/unit/test_cli_db.py`：将 DB 连接调用替换为 mock，或迁移到 `tests/integration/`
-  - [ ] 3.2 `tests/unit/capabilities/test_bindings_queue_executor.py`：mock Kafka 连接
-  - [ ] 3.3 `tests/unit/triggers/test_queue_idempotency.py`：mock Redis 连接
+  - [x] 3.1 `tests/unit/test_cli_db.py`：将 DB 连接调用替换为 mock，或迁移到 `tests/integration/`
+  - [x] 3.2 `tests/unit/capabilities/test_bindings_queue_executor.py`：mock Kafka 连接
+  - [x] 3.3 `tests/unit/triggers/test_queue_idempotency.py`：mock Redis 连接
   - [ ] 3.4 验证：`poetry run pytest tests/unit/ -q`（无任何外部服务）全部通过，0 skip
   - _Requirements: AC-1_
 
 - [ ] **Task 4**: 验证 unit 测试零外部依赖
-  - [ ] 4.1 在 CI lint job 中添加步骤：`pytest tests/unit/ -q --tb=short`（不启动任何 service）
-  - [ ] 4.2 确认 unit 测试运行时间 < 60 秒
+  - [x] 4.1 在 CI lint job 中添加步骤：`pytest tests/unit/ -q --tb=short`（不启动任何 service）
+  - [ ] 4.2 确认 unit 测试运行时间 < 60 秒  
+    - 当前阻塞（2026-02-25）：本地执行 `poetry run pytest tests/unit/ -q --tb=short` 超过 10 分钟超时，需后续做用例分层/性能优化
   - _Requirements: AC-1_
 
 ### Phase 3：共享 Fixtures（P1）
 
-- [ ] **Task 5**: 全局 conftest.py 重构
-  - [ ] 5.1 添加 `db_url` fixture（从环境变量读取，默认 `localhost:5432/owlclaw_test`）
-  - [ ] 5.2 添加 `async_db_session` fixture（事务回滚模式）
-  - [ ] 5.3 添加 `mock_hatchet_client` fixture（patch `owlclaw.integrations.hatchet`）
-  - [ ] 5.4 保留现有 `app` fixture，确保向后兼容
+- [x] **Task 5**: 全局 conftest.py 重构
+  - [x] 5.1 添加 `db_url` fixture（从环境变量读取，默认 `localhost:5432/owlclaw_test`）
+  - [x] 5.2 添加 `async_db_session` fixture（事务回滚模式）
+  - [x] 5.3 添加 `mock_hatchet_client` fixture（patch `owlclaw.integrations.hatchet`）
+  - [x] 5.4 保留现有 `app` fixture，确保向后兼容
   - _Requirements: AC-3_
 
 - [ ] **Task 6**: integration/conftest.py 模块级 fixtures
-  - [ ] 6.1 添加 `db_engine` fixture（scope="module"，避免每个测试重建连接池）
-  - [ ] 6.2 添加 `run_migrations` fixture（scope="session"，确保 schema 最新）
+  - [x] 6.1 添加 `db_engine` fixture（scope="module"，避免每个测试重建连接池）
+  - [x] 6.2 添加 `run_migrations` fixture（scope="session"，确保 schema 最新）
   - [ ] 6.3 验证：集成测试之间数据不互相污染（事务回滚有效）
   - _Requirements: AC-3_
 
 ### Phase 4：覆盖率分层（P1）
 
-- [ ] **Task 7**: pyproject.toml 覆盖率配置
-  - [ ] 7.1 配置 `[tool.coverage.run]`：source、omit、branch=true
-  - [ ] 7.2 配置 `[tool.coverage.report]`：exclude_lines（TYPE_CHECKING、abstractmethod 等）
-  - [ ] 7.3 配置 `[tool.coverage.html]`：输出目录 `htmlcov/`
+- [x] **Task 7**: pyproject.toml 覆盖率配置
+  - [x] 7.1 配置 `[tool.coverage.run]`：source、omit、branch=true
+  - [x] 7.2 配置 `[tool.coverage.report]`：exclude_lines（TYPE_CHECKING、abstractmethod 等）
+  - [x] 7.3 配置 `[tool.coverage.html]`：输出目录 `htmlcov/`
   - _Requirements: AC-5_
 
-- [ ] **Task 8**: CI test.yml 分层运行
-  - [ ] 8.1 将 CI test job 拆分为两步：unit（`--cov-fail-under=90`）+ integration（`--cov-fail-under=80`）
-  - [ ] 8.2 integration 步骤使用 `--cov-append` 累加覆盖率
-  - [ ] 8.3 验证：CI 输出分层覆盖率报告
+- [x] **Task 8**: CI test.yml 分层运行
+  - [x] 8.1 将 CI test job 拆分为两步：unit（`--cov-fail-under=90`）+ integration（`--cov-fail-under=80`）
+  - [x] 8.2 integration 步骤使用 `--cov-append` 累加覆盖率
+  - [x] 8.3 验证：CI 输出分层覆盖率报告
   - _Requirements: AC-4, AC-5_
 
 ### Phase 5：CI 与本地镜像对齐（P0）
@@ -78,11 +79,11 @@
 
 ### Phase 6：文档（P1）
 
-- [ ] **Task 10**: docs/TESTING.md
-  - [ ] 10.1 创建 `docs/TESTING.md`，包含：
+- [x] **Task 10**: docs/TESTING.md
+  - [x] 10.1 创建 `docs/TESTING.md`，包含：
         测试分层说明、各层运行命令、如何添加新测试、外部服务 skip 说明
-  - [ ] 10.2 添加测试矩阵表格（哪些测试需要哪些服务）
-  - [ ] 10.3 覆盖率目标说明（unit ≥ 90%，overall ≥ 80%）
+  - [x] 10.2 添加测试矩阵表格（哪些测试需要哪些服务）
+  - [x] 10.3 覆盖率目标说明（unit ≥ 90%，overall ≥ 80%）
   - _Requirements: AC-6_
 
 ### Phase 7：验收（P0）

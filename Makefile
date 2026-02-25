@@ -1,56 +1,57 @@
-# Local development shortcuts for OwlClaw.
-# Windows note: if GNU make is unavailable, run equivalent PowerShell commands listed in `make help`.
+.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck
 
-.DEFAULT_GOAL := help
+## Show available commands
+help:
+	@echo "OwlClaw development commands:"
+	@echo "  dev-up       Start full local stack (docker-compose.dev.yml)"
+	@echo "  dev-down     Stop full local stack"
+	@echo "  dev-reset    Stop full stack and remove volumes"
+	@echo "  test-up      Start test database stack (docker-compose.test.yml)"
+	@echo "  test-down    Stop test database stack"
+	@echo "  test         Run unit + integration tests"
+	@echo "  test-unit    Run unit tests only"
+	@echo "  test-int     Run integration tests only"
+	@echo "  lint         Run Ruff checks"
+	@echo "  typecheck    Run MyPy checks"
+	@echo ""
+	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
-ifeq ($(OS),Windows_NT)
-PS_TEST := powershell -ExecutionPolicy Bypass -File scripts/test-local.ps1
-else
-PS_TEST := ./scripts/test-local.sh
-endif
-
-help: ## Show available targets
-	@echo "Targets:" && \
-	echo "  dev-up       Start full dev stack" && \
-	echo "  dev-down     Stop full dev stack" && \
-	echo "  dev-reset    Stop and remove dev volumes" && \
-	echo "  test-up      Start CI-mirror test DB" && \
-	echo "  test-down    Stop CI-mirror test DB" && \
-	echo "  test         Start test DB and run unit+integration (non-e2e)" && \
-	echo "  test-unit    Run unit tests only (no external service)" && \
-	echo "  test-int     Run integration tests (non-e2e)" && \
-	echo "  lint         Run Ruff lint" && \
-	echo "  typecheck    Run mypy"
-	@echo "Windows PowerShell equivalents:" && \
-	echo "  scripts\\test-local.ps1 [-UnitOnly] [-KeepUp]" && \
-	echo "  docker compose -f docker-compose.dev.yml up -d"
-
-dev-up: ## Start full local dev stack (Postgres + Hatchet + Langfuse + Redis)
+## Start full local stack
+dev-up:
 	docker compose -f docker-compose.dev.yml up -d
 
-dev-down: ## Stop full local dev stack
+## Stop full local stack
+dev-down:
 	docker compose -f docker-compose.dev.yml down
 
-dev-reset: ## Stop full local dev stack and remove volumes
+## Reset full local stack and volumes
+dev-reset:
 	docker compose -f docker-compose.dev.yml down -v
 
-test-up: ## Start CI-mirror test database (pgvector pg16)
+## Start test stack
+test-up:
 	docker compose -f docker-compose.test.yml up -d
 
-test-down: ## Stop CI-mirror test database
+## Stop test stack
+test-down:
 	docker compose -f docker-compose.test.yml down
 
-test: ## Run local test pipeline with managed test compose
-	$(PS_TEST)
+## Run unit and integration tests
+test:
+	poetry run pytest tests/unit/ tests/integration/ -q
 
-test-unit: ## Run unit tests only (no external service required)
+## Run unit tests
+test-unit:
 	poetry run pytest tests/unit/ -q
 
-test-int: ## Run integration tests excluding e2e
-	poetry run pytest tests/integration/ -m "not e2e" -q
+## Run integration tests
+test-int:
+	poetry run pytest tests/integration/ -q
 
-lint: ## Run Ruff lint
+## Run lint
+lint:
 	poetry run ruff check .
 
-typecheck: ## Run mypy static checks
+## Run static type check
+typecheck:
 	poetry run mypy owlclaw/

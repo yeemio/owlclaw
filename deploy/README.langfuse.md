@@ -4,34 +4,32 @@ Task 9.2 的 Langfuse 集成测试需要本地运行 Langfuse 并在 `.env` 中�
 
 ## 1. 启动 Langfuse 服务
 
-### 方式 A：使用官方 Docker Compose（推荐）
+### 方式 A：使用仓库内置 `.langfuse` compose（推荐）
+
+`.langfuse/docker-compose.yml` 使用官方 Langfuse 镜像组合（含 web/worker/postgres/redis/clickhouse/minio），无需单独 clone 外部仓库。
 
 ```bash
-# 在任意目录克隆 Langfuse 仓库
-git clone https://github.com/langfuse/langfuse.git
-cd langfuse
-
-# 可选：修改 docker-compose.yml 中的 # CHANGEME 密码（生产建议修改）
-# 若本机 5432 已被占用（如 OwlClaw 的 postgres），可把 postgres ports 改为 "127.0.0.1:5433:5432"
-
+cd .langfuse
 docker compose up -d
-
-# 等待约 2–3 分钟，直到 langfuse-web 日志出现 "Ready"
 docker compose logs -f langfuse-web
 ```
 
 访问 **http://localhost:3000**，首次使用需在 UI 中注册/登录并创建项目。
 
-### 方式 B：使用脚本（克隆并启动）
+### 方式 B：使用脚本启动
 
 在项目根目录执行：
 
 ```bash
-# Linux/macOS
+# Linux/macOS（封装 .langfuse compose 启动）
 ./deploy/start-langfuse.sh
 
-# 或手动执行脚本内命令
+# 或手动执行上面的 `cd .langfuse && docker compose up -d`
 ```
+
+### 方式 C：统一开发入口（规划中）
+
+`local-devenv` spec 完成后，Langfuse 将并入根目录 `docker-compose.dev.yml` 作为首选开发入口；本文件保留独立启动说明用于排障。
 
 ## 2. 获取 API 密钥
 

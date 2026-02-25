@@ -133,11 +133,16 @@ markers = [
     "integration: marks tests requiring external services (Hatchet, PostgreSQL)",
     "e2e: end-to-end tests",
     "slow: long-running tests",
+    "requires_postgres: requires PostgreSQL service",
+    "requires_hatchet: requires Hatchet service",
+    "requires_redis: requires Redis service",
+    "requires_kafka: requires Kafka service",
 ]
 
 [tool.coverage.run]
 source = ["owlclaw"]
 omit = ["tests/*", "**/test_*.py"]
+branch = true
 
 [tool.coverage.report]
 exclude_lines = [
@@ -146,3 +151,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.coverage.html]
+directory = "htmlcov"

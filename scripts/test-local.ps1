@@ -1,36 +1,26 @@
-param(
-    [switch]$UnitOnly,
-    [switch]$KeepUp
+Param(
+    [switch]$unit_only,
+    [switch]$keep_up
 )
 
 $ErrorActionPreference = "Stop"
 
-function Stop-TestCompose {
-    docker compose -f docker-compose.test.yml down | Out-Null
-}
-
-if (-not $KeepUp) {
-    Register-EngineEvent PowerShell.Exiting -Action { Stop-TestCompose } | Out-Null
-}
-
-docker compose -f docker-compose.test.yml up -d | Out-Null
-
-Write-Host "Waiting for postgres healthcheck..."
-$containerId = docker compose -f docker-compose.test.yml ps -q postgres
-for ($i = 0; $i -lt 30; $i++) {
-    $status = docker inspect --format '{{.State.Health.Status}}' $containerId 2>$null
-    if ($status -eq "healthy") {
-        break
+function Stop-TestStack {
+    if (-not $keep_up) {
+        docker compose -f docker-compose.test.yml down | Out-Host
     }
-    Start-Sleep -Seconds 2
 }
 
-if ($UnitOnly) {
-    poetry run pytest tests/unit/ -q
-} else {
-    poetry run pytest tests/unit/ tests/integration/ -m "not e2e" -q
-}
+try {
+    docker compose -f docker-compose.test.yml up -d | Out-Host
 
-if (-not $KeepUp) {
-    Stop-TestCompose
+    if ($unit_only) {
+        poetry run pytest tests/unit/ -q | Out-Host
+    }
+    else {
+        poetry run pytest tests/unit/ tests/integration/ -q | Out-Host
+    }
+}
+finally {
+    Stop-TestStack
 }

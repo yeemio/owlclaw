@@ -1,25 +1,24 @@
-# OwlClaw minimal dependencies (database only)
+# OwlClaw minimal local environment (PostgreSQL + pgvector only)
 # Usage: docker compose -f docker-compose.minimal.yml up -d
-# Stop: docker compose -f docker-compose.minimal.yml down
-# Ports: postgres 5432
 
 services:
-  owlclaw-db:
+  postgres:
     image: pgvector/pgvector:pg16
+    container_name: owlclaw-minimal-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: owlclaw
+      POSTGRES_DB: postgres
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d owlclaw"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     volumes:
-      - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
       - owlclaw_minimal_data:/var/lib/postgresql/data
+      - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
 
 volumes:
   owlclaw_minimal_data:
