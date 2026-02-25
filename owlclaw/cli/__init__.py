@@ -611,12 +611,14 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
     parser.add_argument("--orm", default="")
     parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
     parser.add_argument("--output", "--path", "-o", "-p", dest="output", default=".")
+    parser.add_argument("--dry-run", action="store_true", default=False)
     ns = parser.parse_args(argv[2:])
     run_migrate_scan_command(
         openapi=ns.openapi,
         orm=ns.orm,
         output_mode=ns.output_mode,
         output=ns.output,
+        dry_run=ns.dry_run,
     )
     return True
 
@@ -938,6 +940,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  --output-mode [handler|binding|both]")
         print("                                 Output type (default: handler)")
         print("  --output, --path TEXT          Output directory (default: .)")
+        print("  --dry-run                      Preview generated file paths without writing")
         print("  --help                         Show this message and exit")
         sys.exit(0)
     if argv == ["trigger", "template"]:

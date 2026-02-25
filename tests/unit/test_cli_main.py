@@ -225,12 +225,14 @@ def test_main_dispatches_migrate_scan_with_output_mode(monkeypatch, tmp_path) ->
             "binding",
             "--output",
             str(tmp_path / "out"),
+            "--dry-run",
         ],
     )
     cli_main.main()
     assert captured["output_mode"] == "binding"
     assert captured["openapi"] == str(tmp_path / "openapi.yaml")
     assert captured["output"] == str(tmp_path / "out")
+    assert captured["dry_run"] is True
 
 
 def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
@@ -242,6 +244,7 @@ def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
     out = capsys.readouterr().out
     assert "Usage: owlclaw migrate scan [OPTIONS]" in out
     assert "--output-mode [handler|binding|both]" in out
+    assert "--dry-run" in out
 
 
 def test_main_release_gate_owlhub_help_uses_plain_help(monkeypatch, capsys) -> None:

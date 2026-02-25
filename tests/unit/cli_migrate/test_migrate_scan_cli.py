@@ -104,3 +104,29 @@ def test_migrate_scan_both_generates_handler_and_binding(tmp_path: Path) -> None
 
     assert (tmp_path / "get-order" / "SKILL.md").exists()
     assert (tmp_path / "handlers" / "get-order.py").exists()
+
+
+def test_migrate_scan_dry_run_does_not_write_files(tmp_path: Path) -> None:
+    spec = tmp_path / "openapi.yaml"
+    spec.write_text(
+        (
+            "openapi: 3.0.3\n"
+            "paths:\n"
+            "  /orders/{id}:\n"
+            "    get:\n"
+            "      operationId: get-order\n"
+            "      responses:\n"
+            "        '200': {description: ok}\n"
+        ),
+        encoding="utf-8",
+    )
+
+    run_migrate_scan_command(
+        openapi=str(spec),
+        output_mode="both",
+        output=str(tmp_path),
+        dry_run=True,
+    )
+
+    assert not (tmp_path / "get-order" / "SKILL.md").exists()
+    assert not (tmp_path / "handlers" / "get-order.py").exists()
