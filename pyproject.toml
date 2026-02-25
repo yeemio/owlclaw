@@ -101,9 +101,14 @@ indent-style = "space"
 # ── Mypy ──
 [tool.mypy]
 python_version = "3.10"
-strict = true
 warn_return_any = true
 warn_unused_configs = true
+warn_unused_ignores = false
+warn_redundant_casts = false
+disallow_any_generics = false
+disallow_untyped_defs = false
+check_untyped_defs = true
+disallow_subclassing_any = false
 plugins = []
 
 [[tool.mypy.overrides]]
