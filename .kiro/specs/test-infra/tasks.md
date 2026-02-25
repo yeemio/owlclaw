@@ -41,11 +41,11 @@
 
 ### Phase 3：共享 Fixtures（P1）
 
-- [ ] **Task 5**: 全局 conftest.py 重构
-  - [ ] 5.1 添加 `db_url` fixture（从环境变量读取，默认 `localhost:5432/owlclaw_test`）
-  - [ ] 5.2 添加 `async_db_session` fixture（事务回滚模式）
-  - [ ] 5.3 添加 `mock_hatchet_client` fixture（patch `owlclaw.integrations.hatchet`）
-  - [ ] 5.4 保留现有 `app` fixture，确保向后兼容
+- [x] **Task 5**: 全局 conftest.py 重构
+  - [x] 5.1 添加 `db_url` fixture（从环境变量读取，默认 `localhost:5432/owlclaw_test`）
+  - [x] 5.2 添加 `async_db_session` fixture（事务回滚模式）
+  - [x] 5.3 添加 `mock_hatchet_client` fixture（patch `owlclaw.integrations.hatchet`）
+  - [x] 5.4 保留现有 `app` fixture，确保向后兼容
   - _Requirements: AC-3_
 
 - [ ] **Task 6**: integration/conftest.py 模块级 fixtures
