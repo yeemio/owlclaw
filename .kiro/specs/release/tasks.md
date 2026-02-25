@@ -62,7 +62,7 @@
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets（外部平台操作待执行）
-- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI，外部平台操作待执行）
+- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI，`release.yml` 已支持 `workflow_dispatch target=testpypi`；待合入默认分支并配置 Secrets 后执行）
 
 ---
 
