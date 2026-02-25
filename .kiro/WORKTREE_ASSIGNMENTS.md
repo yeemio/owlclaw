@@ -171,9 +171,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
-**当前任务**：declarative-binding ✅ 已完成。协助 ci-setup / release。
+**当前任务**：ci-setup(10/12) — Task 11 远程验证 + Task 12 Final Checkpoint，或转向 release。
 
-**下一任务（当前完成后）**：ci-setup → release（协助 codex-gpt-work）。
+**下一任务（当前完成后）**：release(0/32)。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -200,7 +200,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | owlhub | 41/42 🟡 | Task 40.4 外部阻塞（生产部署） |
 | examples | 0/12 🟡 | `examples/**`, `tests/unit/test_examples*.py` |
 | cli-migrate | 0/24 🟡 | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
-| ci-setup | 0/12 🟡 | `.github/workflows/**` |
+| ci-setup | 10/12 🟡 | `.github/workflows/**` |
 | release | 0/32 🟡 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
 
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ 已完成。
