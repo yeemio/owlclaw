@@ -12,10 +12,11 @@
 ### Phase 1：核心 compose 文件（P0）
 
 - [ ] **Task 1**: docker-compose.test.yml — 与 CI 完全镜像
-  - [ ] 1.1 创建根目录 `docker-compose.test.yml`，使用 `pgvector/pgvector:pg16`
-  - [ ] 1.2 配置 `owlclaw_test` 数据库，含 healthcheck
-  - [ ] 1.3 添加 `CREATE EXTENSION IF NOT EXISTS vector;` 初始化步骤（与 CI test.yml 一致）
-  - [ ] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过
+  - [x] 1.1 创建根目录 `docker-compose.test.yml`，使用 `pgvector/pgvector:pg16`
+  - [x] 1.2 配置 `owlclaw_test` 数据库，含 healthcheck
+  - [x] 1.3 添加 `CREATE EXTENSION IF NOT EXISTS vector;` 初始化步骤（与 CI test.yml 一致）
+  - [ ] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过  
+    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
   - _Requirements: AC-1, AC-2_
 
 - [ ] **Task 2**: docker-compose.minimal.yml — 最小依赖
