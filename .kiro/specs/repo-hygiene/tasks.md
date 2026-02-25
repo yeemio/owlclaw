@@ -42,9 +42,9 @@
   - [x] 4.2 标注哪些脚本是 CI 使用，哪些是本地开发使用
   - _Requirements: AC-4_
 
-- [ ] **Task 5**: deploy/README.md 更新
+- [x] **Task 5**: deploy/README.md 更新
   - [x] 5.1 更新 `deploy/README.md`：添加状态列（推荐/备用/废弃）
-  - [ ] 5.2 指向根目录 compose 文件作为首选入口（local-devenv spec 完成后）
+  - [x] 5.2 指向根目录 compose 文件作为首选入口（local-devenv spec 完成后）
   - [x] 5.3 `deploy/README.langfuse.md` 更新：说明 Langfuse 通过官方镜像启动，
         不需要 clone 源码；引用 `docker-compose.dev.yml`
   - _Requirements: AC-3_

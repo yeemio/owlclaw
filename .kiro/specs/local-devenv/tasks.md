@@ -28,14 +28,15 @@
   - _Requirements: AC-1, AC-3_
 
 - [ ] **Task 3**: docker-compose.dev.yml — 全量开发环境
-  - [ ] 3.1 创建根目录 `docker-compose.dev.yml`，包含 pgvector/pgvector:pg16
-  - [ ] 3.2 集成 Hatchet Lite（锁定具体版本 tag，连接 owlclaw-db）
-  - [ ] 3.3 集成 Langfuse（官方镜像，连接 owlclaw-db 的 langfuse 库）
-  - [ ] 3.4 集成 Redis（`redis:7-alpine`，用于 Queue trigger 幂等存储）
-  - [ ] 3.5 `deploy/init-db.sql` 扩展：增加 langfuse 数据库和用户创建
-  - [ ] 3.6 所有服务配置 healthcheck
-  - [ ] 3.7 顶部注释说明用途、启动命令、各服务端口
-  - [ ] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy
+  - [x] 3.1 创建根目录 `docker-compose.dev.yml`，包含 pgvector/pgvector:pg16
+  - [x] 3.2 集成 Hatchet Lite（锁定具体版本 tag，连接 owlclaw-db）
+  - [x] 3.3 集成 Langfuse（官方镜像，连接 owlclaw-db 的 langfuse 库）
+  - [x] 3.4 集成 Redis（`redis:7-alpine`，用于 Queue trigger 幂等存储）
+  - [x] 3.5 `deploy/init-db.sql` 扩展：增加 langfuse 数据库和用户创建
+  - [x] 3.6 所有服务配置 healthcheck
+  - [x] 3.7 顶部注释说明用途、启动命令、各服务端口
+  - [ ] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
+    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
   - _Requirements: AC-1, AC-6_
 
 ### Phase 2：环境变量与脚本（P0）
@@ -80,12 +81,12 @@
 
 ### Phase 4：旧 compose 文件对齐（P1）
 
-- [ ] **Task 9**: 更新 deploy/ 下旧 compose 文件
-  - [ ] 9.1 `deploy/docker-compose.lite.yml`：将 `postgres:15-alpine` 替换为 `pgvector/pgvector:pg16`
-  - [ ] 9.2 `deploy/docker-compose.prod.yml`：同上，并添加 pgvector 扩展初始化
-  - [ ] 9.3 `deploy/docker-compose.cron.yml`：同上
-  - [ ] 9.4 所有 compose 文件顶部注释统一格式（用途/命令/端口）
-  - [ ] 9.5 `deploy/README.md` 更新：指向根目录 compose 文件作为首选入口
+- [x] **Task 9**: 更新 deploy/ 下旧 compose 文件
+  - [x] 9.1 `deploy/docker-compose.lite.yml`：将 `postgres:15-alpine` 替换为 `pgvector/pgvector:pg16`
+  - [x] 9.2 `deploy/docker-compose.prod.yml`：同上，并添加 pgvector 扩展初始化
+  - [x] 9.3 `deploy/docker-compose.cron.yml`：同上
+  - [x] 9.4 所有 compose 文件顶部注释统一格式（用途/命令/端口）
+  - [x] 9.5 `deploy/README.md` 更新：指向根目录 compose 文件作为首选入口
   - _Requirements: AC-2_
 
 ### Phase 5：验收（P0）

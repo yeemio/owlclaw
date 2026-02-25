@@ -38,6 +38,10 @@ def _infer_runtime_markers(item: pytest.Item) -> set[str]:
     nodeid = item.nodeid.lower()
     inferred: set[str] = set()
 
+    # Keep unit tests strict: only infer external service requirements in integration suite.
+    if "tests/integration/" not in nodeid.replace("\\", "/"):
+        return inferred
+
     if "hatchet" in nodeid:
         inferred.add("requires_hatchet")
     if "kafka" in nodeid:
