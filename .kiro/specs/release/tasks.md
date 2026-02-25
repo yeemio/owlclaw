@@ -64,7 +64,7 @@
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
   - 状态补充（2026-02-25）：`gh secret list -R yeemio/owlclaw` 当前未返回 `PYPI_TOKEN/TEST_PYPI_TOKEN`，需仓库维护者在 GitHub Actions Secrets 中补齐。
 - [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
-  - 状态补充（2026-02-25）：最近 workflow_dispatch `Release` 连续失败（示例 run: `22396620894`），失败点为 token 校验步骤，根因同 3.1.2。
+  - 状态补充（2026-02-25）：workflow_dispatch `Release` run `22404173746` 已执行到发布阶段，但 `Publish to TestPyPI` 返回 `HTTP 403 Forbidden`，日志显示 `TWINE_PASSWORD` 为空，根因仍为 3.1.2 未完成。
 
 ---
 
