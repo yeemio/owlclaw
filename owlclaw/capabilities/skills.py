@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any
 import yaml  # type: ignore[import-untyped]
 
 from owlclaw.capabilities.tool_schema import extract_tools_schema
+from owlclaw.config.loader import ConfigLoadError, YAMLConfigLoader
 
 logger = logging.getLogger(__name__)
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -217,6 +218,7 @@ class SkillsLoader:
         else:
             raise ValueError("base_path must be a non-empty path")
         self.skills: dict[str, Skill] = {}
+        self._skills_enabled_overrides: dict[str, bool] = {}
 
     def scan(self) -> list[Skill]:
         """Recursively scan for SKILL.md files and load metadata.
@@ -226,6 +228,7 @@ class SkillsLoader:
             logged and skipped.
         """
         self.skills.clear()
+        self._skills_enabled_overrides = self._load_skill_enablement_overrides()
         if not self.base_path.exists() or not self.base_path.is_dir():
             logger.warning("Skills base path does not exist or is not a directory: %s", self.base_path)
             return []
@@ -233,6 +236,9 @@ class SkillsLoader:
         for skill_file in skill_files:
             skill = self._parse_skill_file(skill_file)
             if skill is not None:
+                if not self._is_skill_enabled(skill.name):
+                    logger.warning("Skill '%s' disabled by config, skipping", skill.name)
+                    continue
                 if skill.name in self.skills:
                     logger.warning(
                         "Duplicate Skill name '%s' in %s (already loaded from %s); skipping",
@@ -386,6 +392,37 @@ class SkillsLoader:
             return dumped if isinstance(dumped, dict) else {}
         except Exception:
             return {}
+
+    def _load_skill_enablement_overrides(self) -> dict[str, bool]:
+        try:
+            config_data = YAMLConfigLoader.load_dict()
+        except (ConfigLoadError, OSError) as exc:
+            logger.warning("Failed to load owlclaw.yaml for skills enablement: %s", exc)
+            return {}
+        skills_block = config_data.get("skills")
+        if not isinstance(skills_block, dict):
+            return {}
+        entries = skills_block.get("entries")
+        if not isinstance(entries, dict):
+            return {}
+        overrides: dict[str, bool] = {}
+        for raw_name, raw_cfg in entries.items():
+            if not isinstance(raw_name, str):
+                continue
+            name = raw_name.strip()
+            if not name:
+                continue
+            if isinstance(raw_cfg, bool):
+                overrides[name] = raw_cfg
+                continue
+            if isinstance(raw_cfg, dict):
+                enabled = raw_cfg.get("enabled")
+                if isinstance(enabled, bool):
+                    overrides[name] = enabled
+        return overrides
+
+    def _is_skill_enabled(self, skill_name: str) -> bool:
+        return self._skills_enabled_overrides.get(skill_name, True)
 
     def _check_prerequisites(self, prerequisites: dict[str, Any]) -> tuple[bool, list[str]]:
         if not prerequisites:

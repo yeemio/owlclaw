@@ -601,3 +601,53 @@ owlclaw:
     skills = loader.scan()
     names = sorted(skill.name for skill in skills)
     assert names == ["prereq-config-list", "prereq-config-ok"]
+
+
+def test_skills_loader_respects_owlclaw_yaml_skill_enablement(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "owlclaw.yaml").write_text(
+        """skills:
+  entries:
+    disabled-skill:
+      enabled: false
+""",
+        encoding="utf-8",
+    )
+    enabled_dir = tmp_path / "enabled"
+    enabled_dir.mkdir()
+    (enabled_dir / "SKILL.md").write_text(
+        "---\nname: enabled-skill\ndescription: enabled\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    disabled_dir = tmp_path / "disabled"
+    disabled_dir.mkdir()
+    (disabled_dir / "SKILL.md").write_text(
+        "---\nname: disabled-skill\ndescription: disabled\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    names = sorted(skill.name for skill in skills)
+    assert names == ["enabled-skill"]
+
+
+def test_skills_loader_allows_explicit_enable_in_owlclaw_yaml(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "owlclaw.yaml").write_text(
+        """skills:
+  entries:
+    enabled-skill:
+      enabled: true
+""",
+        encoding="utf-8",
+    )
+    skill_dir = tmp_path / "enabled"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: enabled-skill\ndescription: enabled\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert skills[0].name == "enabled-skill"
