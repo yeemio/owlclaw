@@ -65,17 +65,17 @@
 ### Phase 3：文档（P1）
 
 - [ ] **Task 7**: docs/DEVELOPMENT.md
-  - [ ] 7.1 创建 `docs/DEVELOPMENT.md`，包含：
+  - [x] 7.1 创建 `docs/DEVELOPMENT.md`，包含：
         前置条件、快速开始（3 步）、服务端口说明、常见问题
   - [ ] 7.2 快速开始验证：按文档步骤从零操作，`poetry run pytest` 通过
-  - [ ] 7.3 Windows 特殊步骤单独说明（firewall、host.docker.internal）
+  - [x] 7.3 Windows 特殊步骤单独说明（firewall、host.docker.internal）
   - _Requirements: AC-5_
 
-- [ ] **Task 8**: docs/DEPLOYMENT.md
-  - [ ] 8.1 创建 `docs/DEPLOYMENT.md`，包含：
+- [x] **Task 8**: docs/DEPLOYMENT.md
+  - [x] 8.1 创建 `docs/DEPLOYMENT.md`，包含：
         必须 vs 可选依赖表格、三种部署路径、环境变量完整参考
-  - [ ] 8.2 明确说明：`pip install owlclaw` 零 Docker 依赖，Docker 只是便利工具
-  - [ ] 8.3 生产路径：最小依赖（仅 PG）+ 可选组件（Hatchet/Langfuse/Redis）
+  - [x] 8.2 明确说明：`pip install owlclaw` 零 Docker 依赖，Docker 只是便利工具
+  - [x] 8.3 生产路径：最小依赖（仅 PG）+ 可选组件（Hatchet/Langfuse/Redis）
   - _Requirements: AC-5_
 
 ### Phase 4：旧 compose 文件对齐（P1）
