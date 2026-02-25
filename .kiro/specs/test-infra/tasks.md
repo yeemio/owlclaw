@@ -11,17 +11,17 @@
 
 ### Phase 1：外部服务 Skip 机制（P0）
 
-- [ ] **Task 1**: pytest skip 机制实现
-  - [ ] 1.1 在 `tests/conftest.py` 实现 `_is_port_open()` 服务可用性检测
-  - [ ] 1.2 实现 `pytest_collection_modifyitems`：检测 PG/Hatchet/Redis/Kafka，不可用时 skip
-  - [ ] 1.3 注册 markers：`requires_postgres`、`requires_hatchet`、`requires_redis`、`requires_kafka`
-  - [ ] 1.4 验证：无 PG 时 `pytest tests/integration/ -v` 显示 SKIP 而非 ERROR
+- [x] **Task 1**: pytest skip 机制实现
+  - [x] 1.1 在 `tests/conftest.py` 实现 `_is_port_open()` 服务可用性检测
+  - [x] 1.2 实现 `pytest_collection_modifyitems`：检测 PG/Hatchet/Redis/Kafka，不可用时 skip
+  - [x] 1.3 注册 markers：`requires_postgres`、`requires_hatchet`、`requires_redis`、`requires_kafka`
+  - [x] 1.4 验证：无 PG 时 `pytest tests/integration/ -v` 显示 SKIP 而非 ERROR
   - _Requirements: AC-2_
 
-- [ ] **Task 2**: integration/ 目录自动标注
-  - [ ] 2.1 在 `tests/integration/conftest.py` 添加 `pytestmark = pytest.mark.requires_postgres`
-  - [ ] 2.2 移除各 integration 测试文件中手动的 `skipif` 逻辑（统一到 conftest）
-  - [ ] 2.3 验证：`pytest tests/integration/ --co -q` 显示所有测试带 `requires_postgres` marker
+- [x] **Task 2**: integration/ 目录自动标注
+  - [x] 2.1 在 `tests/integration/conftest.py` 添加 `pytestmark = pytest.mark.requires_postgres`
+  - [x] 2.2 移除各 integration 测试文件中手动的 `skipif` 逻辑（统一到 conftest）
+  - [x] 2.3 验证：`pytest tests/integration/ --co -q` 显示所有测试带 `requires_postgres` marker
   - _Requirements: AC-2_
 
 ### Phase 2：单元测试纯净化（P0）
