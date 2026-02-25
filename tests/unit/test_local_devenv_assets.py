@@ -48,6 +48,9 @@ def test_dev_compose_contains_expected_services_and_healthchecks() -> None:
     assert services["hatchet-lite"]["image"].startswith("ghcr.io/hatchet-dev/hatchet/hatchet-lite:")
     assert services["langfuse"]["image"] == "langfuse/langfuse:2"
     assert services["redis"]["image"] == "redis:7-alpine"
+    assert "${OWLCLAW_REDIS_PORT:-6379}:6379" in services["redis"]["ports"]
+    assert "${OWLCLAW_LANGFUSE_PORT:-3000}:3000" in services["langfuse"]["ports"]
+    assert "http://$$HOSTNAME:3000/" in " ".join(services["langfuse"]["healthcheck"]["test"])
     assert all("healthcheck" in services[name] for name in ("owlclaw-db", "hatchet-lite", "langfuse", "redis"))
 
 
@@ -115,6 +118,8 @@ def test_env_example_covers_local_devenv_core_variables() -> None:
         "REDIS_URL=redis://localhost:6379/0",
         "KAFKA_BOOTSTRAP_SERVERS=",
         "OWLCLAW_PG_PORT=5432",
+        "OWLCLAW_REDIS_PORT=6379",
+        "OWLCLAW_LANGFUSE_PORT=3000",
     ]
     for key in expected:
         assert key in payload

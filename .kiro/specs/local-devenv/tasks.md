@@ -26,7 +26,7 @@
     - 验证记录（2026-02-25）：`OWLCLAW_PG_PORT=25432` + `OWLCLAW_DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:25432/postgres` 下通过
   - _Requirements: AC-1, AC-3_
 
-- [ ] **Task 3**: docker-compose.dev.yml — 全量开发环境
+- [x] **Task 3**: docker-compose.dev.yml — 全量开发环境
   - [x] 3.1 创建根目录 `docker-compose.dev.yml`，包含 pgvector/pgvector:pg16
   - [x] 3.2 集成 Hatchet Lite（锁定具体版本 tag，连接 owlclaw-db）
   - [x] 3.3 集成 Langfuse（官方镜像，连接 owlclaw-db 的 langfuse 库）
@@ -34,8 +34,8 @@
   - [x] 3.5 `deploy/init-db.sql` 扩展：增加 langfuse 数据库和用户创建
   - [x] 3.6 所有服务配置 healthcheck
   - [x] 3.7 顶部注释说明用途、启动命令、各服务端口
-  - [ ] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
-    - 当前阻塞（2026-02-25）：`langfuse/langfuse:2` 首次拉取体积较大，当前机器执行窗口超时，未完成全量 healthy 验证
+  - [x] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
+    - 验证记录（2026-02-25）：`OWLCLAW_PG_PORT=25432`、`OWLCLAW_REDIS_PORT=26379`、`OWLCLAW_LANGFUSE_PORT=13000` 下 `owlclaw-db/redis/hatchet-lite/langfuse` 全部 healthy
   - _Requirements: AC-1, AC-6_
 
 ### Phase 2：环境变量与脚本（P0）
@@ -95,7 +95,8 @@
 - [ ] **Task 10**: 端到端验收
   - [ ] 10.1 从干净状态（`docker compose down -v`）执行完整流程：
         `docker compose -f docker-compose.test.yml up -d` → `poetry run pytest tests/unit/ tests/integration/ -m "not e2e"` → 全部通过
-  - [ ] 10.2 验证 `docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy
+  - [x] 10.2 验证 `docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
+    - 验证记录（2026-02-25）：`--profile full` + 端口覆盖 `25432/26379/13000` 下全部服务 healthy
   - [ ] 10.3 验证 `make test-unit` 不需要任何外部服务即可通过
   - [ ] 10.4 验证 `.env.example` 覆盖所有实际使用的环境变量（与代码中的 `os.environ` 对照）
   - _Requirements: AC-1, AC-2, AC-3_
