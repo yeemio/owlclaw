@@ -264,14 +264,14 @@
 
 - [x] 15. Final Checkpoint - 确保所有测试通过
   - 运行所有单元测试：test_cli_db.py + test_db.py 共 23 个全部通过
-  - 属性测试：13.1/13.2 为可选，本轮未执行
-  - 集成测试：14.1 为可选，本轮未执行
+  - 属性测试：13.1/13.2 已纳入并通过（见 tests/unit/test_cli_db_properties.py）
+  - 集成测试：14.1 已纳入并通过（见 tests/integration/test_cli_db_workflows.py）
   - 手动验证：owlclaw db --help 及 init/migrate/status/revision/rollback/backup/restore/check 的 --help 均正常
-  - 确认通过；用户可后续按需补充属性/集成测试
+  - 确认通过
 
 ## 注意事项
 
-- 标记 `*` 的任务为可选测试任务，可以跳过以加快 MVP 开发
+- 标记 `*` 的任务为测试重点标记，不代表可跳过；发布前需完成并通过验收
 - 每个任务引用了具体的需求编号，便于追溯
 - 任务按优先级组织：P0（任务 1-6）→ P1（任务 7-9）→ P2（任务 10-12）
 - Checkpoint 任务确保增量验证，及时发现问题
