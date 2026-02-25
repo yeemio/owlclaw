@@ -30,12 +30,8 @@ def _register_subapps() -> None:
     app.add_typer(skill_app, name="skill")
     _SUBAPPS_REGISTERED = True
 
-
-<<<<<<< HEAD
-=======
 # Keep subcommands registered for direct `CliRunner.invoke(app, ...)` usage in tests
 # and library callers that import the Typer app object without going through main().
->>>>>>> main
 _register_subapps()
 
 
