@@ -65,11 +65,11 @@
 
 ### Phase 3：文档（P1）
 
-- [ ] **Task 7**: docs/DEVELOPMENT.md
+- [x] **Task 7**: docs/DEVELOPMENT.md
   - [x] 7.1 创建 `docs/DEVELOPMENT.md`，包含：
         前置条件、快速开始（3 步）、服务端口说明、常见问题
-  - [ ] 7.2 快速开始验证：按文档步骤从零操作，`poetry run pytest` 通过  
-    - 当前阻塞（2026-02-25）：需在同一窗口完成 `tests/integration` 验证；本轮优先完成了 `tests/unit` 与 compose 资产验收
+  - [x] 7.2 快速开始验证：按文档步骤从零操作，`poetry run pytest` 通过  
+    - 验证记录（2026-02-25）：在同一 PowerShell 会话执行 test compose 启动后，`poetry run pytest tests/unit/ tests/integration/ -m "not e2e" -q` 通过（`1645 passed, 12 skipped`）
   - [x] 7.3 Windows 特殊步骤单独说明（firewall、host.docker.internal）
   - _Requirements: AC-5_
 
@@ -93,8 +93,9 @@
 ### Phase 5：验收（P0）
 
 - [ ] **Task 10**: 端到端验收
-  - [ ] 10.1 从干净状态（`docker compose down -v`）执行完整流程：
+  - [x] 10.1 从干净状态（`docker compose down -v`）执行完整流程：
         `docker compose -f docker-compose.test.yml up -d` → `poetry run pytest tests/unit/ tests/integration/ -m "not e2e"` → 全部通过
+    - 验证记录（2026-02-25）：`OWLCLAW_PG_PORT=35432` + `OWLCLAW_DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:35432/owlclaw_test` 下通过（`1645 passed, 12 skipped`）
   - [x] 10.2 验证 `docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
     - 验证记录（2026-02-25）：`--profile full` + 端口覆盖 `25432/26379/13000` 下全部服务 healthy
   - [ ] 10.3 验证 `make test-unit` 不需要任何外部服务即可通过
