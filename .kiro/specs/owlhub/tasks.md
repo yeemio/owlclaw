@@ -909,7 +909,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Verify index is accessible and CLI works
     - Plan Phase 2 and Phase 3 rollout timeline
     - _Requirements: 8.1, 8.2_
-    - _Status note (2026-02-24): blocked by external production credentials/environment ownership; local production-like validation completed via integration tests and deployment smoke checks._
+    - _Status note (2026-02-24): blocked by external production credentials/environment ownership; local production-like validation completed via integration tests and deployment smoke checks. Runbook + automation ready: `docs/owlhub/production_rollout.md`, `scripts/owlhub_release_gate.py`._
 
 ## Notes
 

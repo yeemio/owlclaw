@@ -53,7 +53,8 @@ def _get_json(url: str, timeout: int = 10) -> dict[str, object]:
 def _get_text(url: str, timeout: int = 10) -> str:
     request = Request(url, headers={"Accept": "text/plain"})
     with urlopen(request, timeout=timeout) as response:
-        return response.read().decode("utf-8")
+        payload = response.read()
+    return str(payload.decode("utf-8"))
 
 
 def check_api_health(api_base_url: str) -> GateCheckResult:
@@ -81,11 +82,12 @@ def check_api_metrics(api_base_url: str) -> GateCheckResult:
 def check_index_access(index_url: str) -> GateCheckResult:
     try:
         data = _get_json(index_url)
-        if isinstance(data.get("skills"), list):
+        skills = data.get("skills")
+        if isinstance(skills, list):
             return GateCheckResult(
                 "index_access",
                 True,
-                f"index loaded with {len(data['skills'])} skills",
+                f"index loaded with {len(skills)} skills",
             )
         return GateCheckResult("index_access", False, f"invalid index payload: {list(data.keys())}")
     except Exception as exc:  # pragma: no cover

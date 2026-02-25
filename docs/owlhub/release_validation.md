@@ -36,3 +36,6 @@ Last updated: 2026-02-24
 ## Notes
 
 - Production deployment (task 40.4) requires external production credentials and environment ownership; not executable in this worktree.
+- Production rollout automation is prepared:
+  - Runbook: `docs/owlhub/production_rollout.md`
+  - Release gate script: `scripts/owlhub_release_gate.py`

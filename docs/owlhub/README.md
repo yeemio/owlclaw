@@ -9,3 +9,7 @@
 - [API Reference](./api_reference.md)
 - [Troubleshooting](./troubleshooting.md)
 - [Architecture](./architecture.md)
+- [Production Rollout](./production_rollout.md)
+- [Release Validation](./release_validation.md)
+- [Release Notes](./release_notes.md)
+- [Changelog](./changelog.md)
