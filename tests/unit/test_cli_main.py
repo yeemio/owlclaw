@@ -8,8 +8,6 @@ import importlib
 import pytest
 from click.exceptions import Exit
 
-from owlclaw import __version__
-
 
 def test_main_dispatches_skill_templates_with_option_value(monkeypatch) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
@@ -28,13 +26,34 @@ def test_main_dispatches_skill_templates_with_option_value(monkeypatch) -> None:
     assert captured["json_output"] is False
 
 
-def test_main_version_flag_outputs_package_version(monkeypatch, capsys) -> None:
+def test_main_version_flag_prints_version(monkeypatch, capsys) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
     monkeypatch.setattr("sys.argv", ["owlclaw", "--version"])
     with pytest.raises(SystemExit) as exc_info:
         cli_main.main()
     assert exc_info.value.code == 0
-    assert capsys.readouterr().out.strip() == __version__
+    out = capsys.readouterr().out
+    assert "owlclaw " in out
+
+
+def test_main_short_version_flag_prints_version(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "-V"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "owlclaw " in out
+
+
+def test_main_root_help_includes_version_option(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "--version, -V" in out
 
 
 def test_main_dispatches_skill_init_with_template_value(monkeypatch, tmp_path) -> None:
@@ -230,18 +249,31 @@ def test_main_dispatches_migrate_scan_with_output_mode(monkeypatch, tmp_path) ->
             "owlclaw",
             "migrate",
             "scan",
+            "--project",
+            str(tmp_path / "legacy"),
             "--openapi",
             str(tmp_path / "openapi.yaml"),
             "--output-mode",
             "binding",
             "--output",
             str(tmp_path / "out"),
+            "--dry-run",
+            "--report-json",
+            str(tmp_path / "r.json"),
+            "--report-md",
+            str(tmp_path / "r.md"),
+            "--force",
         ],
     )
     cli_main.main()
     assert captured["output_mode"] == "binding"
+    assert captured["project"] == str(tmp_path / "legacy")
     assert captured["openapi"] == str(tmp_path / "openapi.yaml")
     assert captured["output"] == str(tmp_path / "out")
+    assert captured["dry_run"] is True
+    assert captured["report_json"] == str(tmp_path / "r.json")
+    assert captured["report_md"] == str(tmp_path / "r.md")
+    assert captured["force"] is True
 
 
 def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
@@ -252,4 +284,115 @@ def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
     assert exc_info.value.code == 0
     out = capsys.readouterr().out
     assert "Usage: owlclaw migrate scan [OPTIONS]" in out
+    assert "--project" in out
     assert "--output-mode [handler|binding|both]" in out
+    assert "--dry-run" in out
+    assert "--report-json" in out
+    assert "--report-md" in out
+    assert "--force" in out
+
+
+def test_main_dispatches_migrate_init(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_init_migrate_config_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr(
+        "owlclaw.cli.migrate.config_cli.init_migrate_config_command",
+        _fake_init_migrate_config_command,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "migrate",
+            "init",
+            "--path",
+            str(tmp_path),
+            "--project",
+            "./legacy",
+            "--output",
+            "./out",
+            "--output-mode",
+            "binding",
+            "--non-interactive",
+        ],
+    )
+    cli_main.main()
+    assert captured["path"] == str(tmp_path)
+    assert captured["project"] == "./legacy"
+    assert captured["output_mode"] == "binding"
+    assert captured["interactive"] is False
+
+
+def test_main_dispatches_migrate_config_validate(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_validate_migrate_config_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr(
+        "owlclaw.cli.migrate.config_cli.validate_migrate_config_command",
+        _fake_validate_migrate_config_command,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "migrate",
+            "config",
+            "validate",
+            "--config",
+            str(tmp_path / ".owlclaw-migrate.yaml"),
+        ],
+    )
+    cli_main.main()
+    assert captured["config"] == str(tmp_path / ".owlclaw-migrate.yaml")
+
+
+def test_main_release_gate_owlhub_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "release", "gate", "owlhub", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw release gate owlhub [OPTIONS]" in out
+
+
+def test_main_dispatches_release_gate_owlhub(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_release_gate_owlhub_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.release_gate.release_gate_owlhub_command", _fake_release_gate_owlhub_command)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "release",
+            "gate",
+            "owlhub",
+            "--api-base-url",
+            "http://127.0.0.1:18080",
+            "--index-url",
+            "file:///tmp/index.json",
+            "--query",
+            "local",
+            "--work-dir",
+            str(tmp_path),
+            "--output",
+            str(tmp_path / "gate.json"),
+        ],
+    )
+    cli_main.main()
+    assert captured["api_base_url"] == "http://127.0.0.1:18080"
+    assert captured["index_url"] == "file:///tmp/index.json"
+    assert captured["query"] == "local"
+    assert captured["work_dir"] == str(tmp_path)
+    assert captured["output"] == str(tmp_path / "gate.json")

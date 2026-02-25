@@ -171,9 +171,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
-**当前任务**：ci-setup(10/12) — Task 11 远程验证 + Task 12 Final Checkpoint，或转向 release。
+**当前任务**：ci-setup ✅(12/12) 已完成。release(22/32) — 剩余外部平台动作（PyPI/TestPyPI/GitHub Release）待人工凭据。
 
-**下一任务（当前完成后）**：release(0/32)。
+**下一任务（当前完成后）**：release 收口后协助 capabilities-skills 收尾。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -200,12 +200,12 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | owlhub | 41/42 🟡 | Task 40.4 外部阻塞（生产部署） |
 | examples | 0/12 🟡 | `examples/**`, `tests/unit/test_examples*.py` |
 | cli-migrate | 0/24 🟡 | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
-| ci-setup | 10/12 🟡 | `.github/workflows/**` |
+| ci-setup | 12/12 🟡 | `.github/workflows/**` |
 | release | 0/32 🟡 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
 
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ 已完成。
 
-**当前任务**：owlhub(41/42，Task 40.4 外部阻塞) → examples(0/12) → cli-migrate(0/24) → ci-setup(0/12) → release(0/32) 依序推进。
+**当前任务**：owlhub(41/42) → examples ✅(14/14) → cli-migrate ✅(24/24) → release(22/32) 推进中。
 
 **下一任务（当前完成后）**：全部收口即完成 Phase 2/3，项目进入发布阶段。
 
@@ -253,6 +253,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-23 | 全量分配：codex-work 追加 triggers-db-change/api/signal + cli-scan | 一次分完所有剩余 spec，减少统筹轮次 |
 | 2026-02-23 | 全量分配：codex-gpt-work 追加 owlhub + examples + cli-migrate + ci-setup + release | 同上 |
 | 2026-02-25 | declarative-binding ✅(26/26) 收口；owlhub 更新为 41/42（Task 40.4 外部阻塞）；codex-work 转向协助 ci-setup/release | 统筹轮次合并 review-work |
+| 2026-02-25 | ci-setup ✅(12/12)；examples ✅(14/14)；cli-migrate ✅(24/24)；release 22/32；owlhub 41/42 | 统筹轮次合并 review-work（50+ commits） |
 
 ---
 

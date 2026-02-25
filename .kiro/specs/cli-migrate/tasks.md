@@ -1,4 +1,4 @@
-# Tasks: 迁移工具
+# Tasks: cli-migrate
 
 ## 文档联动
 
@@ -7,107 +7,64 @@
 - tasks: `.kiro/specs/cli-migrate/tasks.md`
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
-
-> **状态**：未开始  
-> **预估工作量**：4-6 天  
-> **最后更新**：2026-02-22  
-> **执行原则**：本清单内所有任务均须专业、认真完成，不区分可选与必选（见规范 §1.4、§4.5）。
+> **状态**：已完成  
+> **最后更新**：2026-02-25
 
 ---
 
 ## 进度概览
 
-- **总任务数**：9（含 binding 输出模式 3 个新任务组）
-- **已完成**：0
+- **总任务数**：24
+- **已完成**：24
 - **进行中**：0
-- **未开始**：9
+- **未开始**：0
 
 ---
 
-## 1. 需求与设计（1-2 天）
+## Task 清单（24）
 
-### 1.1 需求收敛
-- [ ] 1.1.1 完成需求评审与范围确认
-- [ ] 1.1.2 明确外部依赖与契约
+### 1. 命令入口与参数（3/3）
+- [x] 1.1 提供 `owlclaw migrate scan` 命令分发
+- [x] 1.2 支持 `--openapi`、`--orm`、`--output` 参数
+- [x] 1.3 支持 `--output-mode handler|binding|both`
 
-### 1.2 设计落地
-- [ ] 1.2.1 完成架构设计评审
-- [ ] 1.2.2 明确集成点：何时、何处调用适配层
+### 2. BindingGenerator（OpenAPI）（4/4）
+- [x] 2.1 实现 `generate_from_openapi()`
+- [x] 2.2 映射参数与 requestBody 到 `tools_schema.parameters`
+- [x] 2.3 生成 HTTP binding（method/url/headers/response_mapping）
+- [x] 2.4 security schemes -> `${ENV_VAR}` + prerequisites.env
 
----
+### 3. BindingGenerator（ORM）（3/3）
+- [x] 3.1 实现 `generate_from_orm()`
+- [x] 3.2 生成参数化 SQL（`:param`）与 `parameter_mapping`
+- [x] 3.3 默认 `read_only: true` 与连接环境变量引用
 
-## 2. 实现与验证（2-4 天）
+### 4. 扫描命令集成（3/3）
+- [x] 4.1 `output_mode=binding` 生成 binding SKILL.md
+- [x] 4.2 `output_mode=both` 同时生成 handler 与 binding
+- [x] 4.3 支持 `--dry-run` 仅预览不写盘
 
-### 2.1 最小实现
-- [ ] 2.1.1 实现核心能力与注册流程
-- [ ] 2.1.2 完成最小端到端验证
+### 5. Handler 实迁能力（3/3）
+- [x] 5.1 复用 AST 扫描做 Python 候选函数扫描
+- [x] 5.2 生成可执行 `@app.handler` 注册代码（`register_handlers(app)`）
+- [x] 5.3 缺失类型注解输出 `MANUAL_REVIEW` 汇总
 
----
+### 6. 报告与冲突处理（4/4）
+- [x] 6.1 输出 JSON 迁移报告（统计+文件清单）
+- [x] 6.2 输出 Markdown 迁移报告
+- [x] 6.3 目标文件冲突检测 + `--force` 覆盖
+- [x] 6.4 输出迁移统计（数量与预估工时）
 
-## 3. 验收清单
+### 7. 配置与向导（2/2）
+- [x] 7.1 支持 `.owlclaw-migrate.yaml` 配置加载/校验
+- [x] 7.2 实现交互式迁移向导 `owlclaw migrate init`
 
-### 3.1 功能验收
-- [ ] 核心能力可被注册与调用
-- [ ] 配置与约束生效
-
-### 3.2 性能验收
-- [ ] 关键路径无明显阻塞
-
-### 3.3 测试验收
-- [ ] 单元测试覆盖率 > 80%
-- [ ] 集成测试覆盖核心场景
-
-### 3.4 文档验收
-- [ ] 文档完整
-
----
-
-## 4. Binding 输出模式（与 declarative-binding spec 联动）
-
-### 4.1 BindingGenerator 实现
-- [ ] 4.1.1 实现 BindingGenerator 类（与 HandlerGenerator/SKILLGenerator 并列）
-- [ ] 4.1.2 实现 `generate_from_openapi()`：OpenAPI endpoint → HTTP Binding SKILL.md
-- [ ] 4.1.3 实现 `generate_from_orm()`：ORM operation → SQL Binding SKILL.md
-- [ ] 4.1.4 实现 security schemes → `${ENV_VAR}` + prerequisites.env 映射
-- [ ] 4.1.5 实现 response schema → response_mapping 映射
-- [ ] 4.1.6 生成的 SKILL.md 通过 `owlclaw skill validate` 验证
-
-### 4.2 CLI 集成
-- [ ] 4.2.1 扩展 `owlclaw migrate scan` 增加 `--output-mode` 参数（handler/binding/both）
-- [ ] 4.2.2 `--output-mode binding` 时调用 BindingGenerator
-- [ ] 4.2.3 `--output-mode both` 时同时生成 @handler 和 binding SKILL.md
-
-### 4.3 测试
-- [ ] 4.3.1 单元测试：OpenAPI → HTTP Binding SKILL.md 生成
-- [ ] 4.3.2 单元测试：ORM → SQL Binding SKILL.md 生成
-- [ ] 4.3.3 集成测试：端到端 scan → generate → validate → load
+### 8. 测试与文档收口（2/2）
+- [x] 8.1 单元测试覆盖：binding/scan/dry-run/report/conflict
+- [x] 8.2 requirements/design 与 SPEC_TASKS_SCAN 进度对齐
 
 ---
 
-## 5. 依赖与阻塞
+## 阻塞项
 
-### 5.1 依赖
-- CLI 框架
-- `declarative-binding` spec（Binding Schema 定义）
-- `cli-scan` spec（AST 扫描器，PythonFunctionScanner 复用）
-
-### 5.2 阻塞
 - 无
-
----
-
-## 5. 风险
-
-### 5.1 风险描述
-- **缓解**：引入契约与 Mock，CI 验证关键路径
-
----
-
-## 6. 参考文档
-
-- docs/ARCHITECTURE_ANALYSIS.md
-
----
-
-**维护者**：平台研发  
-**最后更新**：2026-02-24

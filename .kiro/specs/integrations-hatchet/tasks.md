@@ -157,8 +157,8 @@
   - [x] 8.1.1 创建开发模式配置（Hatchet Lite）
   - [x] 8.1.2 创建生产模式配置
   - [x] 8.1.3 database 级隔离：OwlClaw 数据层（owlclaw-db），Hatchet 连接 hatchet 库
-  - [x] 8.1.4 提供 init-db.sql 创建 hatchet/owlclaw 库及用户（详见 `DATABASE_ARCHITECTURE.md`）
-  - [x] 8.1.5 部署文档说明两种初始化方式：`owlclaw db init` 与 init-db.sql（见 DATABASE_ARCHITECTURE §5.2）
+  - [x] 8.1.4 提供 init-db.sql 创建 hatchet/owlclaw 库及用户（详见 `docs/DATABASE_ARCHITECTURE.md`）
+  - [x] 8.1.5 部署文档说明两种初始化方式：`owlclaw db init` 与 init-db.sql（见 docs/DATABASE_ARCHITECTURE §5.2）
 
 - [x] 8.2 创建配置示例
   - [x] 8.2.1 创建 owlclaw.yaml 示例

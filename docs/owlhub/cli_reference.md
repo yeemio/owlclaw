@@ -28,6 +28,15 @@ owlclaw skill publish ./my-skill \
 
 ## Command Reference
 
+- Release gate:
+
+```bash
+owlclaw release gate owlhub \
+  --api-base-url http://localhost:8000 \
+  --index-url http://localhost:8000/index.json \
+  --output ./artifacts/owlhub-release-gate.json
+```
+
 - Search:
 
 ```bash

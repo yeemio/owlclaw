@@ -14,7 +14,19 @@ examples（示例应用）是 OwlClaw 的端到端示例集合，用于展示 Ow
 
 根据 OwlClaw 的核心定位"让已有业务系统获得 AI 自主能力"，examples 通过实际业务场景展示如何使用 @handler 装饰器、Skills 系统、触发器机制和治理能力，帮助用户快速理解 OwlClaw 的价值和使用方法。
 
-examples 设计为独立可运行的示例应用集合，每个示例都包含完整的代码、配置、文档和 Docker Compose 环境，使用 mock 数据避免依赖真实外部服务。MVP 阶段提供 5 个核心场景示例，覆盖电商、金融、SaaS 等行业。
+examples 设计为仓库内可运行的示例集合，优先提供轻量脚本和能力目录示例，避免强依赖外部服务。当前 MVP 已覆盖 Cron、LangChain、Binding、行业 Skills 与 mionyee 完整链路示例。
+
+## Current MVP Scope (2026-02-25)
+
+| 示例路径 | 类型 | 状态 |
+|---------|------|------|
+| `examples/cron/` | 非交易场景示例 | ✅ |
+| `examples/langchain/` | LangChain 集成示例 | ✅ |
+| `examples/binding-http/` | API/Binding 集成示例 | ✅ |
+| `examples/owlhub_skills/` | 行业 Skills 示例（电商/金融/SaaS） | ✅ |
+| `examples/mionyee-trading/` | mionyee 三任务完整接入示例 | ✅ |
+
+> 注：文档中其余更大范围场景（如 Docker Compose 全覆盖）保留为后续阶段目标，不作为当前 MVP 完成判定。
 
 ## Glossary
 

@@ -2,7 +2,7 @@
 
 import argparse
 import sys
-from importlib.metadata import PackageNotFoundError, version as package_version
+from importlib import metadata
 
 import typer
 from click.exceptions import Exit as ClickExit
@@ -16,16 +16,6 @@ app = typer.Typer(
 )
 
 _SUBAPPS_REGISTERED = False
-
-
-def _resolve_cli_version() -> str:
-    """Resolve CLI version from installed metadata, fallback to source version."""
-    try:
-        return package_version("owlclaw")
-    except PackageNotFoundError:
-        from owlclaw import __version__
-
-        return __version__
 
 
 def _register_subapps() -> None:
@@ -44,6 +34,16 @@ def _register_subapps() -> None:
 # Keep subcommands registered for direct `CliRunner.invoke(app, ...)` usage in tests
 # and library callers that import the Typer app object without going through main().
 _register_subapps()
+
+
+def _print_version_and_exit() -> None:
+    """Print installed package version and exit."""
+    try:
+        version = metadata.version("owlclaw")
+    except metadata.PackageNotFoundError:
+        version = "unknown"
+    print(f"owlclaw {version}")
+    raise SystemExit(0)
 
 
 @app.command("init")
@@ -611,6 +611,42 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
         _print_help_and_exit(["migrate"])
 
     sub = argv[1]
+    if sub == "config":
+        if len(argv) < 3:
+            _print_help_and_exit(["migrate", "config"])
+        action = argv[2]
+        if action != "validate":
+            print(f"Error: unknown migrate config subcommand: {action}", file=sys.stderr)
+            raise SystemExit(2)
+        from owlclaw.cli.migrate.config_cli import validate_migrate_config_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migrate config validate")
+        parser.add_argument("--config", default=".owlclaw-migrate.yaml")
+        ns = parser.parse_args(argv[3:])
+        validate_migrate_config_command(config=ns.config)
+        return True
+
+    if sub == "init":
+        from owlclaw.cli.migrate.config_cli import init_migrate_config_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migrate init")
+        parser.add_argument("--path", default=".")
+        parser.add_argument("--project", default="")
+        parser.add_argument("--output", default="")
+        parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
+        parser.add_argument("--force", action="store_true", default=False)
+        parser.add_argument("--non-interactive", action="store_true", default=False)
+        ns = parser.parse_args(argv[2:])
+        init_migrate_config_command(
+            path=ns.path,
+            project=ns.project,
+            output=ns.output,
+            output_mode=ns.output_mode,
+            force=ns.force,
+            interactive=not ns.non_interactive,
+        )
+        return True
+
     if sub != "scan":
         print(f"Error: unknown migrate subcommand: {sub}", file=sys.stderr)
         raise SystemExit(2)
@@ -618,15 +654,65 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
     from owlclaw.cli.migrate.scan_cli import run_migrate_scan_command
 
     parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migrate scan")
+    parser.add_argument("--project", default="")
     parser.add_argument("--openapi", default="")
     parser.add_argument("--orm", default="")
     parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
     parser.add_argument("--output", "--path", "-o", "-p", dest="output", default=".")
+    parser.add_argument("--dry-run", action="store_true", default=False)
+    parser.add_argument("--report-json", default="")
+    parser.add_argument("--report-md", default="")
+    parser.add_argument("--force", action="store_true", default=False)
     ns = parser.parse_args(argv[2:])
     run_migrate_scan_command(
+        project=ns.project,
         openapi=ns.openapi,
         orm=ns.orm,
         output_mode=ns.output_mode,
+        output=ns.output,
+        dry_run=ns.dry_run,
+        report_json=ns.report_json,
+        report_md=ns.report_md,
+        force=ns.force,
+    )
+    return True
+
+
+def _dispatch_release_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw release ...` via argparse."""
+    if not argv or argv[0] != "release":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["release"])
+
+    sub = argv[1]
+    if sub != "gate":
+        print(f"Error: unknown release subcommand: {sub}", file=sys.stderr)
+        raise SystemExit(2)
+
+    if len(argv) < 3:
+        _print_help_and_exit(["release", "gate"])
+    target = argv[2]
+    if "--help" in argv or "-h" in argv:
+        _print_help_and_exit(["release", "gate", target])
+    if target != "owlhub":
+        print(f"Error: unknown release gate target: {target}", file=sys.stderr)
+        raise SystemExit(2)
+
+    from owlclaw.cli.release_gate import release_gate_owlhub_command
+
+    parser = argparse.ArgumentParser(add_help=False, prog="owlclaw release gate owlhub")
+    parser.add_argument("--api-base-url", required=True)
+    parser.add_argument("--index-url", required=True)
+    parser.add_argument("--query", default="skill")
+    parser.add_argument("--work-dir", default=".owlhub/release-gate")
+    parser.add_argument("--output", default="")
+    ns = parser.parse_args(argv[3:])
+    release_gate_owlhub_command(
+        api_base_url=ns.api_base_url,
+        index_url=ns.index_url,
+        query=ns.query,
+        work_dir=ns.work_dir,
         output=ns.output,
     )
     return True
@@ -639,7 +725,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw [OPTIONS] COMMAND [ARGS]...")
         print("\n  OwlClaw — Agent base for business applications.\n")
         print("Options:")
-        print("  --version  Show OwlClaw CLI version")
+        print("  --version, -V  Show installed version and exit")
         print("Commands:")
         print("  db     Database: init, migrate, status")
         print("  memory Agent memory: list, prune, reset, stats")
@@ -647,6 +733,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  skill  Create, validate, list Agent Skills (SKILL.md)")
         print("  trigger Trigger templates (db-change)")
         print("  migrate Migrate legacy APIs/models to OwlClaw assets")
+        print("  release Release validation and gate checks")
         print("\n  owlclaw db --help   owlclaw skill --help")
         sys.exit(0)
     if argv == ["db"]:
@@ -873,18 +960,77 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw migrate [OPTIONS] COMMAND [ARGS]...")
         print("\n  Migration tooling commands.")
         print("Commands:")
-        print("  scan  Scan OpenAPI/ORM sources and generate handlers or binding skills")
+        print("  scan   Scan project/OpenAPI/ORM sources and generate handlers or binding skills")
+        print("  init   Interactive migrate config wizard")
+        print("  config Validate migrate config")
         print("\n  owlclaw migrate scan --help")
+        sys.exit(0)
+    if argv == ["migrate", "config"]:
+        print("Usage: owlclaw migrate config [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Migrate config commands.")
+        print("Commands:")
+        print("  validate  Validate .owlclaw-migrate.yaml")
+        print("\n  owlclaw migrate config validate --help")
+        sys.exit(0)
+    if argv == ["migrate", "config", "validate"]:
+        print("Usage: owlclaw migrate config validate [OPTIONS]")
+        print("\n  Validate migrate config file.")
+        print("Options:")
+        print("  --config TEXT  Path to config file (default: .owlclaw-migrate.yaml)")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["migrate", "init"]:
+        print("Usage: owlclaw migrate init [OPTIONS]")
+        print("\n  Create .owlclaw-migrate.yaml (interactive by default).")
+        print("Options:")
+        print("  --path TEXT                     Directory for config file (default: .)")
+        print("  --project TEXT                  Default project path")
+        print("  --output TEXT                   Default output directory")
+        print("  --output-mode [handler|binding|both]")
+        print("                                  Default output mode")
+        print("  --force                         Overwrite existing config")
+        print("  --non-interactive               Use provided options only")
+        print("  --help                          Show this message and exit")
+        sys.exit(0)
+    if argv == ["release"]:
+        print("Usage: owlclaw release [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Release validation and gate tooling.")
+        print("Commands:")
+        print("  gate  Run release gate checks")
+        print("\n  owlclaw release gate --help")
+        sys.exit(0)
+    if argv == ["release", "gate"]:
+        print("Usage: owlclaw release gate [OPTIONS] TARGET")
+        print("\n  Run release gate checks for one target.")
+        print("Targets:")
+        print("  owlhub  OwlHub API/index/CLI smoke gate")
+        print("\n  owlclaw release gate owlhub --help")
+        sys.exit(0)
+    if argv == ["release", "gate", "owlhub"]:
+        print("Usage: owlclaw release gate owlhub [OPTIONS]")
+        print("\n  Run OwlHub release gate checks.")
+        print("Options:")
+        print("  --api-base-url TEXT  OwlHub API base URL (required)")
+        print("  --index-url TEXT     Public index URL (required)")
+        print("  --query TEXT         Query used for CLI search smoke check (default: skill)")
+        print("  --work-dir TEXT      Local temp dir for gate run (default: .owlhub/release-gate)")
+        print("  --output TEXT        Optional output JSON file path")
+        print("  --help               Show this message and exit")
         sys.exit(0)
     if argv == ["migrate", "scan"]:
         print("Usage: owlclaw migrate scan [OPTIONS]")
         print("\n  Scan OpenAPI/ORM inputs and generate handler stubs and/or binding SKILL.md.")
         print("Options:")
+        print("  --project TEXT                 Python project path for handler migration scan")
         print("  --openapi TEXT                 OpenAPI spec path (.yaml/.yml/.json)")
         print("  --orm TEXT                     ORM operations descriptor path (.yaml/.yml/.json)")
         print("  --output-mode [handler|binding|both]")
         print("                                 Output type (default: handler)")
         print("  --output, --path TEXT          Output directory (default: .)")
+        print("  --dry-run                      Preview generated file paths without writing")
+        print("  --report-json TEXT             Report JSON path (default: <output>/migration_report.json)")
+        print("  --report-md TEXT               Report Markdown path (default: <output>/migration_report.md)")
+        print("  --force                        Overwrite existing target files")
         print("  --help                         Show this message and exit")
         sys.exit(0)
     if argv == ["trigger", "template"]:
@@ -925,12 +1071,15 @@ def _print_help_and_exit(argv: list[str]) -> None:
         sys.exit(0)
     # Fallback
     print("Usage: owlclaw [OPTIONS] COMMAND [ARGS]...")
+    print("Options:")
+    print("  --version, -V  Show installed version and exit")
     print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
     print("  agent  Manual control via signal (pause, resume, trigger, instruct, status)")
     print("  skill  Create, validate, list Agent Skills (SKILL.md)")
     print("  trigger Trigger templates (db-change)")
     print("  migrate Migrate legacy APIs/models to OwlClaw assets")
+    print("  release Release validation and gate checks")
     sys.exit(0)
 
 
@@ -1028,9 +1177,8 @@ def _dispatch_db_restore(argv: list[str]) -> bool:
 
 def main() -> None:
     """CLI entry point — dispatches to subcommands."""
-    if sys.argv[1:] == ["--version"]:
-        print(_resolve_cli_version())
-        sys.exit(0)
+    if "--version" in sys.argv or "-V" in sys.argv:
+        _print_version_and_exit()
     if "--help" in sys.argv or "-h" in sys.argv:
         argv = [a for a in sys.argv[1:] if a not in ("--help", "-h")]
         _print_help_and_exit(argv)
@@ -1091,6 +1239,11 @@ def _main_impl() -> None:
         raise SystemExit(e.exit_code) from None
     try:
         if _dispatch_migrate_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_release_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None

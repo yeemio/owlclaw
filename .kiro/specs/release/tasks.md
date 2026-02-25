@@ -18,9 +18,9 @@
 ## 进度概览
 
 - **总任务数**：32
-- **已完成**：25
+- **已完成**：22
 - **进行中**：0
-- **未开始**：7
+- **未开始**：10
 
 ---
 
@@ -61,27 +61,28 @@
 
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
-- [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets（外部平台操作待执行）
-- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI，`release.yml` 已支持 `workflow_dispatch target=testpypi`；待合入默认分支并配置 Secrets 后执行）
+- [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
+- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
 
 ---
 
 ## 4. 发布执行（0.5 天）
 
 ### 4.1 首次发布
-- [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布（外部仓库发布动作待执行）
-- [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功（受当前环境 TLS/CA 异常阻塞）
-- [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常
-- [ ] 4.1.4 验证 GitHub Release 自动创建（依赖 4.1.1 外部发布动作）
+- [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布
+- [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功
+- [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
+  - 本地验证（2026-02-25）：`poetry run owlclaw --version` → `owlclaw 0.1.0`；`poetry run owlclaw skill list` 正常输出
+- [ ] 4.1.4 验证 GitHub Release 自动创建
 
 ---
 
 ## 5. 社区准备（0.5 天）
 
 ### 5.1 社区渠道
-- [x] 5.1.1 启用 GitHub Discussions（已于 2026-02-25 执行）
-- [x] 5.1.2 仓库设为 Public（已于 2026-02-25 执行）
-- [x] 5.1.3 添加 Topics 和 Description（已于 2026-02-25 执行）
+- [ ] 5.1.1 启用 GitHub Discussions
+- [ ] 5.1.2 仓库设为 Public
+- [ ] 5.1.3 添加 Topics 和 Description
 
 ---
 

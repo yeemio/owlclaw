@@ -399,7 +399,7 @@ The implementation follows a bottom-up approach: core data models → parser com
 
 ## Notes
 
-- Tasks marked with `*` are optional testing tasks and can be skipped for faster MVP
+- Tasks marked with `*` are testing-priority markers and are not skippable for final acceptance
 - Each task references specific requirements for traceability
 - Property-based tests use `hypothesis` library with minimum 100 iterations
 - All property tests must include feature and property number in comments

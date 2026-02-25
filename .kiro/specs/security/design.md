@@ -157,11 +157,11 @@ owlclaw/
 
 | 集成位置 | 安全组件 | 调用时机 |
 |---------|---------|---------|
-| `agent.runtime.runtime.py` | InputSanitizer | 构建 prompt 前，对外部输入净化 |
-| `agent.runtime.runtime.py` | Role Isolation | 构建 messages 时，强制 system/user 分离 |
-| `agent.runtime.runtime.py` | OutputValidator | LLM 返回 function call 后，执行前验证 |
-| `governance.visibility.py` | RiskGate | 工具执行前，检查风险等级 |
-| `integrations.langfuse.py` / MCP | DataMasker | 数据对外输出时脱敏 |
+| `owlclaw/agent/runtime/runtime.py` | InputSanitizer | 构建 prompt 前，对外部输入净化 |
+| `owlclaw/agent/runtime/runtime.py` | Role Isolation | 构建 messages 时，强制 system/user 分离 |
+| `owlclaw/agent/runtime/runtime.py` | OutputValidator | LLM 返回 function call 后，执行前验证 |
+| `owlclaw/governance/visibility.py` | RiskGate | 工具执行前，检查风险等级 |
+| `owlclaw/integrations/langfuse.py` / MCP | DataMasker | 数据对外输出时脱敏 |
 
 ---
 
