@@ -366,3 +366,11 @@ def test_main_dispatches_release_gate_owlhub(monkeypatch, tmp_path) -> None:
     assert captured["query"] == "local"
     assert captured["work_dir"] == str(tmp_path)
     assert captured["output"] == str(tmp_path / "gate.json")
+
+
+def test_main_prints_version(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "--version"])
+    cli_main.main()
+    out = capsys.readouterr().out.strip()
+    assert out
