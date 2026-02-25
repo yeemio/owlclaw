@@ -68,3 +68,12 @@ def test_pyproject_has_release_metadata_and_extras() -> None:
 
     scripts = poetry["scripts"]
     assert scripts["owlclaw"] == "owlclaw.cli:main"
+
+
+def test_owlclaw_mcp_standalone_package_config_exists() -> None:
+    payload = tomllib.loads(Path("owlclaw-mcp/pyproject.toml").read_text(encoding="utf-8"))
+    poetry = payload["tool"]["poetry"]
+    assert poetry["name"] == "owlclaw-mcp"
+    assert poetry["version"] == "0.1.0"
+    scripts = poetry["scripts"]
+    assert scripts["owlclaw-mcp"] == "owlclaw_mcp.server:main"

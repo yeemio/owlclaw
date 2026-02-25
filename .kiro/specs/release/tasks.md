@@ -30,7 +30,7 @@
 - [x] 1.1.1 确认 owlclaw 包元数据完整（name, version, description, author, license, keywords, classifiers）
 - [x] 1.1.2 配置可选依赖组（`[langchain]`, `[dev]`）
 - [x] 1.1.3 配置 CLI 入口点（`owlclaw = "owlclaw.cli:main"`）
-- [ ] 1.1.4 确认 owlclaw-mcp 包独立构建配置
+- [x] 1.1.4 确认 owlclaw-mcp 包独立构建配置
 
 ### 1.2 敏感信息检查
 - [x] 1.2.1 扫描仓库确认无硬编码 API key、token、密码
