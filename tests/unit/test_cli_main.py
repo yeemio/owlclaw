@@ -36,6 +36,26 @@ def test_main_version_flag_prints_version(monkeypatch, capsys) -> None:
     assert "owlclaw " in out
 
 
+def test_main_short_version_flag_prints_version(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "-V"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "owlclaw " in out
+
+
+def test_main_root_help_includes_version_option(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "--version, -V" in out
+
+
 def test_main_dispatches_skill_init_with_template_value(monkeypatch, tmp_path) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
 
