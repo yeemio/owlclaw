@@ -37,7 +37,7 @@
 - [ ] **Task 4**: 验证 unit 测试零外部依赖
   - [x] 4.1 在 CI lint job 中添加步骤：`pytest tests/unit/ -q --tb=short`（不启动任何 service）
   - [ ] 4.2 确认 unit 测试运行时间 < 60 秒  
-    - 当前阻塞（2026-02-25）：本地实测 `tests/unit` 耗时约 `355s`（`1530 passed, 0 skipped`），需后续做用例分层/性能优化
+    - 当前阻塞（2026-02-25）：本地实测 `tests/unit` 耗时约 `379s`（`1530 passed, 0 skipped`）；本轮已对 `test_parallel_executor` 与 `test_property_memory_file_size_limit` 做热点降耗，仍需继续做用例分层/性能优化
   - _Requirements: AC-1_
 
 ### Phase 3：共享 Fixtures（P1）
