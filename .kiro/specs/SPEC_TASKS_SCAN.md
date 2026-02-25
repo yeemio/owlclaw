@@ -153,10 +153,10 @@
 | 最后更新 | 2026-02-25 |
 | 当前批次 | 统筹轮次：合并 review-work → main，同步所有 worktree，更新 declarative-binding 状态 |
 | 批次状态 | **完成**。review-work（13 commits）已合并到 main；codex-work 已同步；codex-gpt-work 冲突已解决并同步。 |
-| 已完成项 | 1) 合并 review-work（13 commits）到 main：declarative-binding Task 16~19 全部完成 + owlhub 收尾文档 + 完整 migrate CLI dispatch；2) 同步 codex-work（fast-forward）；3) 解决 codex-gpt-work 冲突并提交；4) declarative-binding 状态更新为 ✅(26/26)；5) owlhub 状态确认 🟡(41/42)，Task 40.4 外部阻塞。 |
-| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12) → cli-migrate(0/24) → ci-setup(0/12) → release(0/32)；2) codex-work 协助 ci-setup / release；3) review-work 审校新提交。 |
+| 已完成项 | 1) 合并 review-work（13 commits）到 main：declarative-binding Task 16~19 全部完成 + owlhub 收尾文档 + 完整 migrate CLI dispatch；2) 同步 codex-work（fast-forward）；3) 解决 codex-gpt-work 冲突并提交；4) declarative-binding 状态更新为 ✅(26/26)；5) owlhub 状态确认 🟡(41/42)，Task 40.4 外部阻塞；6) 已提交 OwlHub 发布闸门 CLI 命名审校提案：`docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md`。 |
+| 下一待执行 | 1) 架构层确认 OwlHub gate CLI 命名（推荐 `owlclaw release gate owlhub`）；2) codex-gpt-work 推进 examples(0/12) → cli-migrate(0/24) → ci-setup(0/12) → release(0/32)；3) codex-work 协助 ci-setup / release；4) review-work 审校新提交。 |
 | 验收快照 | 当前：declarative-binding ✅(26/26)，owlhub 🟡(41/42，Task 40.4 外部阻塞)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，ci-setup 🟡(0/12)，release 🟡(0/32)，全仓测试门禁 ✅（1640 passed）。 |
-| 阻塞项 | owlhub Task 40.4（外部生产环境部署，需用户提供生产凭据）。 |
+| 阻塞项 | 1) owlhub Task 40.4（外部生产环境部署，需用户提供生产凭据）；2) OwlHub gate CLI 正式命名待架构决策。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
