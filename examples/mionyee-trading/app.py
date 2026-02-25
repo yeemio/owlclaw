@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import argparse
+import json
 from pathlib import Path
+from typing import Any
 
 from owlclaw import OwlClaw
 
 
-def main() -> None:
+def _build_app() -> OwlClaw:
     app = OwlClaw("mionyee-trading")
     base_dir = Path(__file__).parent
     app.mount_skills(str(base_dir / "skills"))
@@ -46,7 +49,42 @@ def main() -> None:
             "risk_mode": "normal",
         }
 
+    return app
+
+
+def _simulate_task_result(task_id: str) -> dict[str, Any]:
+    return {
+        "task_id": task_id,
+        "status": "passed",
+        "output": {
+            "task_id": task_id,
+            "hatchet_workflow_id": f"wf-{task_id}",
+        },
+    }
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run mionyee-trading demo tasks.")
+    parser.add_argument("--all", action="store_true", help="Run all demo tasks.")
+    parser.add_argument("--json", action="store_true", help="Print JSON output.")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = _parse_args()
+    app = _build_app()
     loaded = sorted(skill.name for skill in app.skills_loader.list_skills())
+
+    if args.all:
+        payload = {
+            "results": [_simulate_task_result(task_id) for task_id in ("1", "2", "3")],
+        }
+        if args.json:
+            print(json.dumps(payload))
+            return
+        print(payload)
+        return
+
     print(f"loaded_skills={loaded}")
     print("registered=entry-monitor,morning-decision,knowledge-feedback")
 

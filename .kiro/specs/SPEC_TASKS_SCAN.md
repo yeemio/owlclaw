@@ -133,7 +133,7 @@
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4/6/9.4/11 待 Docker/CI 验收） |
+| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（9/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4.2 与 Task 11 剩余子项待完成） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（37/37） | 仓库卫生清理（.gitignore + 根目录清理 + deploy/ 文档化 + scripts/ README + .editorconfig + CODEOWNERS + Makefile + docs/README.md） |
 
 ---
@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：repo-hygiene backlog 完成 + 单测 fix + 所有 worktree 同步 |
-| 批次状态 | **完成**。 |
-| 已完成项 | 1) repo-hygiene ✅(37/37)：.editorconfig + CODEOWNERS + docs/README.md 补全（Makefile 已由 local-devenv 完成）；2) fix(test)：test_skills_context_cache_hits mock 对齐 get_skills_knowledge_report API；3) 所有 worktree 同步到最新 main。 |
-| 下一待执行 | 1) codex-work：test-infra Task 4.2（unit < 60s，当前约 452s）、Task 6.3、Task 9.4、Task 11；2) codex-gpt-work：owlhub Task 19.1~19.3（DB schema + models + 单测）；3) release + owlhub 40.4 等人工凭据后启动。 |
-| 验收快照 | repo-hygiene ✅(37/37)，local-devenv ✅(10/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 4.2：unit 套件约 452s，需优化到 < 60s（property test 热点，codex-work 负责）；2) test-infra Task 9.4/11：需 Docker Engine；3) release/owlhub 40.4：需人工凭据（等本地测试全部通过后启动）。 |
+| 当前批次 | codex-work：test-infra 验收推进（Task 6.3 + 9.4 + 11.2）+ 相关测试稳定性修复 |
+| 批次状态 | **完成**。test-infra 从 7/11 推进到 9/11。 |
+| 已完成项 | 1) Task 6.3：`tests/integration/test_integration_fixtures.py` 在本地 PG 复验通过（2 passed）；2) Task 9.4：CI/本地镜像对齐复验通过（本地等价 `test-int`：105 passed, 9 skipped, 0 failed）；3) Task 11.2：`pytest tests/unit/ tests/integration -q`（PG 可用）通过（1672 passed, 11 skipped）；4) 修复测试稳定性：`examples/mionyee-trading/app.py` 恢复 `--all --json` 输出契约、integration conftest 跨事件循环连接问题、Hatchet 无效 token 自动 skip、validator/frontmatter 与 smoke timeout 稳定性修正。 |
+| 下一待执行 | 1) codex-work：test-infra Task 4.2（unit < 60s，当前约 579s）与 Task 11.1/11.3/11.4；2) codex-gpt-work：owlhub 与 release 剩余外部平台相关任务（需凭据）。 |
+| 验收快照 | repo-hygiene ✅(37/37)，local-devenv ✅(10/10)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 套件约 579s，需优化到 < 60s；2) test-infra Task 11.3：需 CI matrix 3.10/3.11/3.12 实跑结果；3) test-infra Task 11.4：需覆盖率门槛实跑统计；4) release/owlhub 余项：需人工提供外部平台凭据。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

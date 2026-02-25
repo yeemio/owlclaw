@@ -8,8 +8,8 @@ import pytest
 import pytest_asyncio
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 pytestmark = pytest.mark.requires_postgres
 
@@ -26,7 +26,8 @@ async def db_engine() -> AsyncEngine:
     db_url = os.getenv("OWLCLAW_DATABASE_URL") or os.getenv("DATABASE_URL")
     if not db_url:
         pytest.skip("DATABASE_URL/OWLCLAW_DATABASE_URL is not set")
-    engine = create_async_engine(db_url, future=True)
+    # NullPool avoids cross-event-loop connection reuse with asyncpg on Windows.
+    engine = create_async_engine(db_url, future=True, poolclass=NullPool)
     try:
         yield engine
     finally:
@@ -53,5 +54,5 @@ async def isolated_session(db_engine: AsyncEngine, run_migrations: None):
         try:
             yield session
         finally:
-            await session.rollback()
-            await session.execute(text("select 1"))
+            if session.in_transaction():
+                await session.rollback()

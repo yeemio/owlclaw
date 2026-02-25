@@ -37,7 +37,7 @@
 - [ ] **Task 4**: 验证 unit 测试零外部依赖
   - [x] 4.1 在 CI lint job 中添加步骤：`pytest tests/unit/ -q --tb=short`（不启动任何 service）
   - [ ] 4.2 确认 unit 测试运行时间 < 60 秒  
-    - 当前阻塞（2026-02-25）：本地实测 `tests/unit` 耗时约 `353s`（`1530 passed, 0 skipped`），需后续做用例分层/性能优化
+    - 当前阻塞（2026-02-25）：本地实测 `tests/unit` 耗时约 `579s`（`1569 passed, 0 skipped`），需后续做用例分层/性能优化
   - _Requirements: AC-1_
 
 ### Phase 3：共享 Fixtures（P1）
@@ -52,8 +52,8 @@
 - [ ] **Task 6**: integration/conftest.py 模块级 fixtures
   - [x] 6.1 添加 `db_engine` fixture（scope="module"，避免每个测试重建连接池）
   - [x] 6.2 添加 `run_migrations` fixture（scope="session"，确保 schema 最新）
-  - [ ] 6.3 验证：集成测试之间数据不互相污染（事务回滚有效）  
-    - 当前状态（2026-02-25）：已新增 `tests/integration/test_integration_fixtures.py` 双测试隔离探针（写入 -> 下一测试验证清洁状态）；本机因 PostgreSQL 不可用触发 `2 skipped`，待有 PG 环境复验并转为 completed
+  - [x] 6.3 验证：集成测试之间数据不互相污染（事务回滚有效）  
+    - 验收（2026-02-25）：`tests/integration/test_integration_fixtures.py` 在本地 PG（docker-compose.test，端口 55432）通过：`2 passed`
   - _Requirements: AC-3_
 
 ### Phase 4：覆盖率分层（P1）
@@ -76,8 +76,8 @@
   - [x] 9.1 确认 CI `test.yml` postgres service 使用 `pgvector/pgvector:pg16`（已对齐）
   - [x] 9.2 确认 CI pgvector 初始化步骤与 `docker-compose.test.yml` 完全一致（CI 改为复用 `deploy/init-test-db.sql`）
   - [x] 9.3 将 CI 中 `POSTGRES_DB: owlclaw_test` 与本地 compose 对齐（已对齐）
-  - [ ] 9.4 验证：本地 `make test-int` 与 CI 测试结果一致（同 pass/skip/fail）  
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行，且无 `make` 命令，暂无法做本地对齐验收
+  - [x] 9.4 验证：本地 `make test-int` 与 CI 测试结果一致（同 pass/skip/fail）  
+    - 验收（2026-02-25）：Windows 环境使用等价命令（`docker compose -f docker-compose.test.yml up -d` + `pytest tests/integration/ -q`）完成对齐；结果 `105 passed, 9 skipped, 0 failed`（无效 Hatchet token 用例按规范 skip）
   - _Requirements: AC-4_
 
 ### Phase 6：文档（P1）
@@ -93,7 +93,8 @@
 
 - [ ] **Task 11**: 端到端验收
   - [ ] 11.1 无外部服务：`poetry run pytest tests/unit/ -q` → 全部通过，0 skip，< 60s
-  - [ ] 11.2 有 PG：`poetry run pytest tests/unit/ tests/integration/ -q` → unit 全过，integration 按可用性 pass/skip
+  - [x] 11.2 有 PG：`poetry run pytest tests/unit/ tests/integration/ -q` → unit 全过，integration 按可用性 pass/skip  
+    - 验收（2026-02-25）：本地 PG（docker-compose.test，端口 55432）下执行通过：`1672 passed, 11 skipped`
   - [ ] 11.3 CI 运行：所有 matrix（3.10/3.11/3.12）通过
   - [ ] 11.4 覆盖率：unit ≥ 90%，overall ≥ 80%
   - _Requirements: AC-1, AC-2, AC-3, AC-4, AC-5_

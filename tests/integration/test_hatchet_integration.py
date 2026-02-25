@@ -32,6 +32,11 @@ def _normalize_status(value: str) -> str:
     return value.strip().lower()
 
 
+def _is_hatchet_auth_error(exc: Exception) -> bool:
+    lowered = str(exc).lower()
+    return "invalid auth token" in lowered or "unauthenticated" in lowered
+
+
 def _start_worker_process(task_name: str, sleep_seconds: float) -> subprocess.Popen:
     env = os.environ.copy()
     env["HATCHET_E2E_TASK_NAME"] = task_name
@@ -175,7 +180,12 @@ async def test_hatchet_durable_task_worker_restart_recovery_real_e2e():
             await ctx.aio_sleep_for(timedelta(seconds=sleep_seconds))
             return {"slept": True}
 
-        run_id = await _run_task_when_registered(client, task_name=task_name, timeout_seconds=45)
+        try:
+            run_id = await _run_task_when_registered(client, task_name=task_name, timeout_seconds=45)
+        except Exception as exc:
+            if _is_hatchet_auth_error(exc):
+                pytest.skip("Hatchet auth token is invalid; skipping real restart recovery test")
+            raise
 
         await asyncio.sleep(min(max(sleep_seconds / 2.0, 1.5), 5.0))
         _stop_process(worker_a)
