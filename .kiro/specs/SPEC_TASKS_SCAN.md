@@ -151,10 +151,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 codex-work ci-setup + codex-gpt-work owlhub gate → review-work → main |
-| 批次状态 | **完成**。codex-work（6 commits ci-setup）+ codex-gpt-work（3 commits owlhub gate）均已合并到 main；当前审校分支完成门禁复核与状态校准。 |
-| 已完成项 | 1) 合并 codex-work：ci-setup Task 1~10（GitHub Actions lint/test/build/release workflows + pre-commit + dependabot + .releaserc.json + pyproject.toml 工具链配置 + CI 文档 + 配置测试）；2) 合并 codex-gpt-work：owlhub release_gate 模块（owlclaw/owlhub/release_gate.py + scripts/owlhub_release_gate.py + tests）+ OwlHub gate CLI 命名决策提案文档；3) 完成全仓门禁复核：`ruff check .`、`mypy owlclaw/`、`pytest` 分组复跑通过（unit: 1488 passed, 2 skipped；integration+e2e: 159 passed, 26 skipped；tests 根目录其余: 9 passed）；4) 规范化 `cli-migrate` 任务状态：已按代码与测试事实完成 Task 4.1~4.3，进度更新为 12/24。 |
-| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12)；2) codex-work 推进 ci-setup Task 11/12 或转向 release；3) cli-migrate 剩余 12 项（Task 1~3）继续推进；4) owlhub Task 19（数据库基础设施）需架构范围决策后再推进。 |
+| 当前批次 | review-work spec 规范化批次（进度口径与规则语义对齐） |
+| 批次状态 | **完成**。已完成跨 spec 的任务进度口径校准与注释语义统一；审校分支处于可合并状态。 |
+| 已完成项 | 1) `cli-migrate` 任务进度归一：`tasks.md` 与 `SPEC_TASKS_SCAN` 同步为 12/24；2) `owlhub` 进度修正为 40/42，并补充 Task 19 范围决策说明；3) `examples`/`release`/`mcp-server` 进度概览与实际勾选数对齐（0/12、0/32、12/12）；4) 清理 `cli-db`/`cli-scan` 中“测试可跳过”旧表述并统一为“发布前必须完成”；5) 定向验证：`pytest tests/unit/test_cli_db.py tests/unit/test_cli_db_properties.py tests/integration/test_cli_db_workflows.py -q`（22 passed）。 |
+| 下一待执行 | 1) `examples`（0/12）实现与验收；2) `cli-migrate` 剩余 Task 1~3（12 项）；3) `ci-setup` Task 11/12（GitHub 外部环境）；4) `release`（0/32）启动；5) `owlhub` Task 19/40.4（架构决策 + 外部部署）。 |
 | 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(40/42)，examples 🟡(0/12)，cli-migrate 🟡(12/24)，release 🟡(0/32)，全仓门禁 ✅。 |
 | 阻塞项 | 1) ci-setup Task 11（需实际 GitHub Actions 运行环境）；2) owlhub Task 40.4（外部生产部署）；3) owlhub Task 19（数据库基础设施）与当前实现路径存在范围漂移，需架构决策确认。 |
 | 健康状态 | 正常 |
