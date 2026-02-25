@@ -11,12 +11,11 @@
 
 ### Phase 1：核心 compose 文件（P0）
 
-- [ ] **Task 1**: docker-compose.test.yml — 与 CI 完全镜像
+- [x] **Task 1**: docker-compose.test.yml — 与 CI 完全镜像
   - [x] 1.1 创建根目录 `docker-compose.test.yml`，使用 `pgvector/pgvector:pg16`
   - [x] 1.2 配置 `owlclaw_test` 数据库，含 healthcheck
   - [x] 1.3 添加 `CREATE EXTENSION IF NOT EXISTS vector;` 初始化步骤（与 CI test.yml 一致）
-  - [ ] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过  
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
+  - [x] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过
   - _Requirements: AC-1, AC-2_
 
 - [ ] **Task 2**: docker-compose.minimal.yml — 最小依赖
@@ -24,7 +23,7 @@
   - [x] 2.2 挂载 `deploy/init-db.sql` 自动初始化 owlclaw 库
   - [x] 2.3 配置具名 volume `owlclaw_minimal_data` 持久化数据
   - [ ] 2.4 验证：启动后 `owlclaw db status` 显示连接正常  
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
+    - 当前阻塞（2026-02-25）：Windows + asyncpg 连接在 `owlclaw db status` 中出现 `WinError 64 / ConnectionDoesNotExistError`，compose 健康但 CLI 状态命令异常
   - _Requirements: AC-1, AC-3_
 
 - [ ] **Task 3**: docker-compose.dev.yml — 全量开发环境
@@ -36,7 +35,7 @@
   - [x] 3.6 所有服务配置 healthcheck
   - [x] 3.7 顶部注释说明用途、启动命令、各服务端口
   - [ ] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
+    - 当前阻塞（2026-02-25）：`langfuse/langfuse:2` 首次拉取体积较大，当前机器执行窗口超时，未完成全量 healthy 验证
   - _Requirements: AC-1, AC-6_
 
 ### Phase 2：环境变量与脚本（P0）
@@ -69,7 +68,8 @@
 - [ ] **Task 7**: docs/DEVELOPMENT.md
   - [x] 7.1 创建 `docs/DEVELOPMENT.md`，包含：
         前置条件、快速开始（3 步）、服务端口说明、常见问题
-  - [ ] 7.2 快速开始验证：按文档步骤从零操作，`poetry run pytest` 通过
+  - [ ] 7.2 快速开始验证：按文档步骤从零操作，`poetry run pytest` 通过  
+    - 当前阻塞（2026-02-25）：需在同一窗口完成 `tests/integration` 验证；本轮优先完成了 `tests/unit` 与 compose 资产验收
   - [x] 7.3 Windows 特殊步骤单独说明（firewall、host.docker.internal）
   - _Requirements: AC-5_
 

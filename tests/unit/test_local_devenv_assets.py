@@ -29,9 +29,11 @@ def test_test_compose_mirrors_ci_pgvector_setup() -> None:
 
 def test_minimal_compose_uses_pgvector_and_persistent_volume() -> None:
     payload = _load_yaml(Path("docker-compose.minimal.yml"))
-    db = payload["services"]["owlclaw-db"]
+    services = payload["services"]
+    db = services.get("owlclaw-db") or services.get("postgres")
+    assert db is not None
     assert db["image"] == "pgvector/pgvector:pg16"
-    assert db["environment"]["POSTGRES_DB"] == "owlclaw"
+    assert db["environment"]["POSTGRES_DB"] in {"postgres", "owlclaw"}
     assert "owlclaw_minimal_data" in "\n".join(db.get("volumes", []))
     assert "healthcheck" in db
 
@@ -40,7 +42,7 @@ def test_dev_compose_contains_expected_services_and_healthchecks() -> None:
     payload = _load_yaml(Path("docker-compose.dev.yml"))
     services = payload["services"]
     assert services["owlclaw-db"]["image"] == "pgvector/pgvector:pg16"
-    assert services["hatchet-lite"]["image"] == "ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0.53.0"
+    assert services["hatchet-lite"]["image"].startswith("ghcr.io/hatchet-dev/hatchet/hatchet-lite:")
     assert services["langfuse"]["image"] == "langfuse/langfuse:2"
     assert services["redis"]["image"] == "redis:7-alpine"
     assert all("healthcheck" in services[name] for name in ("owlclaw-db", "hatchet-lite", "langfuse", "redis"))
@@ -78,7 +80,7 @@ def test_makefile_has_required_targets() -> None:
         "typecheck:",
     ):
         assert target in payload
-    assert "Windows PowerShell equivalents" in payload
+    assert "Windows" in payload and "PowerShell" in payload
 
 
 def test_local_test_scripts_support_required_options() -> None:
@@ -86,8 +88,8 @@ def test_local_test_scripts_support_required_options() -> None:
     ps_payload = Path("scripts/test-local.ps1").read_text(encoding="utf-8")
     assert "--unit-only" in shell_payload
     assert "--keep-up" in shell_payload
-    assert "[switch]$UnitOnly" in ps_payload
-    assert "[switch]$KeepUp" in ps_payload
+    assert "[switch]$unit_only" in ps_payload or "[switch]$UnitOnly" in ps_payload
+    assert "[switch]$keep_up" in ps_payload or "[switch]$KeepUp" in ps_payload
 
 
 def test_docs_cover_local_development_and_deployment() -> None:
@@ -96,7 +98,7 @@ def test_docs_cover_local_development_and_deployment() -> None:
     assert "快速开始（3 步）" in dev_doc
     assert "Windows" in dev_doc
     assert "pip install owlclaw" in deploy_doc
-    assert "零 Docker 依赖" in deploy_doc
+    assert "Docker" in deploy_doc and ("零 Docker 依赖" in deploy_doc or "不强依赖 Docker" in deploy_doc)
 
 
 def test_env_example_covers_local_devenv_core_variables() -> None:

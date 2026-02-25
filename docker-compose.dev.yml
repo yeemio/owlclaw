@@ -5,7 +5,6 @@
 services:
   owlclaw-db:
     image: pgvector/pgvector:pg16
-    container_name: owlclaw-dev-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -23,7 +22,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: owlclaw-dev-redis
     ports:
       - "6379:6379"
     command: ["redis-server", "--save", "", "--appendonly", "no"]
@@ -34,8 +32,7 @@ services:
       retries: 8
 
   hatchet-lite:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:latest
-    container_name: owlclaw-dev-hatchet
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0.53.0
     environment:
       DATABASE_URL: postgresql://hatchet:hatchet@owlclaw-db:5432/hatchet
       SERVER_PORT: "7077"
@@ -64,7 +61,6 @@ services:
   # Official Langfuse image (optional in local dev). Disable with: --profile core
   langfuse:
     image: langfuse/langfuse:2
-    container_name: owlclaw-dev-langfuse
     profiles: ["full"]
     environment:
       DATABASE_URL: postgresql://langfuse:langfuse@owlclaw-db:5432/langfuse
