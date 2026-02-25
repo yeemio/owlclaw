@@ -69,7 +69,7 @@ types-pyyaml = "^6.0.12.20250915"
 optional = true
 
 [tool.poetry.group.observability.dependencies]
-langfuse = "^2.0"
+langfuse = "^3.14"
 opentelemetry-api = "^1.0"
 opentelemetry-sdk = "^1.0"
 
