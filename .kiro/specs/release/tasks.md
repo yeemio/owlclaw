@@ -18,9 +18,9 @@
 ## 进度概览
 
 - **总任务数**：32
-- **已完成**：25
+- **已完成**：28
 - **进行中**：0
-- **未开始**：7
+- **未开始**：4
 
 ---
 
@@ -69,10 +69,10 @@
 ## 4. 发布执行（0.5 天）
 
 ### 4.1 首次发布
-- [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布（外部仓库发布动作待执行）
+- [x] 4.1.1 创建 Git tag `v1.0.0` 触发发布（已存在 tag `v1.0.0`）
 - [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功（受当前环境 TLS/CA 异常阻塞）
 - [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常
-- [ ] 4.1.4 验证 GitHub Release 自动创建（依赖 4.1.1 外部发布动作）
+- [x] 4.1.4 验证 GitHub Release 自动创建（`v1.0.0` Release 已创建）
 
 ---
 
@@ -91,7 +91,7 @@
 - [ ] `pip install owlclaw` 在干净环境中成功
 - [x] `owlclaw --version` 输出正确版本
 - [x] examples/ 中至少 1 个示例可独立运行
-- [ ] GitHub Release 包含 changelog
+- [x] GitHub Release 包含 changelog
 
 ### 6.2 文档验收
 - [x] README.md 英文完整
@@ -110,7 +110,8 @@
 ### 7.2 阻塞
 - 外部平台操作待执行（非仓内可自动完成）：
   - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
-  - TestPyPI 实际发布验证（当前 run `22386433493` 失败，403 Forbidden）
+  - TestPyPI 实际发布验证（当前 run `22386433493` 失败，403 Forbidden，`TWINE_PASSWORD` 为空）
+  - PyPI 正式发布与安装验收（`pip index versions owlclaw` 当前无可用发行版）
 
 ---
 
