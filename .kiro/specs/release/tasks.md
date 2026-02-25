@@ -62,7 +62,7 @@
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets（外部平台操作待执行）
-- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI；2026-02-25 已触发 `Release` run `22386433493`，因 `TEST_PYPI_TOKEN` 为空导致 403）
+- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI；2026-02-25 已触发 `Release` run `22386433493`，因 `TEST_PYPI_TOKEN` 为空导致 403；当前 workflow 已增加 token 前置校验）
 
 ---
 
