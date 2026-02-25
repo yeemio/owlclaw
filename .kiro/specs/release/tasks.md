@@ -62,7 +62,9 @@
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
+  - 状态补充（2026-02-25）：`gh secret list -R yeemio/owlclaw` 当前未返回 `PYPI_TOKEN/TEST_PYPI_TOKEN`，需仓库维护者在 GitHub Actions Secrets 中补齐。
 - [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
+  - 状态补充（2026-02-25）：最近 workflow_dispatch `Release` 连续失败（示例 run: `22396620894`），失败点为 token 校验步骤，根因同 3.1.2。
 
 ---
 
@@ -117,6 +119,7 @@
   - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
   - TestPyPI 实际发布验证
   - 生产发布 tag 与 GitHub Release 生成（需 main 分支发布流程）
+  - 本轮核验（2026-02-25）：`gh auth status` 已登录；`gh workflow list` 可读；`release.yml` 最近运行在 token 校验步骤失败，确认阻塞为凭据缺失而非仓内脚本错误。
 
 ---
 

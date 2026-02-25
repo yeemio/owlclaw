@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | codex-gpt-work：local-devenv 收口 + test-infra 验收推进 |
-| 批次状态 | **进行中**。local-devenv 已完成（10/10）；test-infra 已推进到 9/11，剩余为性能门槛与外部 CI/覆盖率验收。 |
-| 已完成项 | 1) capabilities-skills ✅(115/115)：prerequisites 门控、session snapshot、token impact、enable/disable、env 注入生命周期、source-priority 覆盖、Skills Watcher 热重载；2) local-devenv ✅(10/10)：baseline assets、compose 稳定性、db status + Windows asyncpg fallback、env 覆盖验证、验收完成；3) test-infra：Task 6.3/9.4/11.2 完成（本机 `make test-int` 通过，`102 passed, 12 skipped`）。 |
-| 下一待执行 | 1) test-infra：Task 4.2、Task 11.1、Task 11.3、Task 11.4；2) owlhub：Task 40.4 外部部署；3) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
+| 当前批次 | codex-gpt-work：release 外部阻塞核验 + runbook 对齐 |
+| 批次状态 | **进行中**。已完成仓内可执行收敛（凭据/流程核验与文档化）；release/owlhub 剩余项均为外部平台动作。 |
+| 已完成项 | 1) capabilities-skills ✅(115/115)；2) local-devenv ✅(10/10)；3) test-infra 验收子项（6.3/9.4/11.2）完成；4) release 外部阻塞核验完成：`gh auth status` 可用，`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，Release workflow 最近 run（如 `22396620894`）失败于 token 校验步骤；5) `docs/RELEASE_RUNBOOK.md` 与 `release/tasks.md` 已补充可执行核验命令与阻塞证据。 |
+| 下一待执行 | 1) 维护者在 GitHub 配置 `PYPI_TOKEN/TEST_PYPI_TOKEN`；2) 触发 `gh workflow run release.yml -R yeemio/owlclaw -f target=testpypi` 完成 3.1.3；3) 完成 tag 发布与 PyPI/GitHub Release 验收（4.1.1/4.1.2/4.1.4, 6.1）。 |
 | 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra：11.1 受 `<60s` 性能门槛阻塞（当前 `tests/unit` 约 `353s`）；2) test-infra：11.3 需外部 CI matrix 结果；3) test-infra：11.4 覆盖率门槛未达（本地 `--cov-fail-under=90` 总覆盖率 `71.88%`）；4) release/owlhub 余项含外部平台与人工决策动作。 |
+| 阻塞项 | 1) test-infra：11.1 受 `<60s` 性能门槛阻塞（当前 `tests/unit` 约 `353s`）；2) test-infra：11.3 需外部 CI matrix 结果；3) test-infra：11.4 覆盖率门槛未达（本地 `--cov-fail-under=90` 总覆盖率 `71.88%`）；4) release：缺 `PYPI_TOKEN/TEST_PYPI_TOKEN` 导致 Release workflow 在 token 校验步骤失败；5) owlhub：40.4 需外部生产凭据与环境所有权。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
