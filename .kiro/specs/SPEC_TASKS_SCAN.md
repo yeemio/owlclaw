@@ -124,7 +124,7 @@
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
-| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
+| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（5/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 
 ---
@@ -151,11 +151,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | codex-work：ci-setup Task 11/12 收口（GitHub Actions 远端实跑验收） |
-| 批次状态 | **完成**。ci-setup 端到端验证与最终验收已闭环。 |
-| 已完成项 | 1) 修复 CI 失稳点：workflow/test 配置测试断言漂移、db CLI 测试环境变量污染、Alembic webhook 模型导入漂移；2) Test workflow 切换 `pgvector/pgvector:pg16` 并显式初始化 `vector` 扩展；3) 修复 `tests/integration/test_signal_state_integration.py` 缺失 `vector` 扩展初始化；4) 远端验证通过：Lint `22381643241`、Test `22381643232`（3.10/3.11/3.12 全绿）；5) `ci-setup` 进度更新为 12/12。 |
-| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12)；2) codex-work 进入 release 或 cli-migrate；3) 架构层确认 OwlHub gate CLI 命名（见 docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md）。 |
-| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(0/32)。 |
+| 当前批次 | codex-work：release 首轮（文档/模板与安全基线） |
+| 批次状态 | **进行中**。release 已完成 5/32（1.2 全部完成 + 2.2.2/2.2.3 完成）。 |
+| 已完成项 | 1) 新增 `CHANGELOG.md`（v0.1.0 初始发布记录）；2) 新增 GitHub Issue 模板（Bug/Feature + config）；3) 执行敏感信息基线扫描，确认仅测试样例/文档占位命中；4) 完成 `.gitignore` 与 `.env.example` 发布前检查并在测试中固化；5) 新增 `tests/unit/test_release_assets.py`，覆盖发布工件检查（changelog/issue template/gitignore/env example）。 |
+| 下一待执行 | 1) release 1.2.2/1.2.3（.gitignore 与 .env.example）勾选收口；2) release 1.1.*（pyproject/extras/入口/mcp 独立构建）对齐；3) release 3.1 自动化发布联调（含 TestPyPI 验证）。 |
+| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(5/32)。 |
 | 阻塞项 | 1) owlhub Task 40.4（外部生产部署）；2) OwlHub gate CLI 命名待架构决策。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

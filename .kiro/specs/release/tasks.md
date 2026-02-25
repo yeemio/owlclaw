@@ -33,9 +33,11 @@
 - [ ] 1.1.4 确认 owlclaw-mcp 包独立构建配置
 
 ### 1.2 敏感信息检查
-- [ ] 1.2.1 扫描仓库确认无硬编码 API key、token、密码
-- [ ] 1.2.2 确认 .gitignore 覆盖 .env、*.pyc、__pycache__、dist/、build/
-- [ ] 1.2.3 确认 .env.example 存在且不含真实凭证
+- [x] 1.2.1 扫描仓库确认无硬编码 API key、token、密码
+  - 基线扫描：`rg -n -S "AKIA|ASIA|BEGIN PRIVATE KEY|ghp_|sk-|xoxb-|xoxp-|xoxa-|xoxr-" owlclaw tests scripts .github docs`
+  - 结果：仅测试样例/文档占位命中，未发现可用真实凭证
+- [x] 1.2.2 确认 .gitignore 覆盖 .env、*.pyc、__pycache__、dist/、build/
+- [x] 1.2.3 确认 .env.example 存在且不含真实凭证
 
 ---
 
@@ -50,8 +52,8 @@
 
 ### 2.2 辅助文档
 - [ ] 2.2.1 编写 CONTRIBUTING.md（开发环境搭建、测试运行、PR 规范、代码风格）
-- [ ] 2.2.2 编写 CHANGELOG.md（v0.1.0 初始版本记录）
-- [ ] 2.2.3 创建 GitHub Issue 模板（Bug Report、Feature Request）
+- [x] 2.2.2 编写 CHANGELOG.md（v0.1.0 初始版本记录）
+- [x] 2.2.3 创建 GitHub Issue 模板（Bug Report、Feature Request）
 
 ---
 
