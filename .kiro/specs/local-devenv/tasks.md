@@ -20,10 +20,11 @@
   - _Requirements: AC-1, AC-2_
 
 - [ ] **Task 2**: docker-compose.minimal.yml — 最小依赖
-  - [ ] 2.1 创建根目录 `docker-compose.minimal.yml`，使用 `pgvector/pgvector:pg16`
-  - [ ] 2.2 挂载 `deploy/init-db.sql` 自动初始化 owlclaw 库
-  - [ ] 2.3 配置具名 volume `owlclaw_minimal_data` 持久化数据
-  - [ ] 2.4 验证：启动后 `owlclaw db status` 显示连接正常
+  - [x] 2.1 创建根目录 `docker-compose.minimal.yml`，使用 `pgvector/pgvector:pg16`
+  - [x] 2.2 挂载 `deploy/init-db.sql` 自动初始化 owlclaw 库
+  - [x] 2.3 配置具名 volume `owlclaw_minimal_data` 持久化数据
+  - [ ] 2.4 验证：启动后 `owlclaw db status` 显示连接正常  
+    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
   - _Requirements: AC-1, AC-3_
 
 - [ ] **Task 3**: docker-compose.dev.yml — 全量开发环境
@@ -39,11 +40,11 @@
 
 ### Phase 2：环境变量与脚本（P0）
 
-- [ ] **Task 4**: .env.example 完整化
-  - [ ] 4.1 按分区重写 `.env.example`：必填 / Hatchet / Langfuse / Redis / Kafka / 可选覆盖
-  - [ ] 4.2 每个变量标注：必填/可选、默认值、说明
-  - [ ] 4.3 添加本地 Langfuse key 配置示例（`http://localhost:3000`）
-  - [ ] 4.4 添加 `DATABASE_URL` 和 `OWLCLAW_DATABASE_URL` 的本地默认值
+- [x] **Task 4**: .env.example 完整化
+  - [x] 4.1 按分区重写 `.env.example`：必填 / Hatchet / Langfuse / Redis / Kafka / 可选覆盖
+  - [x] 4.2 每个变量标注：必填/可选、默认值、说明
+  - [x] 4.3 添加本地 Langfuse key 配置示例（`http://localhost:3000`）
+  - [x] 4.4 添加 `DATABASE_URL` 和 `OWLCLAW_DATABASE_URL` 的本地默认值
   - _Requirements: AC-4, AC-5_
 
 - [ ] **Task 5**: Makefile（开发快捷命令）
