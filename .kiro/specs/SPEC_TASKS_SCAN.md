@@ -75,9 +75,9 @@
 - [x] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
 - [x] `owlclaw-mcp` — MCP Server（OpenClaw 通道，只读查询为主） → spec: mcp-server  
   说明：MVP 先落地于 `owlclaw/mcp/`（协议处理 + tools/resources + stdio 处理 + e2e 验证）；后续按 release 计划补独立 `owlclaw-mcp/` 打包形态。
-- [ ] 非交易场景 examples（至少 2 个） → spec: examples
-- [ ] LangChain 集成示例（LangChain chain + LangGraph workflow 作为 capability） → spec: examples
-- [ ] 业务 Skills 示例（至少 3 个行业：电商/金融/SaaS） → spec: examples
+- [x] 非交易场景 examples（至少 2 个） → spec: examples
+- [x] LangChain 集成示例（LangChain chain + LangGraph workflow 作为 capability） → spec: examples
+- [x] 业务 Skills 示例（至少 3 个行业：电商/金融/SaaS） → spec: examples
 
 ### Phase 3：开源发布 + Skills 生态
 
@@ -122,7 +122,7 @@
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
-| examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（1/12） | 示例（含业务 Skills 示例 + LangChain 集成示例；已完成 examples 索引文档对齐与路径一致性测试） |
+| examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（4/12） | 示例（含业务 Skills 示例 + LangChain 集成示例；已完成非交易场景示例、LangChain 示例、3 行业 Skills 示例与索引路径一致性测试） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（10/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
@@ -153,9 +153,9 @@
 | 最后更新 | 2026-02-25 |
 | 当前批次 | 统筹轮次：合并 codex-work ci-setup + codex-gpt-work owlhub gate → review-work → main |
 | 批次状态 | **完成**。codex-work（6 commits ci-setup）+ codex-gpt-work（3 commits owlhub gate）均已合并到 main。 |
-| 已完成项 | 1) 合并 codex-work：ci-setup Task 1~10（GitHub Actions lint/test/build/release workflows + pre-commit + dependabot + .releaserc.json + pyproject.toml 工具链配置 + CI 文档 + 配置测试）；2) 合并 codex-gpt-work：owlhub release_gate 模块（owlclaw/owlhub/release_gate.py + scripts/owlhub_release_gate.py + tests）+ OwlHub gate CLI 落地（`owlclaw release gate owlhub`）；3) ci-setup 进度更新为 10/12（Task 11 远程验证 + Task 12 Final Checkpoint 待外部 GitHub 环境）；4) examples 索引文档修正并新增路径一致性测试。 |
-| 下一待执行 | 1) codex-gpt-work 推进 examples(1/12) 的非交易场景实现与端到端验证；2) codex-work 推进 ci-setup Task 11/12 或转向 release；3) 在具备生产凭据后执行 owlhub 40.4 真实生产部署验收。 |
-| 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(1/12)，cli-migrate 🟡(0/24)，release 🟡(0/32)，全仓测试门禁待验证（新 pyproject.toml 配置）。 |
+| 已完成项 | 1) 合并 codex-work：ci-setup Task 1~10（GitHub Actions lint/test/build/release workflows + pre-commit + dependabot + .releaserc.json + pyproject.toml 工具链配置 + CI 文档 + 配置测试）；2) 合并 codex-gpt-work：owlhub release_gate 模块（owlclaw/owlhub/release_gate.py + scripts/owlhub_release_gate.py + tests）+ OwlHub gate CLI 落地（`owlclaw release gate owlhub`）；3) ci-setup 进度更新为 10/12（Task 11 远程验证 + Task 12 Final Checkpoint 待外部 GitHub 环境）；4) examples 索引文档修正并新增路径一致性测试；5) examples 能力回填：非交易场景示例、LangChain 集成示例、3 行业 Skills 示例均已具备。 |
+| 下一待执行 | 1) codex-gpt-work 推进 examples(4/12) 的 mionyee 完整接入示例与自动化可运行性验证；2) codex-work 推进 ci-setup Task 11/12 或转向 release；3) 在具备生产凭据后执行 owlhub 40.4 真实生产部署验收。 |
+| 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(4/12)，cli-migrate 🟡(0/24)，release 🟡(0/32)，全仓测试门禁待验证（新 pyproject.toml 配置）。 |
 | 阻塞项 | 1) ci-setup Task 11（需实际 GitHub Actions 运行环境）；2) owlhub Task 40.4（外部生产部署）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
