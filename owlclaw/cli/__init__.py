@@ -31,6 +31,11 @@ def _register_subapps() -> None:
     _SUBAPPS_REGISTERED = True
 
 
+<<<<<<< HEAD
+=======
+# Keep subcommands registered for direct `CliRunner.invoke(app, ...)` usage in tests
+# and library callers that import the Typer app object without going through main().
+>>>>>>> main
 _register_subapps()
 
 
@@ -69,20 +74,24 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
 
         parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill init")
         parser.add_argument("--name", default="")
+        parser.add_argument("--description", default="")
         parser.add_argument("--output", "--path", "-o", "-p", dest="path", default=".")
         parser.add_argument("--template", default="")
         parser.add_argument("--category", "-c", default="")
         parser.add_argument("--params-file", dest="params_file", default="")
         parser.add_argument("--param", default="")
+        parser.add_argument("--no-minimal", dest="no_minimal", action="store_true", default=False)
         parser.add_argument("--force", "-f", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         init_command(
             name=ns.name,
+            description=ns.description,
             path=ns.path,
             template=ns.template,
             category=ns.category,
             params_file=ns.params_file,
             param=ns.param,
+            no_minimal=ns.no_minimal,
             force=ns.force,
         )
         return True

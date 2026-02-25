@@ -196,6 +196,41 @@ owlclaw:
     assert "binary not found in PATH".lower() in result.output.lower()
 
 
+def test_skill_validate_accepts_top_level_tools_simplified_syntax(tmp_path, monkeypatch):
+    monkeypatch.setenv("API_TOKEN", "token")
+    skill_dir = tmp_path / "binding-tools-simple"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: binding-tools-simple
+description: binding with simplified tools declaration
+tools:
+  fetch-order:
+    description: fetch order
+    order_id: string
+    include_items:
+      type: boolean
+      description: include lines
+    binding:
+      type: http
+      method: GET
+      url: https://svc.local/orders/{order_id}
+      headers:
+        Authorization: ${API_TOKEN}
+owlclaw:
+  prerequisites:
+    env:
+      - API_TOKEN
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["validate", str(skill_dir)])
+    assert result.exit_code == 0
+    assert "OK:" in result.output
+
+
 def test_skill_validate_deduplicates_overlapping_paths(tmp_path):
     """validate should not process the same SKILL.md twice for overlapping inputs."""
     skill_dir = tmp_path / "dup-skill"
@@ -289,8 +324,38 @@ def test_skill_templates_category_filter_case_insensitive():
     )
 
 
-def test_skill_init_interactive_wizard_without_template(tmp_path, monkeypatch):
-    """init without --template enters interactive mode and creates SKILL.md."""
+def test_skill_init_defaults_to_minimal_mode_without_template(tmp_path, monkeypatch):
+    """init without template should generate minimal SKILL.md."""
+    monkeypatch.chdir(tmp_path)
+    from owlclaw.cli.skill_init import init_command
+
+    prompts = iter(["minimal-skill", "Minimal description"])
+
+    def _fake_prompt(*args, **kwargs):  # type: ignore[no-untyped-def]
+        return next(prompts, "1")
+
+    monkeypatch.setattr("typer.prompt", _fake_prompt)
+    init_command(
+        name="",
+        path=".",
+        template="",
+        category="",
+        params_file="",
+        param="",
+        no_minimal=False,
+        force=False,
+    )
+
+    skill_file = tmp_path / "minimal-skill" / "SKILL.md"
+    assert skill_file.is_file()
+    content = skill_file.read_text(encoding="utf-8")
+    assert "name: minimal-skill" in content
+    assert "description: Minimal description" in content
+    assert "metadata:" not in content
+
+
+def test_skill_init_no_minimal_enters_template_wizard(tmp_path, monkeypatch):
+    """--no-minimal should preserve template wizard behavior."""
     monkeypatch.chdir(tmp_path)
     from owlclaw.cli.skill_init import init_command
 
@@ -307,6 +372,7 @@ def test_skill_init_interactive_wizard_without_template(tmp_path, monkeypatch):
         category="",
         params_file="",
         param="",
+        no_minimal=True,
         force=False,
     )
 

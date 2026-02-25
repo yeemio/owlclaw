@@ -1,6 +1,8 @@
 """Unit tests for Skills Loader (SKILL.md discovery and parsing)."""
 
 
+from pathlib import Path
+
 import pytest
 
 from owlclaw.capabilities.skills import SkillsLoader
@@ -194,7 +196,7 @@ def test_skill_focus_supports_tuple_and_dedupes():
     skill = Skill(
         name="x",
         description="d",
-        file_path="SKILL.md",
+        file_path=Path("SKILL.md"),
         metadata={},
         owlclaw_config={"focus": ("a", " a ", "b", "", "b")},
     )
@@ -380,3 +382,65 @@ Body text
     body = skill.load_full_content()
     assert "# Body Heading" in body
     assert "description:" not in body
+
+
+def test_skills_loader_normalizes_top_level_tools_simplified_parameters(tmp_path):
+    skill_dir = tmp_path / "tools-simple"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: tools-simple
+description: tools simplified syntax
+tools:
+  fetch-order:
+    description: fetch order by id
+    order_id: string
+    include_items:
+      type: boolean
+      description: include line items
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("tools-simple")
+    assert skill is not None
+    tools_schema = skill.metadata.get("tools_schema", {})
+    assert "fetch-order" in tools_schema
+    params = tools_schema["fetch-order"]["parameters"]
+    assert params["type"] == "object"
+    assert params["properties"]["order_id"]["type"] == "string"
+    assert params["properties"]["include_items"]["type"] == "boolean"
+    assert set(params["required"]) == {"order_id", "include_items"}
+
+
+def test_skills_loader_tools_schema_full_schema_precedence(tmp_path):
+    skill_dir = tmp_path / "tools-precedence"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: tools-precedence
+description: full schema should win
+tools:
+  check-stock:
+    parameters:
+      type: object
+      properties:
+        sku:
+          type: string
+      required: [sku]
+    warehouse_id: string
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("tools-precedence")
+    assert skill is not None
+    params = skill.metadata["tools_schema"]["check-stock"]["parameters"]
+    assert params["properties"] == {"sku": {"type": "string"}}
+    assert params["required"] == ["sku"]

@@ -198,6 +198,39 @@ class CapabilityRegistry:
 
         return filtered
 
+    @staticmethod
+    def _handler_metadata(handler: Callable) -> dict[str, Any] | None:
+        """Best-effort metadata extraction for non-skill-backed handlers."""
+        task_type = getattr(handler, "task_type", None)
+        constraints = getattr(handler, "constraints", None)
+        focus = getattr(handler, "focus", None)
+        risk_level = getattr(handler, "risk_level", None)
+        requires_confirmation = getattr(handler, "requires_confirmation", None)
+
+        if not any(value is not None for value in (task_type, constraints, focus, risk_level, requires_confirmation)):
+            return None
+
+        normalized_focus: list[str] = []
+        if isinstance(focus, list):
+            normalized_focus = [item.strip() for item in focus if isinstance(item, str) and item.strip()]
+        normalized_constraints = constraints if isinstance(constraints, dict) else {}
+        normalized_task_type = task_type.strip() if isinstance(task_type, str) else None
+        normalized_risk = risk_level.strip().lower() if isinstance(risk_level, str) else "low"
+        if normalized_risk not in {"low", "medium", "high", "critical"}:
+            normalized_risk = "low"
+
+        normalized_requires = False
+        if isinstance(requires_confirmation, bool):
+            normalized_requires = requires_confirmation
+
+        return {
+            "task_type": normalized_task_type,
+            "constraints": normalized_constraints,
+            "focus": normalized_focus,
+            "risk_level": normalized_risk,
+            "requires_confirmation": normalized_requires,
+        }
+
     async def get_state(self, state_name: str) -> dict:
         """Get state from a registered state provider.
 
@@ -257,6 +290,21 @@ class CapabilityRegistry:
                     "requires_confirmation": skill.requires_confirmation,
                     "handler": self._callable_name(handler),
                 })
+                continue
+            handler_meta = self._handler_metadata(handler)
+            if handler_meta is not None:
+                capabilities.append(
+                    {
+                        "name": skill_name,
+                        "description": getattr(handler, "description", "") or "",
+                        "task_type": handler_meta["task_type"],
+                        "constraints": handler_meta["constraints"],
+                        "focus": handler_meta["focus"],
+                        "risk_level": handler_meta["risk_level"],
+                        "requires_confirmation": handler_meta["requires_confirmation"],
+                        "handler": self._callable_name(handler),
+                    }
+                )
 
         return capabilities
 
@@ -275,7 +323,22 @@ class CapabilityRegistry:
             return None
         skill = self.skills_loader.get_skill(normalized)
         if not skill:
-            return None
+            handler = self.handlers.get(normalized)
+            if handler is None:
+                return None
+            handler_meta = self._handler_metadata(handler)
+            if handler_meta is None:
+                return None
+            return {
+                "name": normalized,
+                "description": getattr(handler, "description", "") or "",
+                "task_type": handler_meta["task_type"],
+                "constraints": handler_meta["constraints"],
+                "focus": handler_meta["focus"],
+                "risk_level": handler_meta["risk_level"],
+                "requires_confirmation": handler_meta["requires_confirmation"],
+                "handler": self._callable_name(handler),
+            }
 
         handler = self.handlers.get(normalized)
 
@@ -308,7 +371,12 @@ class CapabilityRegistry:
 
         for skill_name in self.handlers:
             skill = self.skills_loader.get_skill(skill_name)
-            skill_task_type = getattr(skill, "task_type", None) if skill else None
+            if skill:
+                skill_task_type = getattr(skill, "task_type", None)
+            else:
+                handler = self.handlers.get(skill_name)
+                handler_meta = self._handler_metadata(handler) if handler else None
+                skill_task_type = handler_meta["task_type"] if handler_meta else None
             if isinstance(skill_task_type, str) and skill_task_type.strip() == normalized_task_type:
                 matching.append(skill_name)
 

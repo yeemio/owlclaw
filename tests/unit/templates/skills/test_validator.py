@@ -295,7 +295,7 @@ class TestTemplateValidator:
         """Task 13 checkpoint: all 15 shipped templates must validate."""
         base = Path(__file__).resolve().parents[4] / "owlclaw" / "templates" / "skills" / "templates"
         templates = sorted(base.rglob("*.md.j2"))
-        assert len(templates) == 15, f"Expected 15 templates, got {len(templates)}"
+        assert len(templates) == 16, f"Expected 16 templates, got {len(templates)}"
         v = TemplateValidator()
         for p in templates:
             errs = v.validate_template(p)

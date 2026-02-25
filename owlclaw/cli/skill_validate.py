@@ -10,6 +10,7 @@ import typer
 import yaml  # type: ignore[import-untyped]
 
 from owlclaw.capabilities.bindings import CredentialResolver, validate_binding_config
+from owlclaw.capabilities.tool_schema import extract_tools_schema
 from owlclaw.templates.skills import TemplateValidator
 from owlclaw.templates.skills.models import ValidationError
 
@@ -78,18 +79,6 @@ def _as_str_list(value: Any) -> list[str]:
     return out
 
 
-def _extract_tools_schema(frontmatter: dict[str, Any]) -> dict[str, Any]:
-    metadata = frontmatter.get("metadata")
-    if isinstance(metadata, dict):
-        nested = metadata.get("tools_schema")
-        if isinstance(nested, dict):
-            return nested
-    top_level = frontmatter.get("tools_schema")
-    if isinstance(top_level, dict):
-        return top_level
-    return {}
-
-
 def _extract_prerequisites(frontmatter: dict[str, Any]) -> dict[str, Any]:
     owlclaw = frontmatter.get("owlclaw")
     if isinstance(owlclaw, dict):
@@ -130,12 +119,15 @@ def _validate_binding_semantics(path: Path) -> list[ValidationError]:
     if not frontmatter:
         return []
 
-    tools_schema = _extract_tools_schema(frontmatter)
+    tools_schema, tool_errors = extract_tools_schema(frontmatter)
     prerequisites = _extract_prerequisites(frontmatter)
     prerequisite_env = set(_as_str_list(prerequisites.get("env")))
     prerequisite_bins = _as_str_list(prerequisites.get("bins"))
 
     errors: list[ValidationError] = []
+    for err in tool_errors:
+        errors.append(ValidationError(field="tools", message=err, severity="error"))
+
     for name, tool_def in tools_schema.items():
         if not isinstance(name, str):
             continue

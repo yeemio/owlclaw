@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from hypothesis import given, settings
@@ -21,7 +21,7 @@ def _result(
     duration_ms: float = 10.0,
     errors: list[str] | None = None,
 ) -> ExecutionResult:
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     return ExecutionResult(
         scenario_id=scenario_id,
         status=status,

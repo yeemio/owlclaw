@@ -83,64 +83,64 @@
 
 ### Phase 2：扩展执行器（P1）
 
-- [ ] **Task 8**: QueueBinding Executor
-  - [ ] 8.1 实现 `queue_executor.py`：QueueBindingExecutor 类
-  - [ ] 8.2 复用 `owlclaw/integrations/queue_adapters/` 的 Kafka 适配器
-  - [ ] 8.3 实现 headers_mapping 参数替换
-  - [ ] 8.4 实现 shadow 模式（只记录不发送）
-  - [ ] 8.5 单元测试：active publish、shadow 拦截、headers mapping
+- [x] **Task 8**: QueueBinding Executor
+  - [x] 8.1 实现 `queue_executor.py`：QueueBindingExecutor 类
+  - [x] 8.2 复用 `owlclaw/integrations/queue_adapters/` 的 Kafka 适配器
+  - [x] 8.3 实现 headers_mapping 参数替换
+  - [x] 8.4 实现 shadow 模式（只记录不发送）
+  - [x] 8.5 单元测试：active publish、shadow 拦截、headers mapping
 
-- [ ] **Task 9**: SQLBinding Executor
-  - [ ] 9.1 实现 `sql_executor.py`：SQLBindingExecutor 类
-  - [ ] 9.2 实现参数化查询（强制 `:param` 占位符）
-  - [ ] 9.3 实现 read_only 强制（默认 true）
-  - [ ] 9.4 实现 max_rows 限制
-  - [ ] 9.5 validate_config 拒绝字符串拼接模式（%、f-string）
-  - [ ] 9.6 实现 shadow 模式（写操作只记录）
-  - [ ] 9.7 单元测试：参数化查询、read_only、string interpolation 拒绝、max_rows
+- [x] **Task 9**: SQLBinding Executor
+  - [x] 9.1 实现 `sql_executor.py`：SQLBindingExecutor 类
+  - [x] 9.2 实现参数化查询（强制 `:param` 占位符）
+  - [x] 9.3 实现 read_only 强制（默认 true）
+  - [x] 9.4 实现 max_rows 限制
+  - [x] 9.5 validate_config 拒绝字符串拼接模式（%、f-string）
+  - [x] 9.6 实现 shadow 模式（写操作只记录）
+  - [x] 9.7 单元测试：参数化查询、read_only、string interpolation 拒绝、max_rows
 
-- [ ] **Task 10**: Shadow 模式 → 对比报告
-  - [ ] 10.1 shadow 执行结果写入 Ledger 并标记 `mode=shadow`
-  - [ ] 10.2 实现 shadow 结果查询 API（按 tool_name、时间范围）
-  - [ ] 10.3 与 `e2e-validation` report_generator 集成（shadow 数据作为对比输入）
-  - [ ] 10.4 集成测试：shadow 调用 → Ledger → 查询 → 报告
+- [x] **Task 10**: Shadow 模式 → 对比报告
+  - [x] 10.1 shadow 执行结果写入 Ledger 并标记 `mode=shadow`
+  - [x] 10.2 实现 shadow 结果查询 API（按 tool_name、时间范围）
+  - [x] 10.3 与 `e2e-validation` report_generator 集成（shadow 数据作为对比输入）
+  - [x] 10.4 集成测试：shadow 调用 → Ledger → 查询 → 报告
 
 ### Phase 3：安全与治理（P1）
 
-- [ ] **Task 11**: 安全集成
-  - [ ] 11.1 binding 输入参数经过 InputSanitizer 清洗
-  - [ ] 11.2 binding 返回数据经过 DataMasker 脱敏
-  - [ ] 11.3 SQL binding write 操作联动 risk_level 确认流程
-  - [ ] 11.4 单元测试：输入清洗、输出脱敏、risk_level 联动
+- [x] **Task 11**: 安全集成
+  - [x] 11.1 binding 输入参数经过 InputSanitizer 清洗
+  - [x] 11.2 binding 返回数据经过 DataMasker 脱敏
+  - [x] 11.3 SQL binding write 操作联动 risk_level 确认流程
+  - [x] 11.4 单元测试：输入清洗、输出脱敏、risk_level 联动
 
-- [ ] **Task 12**: 治理集成
-  - [ ] 12.1 BindingTool 参与 governance.visibility 过滤
-  - [ ] 12.2 BindingTool 调用消耗 governance.budget
-  - [ ] 12.3 BindingTool 受 governance rate limiting 控制
-  - [ ] 12.4 集成测试：visibility 过滤、budget 消耗、rate limiting
+- [x] **Task 12**: 治理集成
+  - [x] 12.1 BindingTool 参与 governance.visibility 过滤
+  - [x] 12.2 BindingTool 调用消耗 governance.budget
+  - [x] 12.3 BindingTool 受 governance rate limiting 控制
+  - [x] 12.4 集成测试：visibility 过滤、budget 消耗、rate limiting
 
 ### Phase 4：开发者体验 + 示例（P2）
 
-- [ ] **Task 13**: SKILL.md 书写门槛降低
-  - [ ] 13.1 定义"最小可用 SKILL.md"规范：只需 name + description + body 即可工作
-  - [ ] 13.2 `owlclaw skill init` 增加极简模式（只问 name 和 description）
-  - [ ] 13.3 `tools` 简化声明：支持 YAML 内联的简化类型声明（`param: string` 替代完整 JSON Schema）
-  - [ ] 13.4 运行时自动将简化声明展开为完整 JSON Schema
-  - [ ] 13.5 编写 SKILL.md 书写指南（面向非技术用户，含最佳实践和常见模式）
+- [x] **Task 13**: SKILL.md 书写门槛降低
+  - [x] 13.1 定义"最小可用 SKILL.md"规范：只需 name + description + body 即可工作
+  - [x] 13.2 `owlclaw skill init` 增加极简模式（只问 name 和 description）
+  - [x] 13.3 `tools` 简化声明：支持 YAML 内联的简化类型声明（`param: string` 替代完整 JSON Schema）
+  - [x] 13.4 运行时自动将简化声明展开为完整 JSON Schema
+  - [x] 13.5 编写 SKILL.md 书写指南（面向非技术用户，含最佳实践和常见模式）
 
-- [ ] **Task 14**: Reference Implementation
-  - [ ] 14.1 创建 `examples/binding-http/` 示例（HTTP binding 调用 REST API）
-  - [ ] 14.2 创建示例的 SKILL.md（含 binding 声明 + 简化 tools 语法）
-  - [ ] 14.3 创建 mock HTTP server 用于示例运行
-  - [ ] 14.4 创建 shadow 模式对比示例
-  - [ ] 14.5 创建"无 binding 无 handler"示例（body 含 curl 命令，Agent 通过 shell 工具执行）
-  - [ ] 14.6 编写 README 说明三种 skill 模式（binding / @handler / shell 指令）
+- [x] **Task 14**: Reference Implementation
+  - [x] 14.1 创建 `examples/binding-http/` 示例（HTTP binding 调用 REST API）
+  - [x] 14.2 创建示例的 SKILL.md（含 binding 声明 + 简化 tools 语法）
+  - [x] 14.3 创建 mock HTTP server 用于示例运行
+  - [x] 14.4 创建 shadow 模式对比示例
+  - [x] 14.5 创建"无 binding 无 handler"示例（body 含 curl 命令，Agent 通过 shell 工具执行）
+  - [x] 14.6 编写 README 说明三种 skill 模式（binding / @handler / shell 指令）
 
-- [ ] **Task 15**: 文档更新
-  - [ ] 15.1 更新 `examples/` 索引 README 包含 binding 示例
-  - [ ] 15.2 更新 SKILL.md 模板库（skill-templates）增加 binding 示例模板
-  - [ ] 15.3 更新 `owlclaw skill init` 生成的模板包含 binding 字段注释
-  - [ ] 15.4 更新 `owlclaw skill init` 默认模板为"最小可用"版本
+- [x] **Task 15**: 文档更新
+  - [x] 15.1 更新 `examples/` 索引 README 包含 binding 示例
+  - [x] 15.2 更新 SKILL.md 模板库（skill-templates）增加 binding 示例模板
+  - [x] 15.3 更新 `owlclaw skill init` 生成的模板包含 binding 字段注释
+  - [x] 15.4 更新 `owlclaw skill init` 默认模板为"最小可用"版本
 
 ### Phase 5：cli-migrate 自动生成（P1，依赖 cli-migrate spec）
 
