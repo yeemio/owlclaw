@@ -1329,11 +1329,44 @@ class AgentRuntime:
         else:
             skill_names = all_skill_names
 
-        out = self.knowledge_injector.get_skills_knowledge(skill_names)
+        skill_token_budget = self._resolve_skill_token_budget()
+        report = self.knowledge_injector.get_skills_knowledge_report(
+            skill_names,
+            max_tokens=skill_token_budget,
+            focus=context.focus,
+        )
+        self._perf_metrics["skills_tokens_total"] = float(report.total_tokens)
+        self._perf_metrics["skills_selected_count"] = float(len(report.selected_skill_names))
+        self._perf_metrics["skills_dropped_count"] = float(len(report.dropped_skill_names))
+        self._perf_metrics["skills_tokens_per_skill"] = float(
+            sum(report.per_skill_tokens.values())
+        )
+        out = report.content
         self._skills_context_cache[cache_key] = out
         if len(self._skills_context_cache) > 64:
             self._skills_context_cache.pop(next(iter(self._skills_context_cache)))
         return out
+
+    def _resolve_skill_token_budget(self) -> int | None:
+        """Resolve skill prompt token budget from runtime config."""
+        raw_values = [
+            self.config.get("skills_token_limit"),
+            self.config.get("skills_prompt_token_budget"),
+        ]
+        governance = self.config.get("governance")
+        if isinstance(governance, dict):
+            raw_values.append(governance.get("skills_token_limit"))
+            raw_values.append(governance.get("skills_prompt_token_budget"))
+        for raw in raw_values:
+            if isinstance(raw, bool):
+                continue
+            if isinstance(raw, int) and raw > 0:
+                return raw
+            if isinstance(raw, str):
+                stripped = raw.strip()
+                if stripped.isdigit() and int(stripped) > 0:
+                    return int(stripped)
+        return None
 
     def _release_skill_content_cache(self) -> None:
         """Release cached full Skill contents and prompt cache after each run."""

@@ -558,7 +558,7 @@ Check entries.
         rt.knowledge_injector = MagicMock()
         ctx = AgentRunContext(agent_id="bot", trigger="cron", focus="inventory_monitor")
         assert rt._build_skills_context(ctx) == ""
-        rt.knowledge_injector.get_skills_knowledge.assert_not_called()
+        rt.knowledge_injector.get_skills_knowledge_report.assert_not_called()
 
     def test_build_skills_context_includes_only_focus_matches(self, tmp_path) -> None:
         """When focus is set, only matching skills are passed to knowledge injector."""
@@ -573,11 +573,50 @@ Check entries.
 
         rt.registry.skills_loader.get_skill.side_effect = _get_skill
         rt.knowledge_injector = MagicMock()
-        rt.knowledge_injector.get_skills_knowledge.return_value = "focused"
+        rt.knowledge_injector.get_skills_knowledge_report.return_value = MagicMock(
+            content="focused",
+            selected_skill_names=["skill-a"],
+            dropped_skill_names=[],
+            per_skill_tokens={"skill-a": 2},
+            total_tokens=2,
+        )
         ctx = AgentRunContext(agent_id="bot", trigger="cron", focus="inventory_monitor")
         result = rt._build_skills_context(ctx)
         assert result == "focused"
-        rt.knowledge_injector.get_skills_knowledge.assert_called_once_with(["skill-a"])
+        rt.knowledge_injector.get_skills_knowledge_report.assert_called_once_with(
+            ["skill-a"],
+            max_tokens=None,
+            focus="inventory_monitor",
+        )
+
+    def test_build_skills_context_uses_token_budget_report(self, tmp_path) -> None:
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"skills_token_limit": 3},
+        )
+        rt.registry = MagicMock()
+        rt.registry.handlers = {"skill-a": MagicMock(), "skill-b": MagicMock()}
+        rt.registry.skills_loader.get_skill.return_value = MagicMock(owlclaw_config={}, metadata={})
+        rt.knowledge_injector = MagicMock()
+        rt.knowledge_injector.get_skills_knowledge_report.return_value = MagicMock(
+            content="trimmed",
+            selected_skill_names=["skill-a"],
+            dropped_skill_names=["skill-b"],
+            per_skill_tokens={"skill-a": 2},
+            total_tokens=2,
+        )
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+        out = rt._build_skills_context(ctx)
+        assert out == "trimmed"
+        rt.knowledge_injector.get_skills_knowledge_report.assert_called_once_with(
+            ["skill-a", "skill-b"],
+            max_tokens=3,
+            focus=None,
+        )
+        assert rt._perf_metrics["skills_tokens_total"] == 2.0
+        assert rt._perf_metrics["skills_selected_count"] == 1.0
+        assert rt._perf_metrics["skills_dropped_count"] == 1.0
 
     def test_capability_schemas_sorted_by_name(self, tmp_path) -> None:
         """Capability schema order should be deterministic by name."""
@@ -599,7 +638,13 @@ Check entries.
         rt.registry.list_capabilities.return_value = [{"name": "skill-a", "description": "a"}]
         rt.registry.skills_loader.get_skill.return_value = MagicMock(owlclaw_config={}, metadata={})
         rt.knowledge_injector = MagicMock()
-        rt.knowledge_injector.get_skills_knowledge.return_value = "ctx-a"
+        rt.knowledge_injector.get_skills_knowledge_report.return_value = MagicMock(
+            content="ctx-a",
+            selected_skill_names=["skill-a"],
+            dropped_skill_names=[],
+            per_skill_tokens={"skill-a": 2},
+            total_tokens=2,
+        )
         ctx = AgentRunContext(agent_id="bot", trigger="cron")
 
         rt._capture_run_skill_snapshot()
@@ -610,7 +655,11 @@ Check entries.
         ]
 
         assert rt._build_skills_context(ctx) == "ctx-a"
-        rt.knowledge_injector.get_skills_knowledge.assert_called_once_with(["skill-a"])
+        rt.knowledge_injector.get_skills_knowledge_report.assert_called_once_with(
+            ["skill-a"],
+            max_tokens=None,
+            focus=None,
+        )
         schemas = rt._capability_schemas()
         assert [item["function"]["name"] for item in schemas] == ["skill-a"]
 
