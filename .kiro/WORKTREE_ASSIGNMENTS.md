@@ -171,9 +171,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
-**当前任务**：ci-setup ✅(12/12) 已完成。release(22/32) — 剩余外部平台动作（PyPI/TestPyPI/GitHub Release）待人工凭据。
+**当前任务**：release(22/32) 外部平台动作阻塞中。**新分配**：repo-hygiene(0/7) + test-infra(0/11)。
 
-**下一任务（当前完成后）**：release 收口后协助 capabilities-skills 收尾。
+**下一任务（当前完成后）**：capabilities-skills 收尾（108/115）。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -205,9 +205,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ 已完成。
 
-**当前任务**：owlhub(41/42) → examples ✅(14/14) → cli-migrate ✅(24/24) → release(22/32) 推进中。
+**当前任务**：release(22/32) 外部平台动作阻塞中。**新分配**：local-devenv(0/10) + capabilities-skills 收尾(108/115)。
 
-**下一任务（当前完成后）**：全部收口即完成 Phase 2/3，项目进入发布阶段。
+**下一任务（当前完成后）**：全部收口即完成 Phase 2/3/4，项目进入发布阶段。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -254,6 +254,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-23 | 全量分配：codex-gpt-work 追加 owlhub + examples + cli-migrate + ci-setup + release | 同上 |
 | 2026-02-25 | declarative-binding ✅(26/26) 收口；owlhub 更新为 41/42（Task 40.4 外部阻塞）；codex-work 转向协助 ci-setup/release | 统筹轮次合并 review-work |
 | 2026-02-25 | ci-setup ✅(12/12)；examples ✅(14/14)；cli-migrate ✅(24/24)；release 22/32；owlhub 41/42 | 统筹轮次合并 review-work（50+ commits） |
+| 2026-02-25 | 新建 local-devenv/test-infra/repo-hygiene spec；分配：codex-work→repo-hygiene+test-infra，codex-gpt-work→local-devenv+capabilities-skills | 统筹轮次：开发基础设施统一规划 |
 
 ---
 
@@ -265,4 +266,6 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **全部 spec 已分配完毕 ✅**
 
-剩余 13 个 spec 已全部分配到两个编码 worktree，无待分配项。
+新增 3 个 spec 已分配：
+- codex-work → repo-hygiene + test-infra
+- codex-gpt-work → local-devenv + capabilities-skills 收尾
