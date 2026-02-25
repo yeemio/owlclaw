@@ -154,12 +154,12 @@
   - [x] 16.7 生成的 SKILL.md 通过 `owlclaw skill validate` 验证
   - [x] 16.8 单元测试：从 OpenAPI 规范生成 → 验证 binding 完整性 → 验证 prerequisites
 
-- [ ] **Task 17**: BindingGenerator — 从 ORM 模型生成 SQL Binding SKILL.md
-  - [ ] 17.1 实现 `generate_from_orm()`：model/table → name，columns → 参数化查询
-  - [ ] 17.2 生成的 SQL binding 强制 `read_only: true`（默认），写操作需显式声明
-  - [ ] 17.3 实现 connection string → prerequisites.env 映射
-  - [ ] 17.4 生成 SKILL.md body 含数据访问规则占位符
-  - [ ] 17.5 单元测试：从 ORM 模型生成 → 验证 SQL 参数化 → 验证 read_only
+- [x] **Task 17**: BindingGenerator — 从 ORM 模型生成 SQL Binding SKILL.md
+  - [x] 17.1 实现 `generate_from_orm()`：model/table → name，columns → 参数化查询
+  - [x] 17.2 生成的 SQL binding 强制 `read_only: true`（默认），写操作需显式声明
+  - [x] 17.3 实现 connection string → prerequisites.env 映射
+  - [x] 17.4 生成 SKILL.md body 含数据访问规则占位符
+  - [x] 17.5 单元测试：从 ORM 模型生成 → 验证 SQL 参数化 → 验证 read_only
 
 - [ ] **Task 18**: cli-migrate `--output-mode binding` 集成
   - [ ] 18.1 扩展 `owlclaw migrate scan` 命令增加 `--output-mode` 参数（handler/binding/both）
