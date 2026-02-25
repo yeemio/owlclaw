@@ -15,9 +15,9 @@
 ## 进度概览
 
 - **总任务数**：19
-- **已完成**：10
+- **已完成**：11
 - **进行中**：0
-- **未开始**：9
+- **未开始**：8
 
 ---
 
@@ -35,10 +35,10 @@
 - [x] 2.3 新增 `CHANGELOG.md`（v0.1.0 初始记录）
 - [x] 2.4 新增 GitHub Issue 模板（bug/feature）
 
-### 3. 仓库安全与配置检查（1/3）
+### 3. 仓库安全与配置检查（3/3）
 - [x] 3.1 `.gitignore` 覆盖 `.env`/`dist`/`build`/缓存目录
 - [x] 3.2 全仓敏感信息扫描并形成可追溯报告（`docs/release/SECURITY_SCAN_REPORT.md`）
-- [ ] 3.3 发布前凭据最小权限审计（PyPI/GitHub Secrets）
+- [x] 3.3 发布前凭据最小权限审计（`docs/release/CREDENTIAL_AUDIT.md`）
 
 ### 4. 自动化发布联调（0/3）
 - [ ] 4.1 配置并验证 PyPI token（GitHub Secrets）
