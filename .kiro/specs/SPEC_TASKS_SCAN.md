@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（26/26） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（40/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -154,9 +154,9 @@
 | 当前批次 | 统筹轮次：合并 codex-work ci-setup + codex-gpt-work owlhub gate → review-work → main |
 | 批次状态 | **完成**。codex-work（6 commits ci-setup）+ codex-gpt-work（3 commits owlhub gate）均已合并到 main；当前审校分支完成门禁复核与状态校准。 |
 | 已完成项 | 1) 合并 codex-work：ci-setup Task 1~10（GitHub Actions lint/test/build/release workflows + pre-commit + dependabot + .releaserc.json + pyproject.toml 工具链配置 + CI 文档 + 配置测试）；2) 合并 codex-gpt-work：owlhub release_gate 模块（owlclaw/owlhub/release_gate.py + scripts/owlhub_release_gate.py + tests）+ OwlHub gate CLI 命名决策提案文档；3) 完成全仓门禁复核：`ruff check .`、`mypy owlclaw/`、`pytest` 分组复跑通过（unit: 1488 passed, 2 skipped；integration+e2e: 159 passed, 26 skipped；tests 根目录其余: 9 passed）；4) 规范化 `cli-migrate` 任务状态：已按代码与测试事实完成 Task 4.1~4.3，进度更新为 12/24。 |
-| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12)；2) codex-work 推进 ci-setup Task 11/12 或转向 release；3) cli-migrate 剩余 12 项（Task 1~3）继续推进；4) CLI 命令面统一规划推迟至所有功能完成后，编码 worktree 不受阻塞。 |
-| 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(12/24)，release 🟡(0/32)，全仓门禁 ✅。 |
-| 阻塞项 | 1) ci-setup Task 11（需实际 GitHub Actions 运行环境）；2) owlhub Task 40.4（外部生产部署）；3) CLI 命令面统一规划（待所有功能完成后执行，见 docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md）。 |
+| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12)；2) codex-work 推进 ci-setup Task 11/12 或转向 release；3) cli-migrate 剩余 12 项（Task 1~3）继续推进；4) owlhub Task 19（数据库基础设施）需架构范围决策后再推进。 |
+| 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(40/42)，examples 🟡(0/12)，cli-migrate 🟡(12/24)，release 🟡(0/32)，全仓门禁 ✅。 |
+| 阻塞项 | 1) ci-setup Task 11（需实际 GitHub Actions 运行环境）；2) owlhub Task 40.4（外部生产部署）；3) owlhub Task 19（数据库基础设施）与当前实现路径存在范围漂移，需架构决策确认。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
