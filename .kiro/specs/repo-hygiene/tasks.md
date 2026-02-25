@@ -11,52 +11,52 @@
 
 ### Phase 1：.gitignore 补充（P0，最优先）
 
-- [ ] **Task 1**: 补充 .gitignore 缺失条目
-  - [ ] 1.1 添加 Windows artifacts：`nul`
-  - [ ] 1.2 添加 IDE 文件：`*.code-workspace`
-  - [ ] 1.3 添加测试产物：`htmlcov/`、`.coverage`、`coverage.xml`
-  - [ ] 1.4 添加临时目录：`tmp/`、`temp/`
-  - [ ] 1.5 验证：`git check-ignore -v nul owlclaw.code-workspace htmlcov/` 均有输出
+- [x] **Task 1**: 补充 .gitignore 缺失条目
+  - [x] 1.1 添加 Windows artifacts：`nul`
+  - [x] 1.2 添加 IDE 文件：`*.code-workspace`
+  - [x] 1.3 添加测试产物：`htmlcov/`、`.coverage`、`coverage.xml`
+  - [x] 1.4 添加临时目录：`tmp/`、`temp/`
+  - [x] 1.5 验证：`git check-ignore -v nul owlclaw.code-workspace htmlcov/` 均有输出
   - _Requirements: AC-5_
 
 ### Phase 2：根目录清理（P0）
 
-- [ ] **Task 2**: 删除 nul 文件
-  - [ ] 2.1 确认 `nul` 文件存在且为 Windows 误创建（0 字节或无意义内容）
-  - [ ] 2.2 执行 `git rm --cached nul` + 物理删除（若已 tracked）或直接删除
-  - [ ] 2.3 验证：根目录无 `nul` 文件
+- [x] **Task 2**: 删除 nul 文件
+  - [x] 2.1 确认 `nul` 文件存在且为 Windows 误创建（0 字节或无意义内容）
+  - [x] 2.2 执行 `git rm --cached nul` + 物理删除（若已 tracked）或直接删除
+  - [x] 2.3 验证：根目录无 `nul` 文件
   - _Requirements: AC-2_
 
-- [ ] **Task 3**: 处理游离目录
-  - [ ] 3.1 检查 `rules/`、`ISSUE_TEMPLATE/`、`workflows/` 目录来源
+- [x] **Task 3**: 处理游离目录
+  - [x] 3.1 检查 `rules/`、`ISSUE_TEMPLATE/`、`workflows/` 目录来源
         （可能是 git worktree 残留或 IDE 误创建）
-  - [ ] 3.2 若为 git worktree 残留：`git worktree prune` 清理
-  - [ ] 3.3 若为 IDE 误创建：删除并加入 .gitignore
-  - [ ] 3.4 验证：`git status` 无游离目录
+  - [x] 3.2 若为 git worktree 残留：`git worktree prune` 清理
+  - [x] 3.3 若为 IDE 误创建：删除并加入 .gitignore
+  - [x] 3.4 验证：`git status` 无游离目录
   - _Requirements: AC-2_
 
 ### Phase 3：文档补充（P1）
 
-- [ ] **Task 4**: scripts/README.md
-  - [ ] 4.1 创建 `scripts/README.md`，列出每个脚本的用途、用法、依赖
-  - [ ] 4.2 标注哪些脚本是 CI 使用，哪些是本地开发使用
+- [x] **Task 4**: scripts/README.md
+  - [x] 4.1 创建 `scripts/README.md`，列出每个脚本的用途、用法、依赖
+  - [x] 4.2 标注哪些脚本是 CI 使用，哪些是本地开发使用
   - _Requirements: AC-4_
 
 - [ ] **Task 5**: deploy/README.md 更新
-  - [ ] 5.1 更新 `deploy/README.md`：添加状态列（推荐/备用/废弃）
+  - [x] 5.1 更新 `deploy/README.md`：添加状态列（推荐/备用/废弃）
   - [ ] 5.2 指向根目录 compose 文件作为首选入口（local-devenv spec 完成后）
-  - [ ] 5.3 `deploy/README.langfuse.md` 更新：说明 Langfuse 通过官方镜像启动，
+  - [x] 5.3 `deploy/README.langfuse.md` 更新：说明 Langfuse 通过官方镜像启动，
         不需要 clone 源码；引用 `docker-compose.dev.yml`
   - _Requirements: AC-3_
 
 ### Phase 4：docs/ 文件名检查（P1）
 
-- [ ] **Task 6**: docs/ 文件名可访问性验证
-  - [ ] 6.1 列出 `docs/` 所有文件，检查截断的文件名（Windows 路径长度限制）
-  - [ ] 6.2 `OWLHUB_CLI_NAMING_DECISION_PROPOSAL` 和 `OWLHUB_PHASE3_DB_DECISION_PROPOSAL`
+- [x] **Task 6**: docs/ 文件名可访问性验证
+  - [x] 6.1 列出 `docs/` 所有文件，检查截断的文件名（Windows 路径长度限制）
+  - [x] 6.2 `OWLHUB_CLI_NAMING_DECISION_PROPOSAL` 和 `OWLHUB_PHASE3_DB_DECISION_PROPOSAL`
         等截断文件名：确认完整文件名，必要时重命名
-  - [ ] 6.3 `ZERO_CODE_FASTPATH_DECISION_PROPOSAL` 同上
-  - [ ] 6.4 验证：所有 docs/ 文件在 Linux/macOS 下可正常访问（文件名无特殊字符）
+  - [x] 6.3 `ZERO_CODE_FASTPATH_DECISION_PROPOSAL` 同上
+  - [x] 6.4 验证：所有 docs/ 文件在 Linux/macOS 下可正常访问（文件名无特殊字符）
   - _Requirements: AC-6_
 
 ### Phase 5：验收（P0）

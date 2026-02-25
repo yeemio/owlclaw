@@ -20,6 +20,7 @@ poetry.lock
 .idea/
 .vscode/
 .codex/
+*.code-workspace
 *.swp
 *.swo
 
@@ -44,6 +45,8 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+tmp/
+temp/
 
 # Windows reserved name (accidental create)
 nul

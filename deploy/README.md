@@ -119,10 +119,13 @@ docker compose -f deploy/docker-compose.lite.yml up -d
 
 | 文件 | 用途 | 依赖 |
 |------|------|------|
-| `docker-compose.lite.hatchet-only.yml` | **推荐**。仅 Hatchet Lite，连本机已建好的 hatchet 库 | 本机 Postgres + 已执行步骤 1 |
-| `docker-compose.lite.yml` | 可选。Postgres + Hatchet Lite 均由 Docker 提供 | 无（需能拉取 postgres 镜像） |
-| `docker-compose.prod.yml` | 生产：Postgres + Hatchet Engine | 见文件内说明 |
-| `docker-compose.cron.yml` | Cron 一体化：OwlClaw + Hatchet + Postgres + Prometheus | Docker 构建环境 |
+| `docker-compose.lite.hatchet-only.yml` | **推荐（当前）**。仅 Hatchet Lite，连本机已建好的 hatchet 库 | 本机 Postgres + 已执行步骤 1 |
+| `docker-compose.lite.yml` | 备用。Postgres + Hatchet Lite 均由 Docker 提供 | 无（需能拉取 postgres 镜像） |
+| `docker-compose.prod.yml` | 生产（旧入口，待与根目录 compose 统一） | 见文件内说明 |
+| `docker-compose.cron.yml` | Cron 一体化（旧入口，待与根目录 compose 统一） | Docker 构建环境 |
+
+> 说明：根目录 `docker-compose.dev.yml` / `docker-compose.test.yml` / `docker-compose.minimal.yml`
+> 由 `local-devenv` spec 统一收敛后作为首选入口；本目录 compose 将保留为兼容入口。
 
 ---
 
