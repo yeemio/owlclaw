@@ -49,7 +49,7 @@
   - [x] 5.4 保留现有 `app` fixture，确保向后兼容
   - _Requirements: AC-3_
 
-- [ ] **Task 6**: integration/conftest.py 模块级 fixtures
+- [x] **Task 6**: integration/conftest.py 模块级 fixtures
   - [x] 6.1 添加 `db_engine` fixture（scope="module"，避免每个测试重建连接池）
   - [x] 6.2 添加 `run_migrations` fixture（scope="session"，确保 schema 最新）
   - [x] 6.3 验证：集成测试之间数据不互相污染（事务回滚有效）  
@@ -72,7 +72,7 @@
 
 ### Phase 5：CI 与本地镜像对齐（P0）
 
-- [ ] **Task 9**: CI test.yml 与 docker-compose.test.yml 对齐
+- [x] **Task 9**: CI test.yml 与 docker-compose.test.yml 对齐
   - [x] 9.1 确认 CI `test.yml` postgres service 使用 `pgvector/pgvector:pg16`（已对齐）
   - [x] 9.2 确认 CI pgvector 初始化步骤与 `docker-compose.test.yml` 完全一致（CI 改为复用 `deploy/init-test-db.sql`）
   - [x] 9.3 将 CI 中 `POSTGRES_DB: owlclaw_test` 与本地 compose 对齐（已对齐）
