@@ -61,6 +61,26 @@ jobs:
       - name: Build package
         run: python -m build
 
+      - name: Validate TestPyPI token
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi' }}
+        env:
+          TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
+        run: |
+          if [ -z "${TEST_PYPI_TOKEN}" ]; then
+            echo "Missing required secret TEST_PYPI_TOKEN for TestPyPI publish."
+            exit 1
+          fi
+
+      - name: Validate PyPI token
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          if [ -z "${PYPI_TOKEN}" ]; then
+            echo "Missing required secret PYPI_TOKEN for PyPI publish."
+            exit 1
+          fi
+
       - name: Publish to TestPyPI
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi' }}
         env:

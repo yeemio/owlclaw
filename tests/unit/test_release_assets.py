@@ -117,6 +117,10 @@ def test_release_workflow_is_tag_triggered() -> None:
 
 def test_release_workflow_supports_testpypi_and_pypi_publish_steps() -> None:
     payload = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
+    assert "Validate TestPyPI token" in payload
+    assert "Missing required secret TEST_PYPI_TOKEN" in payload
+    assert "Validate PyPI token" in payload
+    assert "Missing required secret PYPI_TOKEN" in payload
     assert "Publish to TestPyPI" in payload
     assert "secrets.TEST_PYPI_TOKEN" in payload
     assert "https://test.pypi.org/legacy/" in payload
