@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -37,8 +37,8 @@ def test_event_importer_json_sort_and_time_filter(tmp_path: Path) -> None:
     source = tmp_path / "events.json"
     _write_json_events(source)
     importer = EventImporter()
-    start = datetime(2026, 1, 15, 9, 30, 30, tzinfo=UTC)
-    end = datetime(2026, 1, 15, 9, 31, 30, tzinfo=UTC)
+    start = datetime(2026, 1, 15, 9, 30, 30, tzinfo=timezone.utc)
+    end = datetime(2026, 1, 15, 9, 31, 30, tzinfo=timezone.utc)
 
     events = importer.import_events(str(source), format="json", time_range=(start, end))
     assert len(events) == 1

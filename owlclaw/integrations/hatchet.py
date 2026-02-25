@@ -398,7 +398,7 @@ class HatchetClient:
             raise RuntimeError("Must call connect() before start_worker()")
         if not hasattr(signal, "SIGQUIT"):
             # Hatchet SDK expects SIGQUIT on POSIX; map to SIGTERM for Windows.
-            signal.SIGQUIT = signal.SIGTERM  # type: ignore[attr-defined]
+            signal.SIGQUIT = signal.SIGTERM  # type: ignore[attr-defined,misc]
         worker_name = self.config.worker_name or f"owlclaw-worker-{os.getpid()}"
         workflows = list(self._workflows.values())
         if not workflows:

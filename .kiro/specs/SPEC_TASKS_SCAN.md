@@ -25,7 +25,7 @@
 - [x] 建立包结构（owlclaw / owlclaw-mcp）  
   说明：`owlclaw` 已存在；`owlclaw/mcp/` 已随 mcp-server spec 完成实现（12/12 ✅）。
 - [x] pyproject.toml + MIT LICENSE + README
-- [ ] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
+- [x] 配置 CI（GitHub Actions: lint + test） → spec: ci-setup
 
 ### Phase 1：Agent 核心（MVP）
 
@@ -125,7 +125,7 @@
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
-| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（0/12） | GitHub Actions CI（lint + test） |
+| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（10/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 
 ---
 
@@ -151,12 +151,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 review-work → main，同步所有 worktree，更新 declarative-binding 状态 |
-| 批次状态 | **完成**。review-work（13 commits）已合并到 main；codex-work 已同步；codex-gpt-work 冲突已解决并同步。 |
-| 已完成项 | 1) 合并 review-work（13 commits）到 main：declarative-binding Task 16~19 全部完成 + owlhub 收尾文档 + 完整 migrate CLI dispatch；2) 同步 codex-work（fast-forward）；3) 解决 codex-gpt-work 冲突并提交；4) declarative-binding 状态更新为 ✅(26/26)；5) owlhub 状态确认 🟡(41/42)，Task 40.4 外部阻塞。 |
-| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12) → cli-migrate(0/24) → ci-setup(0/12) → release(0/32)；2) codex-work 协助 ci-setup / release；3) review-work 审校新提交。 |
-| 验收快照 | 当前：declarative-binding ✅(26/26)，owlhub 🟡(41/42，Task 40.4 外部阻塞)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，ci-setup 🟡(0/12)，release 🟡(0/32)，全仓测试门禁 ✅（1640 passed）。 |
-| 阻塞项 | owlhub Task 40.4（外部生产环境部署，需用户提供生产凭据）。 |
+| 当前批次 | coding loop（codex-work: ci-setup Task 1~10 + Task 11 预验收） |
+| 批次状态 | **进行中（本批）**。`ci-setup` 已推进至 10/12。 |
+| 已完成项 | 1) `pyproject.toml` 补齐 Ruff/MyPy/Pytest/Coverage 配置；2) 新增 `lint.yml`/`test.yml`/`build.yml`/`release.yml` 并替换旧 `ci.yml`；3) 新增 `.releaserc.json`、`.pre-commit-config.yaml`、`.github/dependabot.yml`、PR 模板；4) 新增 `docs/CI_SETUP.md` 与 `CONTRIBUTING.md` 更新；5) 新增 `tests/unit/ci/test_ci_configs.py` 校验 CI 配置；6) 完成 Task 11 预验收路径：`gh auth status` 可用、`gh workflow list`/`gh run list` 可执行，补充远端 smoke 验收命令。 |
+| 下一待执行 | `codex-work`：执行 Task 11.1（在远端创建测试 PR 并观察新 workflow 运行）后收口 Task 12。 |
+| 验收快照 | 当前：`ci-setup` 🟡(10/12)；本批验证：`pytest tests/unit/ci/test_ci_configs.py -q`（7 passed）+ `pytest tests/unit/test_cli_main.py tests/unit/test_cli_skill.py -q`（43 passed, 2 skipped）+ `gh workflow list`/`gh run list` 已连通。 |
+| 阻塞项 | `ci-setup` Task 11.1 需将当前分支推送到远端并触发真实 PR 工作流；`owlhub` Task 40.4 需生产凭据。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
