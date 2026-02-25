@@ -34,7 +34,7 @@ def test_test_workflow_has_python_matrix_and_postgres_service() -> None:
     postgres = jobs["test"]["services"]["postgres"]
     assert postgres["image"] == "pgvector/pgvector:pg16"
     steps = "\n".join(str(item) for item in jobs["test"]["steps"])
-    assert "CREATE EXTENSION IF NOT EXISTS vector" in steps
+    assert "deploy/init-test-db.sql" in steps
     assert "--cov-fail-under=80" in steps
 
 

@@ -615,28 +615,25 @@ def test_skill_list_shows_skills(tmp_path, monkeypatch):
     assert "Second skill" in result.output
 
 
-@pytest.mark.skip(reason="Typer/CliRunner optional positional path parsing differs; manual coverage")
 def test_skill_init_refuse_overwrite_without_force(tmp_path):
     """init without --force refuses to overwrite existing SKILL.md."""
+    from owlclaw.cli.skill_init import init_command
+
     (tmp_path / "existing").mkdir()
     (tmp_path / "existing" / "SKILL.md").write_text("existing", encoding="utf-8")
-    path_arg = tmp_path.as_posix()
-    result = runner.invoke(skill_app, ["init", "existing", path_arg])
-    assert result.exit_code == 2
-    assert "already exists" in result.output
+    with pytest.raises(Exit) as exc_info:
+        init_command(name="existing", path=tmp_path.as_posix(), template="default", force=False)
+    assert exc_info.value.exit_code == 2
     assert (tmp_path / "existing" / "SKILL.md").read_text() == "existing"
 
 
-@pytest.mark.skip(reason="Typer/CliRunner optional positional path parsing differs; manual coverage")
 def test_skill_init_force_overwrites(tmp_path):
     """init with --force overwrites existing SKILL.md."""
+    from owlclaw.cli.skill_init import init_command
+
     (tmp_path / "overwrite").mkdir()
     (tmp_path / "overwrite" / "SKILL.md").write_text("old", encoding="utf-8")
-    path_arg = tmp_path.as_posix()
-    result = runner.invoke(
-        skill_app, ["init", "overwrite", path_arg, "--force"]
-    )
-    assert result.exit_code == 0
+    init_command(name="overwrite", path=tmp_path.as_posix(), template="default", force=True)
     content = (tmp_path / "overwrite" / "SKILL.md").read_text(encoding="utf-8")
     assert "name: overwrite" in content
     assert "old" not in content
