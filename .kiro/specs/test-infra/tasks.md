@@ -52,7 +52,8 @@
 - [ ] **Task 6**: integration/conftest.py 模块级 fixtures
   - [x] 6.1 添加 `db_engine` fixture（scope="module"，避免每个测试重建连接池）
   - [x] 6.2 添加 `run_migrations` fixture（scope="session"，确保 schema 最新）
-  - [ ] 6.3 验证：集成测试之间数据不互相污染（事务回滚有效）
+  - [ ] 6.3 验证：集成测试之间数据不互相污染（事务回滚有效）  
+    - 当前状态（2026-02-25）：已新增 `tests/integration/test_integration_fixtures.py` 双测试隔离探针（写入 -> 下一测试验证清洁状态）；本机因 PostgreSQL 不可用触发 `2 skipped`，待有 PG 环境复验并转为 completed
   - _Requirements: AC-3_
 
 ### Phase 4：覆盖率分层（P1）
