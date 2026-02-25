@@ -161,9 +161,9 @@
 |------|---|
 | 最后更新 | 2026-02-25 |
 | 当前批次 | codex-gpt-work：local-devenv 验收推进（Task 3.8 + Task 7.2 + Task 10.1） |
-| 批次状态 | **进行中**。本轮已完成 local-devenv 文档/端到端验收关键路径，剩余项集中在 make 与 env 覆盖核对。 |
-| 已完成项 | 1) local-devenv：Task 3.8 完成（`docker compose -f docker-compose.dev.yml --profile full up -d` 后 `owlclaw-db/redis/hatchet-lite/langfuse` 全部 healthy）；2) local-devenv：Task 7.2 完成（同一会话完成 quickstart 路径验证）；3) local-devenv：Task 10.1 完成（`poetry run pytest tests/unit/ tests/integration/ -m "not e2e" -q` 结果 `1645 passed, 12 skipped`）；4) `docker-compose.dev.yml` 新增 `SERVER_MSGQUEUE_KIND=postgres` 并修复 Langfuse healthcheck `$$HOSTNAME`。 |
-| 下一待执行 | 1) local-devenv：Task 5.4、Task 10.3、Task 10.4；2) test-infra：Task 4.2（<60s）、Task 6.3、Task 9.4、Task 11；3) owlhub：Task 19 决策确认与 Task 40.4 外部部署；4) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
+| 批次状态 | **进行中**。本轮已完成 local-devenv 文档/端到端验收关键路径与 env 覆盖自动校验，剩余项集中在 make 命令验收。 |
+| 已完成项 | 1) local-devenv：Task 3.8 完成（`docker compose -f docker-compose.dev.yml --profile full up -d` 后 `owlclaw-db/redis/hatchet-lite/langfuse` 全部 healthy）；2) local-devenv：Task 7.2 完成（同一会话完成 quickstart 路径验证）；3) local-devenv：Task 10.1 完成（`poetry run pytest tests/unit/ tests/integration/ -m "not e2e" -q` 结果 `1645 passed, 12 skipped`）；4) local-devenv：Task 10.4 完成（新增 env 覆盖自动校验测试并通过）；5) `docker-compose.dev.yml` 新增 `SERVER_MSGQUEUE_KIND=postgres` 并修复 Langfuse healthcheck `$$HOSTNAME`。 |
+| 下一待执行 | 1) local-devenv：Task 5.4、Task 10.3；2) test-infra：Task 4.2（<60s）、Task 6.3、Task 9.4、Task 11；3) owlhub：Task 19 决策确认与 Task 40.4 外部部署；4) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
 | 验收快照 | repo-hygiene ✅(7/7)，local-devenv 🟡(8/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) Windows 环境无 `make`，阻塞 local-devenv Task 5.4；2) release/owlhub 余项包含外部平台与人工决策动作。 |
 | 健康状态 | 正常 |

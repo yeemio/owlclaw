@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 import yaml  # type: ignore[import-untyped]
 
@@ -120,6 +121,43 @@ def test_env_example_covers_local_devenv_core_variables() -> None:
         "OWLCLAW_PG_PORT=5432",
         "OWLCLAW_REDIS_PORT=6379",
         "OWLCLAW_LANGFUSE_PORT=3000",
+        "OWLCLAW_CONFIG=",
+        "OWLCLAW_WEBHOOK_TIMEOUT_SECONDS=",
+        "OWLCLAW_WEBHOOK_MAX_RETRIES=",
+        "OWLCLAW_WEBHOOK_LOG_LEVEL=",
+        "OWLCLAW_QDRANT_URL=",
+        "OWLCLAW_QDRANT_COLLECTION=",
+        "HATCHET_GRPC_TLS_STRATEGY=",
+        "HATCHET_GRPC_HOST_PORT=",
+        "OWLHUB_LOG_LEVEL=INFO",
+        "OWLHUB_INDEX_PATH=./index.json",
+        "OWLHUB_REVIEW_DIR=./.owlhub/reviews",
+        "OWLHUB_AUDIT_LOG=./.owlhub/audit.log.jsonl",
+        "OWLHUB_STATISTICS_DB=./.owlhub/skill_statistics.json",
+        "OWLHUB_BLACKLIST_DB=./.owlhub/blacklist.json",
+        "OWLHUB_AUTH_SECRET=",
+        "OWLHUB_CSRF_TOKEN=",
     ]
     for key in expected:
         assert key in payload
+
+
+def test_env_example_covers_literal_env_reads_in_owlclaw_code() -> None:
+    ignored = {"PYTEST_CURRENT_TEST", "COV_CORE_SOURCE"}
+    env_keys = {
+        line.split("=", 1)[0].strip()
+        for line in Path(".env.example").read_text(encoding="utf-8").splitlines()
+        if line and not line.startswith("#") and "=" in line
+    }
+    used_keys: set[str] = set()
+    patterns = (
+        re.compile(r'os\.getenv\(\s*"([A-Z][A-Z0-9_]*)"'),
+        re.compile(r'os\.environ\.get\(\s*"([A-Z][A-Z0-9_]*)"'),
+        re.compile(r'os\.environ\[\s*"([A-Z][A-Z0-9_]*)"\s*\]'),
+    )
+    for py_file in Path("owlclaw").rglob("*.py"):
+        source = py_file.read_text(encoding="utf-8")
+        for pattern in patterns:
+            used_keys.update(pattern.findall(source))
+    missing = sorted(key for key in used_keys if key not in env_keys and key not in ignored)
+    assert missing == []

@@ -99,7 +99,8 @@
   - [x] 10.2 验证 `docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
     - 验证记录（2026-02-25）：`--profile full` + 端口覆盖 `25432/26379/13000` 下全部服务 healthy
   - [ ] 10.3 验证 `make test-unit` 不需要任何外部服务即可通过
-  - [ ] 10.4 验证 `.env.example` 覆盖所有实际使用的环境变量（与代码中的 `os.environ` 对照）
+  - [x] 10.4 验证 `.env.example` 覆盖所有实际使用的环境变量（与代码中的 `os.environ` 对照）  
+    - 验证记录（2026-02-25）：新增 `tests/unit/test_local_devenv_assets.py::test_env_example_covers_literal_env_reads_in_owlclaw_code`，对 `owlclaw/**/*.py` 中字面量环境变量读取执行自动对照校验并通过
   - _Requirements: AC-1, AC-2, AC-3_
 
 ## Backlog
