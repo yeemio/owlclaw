@@ -44,6 +44,11 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
+      - name: Enable pgvector extension
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d owlclaw_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
       - name: Run tests with coverage
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test
