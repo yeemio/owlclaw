@@ -158,7 +158,7 @@ def test_property_vector_search_relevance(pair: tuple[str, str]) -> None:
         max_size=60,
     )
 )
-@settings(deadline=None, max_examples=12, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_property_memory_file_size_limit(payload: list[str], tmp_path: Path) -> None:
     """Property 8: memory file is rotated when size exceeds configured limit."""
     memory_path = tmp_path / "MEMORY.md"
