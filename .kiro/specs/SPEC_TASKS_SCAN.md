@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.5（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-24
+> **最后更新**: 2026-02-25
 
 ---
 
@@ -58,7 +58,7 @@
 - [ ] `owlclaw.capabilities.bindings` — Declarative Binding 系统（HTTP/Queue/SQL 执行器 + shadow 模式 + Ledger 集成） → spec: declarative-binding
 - [x] `owlclaw.capabilities.skills` 扩展 — Skills Loader binding 检测与 BindingTool 自动注册 → spec: declarative-binding Task 6
 - [x] `owlclaw.cli.skill` 扩展 — `owlclaw skill validate` binding schema 验证 → spec: declarative-binding Task 7
-- [ ] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
+- [x] `owlclaw.cli.migrate` 扩展 — BindingGenerator（从 OpenAPI/ORM 自动生成 binding SKILL.md）→ spec: declarative-binding Task 16-19 + cli-migrate §4
 
 ### Phase 2：扩展 + 可观测 + 生态接入
 
@@ -117,7 +117,7 @@
 | integrations-langfuse | `.kiro/specs/integrations-langfuse/` | ✅ 三层齐全，已完成（66/66） | Langfuse tracing |
 | integrations-langchain | `.kiro/specs/integrations-langchain/` | ✅ 三层齐全，已完成（101/101） | LangChain LLM 后端适配器 + 编排框架集成文档/示例 |
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
-| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（16/26） | 声明式工具绑定（Task 0~15 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动） |
+| **declarative-binding** | `.kiro/specs/declarative-binding/` | 🟡 三层齐全，进行中（20/26） | 声明式工具绑定（Task 0~19 已完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
@@ -150,12 +150,12 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-24 |
+| 最后更新 | 2026-02-25 |
 | 当前批次 | review-work（持续合并并审校 `codex-work` + `codex-gpt-work` 新增提交） |
-| 批次状态 | **进行中（本批）**。已完成一轮全仓门禁审校与回归；`codex-gpt-work` 新增 2 提交已审阅，当前结论为 **FIX_NEEDED（分支需先与 review-work/main 同步后再提审，避免回退已合并功能）**。 |
-| 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）+ BindingTool/Ledger + Skills 自动注册 + CLI validate 扩展 + Queue/SQL Executor + Shadow 报告链路 + 安全集成（InputSanitizer/DataMasker/risk_level）+ 治理集成（visibility/budget/rate limit）+ HTTP reference examples（active/shadow/shell）+ 文档/模板联动（examples 索引、binding-http-client 模板、skill init 默认最小模板注释）；2) `cli-scan` 收口（Task 1~20 完成，80/80）；3) 保持并修复 `serialization.py` 的 mypy/ruff 兼容写法，避免类型回退；4) 合并 `codex-gpt-work` 批次：`owlhub` Phase 3 集成流与文档、CI/CD 部署流程、checksum 全链路校验与安全加固；5) 顶层 CLI 回归修复：恢复 `CliRunner.invoke(app, ...)` 场景下 `db` 子命令注册（修复 `tests/unit/test_cli_db.py` 与 `tests/integration/test_cli_db_workflows.py` 失败）；6) 全量门禁通过：`ruff check .` + `mypy owlclaw/` + `pytest -q`（1640 passed, 28 skipped）。 |
-| 下一待执行 | 1) 推进 `declarative-binding` Task 16+；2) 在具备生产凭据后执行 `owlhub` Task 40.4 实际部署与监控验收（已补 runbook+release gate 脚本）；3) 继续保持 `review-work` 与两条开发分支差异归零。 |
-| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(16/26)，`owlhub` 🟡(41/42)，`triggers-signal` ✅(15/15)。 |
+| 批次状态 | **进行中（本批）**。已完成一轮全仓门禁审校与回归；`codex-gpt-work` 新增提交完成“选择性吸收”；`codex-work` 新增提交已推进 `declarative-binding` Task 16-19。 |
+| 已完成项 | 1) 合并 `codex-work` 批次：`declarative-binding` 基础能力（schema/credential/executor registry/http executor）+ BindingTool/Ledger + Skills 自动注册 + CLI validate 扩展 + Queue/SQL Executor + Shadow 报告链路 + 安全集成（InputSanitizer/DataMasker/risk_level）+ 治理集成（visibility/budget/rate limit）+ HTTP reference examples（active/shadow/shell）+ 文档/模板联动（examples 索引、binding-http-client 模板、skill init 默认最小模板注释）；2) 新增 `BindingGenerator`（OpenAPI/ORM → binding SKILL.md，含 security/env/response_mapping 映射与 SQL 参数化/read_only 约束）与对应单元测试；3) 新增 `owlclaw migrate scan --output-mode`（handler/binding/both）路径与 CLI 分发/帮助文本/端到端单测；4) 完成 Task 19：三角色工作流文档、OpenAPI E2E binding 示例、`owlclaw skill init --from-binding` 业务规则模板化能力；5) 合并 `codex-gpt-work` 批次：`owlhub` Phase 3 集成流与文档、CI/CD 部署流程、checksum 全链路校验与安全加固；6) 顶层 CLI 回归修复：恢复 `CliRunner.invoke(app, ...)` 场景下 `db` 子命令注册（修复 `tests/unit/test_cli_db.py` 与 `tests/integration/test_cli_db_workflows.py` 失败）；7) 选择性吸收 `owlhub` 发布文档（`changelog` / `release_notes` / `release_validation`）并更新当前门禁计数；8) 全量门禁通过：`ruff check .` + `mypy owlclaw/` + `pytest -q`（1640 passed, 28 skipped）。 |
+| 下一待执行 | 1) 继续监控并合并编码分支新提交；2) 跟进 `owlhub` 最后未完成项（Task 40.4，外部环境依赖）；3) 推进 `examples` / `cli-migrate` 主 spec 收口。 |
+| 验收快照 | 当前：`cli-scan` ✅(80/80)，`declarative-binding` 🟡(20/26)，`owlhub` 🟡(41/42)，`triggers-signal` ✅(15/15)，全仓测试门禁 ✅（1640 passed）。 |
 | 阻塞项 | 无。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

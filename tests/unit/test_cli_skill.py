@@ -382,6 +382,60 @@ def test_skill_init_no_minimal_enters_template_wizard(tmp_path, monkeypatch):
     assert "name: wizard-skill" in content
 
 
+def test_skill_init_from_binding_generates_business_rules_template(tmp_path):
+    from owlclaw.cli.skill_init import init_command
+
+    source_dir = tmp_path / "source-binding"
+    source_dir.mkdir()
+    (source_dir / "SKILL.md").write_text(
+        """---
+name: source-binding
+description: source binding
+metadata:
+  tools_schema:
+    fetch-order:
+      description: fetch order
+      parameters:
+        type: object
+        properties:
+          order_id:
+            type: string
+      binding:
+        type: http
+        method: GET
+        url: https://api.example.com/orders/{order_id}
+owlclaw:
+  prerequisites:
+    env: []
+---
+
+# Instructions
+""",
+        encoding="utf-8",
+    )
+
+    init_command(
+        name="business-rules",
+        description="Business rules for order tools",
+        path=str(tmp_path),
+        template="",
+        category="",
+        params_file="",
+        param="",
+        no_minimal=False,
+        from_binding=str(source_dir),
+        force=False,
+    )
+
+    generated = tmp_path / "business-rules" / "SKILL.md"
+    assert generated.is_file()
+    content = generated.read_text(encoding="utf-8")
+    assert "name: business-rules" in content
+    assert "Business rules for order tools" in content
+    assert "`fetch-order`: describe when to call this tool." in content
+    assert "## Business Rules" in content
+
+
 def test_skill_init_params_file_not_found_exits(tmp_path):
     """Missing --params-file should fail with clear error."""
     from owlclaw.cli.skill_init import init_command
