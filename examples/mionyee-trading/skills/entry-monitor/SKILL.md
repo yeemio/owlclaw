@@ -1,16 +1,18 @@
 ---
 name: entry-monitor
-description: Monitor entry opportunities for owned symbols.
+description: Evaluate entry opportunities for watchlist symbols
 metadata:
-  author: owlclaw-examples
+  author: mionyee-example
   version: "1.0.0"
+  tags: [trading, monitoring]
 owlclaw:
   spec_version: "1.0"
   task_type: trading_decision
-  trigger: cron("*/5 * * * *")
+  constraints:
+    trading_hours_only: true
+    cooldown_seconds: 300
 ---
 
 # Entry Monitor
 
-Checks signal conditions for candidate entries and returns structured alerts.
-
+Use this skill to evaluate whether symbols meet entry criteria and to summarize actionable signals.

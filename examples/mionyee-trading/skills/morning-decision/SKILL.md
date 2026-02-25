@@ -1,9 +1,10 @@
 ---
 name: morning-decision
-description: Generate a morning trading plan before market open.
+description: Build start-of-day execution priority for the trading session
 metadata:
-  author: owlclaw-examples
+  author: mionyee-example
   version: "1.0.0"
+  tags: [trading, planning]
 owlclaw:
   spec_version: "1.0"
   task_type: planning
@@ -12,5 +13,4 @@ owlclaw:
 
 # Morning Decision
 
-Builds a priority plan from overnight context and risk constraints.
-
+Use this skill to determine the first operational actions at market open based on current state and constraints.
