@@ -18,13 +18,12 @@
   - [x] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过
   - _Requirements: AC-1, AC-2_
 
-- [ ] **Task 2**: docker-compose.minimal.yml — 最小依赖
+- [x] **Task 2**: docker-compose.minimal.yml — 最小依赖
   - [x] 2.1 创建根目录 `docker-compose.minimal.yml`，使用 `pgvector/pgvector:pg16`
   - [x] 2.2 挂载 `deploy/init-db.sql` 自动初始化 owlclaw 库
   - [x] 2.3 配置具名 volume `owlclaw_minimal_data` 持久化数据
-  - [ ] 2.4 验证：启动后 `owlclaw db status` 显示连接正常  
-    - 进展（2026-02-25）：已在 `owlclaw.cli.db_status` 增加 async 探测失败时的 sync fallback（psycopg2）
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用），待恢复后实机复验
+  - [x] 2.4 验证：启动后 `owlclaw db status` 显示连接正常  
+    - 验证记录（2026-02-25）：`OWLCLAW_PG_PORT=25432` + `OWLCLAW_DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:25432/postgres` 下通过
   - _Requirements: AC-1, AC-3_
 
 - [ ] **Task 3**: docker-compose.dev.yml — 全量开发环境

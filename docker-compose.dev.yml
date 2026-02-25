@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     ports:
-      - "5432:5432"
+      - "${OWLCLAW_PG_PORT:-5432}:5432"
     volumes:
       - owlclaw_dev_data:/var/lib/postgresql/data
       - ./deploy/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro

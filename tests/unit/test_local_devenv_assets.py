@@ -22,6 +22,7 @@ def test_test_compose_mirrors_ci_pgvector_setup() -> None:
     postgres = payload["services"]["postgres"]
     assert postgres["image"] == "pgvector/pgvector:pg16"
     assert postgres["environment"]["POSTGRES_DB"] == "owlclaw_test"
+    assert "${OWLCLAW_PG_PORT:-5432}:5432" in postgres["ports"]
     assert "healthcheck" in postgres
     volumes = "\n".join(postgres.get("volumes", []))
     assert "init-test-db.sql" in volumes
@@ -34,6 +35,7 @@ def test_minimal_compose_uses_pgvector_and_persistent_volume() -> None:
     assert db is not None
     assert db["image"] == "pgvector/pgvector:pg16"
     assert db["environment"]["POSTGRES_DB"] in {"postgres", "owlclaw"}
+    assert "${OWLCLAW_PG_PORT:-5432}:5432" in db["ports"]
     assert "owlclaw_minimal_data" in "\n".join(db.get("volumes", []))
     assert "healthcheck" in db
 
@@ -42,6 +44,7 @@ def test_dev_compose_contains_expected_services_and_healthchecks() -> None:
     payload = _load_yaml(Path("docker-compose.dev.yml"))
     services = payload["services"]
     assert services["owlclaw-db"]["image"] == "pgvector/pgvector:pg16"
+    assert "${OWLCLAW_PG_PORT:-5432}:5432" in services["owlclaw-db"]["ports"]
     assert services["hatchet-lite"]["image"].startswith("ghcr.io/hatchet-dev/hatchet/hatchet-lite:")
     assert services["langfuse"]["image"] == "langfuse/langfuse:2"
     assert services["redis"]["image"] == "redis:7-alpine"
@@ -111,6 +114,7 @@ def test_env_example_covers_local_devenv_core_variables() -> None:
         "LANGFUSE_HOST=http://localhost:3000",
         "REDIS_URL=redis://localhost:6379/0",
         "KAFKA_BOOTSTRAP_SERVERS=",
+        "OWLCLAW_PG_PORT=5432",
     ]
     for key in expected:
         assert key in payload
