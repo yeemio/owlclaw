@@ -55,10 +55,10 @@
 
 ### Phase 4：覆盖率分层（P1）
 
-- [ ] **Task 7**: pyproject.toml 覆盖率配置
-  - [ ] 7.1 配置 `[tool.coverage.run]`：source、omit、branch=true
-  - [ ] 7.2 配置 `[tool.coverage.report]`：exclude_lines（TYPE_CHECKING、abstractmethod 等）
-  - [ ] 7.3 配置 `[tool.coverage.html]`：输出目录 `htmlcov/`
+- [x] **Task 7**: pyproject.toml 覆盖率配置
+  - [x] 7.1 配置 `[tool.coverage.run]`：source、omit、branch=true
+  - [x] 7.2 配置 `[tool.coverage.report]`：exclude_lines（TYPE_CHECKING、abstractmethod 等）
+  - [x] 7.3 配置 `[tool.coverage.html]`：输出目录 `htmlcov/`
   - _Requirements: AC-5_
 
 - [ ] **Task 8**: CI test.yml 分层运行

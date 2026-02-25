@@ -142,6 +142,7 @@ markers = [
 [tool.coverage.run]
 source = ["owlclaw"]
 omit = ["tests/*", "**/test_*.py"]
+branch = true
 
 [tool.coverage.report]
 exclude_lines = [
@@ -150,3 +151,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.coverage.html]
+directory = "htmlcov"
