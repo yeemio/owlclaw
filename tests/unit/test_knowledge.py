@@ -111,6 +111,17 @@ def test_get_skills_knowledge_respects_max_tokens(injector):
     assert result.count("## Skill:") <= 1
 
 
+def test_get_skills_knowledge_report_includes_token_impact(injector):
+    report = injector.get_skills_knowledge_report(["skill-a", "skill-b"], max_tokens=3)
+    assert report.content
+    assert report.selected_skill_names
+    assert report.total_tokens > 0
+    assert all(name in {"skill-a", "skill-b"} for name in report.selected_skill_names)
+    assert all(name in {"skill-a", "skill-b"} for name in report.dropped_skill_names)
+    for name in report.selected_skill_names:
+        assert report.per_skill_tokens.get(name, 0) > 0
+
+
 def test_select_skills_respects_focus_and_token_budget(skills_loader_with_two):
     tiny = KnowledgeInjector(skills_loader_with_two, token_limit=3)
     selected = tiny.select_skills(["skill-a", "skill-b"], focus=None)

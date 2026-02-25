@@ -323,6 +323,46 @@ def test_scan_duplicate_skill_names_keeps_first_sorted_path(tmp_path):
     assert skill.description == "first"
 
 
+def test_scan_duplicate_skill_names_workspace_overrides_bundled(tmp_path):
+    bundled_dir = tmp_path / "bundled" / "skill"
+    workspace_dir = tmp_path / "workspace" / "skill"
+    bundled_dir.mkdir(parents=True)
+    workspace_dir.mkdir(parents=True)
+    (bundled_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: bundled\n---\n",
+        encoding="utf-8",
+    )
+    (workspace_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: workspace\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("same")
+    assert skill is not None
+    assert skill.description == "workspace"
+
+
+def test_scan_duplicate_skill_names_managed_overrides_bundled(tmp_path):
+    bundled_dir = tmp_path / "bundled" / "skill"
+    managed_dir = tmp_path / "managed" / "skill"
+    bundled_dir.mkdir(parents=True)
+    managed_dir.mkdir(parents=True)
+    (bundled_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: bundled\n---\n",
+        encoding="utf-8",
+    )
+    (managed_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: managed\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("same")
+    assert skill is not None
+    assert skill.description == "managed"
+
+
 def test_skill_exposes_optional_assets_references_and_scripts_dirs(tmp_path):
     skill_dir = tmp_path / "with-dirs"
     skill_dir.mkdir()
@@ -444,3 +484,210 @@ tools:
     params = skill.metadata["tools_schema"]["check-stock"]["parameters"]
     assert params["properties"] == {"sku": {"type": "string"}}
     assert params["required"] == ["sku"]
+
+
+def test_skills_loader_prerequisites_env_missing_skips_skill(tmp_path, monkeypatch):
+    monkeypatch.delenv("OWLCLAW_PREREQ_TOKEN", raising=False)
+    skill_dir = tmp_path / "prereq-env-missing"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-env-missing
+description: should be skipped
+owlclaw:
+  prerequisites:
+    env: [OWLCLAW_PREREQ_TOKEN]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    assert loader.scan() == []
+
+
+def test_skills_loader_prerequisites_env_present_loads_skill(tmp_path, monkeypatch):
+    monkeypatch.setenv("OWLCLAW_PREREQ_TOKEN", "ok")
+    skill_dir = tmp_path / "prereq-env-ok"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-env-ok
+description: should load
+owlclaw:
+  prerequisites:
+    env: [OWLCLAW_PREREQ_TOKEN]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert skills[0].name == "prereq-env-ok"
+
+
+def test_skills_loader_prerequisites_bin_missing_skips_skill(tmp_path):
+    skill_dir = tmp_path / "prereq-bin-missing"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-bin-missing
+description: should be skipped
+owlclaw:
+  prerequisites:
+    bins: [__definitely_missing_binary__]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    assert loader.scan() == []
+
+
+def test_skills_loader_prerequisites_python_package_missing_skips_skill(tmp_path):
+    skill_dir = tmp_path / "prereq-pkg-missing"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-pkg-missing
+description: should be skipped
+owlclaw:
+  prerequisites:
+    python_packages: [__missing_python_package__]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    assert loader.scan() == []
+
+
+def test_skills_loader_prerequisites_os_mismatch_skips_skill(tmp_path):
+    skill_dir = tmp_path / "prereq-os-missing"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-os-missing
+description: should be skipped
+owlclaw:
+  prerequisites:
+    os: [nonexistent-os]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    assert loader.scan() == []
+
+
+def test_skills_loader_prerequisites_config_list_and_map(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        SkillsLoader,
+        "_load_runtime_config",
+        lambda self: {"feature": {"enabled": True}, "agent": {"mode": "prod"}},
+    )
+    ok_dir = tmp_path / "prereq-config-ok"
+    ok_dir.mkdir()
+    (ok_dir / "SKILL.md").write_text(
+        """---
+name: prereq-config-ok
+description: should load
+owlclaw:
+  prerequisites:
+    config:
+      feature.enabled: true
+      agent.mode: prod
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    bad_dir = tmp_path / "prereq-config-bad"
+    bad_dir.mkdir()
+    (bad_dir / "SKILL.md").write_text(
+        """---
+name: prereq-config-bad
+description: should skip
+owlclaw:
+  prerequisites:
+    config:
+      feature.enabled: false
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    list_dir = tmp_path / "prereq-config-list"
+    list_dir.mkdir()
+    (list_dir / "SKILL.md").write_text(
+        """---
+name: prereq-config-list
+description: should load
+owlclaw:
+  prerequisites:
+    config: [feature.enabled]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    names = sorted(skill.name for skill in skills)
+    assert names == ["prereq-config-list", "prereq-config-ok"]
+
+
+def test_skills_loader_respects_owlclaw_yaml_skill_enablement(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "owlclaw.yaml").write_text(
+        """skills:
+  entries:
+    disabled-skill:
+      enabled: false
+""",
+        encoding="utf-8",
+    )
+    enabled_dir = tmp_path / "enabled"
+    enabled_dir.mkdir()
+    (enabled_dir / "SKILL.md").write_text(
+        "---\nname: enabled-skill\ndescription: enabled\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    disabled_dir = tmp_path / "disabled"
+    disabled_dir.mkdir()
+    (disabled_dir / "SKILL.md").write_text(
+        "---\nname: disabled-skill\ndescription: disabled\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    names = sorted(skill.name for skill in skills)
+    assert names == ["enabled-skill"]
+
+
+def test_skills_loader_allows_explicit_enable_in_owlclaw_yaml(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "owlclaw.yaml").write_text(
+        """skills:
+  entries:
+    enabled-skill:
+      enabled: true
+""",
+        encoding="utf-8",
+    )
+    skill_dir = tmp_path / "enabled"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        "---\nname: enabled-skill\ndescription: enabled\n---\n# Body\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert skills[0].name == "enabled-skill"

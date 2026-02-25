@@ -5,9 +5,21 @@ Skills knowledge and injects it into Agent system prompts.
 """
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
 from owlclaw.capabilities.skills import Skill, SkillsLoader
+
+
+@dataclass(frozen=True)
+class SkillsKnowledgeReport:
+    """Structured report for injected skills knowledge token impact."""
+
+    content: str
+    selected_skill_names: list[str]
+    dropped_skill_names: list[str]
+    per_skill_tokens: dict[str, int]
+    total_tokens: int
 
 
 class KnowledgeInjector:
@@ -115,18 +127,52 @@ class KnowledgeInjector:
         max_tokens: int | None = None,
     ) -> str:
         """Retrieve and format Skills knowledge for specified skills."""
+        report = self.get_skills_knowledge_report(
+            skill_names,
+            context_filter=context_filter,
+            max_tokens=max_tokens,
+        )
+        return report.content
+
+    def get_skills_knowledge_report(
+        self,
+        skill_names: list[str],
+        context_filter: Callable[[Skill], bool] | None = None,
+        max_tokens: int | None = None,
+        *,
+        focus: str | None = None,
+    ) -> SkillsKnowledgeReport:
+        """Retrieve formatted knowledge and token impact report."""
         knowledge_parts: list[str] = []
         selected_names = self.select_skills(
             skill_names,
             context_filter=context_filter,
             max_tokens=max_tokens,
+            focus=focus,
         )
+        selected_set = set(selected_names)
+        dropped_names: list[str] = []
+        seen: set[str] = set()
+        for raw_name in skill_names:
+            if not isinstance(raw_name, str):
+                continue
+            normalized = raw_name.strip().lower()
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            skill = self.skills_loader.get_skill(normalized)
+            if skill is None:
+                continue
+            if skill.name not in selected_set:
+                dropped_names.append(skill.name)
 
+        per_skill_tokens: dict[str, int] = {}
         for selected_name in selected_names:
             skill = self.skills_loader.get_skill(selected_name)
             if skill is None:
                 continue
             full_content = skill.load_full_content()
+            per_skill_tokens[skill.name] = self._estimate_tokens(full_content)
             knowledge_parts.append(
                 f"## Skill: {skill.name}\n\n"
                 f"**Description:** {skill.description}\n\n"
@@ -134,13 +180,26 @@ class KnowledgeInjector:
             )
 
         if not knowledge_parts:
-            return ""
+            return SkillsKnowledgeReport(
+                content="",
+                selected_skill_names=[],
+                dropped_skill_names=dropped_names,
+                per_skill_tokens={},
+                total_tokens=0,
+            )
 
-        return (
+        content = (
             "# Available Skills\n\n"
             "The following Skills describe your capabilities and "
             "when to use them:\n\n"
             + "\n---\n\n".join(knowledge_parts)
+        )
+        return SkillsKnowledgeReport(
+            content=content,
+            selected_skill_names=selected_names,
+            dropped_skill_names=dropped_names,
+            per_skill_tokens=per_skill_tokens,
+            total_tokens=self._estimate_tokens(content),
         )
 
     def get_all_skills_summary(self) -> str:

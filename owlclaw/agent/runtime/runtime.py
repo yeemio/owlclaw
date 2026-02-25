@@ -154,6 +154,9 @@ class AgentRuntime:
         self._tool_call_timestamps: deque[float] = deque()
         self._skills_context_cache: dict[tuple[str | None, tuple[str, ...]], str] = {}
         self._visible_tools_cache: dict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = {}
+        self._run_handler_names_snapshot: tuple[str, ...] | None = None
+        self._run_capabilities_snapshot: list[dict[str, Any]] | None = None
+        self._run_env_restore: dict[str, str | None] = {}
         self._perf_metrics: dict[str, float] = {
             "llm_calls": 0.0,
             "tool_calls": 0.0,
@@ -537,6 +540,8 @@ class AgentRuntime:
             context.trigger,
             context.focus,
         )
+        self._capture_run_skill_snapshot()
+        self._inject_skill_env_for_run()
 
         if context.trigger == "heartbeat" and self._heartbeat_checker is not None:
             has_events = self._heartbeat_payload_has_events(context.payload)
@@ -550,6 +555,8 @@ class AgentRuntime:
                 )
                 self._reset_builtin_tool_budget(context.run_id)
                 self._release_skill_content_cache()
+                self._clear_run_skill_snapshot()
+                self._restore_skill_env_after_run()
                 return {
                     "status": "skipped",
                     "run_id": context.run_id,
@@ -622,6 +629,8 @@ class AgentRuntime:
         finally:
             self._reset_builtin_tool_budget(context.run_id)
             self._release_skill_content_cache()
+            self._clear_run_skill_snapshot()
+            self._restore_skill_env_after_run()
             TraceContext.set_current(previous_trace_ctx)
 
         logger.info(
@@ -1301,7 +1310,10 @@ class AgentRuntime:
         if self.knowledge_injector is None or self.registry is None:
             return ""
 
-        all_skill_names = list(self.registry.handlers.keys())
+        if self._run_handler_names_snapshot is not None:
+            all_skill_names = list(self._run_handler_names_snapshot)
+        else:
+            all_skill_names = list(self.registry.handlers.keys())
         if not all_skill_names:
             return ""
         cache_key = (context.focus, tuple(sorted(all_skill_names)))
@@ -1321,11 +1333,44 @@ class AgentRuntime:
         else:
             skill_names = all_skill_names
 
-        out = self.knowledge_injector.get_skills_knowledge(skill_names)
+        skill_token_budget = self._resolve_skill_token_budget()
+        report = self.knowledge_injector.get_skills_knowledge_report(
+            skill_names,
+            max_tokens=skill_token_budget,
+            focus=context.focus,
+        )
+        self._perf_metrics["skills_tokens_total"] = float(report.total_tokens)
+        self._perf_metrics["skills_selected_count"] = float(len(report.selected_skill_names))
+        self._perf_metrics["skills_dropped_count"] = float(len(report.dropped_skill_names))
+        self._perf_metrics["skills_tokens_per_skill"] = float(
+            sum(report.per_skill_tokens.values())
+        )
+        out = report.content
         self._skills_context_cache[cache_key] = out
         if len(self._skills_context_cache) > 64:
             self._skills_context_cache.pop(next(iter(self._skills_context_cache)))
         return out
+
+    def _resolve_skill_token_budget(self) -> int | None:
+        """Resolve skill prompt token budget from runtime config."""
+        raw_values = [
+            self.config.get("skills_token_limit"),
+            self.config.get("skills_prompt_token_budget"),
+        ]
+        governance = self.config.get("governance")
+        if isinstance(governance, dict):
+            raw_values.append(governance.get("skills_token_limit"))
+            raw_values.append(governance.get("skills_prompt_token_budget"))
+        for raw in raw_values:
+            if isinstance(raw, bool):
+                continue
+            if isinstance(raw, int) and raw > 0:
+                return raw
+            if isinstance(raw, str):
+                stripped = raw.strip()
+                if stripped.isdigit() and int(stripped) > 0:
+                    return int(stripped)
+        return None
 
     def _release_skill_content_cache(self) -> None:
         """Release cached full Skill contents and prompt cache after each run."""
@@ -1345,6 +1390,74 @@ class AgentRuntime:
                     clear_fn()
         except Exception:
             logger.debug("Failed to release Skill content cache", exc_info=True)
+
+    def _capture_run_skill_snapshot(self) -> None:
+        """Freeze skill/capability view for the current run."""
+        if self.registry is None:
+            self._run_handler_names_snapshot = tuple()
+            self._run_capabilities_snapshot = []
+            return
+        try:
+            self._run_handler_names_snapshot = tuple(sorted(str(name) for name in self.registry.handlers.keys()))
+        except Exception:
+            self._run_handler_names_snapshot = tuple()
+        try:
+            capabilities = self.registry.list_capabilities()
+            self._run_capabilities_snapshot = list(capabilities) if isinstance(capabilities, list) else []
+        except Exception:
+            self._run_capabilities_snapshot = []
+
+    def _clear_run_skill_snapshot(self) -> None:
+        """Release per-run frozen skill/capability snapshot."""
+        self._run_handler_names_snapshot = None
+        self._run_capabilities_snapshot = None
+
+    def _inject_skill_env_for_run(self) -> None:
+        """Inject environment variables declared by skills for current run."""
+        if self.registry is None:
+            return
+        loader = getattr(self.registry, "skills_loader", None)
+        if loader is None:
+            return
+        get_skill = getattr(loader, "get_skill", None)
+        if not callable(get_skill):
+            return
+        skill_names = (
+            list(self._run_handler_names_snapshot)
+            if self._run_handler_names_snapshot is not None
+            else list(getattr(self.registry, "handlers", {}).keys())
+        )
+        for skill_name in skill_names:
+            try:
+                skill = get_skill(skill_name)
+            except Exception:
+                logger.debug("Failed to resolve skill for env injection: %s", skill_name, exc_info=True)
+                continue
+            if skill is None:
+                continue
+            declared_env = getattr(skill, "owlclaw_config", {}).get("env")
+            if not isinstance(declared_env, dict):
+                continue
+            for raw_key, raw_value in declared_env.items():
+                if not isinstance(raw_key, str):
+                    continue
+                key = raw_key.strip()
+                if not key:
+                    continue
+                if key not in self._run_env_restore:
+                    self._run_env_restore[key] = os.environ.get(key)
+                os.environ[key] = str(raw_value)
+
+    def _restore_skill_env_after_run(self) -> None:
+        """Restore process env vars changed by _inject_skill_env_for_run."""
+        if not self._run_env_restore:
+            return
+        for key, previous in self._run_env_restore.items():
+            if previous is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = previous
+        self._run_env_restore.clear()
 
     def _skill_has_focus(self, skill_name: str, focus: str) -> bool:
         """Return True if the skill declares *focus* in owlclaw.focus.
@@ -1419,7 +1532,11 @@ class AgentRuntime:
 
         if self.registry is None:
             return all_schemas
-        cap_list = self.registry.list_capabilities()
+        cap_list = (
+            list(self._run_capabilities_snapshot)
+            if self._run_capabilities_snapshot is not None
+            else self.registry.list_capabilities()
+        )
         name_to_meta = {c["name"]: c for c in cap_list}
         cap_views = [
             CapabilityView(
@@ -1505,10 +1622,12 @@ class AgentRuntime:
             return []
 
         schemas: list[dict[str, Any]] = []
-        capabilities = sorted(
-            self.registry.list_capabilities(),
-            key=lambda c: str(c.get("name", "")),
+        source = (
+            list(self._run_capabilities_snapshot)
+            if self._run_capabilities_snapshot is not None
+            else self.registry.list_capabilities()
         )
+        capabilities = sorted(source, key=lambda c: str(c.get("name", "")))
         for capability in capabilities:
             schemas.append({
                 "type": "function",
