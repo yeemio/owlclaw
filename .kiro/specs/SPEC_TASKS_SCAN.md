@@ -124,7 +124,7 @@
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
-| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（28/32） | PyPI + GitHub 发布 |
+| release | `.kiro/specs/release/` | ✅ 三层齐全，阶段完成（32/32，PyPI 延期） | GitHub Release + 发布流程 dry-run |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 
 ---
@@ -151,12 +151,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | codex-work：release 收口（主分支联通与 TestPyPI 实跑） |
-| 批次状态 | **进行中**。release 已完成 28/32（`v1.0.0` tag 与 GitHub Release 已存在）。 |
-| 已完成项 | 1) 新增 `CHANGELOG.md`（v0.1.0 初始发布记录）；2) 新增 GitHub Issue 模板（Bug/Feature + config）；3) 执行敏感信息基线扫描，确认仅测试样例/文档占位命中；4) 完成 `.gitignore` 与 `.env.example` 发布前检查并在测试中固化；5) 完成 `pyproject.toml` 发布元数据核验、`[langchain]/[dev]` extras 对齐与 `owlclaw` CLI 入口确认；6) 新增 `owlclaw-mcp/` 独立构建配置（独立 pyproject + 入口）；7) 完成 README 发布面补齐（架构 ASCII、LangChain/LangGraph 互补、链接区）；8) 完成 CONTRIBUTING 的 PR 规范与代码风格补充；9) release workflow 改为 `v*` tag 触发并增加发布前 `poetry install + pytest` 步骤；10) 新增 `docs/RELEASE_RUNBOOK.md` 固化外部发布动作；11) 新增/扩展 `tests/unit/test_release_assets.py`，覆盖发布工件、文档与 release workflow 触发契约；12) CLI 增加 `owlclaw --version` 支持并完成 `owlclaw --version` / `owlclaw skill list` 运行验收；13) 本地执行 `poetry run python examples/basic_usage.py` 成功，完成 release 示例验收基线；14) GitHub 仓库侧完成 Discussions 启用、仓库 Public 化、Topics/Description 设置；15) release workflow 新增 `workflow_dispatch target=testpypi|pypi` 分流与 TestPyPI 发布路径；16) `codex-work` 通过 PR #1 合入 `main`，并在 `main` 上触发 `Release` workflow（run `22386433493`）完成到 TestPyPI 上传阶段；17) `v1.0.0`/`v1.0.1`/`v1.0.2` tag 与 GitHub Release 已创建；18) release workflow 增加 PyPI/TestPyPI token 前置校验步骤，缺失凭证时快速失败并输出明确提示；19) 将 `semantic-release` 限制为正式发布路径，避免 TestPyPI 触发继续打版本；20) 在 `main` 上实跑 `Release` run `22391380676`（21s 失败），确认 token 前置校验按预期生效且快速返回。 |
-| 下一待执行 | 1) release 3.1.2/3.1.3（配置 `PYPI_TOKEN`/`TEST_PYPI_TOKEN` 并重跑 TestPyPI）；2) release 4.1.2（PyPI 实装安装验收）；3) release 6.1 剩余项（`pip install owlclaw` 成功验收）。 |
-| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(28/32)。 |
-| 阻塞项 | 1) owlhub Task 40.4（外部生产部署）；2) OwlHub gate CLI 命名待架构决策；3) release 发布凭证缺失（仓库 Secrets 当前为空，run `22391380676` 在 `Validate TestPyPI token` 阶段失败）；4) PyPI 当前无 `owlclaw` 发行版（`pip index versions owlclaw` 返回无匹配），阻塞安装验收。 |
+| 当前批次 | codex-work：release 阶段收口（按决策延期 PyPI） |
+| 批次状态 | **已完成（阶段性）**。release 以“GitHub Release + dry-run 流程”为验收口径完成；PyPI/TestPyPI 发布延期。 |
+| 已完成项 | 1) 新增 `CHANGELOG.md`（v0.1.0 初始发布记录）；2) 新增 GitHub Issue 模板（Bug/Feature + config）；3) 执行敏感信息基线扫描，确认仅测试样例/文档占位命中；4) 完成 `.gitignore` 与 `.env.example` 发布前检查并在测试中固化；5) 完成 `pyproject.toml` 发布元数据核验、`[langchain]/[dev]` extras 对齐与 `owlclaw` CLI 入口确认；6) 新增 `owlclaw-mcp/` 独立构建配置（独立 pyproject + 入口）；7) 完成 README 发布面补齐（架构 ASCII、LangChain/LangGraph 互补、链接区）；8) 完成 CONTRIBUTING 的 PR 规范与代码风格补充；9) release workflow 增加发布前 `poetry install + pytest`；10) 新增 `docs/RELEASE_RUNBOOK.md`；11) 新增/扩展 `tests/unit/test_release_assets.py`；12) CLI `--version` 验收通过；13) 本地 example 验收通过；14) 仓库社区设置完成（Discussions/Public/Topics）；15) workflow 支持 `workflow_dispatch target` 分流；16) token 前置校验已落地并实跑验证；17) `semantic-release` 已限制到正式发布路径；18) workflow 默认目标改为 `dryrun`，并新增 `twine check dist/*`。 |
+| 下一待执行 | 1) 若后续恢复 PyPI 目标：配置 `PYPI_TOKEN`/`TEST_PYPI_TOKEN`；2) 执行 TestPyPI -> PyPI 正式发布；3) 回补 `pip install owlclaw` 验收记录。 |
+| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release ✅(32/32，阶段完成)。 |
+| 阻塞项 | 1) owlhub Task 40.4（外部生产部署）；2) OwlHub gate CLI 命名待架构决策；3) release 无当前阶段阻塞（PyPI 发布为决策延期项）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
