@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-02-25T00:00:00+00:00",
+  "total_skills": 1,
+  "skills": [
+    {
+      "manifest": {
+        "name": "local-demo-skill",
+        "publisher": "local",
+        "version": "1.0.0",
+        "description": "Local demo skill for release gate.",
+        "license": "MIT",
+        "tags": ["demo"],
+        "dependencies": {}
+      },
+      "download_url": "file:///D:/ai/owlclaw-codex-gpt/README.md",
+      "checksum": "sha256:dummy",
+      "published_at": "2026-02-25T00:00:00+00:00",
+      "updated_at": "2026-02-25T00:00:00+00:00",
+      "version_state": "released"
+    }
+  ]
+}

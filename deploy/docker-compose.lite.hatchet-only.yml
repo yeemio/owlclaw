@@ -6,7 +6,7 @@
 
 services:
   hatchet-lite:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0.53.0
     environment:
       DATABASE_URL: postgresql://hatchet:hatchet@host.docker.internal:5432/hatchet
       # Hatchet requires DB timezone UTC; or set DATABASE_ENFORCE_UTC_TIMEZONE=false to skip check

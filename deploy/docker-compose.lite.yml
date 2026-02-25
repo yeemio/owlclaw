@@ -1,8 +1,7 @@
-# OwlClaw 数据层 + Hatchet Lite（开发）
-# 数据库架构详见 docs/DATABASE_ARCHITECTURE.md
-# init-db.sql 创建 hatchet / owlclaw 两库；Hatchet 连接 hatchet 库。
+# OwlClaw lite stack (DB + Hatchet Lite)
 # Usage: docker compose -f deploy/docker-compose.lite.yml up -d
-# UI: http://localhost:8888  默认账号 admin@example.com / Admin123!!
+# Stop: docker compose -f deploy/docker-compose.lite.yml down
+# Ports: postgres 5432, hatchet gRPC 17077, hatchet UI 8888
 
 services:
   owlclaw-db:
@@ -13,28 +12,39 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   hatchet-lite:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0.53.0
     environment:
       DATABASE_URL: postgresql://hatchet:hatchet@owlclaw-db:5432/hatchet
       SERVER_PORT: "7077"
-      SERVER_GRPC_PORT: "7077"
+      SERVER_GRPC_PORT: "7078"
       SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
-      SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:7077"
+      SERVER_GRPC_BROADCAST_ADDRESS: "host.docker.internal:17077"
       SERVER_GRPC_INSECURE: "t"
       SERVER_URL: "http://host.docker.internal:8888"
       SERVER_AUTH_COOKIE_DOMAIN: "localhost"
       SERVER_AUTH_COOKIE_INSECURE: "t"
       SERVER_AUTH_SET_EMAIL_VERIFIED: "t"
     ports:
-      - "7077:7077"
+      - "17077:7078"
       - "8888:8888"
     volumes:
       - hatchet_lite_config:/config
     depends_on:
-      - owlclaw-db
+      owlclaw-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8888 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
 
 volumes:
   hatchet_lite_config:

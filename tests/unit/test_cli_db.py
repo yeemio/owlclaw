@@ -251,3 +251,49 @@ def test_db_status_handles_optioninfo_database_url(monkeypatch):
         }
         status_command(database_url=OptionInfo(default=None))  # type: ignore[arg-type]
     mock_get_engine.assert_called_once_with("postgresql://u:p@localhost/owlclaw")
+
+
+def test_db_status_falls_back_to_sync_probe_when_async_probe_fails(monkeypatch):
+    from owlclaw.cli.db_status import status_command
+
+    monkeypatch.setenv("OWLCLAW_DATABASE_URL", "postgresql://u:p@localhost/owlclaw")
+    def _raise_and_close(coro):  # type: ignore[no-untyped-def]
+        coro.close()
+        raise RuntimeError("WinError 64")
+
+    with patch("owlclaw.cli.db_status.get_engine"), patch(
+        "owlclaw.cli.db_status.asyncio.run",
+        side_effect=_raise_and_close,
+    ), patch(
+        "owlclaw.cli.db_status._collect_status_info_sync"
+    ) as mock_sync, patch(
+        "owlclaw.cli.db_status._print_status_table"
+    ) as mock_print, patch(
+        "owlclaw.cli.db_status.typer.echo"
+    ) as mock_echo:
+        mock_sync.return_value = {
+            "connection": "x",
+            "server_version": "x",
+            "extensions": [],
+            "current_migration": "x",
+            "pending_migrations": 0,
+            "table_count": 0,
+            "total_rows": 0,
+            "disk_usage_bytes": 0,
+        }
+        status_command(database_url=None)
+    assert mock_sync.call_count == 1
+    assert mock_print.call_count == 1
+    assert any(
+        "falling back to sync probe" in str(call.args[0]) for call in mock_echo.call_args_list if call.args
+    )
+
+
+def test_db_status_to_sync_postgres_url_converts_asyncpg_scheme():
+    from owlclaw.cli.db_status import _to_sync_postgres_url
+
+    assert (
+        _to_sync_postgres_url("postgresql+asyncpg://u:p@localhost:5432/owlclaw")
+        == "postgresql://u:p@localhost:5432/owlclaw"
+    )
+    assert _to_sync_postgres_url("postgresql://u:p@localhost:5432/owlclaw") == "postgresql://u:p@localhost:5432/owlclaw"

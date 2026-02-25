@@ -7,6 +7,7 @@ from urllib.parse import urlsplit, urlunsplit
 import typer
 from rich.console import Console
 from rich.table import Table
+from sqlalchemy import create_engine as create_sync_engine
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 from typer.models import OptionInfo
@@ -56,6 +57,14 @@ def _format_size(size_bytes: int) -> str:
             return f"{n:.1f} {unit}"
         n /= 1024
     return f"{n:.1f} PB"
+
+
+def _to_sync_postgres_url(url: str) -> str:
+    """Convert asyncpg URL to sync psycopg2 URL when needed."""
+    u = url.strip()
+    if u.startswith("postgresql+asyncpg://"):
+        return "postgresql://" + u[len("postgresql+asyncpg://") :]
+    return u
 
 
 async def _collect_status_info(engine: AsyncEngine, url: str) -> dict:
@@ -144,6 +153,92 @@ async def _collect_status_info(engine: AsyncEngine, url: str) -> dict:
     return info
 
 
+def _collect_status_info_sync(url: str) -> dict:
+    """Sync fallback probe for environments where asyncpg is unstable."""
+    from alembic.config import Config
+    from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
+
+    info: dict = {
+        "connection": _mask_url(url),
+        "server_version": "—",
+        "extensions": [],
+        "current_migration": "—",
+        "pending_migrations": 0,
+        "table_count": 0,
+        "total_rows": 0,
+        "disk_usage_bytes": 0,
+    }
+
+    sync_url = _to_sync_postgres_url(url)
+    engine = create_sync_engine(sync_url, pool_pre_ping=True)
+    current_rev = None
+    try:
+        with engine.connect() as conn:
+            try:
+                r = conn.execute(text("SELECT version()"))
+                v = r.scalar()
+                info["server_version"] = (v.split(",")[0].strip() if v else "—")
+            except Exception:
+                info["server_version"] = "—"
+
+            try:
+                r = conn.execute(text("SELECT extname, extversion FROM pg_extension ORDER BY extname"))
+                info["extensions"] = [f"{row[0]} {row[1]}" for row in r]
+            except Exception:
+                pass
+
+            try:
+                r = conn.execute(
+                    text(
+                        """
+                        SELECT
+                            COUNT(*) AS table_count,
+                            COALESCE(SUM(n_live_tup), 0)::bigint AS total_rows
+                        FROM pg_stat_user_tables
+                        """
+                    )
+                )
+                row = r.fetchone()
+                if row:
+                    info["table_count"] = int(row[0]) if row[0] is not None else 0
+                    info["total_rows"] = int(row[1]) if row[1] is not None else 0
+            except Exception:
+                pass
+
+            try:
+                r = conn.execute(text("SELECT pg_database_size(current_database())"))
+                info["disk_usage_bytes"] = int(r.scalar() or 0)
+            except Exception:
+                pass
+
+            try:
+                ctx = MigrationContext.configure(conn)
+                current_rev = ctx.get_current_revision()
+            except Exception:
+                current_rev = None
+    finally:
+        engine.dispose()
+
+    try:
+        alembic_cfg = Config("alembic.ini")
+        script = ScriptDirectory.from_config(alembic_cfg)
+        if current_rev:
+            rev_obj = script.get_revision(current_rev)
+            doc = getattr(rev_obj, "doc", None) if rev_obj else None
+            info["current_migration"] = f"{current_rev[:8]} ({doc})" if doc else current_rev[:8]
+            pending = list(script.iterate_revisions("head", current_rev))
+            info["pending_migrations"] = len(pending)
+        else:
+            info["current_migration"] = "none (run: owlclaw db migrate)"
+            info["pending_migrations"] = len(list(script.iterate_revisions("head", None)))
+    except Exception:
+        info["current_migration"] = "—"
+        info["pending_migrations"] = 0
+
+    return info
+
+
 def _print_status_table(info: dict) -> None:
     """Print status info as a Rich table."""
     console = Console()
@@ -180,5 +275,12 @@ def status_command(
     except ConfigurationError as e:
         typer.echo(f"Error: {e}", err=True)
         raise typer.Exit(2) from e
-    info = asyncio.run(_collect_status_info(engine, url))
+    try:
+        info = asyncio.run(_collect_status_info(engine, url))
+    except Exception as exc:
+        typer.echo(
+            f"Warning: async status probe failed ({exc}); falling back to sync probe.",
+            err=True,
+        )
+        info = _collect_status_info_sync(url)
     _print_status_table(info)

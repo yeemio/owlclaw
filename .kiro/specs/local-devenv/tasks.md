@@ -11,23 +11,22 @@
 
 ### Phase 1：核心 compose 文件（P0）
 
-- [ ] **Task 1**: docker-compose.test.yml — 与 CI 完全镜像
+- [x] **Task 1**: docker-compose.test.yml — 与 CI 完全镜像
   - [x] 1.1 创建根目录 `docker-compose.test.yml`，使用 `pgvector/pgvector:pg16`
   - [x] 1.2 配置 `owlclaw_test` 数据库，含 healthcheck
   - [x] 1.3 添加 `CREATE EXTENSION IF NOT EXISTS vector;` 初始化步骤（与 CI test.yml 一致）
-  - [ ] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过  
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
+  - [x] 1.4 验证：`docker compose -f docker-compose.test.yml up -d` + `poetry run pytest tests/unit/ -q` 通过
   - _Requirements: AC-1, AC-2_
 
-- [ ] **Task 2**: docker-compose.minimal.yml — 最小依赖
+- [x] **Task 2**: docker-compose.minimal.yml — 最小依赖
   - [x] 2.1 创建根目录 `docker-compose.minimal.yml`，使用 `pgvector/pgvector:pg16`
   - [x] 2.2 挂载 `deploy/init-db.sql` 自动初始化 owlclaw 库
   - [x] 2.3 配置具名 volume `owlclaw_minimal_data` 持久化数据
-  - [ ] 2.4 验证：启动后 `owlclaw db status` 显示连接正常  
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
+  - [x] 2.4 验证：启动后 `owlclaw db status` 显示连接正常  
+    - 验证记录（2026-02-25）：`OWLCLAW_PG_PORT=25432` + `OWLCLAW_DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:25432/postgres` 下通过
   - _Requirements: AC-1, AC-3_
 
-- [ ] **Task 3**: docker-compose.dev.yml — 全量开发环境
+- [x] **Task 3**: docker-compose.dev.yml — 全量开发环境
   - [x] 3.1 创建根目录 `docker-compose.dev.yml`，包含 pgvector/pgvector:pg16
   - [x] 3.2 集成 Hatchet Lite（锁定具体版本 tag，连接 owlclaw-db）
   - [x] 3.3 集成 Langfuse（官方镜像，连接 owlclaw-db 的 langfuse 库）
@@ -35,8 +34,8 @@
   - [x] 3.5 `deploy/init-db.sql` 扩展：增加 langfuse 数据库和用户创建
   - [x] 3.6 所有服务配置 healthcheck
   - [x] 3.7 顶部注释说明用途、启动命令、各服务端口
-  - [ ] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行（`//./pipe/dockerDesktopLinuxEngine` 不可用）
+  - [x] 3.8 验证：`docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
+    - 验证记录（2026-02-25）：`OWLCLAW_PG_PORT=25432`、`OWLCLAW_REDIS_PORT=26379`、`OWLCLAW_LANGFUSE_PORT=13000` 下 `owlclaw-db/redis/hatchet-lite/langfuse` 全部 healthy
   - _Requirements: AC-1, AC-6_
 
 ### Phase 2：环境变量与脚本（P0）
@@ -48,14 +47,14 @@
   - [x] 4.4 添加 `DATABASE_URL` 和 `OWLCLAW_DATABASE_URL` 的本地默认值
   - _Requirements: AC-4, AC-5_
 
-- [ ] **Task 5**: Makefile（开发快捷命令）
+- [x] **Task 5**: Makefile（开发快捷命令）
   - [x] 5.1 创建根目录 `Makefile`，包含目标：
         `dev-up`, `dev-down`, `dev-reset`, `test-up`, `test-down`,
         `test`, `test-unit`, `test-int`, `lint`, `typecheck`
   - [x] 5.2 每个目标添加 `## 注释`（`make help` 可读）
   - [x] 5.3 Windows 兼容：检测 OS，提示使用 PowerShell 等价命令
-  - [ ] 5.4 验证：`make help` 输出所有目标说明  
-    - 当前阻塞（2026-02-25）：本机无 `make` 命令（Windows 环境）
+  - [x] 5.4 验证：`make help` 输出所有目标说明  
+    - 验证记录（2026-02-25）：安装 `ezwinports.make` 后执行 `make help`，目标说明完整输出
   - _Requirements: AC-3_
 
 - [x] **Task 6**: scripts/test-local.sh + scripts/test-local.ps1
@@ -66,10 +65,11 @@
 
 ### Phase 3：文档（P1）
 
-- [ ] **Task 7**: docs/DEVELOPMENT.md
+- [x] **Task 7**: docs/DEVELOPMENT.md
   - [x] 7.1 创建 `docs/DEVELOPMENT.md`，包含：
         前置条件、快速开始（3 步）、服务端口说明、常见问题
-  - [ ] 7.2 快速开始验证：按文档步骤从零操作，`poetry run pytest` 通过
+  - [x] 7.2 快速开始验证：按文档步骤从零操作，`poetry run pytest` 通过  
+    - 验证记录（2026-02-25）：在同一 PowerShell 会话执行 test compose 启动后，`poetry run pytest tests/unit/ tests/integration/ -m "not e2e" -q` 通过（`1645 passed, 12 skipped`）
   - [x] 7.3 Windows 特殊步骤单独说明（firewall、host.docker.internal）
   - _Requirements: AC-5_
 
@@ -92,12 +92,16 @@
 
 ### Phase 5：验收（P0）
 
-- [ ] **Task 10**: 端到端验收
-  - [ ] 10.1 从干净状态（`docker compose down -v`）执行完整流程：
+- [x] **Task 10**: 端到端验收
+  - [x] 10.1 从干净状态（`docker compose down -v`）执行完整流程：
         `docker compose -f docker-compose.test.yml up -d` → `poetry run pytest tests/unit/ tests/integration/ -m "not e2e"` → 全部通过
-  - [ ] 10.2 验证 `docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy
-  - [ ] 10.3 验证 `make test-unit` 不需要任何外部服务即可通过
-  - [ ] 10.4 验证 `.env.example` 覆盖所有实际使用的环境变量（与代码中的 `os.environ` 对照）
+    - 验证记录（2026-02-25）：`OWLCLAW_PG_PORT=35432` + `OWLCLAW_DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:35432/owlclaw_test` 下通过（`1645 passed, 12 skipped`）
+  - [x] 10.2 验证 `docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
+    - 验证记录（2026-02-25）：`--profile full` + 端口覆盖 `25432/26379/13000` 下全部服务 healthy
+  - [x] 10.3 验证 `make test-unit` 不需要任何外部服务即可通过  
+    - 验证记录（2026-02-25）：`make test-unit` 成功（`1544 passed`）
+  - [x] 10.4 验证 `.env.example` 覆盖所有实际使用的环境变量（与代码中的 `os.environ` 对照）  
+    - 验证记录（2026-02-25）：新增 `tests/unit/test_local_devenv_assets.py::test_env_example_covers_literal_env_reads_in_owlclaw_code`，对 `owlclaw/**/*.py` 中字面量环境变量读取执行自动对照校验并通过
   - _Requirements: AC-1, AC-2, AC-3_
 
 ## Backlog
