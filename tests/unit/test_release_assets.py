@@ -77,3 +77,18 @@ def test_owlclaw_mcp_standalone_package_config_exists() -> None:
     assert poetry["version"] == "0.1.0"
     scripts = poetry["scripts"]
     assert scripts["owlclaw-mcp"] == "owlclaw_mcp.server:main"
+
+
+def test_readme_has_release_required_sections() -> None:
+    payload = Path("README.md").read_text(encoding="utf-8")
+    assert "## What is OwlClaw?" in payload
+    assert "## Quick Start" in payload
+    assert "## Architecture Overview (ASCII)" in payload
+    assert "## OwlClaw and LangChain/LangGraph" in payload
+    assert "## Useful Links" in payload
+
+
+def test_contributing_has_pr_and_style_guidance() -> None:
+    payload = Path("CONTRIBUTING.md").read_text(encoding="utf-8")
+    assert "## Pull Request Guidelines" in payload
+    assert "## Code Style" in payload

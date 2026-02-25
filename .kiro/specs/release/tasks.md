@@ -44,14 +44,14 @@
 ## 2. 文档准备（1 天）
 
 ### 2.1 README.md（英文）
-- [ ] 2.1.1 编写项目定位（一句话 + 详细描述）
-- [ ] 2.1.2 编写 Quick Start（安装 → 创建 Skill → 运行第一个 Agent）
-- [ ] 2.1.3 编写架构概览图（ASCII）
-- [ ] 2.1.4 编写与 LangChain/LangGraph 的对比/互补关系
-- [ ] 2.1.5 编写链接列表（文档、示例、贡献指南、许可证）
+- [x] 2.1.1 编写项目定位（一句话 + 详细描述）
+- [x] 2.1.2 编写 Quick Start（安装 → 创建 Skill → 运行第一个 Agent）
+- [x] 2.1.3 编写架构概览图（ASCII）
+- [x] 2.1.4 编写与 LangChain/LangGraph 的对比/互补关系
+- [x] 2.1.5 编写链接列表（文档、示例、贡献指南、许可证）
 
 ### 2.2 辅助文档
-- [ ] 2.2.1 编写 CONTRIBUTING.md（开发环境搭建、测试运行、PR 规范、代码风格）
+- [x] 2.2.1 编写 CONTRIBUTING.md（开发环境搭建、测试运行、PR 规范、代码风格）
 - [x] 2.2.2 编写 CHANGELOG.md（v0.1.0 初始版本记录）
 - [x] 2.2.3 创建 GitHub Issue 模板（Bug Report、Feature Request）
 

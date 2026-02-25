@@ -124,7 +124,7 @@
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
-| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（9/32） | PyPI + GitHub 发布 |
+| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（15/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 
 ---
@@ -152,10 +152,10 @@
 |------|---|
 | 最后更新 | 2026-02-25 |
 | 当前批次 | codex-work：release 首轮（文档/模板与安全基线） |
-| 批次状态 | **进行中**。release 已完成 9/32（1.1.* 全部完成 + 1.2.* + 2.2.2/2.2.3）。 |
-| 已完成项 | 1) 新增 `CHANGELOG.md`（v0.1.0 初始发布记录）；2) 新增 GitHub Issue 模板（Bug/Feature + config）；3) 执行敏感信息基线扫描，确认仅测试样例/文档占位命中；4) 完成 `.gitignore` 与 `.env.example` 发布前检查并在测试中固化；5) 完成 `pyproject.toml` 发布元数据核验、`[langchain]/[dev]` extras 对齐与 `owlclaw` CLI 入口确认；6) 新增 `owlclaw-mcp/` 独立构建配置（独立 pyproject + 入口）；7) 新增 `tests/unit/test_release_assets.py`，覆盖发布工件与 pyproject 发布契约。 |
-| 下一待执行 | 1) release 2.1.*（README 发布面核对与架构 ASCII）；2) release 2.2.1（CONTRIBUTING 发布面补充）；3) release 3.1.*（release workflow/TestPyPI 联调）。 |
-| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(9/32)。 |
+| 批次状态 | **进行中**。release 已完成 15/32（1.1.* + 1.2.* + 2.1.* + 2.2.*）。 |
+| 已完成项 | 1) 新增 `CHANGELOG.md`（v0.1.0 初始发布记录）；2) 新增 GitHub Issue 模板（Bug/Feature + config）；3) 执行敏感信息基线扫描，确认仅测试样例/文档占位命中；4) 完成 `.gitignore` 与 `.env.example` 发布前检查并在测试中固化；5) 完成 `pyproject.toml` 发布元数据核验、`[langchain]/[dev]` extras 对齐与 `owlclaw` CLI 入口确认；6) 新增 `owlclaw-mcp/` 独立构建配置（独立 pyproject + 入口）；7) 完成 README 发布面补齐（架构 ASCII、LangChain/LangGraph 互补、链接区）；8) 完成 CONTRIBUTING 的 PR 规范与代码风格补充；9) 新增/扩展 `tests/unit/test_release_assets.py`，覆盖发布工件与文档发布契约。 |
+| 下一待执行 | 1) release 3.1.*（release workflow/TestPyPI 联调）；2) release 4.1.*（首发 tag 与安装/CLI 验证）；3) release 5.1.*（Discussions/Public/Topics，外部平台操作）。 |
+| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(15/32)。 |
 | 阻塞项 | 1) owlhub Task 40.4（外部生产部署）；2) OwlHub gate CLI 命名待架构决策。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
