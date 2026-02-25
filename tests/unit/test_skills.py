@@ -444,3 +444,160 @@ tools:
     params = skill.metadata["tools_schema"]["check-stock"]["parameters"]
     assert params["properties"] == {"sku": {"type": "string"}}
     assert params["required"] == ["sku"]
+
+
+def test_skills_loader_prerequisites_env_missing_skips_skill(tmp_path, monkeypatch):
+    monkeypatch.delenv("OWLCLAW_PREREQ_TOKEN", raising=False)
+    skill_dir = tmp_path / "prereq-env-missing"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-env-missing
+description: should be skipped
+owlclaw:
+  prerequisites:
+    env: [OWLCLAW_PREREQ_TOKEN]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    assert loader.scan() == []
+
+
+def test_skills_loader_prerequisites_env_present_loads_skill(tmp_path, monkeypatch):
+    monkeypatch.setenv("OWLCLAW_PREREQ_TOKEN", "ok")
+    skill_dir = tmp_path / "prereq-env-ok"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-env-ok
+description: should load
+owlclaw:
+  prerequisites:
+    env: [OWLCLAW_PREREQ_TOKEN]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert skills[0].name == "prereq-env-ok"
+
+
+def test_skills_loader_prerequisites_bin_missing_skips_skill(tmp_path):
+    skill_dir = tmp_path / "prereq-bin-missing"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-bin-missing
+description: should be skipped
+owlclaw:
+  prerequisites:
+    bins: [__definitely_missing_binary__]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    assert loader.scan() == []
+
+
+def test_skills_loader_prerequisites_python_package_missing_skips_skill(tmp_path):
+    skill_dir = tmp_path / "prereq-pkg-missing"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-pkg-missing
+description: should be skipped
+owlclaw:
+  prerequisites:
+    python_packages: [__missing_python_package__]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    assert loader.scan() == []
+
+
+def test_skills_loader_prerequisites_os_mismatch_skips_skill(tmp_path):
+    skill_dir = tmp_path / "prereq-os-missing"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: prereq-os-missing
+description: should be skipped
+owlclaw:
+  prerequisites:
+    os: [nonexistent-os]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    assert loader.scan() == []
+
+
+def test_skills_loader_prerequisites_config_list_and_map(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        SkillsLoader,
+        "_load_runtime_config",
+        lambda self: {"feature": {"enabled": True}, "agent": {"mode": "prod"}},
+    )
+    ok_dir = tmp_path / "prereq-config-ok"
+    ok_dir.mkdir()
+    (ok_dir / "SKILL.md").write_text(
+        """---
+name: prereq-config-ok
+description: should load
+owlclaw:
+  prerequisites:
+    config:
+      feature.enabled: true
+      agent.mode: prod
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    bad_dir = tmp_path / "prereq-config-bad"
+    bad_dir.mkdir()
+    (bad_dir / "SKILL.md").write_text(
+        """---
+name: prereq-config-bad
+description: should skip
+owlclaw:
+  prerequisites:
+    config:
+      feature.enabled: false
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    list_dir = tmp_path / "prereq-config-list"
+    list_dir.mkdir()
+    (list_dir / "SKILL.md").write_text(
+        """---
+name: prereq-config-list
+description: should load
+owlclaw:
+  prerequisites:
+    config: [feature.enabled]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    names = sorted(skill.name for skill in skills)
+    assert names == ["prereq-config-list", "prereq-config-ok"]

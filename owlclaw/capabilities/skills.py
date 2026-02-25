@@ -5,7 +5,11 @@ SKILL.md files from application directories following the Agent Skills specifica
 """
 
 import logging
+import os
+import platform
 import re
+import shutil
+from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -305,6 +309,15 @@ class SkillsLoader:
         owlclaw_config = frontmatter_map.get("owlclaw", {})
         if not isinstance(owlclaw_config, dict):
             owlclaw_config = {}
+        prerequisites = self._extract_prerequisites(frontmatter_map, owlclaw_config)
+        ready, reasons = self._check_prerequisites(prerequisites)
+        if not ready:
+            logger.warning(
+                "Skill file %s skipped due to unmet prerequisites: %s",
+                file_path,
+                "; ".join(reasons),
+            )
+            return None
 
         return Skill(
             name=frontmatter_map["name"].strip(),
@@ -314,6 +327,113 @@ class SkillsLoader:
             owlclaw_config=owlclaw_config,
             full_content=None,
         )
+
+    @staticmethod
+    def _extract_prerequisites(frontmatter: dict[str, Any], owlclaw_config: dict[str, Any]) -> dict[str, Any]:
+        nested = owlclaw_config.get("prerequisites")
+        if isinstance(nested, dict):
+            return nested
+        top_level = frontmatter.get("prerequisites")
+        if isinstance(top_level, dict):
+            return top_level
+        return {}
+
+    @staticmethod
+    def _as_str_list(value: Any) -> list[str]:
+        if isinstance(value, str):
+            normalized = value.strip()
+            return [normalized] if normalized else []
+        if not isinstance(value, list):
+            return []
+        out: list[str] = []
+        for item in value:
+            if isinstance(item, str) and item.strip():
+                out.append(item.strip())
+        return out
+
+    @staticmethod
+    def _get_by_path(data: dict[str, Any], dotted_path: str) -> tuple[bool, Any]:
+        if not dotted_path:
+            return False, None
+        cursor: Any = data
+        for part in dotted_path.split("."):
+            key = part.strip()
+            if not key or not isinstance(cursor, dict) or key not in cursor:
+                return False, None
+            cursor = cursor[key]
+        return True, cursor
+
+    @staticmethod
+    def _normalize_os_name(raw: str) -> str:
+        candidate = raw.strip().lower()
+        aliases = {
+            "win32": "windows",
+            "windows": "windows",
+            "linux": "linux",
+            "darwin": "darwin",
+            "mac": "darwin",
+            "macos": "darwin",
+            "osx": "darwin",
+        }
+        return aliases.get(candidate, candidate)
+
+    def _load_runtime_config(self) -> dict[str, Any]:
+        try:
+            from owlclaw.config.manager import ConfigManager
+
+            cfg = ConfigManager.instance().get()
+            dumped = cfg.model_dump(mode="python")
+            return dumped if isinstance(dumped, dict) else {}
+        except Exception:
+            return {}
+
+    def _check_prerequisites(self, prerequisites: dict[str, Any]) -> tuple[bool, list[str]]:
+        if not prerequisites:
+            return True, []
+        reasons: list[str] = []
+
+        for env_name in self._as_str_list(prerequisites.get("env")):
+            if not os.getenv(env_name):
+                reasons.append(f"missing env {env_name}")
+
+        for bin_name in self._as_str_list(prerequisites.get("bins")):
+            if shutil.which(bin_name) is None:
+                reasons.append(f"missing binary {bin_name}")
+
+        for package_name in self._as_str_list(prerequisites.get("python_packages")):
+            if find_spec(package_name) is None:
+                reasons.append(f"missing python package {package_name}")
+
+        declared_os = {
+            self._normalize_os_name(item)
+            for item in self._as_str_list(prerequisites.get("os"))
+            if self._normalize_os_name(item)
+        }
+        if declared_os:
+            current_os = self._normalize_os_name(platform.system())
+            if current_os not in declared_os:
+                reasons.append(f"os mismatch {current_os} not in {sorted(declared_os)}")
+
+        cfg_requirements = prerequisites.get("config")
+        if isinstance(cfg_requirements, list):
+            cfg = self._load_runtime_config()
+            for path in self._as_str_list(cfg_requirements):
+                found, value = self._get_by_path(cfg, path)
+                if not found or value is None:
+                    reasons.append(f"missing config {path}")
+        elif isinstance(cfg_requirements, dict):
+            cfg = self._load_runtime_config()
+            for path, expected in cfg_requirements.items():
+                if not isinstance(path, str) or not path.strip():
+                    continue
+                found, value = self._get_by_path(cfg, path.strip())
+                if not found:
+                    reasons.append(f"missing config {path.strip()}")
+                    continue
+                if value != expected:
+                    reasons.append(f"config mismatch {path.strip()} expected={expected!r} actual={value!r}")
+
+        return len(reasons) == 0, reasons
 
     def get_skill(self, name: str) -> Skill | None:
         """Retrieve a Skill by name."""

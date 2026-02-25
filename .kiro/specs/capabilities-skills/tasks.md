@@ -163,7 +163,7 @@
 
 ### 运行时增强（来自 OpenClaw 对标分析，2026-02-24）
 
-- [ ] **Skill Prerequisites（加载前提条件）**：在 SKILL.md 的 `owlclaw` 字段中增加 `prerequisites`（env/bins/config/python_packages/os），加载时检查不满足则跳过该 Skill 并记录警告。参考 OpenClaw 的 `metadata.openclaw.requires`。
+- [x] **Skill Prerequisites（加载前提条件）**：在 SKILL.md 的 `owlclaw` 字段中增加 `prerequisites`（env/bins/config/python_packages/os），加载时检查不满足则跳过该 Skill 并记录警告。参考 OpenClaw 的 `metadata.openclaw.requires`。
 - [ ] **Session Skill Snapshot**：Agent Run 开始时快照当前可用 Skills 列表，Run 内保持稳定（不受文件系统变更影响）。Run 结束后刷新快照。参考 OpenClaw 的 session snapshot 机制。
 - [ ] **Token Impact 估算**：KnowledgeInjector 注入 prompt 时计算 token 开销（per-skill 和总量），纳入 governance budget 控制。当总 token 超过阈值时自动按 focus 优先级裁剪。参考 OpenClaw 的 `formatSkillsForPrompt` 精确计算。
 - [ ] **Skill 优先级/覆盖**：定义三层优先级（workspace > managed/installed > bundled），同名 Skill 高优先级覆盖低优先级。为 OwlHub 上线后的 Skill 冲突做准备。
