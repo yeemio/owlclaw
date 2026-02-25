@@ -26,18 +26,18 @@
 
 ### Phase 2：单元测试纯净化（P0）
 
-- [ ] **Task 3**: 修复 unit 层外部依赖违规
+- [x] **Task 3**: 修复 unit 层外部依赖违规
   - [x] 3.1 `tests/unit/test_cli_db.py`：将 DB 连接调用替换为 mock，或迁移到 `tests/integration/`
   - [x] 3.2 `tests/unit/capabilities/test_bindings_queue_executor.py`：mock Kafka 连接
   - [x] 3.3 `tests/unit/triggers/test_queue_idempotency.py`：mock Redis 连接
-  - [ ] 3.4 验证：`poetry run pytest tests/unit/ -q`（无任何外部服务）全部通过，0 skip  
-    - 当前状态（2026-02-25）：`1528 passed, 2 skipped`；剩余 2 个 skip 来自 `tests/unit/test_cli_skill.py` 的 Typer/CliRunner 兼容性用例
+  - [x] 3.4 验证：`poetry run pytest tests/unit/ -q`（无任何外部服务）全部通过，0 skip  
+    - 当前状态（2026-02-25）：`1530 passed, 0 skipped`
   - _Requirements: AC-1_
 
 - [ ] **Task 4**: 验证 unit 测试零外部依赖
   - [x] 4.1 在 CI lint job 中添加步骤：`pytest tests/unit/ -q --tb=short`（不启动任何 service）
   - [ ] 4.2 确认 unit 测试运行时间 < 60 秒  
-    - 当前阻塞（2026-02-25）：本地实测 `tests/unit` 耗时约 `666s`（`1528 passed, 2 skipped`），需后续做用例分层/性能优化
+    - 当前阻塞（2026-02-25）：本地实测 `tests/unit` 耗时约 `355s`（`1530 passed, 0 skipped`），需后续做用例分层/性能优化
   - _Requirements: AC-1_
 
 ### Phase 3：共享 Fixtures（P1）
@@ -72,10 +72,11 @@
 ### Phase 5：CI 与本地镜像对齐（P0）
 
 - [ ] **Task 9**: CI test.yml 与 docker-compose.test.yml 对齐
-  - [ ] 9.1 确认 CI `test.yml` postgres service 使用 `pgvector/pgvector:pg16`（已有，验证）
-  - [ ] 9.2 确认 CI pgvector 初始化步骤与 `docker-compose.test.yml` 完全一致
-  - [ ] 9.3 将 CI 中 `POSTGRES_DB: owlclaw_test` 与本地 compose 对齐
-  - [ ] 9.4 验证：本地 `make test-int` 与 CI 测试结果一致（同 pass/skip/fail）
+  - [x] 9.1 确认 CI `test.yml` postgres service 使用 `pgvector/pgvector:pg16`（已对齐）
+  - [x] 9.2 确认 CI pgvector 初始化步骤与 `docker-compose.test.yml` 完全一致（CI 改为复用 `deploy/init-test-db.sql`）
+  - [x] 9.3 将 CI 中 `POSTGRES_DB: owlclaw_test` 与本地 compose 对齐（已对齐）
+  - [ ] 9.4 验证：本地 `make test-int` 与 CI 测试结果一致（同 pass/skip/fail）  
+    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行，且无 `make` 命令，暂无法做本地对齐验收
   - _Requirements: AC-4_
 
 ### Phase 6：文档（P1）
