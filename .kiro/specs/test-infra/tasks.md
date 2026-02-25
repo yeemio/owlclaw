@@ -27,9 +27,9 @@
 ### Phase 2：单元测试纯净化（P0）
 
 - [ ] **Task 3**: 修复 unit 层外部依赖违规
-  - [ ] 3.1 `tests/unit/test_cli_db.py`：将 DB 连接调用替换为 mock，或迁移到 `tests/integration/`
-  - [ ] 3.2 `tests/unit/capabilities/test_bindings_queue_executor.py`：mock Kafka 连接
-  - [ ] 3.3 `tests/unit/triggers/test_queue_idempotency.py`：mock Redis 连接
+  - [x] 3.1 `tests/unit/test_cli_db.py`：将 DB 连接调用替换为 mock，或迁移到 `tests/integration/`
+  - [x] 3.2 `tests/unit/capabilities/test_bindings_queue_executor.py`：mock Kafka 连接
+  - [x] 3.3 `tests/unit/triggers/test_queue_idempotency.py`：mock Redis 连接
   - [ ] 3.4 验证：`poetry run pytest tests/unit/ -q`（无任何外部服务）全部通过，0 skip
   - _Requirements: AC-1_
 
@@ -61,10 +61,10 @@
   - [x] 7.3 配置 `[tool.coverage.html]`：输出目录 `htmlcov/`
   - _Requirements: AC-5_
 
-- [ ] **Task 8**: CI test.yml 分层运行
-  - [ ] 8.1 将 CI test job 拆分为两步：unit（`--cov-fail-under=90`）+ integration（`--cov-fail-under=80`）
-  - [ ] 8.2 integration 步骤使用 `--cov-append` 累加覆盖率
-  - [ ] 8.3 验证：CI 输出分层覆盖率报告
+- [x] **Task 8**: CI test.yml 分层运行
+  - [x] 8.1 将 CI test job 拆分为两步：unit（`--cov-fail-under=90`）+ integration（`--cov-fail-under=80`）
+  - [x] 8.2 integration 步骤使用 `--cov-append` 累加覆盖率
+  - [x] 8.3 验证：CI 输出分层覆盖率报告
   - _Requirements: AC-4, AC-5_
 
 ### Phase 5：CI 与本地镜像对齐（P0）
