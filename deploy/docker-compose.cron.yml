@@ -1,3 +1,8 @@
+# OwlClaw cron all-in-one stack
+# Usage: docker compose -f deploy/docker-compose.cron.yml up -d --build
+# Stop: docker compose -f deploy/docker-compose.cron.yml down
+# Ports: postgres 5432, hatchet 7077/8081, owlclaw 8080, prometheus 9090
+
 version: "3.9"
 
 services:
@@ -14,8 +19,10 @@ services:
       OWLCLAW_INTEGRATIONS__HATCHET__API_TOKEN: "${HATCHET_API_TOKEN:-}"
       OWLCLAW_DATABASE_URL: "postgresql://owlclaw:owlclaw@owlclaw-db:5432/owlclaw"
     depends_on:
-      - owlclaw-db
-      - hatchet-server
+      owlclaw-db:
+        condition: service_healthy
+      hatchet-server:
+        condition: service_healthy
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -26,29 +33,40 @@ services:
       retries: 3
 
   owlclaw-db:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
       - owlclaw_db_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   hatchet-server:
-    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:latest
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.53.0
     environment:
       DATABASE_URL: postgresql://hatchet:hatchet@owlclaw-db:5432/hatchet
       SERVER_PORT: "7077"
       SERVER_MSGQUEUE_KIND: "postgres"
     depends_on:
-      - owlclaw-db
+      owlclaw-db:
+        condition: service_healthy
     ports:
       - "7077:7077"
       - "8081:8080"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080 || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 6
 
   prometheus:
     image: prom/prometheus:latest

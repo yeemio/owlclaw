@@ -2,6 +2,14 @@
 
 **架构真源**：所有数据库与部署方式以 **`docs/DATABASE_ARCHITECTURE.md`** 为准。禁止在未对齐该文档的情况下新增数据库或变更隔离方式。
 
+**开发者入口优先级**：优先使用根目录 compose 文件：
+
+- `docker-compose.test.yml`（与 CI 测试镜像一致）
+- `docker-compose.minimal.yml`（仅 PG + pgvector）
+- `docker-compose.dev.yml`（PG + Hatchet + Langfuse + Redis）
+
+`deploy/` 下 compose 主要用于生产或特殊运维场景。
+
 **原则**：复用**宿主已有 PostgreSQL**（本机 Postgres），在同一实例上创建 **hatchet** / **owlclaw** 两个独立 database，组件 database 级隔离。Hatchet Server 仅连 **hatchet** 库，OwlClaw 应用仅连 **owlclaw** 库。
 
 ---
@@ -119,6 +127,9 @@ docker compose -f deploy/docker-compose.lite.yml up -d
 
 | 文件 | 用途 | 依赖 |
 |------|------|------|
+| `../docker-compose.test.yml` | 推荐测试入口。与 CI 一致的 pgvector 测试库 | Docker |
+| `../docker-compose.minimal.yml` | 推荐最小入口。仅启动 OwlClaw 核心数据库 | Docker |
+| `../docker-compose.dev.yml` | 推荐全量开发入口。PG + Hatchet + Langfuse + Redis | Docker |
 | `docker-compose.lite.hatchet-only.yml` | **推荐**。仅 Hatchet Lite，连本机已建好的 hatchet 库 | 本机 Postgres + 已执行步骤 1 |
 | `docker-compose.lite.yml` | 可选。Postgres + Hatchet Lite 均由 Docker 提供 | 无（需能拉取 postgres 镜像） |
 | `docker-compose.prod.yml` | 生产：Postgres + Hatchet Engine | 见文件内说明 |
