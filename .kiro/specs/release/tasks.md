@@ -18,9 +18,9 @@
 ## 进度概览
 
 - **总任务数**：32
-- **已完成**：16
+- **已完成**：22
 - **进行中**：0
-- **未开始**：16
+- **未开始**：10
 
 ---
 
@@ -71,7 +71,8 @@
 ### 4.1 首次发布
 - [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布
 - [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功
-- [ ] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常
+- [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
+  - 本地验证（2026-02-25）：`poetry run owlclaw --version` → `owlclaw 0.1.0`；`poetry run owlclaw skill list` 正常输出
 - [ ] 4.1.4 验证 GitHub Release 自动创建
 
 ---
@@ -89,14 +90,14 @@
 
 ### 6.1 功能验收
 - [ ] `pip install owlclaw` 在干净环境中成功
-- [ ] `owlclaw --version` 输出正确版本
-- [ ] examples/ 中至少 1 个示例可独立运行
+- [x] `owlclaw --version` 输出正确版本
+- [x] examples/ 中至少 1 个示例可独立运行
 - [ ] GitHub Release 包含 changelog
 
 ### 6.2 文档验收
-- [ ] README.md 英文完整
-- [ ] CONTRIBUTING.md 可指导新贡献者
-- [ ] CHANGELOG.md 记录 v0.1.0
+- [x] README.md 英文完整
+- [x] CONTRIBUTING.md 可指导新贡献者
+- [x] CHANGELOG.md 记录 v0.1.0
 
 ---
 

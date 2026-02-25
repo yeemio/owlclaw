@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from importlib import metadata
 
 import typer
 from click.exceptions import Exit as ClickExit
@@ -33,6 +34,16 @@ def _register_subapps() -> None:
 # Keep subcommands registered for direct `CliRunner.invoke(app, ...)` usage in tests
 # and library callers that import the Typer app object without going through main().
 _register_subapps()
+
+
+def _print_version_and_exit() -> None:
+    """Print installed package version and exit."""
+    try:
+        version = metadata.version("owlclaw")
+    except metadata.PackageNotFoundError:
+        version = "unknown"
+    print(f"owlclaw {version}")
+    raise SystemExit(0)
 
 
 @app.command("init")
@@ -713,6 +724,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
     if not argv:
         print("Usage: owlclaw [OPTIONS] COMMAND [ARGS]...")
         print("\n  OwlClaw — Agent base for business applications.\n")
+        print("Options:")
+        print("  --version, -V  Show installed version and exit")
         print("Commands:")
         print("  db     Database: init, migrate, status")
         print("  memory Agent memory: list, prune, reset, stats")
@@ -1058,6 +1071,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
         sys.exit(0)
     # Fallback
     print("Usage: owlclaw [OPTIONS] COMMAND [ARGS]...")
+    print("Options:")
+    print("  --version, -V  Show installed version and exit")
     print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
     print("  agent  Manual control via signal (pause, resume, trigger, instruct, status)")
@@ -1162,6 +1177,8 @@ def _dispatch_db_restore(argv: list[str]) -> bool:
 
 def main() -> None:
     """CLI entry point — dispatches to subcommands."""
+    if "--version" in sys.argv or "-V" in sys.argv:
+        _print_version_and_exit()
     if "--help" in sys.argv or "-h" in sys.argv:
         argv = [a for a in sys.argv[1:] if a not in ("--help", "-h")]
         _print_help_and_exit(argv)
