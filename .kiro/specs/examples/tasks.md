@@ -7,7 +7,7 @@
 - tasks: `.kiro/specs/examples/tasks.md`
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
-> **状态**：进行中  
+> **状态**：已完成  
 > **最后更新**：2026-02-25
 
 ---
@@ -15,9 +15,9 @@
 ## 进度概览
 
 - **总任务数**：12
-- **已完成**：9
+- **已完成**：12
 - **进行中**：0
-- **未开始**：3
+- **未开始**：0
 
 ---
 
@@ -41,13 +41,13 @@
 - [x] 4.3 增加自动化可运行性验证（执行示例脚本并断言输出）
 
 ### 5. 运行与CI集成
-- [ ] 5.1 提供示例批量可运行验证脚本（覆盖至少 cron/langchain/mionyee）
-- [ ] 5.2 将示例可运行验证接入 GitHub Actions
+- [x] 5.1 提供示例批量可运行验证脚本（覆盖至少 cron/langchain/mionyee）
+- [x] 5.2 将示例可运行验证接入 GitHub Actions
 
 ### 6. 文档收口
-- [ ] 6.1 requirements/design 文档对齐现有示例命名与目录
-- [ ] 6.2 为 mionyee 示例补充 mock vs production 差异说明
-- [ ] 6.3 更新 SPEC_TASKS_SCAN 的 examples 收口说明与验收快照
+- [x] 6.1 requirements/design 文档对齐现有示例命名与目录
+- [x] 6.2 为 mionyee 示例补充 mock vs production 差异说明
+- [x] 6.3 更新 SPEC_TASKS_SCAN 的 examples 收口说明与验收快照
 
 ---
 

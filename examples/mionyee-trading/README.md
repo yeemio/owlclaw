@@ -25,8 +25,13 @@ poetry run python examples/mionyee-trading/app.py --task-id 2 --symbol TSLA --js
 - 每个任务返回 `status: "passed"`
 - 输出中包含 `hatchet_workflow_id`（如 `wf-1`）
 
+## Mock 与 Production 差异
+
+- 当前示例使用 `owlclaw.e2e` 组件的本地 stub 适配器，不依赖真实外部服务。
+- `cron_trigger/agent_runtime/skills_system/governance_layer/hatchet_integration` 均为可替换函数。
+- 生产接入时应替换为真实集成层实现，并接入正式的可观测、鉴权与故障恢复策略。
+
 ## 目录结构
 
 - `app.py`: 示例入口，可运行全部任务或单任务
 - `skills/`: 三个任务的 SKILL.md 示例
-

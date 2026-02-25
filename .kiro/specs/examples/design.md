@@ -9,8 +9,8 @@
 
 
 > **目标**：提供端到端示例，覆盖多行业业务场景，展示 OwlClaw 各子系统协作  
-> **状态**：设计中  
-> **最后更新**：2026-02-22
+> **状态**：进行中（已完成核心目录与可运行样例）  
+> **最后更新**：2026-02-25
 
 ---
 
@@ -26,40 +26,16 @@
 
 ### 1.1 整体架构
 
-每个示例是一个独立的 Python 项目，展示 OwlClaw 的完整接入流程。
+示例以仓库内 `examples/` 目录组织，包含可直接运行的脚本样例和能力目录样例。
 
 ```
 examples/
-├── simple-cron/                    # 最小示例：Cron 替代
-│   ├── skills/
-│   │   └── data-cleanup/
-│   │       └── SKILL.md
-│   ├── app.py                      # OwlClaw 应用入口
-│   ├── handlers.py                 # 业务函数（capability handlers）
-│   └── README.md
-│
-├── inventory-monitor/              # 电商：库存监控预警
-│   ├── skills/
-│   │   └── inventory-monitor/
-│   │       └── SKILL.md
-│   ├── app.py
-│   ├── mock_data.py                # Mock 数据（无需真实数据库）
-│   └── README.md
-│
-├── webhook-ticket-router/          # SaaS：工单智能路由
-│   ├── skills/
-│   │   └── ticket-router/
-│   │       └── SKILL.md
-│   ├── app.py
-│   ├── mock_webhook.py             # Mock webhook 发送器
-│   └── README.md
-│
-├── langchain-rag-agent/            # LangChain 集成：RAG Agent
-│   ├── skills/
-│   │   └── knowledge-query/
-│   │       └── SKILL.md
-│   ├── app.py                      # LangChain chain 注册为 capability
-│   └── README.md
+├── cron/                           # Cron 触发器示例（focus/治理/重试）
+├── langchain/                      # LangChain runnable 集成示例
+├── binding-http/                   # Declarative Binding（active/shadow/shell）
+├── binding-openapi-e2e/            # OpenAPI -> binding 端到端示例
+├── capabilities/                   # 能力目录（entry-monitor/morning-decision）
+├── owlhub_skills/                  # 行业 Skills（analytics/monitoring/workflow）
 │
 └── mionyee-trading/                # 完整示例：交易系统（3 个核心任务）
     ├── skills/
@@ -69,9 +45,6 @@ examples/
     │   │   └── SKILL.md
     │   └── knowledge-feedback/
     │       └── SKILL.md
-    ├── docs/
-    │   ├── SOUL.md
-    │   └── IDENTITY.md
     ├── app.py
     └── README.md
 ```
@@ -80,7 +53,7 @@ examples/
 
 1. **独立可运行**：每个示例 `cd examples/<name> && python app.py` 即可运行
 2. **无外部依赖**：使用 mock 数据和 `mock_mode=True`，不需要真实数据库/Hatchet/LLM
-3. **渐进复杂度**：从最小示例（simple-cron）到完整场景（mionyee-trading）
+3. **渐进复杂度**：从通用脚本与目录示例到完整场景（mionyee-trading）
 4. **多行业覆盖**：至少覆盖电商、SaaS、金融 3 个行业
 5. **展示核心特性**：每个示例突出 OwlClaw 的一个核心特性
 
@@ -88,17 +61,17 @@ examples/
 
 | 示例 | Skills | @handler | @cron | Webhook | Fallback | Governance | LangChain |
 |------|--------|----------|-------|---------|----------|------------|-----------|
-| simple-cron | ✅ | ✅ | ✅ | | ✅ | | |
-| inventory-monitor | ✅ | ✅ | ✅ | | | ✅ | |
-| webhook-ticket-router | ✅ | ✅ | | ✅ | | ✅ | |
-| langchain-rag-agent | ✅ | ✅ | ✅ | | | | ✅ |
+| cron | ✅ | ✅ | ✅ | | ✅ | ✅ | |
+| binding-http | ✅ | ✅ | | ✅ | ✅ | ✅ | |
+| langchain | ✅ | ✅ | ✅ | | ✅ | | ✅ |
+| owlhub_skills | ✅ | | | | | | |
 | mionyee-trading | ✅ | ✅ | ✅ | | ✅ | ✅ | |
 
 ---
 
 ## 2. 实现细节
 
-### 2.1 示例 1：simple-cron（最小示例）
+### 2.1 示例 1：cron（最小示例）
 
 **目标**：5 分钟上手，展示 Cron 替代的核心价值。
 
@@ -106,44 +79,28 @@ examples/
 # app.py
 from owlclaw import OwlClaw
 
-app = OwlClaw("simple-cleanup", mock_mode=True)
-app.mount_skills("./skills/")
-
-@app.handler("data-cleanup")
-async def cleanup_old_data(days: int = 7) -> dict:
-    """清理指定天数前的过期数据"""
-    return {"deleted_count": 42, "freed_mb": 128}
+app = OwlClaw("cleanup-agent")
 
 @app.cron(
-    expression="0 2 * * *",
+    "0 2 * * *",
     event_name="nightly_cleanup",
-    focus="data-cleanup",
-    description="每日凌晨 2 点清理过期数据"
+    focus="maintenance",
 )
-async def nightly_cleanup():
-    """Fallback: 固定清理 7 天前的数据"""
-    await cleanup_old_data(days=7)
-
-app.run()
+async def cleanup_fallback() -> dict:
+    return {"status": "fallback_ok", "task": "cleanup"}
 ```
 
-### 2.2 示例 2：inventory-monitor（电商场景）
+### 2.2 示例 2：binding-http（API/Binding 场景）
 
 **目标**：展示治理约束（成本控制、频率限制）和业务 Skills。
 
-对应架构文档 §2.7.3 场景 1（ERP 库存预警）。
+展示 active/shadow/fallback 三种执行路径，体现治理与观测约束。
 
-### 2.3 示例 3：webhook-ticket-router（SaaS 场景）
-
-**目标**：展示 Webhook 触发器和 Agent 智能路由。
-
-接收 Zendesk/Jira 风格的 webhook，Agent 决定分配给哪个团队。
-
-### 2.4 示例 4：langchain-rag-agent（LangChain 集成）
+### 2.3 示例 3：langchain（LangChain 集成）
 
 **目标**：展示编排框架标准接入（架构决策 8）。
 
-LangChain RAG chain 注册为 capability，OwlClaw Agent 自主决定何时调用。
+LangChain runnable 注册为 capability，OwlClaw Agent 自主决定何时调用。
 
 ```python
 # LangChain chain 注册为 OwlClaw capability
@@ -152,7 +109,7 @@ async def query_kb(question: str) -> str:
     return await rag_chain.ainvoke(question)
 ```
 
-### 2.5 示例 5：mionyee-trading（完整场景）
+### 2.4 示例 4：mionyee-trading（完整场景）
 
 **目标**：展示 OwlClaw 的完整能力，3 个核心任务端到端验证。
 
@@ -260,16 +217,15 @@ def test_simple_cron_example():
 
 ## 7. 迁移计划
 
-### 7.1 Phase 1：最小示例（1 天）
-- [ ] simple-cron 示例实现
+### 7.1 Phase 1：核心示例目录（完成）
+- [x] cron / langchain / binding-http / owlhub_skills 基础示例
 
-### 7.2 Phase 2：多行业示例（2-3 天）
-- [ ] inventory-monitor 示例
-- [ ] webhook-ticket-router 示例
+### 7.2 Phase 2：完整业务示例（进行中）
+- [x] mionyee-trading 示例目录与三任务技能文档
+- [x] mionyee-trading 可运行性自动化测试
 
-### 7.3 Phase 3：集成示例（1-2 天）
-- [ ] langchain-rag-agent 示例
-- [ ] mionyee-trading 完整示例
+### 7.3 Phase 3：CI 与文档收口（待完成）
+- [ ] 示例批量验证脚本持续纳入 CI 质量门禁
 
 ---
 
