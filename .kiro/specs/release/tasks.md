@@ -8,7 +8,7 @@
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
 
-> **状态**：未开始  
+> **状态**：进行中  
 > **预估工作量**：3-5 天  
 > **最后更新**：2026-02-25  
 > **执行原则**：本清单内所有任务均须专业、认真完成，不区分可选与必选。
@@ -18,47 +18,49 @@
 ## 进度概览
 
 - **总任务数**：32
-- **已完成**：0
+- **已完成**：16
 - **进行中**：0
-- **未开始**：32
+- **未开始**：16
 
 ---
 
 ## 1. 包构建准备（1 天）
 
 ### 1.1 pyproject.toml 完善
-- [ ] 1.1.1 确认 owlclaw 包元数据完整（name, version, description, author, license, keywords, classifiers）
-- [ ] 1.1.2 配置可选依赖组（`[langchain]`, `[dev]`）
-- [ ] 1.1.3 配置 CLI 入口点（`owlclaw = "owlclaw.cli:main"`）
-- [ ] 1.1.4 确认 owlclaw-mcp 包独立构建配置
+- [x] 1.1.1 确认 owlclaw 包元数据完整（name, version, description, author, license, keywords, classifiers）
+- [x] 1.1.2 配置可选依赖组（`[langchain]`, `[dev]`）
+- [x] 1.1.3 配置 CLI 入口点（`owlclaw = "owlclaw.cli:main"`）
+- [x] 1.1.4 确认 owlclaw-mcp 包独立构建配置
 
 ### 1.2 敏感信息检查
-- [ ] 1.2.1 扫描仓库确认无硬编码 API key、token、密码
-- [ ] 1.2.2 确认 .gitignore 覆盖 .env、*.pyc、__pycache__、dist/、build/
-- [ ] 1.2.3 确认 .env.example 存在且不含真实凭证
+- [x] 1.2.1 扫描仓库确认无硬编码 API key、token、密码
+  - 基线扫描：`rg -n -S "AKIA|ASIA|BEGIN PRIVATE KEY|ghp_|sk-|xoxb-|xoxp-|xoxa-|xoxr-" owlclaw tests scripts .github docs`
+  - 结果：仅测试样例/文档占位命中，未发现可用真实凭证
+- [x] 1.2.2 确认 .gitignore 覆盖 .env、*.pyc、__pycache__、dist/、build/
+- [x] 1.2.3 确认 .env.example 存在且不含真实凭证
 
 ---
 
 ## 2. 文档准备（1 天）
 
 ### 2.1 README.md（英文）
-- [ ] 2.1.1 编写项目定位（一句话 + 详细描述）
-- [ ] 2.1.2 编写 Quick Start（安装 → 创建 Skill → 运行第一个 Agent）
-- [ ] 2.1.3 编写架构概览图（ASCII）
-- [ ] 2.1.4 编写与 LangChain/LangGraph 的对比/互补关系
-- [ ] 2.1.5 编写链接列表（文档、示例、贡献指南、许可证）
+- [x] 2.1.1 编写项目定位（一句话 + 详细描述）
+- [x] 2.1.2 编写 Quick Start（安装 → 创建 Skill → 运行第一个 Agent）
+- [x] 2.1.3 编写架构概览图（ASCII）
+- [x] 2.1.4 编写与 LangChain/LangGraph 的对比/互补关系
+- [x] 2.1.5 编写链接列表（文档、示例、贡献指南、许可证）
 
 ### 2.2 辅助文档
-- [ ] 2.2.1 编写 CONTRIBUTING.md（开发环境搭建、测试运行、PR 规范、代码风格）
-- [ ] 2.2.2 编写 CHANGELOG.md（v0.1.0 初始版本记录）
-- [ ] 2.2.3 创建 GitHub Issue 模板（Bug Report、Feature Request）
+- [x] 2.2.1 编写 CONTRIBUTING.md（开发环境搭建、测试运行、PR 规范、代码风格）
+- [x] 2.2.2 编写 CHANGELOG.md（v0.1.0 初始版本记录）
+- [x] 2.2.3 创建 GitHub Issue 模板（Bug Report、Feature Request）
 
 ---
 
 ## 3. 自动化发布（1 天）
 
 ### 3.1 GitHub Actions
-- [ ] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
+- [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
 - [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
 

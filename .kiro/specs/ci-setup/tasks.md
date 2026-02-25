@@ -61,7 +61,8 @@
     - 创建 `.github/workflows/test.yml` 文件
     - 配置触发条件：push 到所有分支 + pull_request
     - 配置 matrix strategy：Python 3.10, 3.11, 3.12
-    - 配置 PostgreSQL service container（postgres:16）
+    - 配置 PostgreSQL service container（`pgvector/pgvector:pg16`）
+    - 添加 `CREATE EXTENSION IF NOT EXISTS vector` 初始化步骤
     - 设置环境变量：DATABASE_URL
     - 添加步骤：checkout, setup-python, install dependencies
     - 添加步骤：运行 pytest 并生成覆盖率报告（--cov-fail-under=80）
@@ -205,13 +206,14 @@
     - 提供代码审查清单（功能性、可读性、可维护性、性能、安全性）
     - _Requirements: FR-2_
 
-- [ ] 11. 集成与验证
-  - [ ] 11.1 端到端验证
+- [x] 11. 集成与验证
+  - [x] 11.1 端到端验证
     - 创建测试 PR 验证所有 workflows 正常运行
     - 验证 Lint Pipeline 可以检测代码问题
     - 验证 Test Pipeline 可以运行测试并报告覆盖率
     - 验证 Build Pipeline 可以构建包
     - 验证 pre-commit hooks 正常工作
+    - 验证记录：GitHub Actions `Lint#22381643241`、`Test#22381643232` 全部通过
     - _Requirements: FR-1, FR-2, NFR-1_
   
   - [x]* 11.2 编写集成测试
@@ -224,7 +226,7 @@
     - 验证文档中的命令和示例可以正常运行
     - _Requirements: FR-2, NFR-1_
 
-- [ ] 12. Final Checkpoint - 完整验收
+- [x] 12. Final Checkpoint - 完整验收
   - 确保所有测试通过，所有文档完整，询问用户是否满意或需要调整。
 
 ## Notes

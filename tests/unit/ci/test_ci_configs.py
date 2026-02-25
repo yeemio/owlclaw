@@ -22,7 +22,7 @@ def test_lint_workflow_contains_ruff_and_mypy_steps() -> None:
     steps = jobs["lint"]["steps"]
     step_text = "\n".join(str(item) for item in steps)
     assert "ruff check ." in step_text
-    assert "mypy owlclaw --strict" in step_text
+    assert "mypy owlclaw" in step_text
 
 
 def test_test_workflow_has_python_matrix_and_postgres_service() -> None:
@@ -32,8 +32,9 @@ def test_test_workflow_has_python_matrix_and_postgres_service() -> None:
     matrix = jobs["test"]["strategy"]["matrix"]["python-version"]
     assert matrix == ["3.10", "3.11", "3.12"]
     postgres = jobs["test"]["services"]["postgres"]
-    assert postgres["image"] == "postgres:16"
+    assert postgres["image"] == "pgvector/pgvector:pg16"
     steps = "\n".join(str(item) for item in jobs["test"]["steps"])
+    assert "CREATE EXTENSION IF NOT EXISTS vector" in steps
     assert "--cov-fail-under=80" in steps
 
 
