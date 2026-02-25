@@ -134,7 +134,7 @@
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
 | **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4/6/9.4/11 待 Docker/CI 验收） |
-| **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（7/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
+| **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（37/37） | 仓库卫生清理（.gitignore + 根目录清理 + deploy/ 文档化 + scripts/ README + .editorconfig + CODEOWNERS + Makefile + docs/README.md） |
 
 ---
 
@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 review-work(11)+codex-gpt-work(11)+codex-work(5) → main；同步所有 worktree；修复 origin/main 9-commit divergence |
-| 批次状态 | **完成**。三分支全部合并到 main，所有 worktree 已同步到最新 main。 |
-| 已完成项 | 1) capabilities-skills ✅(115/115)：prerequisites 门控、session snapshot、token impact、enable/disable、env 注入生命周期、source-priority 覆盖、Skills Watcher 热重载（7 个 backlog tasks 全部完成）；2) local-devenv ✅(10/10)：baseline assets、compose 稳定性、db status + Windows asyncpg fallback、env 覆盖验证、全部验收完成；3) owlhub release gate 实现（Task 19 db infra）；4) mionyee-trading 完整示例（app.py + 3 SKILL.md）；5) 修复 origin/main divergence（9 remote commits 合并）；6) 修复 SPEC_TASKS_SCAN stash 冲突标记。 |
-| 下一待执行 | 1) codex-work：test-infra Task 4.2（unit < 60s）、Task 6.3（integration 事务回滚）、Task 9.4（本地 make test-int 与 CI 一致）、Task 11（端到端验收）；2) owlhub Task 40.4（外部阻塞，等生产凭据）；3) release Task 3.1.2/3.1.3/4.1.1/4.1.2/4.1.4（PyPI token + 发布验证，需人工凭据）。 |
-| 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 4.2：unit 套件当前运行约 353s，需优化到 < 60s（property test 热点）；2) test-infra Task 9.4/11：需 Docker Engine 运行做本地集成验收；3) release/owlhub 余项：PyPI token、GitHub Release 等外部平台动作，需人工提供凭据。 |
+| 当前批次 | 统筹轮次：repo-hygiene backlog 完成 + 单测 fix + 所有 worktree 同步 |
+| 批次状态 | **完成**。 |
+| 已完成项 | 1) repo-hygiene ✅(37/37)：.editorconfig + CODEOWNERS + docs/README.md 补全（Makefile 已由 local-devenv 完成）；2) fix(test)：test_skills_context_cache_hits mock 对齐 get_skills_knowledge_report API；3) 所有 worktree 同步到最新 main。 |
+| 下一待执行 | 1) codex-work：test-infra Task 4.2（unit < 60s，当前约 452s）、Task 6.3、Task 9.4、Task 11；2) codex-gpt-work：owlhub Task 19.1~19.3（DB schema + models + 单测）；3) release + owlhub 40.4 等人工凭据后启动。 |
+| 验收快照 | repo-hygiene ✅(37/37)，local-devenv ✅(10/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra Task 4.2：unit 套件约 452s，需优化到 < 60s（property test 热点，codex-work 负责）；2) test-infra Task 9.4/11：需 Docker Engine；3) release/owlhub 40.4：需人工凭据（等本地测试全部通过后启动）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
