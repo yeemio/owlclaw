@@ -323,6 +323,46 @@ def test_scan_duplicate_skill_names_keeps_first_sorted_path(tmp_path):
     assert skill.description == "first"
 
 
+def test_scan_duplicate_skill_names_workspace_overrides_bundled(tmp_path):
+    bundled_dir = tmp_path / "bundled" / "skill"
+    workspace_dir = tmp_path / "workspace" / "skill"
+    bundled_dir.mkdir(parents=True)
+    workspace_dir.mkdir(parents=True)
+    (bundled_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: bundled\n---\n",
+        encoding="utf-8",
+    )
+    (workspace_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: workspace\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("same")
+    assert skill is not None
+    assert skill.description == "workspace"
+
+
+def test_scan_duplicate_skill_names_managed_overrides_bundled(tmp_path):
+    bundled_dir = tmp_path / "bundled" / "skill"
+    managed_dir = tmp_path / "managed" / "skill"
+    bundled_dir.mkdir(parents=True)
+    managed_dir.mkdir(parents=True)
+    (bundled_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: bundled\n---\n",
+        encoding="utf-8",
+    )
+    (managed_dir / "SKILL.md").write_text(
+        "---\nname: same\ndescription: managed\n---\n",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("same")
+    assert skill is not None
+    assert skill.description == "managed"
+
+
 def test_skill_exposes_optional_assets_references_and_scripts_dirs(tmp_path):
     skill_dir = tmp_path / "with-dirs"
     skill_dir.mkdir()

@@ -240,15 +240,40 @@ class SkillsLoader:
                     logger.warning("Skill '%s' disabled by config, skipping", skill.name)
                     continue
                 if skill.name in self.skills:
+                    existing = self.skills[skill.name]
+                    existing_priority = self._skill_source_priority(existing.file_path)
+                    new_priority = self._skill_source_priority(skill.file_path)
+                    if new_priority > existing_priority:
+                        logger.warning(
+                            "Duplicate Skill name '%s' in %s overrides %s by source priority",
+                            skill.name,
+                            skill_file,
+                            existing.file_path,
+                        )
+                        self.skills[skill.name] = skill
+                        continue
                     logger.warning(
                         "Duplicate Skill name '%s' in %s (already loaded from %s); skipping",
                         skill.name,
                         skill_file,
-                        self.skills[skill.name].file_path,
+                        existing.file_path,
                     )
                     continue
                 self.skills[skill.name] = skill
         return list(self.skills.values())
+
+    @staticmethod
+    def _skill_source_priority(file_path: Path) -> int:
+        """Return source priority for duplicate skill resolution.
+
+        Higher value wins: workspace (2) > managed/installed (1) > bundled (0).
+        """
+        parts = {part.lower() for part in file_path.parts}
+        if "bundled" in parts:
+            return 0
+        if "managed" in parts or "installed" in parts:
+            return 1
+        return 2
 
     def _parse_skill_file(self, file_path: Path) -> Skill | None:
         """Parse SKILL.md file and extract frontmatter metadata.
