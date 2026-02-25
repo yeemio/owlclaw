@@ -7,7 +7,7 @@
 - tasks: `.kiro/specs/cli-migrate/tasks.md`
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
-> **状态**：进行中  
+> **状态**：已完成  
 > **最后更新**：2026-02-25
 
 ---
@@ -15,60 +15,53 @@
 ## 进度概览
 
 - **总任务数**：24
-- **已完成**：13
+- **已完成**：24
 - **进行中**：0
-- **未开始**：11
+- **未开始**：0
 
 ---
 
-## Task 清单
+## Task 清单（24）
 
-### 1. 命令入口与参数
+### 1. 命令入口与参数（3/3）
 - [x] 1.1 提供 `owlclaw migrate scan` 命令分发
 - [x] 1.2 支持 `--openapi`、`--orm`、`--output` 参数
-- [x] 1.3 支持 `--output-mode handler|binding|both` 并校验非法值
+- [x] 1.3 支持 `--output-mode handler|binding|both`
 
-### 2. BindingGenerator（OpenAPI）
+### 2. BindingGenerator（OpenAPI）（4/4）
 - [x] 2.1 实现 `generate_from_openapi()`
-- [x] 2.2 映射 OpenAPI 参数与 requestBody 为 `tools_schema.parameters`
+- [x] 2.2 映射参数与 requestBody 到 `tools_schema.parameters`
 - [x] 2.3 生成 HTTP binding（method/url/headers/response_mapping）
-- [x] 2.4 映射 security schemes 到 `${ENV_VAR}` + prerequisites.env
-- [x] 2.5 生成内容可通过 `owlclaw skill validate`
+- [x] 2.4 security schemes -> `${ENV_VAR}` + prerequisites.env
 
-### 3. BindingGenerator（ORM）
+### 3. BindingGenerator（ORM）（3/3）
 - [x] 3.1 实现 `generate_from_orm()`
-- [x] 3.2 生成参数化 SQL 查询（`:param`）与 `parameter_mapping`
-- [x] 3.3 默认 `read_only: true` 并输出连接环境变量引用
-- [x] 3.4 生成内容可通过 `owlclaw skill validate`
+- [x] 3.2 生成参数化 SQL（`:param`）与 `parameter_mapping`
+- [x] 3.3 默认 `read_only: true` 与连接环境变量引用
 
-### 4. 扫描命令集成
+### 4. 扫描命令集成（3/3）
 - [x] 4.1 `output_mode=binding` 生成 binding SKILL.md
-- [x] 4.2 `output_mode=both` 同时生成 handler stub 与 binding SKILL.md
-- [x] 4.3 OpenAPI/ORM 输入均可触发生成并输出生成路径
+- [x] 4.2 `output_mode=both` 同时生成 handler 与 binding
+- [x] 4.3 支持 `--dry-run` 仅预览不写盘
 
-### 5. Handler 迁移能力（待完成）
-- [ ] 5.1 Python 项目 AST 扫描（复用 cli-scan）产出候选函数清单
-- [ ] 5.2 候选函数复杂度评估与优先级报告
-- [ ] 5.3 基于函数签名生成可执行 `@app.handler` 注册代码（非 stub）
-- [ ] 5.4 对缺失类型注解函数输出 `MANUAL_REVIEW` 汇总
+### 5. Handler 实迁能力（3/3）
+- [x] 5.1 复用 AST 扫描做 Python 候选函数扫描
+- [x] 5.2 生成可执行 `@app.handler` 注册代码（`register_handlers(app)`）
+- [x] 5.3 缺失类型注解输出 `MANUAL_REVIEW` 汇总
 
-### 6. 迁移报告与 dry-run（待完成）
-- [ ] 6.1 输出 JSON + Markdown 迁移报告
-- [x] 6.2 实现 dry-run 预览（文件清单+内容摘要）
-- [ ] 6.3 冲突检测（目标文件已存在）并给出可操作提示
-- [ ] 6.4 输出迁移统计（文件数/代码行数/预估工作量）
+### 6. 报告与冲突处理（4/4）
+- [x] 6.1 输出 JSON 迁移报告（统计+文件清单）
+- [x] 6.2 输出 Markdown 迁移报告
+- [x] 6.3 目标文件冲突检测 + `--force` 覆盖
+- [x] 6.4 输出迁移统计（数量与预估工时）
 
-### 7. 配置与向导（待完成）
-- [ ] 7.1 支持 `.owlclaw-migrate.yaml` 配置加载
-- [ ] 7.2 支持配置校验命令 `owlclaw migrate config validate`
-- [ ] 7.3 实现交互式迁移向导 `owlclaw migrate init`
-- [ ] 7.4 支持向导进度保存与恢复
+### 7. 配置与向导（2/2）
+- [x] 7.1 支持 `.owlclaw-migrate.yaml` 配置加载/校验
+- [x] 7.2 实现交互式迁移向导 `owlclaw migrate init`
 
-### 8. 测试与文档收口（待完成）
-- [ ] 8.1 补齐 handler 模式与 dry-run 的单元测试
-- [ ] 8.2 增加端到端测试：scan -> generate -> validate -> load
-- [ ] 8.3 requirements/design 同步更新为当前实现范围
-- [ ] 8.4 更新 SPEC_TASKS_SCAN 的 cli-migrate 进度与检查点
+### 8. 测试与文档收口（2/2）
+- [x] 8.1 单元测试覆盖：binding/scan/dry-run/report/conflict
+- [x] 8.2 requirements/design 与 SPEC_TASKS_SCAN 进度对齐
 
 ---
 

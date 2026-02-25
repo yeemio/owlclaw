@@ -600,6 +600,42 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
         _print_help_and_exit(["migrate"])
 
     sub = argv[1]
+    if sub == "config":
+        if len(argv) < 3:
+            _print_help_and_exit(["migrate", "config"])
+        action = argv[2]
+        if action != "validate":
+            print(f"Error: unknown migrate config subcommand: {action}", file=sys.stderr)
+            raise SystemExit(2)
+        from owlclaw.cli.migrate.config_cli import validate_migrate_config_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migrate config validate")
+        parser.add_argument("--config", default=".owlclaw-migrate.yaml")
+        ns = parser.parse_args(argv[3:])
+        validate_migrate_config_command(config=ns.config)
+        return True
+
+    if sub == "init":
+        from owlclaw.cli.migrate.config_cli import init_migrate_config_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migrate init")
+        parser.add_argument("--path", default=".")
+        parser.add_argument("--project", default="")
+        parser.add_argument("--output", default="")
+        parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
+        parser.add_argument("--force", action="store_true", default=False)
+        parser.add_argument("--non-interactive", action="store_true", default=False)
+        ns = parser.parse_args(argv[2:])
+        init_migrate_config_command(
+            path=ns.path,
+            project=ns.project,
+            output=ns.output,
+            output_mode=ns.output_mode,
+            force=ns.force,
+            interactive=not ns.non_interactive,
+        )
+        return True
+
     if sub != "scan":
         print(f"Error: unknown migrate subcommand: {sub}", file=sys.stderr)
         raise SystemExit(2)
@@ -607,18 +643,26 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
     from owlclaw.cli.migrate.scan_cli import run_migrate_scan_command
 
     parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migrate scan")
+    parser.add_argument("--project", default="")
     parser.add_argument("--openapi", default="")
     parser.add_argument("--orm", default="")
     parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
     parser.add_argument("--output", "--path", "-o", "-p", dest="output", default=".")
     parser.add_argument("--dry-run", action="store_true", default=False)
+    parser.add_argument("--report-json", default="")
+    parser.add_argument("--report-md", default="")
+    parser.add_argument("--force", action="store_true", default=False)
     ns = parser.parse_args(argv[2:])
     run_migrate_scan_command(
+        project=ns.project,
         openapi=ns.openapi,
         orm=ns.orm,
         output_mode=ns.output_mode,
         output=ns.output,
         dry_run=ns.dry_run,
+        report_json=ns.report_json,
+        report_md=ns.report_md,
+        force=ns.force,
     )
     return True
 
@@ -903,8 +947,37 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw migrate [OPTIONS] COMMAND [ARGS]...")
         print("\n  Migration tooling commands.")
         print("Commands:")
-        print("  scan  Scan OpenAPI/ORM sources and generate handlers or binding skills")
+        print("  scan   Scan project/OpenAPI/ORM sources and generate handlers or binding skills")
+        print("  init   Interactive migrate config wizard")
+        print("  config Validate migrate config")
         print("\n  owlclaw migrate scan --help")
+        sys.exit(0)
+    if argv == ["migrate", "config"]:
+        print("Usage: owlclaw migrate config [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Migrate config commands.")
+        print("Commands:")
+        print("  validate  Validate .owlclaw-migrate.yaml")
+        print("\n  owlclaw migrate config validate --help")
+        sys.exit(0)
+    if argv == ["migrate", "config", "validate"]:
+        print("Usage: owlclaw migrate config validate [OPTIONS]")
+        print("\n  Validate migrate config file.")
+        print("Options:")
+        print("  --config TEXT  Path to config file (default: .owlclaw-migrate.yaml)")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["migrate", "init"]:
+        print("Usage: owlclaw migrate init [OPTIONS]")
+        print("\n  Create .owlclaw-migrate.yaml (interactive by default).")
+        print("Options:")
+        print("  --path TEXT                     Directory for config file (default: .)")
+        print("  --project TEXT                  Default project path")
+        print("  --output TEXT                   Default output directory")
+        print("  --output-mode [handler|binding|both]")
+        print("                                  Default output mode")
+        print("  --force                         Overwrite existing config")
+        print("  --non-interactive               Use provided options only")
+        print("  --help                          Show this message and exit")
         sys.exit(0)
     if argv == ["release"]:
         print("Usage: owlclaw release [OPTIONS] COMMAND [ARGS]...")
@@ -935,12 +1008,16 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw migrate scan [OPTIONS]")
         print("\n  Scan OpenAPI/ORM inputs and generate handler stubs and/or binding SKILL.md.")
         print("Options:")
+        print("  --project TEXT                 Python project path for handler migration scan")
         print("  --openapi TEXT                 OpenAPI spec path (.yaml/.yml/.json)")
         print("  --orm TEXT                     ORM operations descriptor path (.yaml/.yml/.json)")
         print("  --output-mode [handler|binding|both]")
         print("                                 Output type (default: handler)")
         print("  --output, --path TEXT          Output directory (default: .)")
         print("  --dry-run                      Preview generated file paths without writing")
+        print("  --report-json TEXT             Report JSON path (default: <output>/migration_report.json)")
+        print("  --report-md TEXT               Report Markdown path (default: <output>/migration_report.md)")
+        print("  --force                        Overwrite existing target files")
         print("  --help                         Show this message and exit")
         sys.exit(0)
     if argv == ["trigger", "template"]:

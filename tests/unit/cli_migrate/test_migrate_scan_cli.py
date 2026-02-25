@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+import pytest
+from click.exceptions import Exit
 from typer.testing import CliRunner
 
 from owlclaw.capabilities.skills import SkillsLoader
@@ -130,3 +133,129 @@ def test_migrate_scan_dry_run_does_not_write_files(tmp_path: Path) -> None:
 
     assert not (tmp_path / "get-order" / "SKILL.md").exists()
     assert not (tmp_path / "handlers" / "get-order.py").exists()
+
+
+def test_migrate_scan_writes_json_and_markdown_reports(tmp_path: Path) -> None:
+    spec = tmp_path / "openapi.yaml"
+    spec.write_text(
+        (
+            "openapi: 3.0.3\n"
+            "paths:\n"
+            "  /orders:\n"
+            "    post:\n"
+            "      operationId: create-order\n"
+            "      responses:\n"
+            "        '201': {description: created}\n"
+        ),
+        encoding="utf-8",
+    )
+    report_json = tmp_path / "custom_report.json"
+    report_md = tmp_path / "custom_report.md"
+
+    run_migrate_scan_command(
+        openapi=str(spec),
+        output_mode="binding",
+        output=str(tmp_path),
+        report_json=str(report_json),
+        report_md=str(report_md),
+    )
+
+    payload = json.loads(report_json.read_text(encoding="utf-8"))
+    assert payload["generated_count"] == 1
+    assert payload["generated_binding_count"] == 1
+    assert report_md.exists()
+    assert "Migration Report" in report_md.read_text(encoding="utf-8")
+
+
+def test_migrate_scan_conflict_exits_without_force(tmp_path: Path) -> None:
+    spec = tmp_path / "openapi.yaml"
+    spec.write_text(
+        (
+            "openapi: 3.0.3\n"
+            "paths:\n"
+            "  /orders:\n"
+            "    post:\n"
+            "      operationId: create-order\n"
+            "      responses:\n"
+            "        '201': {description: created}\n"
+        ),
+        encoding="utf-8",
+    )
+    conflict_target = tmp_path / "create-order" / "SKILL.md"
+    conflict_target.parent.mkdir(parents=True, exist_ok=True)
+    conflict_target.write_text("existing", encoding="utf-8")
+
+    with pytest.raises(Exit) as exc_info:
+        run_migrate_scan_command(
+            openapi=str(spec),
+            output_mode="binding",
+            output=str(tmp_path),
+        )
+    assert exc_info.value.exit_code == 2
+
+
+def test_migrate_scan_conflict_force_overwrites(tmp_path: Path) -> None:
+    spec = tmp_path / "openapi.yaml"
+    spec.write_text(
+        (
+            "openapi: 3.0.3\n"
+            "paths:\n"
+            "  /orders:\n"
+            "    post:\n"
+            "      operationId: create-order\n"
+            "      responses:\n"
+            "        '201': {description: created}\n"
+        ),
+        encoding="utf-8",
+    )
+    conflict_target = tmp_path / "create-order" / "SKILL.md"
+    conflict_target.parent.mkdir(parents=True, exist_ok=True)
+    conflict_target.write_text("existing", encoding="utf-8")
+
+    run_migrate_scan_command(
+        openapi=str(spec),
+        output_mode="binding",
+        output=str(tmp_path),
+        force=True,
+    )
+    assert "existing" not in conflict_target.read_text(encoding="utf-8")
+
+
+def test_migrate_scan_project_generates_handler_registration_code(tmp_path: Path) -> None:
+    project = tmp_path / "legacy_app"
+    project.mkdir(parents=True)
+    (project / "orders.py").write_text(
+        (
+            "def calculate_total(price: float, qty: int) -> float:\n"
+            "    return price * qty\n"
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+
+    run_migrate_scan_command(project=str(project), output_mode="handler", output=str(out))
+
+    handler_file = out / "handlers" / "calculate-total.py"
+    text = handler_file.read_text(encoding="utf-8")
+    assert 'def register_handlers(app: Any) -> None:' in text
+    assert '@app.handler("calculate-total")' in text
+    assert 'module = import_module("orders")' in text
+
+
+def test_migrate_scan_project_marks_missing_type_hint_for_manual_review(tmp_path: Path) -> None:
+    project = tmp_path / "legacy_app"
+    project.mkdir(parents=True)
+    (project / "orders.py").write_text(
+        (
+            "def create_order(order_id, qty: int):\n"
+            "    return {'id': order_id, 'qty': qty}\n"
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+
+    run_migrate_scan_command(project=str(project), output_mode="handler", output=str(out))
+
+    report = json.loads((out / "migration_report.json").read_text(encoding="utf-8"))
+    assert report["stats"]["manual_review_count"] >= 1
+    assert any("missing type hint" in item for item in report["manual_review"])
