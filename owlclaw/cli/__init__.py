@@ -591,6 +591,35 @@ def _dispatch_scan_command(argv: list[str]) -> bool:
     return True
 
 
+def _dispatch_migrate_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw migrate ...` via argparse."""
+    if not argv or argv[0] != "migrate":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["migrate"])
+
+    sub = argv[1]
+    if sub != "scan":
+        print(f"Error: unknown migrate subcommand: {sub}", file=sys.stderr)
+        raise SystemExit(2)
+
+    from owlclaw.cli.migrate.scan_cli import run_migrate_scan_command
+
+    parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migrate scan")
+    parser.add_argument("--openapi", default="")
+    parser.add_argument("--orm", default="")
+    parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
+    parser.add_argument("--output", "--path", "-o", "-p", dest="output", default=".")
+    ns = parser.parse_args(argv[2:])
+    run_migrate_scan_command(
+        openapi=ns.openapi,
+        orm=ns.orm,
+        output_mode=ns.output_mode,
+        output=ns.output,
+    )
+    return True
+
+
 def _print_help_and_exit(argv: list[str]) -> None:
     """Print plain help when Typer/Rich make_metavar bug triggers (--help)."""
     argv = [a for a in argv if a not in ("--help", "-h")]
@@ -603,6 +632,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  agent  Manual control via signal (pause/resume/trigger/instruct/status)")
         print("  skill  Create, validate, list Agent Skills (SKILL.md)")
         print("  trigger Trigger templates (db-change)")
+        print("  migrate Migrate legacy APIs/models to OwlClaw assets")
         print("\n  owlclaw db --help   owlclaw skill --help")
         sys.exit(0)
     if argv == ["db"]:
@@ -825,6 +855,24 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  template  Generate trigger templates")
         print("\n  owlclaw trigger template --help")
         sys.exit(0)
+    if argv == ["migrate"]:
+        print("Usage: owlclaw migrate [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Migration tooling commands.")
+        print("Commands:")
+        print("  scan  Scan OpenAPI/ORM sources and generate handlers or binding skills")
+        print("\n  owlclaw migrate scan --help")
+        sys.exit(0)
+    if argv == ["migrate", "scan"]:
+        print("Usage: owlclaw migrate scan [OPTIONS]")
+        print("\n  Scan OpenAPI/ORM inputs and generate handler stubs and/or binding SKILL.md.")
+        print("Options:")
+        print("  --openapi TEXT                 OpenAPI spec path (.yaml/.yml/.json)")
+        print("  --orm TEXT                     ORM operations descriptor path (.yaml/.yml/.json)")
+        print("  --output-mode [handler|binding|both]")
+        print("                                 Output type (default: handler)")
+        print("  --output, --path TEXT          Output directory (default: .)")
+        print("  --help                         Show this message and exit")
+        sys.exit(0)
     if argv == ["trigger", "template"]:
         print("Usage: owlclaw trigger template [OPTIONS] TEMPLATE")
         print("\n  Generate trigger templates.")
@@ -867,6 +915,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  agent  Manual control via signal (pause, resume, trigger, instruct, status)")
     print("  skill  Create, validate, list Agent Skills (SKILL.md)")
     print("  trigger Trigger templates (db-change)")
+    print("  migrate Migrate legacy APIs/models to OwlClaw assets")
     sys.exit(0)
 
 
@@ -1019,6 +1068,11 @@ def _main_impl() -> None:
         raise SystemExit(e.exit_code) from None
     try:
         if _dispatch_scan_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_migrate_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None

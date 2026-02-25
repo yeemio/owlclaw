@@ -161,12 +161,12 @@
   - [x] 17.4 生成 SKILL.md body 含数据访问规则占位符
   - [x] 17.5 单元测试：从 ORM 模型生成 → 验证 SQL 参数化 → 验证 read_only
 
-- [ ] **Task 18**: cli-migrate `--output-mode binding` 集成
-  - [ ] 18.1 扩展 `owlclaw migrate scan` 命令增加 `--output-mode` 参数（handler/binding/both）
-  - [ ] 18.2 `--output-mode binding` 时调用 BindingGenerator 替代 HandlerGenerator
-  - [ ] 18.3 `--output-mode both` 时同时生成 @handler 代码和 binding SKILL.md
-  - [ ] 18.4 集成测试：OpenAPI 规范 → `--output-mode binding` → 生成 SKILL.md → validate → Agent 加载
-  - [ ] 18.5 集成测试：ORM 模型 → `--output-mode binding` → 生成 SKILL.md → validate → Agent 加载
+- [x] **Task 18**: cli-migrate `--output-mode binding` 集成
+  - [x] 18.1 扩展 `owlclaw migrate scan` 命令增加 `--output-mode` 参数（handler/binding/both）
+  - [x] 18.2 `--output-mode binding` 时调用 BindingGenerator 替代 HandlerGenerator
+  - [x] 18.3 `--output-mode both` 时同时生成 @handler 代码和 binding SKILL.md
+  - [x] 18.4 集成测试：OpenAPI 规范 → `--output-mode binding` → 生成 SKILL.md → validate → Agent 加载
+  - [x] 18.5 集成测试：ORM 模型 → `--output-mode binding` → 生成 SKILL.md → validate → Agent 加载
 
 - [ ] **Task 19**: 三种角色工作流文档与示例
   - [ ] 19.1 编写 IT 运维工作流文档（运行命令 + 配置环境变量）
