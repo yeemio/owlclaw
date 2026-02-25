@@ -132,8 +132,8 @@
 | cli-migrate | `.kiro/specs/cli-migrate/` | ✅ 三层齐全，已完成（24/24） | AI 辅助迁移工具（binding、dry-run、报告、冲突处理、Python 扫描与真实 handler 生成、配置校验与迁移向导全部完成） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
-| **local-devenv** | `.kiro/specs/local-devenv/` | 🟡 三层齐全，进行中（6/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（6/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐） |
+| **local-devenv** | `.kiro/specs/local-devenv/` | 🟡 三层齐全，进行中（4/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
+| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（7/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
 
 ---
@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | local-devenv 运行验收推进（Task 1.4 实测通过 + compose 运行冲突修正） |
-| 批次状态 | **进行中**。`local-devenv` 已完成 6/10，剩余主要为全量 dev 验收与最终端到端验收。 |
-| 已完成项 | 1) 验证 `docker-compose.test.yml`：Postgres healthy + `poetry run pytest tests/unit/ -q` 通过（1539 passed，2 skipped）；2) 验证 `docker-compose.minimal.yml`：`owlclaw db status` 成功（通过可配置端口 `OWLCLAW_PG_PORT=25432`）；3) 移除 root compose 中固定 `container_name`，修复重复运行冲突；4) root compose 增加主机端口覆盖 `${OWLCLAW_PG_PORT:-5432}`，兼容本机已有 PostgreSQL；5) `docker-compose.dev.yml` 锁定 Hatchet Lite 版本 `v0.53.0`；6) 修复 `owlclaw db status`：async 探测失败时回退 sync 探测，并补单测（`test_cli_db.py` + `test_local_devenv_assets.py`）。 |
-| 下一待执行 | 1) local-devenv Task 3.8：完成 `docker compose -f docker-compose.dev.yml --profile full up -d` 全量 healthy 验证；2) local-devenv Task 5.4：补齐 Windows 下 `make help` 的等价验收路径；3) local-devenv Task 7.2 与 Task 10.* 完整流程验收。 |
-| 验收快照 | repo-hygiene 🟡(33/37)，local-devenv 🟡(6/10)，test-infra 🟡(32/52)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署；4) 本机无 `make`。 |
+| 当前批次 | review-work 审校续航：test-infra/本地开发环境阻塞量化 + 扫描总览状态回写（对齐各 spec 当前任务面） |
+| 批次状态 | **进行中**。本轮已完成 test-infra 的关键前置闭环（unit 0 skip），并持续推进 CI/本地一致性验收。 |
+| 已完成项 | 1) test-infra：Task 3 完成（`1530 passed, 0 skipped`）；Task 9.1~9.3 完成（CI 与本地 test compose 同源 `deploy/init-test-db.sql`）；2) 单测修复：`test_queue_log_security_properties` 改为字段级断言并通过；3) 扫描文档修正：Checkpoint 去除过期 `33/37, 37/56, 137/143` 旧口径。 |
+| 下一待执行 | 1) test-infra：Task 4.2（<60s）、Task 6.3、Task 9.4、Task 11（含 CI matrix 与覆盖率门槛最终验收）；2) local-devenv：Task 1.4/2.4/3.8/5.4/7.2/10.*（需 Docker Engine + make 条件）；3) owlhub：Task 19 决策确认与 Task 40.4 外部部署；4) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
+| 验收快照 | repo-hygiene ✅(7/7)，local-devenv 🟡(4/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) 本机 Docker Engine 未运行，阻塞 local-devenv 与部分 test-infra 实地验收；2) Windows 环境无 `make`，阻塞 local-devenv Task 5.4；3) release/owlhub 余项包含外部平台与人工决策动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
