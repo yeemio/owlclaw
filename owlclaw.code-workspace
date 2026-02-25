@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../owlclaw-codex"
+		},
+		{
+			"path": "../owlclaw-review"
+		},
+		{
+			"path": "../owlclaw-codex-gpt"
+		}
+	],
+	"settings": {}
+}
