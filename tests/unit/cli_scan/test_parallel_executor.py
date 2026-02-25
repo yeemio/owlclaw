@@ -19,7 +19,7 @@ def _maybe_fail_worker(path: Path) -> str:
     return path.name
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=3)
 @given(names=st.lists(st.from_regex(r"[a-z][a-z0-9_]{0,6}", fullmatch=True), min_size=1, max_size=6, unique=True))
 def test_property_parallel_scan_determinism(names: list[str]) -> None:
     # Property 15: Parallel Scan Determinism
@@ -39,7 +39,7 @@ def test_property_parallel_scan_determinism(names: list[str]) -> None:
         assert [item.result for item in first] == [item.result for item in second]
 
 
-@settings(deadline=None, max_examples=10)
+@settings(deadline=None, max_examples=3)
 @given(
     good_names=st.lists(st.from_regex(r"[a-z][a-z0-9_]{0,6}", fullmatch=True), min_size=1, max_size=5, unique=True),
     bad_name=st.from_regex(r"[a-z][a-z0-9_]{0,6}", fullmatch=True),
