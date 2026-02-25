@@ -219,3 +219,43 @@ def test_migrate_scan_conflict_force_overwrites(tmp_path: Path) -> None:
         force=True,
     )
     assert "existing" not in conflict_target.read_text(encoding="utf-8")
+
+
+def test_migrate_scan_project_generates_handler_registration_code(tmp_path: Path) -> None:
+    project = tmp_path / "legacy_app"
+    project.mkdir(parents=True)
+    (project / "orders.py").write_text(
+        (
+            "def calculate_total(price: float, qty: int) -> float:\n"
+            "    return price * qty\n"
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+
+    run_migrate_scan_command(project=str(project), output_mode="handler", output=str(out))
+
+    handler_file = out / "handlers" / "calculate-total.py"
+    text = handler_file.read_text(encoding="utf-8")
+    assert 'def register_handlers(app: Any) -> None:' in text
+    assert '@app.handler("calculate-total")' in text
+    assert 'module = import_module("orders")' in text
+
+
+def test_migrate_scan_project_marks_missing_type_hint_for_manual_review(tmp_path: Path) -> None:
+    project = tmp_path / "legacy_app"
+    project.mkdir(parents=True)
+    (project / "orders.py").write_text(
+        (
+            "def create_order(order_id, qty: int):\n"
+            "    return {'id': order_id, 'qty': qty}\n"
+        ),
+        encoding="utf-8",
+    )
+    out = tmp_path / "out"
+
+    run_migrate_scan_command(project=str(project), output_mode="handler", output=str(out))
+
+    report = json.loads((out / "migration_report.json").read_text(encoding="utf-8"))
+    assert report["stats"]["manual_review_count"] >= 1
+    assert any("missing type hint" in item for item in report["manual_review"])

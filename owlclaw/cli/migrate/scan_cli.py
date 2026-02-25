@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ast
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
@@ -18,6 +20,7 @@ def run_migrate_scan_command(
     *,
     openapi: str = "",
     orm: str = "",
+    project: str = "",
     output_mode: str = "handler",
     output: str = ".",
     dry_run: bool = False,
@@ -28,7 +31,7 @@ def run_migrate_scan_command(
     mode = output_mode.strip().lower()
     if mode not in {"handler", "binding", "both"}:
         raise typer.Exit(2)
-    if not openapi.strip() and not orm.strip():
+    if not openapi.strip() and not orm.strip() and not project.strip():
         raise typer.Exit(2)
 
     output_dir = Path(output).resolve()
@@ -40,6 +43,7 @@ def run_migrate_scan_command(
     previews: dict[str, str] = {}
     binding_count = 0
     handler_count = 0
+    manual_review_items: list[str] = []
 
     if openapi.strip():
         endpoints = _load_openapi_endpoints(Path(openapi))
@@ -87,6 +91,21 @@ def run_migrate_scan_command(
                     orm_results.append(str(_write_handler_stub(output_dir, result.skill_name)))
                 handler_count += 1
 
+    if project.strip() and mode in {"handler", "both"}:
+        candidates = _scan_python_candidates(Path(project))
+        for candidate in candidates:
+            target = output_dir / "handlers" / f"{candidate.skill_name}.py"
+            _check_conflict(target, dry_run=dry_run, force=force)
+            content = _render_python_handler(candidate)
+            if not dry_run:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content, encoding="utf-8")
+            previews[str(target)] = _preview_lines(content)
+            endpoint_results.append(str(target))
+            handler_count += 1
+            if candidate.manual_review_notes:
+                manual_review_items.extend(candidate.manual_review_notes)
+
     generated = endpoint_results + orm_results
     if not generated:
         raise typer.Exit(2)
@@ -98,9 +117,11 @@ def run_migrate_scan_command(
         "generated_binding_count": binding_count,
         "generated_handler_count": handler_count,
         "generated_files": generated,
+        "manual_review": sorted(set(manual_review_items)),
         "stats": {
             "openapi_endpoints": len(endpoint_results),
             "orm_operations": len(orm_results),
+            "manual_review_count": len(set(manual_review_items)),
             "estimated_effort_hours": round(len(generated) * 0.5, 1),
         },
     }
@@ -259,6 +280,7 @@ def _render_report_markdown(payload: dict[str, Any]) -> str:
         "",
         f"- openapi_endpoints: `{payload['stats']['openapi_endpoints']}`",
         f"- orm_operations: `{payload['stats']['orm_operations']}`",
+        f"- manual_review_count: `{payload['stats']['manual_review_count']}`",
         f"- estimated_effort_hours: `{payload['stats']['estimated_effort_hours']}`",
         "",
         "## Generated Files",
@@ -266,5 +288,100 @@ def _render_report_markdown(payload: dict[str, Any]) -> str:
     ]
     for item in payload["generated_files"]:
         lines.append(f"- `{item}`")
+    manual_review = payload.get("manual_review", [])
+    if isinstance(manual_review, list) and manual_review:
+        lines.extend(["", "## MANUAL_REVIEW", ""])
+        for item in manual_review:
+            lines.append(f"- {item}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+@dataclass(slots=True)
+class _PyParam:
+    name: str
+    type_name: str
+    has_type: bool
+
+
+@dataclass(slots=True)
+class _PyCandidate:
+    skill_name: str
+    function_name: str
+    module_path: str
+    parameters: list[_PyParam]
+    manual_review_notes: list[str]
+
+
+def _scan_python_candidates(project_path: Path) -> list[_PyCandidate]:
+    candidates: list[_PyCandidate] = []
+    root = project_path.resolve()
+    for file_path in root.rglob("*.py"):
+        if file_path.name.startswith("test_"):
+            continue
+        if ".venv" in file_path.parts:
+            continue
+        rel = file_path.relative_to(root)
+        module_path = ".".join(rel.with_suffix("").parts)
+        if module_path.endswith(".__init__"):
+            module_path = module_path.rsplit(".__init__", 1)[0]
+        if not module_path:
+            continue
+        try:
+            tree = ast.parse(file_path.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        for node in tree.body:
+            if not isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
+                continue
+            if node.name.startswith("_"):
+                continue
+            params: list[_PyParam] = []
+            manual: list[str] = []
+            for arg in node.args.args:
+                if arg.arg in {"self", "cls"}:
+                    continue
+                if arg.annotation is None:
+                    params.append(_PyParam(name=arg.arg, type_name="Any", has_type=False))
+                    manual.append(f"{module_path}.{node.name}:{arg.arg} missing type hint")
+                else:
+                    params.append(_PyParam(name=arg.arg, type_name=ast.unparse(arg.annotation), has_type=True))
+            candidates.append(
+                _PyCandidate(
+                    skill_name=node.name.replace("_", "-"),
+                    function_name=node.name,
+                    module_path=module_path,
+                    parameters=params,
+                    manual_review_notes=manual,
+                )
+            )
+    return candidates
+
+
+def _render_python_handler(candidate: _PyCandidate) -> str:
+    params = ", ".join(f"{param.name}: {param.type_name}" for param in candidate.parameters) or ""
+    args = ", ".join(f"{param.name}={param.name}" for param in candidate.parameters)
+    lines = [
+        "from __future__ import annotations",
+        "",
+        "from importlib import import_module",
+        "from inspect import isawaitable",
+        "from typing import Any",
+        "",
+        "",
+        "def register_handlers(app: Any) -> None:",
+        f'    @app.handler("{candidate.skill_name}")',
+        f"    async def {candidate.function_name}_handler({params}) -> dict[str, Any]:",
+        f'        module = import_module("{candidate.module_path}")',
+        f'        target = getattr(module, "{candidate.function_name}")',
+        f"        result = target({args})" if args else "        result = target()",
+        "        if isawaitable(result):",
+        "            result = await result",
+        '        return {"result": result}',
+    ]
+    if candidate.manual_review_notes:
+        lines.extend(["", "# MANUAL_REVIEW"])
+        for note in candidate.manual_review_notes:
+            lines.append(f"# {note}")
     lines.append("")
     return "\n".join(lines)
