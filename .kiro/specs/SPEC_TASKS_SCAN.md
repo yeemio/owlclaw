@@ -125,7 +125,7 @@
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | 🟡 三层齐全，进行中（0/24） | AI 辅助迁移工具（+binding 输出模式，与 declarative-binding 联动） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（0/32） | PyPI + GitHub 发布 |
-| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（10/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
+| ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 
 ---
 
@@ -151,12 +151,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 codex-work ci-setup + codex-gpt-work owlhub gate → review-work → main |
-| 批次状态 | **完成**。codex-work（6 commits ci-setup）+ codex-gpt-work（3 commits owlhub gate）均已合并到 main。 |
-| 已完成项 | 1) 合并 codex-work：ci-setup Task 1~10（GitHub Actions lint/test/build/release workflows + pre-commit + dependabot + .releaserc.json + pyproject.toml 工具链配置 + CI 文档 + 配置测试）；2) 合并 codex-gpt-work：owlhub release_gate 模块（owlclaw/owlhub/release_gate.py + scripts/owlhub_release_gate.py + tests）+ OwlHub gate CLI 命名决策提案文档；3) ci-setup 进度更新为 10/12（Task 11 远程验证 + Task 12 Final Checkpoint 待外部 GitHub 环境）。 |
-| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12)；2) codex-work 推进 ci-setup Task 11/12 或转向 release；3) 架构层确认 OwlHub gate CLI 命名（见 docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md）。 |
-| 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(0/32)，全仓测试门禁待验证（新 pyproject.toml 配置）。 |
-| 阻塞项 | 1) ci-setup Task 11（需实际 GitHub Actions 运行环境）；2) owlhub Task 40.4（外部生产部署）；3) OwlHub gate CLI 命名待架构决策。 |
+| 当前批次 | codex-work：ci-setup Task 11/12 收口（GitHub Actions 远端实跑验收） |
+| 批次状态 | **完成**。ci-setup 端到端验证与最终验收已闭环。 |
+| 已完成项 | 1) 修复 CI 失稳点：workflow/test 配置测试断言漂移、db CLI 测试环境变量污染、Alembic webhook 模型导入漂移；2) Test workflow 切换 `pgvector/pgvector:pg16` 并显式初始化 `vector` 扩展；3) 修复 `tests/integration/test_signal_state_integration.py` 缺失 `vector` 扩展初始化；4) 远端验证通过：Lint `22381643241`、Test `22381643232`（3.10/3.11/3.12 全绿）；5) `ci-setup` 进度更新为 12/12。 |
+| 下一待执行 | 1) codex-gpt-work 推进 examples(0/12)；2) codex-work 进入 release 或 cli-migrate；3) 架构层确认 OwlHub gate CLI 命名（见 docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md）。 |
+| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release 🟡(0/32)。 |
+| 阻塞项 | 1) owlhub Task 40.4（外部生产部署）；2) OwlHub gate CLI 命名待架构决策。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
