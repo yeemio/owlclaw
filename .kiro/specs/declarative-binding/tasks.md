@@ -144,15 +144,15 @@
 
 ### Phase 5：cli-migrate 自动生成（P1，依赖 cli-migrate spec）
 
-- [ ] **Task 16**: BindingGenerator — 从 OpenAPI 生成 HTTP Binding SKILL.md
-  - [ ] 16.1 实现 `BindingGenerator` 类（位于 cli-migrate 的 generators 模块）
-  - [ ] 16.2 实现 `generate_from_openapi()`：operationId/summary → name，description → SKILL.md description
-  - [ ] 16.3 实现 OpenAPI parameters + requestBody → tools_schema + binding 映射
-  - [ ] 16.4 实现 security schemes → `${ENV_VAR}` headers + prerequisites.env 映射
-  - [ ] 16.5 实现 response schema → response_mapping 映射
-  - [ ] 16.6 生成 SKILL.md body 含业务规则占位符（提示业务用户填写）
-  - [ ] 16.7 生成的 SKILL.md 通过 `owlclaw skill validate` 验证
-  - [ ] 16.8 单元测试：从 OpenAPI 规范生成 → 验证 binding 完整性 → 验证 prerequisites
+- [x] **Task 16**: BindingGenerator — 从 OpenAPI 生成 HTTP Binding SKILL.md
+  - [x] 16.1 实现 `BindingGenerator` 类（位于 cli-migrate 的 generators 模块）
+  - [x] 16.2 实现 `generate_from_openapi()`：operationId/summary → name，description → SKILL.md description
+  - [x] 16.3 实现 OpenAPI parameters + requestBody → tools_schema + binding 映射
+  - [x] 16.4 实现 security schemes → `${ENV_VAR}` headers + prerequisites.env 映射
+  - [x] 16.5 实现 response schema → response_mapping 映射
+  - [x] 16.6 生成 SKILL.md body 含业务规则占位符（提示业务用户填写）
+  - [x] 16.7 生成的 SKILL.md 通过 `owlclaw skill validate` 验证
+  - [x] 16.8 单元测试：从 OpenAPI 规范生成 → 验证 binding 完整性 → 验证 prerequisites
 
 - [ ] **Task 17**: BindingGenerator — 从 ORM 模型生成 SQL Binding SKILL.md
   - [ ] 17.1 实现 `generate_from_orm()`：model/table → name，columns → 参数化查询
