@@ -121,6 +121,8 @@ def test_release_workflow_supports_testpypi_and_pypi_publish_steps() -> None:
     assert "Missing required secret TEST_PYPI_TOKEN" in payload
     assert "Validate PyPI token" in payload
     assert "Missing required secret PYPI_TOKEN" in payload
+    assert "if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}" in payload
+    assert "semantic-release version" in payload
     assert "Publish to TestPyPI" in payload
     assert "secrets.TEST_PYPI_TOKEN" in payload
     assert "https://test.pypi.org/legacy/" in payload
