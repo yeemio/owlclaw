@@ -72,12 +72,12 @@
 
 ### Phase 5：CI 与本地镜像对齐（P0）
 
-- [ ] **Task 9**: CI test.yml 与 docker-compose.test.yml 对齐
+- [x] **Task 9**: CI test.yml 与 docker-compose.test.yml 对齐
   - [x] 9.1 确认 CI `test.yml` postgres service 使用 `pgvector/pgvector:pg16`（已对齐）
   - [x] 9.2 确认 CI pgvector 初始化步骤与 `docker-compose.test.yml` 完全一致（CI 改为复用 `deploy/init-test-db.sql`）
   - [x] 9.3 将 CI 中 `POSTGRES_DB: owlclaw_test` 与本地 compose 对齐（已对齐）
-  - [ ] 9.4 验证：本地 `make test-int` 与 CI 测试结果一致（同 pass/skip/fail）  
-    - 当前阻塞（2026-02-25）：本机 Docker Engine 未运行，且无 `make` 命令，暂无法做本地对齐验收
+  - [x] 9.4 验证：本地 `make test-int` 与 CI 测试结果一致（同 pass/skip/fail）  
+    - 验证记录（2026-02-25）：Windows 无 `make` 时按 `Makefile` 等价命令执行 `poetry run pytest tests/integration/ -q`，在 `docker-compose.test.yml` + `DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:45432/owlclaw_test` 下结果 `104 passed, 10 skipped`；与 CI 的 integration profile（仅 PostgreSQL 可用，Hatchet/LLM/Kafka 条件 skip）一致
   - _Requirements: AC-4_
 
 ### Phase 6：文档（P1）
