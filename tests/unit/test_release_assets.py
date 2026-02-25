@@ -6,6 +6,11 @@ from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - py310 fallback
+    import tomli as tomllib  # type: ignore[no-redef]
+
 
 def test_changelog_has_initial_release_section() -> None:
     payload = Path("CHANGELOG.md").read_text(encoding="utf-8")
@@ -45,3 +50,21 @@ def test_env_example_uses_placeholders_only() -> None:
     assert "LANGFUSE_SECRET_KEY=" in payload
     assert "sk-live-" not in payload
     assert "ghp_" not in payload
+
+
+def test_pyproject_has_release_metadata_and_extras() -> None:
+    payload = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    poetry = payload["tool"]["poetry"]
+    assert poetry["name"] == "owlclaw"
+    assert poetry["version"] == "0.1.0"
+    assert poetry["license"] == "MIT"
+    assert "keywords" in poetry and isinstance(poetry["keywords"], list)
+    assert "classifiers" in poetry and isinstance(poetry["classifiers"], list)
+
+    extras = poetry["extras"]
+    assert "langchain" in extras
+    assert "dev" in extras
+    assert "pytest" in extras["dev"]
+
+    scripts = poetry["scripts"]
+    assert scripts["owlclaw"] == "owlclaw.cli:main"
