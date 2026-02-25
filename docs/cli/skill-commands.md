@@ -1,5 +1,7 @@
 # owlclaw skill 命令参考
 
+> 注：OwlHub 发布闸门命令命名正在架构审校中，见 `docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md`。
+
 ## 命令概览
 
 | 命令 | 说明 |
