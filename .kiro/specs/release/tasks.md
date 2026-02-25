@@ -62,7 +62,7 @@
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets（外部平台操作待执行）
-- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI；2026-02-25 已触发 `Release` run `22391005812`，在 `Validate TestPyPI token` 阶段因 `TEST_PYPI_TOKEN` 为空快速失败；已将 `semantic-release` 限制为正式发布路径）
+- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI；2026-02-25 已触发 `Release` run `22391380676`，在 `Validate TestPyPI token` 阶段因 `TEST_PYPI_TOKEN` 为空快速失败；`semantic-release` 已限制为正式发布路径）
 
 ---
 
@@ -110,7 +110,7 @@
 ### 7.2 阻塞
 - 外部平台操作待执行（非仓内可自动完成）：
   - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
-  - TestPyPI 实际发布验证（当前 run `22391005812` 在 token 前置校验阶段失败，`TEST_PYPI_TOKEN` 为空）
+  - TestPyPI 实际发布验证（当前 run `22391380676` 在 token 前置校验阶段失败，`TEST_PYPI_TOKEN` 为空）
   - PyPI 正式发布与安装验收（`pip index versions owlclaw` 当前无可用发行版）
 
 ---
