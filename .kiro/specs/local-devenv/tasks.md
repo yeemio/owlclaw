@@ -47,14 +47,14 @@
   - [x] 4.4 添加 `DATABASE_URL` 和 `OWLCLAW_DATABASE_URL` 的本地默认值
   - _Requirements: AC-4, AC-5_
 
-- [ ] **Task 5**: Makefile（开发快捷命令）
+- [x] **Task 5**: Makefile（开发快捷命令）
   - [x] 5.1 创建根目录 `Makefile`，包含目标：
         `dev-up`, `dev-down`, `dev-reset`, `test-up`, `test-down`,
         `test`, `test-unit`, `test-int`, `lint`, `typecheck`
   - [x] 5.2 每个目标添加 `## 注释`（`make help` 可读）
   - [x] 5.3 Windows 兼容：检测 OS，提示使用 PowerShell 等价命令
-  - [ ] 5.4 验证：`make help` 输出所有目标说明  
-    - 当前阻塞（2026-02-25）：本机无 `make` 命令（Windows 环境）
+  - [x] 5.4 验证：`make help` 输出所有目标说明  
+    - 验证记录（2026-02-25）：安装 `ezwinports.make` 后执行 `make help`，目标说明完整输出
   - _Requirements: AC-3_
 
 - [x] **Task 6**: scripts/test-local.sh + scripts/test-local.ps1
@@ -92,13 +92,14 @@
 
 ### Phase 5：验收（P0）
 
-- [ ] **Task 10**: 端到端验收
+- [x] **Task 10**: 端到端验收
   - [x] 10.1 从干净状态（`docker compose down -v`）执行完整流程：
         `docker compose -f docker-compose.test.yml up -d` → `poetry run pytest tests/unit/ tests/integration/ -m "not e2e"` → 全部通过
     - 验证记录（2026-02-25）：`OWLCLAW_PG_PORT=35432` + `OWLCLAW_DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:35432/owlclaw_test` 下通过（`1645 passed, 12 skipped`）
   - [x] 10.2 验证 `docker compose -f docker-compose.dev.yml up -d` 所有服务 healthy  
     - 验证记录（2026-02-25）：`--profile full` + 端口覆盖 `25432/26379/13000` 下全部服务 healthy
-  - [ ] 10.3 验证 `make test-unit` 不需要任何外部服务即可通过
+  - [x] 10.3 验证 `make test-unit` 不需要任何外部服务即可通过  
+    - 验证记录（2026-02-25）：`make test-unit` 成功（`1544 passed`）
   - [x] 10.4 验证 `.env.example` 覆盖所有实际使用的环境变量（与代码中的 `os.environ` 对照）  
     - 验证记录（2026-02-25）：新增 `tests/unit/test_local_devenv_assets.py::test_env_example_covers_literal_env_reads_in_owlclaw_code`，对 `owlclaw/**/*.py` 中字面量环境变量读取执行自动对照校验并通过
   - _Requirements: AC-1, AC-2, AC-3_

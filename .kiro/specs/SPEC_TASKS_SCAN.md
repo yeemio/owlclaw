@@ -92,7 +92,7 @@
 
 ### Phase 4：开发基础设施统一（新增）
 
-- [ ] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
+- [x] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
 - [ ] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
 - [x] 仓库卫生清理（根目录整洁、.gitignore 完整、deploy/ 文档化） → spec: repo-hygiene
 
@@ -132,7 +132,7 @@
 | cli-migrate | `.kiro/specs/cli-migrate/` | ✅ 三层齐全，已完成（24/24） | AI 辅助迁移工具（binding、dry-run、报告、冲突处理、Python 扫描与真实 handler 生成、配置校验与迁移向导全部完成） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
-| **local-devenv** | `.kiro/specs/local-devenv/` | 🟡 三层齐全，进行中（8/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
+| **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
 | **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（7/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
 
@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | codex-gpt-work：local-devenv 验收推进（Task 3.8 + Task 7.2 + Task 10.1） |
-| 批次状态 | **进行中**。本轮已完成 local-devenv 文档/端到端验收关键路径与 env 覆盖自动校验，剩余项集中在 make 命令验收。 |
-| 已完成项 | 1) local-devenv：Task 3.8 完成（`docker compose -f docker-compose.dev.yml --profile full up -d` 后 `owlclaw-db/redis/hatchet-lite/langfuse` 全部 healthy）；2) local-devenv：Task 7.2 完成（同一会话完成 quickstart 路径验证）；3) local-devenv：Task 10.1 完成（`poetry run pytest tests/unit/ tests/integration/ -m "not e2e" -q` 结果 `1645 passed, 12 skipped`）；4) local-devenv：Task 10.4 完成（新增 env 覆盖自动校验测试并通过）；5) `docker-compose.dev.yml` 新增 `SERVER_MSGQUEUE_KIND=postgres` 并修复 Langfuse healthcheck `$$HOSTNAME`。 |
-| 下一待执行 | 1) local-devenv：Task 5.4、Task 10.3；2) test-infra：Task 4.2（<60s）、Task 6.3、Task 9.4、Task 11；3) owlhub：Task 19 决策确认与 Task 40.4 外部部署；4) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
-| 验收快照 | repo-hygiene ✅(7/7)，local-devenv 🟡(8/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) Windows 环境无 `make`，阻塞 local-devenv Task 5.4；2) release/owlhub 余项包含外部平台与人工决策动作。 |
+| 当前批次 | codex-gpt-work：local-devenv 全量收口（Task 5.4 + Task 10.3 + 扫描状态回写） |
+| 批次状态 | **进行中**。local-devenv 已完成（10/10），本轮转入下一优先 spec（test-infra / release / owlhub）。 |
+| 已完成项 | 1) local-devenv：Task 3.8 完成（`docker compose -f docker-compose.dev.yml --profile full up -d` 后 `owlclaw-db/redis/hatchet-lite/langfuse` 全部 healthy）；2) local-devenv：Task 7.2 完成（同一会话完成 quickstart 路径验证）；3) local-devenv：Task 10.1 完成（`poetry run pytest tests/unit/ tests/integration/ -m "not e2e" -q` 结果 `1645 passed, 12 skipped`）；4) local-devenv：Task 10.4 完成（新增 env 覆盖自动校验测试并通过）；5) local-devenv：Task 5.4/10.3 完成（安装 `ezwinports.make` 后 `make help` 与 `make test-unit` 通过，`1544 passed`）。 |
+| 下一待执行 | 1) test-infra：Task 4.2（<60s）、Task 6.3、Task 9.4、Task 11；2) owlhub：Task 19 决策确认与 Task 40.4 外部部署；3) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
+| 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) release/owlhub 余项包含外部平台与人工决策动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
