@@ -61,12 +61,12 @@
 
 ### Phase 5：验收（P0）
 
-- [ ] **Task 7**: 最终验收
-  - [ ] 7.1 `git status` 在干净工作目录下无意外 untracked files
-  - [ ] 7.2 根目录只有预期文件（无 `nul`、无游离目录）
-  - [ ] 7.3 `git check-ignore -v .langfuse` 确认已 gitignore
-  - [ ] 7.4 `scripts/README.md` 和 `deploy/README.md` 内容准确
-  - [ ] 7.5 所有变更已 commit（`git log --oneline -5` 可见清理记录）
+- [x] **Task 7**: 最终验收
+  - [x] 7.1 `git status` 在干净工作目录下无意外 untracked files
+  - [x] 7.2 根目录只有预期文件（无 `nul`、无游离目录）
+  - [x] 7.3 `git check-ignore -v .langfuse` 确认已 gitignore
+  - [x] 7.4 `scripts/README.md` 和 `deploy/README.md` 内容准确
+  - [x] 7.5 所有变更已 commit（`git log --oneline -5` 可见清理记录）
   - _Requirements: AC-1, AC-2, AC-3, AC-4, AC-5_
 
 ## Backlog
