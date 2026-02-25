@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 review-work（local-devenv 37/56 + test-infra 32/52 + repo-hygiene 33/37）→ main；负载再平衡 |
-| 批次状态 | **完成**。review-work 大批成果合并到 main（31 文件，829 行新增）。 |
-| 已完成项 | 1) repo-hygiene 33/37：.gitignore 补充 + nul 清理 + scripts/README + deploy/README 更新 + compose 文件对齐；2) local-devenv 37/56：docker-compose.dev/minimal/test.yml + Makefile + .env.example + docs/DEVELOPMENT/DEPLOYMENT；3) test-infra 32/52：conftest skip 机制 + integration/conftest fixtures + CI test.yml 更新 + docs/TESTING；4) release 25/32；5) owlhub 137/143；6) capabilities-skills 108/115。 |
-| 下一待执行 | 1) codex-work：repo-hygiene 收尾(33→37) + test-infra Task 3/4/6/9/11；2) codex-gpt-work：local-devenv Task 1/2/3/5/7 + owlhub 收尾(137→143)；3) capabilities-skills 108/115 收尾；4) release 外部平台依赖（待人工凭据）。 |
-| 验收快照 | repo-hygiene 🟡(33/37)，local-devenv 🟡(37/56)，test-infra 🟡(32/52)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署。 |
+| 当前批次 | review-work 审校续航：test-infra/本地开发环境阻塞量化 + 扫描总览状态回写（对齐各 spec 当前任务面） |
+| 批次状态 | **进行中**。本轮已完成遗留改动验证（queue log 安全属性测试通过），并将扫描 Checkpoint 从旧计数口径回写为当前口径。 |
+| 已完成项 | 1) test-infra：Task 3.4、4.2 增加实测基线（`1528 passed, 2 skipped`；unit 约 `666s`）；2) 单测修复：`test_queue_log_security_properties` 改为字段级断言并通过；3) 扫描文档修正：Checkpoint 去除过期 `33/37, 37/56, 137/143` 旧口径。 |
+| 下一待执行 | 1) test-infra：Task 6.3、Task 9、Task 11（含 0 skip/<60s 目标闭环）；2) local-devenv：Task 1.4/2.4/3.8/5.4/7.2/10.*（需 Docker Engine + make 条件）；3) owlhub：Task 19 决策确认与 Task 40.4 外部部署；4) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
+| 验收快照 | repo-hygiene ✅(7/7)，local-devenv 🟡(4/10)，test-infra 🟡(6/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) 本机 Docker Engine 未运行，阻塞 local-devenv 与部分 test-infra 实地验收；2) Windows 环境无 `make`，阻塞 local-devenv Task 5.4；3) release/owlhub 余项包含外部平台与人工决策动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
