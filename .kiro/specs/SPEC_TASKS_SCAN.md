@@ -96,7 +96,7 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（27/34） | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（108/115） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（26/26） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（40/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | ✅ 三层齐全，已完成（14/14） | 示例（非交易场景、LangChain、3 行业 Skills、mionyee-trading 完整示例、批量验证脚本、CI 接入、文档对齐全部完成） |
@@ -151,12 +151,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | review-work：审校收口与 spec 一致性校准（Phase 3 状态复核） |
-| 批次状态 | **进行中**。完成进度口径修正（examples、cli-migrate）并补齐 release 本地验收项（22/32），剩余外部平台依赖待人工环境执行。 |
-| 已完成项 | 1) 合并 codex-work：release 首轮（`CHANGELOG.md`、Issue 模板、README/CONTRIBUTING、`release.yml` tag 触发、`docs/RELEASE_RUNBOOK.md`、`test_release_assets.py`）+ `owlclaw-mcp/` 独立构建配置；2) 合并 codex-gpt-work：examples 全量收口（14/14，含 mionyee 示例、批量验证脚本与 CI 接入）；3) 吸收 cli-migrate 增量（报告/冲突处理/配置校验与迁移向导），进度更新为 ✅24/24；4) 本轮修正 SPEC_TASKS_SCAN：Phase 3 `cli-migrate` 勾选与 examples 计数口径统一；5) 新增 release 收口：实现并验证 `owlclaw --version`，补齐 `release/tasks.md` 验收勾选，release 进度更新为 🟡22/32；6) CLI 稳定性加固：补充 `--version/-V` 与 root help 版本选项回归测试；7) 产出 owlhub Task 19 架构决策提案文档 `docs/OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md` 并挂载到 tasks 状态注释；8) 定向验证通过：`pytest tests/unit/test_cli_main.py -q`（21 passed）与 `pytest tests/unit/test_examples_smoke_script.py -q`（1 passed）。 |
-| 下一待执行 | 1) 推进 release 外部平台动作（PyPI Secret/TestPyPI、首发 tag、仓库公开配置）；2) owlhub Task 19/40.4（架构决策 + 外部部署）；3) 在人工环境完成发布后回填 `pip install owlclaw` 与 GitHub Release 验收项。 |
-| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(40/42)，examples ✅(14/14)，cli-migrate ✅(24/24)，release 🟡(22/32)。 |
-| 阻塞项 | 1) owlhub Task 40.4（外部生产部署）；2) owlhub Task 19（数据库基础设施）需架构决策确认；3) release 外部平台动作（PyPI/GitHub 仓库设置）待人工环境。 |
+| 当前批次 | 统筹轮次：合并 review-work（examples ✅ + cli-migrate ✅ + ci-setup ✅ + release 22/32 + owlhub 41/42）→ main |
+| 批次状态 | **完成**。review-work（50+ commits）已合并到 main，全量 fast-forward。 |
+| 已完成项 | 1) examples ✅(14/14)：mionyee-trading 示例 + 批量验证脚本 + CI 接入；2) cli-migrate ✅(24/24)：报告/冲突处理/配置校验/迁移向导全部完成；3) ci-setup ✅(12/12)：Final Checkpoint 收口；4) release 🟡(22/32)：CHANGELOG/Issue 模板/README/CONTRIBUTING/release.yml/RELEASE_RUNBOOK/test_release_assets/--version flag；5) owlhub 🟡(41/42)：OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md 产出；6) owlclaw-mcp 独立包配置（owlclaw-mcp/pyproject.toml）；7) CLI 稳定性加固（--version/-V 回归测试）。 |
+| 下一待执行 | 1) release 剩余 10 项（PyPI/TestPyPI 发布、GitHub Release、社区反馈收集）——外部平台依赖，需人工提供凭据；2) owlhub Task 19（数据库基础设施）架构决策（见 docs/OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md）；3) capabilities-skills 108/115 收尾。 |
+| 验收快照 | examples ✅(14/14)，cli-migrate ✅(24/24)，ci-setup ✅(12/12)，release 🟡(22/32)，owlhub 🟡(41/42)，capabilities-skills 🟡(108/115)，declarative-binding ✅(26/26)。 |
+| 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
