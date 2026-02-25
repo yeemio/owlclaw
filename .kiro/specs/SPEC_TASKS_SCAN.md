@@ -90,6 +90,12 @@
 - [ ] 根据社区需求评估是否需要 Temporal 支持 → spec: release
 - [ ] OwlHub Phase 3 评估 — 是否需要迁移到数据库后端（基于 Skills 数量和社区规模） → spec: owlhub
 
+### Phase 4：开发基础设施统一（新增）
+
+- [ ] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
+- [ ] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
+- [ ] 仓库卫生清理（根目录整洁、.gitignore 完整、deploy/ 文档化） → spec: repo-hygiene
+
 ---
 
 ## Spec 索引
@@ -126,6 +132,9 @@
 | cli-migrate | `.kiro/specs/cli-migrate/` | ✅ 三层齐全，已完成（24/24） | AI 辅助迁移工具（binding、dry-run、报告、冲突处理、Python 扫描与真实 handler 生成、配置校验与迁移向导全部完成） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（22/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
+| **local-devenv** | `.kiro/specs/local-devenv/` | 🆕 三层齐全，待执行（0/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
+| **test-infra** | `.kiro/specs/test-infra/` | 🆕 三层齐全，待执行（0/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐） |
+| **repo-hygiene** | `.kiro/specs/repo-hygiene/` | 🆕 三层齐全，待执行（0/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
 
 ---
 
@@ -151,11 +160,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 review-work（examples ✅ + cli-migrate ✅ + ci-setup ✅ + release 22/32 + owlhub 41/42）→ main |
-| 批次状态 | **完成**。review-work（50+ commits）已合并到 main，全量 fast-forward。 |
-| 已完成项 | 1) examples ✅(14/14)：mionyee-trading 示例 + 批量验证脚本 + CI 接入；2) cli-migrate ✅(24/24)：报告/冲突处理/配置校验/迁移向导全部完成；3) ci-setup ✅(12/12)：Final Checkpoint 收口；4) release 🟡(22/32)：CHANGELOG/Issue 模板/README/CONTRIBUTING/release.yml/RELEASE_RUNBOOK/test_release_assets/--version flag；5) owlhub 🟡(41/42)：OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md 产出；6) owlclaw-mcp 独立包配置（owlclaw-mcp/pyproject.toml）；7) CLI 稳定性加固（--version/-V 回归测试）。 |
-| 下一待执行 | 1) release 剩余 10 项（PyPI/TestPyPI 发布、GitHub Release、社区反馈收集）——外部平台依赖，需人工提供凭据；2) owlhub Task 19（数据库基础设施）架构决策（见 docs/OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md）；3) capabilities-skills 108/115 收尾。 |
-| 验收快照 | examples ✅(14/14)，cli-migrate ✅(24/24)，ci-setup ✅(12/12)，release 🟡(22/32)，owlhub 🟡(41/42)，capabilities-skills 🟡(108/115)，declarative-binding ✅(26/26)。 |
+| 当前批次 | 新建 3 个 spec：local-devenv + test-infra + repo-hygiene（开发基础设施统一） |
+| 批次状态 | **完成**。三个新 spec 三层文档均已建立，待编码 worktree 拆取执行。 |
+| 已完成项 | 1) local-devenv 🆕(0/10)：requirements + design + tasks 已建立；2) test-infra 🆕(0/11)：requirements + design + tasks 已建立；3) repo-hygiene 🆕(0/7)：requirements + design + tasks 已建立；4) SPEC_TASKS_SCAN 已更新（Phase 4 + Spec 索引 + Checkpoint）。 |
+| 下一待执行 | 1) repo-hygiene Task 1（.gitignore 补充）——最安全，可立即执行；2) repo-hygiene Task 2（nul 文件删除）；3) local-devenv Task 1（docker-compose.test.yml）——与 CI 镜像对齐；4) release 剩余 10 项（外部平台依赖）；5) owlhub Task 19 架构决策。 |
+| 验收快照 | examples ✅(14/14)，cli-migrate ✅(24/24)，ci-setup ✅(12/12)，release 🟡(22/32)，owlhub 🟡(41/42)，capabilities-skills 🟡(108/115)，declarative-binding ✅(26/26)，local-devenv 🆕(0/10)，test-infra 🆕(0/11)，repo-hygiene 🆕(0/7)。 |
 | 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
