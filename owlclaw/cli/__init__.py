@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+from importlib.metadata import PackageNotFoundError, version as package_version
 
 import typer
 from click.exceptions import Exit as ClickExit
@@ -15,6 +16,16 @@ app = typer.Typer(
 )
 
 _SUBAPPS_REGISTERED = False
+
+
+def _resolve_cli_version() -> str:
+    """Resolve CLI version from installed metadata, fallback to source version."""
+    try:
+        return package_version("owlclaw")
+    except PackageNotFoundError:
+        from owlclaw import __version__
+
+        return __version__
 
 
 def _register_subapps() -> None:
@@ -627,6 +638,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
     if not argv:
         print("Usage: owlclaw [OPTIONS] COMMAND [ARGS]...")
         print("\n  OwlClaw — Agent base for business applications.\n")
+        print("Options:")
+        print("  --version  Show OwlClaw CLI version")
         print("Commands:")
         print("  db     Database: init, migrate, status")
         print("  memory Agent memory: list, prune, reset, stats")
@@ -1015,6 +1028,9 @@ def _dispatch_db_restore(argv: list[str]) -> bool:
 
 def main() -> None:
     """CLI entry point — dispatches to subcommands."""
+    if sys.argv[1:] == ["--version"]:
+        print(_resolve_cli_version())
+        sys.exit(0)
     if "--help" in sys.argv or "-h" in sys.argv:
         argv = [a for a in sys.argv[1:] if a not in ("--help", "-h")]
         _print_help_and_exit(argv)

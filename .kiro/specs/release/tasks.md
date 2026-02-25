@@ -8,19 +8,19 @@
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
 
-> **状态**：未开始  
+> **状态**：进行中  
 > **预估工作量**：3-5 天  
-> **最后更新**：2026-02-22  
+> **最后更新**：2026-02-25  
 > **执行原则**：本清单内所有任务均须专业、认真完成，不区分可选与必选。
 
 ---
 
 ## 进度概览
 
-- **总任务数**：15
-- **已完成**：0
+- **总任务数**：32
+- **已完成**：21
 - **进行中**：0
-- **未开始**：15
+- **未开始**：11
 
 ---
 
@@ -61,27 +61,27 @@
 
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
-- [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
-- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
+- [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets（外部平台操作待执行）
+- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI，外部平台操作待执行）
 
 ---
 
 ## 4. 发布执行（0.5 天）
 
 ### 4.1 首次发布
-- [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布
-- [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功
-- [ ] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常
-- [ ] 4.1.4 验证 GitHub Release 自动创建
+- [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布（外部仓库发布动作待执行）
+- [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功（受当前环境 TLS/CA 异常阻塞）
+- [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常
+- [ ] 4.1.4 验证 GitHub Release 自动创建（依赖 4.1.1 外部发布动作）
 
 ---
 
 ## 5. 社区准备（0.5 天）
 
 ### 5.1 社区渠道
-- [ ] 5.1.1 启用 GitHub Discussions
-- [ ] 5.1.2 仓库设为 Public
-- [ ] 5.1.3 添加 Topics 和 Description
+- [ ] 5.1.1 启用 GitHub Discussions（外部仓库设置）
+- [ ] 5.1.2 仓库设为 Public（外部仓库设置）
+- [ ] 5.1.3 添加 Topics 和 Description（外部仓库设置）
 
 ---
 
@@ -89,14 +89,14 @@
 
 ### 6.1 功能验收
 - [ ] `pip install owlclaw` 在干净环境中成功
-- [ ] `owlclaw --version` 输出正确版本
+- [x] `owlclaw --version` 输出正确版本
 - [ ] examples/ 中至少 1 个示例可独立运行
 - [ ] GitHub Release 包含 changelog
 
 ### 6.2 文档验收
-- [ ] README.md 英文完整
-- [ ] CONTRIBUTING.md 可指导新贡献者
-- [ ] CHANGELOG.md 记录 v0.1.0
+- [x] README.md 英文完整
+- [x] CONTRIBUTING.md 可指导新贡献者
+- [x] CHANGELOG.md 记录 v0.1.0
 
 ---
 
@@ -116,4 +116,4 @@
 ---
 
 **维护者**：OwlClaw Team  
-**最后更新**：2026-02-22
+**最后更新**：2026-02-25
