@@ -1,0 +1,35 @@
+# CODEOWNERS — GitHub code ownership for PR review routing
+# Syntax: <pattern> <owner> [<owner> ...]
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default: all changes require review from the core team
+* @yeemio
+
+# Agent core
+owlclaw/agent/ @yeemio
+owlclaw/capabilities/ @yeemio
+
+# Integrations
+owlclaw/integrations/ @yeemio
+
+# Database
+owlclaw/db/ @yeemio
+migrations/ @yeemio
+
+# CLI
+owlclaw/cli/ @yeemio
+
+# Triggers
+owlclaw/triggers/ @yeemio
+
+# Governance & Security
+owlclaw/governance/ @yeemio
+owlclaw/security/ @yeemio
+
+# CI/CD and release
+.github/ @yeemio
+pyproject.toml @yeemio
+
+# Specs and architecture docs
+.kiro/ @yeemio
+docs/ @yeemio
