@@ -8,9 +8,9 @@
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
 
-> **状态**：未开始  
+> **状态**：进行中（binding 输出模式已完成）  
 > **预估工作量**：4-6 天  
-> **最后更新**：2026-02-22  
+> **最后更新**：2026-02-25  
 > **执行原则**：本清单内所有任务均须专业、认真完成，不区分可选与必选（见规范 §1.4、§4.5）。
 
 ---
@@ -18,9 +18,9 @@
 ## 进度概览
 
 - **总任务数**：9（含 binding 输出模式 3 个新任务组）
-- **已完成**：0
+- **已完成**：3（Task 4.1 / 4.2 / 4.3）
 - **进行中**：0
-- **未开始**：9
+- **未开始**：6
 
 ---
 
@@ -65,22 +65,22 @@
 ## 4. Binding 输出模式（与 declarative-binding spec 联动）
 
 ### 4.1 BindingGenerator 实现
-- [ ] 4.1.1 实现 BindingGenerator 类（与 HandlerGenerator/SKILLGenerator 并列）
-- [ ] 4.1.2 实现 `generate_from_openapi()`：OpenAPI endpoint → HTTP Binding SKILL.md
-- [ ] 4.1.3 实现 `generate_from_orm()`：ORM operation → SQL Binding SKILL.md
-- [ ] 4.1.4 实现 security schemes → `${ENV_VAR}` + prerequisites.env 映射
-- [ ] 4.1.5 实现 response schema → response_mapping 映射
-- [ ] 4.1.6 生成的 SKILL.md 通过 `owlclaw skill validate` 验证
+- [x] 4.1.1 实现 BindingGenerator 类（与 HandlerGenerator/SKILLGenerator 并列）
+- [x] 4.1.2 实现 `generate_from_openapi()`：OpenAPI endpoint → HTTP Binding SKILL.md
+- [x] 4.1.3 实现 `generate_from_orm()`：ORM operation → SQL Binding SKILL.md
+- [x] 4.1.4 实现 security schemes → `${ENV_VAR}` + prerequisites.env 映射
+- [x] 4.1.5 实现 response schema → response_mapping 映射
+- [x] 4.1.6 生成的 SKILL.md 通过 `owlclaw skill validate` 验证
 
 ### 4.2 CLI 集成
-- [ ] 4.2.1 扩展 `owlclaw migrate scan` 增加 `--output-mode` 参数（handler/binding/both）
-- [ ] 4.2.2 `--output-mode binding` 时调用 BindingGenerator
-- [ ] 4.2.3 `--output-mode both` 时同时生成 @handler 和 binding SKILL.md
+- [x] 4.2.1 扩展 `owlclaw migrate scan` 增加 `--output-mode` 参数（handler/binding/both）
+- [x] 4.2.2 `--output-mode binding` 时调用 BindingGenerator
+- [x] 4.2.3 `--output-mode both` 时同时生成 @handler 和 binding SKILL.md
 
 ### 4.3 测试
-- [ ] 4.3.1 单元测试：OpenAPI → HTTP Binding SKILL.md 生成
-- [ ] 4.3.2 单元测试：ORM → SQL Binding SKILL.md 生成
-- [ ] 4.3.3 集成测试：端到端 scan → generate → validate → load
+- [x] 4.3.1 单元测试：OpenAPI → HTTP Binding SKILL.md 生成
+- [x] 4.3.2 单元测试：ORM → SQL Binding SKILL.md 生成
+- [x] 4.3.3 集成测试：端到端 scan → generate → validate → load
 
 ---
 
@@ -110,4 +110,4 @@
 ---
 
 **维护者**：平台研发  
-**最后更新**：2026-02-24
+**最后更新**：2026-02-25
