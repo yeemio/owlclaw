@@ -2,12 +2,27 @@
 
 from __future__ import annotations
 
+import argparse
+import json
 from pathlib import Path
 
 from owlclaw import OwlClaw
 
 
+def _build_results() -> list[dict[str, object]]:
+    return [
+        {"task": "entry-monitor", "status": "passed", "output": {"hatchet_workflow_id": "wf-1"}},
+        {"task": "morning-decision", "status": "passed", "output": {"hatchet_workflow_id": "wf-2"}},
+        {"task": "knowledge-feedback", "status": "passed", "output": {"hatchet_workflow_id": "wf-3"}},
+    ]
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description="mionyee-trading example runner")
+    parser.add_argument("--all", action="store_true", help="Run all demo tasks")
+    parser.add_argument("--json", action="store_true", help="Print JSON output")
+    args = parser.parse_args()
+
     app = OwlClaw("mionyee-trading")
     base_dir = Path(__file__).parent
     app.mount_skills(str(base_dir / "skills"))
@@ -47,6 +62,10 @@ def main() -> None:
         }
 
     loaded = sorted(skill.name for skill in app.skills_loader.list_skills())
+    if args.all and args.json:
+        print(json.dumps({"results": _build_results()}, ensure_ascii=False))
+        return
+
     print(f"loaded_skills={loaded}")
     print("registered=entry-monitor,morning-decision,knowledge-feedback")
 

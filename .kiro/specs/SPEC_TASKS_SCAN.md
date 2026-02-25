@@ -92,7 +92,7 @@
 
 ### Phase 4：开发基础设施统一（新增）
 
-- [ ] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
+- [x] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
 - [ ] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
 - [x] 仓库卫生清理（根目录整洁、.gitignore 完整、deploy/ 文档化） → spec: repo-hygiene
 
@@ -132,8 +132,8 @@
 | cli-migrate | `.kiro/specs/cli-migrate/` | ✅ 三层齐全，已完成（24/24） | AI 辅助迁移工具（binding、dry-run、报告、冲突处理、Python 扫描与真实 handler 生成、配置校验与迁移向导全部完成） |
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
-| **local-devenv** | `.kiro/specs/local-devenv/` | 🟡 三层齐全，进行中（4/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐） |
+| **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
+| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（9/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（7/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
 
 ---
@@ -160,12 +160,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 review-work（6 commits）→ main；同步所有子 worktree；解决 codex-work 18 文件冲突 + codex-gpt-work 1 文件冲突 |
-| 批次状态 | **完成**。review-work 已合并到 main，所有子 worktree 已同步。 |
-| 已完成项 | 1) review-work 合并：test-infra Task 3/9.1~9.3 完成（unit 0 skip + CI/本地 compose 同源）；2) 单测修复：queue_log_security 字段级断言；3) codex-work 冲突解决（18 文件）；4) codex-gpt-work 冲突解决（SPEC_TASKS_SCAN）；5) local-devenv：codex-gpt-work 推进 Task 4/6/8/9（db status 验证 + Windows asyncpg fallback）。 |
-| 下一待执行 | 1) codex-work：test-infra Task 4/6/9.4/11；2) codex-gpt-work：local-devenv Task 1/2/3/5/7 + owlhub Task 40.4 收尾；3) capabilities-skills 108/115 剩余 7 tasks（backlog 性质）；4) release 外部平台依赖（需人工凭据）。 |
-| 验收快照 | repo-hygiene ✅(7/7)，local-devenv 🟡(4/10)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，integrations-llm ✅(128/128)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) 本机 Docker Engine 未运行，阻塞 local-devenv Task 1/2/3 与部分 test-infra 实地验收；2) Windows 环境无 `make`，阻塞 local-devenv Task 5；3) release/owlhub 余项包含外部平台与人工决策动作（PyPI token、GitHub 开源）；4) capabilities-skills 剩余 7 tasks 为 backlog 性质，不阻塞主线。 |
+| 当前批次 | codex-gpt-work：local-devenv 全量收口 + test-infra 验收推进（Task 6.3/9.4/11.2） |
+| 批次状态 | **进行中**。local-devenv 已完成（10/10）；test-infra 已推进到 9/11，剩余为性能门槛与外部 CI 验收。 |
+| 已完成项 | 1) local-devenv：Task 3.8 完成（`docker compose -f docker-compose.dev.yml --profile full up -d` 后 `owlclaw-db/redis/hatchet-lite/langfuse` 全部 healthy）；2) local-devenv：Task 7.2/10.1 完成（同一会话完成 quickstart 与 unit+integration 验证，`1646 passed, 12 skipped`）；3) local-devenv：Task 5.4/10.3 完成（安装 `ezwinports.make` 后 `make help` 与 `make test-unit` 通过，`1544 passed`）；4) local-devenv：Task 10.4 完成（新增 env 覆盖自动校验测试并通过）；5) test-infra：Task 6.3/9.4/11.2 完成（`make test-int` 结果 `102 passed, 12 skipped`）。 |
+| 下一待执行 | 1) test-infra：Task 4.2、Task 11.1、Task 11.3、Task 11.4；2) owlhub：Task 19 决策确认与 Task 40.4 外部部署；3) release：PyPI/TestPyPI/GitHub 发布外部动作。 |
+| 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(40/42)，capabilities-skills 🟡(108/115)，integrations-llm ✅(128/128)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra：11.1 受 `<60s` 性能门槛阻塞（当前 `tests/unit` 约 `404.82s`）；2) test-infra：11.3 需外部 CI matrix 结果；3) test-infra：11.4 覆盖率门槛未达（本地 `--cov-fail-under=90` 总覆盖率 `71.88%`）；4) release/owlhub 余项包含外部平台与人工决策动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
