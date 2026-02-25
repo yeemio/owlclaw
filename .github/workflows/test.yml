@@ -14,7 +14,7 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: owlclaw_test
@@ -43,6 +43,11 @@ jobs:
 
       - name: Install dependencies
         run: poetry install --no-interaction
+
+      - name: Enable pgvector extension
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d owlclaw_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
       - name: Run tests with coverage
         env:

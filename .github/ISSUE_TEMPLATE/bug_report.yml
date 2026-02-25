@@ -1,54 +1,45 @@
 name: Bug Report
 description: Report a reproducible problem in OwlClaw.
-title: "[Bug] "
-labels: ["bug"]
+title: "[Bug]: "
+labels:
+  - bug
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for reporting. Please provide enough detail to reproduce the issue.
-  - type: input
+  - type: textarea
     id: summary
     attributes:
       label: Summary
-      description: One-sentence description of the bug.
-      placeholder: What went wrong?
+      description: What happened and what did you expect?
+      placeholder: Short and specific description.
     validations:
       required: true
   - type: textarea
-    id: steps
+    id: reproduce
     attributes:
-      label: Reproduction Steps
-      description: Exact steps/commands to reproduce.
+      label: Steps To Reproduce
+      description: Provide a minimal sequence to reproduce the bug.
       placeholder: |
-        1. ...
-        2. ...
-        3. ...
+        1. Run ...
+        2. Call ...
+        3. Observe ...
     validations:
       required: true
   - type: textarea
-    id: expected
+    id: logs
     attributes:
-      label: Expected Behavior
-    validations:
-      required: true
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual Behavior
-    validations:
-      required: true
+      label: Logs / Traceback
+      description: Paste relevant logs or traceback. Redact secrets.
+      render: shell
   - type: input
     id: version
     attributes:
       label: OwlClaw Version
-      placeholder: 0.1.0
+      placeholder: "0.1.0"
     validations:
       required: true
-  - type: textarea
-    id: environment
+  - type: input
+    id: python
     attributes:
-      label: Environment
-      description: OS, Python version, install method.
-      placeholder: Windows 11, Python 3.11, pip install owlclaw
-
+      label: Python Version
+      placeholder: "3.10 / 3.11 / 3.12"
+    validations:
+      required: true

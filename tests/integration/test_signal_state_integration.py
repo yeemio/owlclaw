@@ -46,6 +46,7 @@ async def db_engine(async_url: str) -> AsyncEngine:
     engine = create_engine(async_url, pool_size=5, max_overflow=5, pool_timeout=10)
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield engine

@@ -54,6 +54,24 @@ Conventional commit types used by release automation:
 BREAKING CHANGE: <what changed and migration guidance>
 ```
 
+## Pull Request Guidelines
+
+Every PR should include:
+
+1. Purpose and scope (what changed and why)
+2. Spec/task linkage (`.kiro/specs/{feature}/tasks.md` item)
+3. Validation commands and results (`pytest`, `ruff`, `mypy`)
+4. Risk notes and rollback hints if behavior changed
+
+Prefer focused PRs over mixed refactor+feature bundles.
+
+## Code Style
+
+- Python 3.10+ with type hints
+- Absolute imports (`from owlclaw...`)
+- Keep production code free of `TODO/FIXME/HACK`
+- Run formatting/lint checks before pushing
+
 ## Spec Workflow
 
 New features and major refactors require a three-layer spec:

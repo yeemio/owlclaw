@@ -1,4 +1,4 @@
-# Tasks: release
+# Tasks: 开源发布
 
 ## 文档联动
 
@@ -7,60 +7,114 @@
 - tasks: `.kiro/specs/release/tasks.md`
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
+
 > **状态**：进行中  
-> **最后更新**：2026-02-25
+> **预估工作量**：3-5 天  
+> **最后更新**：2026-02-25  
+> **执行原则**：本清单内所有任务均须专业、认真完成，不区分可选与必选。
 
 ---
 
 ## 进度概览
 
-- **总任务数**：20
-- **已完成**：12
+- **总任务数**：32
+- **已完成**：22
 - **进行中**：0
-- **未开始**：8
+- **未开始**：10
 
 ---
 
-## Task 清单（20）
+## 1. 包构建准备（1 天）
 
-### 1. 打包元数据与构建资产（4/4）
-- [x] 1.1 `pyproject.toml` 包元数据完整（name/version/description/license/classifiers）
-- [x] 1.2 可选依赖组已配置（`langchain`、`dev`/group）
-- [x] 1.3 CLI 入口点已配置（`owlclaw = "owlclaw.cli:main"`）
-- [x] 1.4 `release.yml` 构建并上传分发包（wheel/sdist）
+### 1.1 pyproject.toml 完善
+- [x] 1.1.1 确认 owlclaw 包元数据完整（name, version, description, author, license, keywords, classifiers）
+- [x] 1.1.2 配置可选依赖组（`[langchain]`, `[dev]`）
+- [x] 1.1.3 配置 CLI 入口点（`owlclaw = "owlclaw.cli:main"`）
+- [x] 1.1.4 确认 owlclaw-mcp 包独立构建配置
 
-### 2. 发布文档与社区入口（4/4）
-- [x] 2.1 README（英文）包含定位、快速开始、架构与示例链接
-- [x] 2.2 `CONTRIBUTING.md` 存在且可指导贡献流程
-- [x] 2.3 新增 `CHANGELOG.md`（v0.1.0 初始记录）
-- [x] 2.4 新增 GitHub Issue 模板（bug/feature）
-
-### 3. 仓库安全与配置检查（3/3）
-- [x] 3.1 `.gitignore` 覆盖 `.env`/`dist`/`build`/缓存目录
-- [x] 3.2 全仓敏感信息扫描并形成可追溯报告（`docs/release/SECURITY_SCAN_REPORT.md`）
-- [x] 3.3 发布前凭据最小权限审计（`docs/release/CREDENTIAL_AUDIT.md`）
-
-### 4. 自动化发布联调（0/3）
-- [ ] 4.1 配置并验证 PyPI token（GitHub Secrets）
-- [ ] 4.2 在 GitHub Actions 上完成一次 TestPyPI/正式发布演练
-- [ ] 4.3 验证 GitHub Release 自动创建与附件可下载
-
-### 5. 外部平台开关（0/2）
-- [ ] 5.1 仓库公开配置（Public/Topics/Description）
-- [ ] 5.2 启用 GitHub Discussions
-
-### 6. 最终验收（0/3）
-- [ ] 6.1 远程 `pip install owlclaw` 验证通过（非本地源码路径）
-- [ ] 6.2 `owlclaw --version` 与 `owlclaw skill list` 在干净环境可运行
-- [ ] 6.3 发布版本与 changelog、tag、release 三方一致
-
-### 7. 预检自动化（新增本地收口）（1/1）
-- [x] 7.1 新增发布前预检脚本（`scripts/release_preflight.py`）并可执行通过
+### 1.2 敏感信息检查
+- [x] 1.2.1 扫描仓库确认无硬编码 API key、token、密码
+  - 基线扫描：`rg -n -S "AKIA|ASIA|BEGIN PRIVATE KEY|ghp_|sk-|xoxb-|xoxp-|xoxa-|xoxr-" owlclaw tests scripts .github docs`
+  - 结果：仅测试样例/文档占位命中，未发现可用真实凭证
+- [x] 1.2.2 确认 .gitignore 覆盖 .env、*.pyc、__pycache__、dist/、build/
+- [x] 1.2.3 确认 .env.example 存在且不含真实凭证
 
 ---
 
-## 阻塞项（外部依赖）
+## 2. 文档准备（1 天）
 
-- PyPI token 与发布权限（需要仓库维护者提供）
-- GitHub 仓库可见性/Discussions 开关（需要管理员权限）
-- 干净环境在线安装依赖受网络 SSL 链路影响（需可用外网/镜像源后复验）
+### 2.1 README.md（英文）
+- [x] 2.1.1 编写项目定位（一句话 + 详细描述）
+- [x] 2.1.2 编写 Quick Start（安装 → 创建 Skill → 运行第一个 Agent）
+- [x] 2.1.3 编写架构概览图（ASCII）
+- [x] 2.1.4 编写与 LangChain/LangGraph 的对比/互补关系
+- [x] 2.1.5 编写链接列表（文档、示例、贡献指南、许可证）
+
+### 2.2 辅助文档
+- [x] 2.2.1 编写 CONTRIBUTING.md（开发环境搭建、测试运行、PR 规范、代码风格）
+- [x] 2.2.2 编写 CHANGELOG.md（v0.1.0 初始版本记录）
+- [x] 2.2.3 创建 GitHub Issue 模板（Bug Report、Feature Request）
+
+---
+
+## 3. 自动化发布（1 天）
+
+### 3.1 GitHub Actions
+- [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
+- [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
+- [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
+
+---
+
+## 4. 发布执行（0.5 天）
+
+### 4.1 首次发布
+- [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布
+- [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功
+- [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
+  - 本地验证（2026-02-25）：`poetry run owlclaw --version` → `owlclaw 0.1.0`；`poetry run owlclaw skill list` 正常输出
+- [ ] 4.1.4 验证 GitHub Release 自动创建
+
+---
+
+## 5. 社区准备（0.5 天）
+
+### 5.1 社区渠道
+- [ ] 5.1.1 启用 GitHub Discussions
+- [ ] 5.1.2 仓库设为 Public
+- [ ] 5.1.3 添加 Topics 和 Description
+
+---
+
+## 6. 验收清单
+
+### 6.1 功能验收
+- [ ] `pip install owlclaw` 在干净环境中成功
+- [x] `owlclaw --version` 输出正确版本
+- [x] examples/ 中至少 1 个示例可独立运行
+- [ ] GitHub Release 包含 changelog
+
+### 6.2 文档验收
+- [x] README.md 英文完整
+- [x] CONTRIBUTING.md 可指导新贡献者
+- [x] CHANGELOG.md 记录 v0.1.0
+
+---
+
+## 7. 依赖与阻塞
+
+### 7.1 依赖
+- Phase 1 MVP 模块全部验收通过
+- ci-setup spec 完成
+- examples spec 至少 2 个非交易示例完成
+
+### 7.2 阻塞
+- 外部平台操作待执行（非仓内可自动完成）：
+  - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
+  - TestPyPI 实际发布验证
+  - GitHub 仓库 Discussions/Public/Topics 设置
+
+---
+
+**维护者**：OwlClaw Team  
+**最后更新**：2026-02-25

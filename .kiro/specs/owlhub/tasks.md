@@ -15,8 +15,8 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 ## Phase 1: GitHub Index Mode (Minimal Viable Registry)
 
 - [x] 1. Set up project structure and core data models
-  - Create `owlhub/` package with `indexer/`, `validator/`, and `schema/` subpackages
-  - Define `SkillManifest`, `IndexEntry`, `ValidationResult`, `ValidationError` dataclasses in `owlhub/schema/`
+  - Create `owlclaw/owlhub/` package with `indexer/`, `validator/`, and `schema/` subpackages
+  - Define `SkillManifest`, `IndexEntry`, `ValidationResult`, `ValidationError` dataclasses in `owlclaw/owlhub/schema/`
   - Define `VersionState` enum (DRAFT, RELEASED, DEPRECATED)
   - Add type hints and docstrings following project conventions
   - _Requirements: 1.1, 1.4, 4.1_
@@ -28,7 +28,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
   - _Requirements: 8.1_
 
 - [x] 2. Implement Validator component
-  - [x] 2.1 Create `owlhub/validator/validator.py` with Validator class
+  - [x] 2.1 Create `owlclaw/owlhub/validator/validator.py` with Validator class
     - Implement `validate_version()` with semver regex pattern
     - Implement `validate_manifest()` for required fields validation
     - Implement `validate_structure()` for directory structure checks
@@ -57,14 +57,14 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 1.2, 1.5, 4.1, 4.2, 4.3, 4.4_
 
 - [x] 3. Implement Index Builder component
-  - [x] 3.1 Create `owlhub/indexer/crawler.py` for repository crawling
+  - [x] 3.1 Create `owlclaw/owlhub/indexer/crawler.py` for repository crawling
     - Implement GitHub API client for fetching repository contents
     - Implement SKILL.md frontmatter parsing using PyYAML
     - Handle API rate limiting and errors gracefully
     - Support authentication via GitHub token
     - _Requirements: 1.1, 4.1_
 
-  - [x] 3.2 Create `owlhub/indexer/builder.py` for index generation
+  - [x] 3.2 Create `owlclaw/owlhub/indexer/builder.py` for index generation
     - Implement `calculate_checksum()` using hashlib.sha256
     - Implement `crawl_repository()` to extract skill manifests
     - Implement `build_index()` to generate complete index.json
@@ -175,7 +175,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 ## Phase 2: Static Site Mode (Enhanced Discovery)
 
 - [x] 8. Implement Statistics Tracker for GitHub-based metrics
-  - [x] 8.1 Create `owlhub/statistics/tracker.py` with StatisticsTracker class
+  - [x] 8.1 Create `owlclaw/owlhub/statistics/tracker.py` with StatisticsTracker class
     - Implement GitHub API integration for release download counts
     - Implement `get_statistics()` to fetch skill download metrics
     - Calculate downloads_last_30d from GitHub API data
@@ -215,7 +215,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 2.1, 6.1, 8.4_
 
 - [x] 10. Implement Static Site Generator
-  - [x] 10.1 Create `owlhub/site/generator.py` with SiteGenerator class
+  - [x] 10.1 Create `owlclaw/owlhub/site/generator.py` with SiteGenerator class
     - Set up Jinja2 templating environment
     - Implement page generation for skill list, detail, search
     - Generate RSS feed for new skills and updates
@@ -255,7 +255,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 2.3, 2.4_
 
 - [x] 11. Implement Review System (Phase 2 - automated validation)
-  - [x] 11.1 Create `owlhub/review/system.py` with ReviewSystem class
+  - [x] 11.1 Create `owlclaw/owlhub/review/system.py` with ReviewSystem class
     - Implement `submit_for_review()` to create review records
     - Implement automated validation checks using Validator
     - Generate review reports with validation results
@@ -367,6 +367,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 ## Phase 3: Service API Mode (Full Service)
 
 - [ ] 19. Set up database infrastructure
+  - _Status note (2026-02-25): pending architecture scope decision. Current implementation path shipped file-backed API/review/statistics flow for Phase 3 validation; DB-backed migration/model track remains open and must be explicitly approved before implementation. Decision proposal: `docs/OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md`._
   - [ ] 19.1 Create database schema with Alembic migrations
     - Create `migrations/versions/` migration for skills table
     - Create migration for skill_versions table with foreign key
@@ -376,10 +377,10 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 1.1, 1.3, 6.1, 7.1_
 
   - [ ] 19.2 Create SQLAlchemy models
-    - Create `owlhub/models/skill.py` with Skill model
-    - Create `owlhub/models/version.py` with SkillVersion model
-    - Create `owlhub/models/statistics.py` with SkillStatistics model
-    - Create `owlhub/models/review.py` with ReviewRecord model
+    - Create `owlclaw/owlhub/models/skill.py` with Skill model
+    - Create `owlclaw/owlhub/models/version.py` with SkillVersion model
+    - Create `owlclaw/owlhub/models/statistics.py` with SkillStatistics model
+    - Create `owlclaw/owlhub/models/review.py` with ReviewRecord model
     - Add relationships and cascade rules
     - _Requirements: 1.1, 1.3, 6.1, 7.1_
 
@@ -391,7 +392,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 1.1, 1.3_
 
 - [x] 20. Implement FastAPI service foundation
-  - [x] 20.1 Create `owlhub/api/app.py` with FastAPI application
+  - [x] 20.1 Create `owlclaw/owlhub/api/app.py` with FastAPI application
     - Set up FastAPI app with CORS middleware
     - Configure database connection pooling
     - Add health check endpoint
@@ -412,7 +413,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 2.1, 2.3_
 
 - [x] 21. Implement Registry API endpoints
-  - [x] 21.1 Create `owlhub/api/routes/skills.py` with search endpoint
+  - [x] 21.1 Create `owlclaw/owlhub/api/routes/skills.py` with search endpoint
     - Implement `GET /api/v1/skills` with query, tags, sort_by, pagination
     - Support sorting by downloads, updated_at, name
     - Implement efficient database queries with joins
@@ -443,7 +444,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 2.1, 2.2, 2.4_
 
 - [x] 22. Implement Authentication and Authorization
-  - [x] 22.1 Create `owlhub/api/auth.py` with OAuth2 integration
+  - [x] 22.1 Create `owlclaw/owlhub/api/auth.py` with OAuth2 integration
     - Implement GitHub OAuth2 flow
     - Implement JWT token generation and validation
     - Create API key management for programmatic access
@@ -479,7 +480,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 1.1, 1.4, 5.1, 7.1_
 
   - [x] 23.2 Implement audit logging for publish operations
-    - Create `owlhub/api/audit.py` with audit logging
+    - Create `owlclaw/owlhub/api/audit.py` with audit logging
     - Log publisher identity, timestamp, changes for all publish operations
     - Store audit logs in database or separate audit log file
     - Provide audit log query API for admins
@@ -568,7 +569,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 
 - [x] 26. Implement blacklist and moderation features
   - [x] 26.1 Create blacklist management
-    - Create `owlhub/models/blacklist.py` with Blacklist model
+    - Create `owlclaw/owlhub/models/blacklist.py` with Blacklist model
     - Implement blacklist API endpoints (admin-only)
     - Add blacklist checking to search and install flows
     - Support blacklisting by skill name or publisher
@@ -835,7 +836,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 
 - [x] 38. Testing coverage and quality assurance
   - [x] 38.1 Achieve coverage targets
-    - Run `poetry run pytest --cov=owlhub --cov=owlclaw/cli/skill` to measure coverage
+    - Run `poetry run pytest --cov=owlclaw.owlhub --cov=owlclaw/cli/skill` to measure coverage
     - Ensure overall coverage ≥ 75%
     - Ensure Validator, IndexBuilder, CLIClient coverage ≥ 85%
     - Ensure install/publish critical paths coverage ≥ 90%
@@ -885,7 +886,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
   - [x] 40.1 Run full test suite
     - Run `poetry run pytest` and ensure all tests pass
     - Run `poetry run ruff check .` and fix any linting issues
-    - Run `poetry run mypy owlclaw/ owlhub/` and fix type errors
+    - Run `poetry run mypy owlclaw/` and fix type errors
     - Run property tests with high iteration count (1000+)
     - _Requirements: All_
 
@@ -913,7 +914,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 
 ## Notes
 
-- Tasks marked with `*` are optional testing tasks that can be skipped for faster MVP delivery
+- Tasks marked with `*` are testing-priority markers and are not skippable for final acceptance
 - Each task references specific requirements for traceability
 - Property tests validate universal correctness properties from the design document
 - Unit tests validate specific examples and edge cases

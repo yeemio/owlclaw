@@ -46,7 +46,7 @@
 - [x] 2.1.5 实现 `_default_rules()` 内置规则集（至少 10 条已知 injection 模式）
 
 ### 2.2 Agent Runtime 集成
-- [x] 2.2.1 在 `agent.runtime.runtime.py` 的 prompt 构建流程中集成 InputSanitizer
+- [x] 2.2.1 在 `owlclaw/agent/runtime/runtime.py` 的 prompt 构建流程中集成 InputSanitizer
 - [x] 2.2.2 确保 system/user 角色隔离在 `_build_messages()` 中强制执行
 - [x] 2.2.3 sanitization 修改时写入审计日志
 
@@ -66,7 +66,7 @@
 - [x] 3.1.4 实现确认超时自动取消逻辑
 
 ### 3.2 Governance 集成
-- [x] 3.2.1 在 `governance/visibility.py` 执行 function call 前调用 RiskGate
+- [x] 3.2.1 在 `owlclaw/governance/visibility.py` 执行 function call 前调用 RiskGate
 - [x] 3.2.2 从 SKILL.md frontmatter 读取 `risk_level` 和 `requires_confirmation`
 
 ### 3.3 单元测试

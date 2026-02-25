@@ -1266,14 +1266,14 @@ def test_property(input_data):
 **实现步骤**:
 
 1. **Index Builder 实现**
-   - 创建 `owlhub/indexer/builder.py`
+   - 创建 `owlclaw/owlhub/indexer/builder.py`
    - 实现仓库抓取逻辑（使用 GitHub API）
    - 实现 SKILL.md 解析（使用 PyYAML）
    - 实现 checksum 计算（使用 hashlib）
    - 生成 index.json 文件
 
 2. **Validator 实现**
-   - 创建 `owlhub/validator/validator.py`
+   - 创建 `owlclaw/owlhub/validator/validator.py`
    - 实现版本号校验（正则表达式）
    - 实现必填字段校验
    - 实现目录结构校验
@@ -1293,7 +1293,7 @@ def test_property(input_data):
 
 **文件结构**:
 ```
-owlhub/
+owlclaw/owlhub/
 ├── indexer/
 │   ├── __init__.py
 │   ├── builder.py
@@ -1327,7 +1327,7 @@ update_interval: 3600  # seconds
 **实现步骤**:
 
 1. **Static Site Generator**
-   - 创建 `owlhub/site/generator.py`
+   - 创建 `owlclaw/owlhub/site/generator.py`
    - 使用 Jinja2 生成 HTML 页面
    - 生成搜索索引（使用 lunr.js）
    - 生成 RSS feed

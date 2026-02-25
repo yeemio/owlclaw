@@ -85,7 +85,7 @@
 - [ ] GitHub 开源（MIT） → spec: release
 - [ ] OwlHub 仓库公开（`owlclaw/owlhub`）+ 首批 10+ 行业 Skills → spec: owlhub
 - [x] mionyee 完整接入示例 → spec: examples
-- [ ] `owlclaw.cli.migrate` — AI 辅助迁移工具 → spec: cli-migrate
+- [x] `owlclaw.cli.migrate` — AI 辅助迁移工具 → spec: cli-migrate
 - [ ] 社区反馈收集 → spec: release
 - [ ] 根据社区需求评估是否需要 Temporal 支持 → spec: release
 - [ ] OwlHub Phase 3 评估 — 是否需要迁移到数据库后端（基于 Skills 数量和社区规模） → spec: owlhub
@@ -96,7 +96,7 @@
 
 | Spec 名称 | 路径 | 状态 | 覆盖模块 |
 |-----------|------|------|---------|
-| capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（27/34） | skills + registry |
+| capabilities-skills | `.kiro/specs/capabilities-skills/` | 🟡 三层齐全，进行中（108/115） | skills + registry |
 | database-core | `.kiro/specs/database-core/` | ✅ 三层齐全，已完成（30/30） | SQLAlchemy Base、engine、session、异常、Alembic |
 | cli-db | `.kiro/specs/cli-db/` | ✅ 三层齐全，已完成（53/53） | `owlclaw db` init/migrate/status/revision/rollback/backup/restore/check |
 | agent-runtime | `.kiro/specs/agent-runtime/` | ✅ 三层齐全，已完成（105/105） | runtime + heartbeat + function calling |
@@ -122,10 +122,10 @@
 | owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
-| examples | `.kiro/specs/examples/` | ✅ 三层齐全，已完成（12/12） | 示例（非交易场景、LangChain、3 行业 Skills、mionyee-trading 完整示例、批量验证脚本、CI 接入、文档对齐全部完成） |
+| examples | `.kiro/specs/examples/` | ✅ 三层齐全，已完成（14/14） | 示例（非交易场景、LangChain、3 行业 Skills、mionyee-trading 完整示例、批量验证脚本、CI 接入、文档对齐全部完成） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | ✅ 三层齐全，已完成（24/24） | AI 辅助迁移工具（binding、dry-run、报告、冲突处理、Python 扫描与真实 handler 生成、配置校验与迁移向导全部完成） |
-| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（12/20） | PyPI + GitHub 发布（文档与发布资产、安全扫描与凭据审计、预检脚本已就绪，外部凭据与平台开关待完成） |
-| ci-setup | `.kiro/specs/ci-setup/` | 🟡 三层齐全，进行中（10/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
+| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（22/32） | PyPI + GitHub 发布 |
+| ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 
 ---
 
@@ -151,12 +151,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | 统筹轮次：合并 codex-work ci-setup + codex-gpt-work owlhub gate → review-work → main |
-| 批次状态 | **完成**。codex-work（6 commits ci-setup）+ codex-gpt-work（3 commits owlhub gate）均已合并到 main。 |
-| 已完成项 | 1) 合并 codex-work：ci-setup Task 1~10（GitHub Actions lint/test/build/release workflows + pre-commit + dependabot + .releaserc.json + pyproject.toml 工具链配置 + CI 文档 + 配置测试）；2) 合并 codex-gpt-work：owlhub release_gate 模块（owlclaw/owlhub/release_gate.py + scripts/owlhub_release_gate.py + tests）+ OwlHub gate CLI 落地（`owlclaw release gate owlhub`）；3) ci-setup 进度更新为 10/12（Task 11 远程验证 + Task 12 Final Checkpoint 待外部 GitHub 环境）；4) examples 全量收口（12/12，含 mionyee 示例、批量验证脚本与 CI 接入）；5) cli-migrate 全量收口（24/24，含 project 扫描、handler 生成、dry-run、报告、冲突处理、config validate/init）；6) release 本地发布资产就绪（CHANGELOG、Issue 模板、安全扫描报告、凭据审计、`--version`、preflight 脚本与测试）。 |
-| 下一待执行 | 1) codex-gpt-work 推进 release（12/20）：PyPI/TestPyPI 联调、远程安装验收、仓库外部开关；2) codex-work 推进 ci-setup Task 11/12 或转向 release；3) 在具备生产凭据后执行 owlhub 40.4 真实生产部署验收。 |
-| 验收快照 | 当前：ci-setup 🟡(10/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples ✅(12/12)，cli-migrate ✅(24/24)，release 🟡(12/20)，全仓测试门禁待验证（新 pyproject.toml 配置）。 |
-| 阻塞项 | 1) ci-setup Task 11（需实际 GitHub Actions 运行环境）；2) owlhub Task 40.4（外部生产部署）；3) release 远程安装/发布联调依赖外部凭据与可用网络链路。 |
+| 当前批次 | 统筹轮次：合并 review-work（examples ✅ + cli-migrate ✅ + ci-setup ✅ + release 22/32 + owlhub 41/42）→ main |
+| 批次状态 | **完成**。review-work（50+ commits）已合并到 main，全量 fast-forward。 |
+| 已完成项 | 1) examples ✅(14/14)：mionyee-trading 示例 + 批量验证脚本 + CI 接入；2) cli-migrate ✅(24/24)：报告/冲突处理/配置校验/迁移向导全部完成；3) ci-setup ✅(12/12)：Final Checkpoint 收口；4) release 🟡(22/32)：CHANGELOG/Issue 模板/README/CONTRIBUTING/release.yml/RELEASE_RUNBOOK/test_release_assets/--version flag；5) owlhub 🟡(41/42)：OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md 产出；6) owlclaw-mcp 独立包配置（owlclaw-mcp/pyproject.toml）；7) CLI 稳定性加固（--version/-V 回归测试）。 |
+| 下一待执行 | 1) release 剩余 10 项（PyPI/TestPyPI 发布、GitHub Release、社区反馈收集）——外部平台依赖，需人工提供凭据；2) owlhub Task 19（数据库基础设施）架构决策（见 docs/OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md）；3) capabilities-skills 108/115 收尾。 |
+| 验收快照 | examples ✅(14/14)，cli-migrate ✅(24/24)，ci-setup ✅(12/12)，release 🟡(22/32)，owlhub 🟡(41/42)，capabilities-skills 🟡(108/115)，declarative-binding ✅(26/26)。 |
+| 阻塞项 | 1) release 外部平台动作（PyPI Secret/TestPyPI/GitHub 仓库公开）待人工环境；2) owlhub Task 19 架构决策待确认；3) owlhub Task 40.4 外部生产部署。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
