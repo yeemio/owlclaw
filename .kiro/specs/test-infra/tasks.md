@@ -34,8 +34,9 @@
   - _Requirements: AC-1_
 
 - [ ] **Task 4**: 验证 unit 测试零外部依赖
-  - [ ] 4.1 在 CI lint job 中添加步骤：`pytest tests/unit/ -q --tb=short`（不启动任何 service）
-  - [ ] 4.2 确认 unit 测试运行时间 < 60 秒
+  - [x] 4.1 在 CI lint job 中添加步骤：`pytest tests/unit/ -q --tb=short`（不启动任何 service）
+  - [ ] 4.2 确认 unit 测试运行时间 < 60 秒  
+    - 当前阻塞（2026-02-25）：本地执行 `poetry run pytest tests/unit/ -q --tb=short` 超过 10 分钟超时，需后续做用例分层/性能优化
   - _Requirements: AC-1_
 
 ### Phase 3：共享 Fixtures（P1）
