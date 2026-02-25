@@ -119,7 +119,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（26/26） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（41/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（40/42） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | 🟡 三层齐全，进行中（0/12） | 示例（含业务 Skills 示例 + LangChain 集成示例） |
@@ -155,8 +155,8 @@
 | 批次状态 | **已完成（阶段性）**。release 以“GitHub Release + dry-run 流程”为验收口径完成；PyPI/TestPyPI 发布延期。 |
 | 已完成项 | 1) 新增 `CHANGELOG.md`（v0.1.0 初始发布记录）；2) 新增 GitHub Issue 模板（Bug/Feature + config）；3) 执行敏感信息基线扫描，确认仅测试样例/文档占位命中；4) 完成 `.gitignore` 与 `.env.example` 发布前检查并在测试中固化；5) 完成 `pyproject.toml` 发布元数据核验、`[langchain]/[dev]` extras 对齐与 `owlclaw` CLI 入口确认；6) 新增 `owlclaw-mcp/` 独立构建配置（独立 pyproject + 入口）；7) 完成 README 发布面补齐（架构 ASCII、LangChain/LangGraph 互补、链接区）；8) 完成 CONTRIBUTING 的 PR 规范与代码风格补充；9) release workflow 增加发布前 `poetry install + pytest`；10) 新增 `docs/RELEASE_RUNBOOK.md`；11) 新增/扩展 `tests/unit/test_release_assets.py`；12) CLI `--version` 验收通过；13) 本地 example 验收通过；14) 仓库社区设置完成（Discussions/Public/Topics）；15) workflow 支持 `workflow_dispatch target` 分流；16) token 前置校验已落地并实跑验证；17) `semantic-release` 已限制到正式发布路径；18) workflow 默认目标改为 `dryrun`，并新增 `twine check dist/*`。 |
 | 下一待执行 | 1) 若后续恢复 PyPI 目标：配置 `PYPI_TOKEN`/`TEST_PYPI_TOKEN`；2) 执行 TestPyPI -> PyPI 正式发布；3) 回补 `pip install owlclaw` 验收记录。 |
-| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(41/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release ✅(32/32，阶段完成)。 |
-| 阻塞项 | 1) owlhub Task 40.4（外部生产部署）；2) OwlHub gate CLI 命名待架构决策；3) release 无当前阶段阻塞（PyPI 发布为决策延期项）。 |
+| 验收快照 | 当前：ci-setup ✅(12/12)，declarative-binding ✅(26/26)，owlhub 🟡(40/42)，examples 🟡(0/12)，cli-migrate 🟡(0/24)，release ✅(32/32，阶段完成)。 |
+| 阻塞项 | 1) owlhub Task 19（Phase 3 数据库基础设施，待进入该阶段后实施）；2) owlhub Task 40.4（外部生产部署凭证/环境）；3) OwlHub gate CLI 命名待架构决策；4) release 无当前阶段阻塞（PyPI 发布为决策延期项）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
