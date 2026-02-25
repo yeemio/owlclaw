@@ -591,6 +591,33 @@ Check entries.
         names = [item["function"]["name"] for item in schemas]
         assert names == ["a-skill", "z-skill"]
 
+    def test_run_skill_snapshot_stabilizes_context_and_capability_view(self, tmp_path) -> None:
+        """Snapshot should keep run-time skill/capability view stable."""
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        rt.registry = MagicMock()
+        rt.registry.handlers = {"skill-a": MagicMock()}
+        rt.registry.list_capabilities.return_value = [{"name": "skill-a", "description": "a"}]
+        rt.registry.skills_loader.get_skill.return_value = MagicMock(owlclaw_config={}, metadata={})
+        rt.knowledge_injector = MagicMock()
+        rt.knowledge_injector.get_skills_knowledge.return_value = "ctx-a"
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+
+        rt._capture_run_skill_snapshot()
+        rt.registry.handlers = {"skill-a": MagicMock(), "skill-b": MagicMock()}
+        rt.registry.list_capabilities.return_value = [
+            {"name": "skill-a", "description": "a"},
+            {"name": "skill-b", "description": "b"},
+        ]
+
+        assert rt._build_skills_context(ctx) == "ctx-a"
+        rt.knowledge_injector.get_skills_knowledge.assert_called_once_with(["skill-a"])
+        schemas = rt._capability_schemas()
+        assert [item["function"]["name"] for item in schemas] == ["skill-a"]
+
+        rt._clear_run_skill_snapshot()
+        schemas_after_clear = rt._capability_schemas()
+        assert [item["function"]["name"] for item in schemas_after_clear] == ["skill-a", "skill-b"]
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_accepts_dict_assistant_message(self, mock_llm, tmp_path) -> None:
         """Runtime should support providers returning dict message objects."""
