@@ -30,13 +30,14 @@
   - [x] 3.1 `tests/unit/test_cli_db.py`：将 DB 连接调用替换为 mock，或迁移到 `tests/integration/`
   - [x] 3.2 `tests/unit/capabilities/test_bindings_queue_executor.py`：mock Kafka 连接
   - [x] 3.3 `tests/unit/triggers/test_queue_idempotency.py`：mock Redis 连接
-  - [ ] 3.4 验证：`poetry run pytest tests/unit/ -q`（无任何外部服务）全部通过，0 skip
+  - [ ] 3.4 验证：`poetry run pytest tests/unit/ -q`（无任何外部服务）全部通过，0 skip  
+    - 当前状态（2026-02-25）：`1528 passed, 2 skipped`；剩余 2 个 skip 来自 `tests/unit/test_cli_skill.py` 的 Typer/CliRunner 兼容性用例
   - _Requirements: AC-1_
 
 - [ ] **Task 4**: 验证 unit 测试零外部依赖
   - [x] 4.1 在 CI lint job 中添加步骤：`pytest tests/unit/ -q --tb=short`（不启动任何 service）
   - [ ] 4.2 确认 unit 测试运行时间 < 60 秒  
-    - 当前阻塞（2026-02-25）：本地执行 `poetry run pytest tests/unit/ -q --tb=short` 超过 10 分钟超时，需后续做用例分层/性能优化
+    - 当前阻塞（2026-02-25）：本地实测 `tests/unit` 耗时约 `666s`（`1528 passed, 2 skipped`），需后续做用例分层/性能优化
   - _Requirements: AC-1_
 
 ### Phase 3：共享 Fixtures（P1）

@@ -28,12 +28,13 @@ def test_property_credentials_are_redacted(secret_value: str, token_value: str, 
     }
 
     redacted = redact_sensitive_data(payload)
-    rendered = str(redacted)
-
-    assert secret_value not in rendered
-    assert token_value not in rendered
-    assert api_key_value not in rendered
-    assert "***" in rendered
+    assert redacted["password"] == "***"
+    assert redacted["token"] == "***"
+    assert redacted["api_key"] == "***"
+    assert redacted["nested"]["secret"] == "***"
+    assert redacted["nested"]["Authorization"] == "Bearer ***"
+    assert "token=***" in redacted["nested"]["meta"]
+    assert "password=***" in redacted["nested"]["meta"]
 
 
 @given(token_value=_SAFE_VALUE)
