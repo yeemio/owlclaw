@@ -1,15 +1,15 @@
 # Tasks: Cross-language Golden Path
 
-> **状态**：进行中  
+> **状态**：已完成  
 > **预估工作量**：4-6 天  
 > **最后更新**：2026-02-26
 
 ## 进度概览
 
 - **总任务数**：16
-- **已完成**：15
+- **已完成**：16
 - **进行中**：0
-- **未开始**：1
+- **未开始**：0
 
 ## 1. Java 示例工程
 
@@ -33,7 +33,8 @@
 
 - [x] 4.1 编写 `JAVA_GOLDEN_PATH.md`
 - [x] 4.2 编写 `verify_cross_lang.ps1`
-- [ ] 4.3 执行验收并产出结果
+- [x] 4.3 执行验收并产出结果
+  - 状态补充（2026-02-26）：已执行 `mvn -q -DskipTests package`、`java -cp target/classes io.owlclaw.examples.crosslang.Main`、`verify_cross_lang.ps1 -Strict`、`compare_response_fields.py`，结果归档于 `docs/protocol/cross-lang-acceptance.md`。
 - [x] 4.4 更新 `SPEC_TASKS_SCAN` checkpoint
 
 ## 5. 阈值与剧本固化

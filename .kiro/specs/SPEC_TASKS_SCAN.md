@@ -118,7 +118,7 @@
 - [x] 网关运行与发布运维标准化（canary/rollback/SLO） → spec: gateway-runtime-ops
 - [ ] API + MCP 契约测试体系（diff + replay + blocking gate） → spec: contract-testing
 - [ ] 发布供应链安全（OIDC Trusted Publishing + provenance） → spec: release-supply-chain
-- [ ] 跨语言接入黄金路径（Java + curl 可执行验收） → spec: cross-lang-golden-path
+- [x] 跨语言接入黄金路径（Java + curl 可执行验收） → spec: cross-lang-golden-path
 
 ---
 
@@ -172,7 +172,7 @@
 | **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | ✅ 三层齐全，已完成（18/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
 | **contract-testing** | `.kiro/specs/contract-testing/` | 🟡 三层齐全，待实施（0/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
 | **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，进行中（10/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
-| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，进行中（15/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
+| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | ✅ 三层齐全，已完成（16/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 
 ---
 
@@ -198,12 +198,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | codex-gpt-work 执行循环：release-supply-chain 策略校准 + 远端演练取证 |
-| 批次状态 | **进行中（阶段性收口）**。gateway-runtime-ops 已完成（18/18）；cross-lang-golden-path 保持 15/16；release-supply-chain 推进至 10/15（OIDC/provenance/回滚策略/检查基线已就位），外部平台配置仍是主阻塞。 |
-| 已完成项 | 1) 触发并观察 release run `22446541468`（2026-02-26），确认主分支仍为旧 token 上传链路（`TWINE_PASSWORD` 为空，TestPyPI `403`）；2) 新增 `docs/release/release-supply-chain-playbook.md`，固化成功率/时延阈值、验收矩阵、T+0~T+15 处置剧本（Task 5.1/5.2/5.3）；3) 新增 `scripts/ops/release_policy_audit.py` 并输出 `docs/release/release-policy-audit.json`（Task 3.1/3.2 校准证据）；4) 新增 `docs/release/release-policy-baseline.md` 固化 required checks 与分支保护基线建议。 |
-| 下一待执行 | 1) release-supply-chain：在 PyPI/TestPyPI 后台完成 Trusted Publisher 绑定（Task 1.1/1.2）并在主分支触发全链路演练（Task 4.1/4.2）；2) cross-lang-golden-path：在具备 Java/Maven 环境后完成 Java 构建执行证据并关闭 Task 4.3；3) release：发布成功后执行 `pip install owlclaw` smoke 关闭剩余发布验收项。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，gateway-runtime-ops ✅(18/18)，release-supply-chain 🟡(10/15)，cross-lang-golden-path 🟡(15/16)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（run `22436813478` 使用旧门槛导致失败，待主分支合并后复验）；2) release/release-supply-chain：PyPI/TestPyPI 侧 Trusted Publisher 尚未绑定，`gh secret list` 仍无发布凭据，主分支 run `22446541468` 仍因 token 为空失败；3) cross-lang Task 4.3：当前环境缺少 `java`/`javac`/`mvn`，Java 构建验收待具备 JDK/Maven 环境后执行；4) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
+| 当前批次 | codex-gpt-work 执行循环：cross-lang 最后一项收口 + release 外部阻塞复核 |
+| 批次状态 | **进行中（阶段性收口）**。gateway-runtime-ops 已完成（18/18）；cross-lang-golden-path 已完成（16/16）；release-supply-chain 推进至 10/15（OIDC/provenance/回滚策略/检查基线已就位），外部平台配置仍是主阻塞。 |
+| 已完成项 | 1) 安装并验证 JDK 17 + Maven 3.9.6 工具链，完成 cross-lang Task 4.3 真实执行验收；2) 验收命令通过：`mvn -q -DskipTests package`、`java -cp target/classes io.owlclaw.examples.crosslang.Main`、`verify_cross_lang.ps1 -Strict`、`compare_response_fields.py`；3) 更新 `docs/protocol/cross-lang-acceptance.md` 并关闭 cross-lang spec（16/16）；4) 保留 release run `22446541468` 失败证据（主分支仍旧 token 链路）。 |
+| 下一待执行 | 1) release-supply-chain：在 PyPI/TestPyPI 后台完成 Trusted Publisher 绑定（Task 1.1/1.2）并在主分支触发全链路演练（Task 4.1/4.2）；2) release：发布成功后执行 `pip install owlclaw` smoke 关闭剩余发布验收项；3) owlhub：推进 Task 40.4 外部生产部署收尾。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，gateway-runtime-ops ✅(18/18)，release-supply-chain 🟡(10/15)，cross-lang-golden-path ✅(16/16)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（run `22436813478` 使用旧门槛导致失败，待主分支合并后复验）；2) release/release-supply-chain：PyPI/TestPyPI 侧 Trusted Publisher 尚未绑定，`gh secret list` 仍无发布凭据，主分支 run `22446541468` 仍因 token 为空失败；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
