@@ -89,3 +89,11 @@ def test_dependabot_config_contains_pip_and_actions() -> None:
     updates = payload.get("updates", [])
     ecosystems = {entry["package-ecosystem"] for entry in updates}
     assert ecosystems == {"pip", "github-actions"}
+
+
+def test_contract_gate_workflow_contains_openapi_gate_step() -> None:
+    payload = _load_yaml(Path(".github/workflows/contract-gate.yml"))
+    jobs = payload.get("jobs", {})
+    assert "contract-gate" in jobs
+    steps = "\n".join(str(item) for item in jobs["contract-gate"]["steps"])
+    assert "tests/contracts/api/test_openapi_contract_gate.py" in steps
