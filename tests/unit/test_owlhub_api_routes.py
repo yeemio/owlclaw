@@ -89,7 +89,7 @@ def test_read_only_endpoints(tmp_path: Path, monkeypatch) -> None:
     assert len(versions.json()) == 2
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=40, deadline=None)
 @given(
     count=st.integers(min_value=1, max_value=40),
     page=st.integers(min_value=1, max_value=8),

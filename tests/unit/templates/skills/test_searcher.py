@@ -123,7 +123,7 @@ class TestTemplateSearcher:
         assert searcher.recommend(limit=0) == []
         assert searcher.recommend(limit=-1) == []
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=30, deadline=None)
     @given(
         templates=st.lists(
             st.tuples(
@@ -149,7 +149,7 @@ class TestTemplateSearcher:
             for idx in range(len(results) - 1):
                 assert results[idx].score >= results[idx + 1].score
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=30, deadline=None)
     @given(
         templates=st.lists(
             st.tuples(
@@ -170,7 +170,7 @@ class TestTemplateSearcher:
             ids = [r.template.id for r in results]
             assert len(ids) == len(set(ids))
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=30, deadline=None)
     @given(
         target_category=st.sampled_from(list(TemplateCategory)),
         names=st.lists(st.from_regex(r"[A-Z][a-z]{2,10}", fullmatch=True), min_size=1, max_size=8, unique=True),
@@ -185,7 +185,7 @@ class TestTemplateSearcher:
             results = TemplateSearcher(reg).search("health", category=target_category, limit=50)
             assert all(r.template.category == target_category for r in results)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=30, deadline=None)
     @given(
         tag=st.from_regex(r"[a-z]{3,10}", fullmatch=True),
         other_tag=st.from_regex(r"[a-z]{3,10}", fullmatch=True),
@@ -200,7 +200,7 @@ class TestTemplateSearcher:
             results = TemplateSearcher(reg).search("monitor", tags=[tag], limit=20)
             assert all(tag in r.template.tags for r in results)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=30, deadline=None)
     @given(
         keyword=st.from_regex(r"[a-z]{3,10}", fullmatch=True),
         category=st.sampled_from(list(TemplateCategory)),

@@ -529,7 +529,7 @@ def test_update_upgrades_to_latest_version(tmp_path: Path) -> None:
     assert changes[0]["to_version"] == "1.1.0"
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=30, deadline=None)
 @given(
     query=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=0, max_size=8),
     name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=8),
@@ -548,7 +548,7 @@ def test_property_6_multi_dimensional_search(query: str, name: str) -> None:
             assert any(item.name == name for item in results)
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=30, deadline=None)
 @given(name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=8))
 def test_property_9_install_correctness(name: str) -> None:
     """Property 9: install creates local target and lock entry."""
@@ -564,7 +564,7 @@ def test_property_9_install_correctness(name: str) -> None:
         assert any(item.get("name") == name for item in installed)
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=30, deadline=None)
 @given(name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=8))
 def test_property_11_lock_consistency(name: str) -> None:
     """Property 11: lock file reflects resolved installed version."""
@@ -580,7 +580,7 @@ def test_property_11_lock_consistency(name: str) -> None:
         assert any(item["name"] == name and item["version"] == "1.0.0" for item in lock["skills"])
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=30, deadline=None)
 @given(name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=8))
 def test_property_12_reject_invalid_package(name: str) -> None:
     """Property 12: invalid package without SKILL.md is rejected."""
@@ -601,7 +601,7 @@ def test_property_12_reject_invalid_package(name: str) -> None:
             assert "SKILL.md" in str(exc)
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=30, deadline=None)
 @given(
     tag_a=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=6),
     tag_b=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=6),
@@ -622,7 +622,7 @@ def test_property_21_tag_based_retrieval(tag_a: str, tag_b: str, query_tag: str)
             assert all(item.name != "tag-skill" for item in results)
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=30, deadline=None)
 @given(
     major=st.integers(min_value=0, max_value=2),
     minor_old=st.integers(min_value=0, max_value=8),

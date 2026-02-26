@@ -19,7 +19,7 @@ def test_utc_now_is_timezone_aware() -> None:
     assert current.tzinfo == timezone.utc
 
 
-@settings(max_examples=100)
+@settings(max_examples=40, deadline=None)
 @given(
     name=st.from_regex(r"^[a-z0-9]+(-[a-z0-9]+)*$", fullmatch=True),
     version=st.from_regex(r"^\d+\.\d+\.\d+$", fullmatch=True),

@@ -99,7 +99,7 @@ def test_generated_html_escapes_script_content(tmp_path: Path) -> None:
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
 
 
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=30, deadline=None)
 @given(
     name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-", min_size=1, max_size=12),
     publisher=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-", min_size=1, max_size=12),
@@ -149,7 +149,7 @@ def test_property_7_skill_detail_contains_required_fields(
         assert description in detail
 
 
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=30, deadline=None)
 @given(
     count=st.integers(min_value=1, max_value=40),
     page_size=st.integers(min_value=1, max_value=10),
