@@ -172,19 +172,19 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
-**当前任务**：
+**当前任务**（按顺序执行）：
 1. test-infra(7/11) 剩余 Task 4/6/9.4/11（Docker/CI 验收为主）
 2. architecture-roadmap(0/13) — 架构演进路线文档（纯文档 spec）
-
-**下一任务（当前完成后）**：
-1. **skill-dx P1**（18 tasks）— SKILL.md 自然语言触发解析+缓存。涉及 `owlclaw/capabilities/` 新增文件。
-2. **skills-quality**（21 tasks）— Skills 质量评分。涉及 `owlclaw/governance/` 新增文件。
+3. skill-dx P1(0/18) — SKILL.md 自然语言触发解析+缓存。涉及 `owlclaw/capabilities/` 新增文件
+4. skill-ai-assist P1(0/16) — 对话式 Skill 创建+模板。依赖 skill-dx P1 完成。涉及 `owlclaw/capabilities/skill_creator.py` + `owlclaw/cli/skill_create.py`
+5. skills-quality(0/21) — Skills 质量评分+数据飞轮。涉及 `owlclaw/governance/` 新增文件
 
 **禁止触碰**（分配给编码 2 的路径）：
 
 - `owlclaw/security/**`
 - `owlclaw/integrations/llm/**`
 - `owlclaw/config/**`
+- `owlclaw/owlhub/**`（industry-skills 分配给编码 2）
 
 ---
 
@@ -211,15 +211,13 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ + local-devenv ✅ 已完成。
 
-**当前任务**：
+**当前任务**（按顺序执行）：
 1. quick-start(0/13) — Quick Start 指南 + 最小示例
 2. complete-workflow(0/18) — 完整端到端示例（库存管理场景）
 3. owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）
 4. release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）
-
-**下一任务（当前完成后）**：
-1. **progressive-migration**（25 tasks）— 渐进式迁移 migration_weight。涉及 `owlclaw/governance/` 新增文件。
-2. **industry-skills**（12 tasks）— OwlHub 语义搜索推荐。涉及 `owlclaw/owlhub/` + `owlclaw/cli/skill.py`。
+5. progressive-migration(0/25) — 渐进式迁移 migration_weight。涉及 `owlclaw/governance/` 新增文件
+6. industry-skills(0/12) — OwlHub 语义搜索推荐。涉及 `owlclaw/owlhub/` + `owlclaw/cli/skill.py`
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -227,6 +225,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 - `owlclaw/cli/db*.py`
 - `migrations/`
 - `owlclaw/agent/runtime/**`
+- `owlclaw/capabilities/skill_creator.py`（skill-ai-assist 分配给编码 1）
+- `owlclaw/capabilities/skill_nl_parser.py`（skill-dx 分配给编码 1）
 
 ---
 
@@ -274,7 +274,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-25 | Phase 5 落地收尾：Lite Mode 核心代码完成（主 worktree）；新建 quick-start/complete-workflow/architecture-roadmap spec；codex-gpt-work→quick-start+complete-workflow；codex-work→architecture-roadmap | 架构重塑：落地差距收尾 |
 | 2026-02-25 | Phase 6 差异化能力：新建 skill-dx/skill-ai-assist/progressive-migration spec（三层齐全）；POSITIONING.md 规范化 v1.1.0 + 文档关联建立 | 补齐战略讨论中识别的缺失 spec |
 | 2026-02-25 | Phase 6 补充：新建 skills-quality/industry-skills spec；skill-dx/skill-ai-assist 分期策略；industry-skills 降级为搜索推荐 | 产品策略审计 + 技术成熟度评估 |
-| 2026-02-26 | 统筹：merge review-work → main；同步所有 worktree；分配 Phase 6 计划：codex-work→skill-dx P1+skills-quality，codex-gpt-work→progressive-migration+industry-skills | 统筹轮次：Phase 6 正式分配 |
+| 2026-02-26 | 统筹：merge review-work → main；同步所有 worktree；Phase 6 分配计划 | 统筹轮次 |
+| 2026-02-26 | Phase 6 全量分配：codex-work→skill-dx P1+skill-ai-assist P1+skills-quality；codex-gpt-work→progressive-migration+industry-skills。仅 P2（skill-dx P2/skill-ai-assist P2）暂不分配 | 一次分完，减少统筹轮次 |
 
 ---
 
@@ -290,16 +291,16 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 - codex-work → test-infra（继续） + architecture-roadmap（新增）
 - codex-gpt-work → quick-start + complete-workflow（新增） + owlhub/release 收尾
 
-**Phase 6 差异化能力 + 生态 spec（已分配计划）**：
+**Phase 6 全部已分配** ✅
 
-| Spec | Tasks | 依赖 | 分配计划 |
-|------|-------|------|---------|
-| skill-dx P1（0/18） | 触发解析+缓存 | 无 | codex-work（architecture-roadmap 后） |
-| skill-dx P2（0/7） | 工具匹配 | P1 + 用户反馈 | 暂不分配，等 P1 上线 |
-| progressive-migration（0/25） | 渐进式迁移 | 无 | codex-gpt-work（quick-start/complete-workflow 后） |
-| skills-quality（0/21） | 质量评分 + 数据飞轮 | Ledger 已完成 | codex-work（skill-dx P1 后） |
-| industry-skills（0/12） | OwlHub 语义搜索推荐 | owlhub 已完成 | codex-gpt-work（progressive-migration 后） |
-| skill-ai-assist P1（0/16） | 对话式创建+模板 | 依赖 skill-dx P1 | skill-dx P1 完成后分配 |
-| skill-ai-assist P2（0/6） | 文档提取 | P1 + 产品验证 | 暂不分配，等 P1 上线 |
+| Spec | Tasks | Worktree | 执行顺序 |
+|------|-------|----------|---------|
+| skill-dx P1（0/18） | 触发解析+缓存 | codex-work | #3 |
+| skill-ai-assist P1（0/16） | 对话式创建+模板 | codex-work | #4（依赖 skill-dx P1） |
+| skills-quality（0/21） | 质量评分+数据飞轮 | codex-work | #5 |
+| progressive-migration（0/25） | 渐进式迁移 | codex-gpt-work | #5 |
+| industry-skills（0/12） | 语义搜索推荐 | codex-gpt-work | #6 |
 
-分配优先级：skill-dx P1 > progressive-migration > skills-quality > industry-skills > skill-ai-assist P1
+**暂不分配（需用户反馈/产品验证后启动）**：
+- skill-dx P2（0/7）— 工具匹配，等 P1 上线后收集反馈
+- skill-ai-assist P2（0/6）— 文档提取，等 P1 验证产品价值
