@@ -168,11 +168,11 @@
 | **skills-quality** | `.kiro/specs/skills-quality/` | ✅ 三层齐全，已完成（27/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
 | **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | 🟡 三层齐全，待实施（0/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
-| **protocol-governance** | `.kiro/specs/protocol-governance/` | 🟡 三层齐全，待实施（0/10） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
-| **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | 🟡 三层齐全，待实施（0/9） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
+| **protocol-governance** | `.kiro/specs/protocol-governance/` | 🟡 三层齐全，待实施（0/23） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
+| **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | 🟡 三层齐全，待实施（0/15） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
 | **contract-testing** | `.kiro/specs/contract-testing/` | 🟡 三层齐全，待实施（0/10） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
 | **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，待实施（0/8） | 发布供应链安全（OIDC、attestation、发布门禁） |
-| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，待实施（0/9） | 跨语言落地路径（Java/curl 场景化接入与验收） |
+| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，待实施（0/13） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 
 ---
 

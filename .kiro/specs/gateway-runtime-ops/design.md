@@ -1,6 +1,6 @@
 # Design: Gateway Runtime Ops
 
-> **目标**：将网关运行从“人工经验”转为“标准流程 + 自动门控”。  
+> **目标**：让发布决策从经验判断升级为 SLO 驱动。  
 > **状态**：设计中  
 > **最后更新**：2026-02-26
 
@@ -9,49 +9,50 @@
 ## 1. 架构设计
 
 ```text
-Deploy Pipeline -> Canary Stage -> Expansion Stage -> Full Rollout
-                          |                |               |
-                        SLO Gate         SLO Gate        SLO Gate
-                          |                |               |
-                     rollback if fail  rollback if fail   stable
+Release Pipeline
+   -> Canary Gate (SLO Check)
+   -> Expansion Gate (SLO Check)
+   -> Full Rollout Gate (SLO Check)
+   -> Post Verification
+           |
+       rollback if fail
 ```
-
----
 
 ## 2. 实现细节
 
-- 运行手册：`docs/ops/gateway-runbook.md`
-- 指标定义：`docs/ops/gateway-slo.md`
-- 发布策略：`docs/ops/gateway-rollout-policy.md`
+- `docs/ops/gateway-rollout-policy.md`
+- `docs/ops/gateway-runbook.md`
+- `docs/ops/gateway-slo.md`
 
-关键集成点：
-- 发布 pipeline 在每阶段读取同一套 SLO 门槛。
-- 回滚由统一脚本触发并记录事件。
+### 集成点（何时、何处调用）
 
----
+- 在每个发布阶段结束后调用 SLO evaluator。
+- Gate 失败时调用 rollback executor。
+- 回滚完成后调用 post-rollback verifier。
 
-## 3. 错误处理
+## 3. 数据流
 
-- 指标采集故障 -> 默认阻断扩量
-- 探针异常 -> 自动触发降级/回滚
+```text
+Deploy -> Metrics Window -> Gate Decision -> (Promote | Rollback)
+```
 
----
+## 4. 错误处理
 
-## 4. 测试策略
+- 指标缺失：默认阻断晋级。
+- 告警系统故障：仅允许人工审批扩量。
 
-- 演练：一次 canary 失败自动回滚
-- 演练：一次正常扩量到全量
-- 演练：手动回滚路径
+## 5. 测试策略
 
----
+- 演练 1：canary 触发错误率超阈，自动回滚。
+- 演练 2：全路径晋级到全量。
+- 演练 3：人工回滚路径。
 
-## 5. 红军视角
+## 6. 红军视角
 
-- 攻击：在监控延迟期间快速扩量。  
-  防御：扩量前必须满足连续窗口稳定条件。
+- 攻击：缩短观察窗口绕过门控。  
+  防御：窗口参数纳入受保护配置并审计。
 
 ---
 
 **维护者**：平台运维组  
 **最后更新**：2026-02-26
-
