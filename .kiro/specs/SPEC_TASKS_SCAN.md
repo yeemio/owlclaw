@@ -73,7 +73,7 @@
 - [x] `owlclaw.cli.scan` — AST 扫描器（自动生成 SKILL.md 骨架） → spec: cli-scan
 - [x] OwlHub Phase 1 — GitHub 仓库索引（`owlclaw/owlhub` 仓库 + index.json + PR 审核流程） → spec: owlhub
 - [x] OwlHub Phase 2 — 静态站点（浏览/搜索/分类 + 向量搜索） → spec: owlhub
-- [x] `owlclaw-mcp` — MCP Server（OpenClaw 通道，只读查询为主） → spec: mcp-server  
+- [x] `owlclaw-mcp` — MCP Server（通用 Agent 协议接口，只读查询为主） → spec: mcp-server  
   说明：MVP 先落地于 `owlclaw/mcp/`（协议处理 + tools/resources + stdio 处理 + e2e 验证）；后续按 release 计划补独立 `owlclaw-mcp/` 打包形态。
 - [x] 非交易场景 examples（至少 2 个） → spec: examples
 - [x] LangChain 集成示例（LangChain chain + LangGraph workflow 作为 capability） → spec: examples
@@ -95,6 +95,13 @@
 - [x] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
 - [ ] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
 - [x] 仓库卫生清理（根目录整洁、.gitignore 完整、deploy/ 文档化） → spec: repo-hygiene
+
+### Phase 5：落地收尾（架构重塑）
+
+- [x] Lite Mode 零依赖启动（`OwlClaw.lite()` + `InMemoryLedger`） → 主 worktree 已实现
+- [ ] Quick Start 指南（10 分钟从安装到看见 Agent 决策） → spec: quick-start
+- [ ] 完整端到端示例（库存管理场景，可运行） → spec: complete-workflow
+- [ ] 架构演进路线章节（Multi-Agent/自我进化/可解释性/OwlHub 安全治理） → spec: architecture-roadmap
 
 ---
 
@@ -133,8 +140,11 @@
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（9/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4/11 待 Docker/CI 验收） |
-| **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（7/7） | 仓库卫生清理（.gitignore 补充 + 根目录清理 + deploy/ 文档化 + scripts/ README） |
+| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4/6/9.4/11 待 Docker/CI 验收） |
+| **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（37/37） | 仓库卫生清理（.gitignore + 根目录清理 + deploy/ 文档化 + scripts/ README + .editorconfig + CODEOWNERS + Makefile + docs/README.md） |
+| **quick-start** | `.kiro/specs/quick-start/` | 🆕 三层齐全，待开始（0/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
+| **complete-workflow** | `.kiro/specs/complete-workflow/` | 🆕 三层齐全，待开始（0/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
+| **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | 🆕 三层齐全，待开始（0/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
 
 ---
 
@@ -160,12 +170,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | review-work 审校续航：同步 main 后继续推进 test-infra/release/owlhub 收尾与事实回写 |
-| 批次状态 | **进行中**。主干统筹合并已完成，当前聚焦剩余阻塞项闭环与验收。 |
-| 已完成项 | 1) capabilities-skills ✅(115/115)：prerequisites 门控、session snapshot、token impact、enable/disable、env 注入生命周期、source-priority 覆盖、Skills Watcher 热重载；2) local-devenv ✅(10/10)：baseline assets、compose 稳定性、db status + Windows asyncpg fallback、env 覆盖验证；3) owlhub release gate（Task 19 db infra）已实现；4) mionyee-trading 完整示例已落地并补齐 `--all --json` 契约；5) test-infra 已完成 9/11（含 Task 6.3 实库隔离回滚验收、Task 9.4 本地 integration profile 与 CI profile 一致性验证、Task 11.2 组合验收通过）；6) 本轮修复了 integration Postgres 门控端口识别、async fixture loop_scope 一致性，以及 owlhub 性能测试中的不稳定断言；7) unit 基线从约 `338s` 降至约 `250s`。 |
-| 下一待执行 | 1) test-infra：Task 4.2（unit < 60s，当前约 250s）与 Task 11.3/11.4；2) owlhub：Task 40.4（外部部署阻塞）；3) release：Task 3.1.2/3.1.3/4.1.1/4.1.2/4.1.4（PyPI/TestPyPI/GitHub 发布外部动作）。 |
-| 验收快照 | repo-hygiene ✅(7/7)，local-devenv ✅(10/10)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(137/143)，capabilities-skills ✅(115/115)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra 仍有性能与验收门槛未闭环（unit <60s 未达；CI 同款覆盖率门槛未达：unit ~74%、overall ~76.72%）；2) release/owlhub 余项依赖外部平台凭据与人工发布动作。 |
+| 当前批次 | Phase 5 落地收尾：Lite Mode 核心代码完成 + 3 个新 spec 创建 |
+| 批次状态 | **进行中**。Lite Mode 已实现（`OwlClaw.lite()` + `InMemoryLedger`），新 spec 待分配。 |
+| 已完成项 | 1) `OwlClaw.lite()` 类方法实现（`owlclaw/app.py`）；2) `InMemoryLedger` 实现（`owlclaw/governance/ledger_inmemory.py`）；3) `_ensure_governance()` 支持 `use_inmemory_ledger` 标志；4) 测试更新（19 passed）；5) 创建 quick-start/complete-workflow/architecture-roadmap 三个 spec（三层齐全）。 |
+| 下一待执行 | 1) 分配 quick-start + complete-workflow → codex-gpt-work；2) 分配 architecture-roadmap → codex-work（或 codex-gpt-work）；3) codex-work 继续 test-infra 剩余 Task；4) release + owlhub 40.4 等人工凭据。 |
+| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra Task 4.2：unit 套件约 452s，需优化到 < 60s；2) test-infra Task 9.4/11：需 Docker Engine；3) release/owlhub 40.4：需人工凭据。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

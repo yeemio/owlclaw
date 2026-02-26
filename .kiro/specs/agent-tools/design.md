@@ -1147,7 +1147,7 @@ class AgentRuntime:
 
 ## 参考
 
-- OpenClaw 的 memory-tool.ts 和 schedule-tool.ts
+- 业界 Agent 框架的 memory-tool 和 schedule-tool 实现
 - OpenAI Function Calling 文档
 - Hatchet Python SDK 文档
 - OwlClaw 架构文档 docs/ARCHITECTURE_ANALYSIS.md §5.2.1（Agent 内建工具）

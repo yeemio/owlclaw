@@ -292,6 +292,6 @@ AND recall() 不返回 archived 记忆
 - OwlClaw 架构文档 `docs/ARCHITECTURE_ANALYSIS.md` §5.2.1（Agent = 身份 + 记忆 + 知识 + 工具 + 自我调度）
 - agent-runtime spec 需求 2（短期记忆）和需求 3（长期记忆）
 - agent-tools spec 需求 4（remember）和需求 5（recall）
-- OpenClaw 的 memory-tool.ts 实现
+- 业界 Agent 框架的 memory-tool 实现
 - Letta (MemGPT) 的分层记忆架构
 - pgvector 文档（PostgreSQL 向量扩展）

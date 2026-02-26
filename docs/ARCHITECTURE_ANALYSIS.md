@@ -10,13 +10,13 @@
 
 在之前的讨论中，我指出了 mionyee-agent 和 mionyee-platform 的一些问题。这些问题是真实的，不能因为定位清晰了就假装它们不存在。
 
-### 1.1 mionyee-agent 的真实差距（对标 OpenClaw）
+### 1.1 mionyee-agent 的真实差距（对标业界最佳实践）
 
-来源：`mionyee-agent/docs/architecture/gaps-with-openclaw.md`（你们自己的分析）
+来源：`mionyee-agent/docs/architecture/` 内部分析
 
-| 领域 | OpenClaw | mionyee-agent 现状 | 差距 |
-|------|---------|-------------------|------|
-| 调度与并发 | Lane队列 + 多种消息策略（Steer/Collect/Followup/Interrupt） | 无队列机制 | 🔴 严重 |
+| 领域 | 业界最佳实践 | mionyee-agent 现状 | 差距 |
+|------|------------|-------------------|------|
+| 调度与并发 | 消息队列 + 多种消息策略 | 无队列机制 | 🔴 严重 |
 | 上下文守卫 | 多层防线 + 自动压缩 | 基础 Compaction | 🟡 中等 |
 | 模型容错 | 认证轮转 + 模型降级链 | 单一 Provider | 🔴 严重 |
 | Gateway架构 | 统一接入 + 安全拦截 + 路由 | 直接调用 | 🟠 较高 |
@@ -45,7 +45,7 @@
 
 | 框架 | 入口 | 核心能力 | 治理 | 与OwlClaw的关系 |
 |------|------|---------|------|---------------|
-| **OpenClaw** | 对话（IM渠道） | 自主运行、工具执行、会话管理、Skills | Gateway安全拦截 | **互补**（对话入口，MCP通道） |
+| **个人 AI 助理类** | 对话（IM渠道） | 自主运行、工具执行、会话管理、Skills | Gateway安全拦截 | **不同问题域**（对话 vs 业务系统） |
 | **Restate** | 任何（框架无关） | 持久执行、Session、Multi-Agent、AI中间件 | 无（基础设施层） | 备选（BSL许可证，已选 Hatchet MIT） |
 | **Dapr Agents** | 事件/Pub-Sub/HTTP | 持久执行、故障恢复、K8s原生、@tool装饰器 | Dapr生态 | ⚠️ 接近但太重（需Dapr sidecar） |
 | **LangGraph** | 代码/API | 状态机、检查点、人工介入 | LangSmith（闭源） | ⚠️ 编排层好，缺业务接入层 |
@@ -414,9 +414,9 @@ OwlClaw 的愿景是：**让这些人也能让业务系统获得 AI 自主能力
 
 #### 2.7.2 "Markdown 即 AI 能力"范式
 
-这个范式的核心思想来自 OpenClaw 的成功验证：
+这个范式的核心思想已被业界广泛验证：
 
-- OpenClaw 用 **SOUL.md** 让非技术用户定义 Agent 人格 → 182K GitHub stars
+- 个人 AI 助理框架用 **SOUL.md** 让非技术用户定义 Agent 人格，证明了 Markdown 驱动 AI 的可行性
 - Agent Skills 规范用 **SKILL.md** 让开发者定义 Agent 技能 → 已成为开源标准（agentskills.io）
 - GitHub 提出 **Spec-Driven Development**——用 Markdown 写规格，AI 编译成代码
 - AgentUse 框架用 **.agentuse Markdown 文件** 定义自主 Agent，无需 SDK
@@ -576,8 +576,8 @@ description: >
 
 **天花板对比**：
 
-| 维度 | OpenClaw ClawHub | OwlClaw OwlHub |
-|------|-----------------|----------------|
+| 维度 | 通用 Skills 生态（个人助理类） | OwlClaw OwlHub |
+|------|-------------------------------|----------------|
 | Skills 类型 | 通用技能（Git、代码审查、写作） | 业务技能（库存、财务、CRM、HR...） |
 | Skills 数量天花板 | 有限（通用操作就那么多） | **无限**（每个行业、每个业务流程） |
 | 用户群体 | 开发者 | 业务开发者 + 业务人员 |
@@ -586,11 +586,11 @@ description: >
 
 #### 2.7.5 OwlHub：业务 Skills 生态平台
 
-OwlHub 是 OwlClaw 的业务 Skills 注册中心，类似 OpenClaw 的 ClawHub，但面向业务领域。
+OwlHub 是 OwlClaw 的业务 Skills 注册中心，面向业务领域的 Skills 发现和分发。
 
 **注册中心架构模型选择**：
 
-经过对 npm（数据库 Web 服务）、Homebrew（Git 仓库索引）、Terraform Registry（GitHub + 协议）、ClawHub（Convex + 向量搜索）的研究，OwlHub 采用**渐进式架构**：
+经过对 npm（数据库 Web 服务）、Homebrew（Git 仓库索引）、Terraform Registry（GitHub + 协议）等注册中心架构的研究，OwlHub 采用**渐进式架构**：
 
 | 阶段 | 架构 | 说明 |
 |------|------|------|
@@ -759,19 +759,19 @@ description: >
 
 > **AI 时代的核心竞争力不是"我有别人没有的"，而是"我能把成熟能力组合得最快最好"。**
 
-试错成本很低，差异化不是重点。重点是：谁能把 Hatchet 的持久执行 + Agent Skills 的知识规范 + OpenClaw 的自主哲学 + litellm 的模型统一 + Langfuse 的可观测性，**快速组合成一个面向业务应用的解决方案**。
+试错成本很低，差异化不是重点。重点是：谁能把 Hatchet 的持久执行 + Agent Skills 的知识规范 + "赋能而非控制"的自主哲学 + litellm 的模型统一 + Langfuse 的可观测性，**快速组合成一个面向业务应用的解决方案**。
 
 OwlClaw 不是要重造任何一个轮子。它是一个**组合层** —— 把成熟的开源能力组合起来，解决一个没人解决的问题：**让已有成熟业务系统获得 AI 自主能力，而不需要重写。**
 
-### 3.2 从 OpenClaw 学到的核心哲学
+### 3.2 OwlClaw 的核心哲学
 
-深入读了 OpenClaw/moltbot 的代码后，最大的启发不是某个具体机制，而是一个设计哲学：
+OwlClaw 的设计哲学源自对 AI Agent 生态的深入研究和实践：
 
 > **不要试图控制 AI，而是给 AI 提供它需要的一切，让它自己来。**
 
-OpenClaw 的 Agent 有灵魂（SOUL.md）、有记忆（MEMORY.md + 向量搜索）、有知识（Skills 注入 prompt）、有工具（function calling）、有自我调度能力（cron tool + heartbeat）。它是一个**自主的实体**。
+一个自主的 Agent 应该有身份（SOUL.md）、有记忆（MEMORY.md + 向量搜索）、有知识（Skills 注入 prompt）、有工具（function calling）、有自我调度能力（heartbeat + schedule）。它是一个**自主的实体**，而不是一个被外部循环驱动的函数。
 
-OwlClaw 要做的是：把这套"让 AI 活起来"的基础设施，从对话场景迁移到**业务应用场景**。
+OwlClaw 要做的是：把"让 AI 活起来"的基础设施，专门面向**业务应用场景**设计和优化。
 
 ### 3.3 OwlClaw 的组合公式
 
@@ -783,7 +783,7 @@ OwlClaw = 业务应用接入层（自建，核心价值）
         + 持久执行（Hatchet MIT，集成）
         + LLM 调用（litellm，集成）
         + 可观测（Langfuse + OpenTelemetry，集成）
-        + 对话通道（OpenClaw via MCP，集成）
+        + 通用 Agent 协议接口（MCP Server，集成）
 ```
 
 **自建的是没人做的**：业务应用接入、治理、Agent 运行时。
@@ -797,7 +797,7 @@ OwlClaw = 业务应用接入层（自建，核心价值）
 
 | 维度 | 在 mionyee-agent 上继续 | 在 OwlClaw 上重新开始 |
 |------|----------------------|---------------------|
-| 目标对齐 | mionyee-agent 对标 OpenClaw（对话式） | OwlClaw 面向业务应用，目标不同 |
+| 目标对齐 | mionyee-agent 面向对话场景 | OwlClaw 面向业务应用，目标不同 |
 | 技术债务 | 5个🔴严重差距需要补 | 从一开始就按正确的架构来 |
 | 代码复用 | 治理钩子、工具策略可以搬过来 | 选择性搬运设计模式，不搬代码 |
 | 开源友好 | 有大量 mionyee 业务耦合 | 干净的开源仓库 |
@@ -811,9 +811,9 @@ v2 的设计是一个外部 OODA 循环在替 Agent 做决策：`Observe → Ori
 **问题**：
 1. **LLM 调用频率高** —— 每次循环都要调用 LLM 做 Decide + Reflect，即使什么都没发生
 2. **决策空间被框架限制** —— Agent 只能在框架预设的 OODA 步骤中做选择，不能自由组合动作
-3. **与 OpenClaw 的成功经验矛盾** —— OpenClaw 证明了 Agent 自己通过 function calling 做决策比外部循环更灵活、更高效
+3. **与业界最佳实践矛盾** —— 业界已证明 Agent 自己通过 function calling 做决策比外部循环更灵活、更高效
 
-**v3 的设计哲学**（从 OpenClaw 学到的）：
+**v3 的设计哲学**：
 
 > **OwlClaw 不是一个控制 Agent 的框架，而是一个赋能 Agent 的基础设施。**
 
@@ -836,8 +836,8 @@ Anthropic 在 2025 年 12 月发布了 Agent Skills 开放规范（agentskills.i
 **OwlClaw 的创新**：Skills 不是 Agent 自己的，而是**业务应用自带的**。
 
 ```
-# 传统 Agent（OpenClaw 等）：Skills 在 Agent 目录里
-~/.openclaw/skills/
+# 传统 Agent（个人助理类）：Skills 在 Agent 目录里
+~/.agent/skills/
 ├── git-workflow/SKILL.md
 ├── code-review/SKILL.md
 └── ...
@@ -903,7 +903,7 @@ owlclaw/
 │   ├── cli/                # owlclaw scan / owlclaw migrate
 │   ├── integrations/       # litellm、Langfuse、Hatchet 等集成
 │   └── pyproject.toml
-├── owlclaw-mcp/            # MCP Server（OpenClaw 通道）
+├── owlclaw-mcp/            # MCP Server（通用 Agent 协议接口）
 ├── examples/
 ├── docs/
 ├── tests/
@@ -966,7 +966,7 @@ owlclaw/
 | LLM 客户端 | | ✅ litellm | 统一 100+ 模型 |
 | LLM 调用 tracing | | ✅ Langfuse | 不重复造轮子 |
 | 分布式追踪 | | ✅ OpenTelemetry | 标准协议 |
-| 对话通道 | | ✅ MCP（OpenClaw） | 标准协议 |
+| Agent 协议接口 | | ✅ MCP Server | 通用 Agent 协议标准 |
 | 向量存储 | | ✅ 业务应用自己选 | OwlClaw 只定义接口 |
 | 编排框架接入 | | ✅ LangChain/LangGraph/CrewAI | 标准 capability handler 接入，详见决策8 |
 | Skills 生态（OwlHub） | ✅ | | Skills 注册/发现/分发平台，详见决策10 |
@@ -1395,19 +1395,19 @@ shadow 模式直接解决了 FastPath 提案的核心需求——"不影响现�
 
 FastPath 提案状态更新为 `Resolved — 纳入决策 4.12 Declarative Binding`。
 
-#### OpenClaw 对标分析补充（2026-02-24）
+#### 易用性与门槛优化（2026-02-24）
 
-OpenClaw（22.3 万星）验证了"SKILL.md 即能力"的模式在市场上的成功。其核心机制是 Agent 通过 bash/curl 执行 SKILL.md 中描述的命令（隐式绑定），与 OwlClaw 的声明式绑定（显式绑定）形成互补。对标分析揭示了以下需要补充的设计点：
+业界实践证明，"SKILL.md 即能力"的模式在开源社区有巨大吸引力。个人 AI 助理框架的成功经验表明：最小化入门门槛是采用率的关键。以下设计点基于业界最佳实践补充：
 
 **1. SKILL.md 书写门槛**
 
-OpenClaw 的最小 SKILL.md 只需 `name` + `description`，5 分钟上手。OwlClaw 的 SKILL.md 要求理解 `owlclaw:` 扩展字段（task_type、constraints、trigger、cron 表达式），门槛过高。
+业界最简的 SKILL.md 只需 `name` + `description`，5 分钟上手。OwlClaw 的 SKILL.md 要求理解 `owlclaw:` 扩展字段（task_type、constraints、trigger、cron 表达式），门槛过高。
 
 决策：所有 `owlclaw:` 扩展字段均为可选，只有 `name` + `description` + body 是必需的。`owlclaw skill init` 默认生成最小版本。
 
 **2. Skill Prerequisites（加载前提条件）**
 
-OpenClaw 的 `metadata.openclaw.requires`（env/bins/config/os）在加载时过滤不可用的 skill。OwlClaw 需要同样的机制——如果 binding 依赖的环境变量不存在，应在加载时就跳过，而不是等到 Agent 调用时才失败。
+业界 Agent 框架普遍支持 `requires`（env/bins/config/os）在加载时过滤不可用的 skill。OwlClaw 需要同样的机制——如果 binding 依赖的环境变量不存在，应在加载时就跳过，而不是等到 Agent 调用时才失败。
 
 决策：在 `owlclaw:` 字段中增加 `prerequisites`（env/bins/config/python_packages/os），加载时检查。
 
@@ -1507,8 +1507,8 @@ IT 运维操作（一次性）：
 │                           外部通道                                       │
 │                                                                          │
 │  ┌──────────────┐         ┌──────────────────────────────┐              │
-│  │  OpenClaw     │◄─MCP──►│  OwlClaw MCP Server          │              │
-│  │  (对话入口)   │         │  (暴露能力 + 控制 + 状态)     │              │
+│  │  MCP Client   │◄─MCP──►│  OwlClaw MCP Server          │              │
+│  │  (任意 Agent) │         │  (暴露能力 + 控制 + 状态)     │              │
 │  └──────────────┘         └──────────────┬───────────────┘              │
 │                                          │                               │
 └──────────────────────────────────────────┼──────────────────────────────┘
@@ -1551,7 +1551,7 @@ IT 运维操作（一次性）：
 │  │  ┌─ 知识 (Knowledge) ───────────────────────────────────────┐   │   │
 │  │  │  每个 capability 附带的业务知识文档（Markdown）             │   │   │
 │  │  │  → 注入 system prompt，引导 Agent 理解业务语义             │   │   │
-│  │  │  → 类似 OpenClaw 的 Skills，但面向业务能力而非对话技能     │   │   │
+│  │  │  → 面向业务能力的结构化知识，引导 Agent 理解业务语义     │   │   │
 │  │  └────────────────────────────────────────────────────────────┘   │   │
 │  │                                                                    │   │
 │  │  ┌─ 决策 (Decision via Function Calling) ───────────────────┐   │   │
@@ -1675,7 +1675,7 @@ class AgentMemory:
     短期记忆: 当前 run 的上下文
     长期记忆: MEMORY.md + 向量搜索（跨 run 持久化）
     
-    参考 OpenClaw 的 memory-tool.ts:
+    核心设计：
     - Agent 通过 remember() 工具主动写入记忆
     - Agent 通过 recall() 工具搜索历史记忆
     - 记忆自动带时间戳和上下文标签
@@ -1813,11 +1813,11 @@ Agent 不是一个永远运行的循环。它是**事件驱动**的：有事才�
 
 #### 5.2.3 Heartbeat — 零成本的主动性
 
-从 OpenClaw 学到的最精妙的机制。
+OwlClaw 最核心的效率机制之一。
 
 **问题**：Agent 如何在没有外部事件时保持"主动性"？v2 的答案是 OODA 循环不断轮询。但这意味着即使什么都没发生，每次循环也要调用 LLM。
 
-**OpenClaw 的答案**：Heartbeat。
+**OwlClaw 的答案**：Heartbeat——周期性轻量检查，有事才唤醒 Agent。
 
 ```python
 # owlclaw/agent/heartbeat.py
@@ -1828,11 +1828,11 @@ class HeartbeatRunner:
     关键设计：如果没有待处理的事情，不调用 LLM。
     这意味着 Agent 在空闲时的成本是零。
     
-    参考 OpenClaw 的 heartbeat-runner.ts:
+    行为：
     - 默认每 30 分钟运行一次
-    - 检查 HEARTBEAT.md 文件
-    - 如果文件为空或无可操作内容 → 跳过，不调 LLM
-    - 如果有内容 → 触发一次 Agent Run
+    - 检查内部事件队列和状态变更标志
+    - 如果无待处理事件 → 跳过，不调 LLM
+    - 如果有事件 → 触发一次 Agent Run
     """
     
     def __init__(self, agent: Agent, interval_minutes: int = 30):
@@ -1856,7 +1856,7 @@ class HeartbeatRunner:
     async def _collect_pending(self) -> str | None:
         """收集待处理事件（纯内部状态检查，零外部 I/O）
         
-        边界定义（参考 OpenClaw heartbeat-runner.ts 的 6 层过滤）：
+        边界定义（多层过滤）：
         - ✅ 内存中的事件队列（待处理事件）
         - ✅ 调度表（到期的 schedule）
         - ✅ 状态变更标志（dirty flag，不是重新查询外部状态）
@@ -1954,11 +1954,7 @@ class CapabilityVisibilityFilter:
     """
     多层过滤，决定 Agent 在当前 run 中能看到哪些工具。
     
-    参考 OpenClaw 的 policy filtering:
-    - Profile Policy → Provider Policy → Global Policy → Agent Policy
-    - 每层都可以增加或移除工具
-    
-    OwlClaw 的过滤层：
+    OwlClaw 的过滤层（每层都可以增加或移除工具）：
     """
     
     def filter(self, all_capabilities: list, context: RunContext) -> list:
@@ -2035,9 +2031,9 @@ def _check_budget(self, capability, context) -> bool:
 - 延迟、是否重试
 - Agent 的决策理由（如果 Agent 调用了 `log_decision` 工具）
 
-#### 5.2.6 OpenClaw 通道（MCP Bridge）
+#### 5.2.6 MCP Server（通用 Agent 协议接口）
 
-与 v2 相同，但现在 MCP Server 暴露的不只是业务能力，还包括 Agent 的状态和控制：
+OwlClaw MCP Server 将业务能力暴露为标准 MCP 协议接口，任何 MCP 客户端均可连接：
 
 ```python
 # owlclaw-mcp/server.py
@@ -2068,16 +2064,16 @@ class OwlClawMCPServer:
         return tools
 ```
 
-**通过 OpenClaw 对话控制 OwlClaw 管理的业务应用**：
+**通过 MCP 客户端与 OwlClaw 管理的业务应用交互**：
 ```
 用户: "mionyee 今天做了什么交易决策？"
-OpenClaw → owlclaw_ledger → 返回今天的决策记录
+MCP Client → owlclaw_ledger → 返回今天的决策记录
 
 用户: "暂停自动交易，我想手动操作一下"
-OpenClaw → owlclaw_pause → Agent 暂停自主调度
+MCP Client → owlclaw_pause → Agent 暂停自主调度
 
 用户: "帮我看看现在有没有入场机会"
-OpenClaw → owlclaw_trigger("检查入场机会") → Agent Run → 返回结果
+MCP Client → owlclaw_trigger("检查入场机会") → Agent Run → 返回结果
 ```
 
 ---
@@ -2315,7 +2311,7 @@ Steady: Agent 完全自主，触发器仅作为事件源
 | `owlclaw.triggers.webhook` | P1 | Webhook 触发器 |
 | `owlclaw.triggers.queue` | P1 | 消息队列触发器 |
 | `owlclaw.integrations.langfuse` | P1 | Langfuse tracing |
-| `owlclaw-mcp` | P1 | MCP Server（OpenClaw 通道，只读查询为主） |
+| `owlclaw-mcp` | P1 | MCP Server（通用 Agent 协议接口，只读查询为主） |
 | `owlclaw.cli.scan` | P1 | AST 扫描器（自动生成 SKILL.md 骨架） |
 | `owlclaw.cli.migrate` | P2 | AI 辅助迁移工具 |
 
@@ -2327,7 +2323,7 @@ Steady: Agent 完全自主，触发器仅作为事件源
 | RBAC / 多租户 | 企业版 |
 | Web UI / 控制台 | 用 Langfuse + Temporal UI |
 | 沙箱 / Docker 隔离 | 业务应用自己管执行环境 |
-| 对话入口 | 交给 OpenClaw（MCP 通道 P1） |
+| 对话入口 | 通过 MCP Server 对外暴露（P1） |
 
 ### 6.4 技术栈
 
@@ -2339,7 +2335,7 @@ Steady: Agent 完全自主，触发器仅作为事件源
 | LLM 客户端 | litellm | 统一 100+ 模型 |
 | 数据库 | SQLAlchemy + PostgreSQL + Alembic | 复用宿主 PG + database 级隔离 + Alembic。详见 `DATABASE_ARCHITECTURE.md` |
 | 追踪 | Langfuse + OpenTelemetry | 开源标准 |
-| MCP | mcp Python SDK | OpenClaw 通道 |
+| MCP | mcp Python SDK | 通用 Agent 协议接口 |
 | 配置 | YAML + Pydantic | 类型安全 |
 | 包管理 | pyproject.toml + uv | 现代 Python |
 | 许可证 | MIT（OwlClaw 核心） | 对接入方最友好 |
@@ -2350,7 +2346,7 @@ Steady: Agent 完全自主，触发器仅作为事件源
 
 ### 7.1 结论：在 OwlClaw 上重新开始
 
-1. **目标不同**：mionyee-agent 对标 OpenClaw（对话式），OwlClaw 面向业务应用
+1. **目标不同**：mionyee-agent 面向对话场景，OwlClaw 面向业务应用
 2. **语言不同**：TypeScript vs Python
 3. **架构不同**：run loop + tools + skills vs Agent Runtime + Capabilities + Governance
 4. **包袱不同**：5个🔴差距 vs 从零开始做对
@@ -2409,7 +2405,7 @@ Steady: Agent 完全自主，触发器仅作为事件源
 
 #### 批判 3：知识文档 = 维护负担
 
-**红军说**：你从 OpenClaw 学了 Skills 的概念，给每个 capability 附带知识文档。但 OpenClaw 的 Skills 是社区维护的通用技能（如"如何使用 Git"），而 OwlClaw 的知识文档是业务特定的（如"什么时候该检查入场机会"）。这意味着：
+**红军说**：你采用了 Agent Skills 规范，给每个 capability 附带知识文档。但个人 AI 助理类框架的 Skills 是社区维护的通用技能（如"如何使用 Git"），而 OwlClaw 的知识文档是业务特定的（如"什么时候该检查入场机会"）。这意味着：
 1. 每个业务应用都要自己写知识文档，这是额外的工作量
 2. 知识文档和业务逻辑可能不同步（代码改了但文档没更新）
 3. 没有社区可以帮你维护这些文档
@@ -2435,9 +2431,9 @@ Steady: Agent 完全自主，触发器仅作为事件源
   4. MIT 许可证的长期价值远大于部署的短期不便
   5. 对于真正的生产用户，Docker Compose 不是障碍
 
-#### 批判 5：与 OpenClaw 的 MCP 通道可能是鸡肋
+#### 批判 5：MCP 通道可能是鸡肋
 
-**红军说**：你设想用户通过 OpenClaw 对话来控制 OwlClaw 管理的业务应用。但：
+**红军说**：你设想用户通过 MCP 客户端对话来控制 OwlClaw 管理的业务应用。但：
 1. 真正的业务用户（交易员、运维）不会通过对话来管理关键业务系统
 2. 对话的延迟和不确定性不适合需要快速响应的场景
 3. MCP 通道增加了架构复杂度，但使用频率可能很低
@@ -2446,7 +2442,7 @@ Steady: Agent 完全自主，触发器仅作为事件源
 - 部分同意。MCP 通道不是核心功能，而是一个"锦上添花"的通道。
 - **调整**：
   1. MCP 通道保持 P1 优先级，不影响核心开发
-  2. MCP 的主要价值不是"对话控制业务"，而是"让 OpenClaw 用户能查询 OwlClaw 的状态和记录" —— 这是一个只读的、低频的使用场景，更合理
+  2. MCP 的主要价值不是"对话控制业务"，而是"让 MCP 客户端用户能查询 OwlClaw 的状态和记录" —— 这是一个只读的、低频的使用场景，更合理
   3. 真正的业务控制（暂停/恢复/强制执行）应该通过 CLI 或 API，不依赖 MCP
 
 #### 批判 6：mionyee 作为唯一验证场景的局限性
@@ -2673,7 +2669,7 @@ OwlClaw v3 的核心理念可以用两句话概括：
 > **不要控制 Agent，赋能 Agent。**
 > **不要重造轮子，组合轮子。**
 
-OwlClaw 不是又一个 Agent 框架。它是一个**组合层**，把成熟的开源能力（Hatchet 的持久执行、Agent Skills 的知识规范、litellm 的模型统一、Langfuse 的可观测、OpenClaw 的对话通道）快速组合起来，解决一个没人解决的问题：
+OwlClaw 不是又一个 Agent 框架。它是一个**组合层**，把成熟的开源能力（Hatchet 的持久执行、Agent Skills 的知识规范、litellm 的模型统一、Langfuse 的可观测、MCP 的通用 Agent 协议）快速组合起来，解决一个没人解决的问题：
 
 **让成熟的业务系统获得 AI 自主能力，而不需要重写。**
 
