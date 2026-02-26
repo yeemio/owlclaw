@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -52,7 +54,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install python-semantic-release build twine
+          pip install python-semantic-release build
 
       - name: Semantic release version and publish metadata
         env:
@@ -66,17 +68,38 @@ jobs:
 
       - name: Publish to TestPyPI
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi' }}
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
-        run: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+          skip-existing: true
 
       - name: Publish to PyPI
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: twine upload dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          skip-existing: true
+
+      - name: Generate build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "dist/*"
+
+      - name: Generate release report
+        run: |
+          python scripts/ops/release_report.py \
+            --run-id "${{ github.run_id }}" \
+            --commit "${{ github.sha }}" \
+            --target "${{ inputs.target || 'pypi' }}" \
+            --output "artifacts/release-report.json"
+
+      - name: Upload release report
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-report-${{ github.run_id }}
+          path: artifacts/release-report.json
+          if-no-files-found: error
 
       - name: Create GitHub Release
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
