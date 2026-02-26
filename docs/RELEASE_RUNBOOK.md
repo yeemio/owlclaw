@@ -14,6 +14,15 @@ Path:
 1. GitHub repository -> `Settings` -> `Secrets and variables` -> `Actions`
 2. Create or rotate tokens with least privilege
 
+Verification (CLI):
+
+```bash
+gh auth status
+gh secret list -R yeemio/owlclaw
+```
+
+Expected: secret names include `PYPI_TOKEN` and `TEST_PYPI_TOKEN`.
+
 ## 2. Dry-run To TestPyPI
 
 Preferred path: trigger release workflow manually with TestPyPI target:
@@ -21,6 +30,15 @@ Preferred path: trigger release workflow manually with TestPyPI target:
 ```bash
 gh workflow run release.yml -R yeemio/owlclaw -f target=testpypi
 ```
+
+Inspect latest run:
+
+```bash
+gh run list -R yeemio/owlclaw --workflow release.yml --limit 5
+gh run view <RUN_ID> -R yeemio/owlclaw
+```
+
+If run fails at token validation or with 403/TWINE password empty, return to step 1 and configure missing secrets.
 
 Alternative manual upload:
 

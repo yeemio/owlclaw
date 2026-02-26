@@ -62,7 +62,9 @@
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
+  - 状态补充（2026-02-25）：`gh secret list -R yeemio/owlclaw` 未返回 `PYPI_TOKEN/TEST_PYPI_TOKEN`，需维护者在仓库 Actions Secrets 补齐。
 - [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
+  - 状态补充（2026-02-25）：workflow_dispatch run `22404173746` 执行到 TestPyPI 发布阶段后返回 `HTTP 403 Forbidden`，日志显示 `TWINE_PASSWORD` 为空，根因仍是 3.1.2 未完成。
 
 ---
 
@@ -117,6 +119,7 @@
   - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
   - TestPyPI 实际发布验证
   - 生产发布 tag 与 GitHub Release 生成（需 main 分支发布流程）
+  - 本轮核验（2026-02-25）：`gh auth status` 正常；`gh workflow list` 可读；release workflow 失败点定位为凭据缺失而非仓内脚本错误
 
 ---
 

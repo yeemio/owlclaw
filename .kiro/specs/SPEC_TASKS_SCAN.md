@@ -183,12 +183,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | Phase 5 + Phase 6 补齐后审校收口：OwlHub/skills 属性测试稳定性调优 |
-| 批次状态 | **进行中**。Phase 6 spec 已创建完成；review-work 已完成测试稳定性修正并验收通过。 |
-| 已完成项 | 1) `OwlClaw.lite()` + `InMemoryLedger`（Phase 5）；2) 创建 quick-start/complete-workflow/architecture-roadmap（Phase 5）；3) 创建 skill-dx/skill-ai-assist/progressive-migration/skills-quality/industry-skills（Phase 6）；4) 调整 8 个 OwlHub/skills 相关测试文件 Hypothesis `max_examples`，分批验证通过（`25 passed` + `40 passed`）。 |
-| 下一待执行 | 1) 分配/推进 Phase 6 spec 到编码 worktree；2) codex-work 继续 test-infra + architecture-roadmap；3) codex-gpt-work 继续 quick-start + complete-workflow；4) release + owlhub 40.4 等人工凭据。 |
+| 当前批次 | review-work 审校循环：吸收 codex-work 测试稳定性修复 + release 外部阻塞证据补齐 |
+| 批次状态 | **进行中**。已完成审校侧代码/文档修正并通过目标测试，等待主 worktree 合并与下轮分配推进。 |
+| 已完成项 | 1) 吸收并验证 test-infra 相关修复（`conftest NullPool + rollback guard`、Hatchet 无效 token skip、validator/frontmatter JSON 化、smoke timeout 放宽）；2) 修复 `test_integration_fixtures` 的 `pytest-asyncio` 作用域冲突；3) 目标验证通过：`38 passed, 6 skipped`；4) 补充 release 阻塞证据到 `release/tasks.md` 与 `docs/RELEASE_RUNBOOK.md`（含 `gh` 核验命令与失败定位）。 |
+| 下一待执行 | 1) 主 worktree 合并 review-work 并同步各子 worktree；2) codex-work 继续 test-infra Task 4.2/11.1/11.3/11.4 与 architecture-roadmap；3) codex-gpt-work 推进 quick-start + complete-workflow；4) release/owlhub 继续等待外部凭据动作。 |
 | 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/24)，skill-ai-assist 🆕(0/22)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/23)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 4.2：unit 套件约 452s，需优化到 < 60s；2) test-infra Task 9.4/11：需 Docker Engine；3) release/owlhub 40.4：需人工凭据。 |
+| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owhub 余项需外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
