@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.5（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-25
+> **最后更新**: 2026-02-26
 
 ---
 
@@ -169,11 +169,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-25 |
-| 当前批次 | Phase 5 落地收尾：Lite Mode 核心代码完成 + 3 个新 spec 创建 |
-| 批次状态 | **进行中**。Lite Mode 已实现（`OwlClaw.lite()` + `InMemoryLedger`），新 spec 待分配。 |
-| 已完成项 | 1) `OwlClaw.lite()` 类方法实现（`owlclaw/app.py`）；2) `InMemoryLedger` 实现（`owlclaw/governance/ledger_inmemory.py`）；3) `_ensure_governance()` 支持 `use_inmemory_ledger` 标志；4) 测试更新（19 passed）；5) 创建 quick-start/complete-workflow/architecture-roadmap 三个 spec（三层齐全）。 |
-| 下一待执行 | 1) 分配 quick-start + complete-workflow → codex-gpt-work；2) 分配 architecture-roadmap → codex-work（或 codex-gpt-work）；3) codex-work 继续 test-infra 剩余 Task；4) release + owlhub 40.4 等人工凭据。 |
+| 最后更新 | 2026-02-26 |
+| 当前批次 | review-work 审校收口：OwlHub 相关属性测试稳定性调优（Hypothesis 样本数下调） |
+| 批次状态 | **进行中**。审校轻量修正已完成并通过目标测试验收，主线 spec 状态未变。 |
+| 已完成项 | 1) 调整 8 个 OwlHub/skills 相关测试文件的 Hypothesis `max_examples`（21 行增删等量）；2) 分批验证通过：`25 passed` + `40 passed`；3) 按规范完成测试后 Python 进程清理。 |
+| 下一待执行 | 1) 继续审校 codex-work：test-infra 剩余 Task 4/6/9.4/11；2) 跟进 codex-gpt-work：quick-start/complete-workflow 启动实现；3) 持续跟踪 release/owlhub 外部凭据阻塞项。 |
 | 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2：unit 套件约 452s，需优化到 < 60s；2) test-infra Task 9.4/11：需 Docker Engine；3) release/owlhub 40.4：需人工凭据。 |
 | 健康状态 | 正常 |
