@@ -145,6 +145,27 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parse_command(path=ns.path, cache=ns.cache)
         return True
 
+    if sub == "quality":
+        from owlclaw.cli.skill_quality import quality_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill quality")
+        parser.add_argument("skill_name", nargs="?", default="")
+        parser.add_argument("--all", action="store_true", default=False)
+        parser.add_argument("--trend", action="store_true", default=False)
+        parser.add_argument("--period", default="30d")
+        parser.add_argument("--suggest", action="store_true", default=False)
+        parser.add_argument("--tenant", default="default")
+        ns = parser.parse_args(sub_argv)
+        quality_command(
+            skill_name=ns.skill_name,
+            all=ns.all,
+            trend=ns.trend,
+            period=ns.period,
+            suggest=ns.suggest,
+            tenant=ns.tenant,
+        )
+        return True
+
     if sub == "list-templates":
         from owlclaw.cli.skill_templates import list_templates_command
 
@@ -864,6 +885,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  create    Conversationally create SKILL.md")
         print("  list-templates  List local AI-assist templates")
         print("  parse     Parse SKILL.md and show resolved metadata")
+        print("  quality   Show quality score/trend/suggestions")
         print("  validate  Validate SKILL.md in current dir")
         print("  list      List skills in a directory")
         print("  templates List templates from the template library")
@@ -1113,6 +1135,14 @@ def _print_help_and_exit(argv: list[str]) -> None:
     if argv == ["skill", "parse"]:
         print("Usage: owlclaw skill parse [PATH] [--cache]")
         print("\n  Parse SKILL.md and output resolved parse metadata as JSON.")
+        sys.exit(0)
+    if argv == ["skill", "quality"]:
+        print("Usage: owlclaw skill quality [SKILL_NAME] [OPTIONS]")
+        print("\n  Show skill quality score, trend and suggestions.")
+        print("  --all      Show latest quality for all skills")
+        print("  --trend    Show trend points in selected period")
+        print("  --period   Period selector (e.g. 7d, 30d, 12w)")
+        print("  --suggest  Show improvement suggestions")
         sys.exit(0)
     if argv == ["skill", "list-templates"]:
         print("Usage: owlclaw skill list-templates")
