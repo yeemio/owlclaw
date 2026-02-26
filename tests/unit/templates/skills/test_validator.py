@@ -1,5 +1,6 @@
 """Unit tests for owlclaw.templates.skills.validator (skill-templates Task 5)."""
 
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -331,7 +332,7 @@ class TestTemplateValidator:
         with TemporaryDirectory() as tmp_dir:
             skill = Path(tmp_dir) / "SKILL.md"
             skill.write_text(
-                f"---\nname: {name}\ndescription: {description!r}\n---\n# Title\n\nBody\n",
+                f"---\nname: {name}\ndescription: {json.dumps(description)}\n---\n# Title\n\nBody\n",
                 encoding="utf-8",
             )
             errs = TemplateValidator().validate_skill_file(skill)

@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
 
-@pytest_asyncio.fixture(scope="module", loop_scope="module")
+@pytest_asyncio.fixture
 async def isolation_probe_table(db_engine: AsyncEngine):
     """Create a reusable probe table for transaction-isolation validation."""
     table_name = "fixture_isolation_probe"
@@ -33,7 +33,7 @@ async def isolation_probe_table(db_engine: AsyncEngine):
             pass
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio
 async def test_01_isolated_session_write_visible_in_current_test(
     isolated_session,
     isolation_probe_table: str,
@@ -44,7 +44,7 @@ async def test_01_isolated_session_write_visible_in_current_test(
     assert row_count == 1
 
 
-@pytest.mark.asyncio(loop_scope="module")
+@pytest.mark.asyncio
 async def test_02_isolated_session_rolls_back_after_previous_test(
     db_engine: AsyncEngine,
     isolation_probe_table: str,

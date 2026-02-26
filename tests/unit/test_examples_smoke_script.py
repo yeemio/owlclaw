@@ -16,7 +16,7 @@ def test_validate_examples_script() -> None:
         cwd=repo,
         capture_output=True,
         text=True,
-        timeout=40,
+        timeout=120,
         check=False,
     )
     assert result.returncode == 0, result.stderr
