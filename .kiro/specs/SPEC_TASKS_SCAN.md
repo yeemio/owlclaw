@@ -114,6 +114,11 @@
 ### Phase 7：协议优先（API + MCP）
 
 - [ ] Protocol-first 治理收口（统一版本策略 / 错误模型 / 兼容门禁 / Java Golden Path） → spec: protocol-first-api-mcp
+- [ ] 协议治理规范化（版本/兼容/错误域/门禁） → spec: protocol-governance
+- [ ] 网关运行与发布运维标准化（canary/rollback/SLO） → spec: gateway-runtime-ops
+- [ ] API + MCP 契约测试体系（diff + replay + blocking gate） → spec: contract-testing
+- [ ] 发布供应链安全（OIDC Trusted Publishing + provenance） → spec: release-supply-chain
+- [ ] 跨语言接入黄金路径（Java + curl 可执行验收） → spec: cross-lang-golden-path
 
 ---
 
@@ -163,6 +168,11 @@
 | **skills-quality** | `.kiro/specs/skills-quality/` | ✅ 三层齐全，已完成（27/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
 | **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | 🟡 三层齐全，待实施（0/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
+| **protocol-governance** | `.kiro/specs/protocol-governance/` | 🟡 三层齐全，待实施（0/10） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
+| **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | 🟡 三层齐全，待实施（0/9） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
+| **contract-testing** | `.kiro/specs/contract-testing/` | 🟡 三层齐全，待实施（0/10） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
+| **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，待实施（0/8） | 发布供应链安全（OIDC、attestation、发布门禁） |
+| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，待实施（0/9） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 
 ---
 
@@ -191,7 +201,7 @@
 | 当前批次 | codex-work 循环：skill-dx P2 + skill-ai-assist P2 收口 |
 | 批次状态 | **已完成（本批次）**。skill-dx 从 18/25 收口到 25/25，skill-ai-assist 从 22/28 收口到 28/28；test-infra / release / owlhub 外部或性能阻塞保持不变。 |
 | 已完成项 | 1) 新增 `capability_matcher`（精确匹配 + embedding 相似度 + 可选 LLM function-call 复核）；2) `SkillsLoader` 集成 `resolved_tools` 自动解析（结构化 tools + 自然语言意图匹配）；3) 新增 `skill_doc_extractor` 与 `owlclaw skill create --from-doc`（Markdown/文本读取 + 批量生成）；4) 单测新增并通过：`test_capability_matcher.py`、`test_skill_doc_extractor.py`、`test_main_skill_create_from_doc_generates_file`，相关回归合计 `118 passed`。 |
-| 下一待执行 | 1) 启动 protocol-first-api-mcp（Phase 1：协议宪法与契约门禁基线）；2) 继续 test-infra Task 4.2/11.1/11.3/11.4 收口；3) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 后重跑 release workflow 并完成 `pip install owlclaw` 验收；4) owlhub Task 40.4 外部阻塞项推进。 |
+| 下一待执行 | 1) 启动 protocol-governance + contract-testing（优先建立规则与门禁）；2) 启动 gateway-runtime-ops（发布门控与回滚手册）；3) 启动 release-supply-chain（OIDC Trusted Publishing 与 provenance）；4) 启动 cross-lang-golden-path（Java + curl 验收路径）；5) 并行继续 test-infra 与 release/owlhub 阻塞项收口。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 串行耗时约 `163s`（2026-02-26），仍高于 `<60s`；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；4) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
