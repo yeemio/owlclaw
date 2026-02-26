@@ -400,6 +400,28 @@ async def test_query_records_applies_status_and_offset_filters():
 
 
 @pytest.mark.asyncio
+async def test_query_records_applies_execution_mode_filter():
+    session = AsyncMock()
+    result = MagicMock()
+    result.scalars.return_value.all.return_value = []
+    session.execute = AsyncMock(return_value=result)
+
+    session_cm = AsyncMock()
+    session_cm.__aenter__.return_value = session
+    session_cm.__aexit__.return_value = None
+    session_factory = MagicMock(return_value=session_cm)
+
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+    await ledger.query_records(
+        tenant_id="tenant-A",
+        filters=LedgerQueryFilters(execution_mode="pending_approval"),
+    )
+
+    stmt = session.execute.await_args.args[0]
+    assert _stmt_uses_value(stmt, "pending_approval")
+
+
+@pytest.mark.asyncio
 async def test_get_cost_summary_enforces_tenant_filter():
     session = AsyncMock()
     total_result = MagicMock()
@@ -425,3 +447,34 @@ async def test_get_cost_summary_enforces_tenant_filter():
     second_stmt = session.execute.await_args_list[1].args[0]
     assert _stmt_uses_tenant(first_stmt, "tenant-B")
     assert _stmt_uses_tenant(second_stmt, "tenant-B")
+
+
+@pytest.mark.asyncio
+async def test_record_execution_supports_migration_audit_fields():
+    session_factory = MagicMock()
+    ledger = Ledger(session_factory, batch_size=2, flush_interval=0.1)
+    await ledger.record_execution(
+        tenant_id="default",
+        agent_id="agent1",
+        run_id="run-migration",
+        capability_name="inventory-check",
+        task_type="monitor",
+        input_params={},
+        output_result={"action": "observe"},
+        decision_reasoning="migration gate observe mode",
+        execution_time_ms=50,
+        llm_model="mock",
+        llm_tokens_input=0,
+        llm_tokens_output=0,
+        estimated_cost=Decimal("0"),
+        status="success",
+        migration_weight=30,
+        execution_mode="pending_approval",
+        risk_level=Decimal("0.4000"),
+        approval_by="ops-a",
+    )
+    record = ledger._write_queue.get_nowait()
+    assert record.migration_weight == 30
+    assert record.execution_mode == "pending_approval"
+    assert record.risk_level == Decimal("0.4000")
+    assert record.approval_by == "ops-a"

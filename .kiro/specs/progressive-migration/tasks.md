@@ -25,19 +25,19 @@
 
 ## Task 3: 审批队列
 
-- [ ] 3.1 创建 `owlclaw/governance/approval_queue.py`
-- [ ] 3.2 实现审批请求创建（包含决策建议 + 推理过程）
-- [ ] 3.3 实现审批状态管理（pending / approved / rejected / modified / expired）
-- [ ] 3.4 实现审批超时机制
-- [ ] 3.5 实现 InMemoryApprovalQueue（Lite Mode 支持）
-- [ ] 3.6 单元测试：审批流程全链路
+- [x] 3.1 创建 `owlclaw/governance/approval_queue.py`
+- [x] 3.2 实现审批请求创建（包含决策建议 + 推理过程）
+- [x] 3.3 实现审批状态管理（pending / approved / rejected / modified / expired）
+- [x] 3.4 实现审批超时机制
+- [x] 3.5 实现 InMemoryApprovalQueue（Lite Mode 支持）
+- [x] 3.6 单元测试：审批流程全链路
 
 ## Task 4: Ledger 审计增强
 
-- [ ] 4.1 扩展 `LedgerRecord` 数据模型（migration_weight / execution_mode / risk_level / approval_by / approval_time）
-- [ ] 4.2 扩展 `InMemoryLedger` 支持新字段
-- [ ] 4.3 扩展 `LedgerQueryFilters` 支持按 execution_mode 过滤
-- [ ] 4.4 单元测试：新字段记录和查询
+- [x] 4.1 扩展 `LedgerRecord` 数据模型（migration_weight / execution_mode / risk_level / approval_by / approval_time）
+- [x] 4.2 扩展 `InMemoryLedger` 支持新字段
+- [x] 4.3 扩展 `LedgerQueryFilters` 支持按 execution_mode 过滤
+- [x] 4.4 单元测试：新字段记录和查询
 
 ## Task 5: Agent Runtime 集成
 
