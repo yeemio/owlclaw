@@ -2663,7 +2663,86 @@ owlclaw signal instruct --agent mionyee-trading \
 
 ---
 
-## 十、总结
+## 十、架构演进路线
+
+> 本节给出 OwlClaw 的中长期演进方向。原则：不推翻现有 v4.5 架构，在既有组件基础上渐进增强。
+
+### 10.1 Multi-Agent 协作
+
+**目标**：让多个 Agent 在统一治理边界内协同执行跨域任务。  
+**现有基础**：`AgentRuntime` 多实例运行、`triggers.signal`、Hatchet durable workflow。  
+**设计思路**：
+- 以事件总线 + 声明式任务契约实现 Agent 间通信，不引入强耦合 RPC。
+- 引入委派协议（delegate/ack/result）与结果聚合器，支持主 Agent 分解任务给专长 Agent。
+- 共享记忆采用“只读共享 + 租户隔离写入”模式，避免跨 Agent 污染。
+**衔接点**：
+- 在 `triggers.signal` 扩展 agent-to-agent channel 语义（保持向后兼容）。
+- 在治理层增加跨 Agent 调用预算、频率和权限边界。
+**预计阶段**：v2.0（先单租户多 Agent，后多租户协作）。
+
+### 10.2 Agent 自我进化
+
+**目标**：基于运行数据形成可控的策略优化闭环。  
+**现有基础**：Ledger 执行轨迹、`cli-scan`/`cli-migrate`、SKILL.md 结构化格式。  
+**设计思路**：
+- 建立离线评估流水线：从 Ledger 抽样失败/低收益 run，生成改进建议。
+- 对 SKILL.md 提供“建议补丁”（非自动覆盖），由人工或审批流确认后应用。
+- 引入决策质量评分（成功率、成本、延迟、回滚率）驱动策略迭代。
+**衔接点**：
+- 复用 `skills-quality` 的评分数据模型。
+- 在 `skill-ai-assist` 增加“基于历史数据优化模板”的生成入口。
+**预计阶段**：v2.0（先离线建议，后半自动优化）。
+
+### 10.3 可解释性（Explainability）
+
+**目标**：回答“为什么这样决策/为什么被治理拒绝”。  
+**现有基础**：Langfuse tracing、Ledger 审计、visibility 过滤规则。  
+**设计思路**：
+- 为每次 tool selection 记录标准化 reason code（任务匹配、风险约束、预算决策）。
+- 将治理拒绝结果转为可读解释（规则命中链路、阈值、建议动作）。
+- 生成可下载审计报告，支持合规审查和事故复盘。
+**衔接点**：
+- 在 `governance.ledger` 扩展 explanation 字段。
+- 在 `integrations.langfuse` 追加治理事件 span，统一 trace 视图。
+**预计阶段**：v1.1（先解释数据模型，再可视化报告）。
+
+### 10.4 OwlHub 安全治理
+
+**目标**：让 Skills 生态在开放增长下保持安全可信。  
+**现有基础**：OwlHub PR 审核流、`owlclaw skill validate`、Declarative Binding schema。  
+**设计思路**：
+- 增加恶意 binding 检测（危险 URL、明文密钥、未参数化 SQL、高风险工具组合）。
+- 引入版本签名与快速回滚，支持“发现风险后一键降级”。
+- 建立社区信任评分（作者历史、审校通过率、使用反馈）作为检索排序信号。
+**衔接点**：
+- 在 `owlhub` 发布链路增加 security gate。
+- 在 `industry-skills` 推荐算法中加入 trust score 权重。
+**预计阶段**：v1.1（安全门禁）到 v2.0（信任网络）。
+
+### 10.5 性能与规模
+
+**目标**：支撑高并发、多租户、跨区域部署。  
+**现有基础**：Hatchet 分布式 worker、Heartbeat 机制、多触发器统一层。  
+**设计思路**：
+- Heartbeat 分片（按 tenant/agent hash）降低单节点热点。
+- 任务执行链路分级限流（租户级、Agent 级、tool 级）避免雪崩。
+- 跨区域采用“就近执行 + 异步复制”的数据策略，优先保证可用性。
+**衔接点**：
+- 扩展 `runtime` 与 `triggers` 的 shard-aware 调度策略。
+- 复用 `owlclaw.db` 多连接池配置与观测指标。
+**预计阶段**：长期（v2.x 以后按规模逐步开启）。
+
+### 10.6 分阶段路线图（摘要）
+
+| 阶段 | 重点方向 | 交付形态 |
+|------|----------|----------|
+| v1.1 | 可解释性 + OwlHub 安全治理 | 数据模型、审计报告、安全门禁 |
+| v2.0 | Multi-Agent + 自我进化 | 协作协议、离线优化闭环、建议补丁 |
+| 长期 | 性能与规模 | 分片调度、跨区域部署策略 |
+
+---
+
+## 十一、总结
 
 OwlClaw v3 的核心理念可以用两句话概括：
 

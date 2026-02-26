@@ -91,6 +91,44 @@ def _extract_prerequisites(frontmatter: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+def _validate_natural_language_mode(path: Path) -> list[ValidationError]:
+    frontmatter = _load_frontmatter(path)
+    if not frontmatter:
+        return []
+    owlclaw = frontmatter.get("owlclaw")
+    if isinstance(owlclaw, dict) and owlclaw.get("trigger"):
+        return []
+    try:
+        text = path.read_text(encoding="utf-8").lstrip("\ufeff")
+    except OSError:
+        return []
+    parts = text.split("---", 2)
+    body = parts[2] if len(parts) >= 3 else text
+    body_lower = body.lower()
+    trigger_hints = (
+        "每天",
+        "每周",
+        "每月",
+        "当",
+        "daily",
+        "weekly",
+        "every day",
+        "every week",
+        "when",
+        "new order",
+        "inventory change",
+    )
+    if any(hint in body or hint in body_lower for hint in trigger_hints):
+        return []
+    return [
+        ValidationError(
+            field="body",
+            message="natural-language mode without clear trigger phrase; add schedule/event sentence",
+            severity="warning",
+        )
+    ]
+
+
 def _iter_string_values(value: Any) -> list[str]:
     if isinstance(value, str):
         return [value]
@@ -244,6 +282,7 @@ def validate_command(
     for file_path in skill_files:
         errs = validator.validate_skill_file(file_path)
         errs.extend(_validate_binding_semantics(file_path))
+        errs.extend(_validate_natural_language_mode(file_path))
         has_error = any(e.severity == "error" for e in errs)
         has_warning = any(e.severity == "warning" for e in errs)
         fails = has_error or (strict_mode and has_warning)

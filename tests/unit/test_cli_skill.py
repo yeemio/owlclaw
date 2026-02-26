@@ -104,6 +104,26 @@ def test_skill_validate_non_skill_file_exits_with_error(tmp_path):
     assert "file is not skill.md" in result.output.lower()
 
 
+def test_skill_parse_outputs_resolved_metadata(tmp_path):
+    skill_dir = tmp_path / "nl-parse"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: nl-parse
+description: 每天早上 9 点巡检
+---
+# 巡检
+每天早上 9 点执行
+""",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["parse", str(tmp_path)])
+    assert result.exit_code == 0
+    assert '"name": "nl-parse"' in result.output
+    assert '"parse_mode": "natural_language"' in result.output
+    assert '"trigger_config"' in result.output
+
+
 def test_skill_validate_binding_passes_with_prerequisites_env_declared(tmp_path, monkeypatch):
     monkeypatch.setenv("API_TOKEN", "token")
     skill_dir = tmp_path / "binding-ok"

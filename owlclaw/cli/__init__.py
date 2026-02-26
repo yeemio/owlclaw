@@ -116,6 +116,16 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         validate_command(paths=ns.paths, verbose=ns.verbose, strict=ns.strict)
         return True
 
+    if sub == "parse":
+        from owlclaw.cli.skill_parse import parse_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill parse")
+        parser.add_argument("path", nargs="?", default=".")
+        parser.add_argument("--cache", action="store_true", default=False)
+        ns = parser.parse_args(sub_argv)
+        parse_command(path=ns.path, cache=ns.cache)
+        return True
+
     if sub == "list":
         from owlclaw.cli.skill_list import list_command
 
@@ -821,9 +831,10 @@ def _print_help_and_exit(argv: list[str]) -> None:
         sys.exit(0)
     if argv == ["skill"]:
         print("Usage: owlclaw skill [OPTIONS] COMMAND [ARGS]...")
-        print("\n  Create, validate, and list Agent Skills (SKILL.md). Local only.\n")
+        print("\n  Create, parse, validate, and list Agent Skills (SKILL.md). Local only.\n")
         print("Commands:")
         print("  init      Scaffold a new SKILL.md from template")
+        print("  parse     Parse SKILL.md and show resolved metadata")
         print("  validate  Validate SKILL.md in current dir")
         print("  list      List skills in a directory")
         print("  templates List templates from the template library")
@@ -1061,6 +1072,10 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw skill validate [OPTIONS] [DIR]")
         print("\n  Validate SKILL.md (default: current dir).")
         sys.exit(0)
+    if argv == ["skill", "parse"]:
+        print("Usage: owlclaw skill parse [PATH] [--cache]")
+        print("\n  Parse SKILL.md and output resolved parse metadata as JSON.")
+        sys.exit(0)
     if argv == ["skill", "list"]:
         print("Usage: owlclaw skill list [OPTIONS]")
         print("\n  List Agent Skills in directory.")
@@ -1076,7 +1091,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
     print("  agent  Manual control via signal (pause, resume, trigger, instruct, status)")
-    print("  skill  Create, validate, list Agent Skills (SKILL.md)")
+    print("  skill  Create, parse, validate, list Agent Skills (SKILL.md)")
     print("  trigger Trigger templates (db-change)")
     print("  migrate Migrate legacy APIs/models to OwlClaw assets")
     print("  release Release validation and gate checks")
