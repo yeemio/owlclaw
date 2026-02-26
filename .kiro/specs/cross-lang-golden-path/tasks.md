@@ -34,6 +34,7 @@
 - [x] 4.1 编写 `JAVA_GOLDEN_PATH.md`
 - [x] 4.2 编写 `verify_cross_lang.ps1`
 - [x] 4.3 执行验收并产出结果
+  - 状态补充（2026-02-26）：已执行 `mvn -q -DskipTests package`、`java -cp target/classes io.owlclaw.examples.crosslang.Main`、`verify_cross_lang.ps1 -Strict`、`compare_response_fields.py`，结果归档于 `docs/protocol/cross-lang-acceptance.md`。
 - [x] 4.4 更新 `SPEC_TASKS_SCAN` checkpoint
 
 ## 5. 阈值与剧本固化

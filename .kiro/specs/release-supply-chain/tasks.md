@@ -14,7 +14,9 @@
 ## 1. OIDC 发布
 
 - [ ] 1.1 配置 TestPyPI Trusted Publisher
+  - 状态补充（2026-02-26）：在 `codex-gpt-work` 触发 run `22449095206`，`pypa/gh-action-pypi-publish@release/v1` 返回 `invalid-publisher`，说明 TestPyPI 尚未配置与当前 claim 匹配的 Trusted Publisher（`workflow_ref=.github/workflows/release.yml@refs/heads/codex-gpt-work`）。
 - [ ] 1.2 配置 PyPI Trusted Publisher
+  - 状态补充（2026-02-26）：与 1.1 同源，需在 PyPI 侧补齐 Trusted Publisher 映射后复跑正式链路。
 - [x] 1.3 调整 workflow 使用 OIDC
 
 ## 2. 验证与证明
@@ -35,6 +37,8 @@
 
 - [ ] 4.1 TestPyPI 全链路演练
   - 演练记录（2026-02-26）：`gh workflow run release.yml -f target=testpypi` 已执行；run `22446541468` 在 `Publish to TestPyPI` 返回 `HTTP 403 Forbidden`，阻塞点为 Trusted Publisher 绑定未完成（对应 Task 1.1）
+  - 状态补充（2026-02-26）：新增演练 runs `22447692518`、`22447700064`，两次均在 `Publish to TestPyPI` 失败（`HTTP 403`，`TWINE_PASSWORD` 为空），Trusted Publisher/发布凭据阻塞未解除。
+  - 状态补充（2026-02-26）：在 `codex-gpt-work` 的 OIDC 链路 run `22449095206` 失败于 `invalid-publisher`（token 有效但未找到匹配发布者），根因已收敛到 Trusted Publisher claim 映射。
 - [ ] 4.2 PyPI 正式链路演练
   - 当前状态（2026-02-26）：前置 TestPyPI OIDC 未打通，正式链路演练顺延（依赖 Task 1.2/3.1/3.2）
 - [x] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint

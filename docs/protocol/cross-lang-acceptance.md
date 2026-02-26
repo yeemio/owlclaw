@@ -22,7 +22,8 @@ python scripts/cross_lang/compare_response_fields.py \
 
 1. Baseline file check: pass
 2. Response field alignment: pass
-3. Java build execution: pending (Maven unavailable in current environment)
+3. Java build execution: pass (`mvn -q -DskipTests package`)
+4. Java entry execution: pass (`java -cp target/classes io.owlclaw.examples.crosslang.Main`)
 
 ## Thresholds
 
