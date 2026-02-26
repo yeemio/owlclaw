@@ -299,8 +299,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | release 剩余（25/32） | 发布凭据与发布验证 | codex-gpt-work | #1（外部依赖） |
 | owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | codex-gpt-work | #2（外部依赖） |
 | protocol-first-api-mcp（0/24） | 协议优先专项（API+MCP） | 待分配 | 高优先级（建议下一轮启动） |
-| protocol-governance（0/10） | 协议治理规则与门禁 | 待分配 | 高优先级 |
-| gateway-runtime-ops（0/9） | 网关发布/回滚/SLO | 待分配 | 高优先级 |
+| protocol-governance（0/23） | 协议治理规则与门禁 | 待分配 | 高优先级 |
+| gateway-runtime-ops（0/15） | 网关发布/回滚/SLO | 待分配 | 高优先级 |
 | contract-testing（0/10） | API/MCP 契约测试体系 | 待分配 | 高优先级 |
 | release-supply-chain（0/8） | OIDC + provenance 发布链路 | 待分配 | 高优先级 |
-| cross-lang-golden-path（0/9） | Java + curl 接入路径 | 待分配 | 高优先级 |
+| cross-lang-golden-path（0/13） | Java + curl 接入路径 | 待分配 | 高优先级 |

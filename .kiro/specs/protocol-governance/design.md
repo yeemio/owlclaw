@@ -1,6 +1,6 @@
 # Design: Protocol Governance
 
-> **目标**：将协议治理从“文档建议”变成“可执行门禁”。  
+> **目标**：把协议治理从“文档共识”升级为“工程门禁”。  
 > **状态**：设计中  
 > **最后更新**：2026-02-26
 
@@ -8,22 +8,30 @@
 
 ## 1. 架构设计
 
+### 1.1 整体架构
+
 ```text
-Contract Source (OpenAPI/MCP schema)
-              |
-              v
-      Compatibility Analyzer
-              |
-      +-------+-------+
-      |               |
-  Governance Rules   Error Domain Mapper
-      |               |
-      +-------+-------+
-              v
-           CI Gate
+Contract Source (OpenAPI / MCP)
+           |
+           v
+  Compatibility Classifier
+           |
+           +--> Governance Policy Engine
+           |          |
+           |          v
+           |      Gate Decision
+           |
+           +--> Error Domain Mapper
+                      |
+                      v
+                 Consistency Tests
 ```
 
-核心思想：规则先文档化，再工具化，再门禁化。
+### 1.2 核心组件
+
+- **Compatibility Classifier**：判定变更级别。
+- **Policy Engine**：按规则生成 warning/blocking 决策。
+- **Error Mapper**：维护 API/MCP 错误语义映射。
 
 ---
 
@@ -39,51 +47,62 @@ docs/protocol/
 └── GOVERNANCE_GATE_POLICY.md
 ```
 
-### 2.2 关键规则
+### 2.2 集成点（何时、何处调用）
 
-- `breaking`：字段删除/语义改变/默认行为逆转
-- `additive`：新增可选字段/新增方法（默认不破坏）
-- `compatible`：文案、示例、非语义变动
+- PR 检查阶段：运行 diff -> classifier -> policy engine。
+- 合并前检查阶段：运行 error consistency tests。
+- 发布前检查阶段：生成 governance summary 报告。
 
-### 2.3 集成点
+### 2.3 数据模型
 
-- PR 阶段：运行差异分析 -> 输出等级
-- CI 阶段：依据等级和 gate policy 决定 warning/blocking
-
----
-
-## 3. 错误处理
-
-- 规则冲突：默认按更严格等级处理
-- 无法判定：标记 `manual-review-required`
+- `ChangeLevel`: compatible/additive/breaking
+- `GateDecision`: pass/warn/block
+- `ProtocolError`: code/category/retryable/incident_id
 
 ---
 
-## 4. 测试策略
+## 3. 数据流
 
-- 单元：分级规则判断
-- 集成：模拟协议 diff -> gate 决策
-- 回归：API/MCP 错误映射一致性
-
----
-
-## 5. 风险与缓解
-
-- 风险：规则过严影响速度  
-  缓解：先 warning 再 blocking。
-
-- 风险：映射表与实现漂移  
-  缓解：契约测试强制校验。
+```text
+PR -> Contract Diff -> ChangeLevel
+                  -> Policy Engine -> GateDecision
+                  -> Error Mapper Consistency -> Pass/Fail
+```
 
 ---
 
-## 6. 红军视角
+## 4. 错误处理
 
-- 如果团队绕过门禁直接合并怎么办？  
-  答：将关键分支保护与 required checks 绑定，避免旁路。
+- 判定冲突：按更严格等级处理。
+- 无法判定：返回 `manual-review-required` 并阻断自动通过。
+
+---
+
+## 5. 测试策略
+
+- 单元：分级判断、错误映射。
+- 集成：策略门禁决策链。
+- 回归：API/MCP 错误一致性。
+
+---
+
+## 6. 迁移计划
+
+- Phase 1：文档和规则草案。
+- Phase 2：warning 门禁。
+- Phase 3：blocking 门禁 + 演练。
+
+---
+
+## 7. 红军视角
+
+- **攻击面**：人为篡改规则规避 blocking。  
+  **防御**：分支保护 + required checks + 审计留痕。
+
+- **攻击面**：错误映射只修文档不修实现。  
+  **防御**：映射表与测试绑定，文档变更触发回归。
 
 ---
 
 **维护者**：OwlClaw 架构组  
 **最后更新**：2026-02-26
-
