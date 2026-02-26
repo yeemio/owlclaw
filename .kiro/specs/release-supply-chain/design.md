@@ -1,33 +1,32 @@
 # Design: Release Supply Chain
 
-> **目标**：发布过程默认安全，且外部可验证。  
+> **目标**：把发布链路提升到“默认安全 + 可追溯”。  
 > **状态**：设计中  
 > **最后更新**：2026-02-26
 
-## 1. 流程
+## 1. 发布链路
 
 ```text
-Tag -> CI Release Workflow -> OIDC Auth -> Publish -> Attestation -> Verify
+Tag -> Release Workflow -> OIDC Auth -> Publish -> Attestation -> Verification
 ```
 
-## 2. 关键设计
+## 2. 集成点
 
-- 使用 Trusted Publishing（OIDC）替代长期凭据。
-- 发布后自动验证 `pip install` 与基础 smoke。
-- 生成并存档 attestation 与发布报告。
+- workflow 开始：校验 tag/branch/required checks
+- publish 后：执行安装 smoke + provenance 归档
+- 失败路径：触发回滚/重试 runbook
 
-## 3. 风险
+## 3. 错误处理
 
-- 仓库权限配置错误导致发布失败。  
-  缓解：先 TestPyPI 演练，再切 PyPI。
+- OIDC 失败：阻断发布并输出配置诊断
+- 发布后安装失败：标记发布失败并触发回滚策略
 
 ## 4. 红军视角
 
-- 攻击：工作流被篡改后发布恶意包。  
-  防御：分支保护 + required reviewers + provenance 验证。
+- 攻击：工作流或凭据篡改。  
+  防御：分支保护、最小权限、来源证明验证。
 
 ---
 
 **维护者**：Release 工程组  
 **最后更新**：2026-02-26
-
