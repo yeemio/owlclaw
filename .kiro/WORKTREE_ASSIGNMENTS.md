@@ -173,11 +173,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
 **当前任务**（按顺序执行）：
-1. test-infra(7/11) 剩余 Task 4/6/9.4/11（Docker/CI 验收为主）
-2. architecture-roadmap(0/13) — 架构演进路线文档（纯文档 spec）
-3. skill-dx P1(0/18) — SKILL.md 自然语言触发解析+缓存。涉及 `owlclaw/capabilities/` 新增文件
-4. skill-ai-assist P1(0/16) — 对话式 Skill 创建+模板。依赖 skill-dx P1 完成。涉及 `owlclaw/capabilities/skill_creator.py` + `owlclaw/cli/skill_create.py`
-5. skills-quality(0/21) — Skills 质量评分+数据飞轮。涉及 `owlclaw/governance/` 新增文件
+1. test-infra(9/11) 收尾：Task 4.2 + 11.1 + 11.3 + 11.4（性能门槛与 CI 验收）
+2. skill-dx P2(7/7) — 工具语义匹配（`capability_matcher` + SkillParser 集成）
+3. skill-ai-assist P2(6/6) — 文档提取生成（`skill_doc_extractor` + `--from-doc` CLI）
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -202,7 +200,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|------|---------|
 | e2e-validation | 85/85 ✅ | `tests/integration/test_e2e*.py` |
 | mcp-server | 12/12 ✅ | `owlclaw_mcp/**` |
-| owlhub | 137/143 🟡 | Task 40.4 外部阻塞（生产部署）+ release gate 已实现 |
+| owlhub | 141/143 🟡 | Task 40.4 外部阻塞（生产部署） |
 | examples | 14/14 ✅ | `examples/**`, `tests/unit/test_examples*.py` |
 | cli-migrate | 24/24 ✅ | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
 | ci-setup | 12/12 ✅ | `.github/workflows/**` |
@@ -212,12 +210,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ + local-devenv ✅ 已完成。
 
 **当前任务**（按顺序执行）：
-1. quick-start(0/13) — Quick Start 指南 + 最小示例
-2. complete-workflow(0/18) — 完整端到端示例（库存管理场景）
-3. owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）
-4. release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）
-5. progressive-migration(0/25) — 渐进式迁移 migration_weight。涉及 `owlclaw/governance/` 新增文件
-6. industry-skills(0/12) — OwlHub 语义搜索推荐。涉及 `owlclaw/owlhub/` + `owlclaw/cli/skill.py`
+1. owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）
+2. release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）
+3. 待命：如编码 1 遇阻，协助 test-infra 非冲突项（CI 文档/workflow 验收）
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -276,6 +271,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-25 | Phase 6 补充：新建 skills-quality/industry-skills spec；skill-dx/skill-ai-assist 分期策略；industry-skills 降级为搜索推荐 | 产品策略审计 + 技术成熟度评估 |
 | 2026-02-26 | 统筹：merge review-work → main；同步所有 worktree；Phase 6 分配计划 | 统筹轮次 |
 | 2026-02-26 | Phase 6 全量分配：codex-work→skill-dx P1+skill-ai-assist P1+skills-quality；codex-gpt-work→progressive-migration+industry-skills。仅 P2（skill-dx P2/skill-ai-assist P2）暂不分配 | 一次分完，减少统筹轮次 |
+| 2026-02-26 | 启动原“暂不分配”项：codex-work 追加 skill-dx P2 + skill-ai-assist P2；codex-gpt-work 保持 release/owlhub 阻塞跟踪 | P1 能力与入口已落地，具备可执行条件 |
 
 ---
 
@@ -291,16 +287,12 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 - codex-work → test-infra（继续） + architecture-roadmap（新增）
 - codex-gpt-work → quick-start + complete-workflow（新增） + owlhub/release 收尾
 
-**Phase 6 全部已分配** ✅
+**Phase 6 全部已分配** ✅（含 P2）
 
 | Spec | Tasks | Worktree | 执行顺序 |
 |------|-------|----------|---------|
-| skill-dx P1（0/18） | 触发解析+缓存 | codex-work | #3 |
-| skill-ai-assist P1（0/16） | 对话式创建+模板 | codex-work | #4（依赖 skill-dx P1） |
-| skills-quality（0/21） | 质量评分+数据飞轮 | codex-work | #5 |
-| progressive-migration（0/25） | 渐进式迁移 | codex-gpt-work | #5 |
-| industry-skills（0/12） | 语义搜索推荐 | codex-gpt-work | #6 |
-
-**暂不分配（需用户反馈/产品验证后启动）**：
-- skill-dx P2（0/7）— 工具匹配，等 P1 上线后收集反馈
-- skill-ai-assist P2（0/6）— 文档提取，等 P1 验证产品价值
+| skill-dx P2（0/7） | 工具语义匹配 | codex-work | #2 |
+| skill-ai-assist P2（0/6） | 文档提取生成 | codex-work | #3 |
+| test-infra 剩余（9/11） | 性能与 CI 收口 | codex-work | #1 |
+| release 剩余（25/32） | 发布凭据与发布验证 | codex-gpt-work | #1（外部依赖） |
+| owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | codex-gpt-work | #2（外部依赖） |
