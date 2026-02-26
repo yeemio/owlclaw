@@ -26,6 +26,22 @@ cd examples/cross_lang/java
 mvn -q -DskipTests package
 ```
 
+Run scenario examples:
+
+```bash
+export OWLCLAW_GATEWAY_BASE_URL=http://localhost:8000
+export OWLCLAW_API_TOKEN=<token>
+
+# Trigger scenario
+java -cp target/classes io.owlclaw.examples.crosslang.Main trigger
+
+# Query scenario
+java -cp target/classes io.owlclaw.examples.crosslang.Main query <run_id>
+
+# Error contract scenario
+java -cp target/classes io.owlclaw.examples.crosslang.Main error
+```
+
 ## curl Baseline
 
 Scripts:
@@ -45,9 +61,9 @@ export OWLCLAW_GATEWAY_BASE_URL=http://localhost:8000
 
 | Scenario | Java | curl |
 |---|---|---|
-| Trigger agent | `GatewayClient` (project baseline) | `trigger_agent.sh` |
-| Query status | extend baseline client | `query_status.sh` |
-| Error contract | baseline plus invalid request case | `error_scenario.sh` |
+| Trigger agent | `Main trigger` -> `GatewayClient.triggerAgent` | `trigger_agent.sh` |
+| Query status | `Main query` -> `GatewayClient.queryRunStatus` | `query_status.sh` |
+| Error contract | `Main error` -> invalid payload path | `error_scenario.sh` |
 
 ## Verification
 
