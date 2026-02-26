@@ -284,6 +284,22 @@ class TestTemplateValidator:
             for e in errs
         )
 
+    def test_validate_skill_file_warns_when_body_tools_missing_from_frontmatter(self, tmp_path: Path) -> None:
+        skill = tmp_path / "SKILL.md"
+        skill.write_text(
+            """---
+name: tool-warning
+description: desc
+---
+# Title
+- fetch_order(order_id): fetch order
+""",
+            encoding="utf-8",
+        )
+        v = TemplateValidator()
+        errs = v.validate_skill_file(skill)
+        assert any(e.field == "body.tools" and e.severity == "warning" for e in errs)
+
     def test_validate_and_report(self, tmp_path: Path) -> None:
         skill = tmp_path / "SKILL.md"
         skill.write_text("---\n---\n", encoding="utf-8")

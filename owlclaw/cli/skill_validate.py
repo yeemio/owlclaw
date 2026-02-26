@@ -10,6 +10,7 @@ import typer
 import yaml  # type: ignore[import-untyped]
 
 from owlclaw.capabilities.bindings import CredentialResolver, validate_binding_config
+from owlclaw.capabilities.trigger_resolver import resolve_trigger_intent
 from owlclaw.capabilities.tool_schema import extract_tools_schema
 from owlclaw.templates.skills import TemplateValidator
 from owlclaw.templates.skills.models import ValidationError
@@ -118,12 +119,85 @@ def _validate_natural_language_mode(path: Path) -> list[ValidationError]:
         "new order",
         "inventory change",
     )
-    if any(hint in body or hint in body_lower for hint in trigger_hints):
+    trigger_line = next(
+        (line.strip() for line in body.splitlines() if any(hint in line or hint in line.lower() for hint in trigger_hints)),
+        "",
+    )
+    if trigger_line:
+        resolved = resolve_trigger_intent(trigger_line)
+        if resolved.confidence < 0.6:
+            return [
+                ValidationError(
+                    field="body",
+                    message="trigger sentence found but resolver confidence is low; please clarify schedule/event wording",
+                    severity="warning",
+                )
+            ]
         return []
     return [
         ValidationError(
             field="body",
             message="natural-language mode without clear trigger phrase; add schedule/event sentence",
+            severity="warning",
+        )
+    ]
+
+
+def _extract_declared_tools_from_body(path: Path) -> set[str]:
+    try:
+        text = path.read_text(encoding="utf-8").lstrip("\ufeff")
+    except OSError:
+        return set()
+    body = text.split("---", 2)[2] if text.startswith("---") and len(text.split("---", 2)) >= 3 else text
+    tool_names: set[str] = set()
+    for line in body.splitlines():
+        stripped = line.strip()
+        match = re.match(r"^[-*]\s*`?([a-zA-Z0-9_-]+)`?\(", stripped)
+        if match:
+            tool_names.add(match.group(1))
+    return tool_names
+
+
+def _validate_tool_availability(path: Path) -> list[ValidationError]:
+    frontmatter = _load_frontmatter(path)
+    if not frontmatter:
+        return []
+    tools_schema, _ = extract_tools_schema(frontmatter)
+    declared = _extract_declared_tools_from_body(path)
+    if not declared:
+        return []
+    schema_tools = {name for name in tools_schema if isinstance(name, str)}
+    env_tools_raw = os.environ.get("OWLCLAW_AVAILABLE_TOOLS", "").strip()
+    env_tools = {item.strip() for item in env_tools_raw.split(",") if item.strip()}
+    allowed = schema_tools | env_tools
+    if not allowed:
+        return []
+    missing = sorted(name for name in declared if name not in allowed)
+    if not missing:
+        return []
+    return [
+        ValidationError(
+            field="body",
+            message=f"referenced tools not available: {', '.join(missing)}",
+            severity="warning",
+        )
+    ]
+
+
+def _validate_rule_ambiguity(path: Path) -> list[ValidationError]:
+    try:
+        text = path.read_text(encoding="utf-8").lstrip("\ufeff")
+    except OSError:
+        return []
+    body = text.split("---", 2)[2] if text.startswith("---") and len(text.split("---", 2)) >= 3 else text
+    ambiguous_tokens = ("尽快", "适当", "合理", "可能", "as soon as possible", "reasonable", "maybe", "approximately")
+    hits = [token for token in ambiguous_tokens if token in body.lower() or token in body]
+    if not hits:
+        return []
+    return [
+        ValidationError(
+            field="body",
+            message=f"ambiguous business rule wording detected: {', '.join(hits)}",
             severity="warning",
         )
     ]
@@ -283,6 +357,8 @@ def validate_command(
         errs = validator.validate_skill_file(file_path)
         errs.extend(_validate_binding_semantics(file_path))
         errs.extend(_validate_natural_language_mode(file_path))
+        errs.extend(_validate_tool_availability(file_path))
+        errs.extend(_validate_rule_ambiguity(file_path))
         has_error = any(e.severity == "error" for e in errs)
         has_warning = any(e.severity == "warning" for e in errs)
         fails = has_error or (strict_mode and has_warning)

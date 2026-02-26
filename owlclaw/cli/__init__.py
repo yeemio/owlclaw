@@ -105,6 +105,25 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         )
         return True
 
+    if sub == "create":
+        from owlclaw.cli.skill_create import create_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill create")
+        parser.add_argument("--interactive", action="store_true", default=False)
+        parser.add_argument("--from-template", default="")
+        parser.add_argument("--from-doc", default="")
+        parser.add_argument("--output", default="skills")
+        parser.add_argument("--capabilities-path", default="skills")
+        ns = parser.parse_args(sub_argv)
+        create_command(
+            interactive=ns.interactive,
+            from_template=ns.from_template,
+            from_doc=ns.from_doc,
+            output=ns.output,
+            capabilities_path=ns.capabilities_path,
+        )
+        return True
+
     if sub == "validate":
         from owlclaw.cli.skill_validate import validate_command
 
@@ -124,6 +143,14 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--cache", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         parse_command(path=ns.path, cache=ns.cache)
+        return True
+
+    if sub == "list-templates":
+        from owlclaw.cli.skill_templates import list_templates_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill list-templates")
+        parser.parse_args(sub_argv)
+        list_templates_command()
         return True
 
     if sub == "list":
@@ -834,6 +861,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("\n  Create, parse, validate, and list Agent Skills (SKILL.md). Local only.\n")
         print("Commands:")
         print("  init      Scaffold a new SKILL.md from template")
+        print("  create    Conversationally create SKILL.md")
+        print("  list-templates  List local AI-assist templates")
         print("  parse     Parse SKILL.md and show resolved metadata")
         print("  validate  Validate SKILL.md in current dir")
         print("  list      List skills in a directory")
@@ -1068,6 +1097,15 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("\n  Scaffold a new SKILL.md in current directory.")
         print("  --from-binding TEXT  Generate a business-rules template from existing binding SKILL.md")
         sys.exit(0)
+    if argv == ["skill", "create"]:
+        print("Usage: owlclaw skill create [OPTIONS]")
+        print("\n  Conversationally create SKILL.md via interactive prompts.")
+        print("  --interactive                Enable interactive mode")
+        print("  --from-template TEXT         Generate from local template")
+        print("  --from-doc TEXT              Generate from business doc (Phase 2, not yet available)")
+        print("  --output TEXT                Output directory (default: skills)")
+        print("  --capabilities-path TEXT     Path to discover existing capabilities")
+        sys.exit(0)
     if argv == ["skill", "validate"]:
         print("Usage: owlclaw skill validate [OPTIONS] [DIR]")
         print("\n  Validate SKILL.md (default: current dir).")
@@ -1075,6 +1113,10 @@ def _print_help_and_exit(argv: list[str]) -> None:
     if argv == ["skill", "parse"]:
         print("Usage: owlclaw skill parse [PATH] [--cache]")
         print("\n  Parse SKILL.md and output resolved parse metadata as JSON.")
+        sys.exit(0)
+    if argv == ["skill", "list-templates"]:
+        print("Usage: owlclaw skill list-templates")
+        print("\n  List local AI-assist templates from ~/.owlclaw/templates.")
         sys.exit(0)
     if argv == ["skill", "list"]:
         print("Usage: owlclaw skill list [OPTIONS]")

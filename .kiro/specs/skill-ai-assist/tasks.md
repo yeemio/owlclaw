@@ -10,37 +10,37 @@
 
 ### Task 1: SkillCreatorAgent 核心
 
-- [ ] 1.1 创建 `owlclaw/capabilities/skill_creator.py`
-- [ ] 1.2 实现 system prompt 模板（角色 + capabilities 注入 + 格式规范）
-- [ ] 1.3 实现多轮对话状态管理（收集信息 → 澄清 → 确认 → 生成）
-- [ ] 1.4 实现信息完整性检查（必填项 / 可选项 / 默认值）
-- [ ] 1.5 实现 SKILL.md 文本生成（frontmatter + 正文）
-- [ ] 1.6 单元测试：对话流程 + 生成结果校验（mock LLM）
+- [x] 1.1 创建 `owlclaw/capabilities/skill_creator.py`
+- [x] 1.2 实现 system prompt 模板（角色 + capabilities 注入 + 格式规范）
+- [x] 1.3 实现多轮对话状态管理（收集信息 → 澄清 → 确认 → 生成）
+- [x] 1.4 实现信息完整性检查（必填项 / 可选项 / 默认值）
+- [x] 1.5 实现 SKILL.md 文本生成（frontmatter + 正文）
+- [x] 1.6 单元测试：对话流程 + 生成结果校验（mock LLM）
 
 ### Task 2: 对话式 CLI
 
-- [ ] 2.1 创建 `owlclaw/cli/skill_create.py`
-- [ ] 2.2 实现 `owlclaw skill create --interactive` 命令
-- [ ] 2.3 实现终端交互（prompt_toolkit 或 click.prompt）
-- [ ] 2.4 实现上下文感知（显示已注册 capabilities）
-- [ ] 2.5 实现生成结果预览 + 确认 + 保存
-- [ ] 2.6 单元测试：CLI 命令测试
+- [x] 2.1 创建 `owlclaw/cli/skill_create.py`
+- [x] 2.2 实现 `owlclaw skill create --interactive` 命令
+- [x] 2.3 实现终端交互（prompt_toolkit 或 click.prompt）
+- [x] 2.4 实现上下文感知（显示已注册 capabilities）
+- [x] 2.5 实现生成结果预览 + 确认 + 保存
+- [x] 2.6 单元测试：CLI 命令测试
 
 ### Task 4: 模板系统
 
-- [ ] 4.1 创建 `owlclaw/cli/skill_templates.py`
-- [ ] 4.2 实现本地模板目录管理（`~/.owlclaw/templates/`）
-- [ ] 4.3 实现 `owlclaw skill list-templates` 命令
-- [ ] 4.4 实现 `owlclaw skill create --from-template` 命令
-- [ ] 4.5 创建 3 个内置模板（inventory-monitor / order-processor / report-generator）
-- [ ] 4.6 单元测试：模板列出 + 使用
+- [x] 4.1 创建 `owlclaw/cli/skill_templates.py`
+- [x] 4.2 实现本地模板目录管理（`~/.owlclaw/templates/`）
+- [x] 4.3 实现 `owlclaw skill list-templates` 命令
+- [x] 4.4 实现 `owlclaw skill create --from-template` 命令
+- [x] 4.5 创建 3 个内置模板（inventory-monitor / order-processor / report-generator）
+- [x] 4.6 单元测试：模板列出 + 使用
 
 ### Task 5: 校验增强
 
-- [ ] 5.1 增强 `cli/skill_validate.py` + `templates/skills/validator.py`：工具可用性校验
-- [ ] 5.2 增强 `cli/skill_validate.py`：触发条件可解析性校验
-- [ ] 5.3 增强 `cli/skill_validate.py`：业务规则歧义检测
-- [ ] 5.4 集成测试：端到端对话创建 + 校验 + 解析
+- [x] 5.1 增强 `cli/skill_validate.py` + `templates/skills/validator.py`：工具可用性校验
+- [x] 5.2 增强 `cli/skill_validate.py`：触发条件可解析性校验
+- [x] 5.3 增强 `cli/skill_validate.py`：业务规则歧义检测
+- [x] 5.4 集成测试：端到端对话创建 + 校验 + 解析
 
 ---
 
