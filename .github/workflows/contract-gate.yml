@@ -34,3 +34,6 @@ jobs:
             tests/contracts/api/test_openapi_contract_gate.py \
             tests/contracts/mcp/test_mcp_contract_regression.py \
             -q
+
+      - name: Run contract-testing drill
+        run: poetry run python scripts/contract_diff/contract_testing_drill.py

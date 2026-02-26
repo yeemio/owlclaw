@@ -14,6 +14,7 @@
 | `validate_examples.py` | 批量验证 `examples/` 可运行性 | `poetry run python scripts/validate_examples.py` | CI 使用 |
 | `contract_diff.py` | 协议契约差异分级与门禁决策（warning/blocking） | `poetry run python scripts/contract_diff.py --help` | CI 使用 |
 | `contract_diff/run_contract_diff.py` | 契约门禁包装入口（用于 PR/nightly 统一调用） | `poetry run python scripts/contract_diff/run_contract_diff.py --help` | CI 使用 |
+| `contract_diff/contract_testing_drill.py` | 执行 contract-testing breaking 注入演练并产出报告 | `poetry run python scripts/contract_diff/contract_testing_drill.py` | CI 使用 |
 | `protocol_governance_drill.py` | 执行 breaking 注入/豁免审计演练并产出证据报告 | `poetry run python scripts/protocol_governance_drill.py` | CI 使用 |
 | `test_queue_trigger.py` | 队列触发链路本地回归脚本 | `poetry run python scripts/test_queue_trigger.py` | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
