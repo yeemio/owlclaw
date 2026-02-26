@@ -30,6 +30,7 @@
 
 - [x] 3.1 校准 required checks
   - 状态补充（2026-02-26）：已产出 baseline（Lint/Test/Build）与审计报告 `docs/release/release-policy-audit.json`。
+  - 状态补充（2026-02-26）：新增供应链就绪审计脚本 `scripts/ops/release_supply_chain_audit.py`，最新报告 `docs/release/release-supply-chain-audit.json`（包含 release runs / environments / secrets / branch protection）。
 - [x] 3.2 校准 release 分支保护
   - 状态补充（2026-02-26）：审计显示 `main` 当前未开启保护（HTTP 404 Branch not protected），已固化建议基线 `docs/release/release-policy-baseline.md`，待维护者应用。
 - [x] 3.3 校准失败回滚策略
