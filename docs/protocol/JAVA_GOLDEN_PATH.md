@@ -72,3 +72,7 @@ Use:
 `scripts/verify_cross_lang.ps1`
 
 The script validates the presence of required Java and curl artifacts.
+
+Field alignment check:
+
+`python scripts/cross_lang/compare_response_fields.py --java-json examples/cross_lang/fixtures/java_trigger_response.json --curl-json examples/cross_lang/fixtures/curl_trigger_response.json`
