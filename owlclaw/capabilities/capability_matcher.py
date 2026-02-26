@@ -164,7 +164,7 @@ class CapabilityMatcher:
         rhs_norm = sum(b * b for b in rhs) ** 0.5
         if lhs_norm == 0.0 or rhs_norm == 0.0:
             return 0.0
-        return max(0.0, min(1.0, dot / (lhs_norm * rhs_norm)))
+        return float(max(0.0, min(1.0, dot / (lhs_norm * rhs_norm))))
 
     @staticmethod
     def _canonical_tokens(text: str) -> set[str]:
