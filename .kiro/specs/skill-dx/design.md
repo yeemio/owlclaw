@@ -2,6 +2,7 @@
 
 > **Spec**: skill-dx
 > **创建日期**: 2026-02-25
+> **分期策略**: Phase 1 触发解析+缓存（确定性高），Phase 2 工具匹配（需真实用户反馈）
 
 ---
 
@@ -45,7 +46,7 @@ SKILL.md 输入
 - 启动时检查缓存：hash 匹配则直接加载，不匹配则重新解析
 - CLI 命令 `owlclaw skill parse --cache` 支持离线预解析
 
-### D-4: 工具匹配算法
+### D-4: 工具匹配算法（Phase 2，需用户反馈后启动）
 
 ```
 1. 从 tool_intent 列表中提取关键词
@@ -74,16 +75,16 @@ trigger_resolver 使用 LLM 将自然语言时间表达转换为结构化配置�
 
 ```
 owlclaw/capabilities/
-├── skill_parser.py          # 增强：双模式解析入口
-├── skill_nl_parser.py       # 新增：自然语言解析器
-├── trigger_resolver.py      # 新增：触发条件自然语言解析
-└── capability_matcher.py    # 新增：工具语义匹配
+├── skills.py               # 增强：双模式解析入口（现有 _parse_skill_file()）
+├── skill_nl_parser.py      # 新增：自然语言解析器
+├── trigger_resolver.py     # 新增：触发条件自然语言解析
+└── capability_matcher.py   # 新增：工具语义匹配（Phase 2）
 ```
 
 ## 依赖
 
 - `owlclaw/integrations/llm.py`（LLM 调用）
-- `owlclaw/capabilities/skill_parser.py`（现有解析器）
+- `owlclaw/capabilities/skills.py`（现有解析器，`_parse_skill_file()`）
 - `owlclaw/capabilities/registry.py`（已注册 capabilities）
 
 ## 不做

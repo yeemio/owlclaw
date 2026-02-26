@@ -4,6 +4,7 @@
 > **创建日期**: 2026-02-25
 > **目标**: 通过对话式交互引导业务人员创建 SKILL.md，零技术门槛
 > **前置依赖**: spec: skill-dx（自然语言 SKILL.md 解析能力）
+> **分期策略**: Phase 1 对话式创建+模板（核心价值），Phase 2 文档提取（需验证产品价值后启动）
 
 ---
 
@@ -87,9 +88,21 @@ owlclaw skill create --from-template inventory-monitor
 - 生成结果应可编辑（生成后用户可手动调整）
 - LLM 调用应使用 OwlClaw 自身的 `owlclaw/integrations/llm.py`
 
+## 分期策略
+
+- **Phase 1**（优先）：对话式创建 `--interactive` + 模板系统 `--from-template` + 校验增强。这是核心产品价值——解决"空白页恐惧"。
+- **Phase 2**（需验证）：从文档生成 `--from-doc`。文档格式多样性大，LLM 提取准确率依赖文档质量，需真实用户场景验证后再投入。
+
 ## 验收标准
+
+### Phase 1 验收
 
 1. `owlclaw skill create --interactive` 可通过 3-5 轮对话生成有效 SKILL.md
 2. 生成的 SKILL.md 可被 SkillParser 正确解析（结构化或自然语言模式）
-3. `--from-doc` 可从标准 SOP 文档中提取至少 1 个可用 Skill
-4. `--from-template` 可列出并使用模板
+3. `--from-template` 可列出并使用模板
+4. 生成结果自动通过校验（结构完整性 + 工具可用性 + 触发条件可解析性）
+
+### Phase 2 验收
+
+5. `--from-doc` 可从标准 SOP 文档中提取至少 1 个可用 Skill
+6. 批量生成的 SKILL.md 全部通过校验

@@ -92,11 +92,14 @@ owlhub://templates/             # 远程模板（OwlHub）
 owlclaw/cli/
 ├── skill_create.py             # 新增：对话式创建 CLI 入口
 ├── skill_templates.py          # 新增：模板管理
+├── skill_validate.py           # 增强：校验生成结果（已有文件）
 
 owlclaw/capabilities/
 ├── skill_creator.py            # 新增：SkillCreatorAgent 核心逻辑
-├── skill_doc_extractor.py      # 新增：从文档提取 Skill
-└── skill_validator.py          # 增强：校验生成结果
+├── skill_doc_extractor.py      # 新增：从文档提取 Skill（Phase 2）
+
+owlclaw/templates/skills/
+└── validator.py                # 增强：模板校验规则（已有文件）
 ```
 
 ## 依赖

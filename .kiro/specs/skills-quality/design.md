@@ -91,8 +91,8 @@ owlclaw/cli/
 
 - `owlclaw/governance/ledger.py`（执行记录查询）
 - `owlclaw/governance/ledger_inmemory.py`（Lite Mode）
-- `owlclaw/agent/runtime.py`（Agent 工具选择）
-- `owlclaw/triggers/signal.py`（质量告警通知）
+- `owlclaw/agent/runtime/runtime.py`（Agent 工具选择）
+- `owlclaw/triggers/signal/`（质量告警通知）
 
 ## 不做
 

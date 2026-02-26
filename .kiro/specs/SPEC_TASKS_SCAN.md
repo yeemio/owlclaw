@@ -153,8 +153,8 @@
 | **quick-start** | `.kiro/specs/quick-start/` | 🆕 三层齐全，待开始（0/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
 | **complete-workflow** | `.kiro/specs/complete-workflow/` | 🆕 三层齐全，待开始（0/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
 | **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | 🆕 三层齐全，待开始（0/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
-| **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/24） | SKILL.md 自然语言书写模式（双模式解析 + 工具匹配 + 触发解析 + CLI） |
-| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22） | AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板系统 + 校验增强） |
+| **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/25，P1:18 P2:7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
+| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22，P1:16 P2:6） | AI 辅助 Skill 生成（P1 对话式创建+模板，P2 文档提取需验证产品价值后启动） |
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | 🆕 三层齐全，待开始（0/25） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | 🆕 三层齐全，待开始（0/21） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | 🆕 三层齐全，待开始（0/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
@@ -187,7 +187,7 @@
 | 批次状态 | **Phase 6 spec 全部创建完成**。共 5 个差异化 spec + 2 个生态 spec，待分配到编码 worktree。 |
 | 已完成项 | 1) `OwlClaw.lite()` + `InMemoryLedger`（Phase 5）；2) POSITIONING.md 规范化（v1.1.0）+ 文档关联；3) 创建 quick-start/complete-workflow/architecture-roadmap（Phase 5）；4) 创建 skill-dx/skill-ai-assist/progressive-migration（Phase 6 差异化）；5) 创建 skills-quality/industry-skills（Phase 6 生态）；6) progressive-migration design.md 补充 shadow 衔接 + 通知渠道。 |
 | 下一待执行 | 1) 分配 Phase 6 spec 到编码 worktree；2) codex-work 继续 test-infra + architecture-roadmap；3) codex-gpt-work 继续 quick-start + complete-workflow；4) release + owlhub 40.4 等人工凭据。 |
-| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/24)，skill-ai-assist 🆕(0/22)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2：unit 套件约 452s，需优化到 < 60s；2) test-infra Task 9.4/11：需 Docker Engine；3) release/owlhub 40.4：需人工凭据。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
