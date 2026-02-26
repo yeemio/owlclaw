@@ -25,7 +25,19 @@ This playbook defines thresholds, acceptance matrix, and T+0~T+15 response flow 
 
 1. Run `22446541468` (main, 2026-02-26) failed at TestPyPI upload with `HTTP 403` and empty `TWINE_PASSWORD`.
 2. This confirms main branch still follows legacy token-based publishing path.
-3. OIDC-based workflow baseline has been prepared in coding branch and awaits review/merge.
+3. Runs `22449095206` and `22449361552` (`codex-gpt-work`, 2026-02-26) executed OIDC publishing and failed with `invalid-publisher`.
+4. Run `22449361552` confirms normalized claim: `sub=repo:yeemio/owlclaw:environment:pypi-release`, `environment=pypi-release`.
+5. Remaining blocker is external Trusted Publisher mapping on PyPI/TestPyPI.
+
+## Trusted Publisher Mapping Template
+
+Configure both TestPyPI and PyPI with the same publisher mapping:
+
+1. Owner: `yeemio`
+2. Repository: `owlclaw`
+3. Workflow: `.github/workflows/release.yml`
+4. Environment: `pypi-release`
+5. Trigger branch for verification: `codex-gpt-work` first, then `main`
 
 ## T+0 to T+15 Response Script
 
