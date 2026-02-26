@@ -113,9 +113,9 @@ Shadow 模式已在 declarative-binding spec 中实现，MigrationGate 的 OBSER
 
 | 通知方式 | 实现 | 适用场景 |
 |---------|------|---------|
-| **Signal 触发器** | `owlclaw/triggers/signal.py` | Agent 间通信、内部通知 |
-| **Webhook 触发器** | `owlclaw/triggers/webhook.py` | 外部系统回调（Slack/钉钉/企业微信 Webhook） |
-| **API 触发器** | `owlclaw/triggers/api.py` | REST API 轮询审批状态 |
+| **Signal 触发器** | `owlclaw/triggers/signal/` | Agent 间通信、内部通知 |
+| **Webhook 触发器** | `owlclaw/triggers/webhook/` | 外部系统回调（Slack/钉钉/企业微信 Webhook） |
+| **API 触发器** | `owlclaw/triggers/api/` | REST API 轮询审批状态 |
 
 配置示例（`owlclaw.yaml`）：
 
@@ -140,21 +140,21 @@ owlclaw/governance/
 ├── approval_queue.py           # 新增：审批队列
 └── ledger.py                   # 增强：迁移审计字段
 
-owlclaw/agent/
+owlclaw/agent/runtime/
 └── runtime.py                  # 修改：集成 MigrationGate
 
 # 复用已有组件（不新建）：
 owlclaw/capabilities/bindings/shadow.py   # Shadow 模式（OBSERVE_ONLY 路径）
-owlclaw/triggers/webhook.py               # 审批通知（Webhook 渠道）
-owlclaw/triggers/signal.py                # 审批通知（内部 Signal 渠道）
+owlclaw/triggers/webhook/                 # 审批通知（Webhook 渠道）
+owlclaw/triggers/signal/                  # 审批通知（内部 Signal 渠道）
 ```
 
 ## 依赖
 
 - `owlclaw/governance/ledger.py`（Ledger 记录）
 - `owlclaw/governance/ledger_inmemory.py`（Lite Mode 支持）
-- `owlclaw/agent/runtime.py`（Agent 决策链路）
-- `owlclaw/triggers/signal.py`（审批通知）
+- `owlclaw/agent/runtime/runtime.py`（Agent 决策链路）
+- `owlclaw/triggers/signal/`（审批通知）
 
 ## 不做
 

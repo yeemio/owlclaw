@@ -234,29 +234,126 @@ OwlHub 积累行业 Skills 模板 → 同行业企业直接复用
 
 ---
 
-## 附录：产品策略 → Spec 追溯矩阵
+## 附录：产品能力全景 → Spec 追溯矩阵
 
-> 确保 POSITIONING.md 中的每个产品承诺都有对应的 spec 或已完成的代码覆盖。
+> 覆盖 OwlClaw 平台的**全部产品能力**，按产品阶段分层追溯到 spec。
+> 详细 spec 进度见 `.kiro/specs/SPEC_TASKS_SCAN.md`。
 
-| 产品策略要点（本文档章节） | 对应 Spec | 状态 |
-|---|---|---|
-| scan → migrate → SKILL.md 链路（§二） | cli-scan ✅ + cli-migrate ✅ + capabilities-skills ✅ | 已完成 |
-| Declarative Binding（§二.2） | declarative-binding ✅ | 已完成 |
-| 治理层（§二.3） | governance ✅ | 已完成 |
-| 六种触发器（§二.4） | triggers-cron/webhook/queue/db-change/api/signal 全部 ✅ | 已完成 |
-| 渐进式迁移 migration_weight（§二.5） | progressive-migration 🆕 | 待实现 |
-| 三角色模型 — IT 配置（§三.1） | cli-migrate ✅ + declarative-binding ✅ | 已完成 |
-| 三角色模型 — 业务人员零门槛（§三.2） | skill-dx 🆕 + skill-ai-assist 🆕 | 待实现 |
-| 三角色模型 — Agent 自主决策（§三.3） | agent-runtime ✅ + governance ✅ | 已完成 |
-| 与编排框架互补（§四） | integrations-langchain ✅ | 已完成 |
-| MCP 协议互通（§四） | mcp-server ✅ | 已完成 |
-| 共享标准 Agent Skills（§五） | capabilities-skills ✅ + skill-templates ✅ | 已完成 |
-| 产品飞轮（§八.1） | quick-start 🆕 + complete-workflow 🆕 | 待实现 |
-| 生态飞轮 — OwlHub（§八.2） | owlhub 🟡 + industry-skills 🆕 | 部分完成 |
-| 数据飞轮 — 质量评分（§八.3） | skills-quality 🆕 | 待实现 |
-| 架构演进方向（§九） | architecture-roadmap 🆕 | 待实现 |
+### S0：工程基础
 
-**覆盖率**：15/15 产品策略要点均有 spec 覆盖。其中 8 个已完成，1 个部分完成，6 个待实现。
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| 包结构 + pyproject.toml + MIT LICENSE | — | ✅ |
+| GitHub Actions CI（lint/test/build/release） | ci-setup | ✅ 12/12 |
+| 统一本地开发环境（docker-compose + Makefile） | local-devenv | ✅ 10/10 |
+| 测试分层（unit 零外部依赖 + integration skip） | test-infra | 🟡 7/11 |
+| 仓库卫生（.gitignore + CODEOWNERS + .editorconfig） | repo-hygiene | ✅ 37/37 |
+
+### S1：Agent 运行时（核心引擎）
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| Agent Runtime（SOUL.md 身份 + function calling 决策循环） | agent-runtime | ✅ 105/105 |
+| Heartbeat（无事不调 LLM，零成本空转） | agent-runtime | ✅ |
+| 内建工具（schedule/remember/recall/query_state/log_decision） | agent-tools | ✅ 139/139 |
+| 记忆系统（STM + LTM + pgvector + Snapshot + 生命周期） | agent-memory | ✅ 18/18 |
+| 统一配置（owlclaw.yaml + Pydantic + 环境变量 + 热更新） | configuration | ✅ 12/12 |
+| Lite Mode（OwlClaw.lite() + InMemoryLedger） | — | ✅ |
+| app.run() 阻塞式启动 + 优雅关停 | — | ✅ |
+
+### S1.5：数据层
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| SQLAlchemy 基础设施（Base/engine/session/Alembic） | database-core | ✅ 30/30 |
+| 数据库运维 CLI（init/migrate/status/rollback/backup/restore） | cli-db | ✅ 53/53 |
+
+### S2：治理层（企业级门槛）
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| 能力可见性过滤（约束/预算/熔断/限流/角色） | governance | ✅ 173/173 |
+| 执行 Ledger（全量审计记录） | governance | ✅ |
+| 模型路由（task_type → 模型选择） | governance | ✅ |
+| 安全模型（Prompt Injection + 高风险确认 + 数据脱敏） | security | ✅ 44/44 |
+| 渐进式迁移 migration_weight（0%→100%） | progressive-migration | 🆕 0/25 |
+| Skills 质量评分（执行指标 → 评分 → 趋势告警） | skills-quality | 🆕 0/21 |
+
+### S3：业务接入层（核心壁垒）
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| Skills 挂载（SKILL.md 加载 + @handler/@state 注册） | capabilities-skills | ✅ 115/115 |
+| Declarative Binding（HTTP/Queue/SQL + Shadow 模式） | declarative-binding | ✅ 26/26 |
+| AST 扫描器（owlclaw scan → SKILL.md 骨架） | cli-scan | ✅ 80/80 |
+| AI 辅助迁移（owlclaw migrate → binding SKILL.md） | cli-migrate | ✅ 24/24 |
+| Skills CLI（init/validate/list/search/install/publish） | cli-skill | ✅ 7/7 |
+| SKILL.md 模板库（5 类通用模板） | skill-templates | ✅ 149/149 |
+| SKILL.md 自然语言书写（P1 触发解析+缓存，P2 工具匹配） | skill-dx | 🆕 0/25 |
+| AI 辅助 Skill 生成（P1 对话式+模板，P2 文档提取） | skill-ai-assist | 🆕 0/22 |
+
+### S4：触发器层（六种事件入口）
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| Cron 触发器 | triggers-cron | ✅ 117/117 |
+| Webhook 触发器 | triggers-webhook | ✅ 18/18 |
+| 消息队列触发器（Kafka/RabbitMQ/Redis） | triggers-queue | ✅ 89/89 |
+| 数据库变更触发器（NOTIFY/LISTEN + CDC） | triggers-db-change | ✅ 11/11 |
+| API 调用触发器（REST → Agent Run） | triggers-api | ✅ 11/11 |
+| Signal 触发器（暂停/恢复/强制/注入） | triggers-signal | ✅ 15/15 |
+
+### S5：集成层（组合轮子）
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| Hatchet 持久执行（崩溃恢复 + 调度 + cron） | integrations-hatchet | ✅ 147/147 |
+| litellm LLM 统一接入（100+ 模型 + routing + fallback） | integrations-llm | ✅ 128/128 |
+| Langfuse 可观测（tracing + evaluation） | integrations-langfuse | ✅ 66/66 |
+| LangChain 生态接入（chain/workflow → capability） | integrations-langchain | ✅ 101/101 |
+| MCP Server（通用 Agent 协议接口） | mcp-server | ✅ 12/12 |
+
+### S6：Skills 生态（OwlHub + 网络效应）
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| OwlHub Phase 1（GitHub 仓库索引 + PR 审核） | owlhub | 🟡 137/143 |
+| OwlHub Phase 2（静态站点 + 搜索 + 分类） | owlhub | 🟡 |
+| OwlHub 语义搜索推荐（用户描述 → 最佳模板建议） | industry-skills | 🆕 0/12 |
+| OwlHub Phase 3（数据库后端，按需评估） | owlhub | 待评估 |
+
+### S7：开源发布 + 落地
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| PyPI 发布（owlclaw + owlclaw-mcp） | release | 🟡 25/32 |
+| GitHub 开源（MIT） | release | 🟡 |
+| Quick Start 指南（10 分钟上手） | quick-start | 🆕 0/13 |
+| 完整端到端示例（可运行业务场景） | complete-workflow | 🆕 0/18 |
+| 示例集（非交易 + LangChain + 3 行业 + mionyee） | examples | ✅ 14/14 |
+| 端到端验证（mionyee 3 任务 + 决策质量对比） | e2e-validation | ✅ 85/85 |
+
+### S8：架构前瞻（文档规划）
+
+| 产品能力 | Spec | 状态 |
+|---------|------|------|
+| 架构演进路线（Multi-Agent/自我进化/可解释性/安全/性能） | architecture-roadmap | 🆕 0/13 |
+
+### 统计
+
+| 阶段 | 能力数 | ✅ | 🟡 | 🆕 |
+|------|-------|---|---|---|
+| S0 工程基础 | 5 | 4 | 1 | 0 |
+| S1 Agent 运行时 | 7 | 7 | 0 | 0 |
+| S1.5 数据层 | 2 | 2 | 0 | 0 |
+| S2 治理层 | 6 | 4 | 0 | 2 |
+| S3 业务接入层 | 8 | 6 | 0 | 2 |
+| S4 触发器层 | 6 | 6 | 0 | 0 |
+| S5 集成层 | 5 | 5 | 0 | 0 |
+| S6 Skills 生态 | 4 | 0 | 2 | 2 |
+| S7 开源发布 | 6 | 2 | 2 | 2 |
+| S8 架构前瞻 | 1 | 0 | 0 | 1 |
+| **合计** | **50** | **36 (72%)** | **5 (10%)** | **9 (18%)** |
 
 ---
 

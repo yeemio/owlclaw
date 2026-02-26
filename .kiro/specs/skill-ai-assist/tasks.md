@@ -2,10 +2,13 @@
 
 > **Spec**: skill-ai-assist
 > **创建日期**: 2026-02-25
+> **分期策略**: Phase 1 对话式创建+模板（核心价值），Phase 2 文档提取（需验证产品价值后启动）
 
 ---
 
-## Task 1: SkillCreatorAgent 核心
+## Phase 1：对话式创建 + 模板（优先实现）
+
+### Task 1: SkillCreatorAgent 核心
 
 - [ ] 1.1 创建 `owlclaw/capabilities/skill_creator.py`
 - [ ] 1.2 实现 system prompt 模板（角色 + capabilities 注入 + 格式规范）
@@ -14,7 +17,7 @@
 - [ ] 1.5 实现 SKILL.md 文本生成（frontmatter + 正文）
 - [ ] 1.6 单元测试：对话流程 + 生成结果校验（mock LLM）
 
-## Task 2: 对话式 CLI
+### Task 2: 对话式 CLI
 
 - [ ] 2.1 创建 `owlclaw/cli/skill_create.py`
 - [ ] 2.2 实现 `owlclaw skill create --interactive` 命令
@@ -23,16 +26,7 @@
 - [ ] 2.5 实现生成结果预览 + 确认 + 保存
 - [ ] 2.6 单元测试：CLI 命令测试
 
-## Task 3: 从文档生成
-
-- [ ] 3.1 创建 `owlclaw/capabilities/skill_doc_extractor.py`
-- [ ] 3.2 实现文档读取（Markdown / 纯文本）
-- [ ] 3.3 实现 LLM 文档分析（识别可自动化流程）
-- [ ] 3.4 实现批量 SKILL.md 生成
-- [ ] 3.5 实现 `owlclaw skill create --from-doc` CLI 命令
-- [ ] 3.6 单元测试：从示例 SOP 文档生成 Skill
-
-## Task 4: 模板系统
+### Task 4: 模板系统
 
 - [ ] 4.1 创建 `owlclaw/cli/skill_templates.py`
 - [ ] 4.2 实现本地模板目录管理（`~/.owlclaw/templates/`）
@@ -41,9 +35,25 @@
 - [ ] 4.5 创建 3 个内置模板（inventory-monitor / order-processor / report-generator）
 - [ ] 4.6 单元测试：模板列出 + 使用
 
-## Task 5: 校验增强
+### Task 5: 校验增强
 
-- [ ] 5.1 增强 `skill_validator.py`：工具可用性校验
-- [ ] 5.2 增强 `skill_validator.py`：触发条件可解析性校验
-- [ ] 5.3 增强 `skill_validator.py`：业务规则歧义检测
+- [ ] 5.1 增强 `cli/skill_validate.py` + `templates/skills/validator.py`：工具可用性校验
+- [ ] 5.2 增强 `cli/skill_validate.py`：触发条件可解析性校验
+- [ ] 5.3 增强 `cli/skill_validate.py`：业务规则歧义检测
 - [ ] 5.4 集成测试：端到端对话创建 + 校验 + 解析
+
+---
+
+## Phase 2：从文档生成（需验证产品价值后启动）
+
+> **启动条件**: Phase 1 上线后，确认对话式创建被用户接受，再扩展文档提取能力。
+> **风险点**: 文档格式多样性大，LLM 提取准确率依赖文档质量，产品价值需真实用户验证。
+
+### Task 3: 从文档生成
+
+- [ ] 3.1 创建 `owlclaw/capabilities/skill_doc_extractor.py`
+- [ ] 3.2 实现文档读取（Markdown / 纯文本）
+- [ ] 3.3 实现 LLM 文档分析（识别可自动化流程）
+- [ ] 3.4 实现批量 SKILL.md 生成
+- [ ] 3.5 实现 `owlclaw skill create --from-doc` CLI 命令
+- [ ] 3.6 单元测试：从示例 SOP 文档生成 Skill

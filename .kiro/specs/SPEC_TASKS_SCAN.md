@@ -109,7 +109,7 @@
 - [ ] AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板） → spec: skill-ai-assist
 - [ ] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
 - [ ] Skills 质量评分与数据飞轮（执行指标 → 评分 → 推荐优化） → spec: skills-quality
-- [ ] 行业 Skills 包（零售/制造/金融，9+ 个开箱即用 Skills） → spec: industry-skills
+- [ ] OwlHub 语义搜索推荐（用户描述 → 最佳模板建议 + 行业标签） → spec: industry-skills
 
 ---
 
@@ -153,11 +153,11 @@
 | **quick-start** | `.kiro/specs/quick-start/` | 🆕 三层齐全，待开始（0/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
 | **complete-workflow** | `.kiro/specs/complete-workflow/` | 🆕 三层齐全，待开始（0/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
 | **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | 🆕 三层齐全，待开始（0/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
-| **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/24） | SKILL.md 自然语言书写模式（双模式解析 + 工具匹配 + 触发解析 + CLI） |
-| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22） | AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板系统 + 校验增强） |
+| **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/25，P1:18 P2:7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
+| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22，P1:16 P2:6） | AI 辅助 Skill 生成（P1 对话式创建+模板，P2 文档提取需验证产品价值后启动） |
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | 🆕 三层齐全，待开始（0/25） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | 🆕 三层齐全，待开始（0/21） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
-| **industry-skills** | `.kiro/specs/industry-skills/` | 🆕 三层齐全，待开始（0/23） | 行业 Skills 包（零售/制造/金融 3 行业 9+ Skills + 包基础设施 + OwlHub 集成） |
+| **industry-skills** | `.kiro/specs/industry-skills/` | 🆕 三层齐全，待开始（0/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
 
 ---
 
@@ -183,12 +183,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | review-work 审校循环：吸收 codex-work 测试稳定性修复 + release 外部阻塞证据补齐 |
-| 批次状态 | **进行中**。已完成审校侧代码/文档修正并通过目标测试，等待主 worktree 合并与下轮分配推进。 |
-| 已完成项 | 1) 吸收并验证 test-infra 相关修复（`conftest NullPool + rollback guard`、Hatchet 无效 token skip、validator/frontmatter JSON 化、smoke timeout 放宽）；2) 修复 `test_integration_fixtures` 的 `pytest-asyncio` 作用域冲突；3) 目标验证通过：`38 passed, 6 skipped`；4) 补充 release 阻塞证据到 `release/tasks.md` 与 `docs/RELEASE_RUNBOOK.md`（含 `gh` 核验命令与失败定位）。 |
-| 下一待执行 | 1) 主 worktree 合并 review-work 并同步各子 worktree；2) codex-work 继续 test-infra Task 4.2/11.1/11.3/11.4 与 architecture-roadmap；3) codex-gpt-work 推进 quick-start + complete-workflow；4) release/owlhub 继续等待外部凭据动作。 |
-| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/24)，skill-ai-assist 🆕(0/22)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/23)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owhub 余项需外部平台凭据与人工发布动作。 |
+| 当前批次 | review-work 审校循环：吸收编码分支修复 + 同步 Phase 6 文档基线 |
+| 批次状态 | **进行中**。已完成审校侧修复与验收，主线 spec 已对齐到最新分配语义。 |
+| 已完成项 | 1) 吸收并验证 test-infra 相关修复（`conftest NullPool + rollback guard`、Hatchet 无效 token skip、validator/frontmatter JSON 化、smoke timeout 放宽）；2) 修复 `test_integration_fixtures` 的 `pytest-asyncio` 作用域冲突；3) 目标验证通过：`38 passed, 6 skipped`；4) release 阻塞证据补齐到 runbook/tasks，并同步 Phase 6 新 spec 口径（含 `industry-skills` 降级为搜索推荐场景）。 |
+| 下一待执行 | 1) 主 worktree 合并 review-work 并同步各子 worktree；2) codex-work 继续 test-infra Task 4.2/11.1/11.3/11.4 与 architecture-roadmap；3) codex-gpt-work 推进 quick-start + complete-workflow；4) release + owlhub 外部凭据动作。 |
+| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
