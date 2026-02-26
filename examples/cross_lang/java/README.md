@@ -12,6 +12,7 @@ This directory provides a Java baseline project for protocol-level integration c
 1. `pom.xml`: Java 17 baseline project configuration.
 2. `src/main/java/io/owlclaw/examples/crosslang/Main.java`: entry point.
 3. `src/main/java/io/owlclaw/examples/crosslang/GatewayClient.java`: simple HTTP helper.
+4. `src/main/java/dev/owlclaw/examples/OwlClawApiClient.java`: retry/idempotency baseline client.
 
 ## Quick Check
 
