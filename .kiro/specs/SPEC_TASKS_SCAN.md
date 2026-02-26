@@ -169,10 +169,10 @@
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
 | **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | 🟡 三层齐全，待实施（0/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
 | **protocol-governance** | `.kiro/specs/protocol-governance/` | ✅ 三层齐全，已完成（27/27） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
-| **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | 🟡 三层齐全，待实施（0/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
+| **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | 🟡 三层齐全，进行中（8/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
 | **contract-testing** | `.kiro/specs/contract-testing/` | 🟡 三层齐全，待实施（0/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
 | **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，待实施（0/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
-| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，待实施（0/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
+| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，进行中（4/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 
 ---
 
@@ -198,12 +198,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | codex-work 循环：protocol-governance 收口完成（27/27） |
-| 批次状态 | **已完成（本批次）**。`protocol-governance` 全部任务和验收清单已闭环。 |
-| 已完成项 | 1) 新增 `docs/protocol/VERSIONING.md`、`COMPATIBILITY_POLICY.md`、`ERROR_MODEL.md`、`GOVERNANCE_GATE_POLICY.md`；2) 新增模板 `docs/protocol/templates/ACCEPTANCE_MATRIX_TEMPLATE.md` 与 `EXEMPTION_APPROVAL_TEMPLATE.md`；3) 新增 `scripts/contract_diff.py` 与 `scripts/protocol_governance_drill.py`（warning/blocking/例外审计/演练报告）；4) 新增测试 `test_contract_diff_script.py`、`test_protocol_error_model_consistency.py`、`test_protocol_governance_drill.py` 并通过；5) `test.yml` 新增协议一致性检查与治理演练步骤，`test_ci_configs.py` 对齐断言；6) `protocol-governance/tasks.md` 更新为 `27/27`。 |
-| 下一待执行 | 1) 启动 `contract-testing` Task 1.1~1.3（目录基线 + diff 脚本复用）；2) 启动 `gateway-runtime-ops` Task 1.1~1.3（发布策略比例/观察窗/晋级阻断）；3) 跟踪 `test-infra` Task 11.3 远端复跑窗口。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（当前策略是不新增 CI 订阅）；2) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
+| 当前批次 | codex-gpt-work 执行循环：gateway-runtime-ops + cross-lang-golden-path 首批落地 |
+| 批次状态 | **进行中（已开工）**。protocol-governance 已完成（27/27）；gateway-runtime-ops 完成策略与运维文档基线（8/18）；cross-lang-golden-path 完成 Java 基础骨架与验证脚本（4/16）。 |
+| 已完成项 | 1) protocol-governance 收口：`VERSIONING/COMPATIBILITY/ERROR_MODEL/GATE_POLICY`、模板、`contract_diff.py`、`protocol_governance_drill.py` 与对应测试；2) 新增 `docs/ops/gateway-rollout-policy.md`、`gateway-runbook.md`、`gateway-slo.md`；3) 新增 Java 示例骨架 `examples/cross_lang/java/`（`pom.xml` + `Main.java` + `GatewayClient.java`）；4) 新增 curl 对照脚本 `scripts/cross_lang/*.sh`、`docs/protocol/JAVA_GOLDEN_PATH.md` 与 `scripts/verify_cross_lang.ps1`。 |
+| 下一待执行 | 1) gateway-runtime-ops：接入 pipeline gate / rollback executor / dashboard 告警联动（Task 4.x）并安排演练记录（Task 5.x/6.3）；2) release-supply-chain：推进 OIDC workflow 改造与 provenance 归档（Task 1.3/2.2/2.3）；3) cross-lang-golden-path：补齐触发/查询/错误处理 Java 场景与验收执行（Task 1.2~1.4/2.x/4.3）；4) 跟踪 test-infra Task 11.3 远端复跑。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，gateway-runtime-ops 🟡(8/18)，cross-lang-golden-path 🟡(4/16)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（run `22436813478` 使用旧门槛导致失败，待主分支合并后复验）；2) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22445573439` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
