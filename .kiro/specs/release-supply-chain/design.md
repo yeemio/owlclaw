@@ -28,5 +28,15 @@ Tag -> Release Workflow -> OIDC Auth -> Publish -> Attestation -> Verification
 
 ---
 
+## 5. 故障处置剧本（T+0 ~ T+15）
+
+- `T+0`：发布失败（OIDC/上传/安装 smoke）自动中断。
+- `T+3`：定位失败阶段并冻结后续 tag 发布。
+- `T+6`：执行 TestPyPI 回放验证配置。
+- `T+10`：确认回滚或重试策略并执行。
+- `T+15`：发布状态公告与复盘记录。
+
+---
+
 **维护者**：Release 工程组  
 **最后更新**：2026-02-26
