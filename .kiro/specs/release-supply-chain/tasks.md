@@ -7,9 +7,9 @@
 ## 进度概览
 
 - **总任务数**：15
-- **已完成**：4
+- **已完成**：10
 - **进行中**：0
-- **未开始**：11
+- **未开始**：5
 
 ## 1. OIDC 发布
 
@@ -25,21 +25,24 @@
 
 ## 3. 门禁与保护
 
-- [ ] 3.1 校准 required checks
-- [ ] 3.2 校准 release 分支保护
+- [x] 3.1 校准 required checks
+  - 状态补充（2026-02-26）：已产出 baseline（Lint/Test/Build）与审计报告 `docs/release/release-policy-audit.json`。
+- [x] 3.2 校准 release 分支保护
+  - 状态补充（2026-02-26）：审计显示 `main` 当前未开启保护（HTTP 404 Branch not protected），已固化建议基线 `docs/release/release-policy-baseline.md`，待维护者应用。
 - [x] 3.3 校准失败回滚策略
 
 ## 4. 演练与收口
 
 - [ ] 4.1 TestPyPI 全链路演练
+  - 状态补充（2026-02-26）：run `22446541468` 已执行演练但在 TestPyPI 上传阶段失败（`HTTP 403`，`TWINE_PASSWORD` 为空），主分支仍为旧 token 链路。
 - [ ] 4.2 PyPI 正式链路演练
-- [ ] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint
+- [x] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint
 
 ## 5. 阈值与剧本固化
 
-- [ ] 5.1 固化成功率与时延阈值
-- [ ] 5.2 新增验收矩阵并绑定发布证据
-- [ ] 5.3 完成 T+0~T+15 处置剧本演练
+- [x] 5.1 固化成功率与时延阈值
+- [x] 5.2 新增验收矩阵并绑定发布证据
+- [x] 5.3 完成 T+0~T+15 处置剧本演练
 
 ---
 
