@@ -1,36 +1,121 @@
 # OwlClaw
 
-> **Agent base for business applications** — let mature systems gain AI autonomy without rewriting.
+> **Let existing business systems gain AI autonomy — without rewriting.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
 ---
 
-## What is OwlClaw?
+## The Problem
 
-OwlClaw is an **agent infrastructure layer** that lets existing business applications gain AI-driven autonomy — without rewriting their core logic.
+Your enterprise has ERP, CRM, HR, and financial systems with years of business logic and data. They work — but they're **passive**: nothing happens unless a human acts.
 
-Instead of building yet another agent framework from scratch, OwlClaw **combines mature open-source capabilities**:
+AI Agent frameworks (LangChain, LangGraph, CrewAI) assume you build from scratch. **None of them are designed to make existing systems intelligent.**
 
-| Component | Source | Role |
-|-----------|--------|------|
-| Durable Execution | [Hatchet](https://hatchet.run/) (MIT) | Crash recovery, scheduling, cron |
-| Knowledge Format | [Agent Skills](https://agentskills.io/) (Anthropic) | Standardized skill documents |
-| LLM Access | [litellm](https://github.com/BerriAI/litellm) | Unified 100+ model access |
-| Observability | [Langfuse](https://langfuse.com/) | LLM tracing and evaluation |
+## OwlClaw's Approach
 
-**OwlClaw builds what nobody else does**: business application onboarding layer, governance (capability visibility filtering), and an Agent runtime with identity, memory, and knowledge.
+OwlClaw gives your existing business systems AI-driven autonomy through a complete chain:
+
+```
+owlclaw scan → owlclaw migrate → SKILL.md → Declarative Binding → Governance → Agent Decision
+```
+
+1. **Scan** existing code (AST analysis) to discover capabilities
+2. **Migrate** from OpenAPI/ORM to generate SKILL.md with bindings
+3. **SKILL.md** describes business rules in Markdown — no AI knowledge required
+4. **Declarative Binding** connects to HTTP/Queue/SQL endpoints automatically
+5. **Governance** filters what the Agent can see and do (budget, rate limits, circuit breakers)
+6. **Agent decides** via LLM function calling — what to do, when, and how
+
+### Business developers write what they know
+
+```markdown
+---
+name: inventory-monitor
+description: >
+  Monitor inventory levels and alert when stock falls below safety thresholds.
+---
+
+## Available Tools
+- get_inventory_levels(warehouse_id): Get current stock levels
+- get_safety_stock(product_id): Get safety stock threshold
+- send_alert(recipient, message): Send alert notification
+
+## Business Rules
+- Alert when stock < 120% of safety level (allow replenishment time)
+- Same product: max 1 alert per 24 hours
+- Skip weekends and holidays
+```
+
+No AI knowledge needed. No prompt engineering. The Agent reads this and autonomously decides when to check inventory, which warehouses to monitor, and whether to alert.
+
+## Quick Start
+
+```python
+from owlclaw import OwlClaw
+
+app = OwlClaw("my-business-agent")
+
+# Mount business Skills
+app.mount_skills("./capabilities/")
+
+# Register capability handlers
+@app.handler("inventory-monitor")
+async def check_inventory(session) -> dict:
+    return await inventory_service.check_levels(session)
+
+# Configure Agent identity and behavior
+app.configure(
+    soul="docs/SOUL.md",
+    identity="docs/IDENTITY.md",
+    heartbeat_interval_minutes=30,
+)
+
+app.run()
+```
 
 ## Core Philosophy
 
 > **Don't control the Agent — empower it.**
 > **Don't reinvent wheels — combine them.**
 
-## Architecture Overview (ASCII)
+## What OwlClaw Builds vs Integrates
+
+| Component | Source | Role |
+|-----------|--------|------|
+| **Agent Runtime** | OwlClaw (built) | Identity, memory, knowledge, function calling decisions |
+| **Governance** | OwlClaw (built) | Capability visibility filtering, Ledger audit, budget control |
+| **Business Onboarding** | OwlClaw (built) | scan → migrate → SKILL.md → Declarative Binding |
+| **Trigger Layer** | OwlClaw (built) | Cron / Webhook / Queue / DB Change / API / Signal |
+| Durable Execution | [Hatchet](https://hatchet.run/) (MIT) | Crash recovery, scheduling, cron |
+| Knowledge Format | [Agent Skills](https://agentskills.io/) (Anthropic) | Standardized skill documents |
+| LLM Access | [litellm](https://github.com/BerriAI/litellm) | Unified 100+ model access |
+| Observability | [Langfuse](https://langfuse.com/) | LLM tracing and evaluation |
+
+## OwlClaw and LangChain/LangGraph
+
+OwlClaw is **not** a replacement for LangChain. They solve different problems:
+
+| Dimension | OwlClaw | LangChain / LangGraph |
+|-----------|---------|----------------------|
+| Core strength | **When** to act, **whether** to act, governance | **How** to act (chains, graphs, RAG) |
+| Business onboarding | First-class (SKILL.md + Binding) | Not primary |
+| Trigger/scheduling | Built-in (6 trigger types) | Limited |
+| Governance | Strong (visibility filter, Ledger, budget) | Usually app-specific |
+
+**They combine**: register a LangChain chain as an OwlClaw capability, and the Agent autonomously decides when to invoke it.
+
+```python
+@app.handler(name="query_knowledge_base", knowledge="skills/kb-query/SKILL.md")
+async def query_kb(question: str) -> str:
+    return await rag_chain.ainvoke(question)
+```
+
+## Architecture Overview
 
 ```text
-Business App Skills (SKILL.md) + Handlers/State
+Business App Skills (SKILL.md) + Handlers/State + Declarative Bindings
                  |
                  v
          +----------------------+
@@ -43,184 +128,64 @@ Business App Skills (SKILL.md) + Handlers/State
       |                                |
       v                                v
   Integrations                     Trigger Layer
-  (LLM / Hatchet / Langfuse)       (cron / webhook / queue / signal / api)
+  (LLM / Hatchet / Langfuse)       (cron / webhook / queue / db / api / signal)
 ```
 
-## OwlClaw and LangChain/LangGraph
+See [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md) for the complete architecture.
+See [docs/POSITIONING.md](docs/POSITIONING.md) for OwlClaw's market positioning.
 
-OwlClaw is not a replacement for LangChain or LangGraph.
+## Key Features
 
-| Capability | OwlClaw | LangChain / LangGraph |
-|-----------|---------|------------------------|
-| Agent runtime governance | Strong focus | Usually app-specific |
-| Existing business onboarding (SKILL.md) | First-class | Not primary |
-| Chain / graph orchestration | Integrates externally | Core strength |
-| Recommended usage | Runtime + governance layer | Workflow composition layer |
+### Skills Mount and Decorators
 
-Use OwlClaw for runtime governance and capability onboarding, then compose advanced chains/graphs with LangChain/LangGraph where needed.
+- **`app.mount_skills(path)`** — Scans for `SKILL.md` files following the [Agent Skills](https://agentskills.io/) spec. YAML frontmatter loaded at startup; full instructions loaded on demand.
+- **`@app.handler(skill_name)`** — Registers a capability handler. Invoked when the Agent calls this capability via function calling.
+- **`@app.state(name)`** — Registers a state provider the Agent can query via `query_state`.
 
-## Quick Start
+### Built-in Tools (Agent Self-Management)
 
-```python
-from owlclaw import OwlClaw
+- `schedule_once` / `schedule_cron` / `cancel_schedule` — self-scheduling
+- `remember` / `recall` — long-term memory operations
+- `query_state` — read business state providers
+- `log_decision` — governance/audit decision logs
 
-app = OwlClaw("mionyee-trading")
+Demo: [examples/agent_tools_demo.py](examples/agent_tools_demo.py) | API: [docs/AGENT_TOOLS_API.md](docs/AGENT_TOOLS_API.md)
 
-# Mount business application's Skills (Agent Skills spec)
-app.mount_skills("./capabilities/")
-
-# Register capability handlers
-@app.handler("entry-monitor")
-async def check_entry(session) -> dict:
-    return await monitor_service.check_opportunities(session)
-
-# Configure Agent identity
-app.configure(
-    soul="docs/SOUL.md",
-    identity="docs/IDENTITY.md",
-    heartbeat_interval_minutes=30,
-)
-
-app.run()
-```
-
-### Skills mount and decorators
-
-- **`app.mount_skills(path)`** — Scans the given directory for `SKILL.md` files (following the [Agent Skills](https://agentskills.io/) spec). Each file's YAML frontmatter (name, description, optional `owlclaw` extensions) is loaded at startup; full instruction text is loaded on demand when building Agent prompts. You must call `mount_skills()` before using `@app.handler` or `@app.state`.
-
-- **`@app.handler(skill_name)`** — Registers a capability handler for the Skill with the given name. The handler is invoked when the Agent calls this capability (e.g. via function calling). Handlers can be sync or async; they receive a session context and return a result (e.g. a dict).
-
-- **`@app.state(name)`** — Registers a state provider. The Agent can query it (e.g. via a built-in `query_state` tool) to get current business state. The provider must return a dict. It can be sync or async.
-
-See [examples/basic_usage.py](examples/basic_usage.py) and [examples/capabilities/](examples/capabilities/) for a minimal runnable example and sample SKILL.md files.
-
-### Built-in tools (Agent self-management)
-
-All Agents can use built-in tools through function calling:
-
-- `schedule_once` / `schedule_cron` / `cancel_schedule` for self-scheduling
-- `remember` / `recall` for long-term memory operations
-- `query_state` for reading business state providers
-- `log_decision` for governance/audit decision logs
-
-Runnable demo:
-
-- [examples/agent_tools_demo.py](examples/agent_tools_demo.py)
-- API reference: [docs/AGENT_TOOLS_API.md](docs/AGENT_TOOLS_API.md)
-
-The demo includes:
-
-- self-scheduling follow-up work (`schedule_once`)
-- writing and recalling experience (`remember` + `recall`)
-- querying state then taking `no_action` (`query_state` + `log_decision`)
-- explicit decision reasoning records (`log_decision`)
-
-### Hatchet integration (durable execution and cron)
+### Hatchet Integration (Durable Execution)
 
 OwlClaw uses [Hatchet](https://hatchet.run/) (MIT) for durable task execution, cron triggers, and self-scheduling. All Hatchet usage is isolated in `owlclaw.integrations.hatchet`.
 
-```python
-from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
+Examples: [examples/hatchet_basic_task.py](examples/hatchet_basic_task.py), [examples/hatchet_cron_task.py](examples/hatchet_cron_task.py)
 
-config = HatchetConfig.from_yaml("owlclaw.yaml")  # or HatchetConfig(server_url=..., api_token=...)
-client = HatchetClient(config)
-client.connect()
-
-@client.task(name="agent-run", retries=3)
-async def agent_run(ctx):
-    return {"status": "ok"}
-
-await client.schedule_task("agent-run", delay_seconds=300)
-client.start_worker()  # blocking
-```
-
-- **Config**: `HatchetConfig.from_yaml("owlclaw.yaml")` or env vars (`${HATCHET_API_TOKEN}`). See [deploy/owlclaw.yaml.example](deploy/owlclaw.yaml.example).
-- **Deploy**: Development with Hatchet Lite — `docker compose -f deploy/docker-compose.lite.yml up -d`. Production — [deploy/docker-compose.prod.yml](deploy/docker-compose.prod.yml).
-- **Cron**: Use `@client.task(name="...", cron="*/5 * * * *")` for periodic runs (5 fields: min hour day month dow).
-
-Examples: [examples/hatchet_basic_task.py](examples/hatchet_basic_task.py), [examples/hatchet_cron_task.py](examples/hatchet_cron_task.py), [examples/hatchet_self_schedule.py](examples/hatchet_self_schedule.py).
-
-### LLM integration (config, routing, fallback)
+### LLM Integration
 
 All LLM calls go through `owlclaw.integrations.llm`: config (YAML or code), model routing by `task_type`, fallback chain, optional Langfuse tracing, and mock mode for tests.
 
-```python
-from owlclaw.integrations.llm import LLMConfig, LLMClient, PromptBuilder
+Config: [docs/llm/owlclaw.llm.example.yaml](docs/llm/owlclaw.llm.example.yaml) | Examples: [examples/integrations_llm/](examples/integrations_llm/)
 
-config = LLMConfig.from_yaml("owlclaw.yaml")  # or LLMConfig.default_for_owlclaw()
-client = LLMClient(config)
-messages = [PromptBuilder.build_system_message("..."), PromptBuilder.build_user_message("...")]
-resp = await client.complete(messages, task_type="simple_query")
-# resp.content, resp.function_calls, resp.model, resp.prompt_tokens, resp.cost
-```
+### Memory System (STM + LTM)
 
-- **Config**: `llm` section in `owlclaw.yaml` — see [docs/llm/owlclaw.llm.example.yaml](docs/llm/owlclaw.llm.example.yaml) (models, task_type_routing, Langfuse, mock_mode).
-- **Examples**: [examples/integrations_llm/](examples/integrations_llm/) — basic call, function calling, model routing (all runnable in mock mode without API keys).
-
-### Memory system (STM + LTM)
-
-OwlClaw provides a pluggable memory subsystem for `remember()` / `recall()`:
-
-- `pgvector` (default): PostgreSQL + vector search.
-- `qdrant`: external vector database for larger-scale retrieval.
-- `inmemory`: local development and tests.
-
-CLI commands:
+Pluggable memory backends: `pgvector` (default), `qdrant`, `inmemory`.
 
 ```bash
 owlclaw memory list --agent <agent_id> --tenant default
 owlclaw memory stats --agent <agent_id> --tenant default
 owlclaw memory prune --agent <agent_id> --before 2026-01-01T00:00:00+00:00
-owlclaw memory reset --agent <agent_id> --confirm
-owlclaw memory migrate-backend --agent <agent_id> --source-backend pgvector --target-backend qdrant
 ```
 
-Memory documentation:
+Docs: [docs/memory/configuration.md](docs/memory/configuration.md)
 
-- [docs/memory/configuration.md](docs/memory/configuration.md)
-- [docs/memory/backend-selection.md](docs/memory/backend-selection.md)
-- [docs/memory/lifecycle-best-practices.md](docs/memory/lifecycle-best-practices.md)
-
-### Database CLI (owlclaw db)
-
-All database lifecycle and operations go through `owlclaw db`:
-
-| Command | Description |
-|---------|-------------|
-| `owlclaw db init` | Create owlclaw (and optional hatchet) database, role, pgvector |
-| `owlclaw db migrate` | Run Alembic migrations |
-| `owlclaw db status` | Connection, version, extensions, table stats, migration status |
-| `owlclaw db revision` | Generate new migration (autogenerate or empty) |
-| `owlclaw db rollback` | Roll back migrations (one step, `--steps N`, or `--target`) |
-| `owlclaw db backup` | Backup with pg_dump (plain or custom format) |
-| `owlclaw db restore` | Restore from backup (psql or pg_restore) |
-| `owlclaw db check` | Health check (connection, migration, pgvector, pool, disk, slow queries) |
-
-**Environment**: `OWLCLAW_DATABASE_URL` for most commands; `OWLCLAW_ADMIN_URL` for `init` only.
+### Database CLI
 
 ```bash
-export OWLCLAW_DATABASE_URL="postgresql://user:pass@localhost:5432/owlclaw"
-owlclaw db status
-owlclaw db migrate
+owlclaw db init      # Create database, role, pgvector
+owlclaw db migrate   # Run Alembic migrations
+owlclaw db status    # Connection, version, migration status
+owlclaw db check     # Health check
+owlclaw db backup    # pg_dump backup
 ```
 
-Full reference and troubleshooting: [docs/cli/db-commands.md](docs/cli/db-commands.md).
-
-### Database core usage (Python API)
-
-OwlClaw database infrastructure provides a shared async engine and session helpers:
-
-```python
-from sqlalchemy import text
-
-from owlclaw.db import get_engine, get_session
-
-engine = get_engine()  # reads OWLCLAW_DATABASE_URL
-
-async with get_session(engine) as session:
-    value = await session.scalar(text("SELECT 1"))
-    assert value == 1
-```
+Full reference: [docs/cli/db-commands.md](docs/cli/db-commands.md)
 
 ## Installation
 
@@ -230,35 +195,25 @@ pip install owlclaw
 poetry add owlclaw
 ```
 
-## Architecture
-
-See [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md) for the complete architecture design.
-
-## Useful Links
-
-- Architecture: [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md)
-- Examples: [examples/](examples/)
-- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Changelog: [CHANGELOG.md](CHANGELOG.md)
-- Release Runbook: [docs/RELEASE_RUNBOOK.md](docs/RELEASE_RUNBOOK.md)
-- License: [LICENSE](LICENSE)
-
 ## Development
 
 ```bash
-# Install dependencies (add observability for Langfuse integration tests)
 poetry install
 poetry install --with observability   # optional: langfuse, opentelemetry
 
-# Run tests
-poetry run pytest
-
-# Lint
-poetry run ruff check .
-
-# Type check
-poetry run mypy owlclaw/
+poetry run pytest                     # tests
+poetry run ruff check .               # lint
+poetry run mypy owlclaw/              # type check
 ```
+
+## Links
+
+- Architecture: [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md)
+- Positioning: [docs/POSITIONING.md](docs/POSITIONING.md)
+- Examples: [examples/](examples/)
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- License: [LICENSE](LICENSE)
 
 ## License
 

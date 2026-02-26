@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import logging
 import os
+import signal
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -147,6 +150,94 @@ class OwlClaw:
         self.api_trigger_server: APITriggerServer | None = None
         self._runtime: AgentRuntime | None = None
         self._langchain_adapter: Any = None
+        self._lite_mode: bool = False
+
+    @classmethod
+    def lite(
+        cls,
+        name: str,
+        *,
+        skills_path: str | None = None,
+        mock_responses: dict[str, Any] | None = None,
+        heartbeat_interval_minutes: int | float = 5,
+        governance: dict[str, Any] | None = None,
+    ) -> "OwlClaw":
+        """Create an OwlClaw instance in Lite Mode — zero external dependencies.
+
+        Lite Mode auto-configures:
+        - LLM: mock mode (no API key needed)
+        - Memory: in-memory store + random embedder (no PostgreSQL)
+        - Governance: in-memory ledger (budget/rate-limit/circuit-breaker all work)
+        - Scheduler: no Hatchet required (cron triggers skipped)
+
+        This is the fastest way to see OwlClaw in action::
+
+            from owlclaw import OwlClaw
+
+            app = OwlClaw.lite("demo")
+            app.mount_skills("./skills/")
+
+            @app.handler("check-inventory")
+            async def check(session) -> dict:
+                return {"action": "reorder", "sku": "WIDGET-42"}
+
+            app.run()
+
+        Args:
+            name: Application name.
+            skills_path: Path to skills directory. Call mount_skills() later if None.
+            mock_responses: Custom mock LLM responses keyed by task_type.
+                            Defaults to a generic "acknowledged" response.
+            heartbeat_interval_minutes: Heartbeat interval (default 5 min).
+            governance: Optional governance config dict. Defaults to sensible
+                        limits (budget, rate-limit, circuit-breaker all enabled
+                        with in-memory ledger).
+        """
+        app = cls(name)
+        app._lite_mode = True
+
+        default_mock = mock_responses or {
+            "default": {
+                "content": "Acknowledged. No action required at this time.",
+                "function_calls": [],
+            },
+        }
+
+        lite_governance = governance or {
+            "visibility": {
+                "budget": {"high_cost_threshold": "1.0"},
+                "circuit_breaker": {"failure_threshold": 5, "recovery_timeout": 300},
+            },
+            "router": {},
+            "use_inmemory_ledger": True,
+        }
+        lite_governance.setdefault("use_inmemory_ledger", True)
+
+        app.configure(
+            heartbeat_interval_minutes=heartbeat_interval_minutes,
+            integrations={
+                "llm": {
+                    "mock_mode": True,
+                    "mock_responses": default_mock,
+                    "model": "mock",
+                },
+            },
+            memory={
+                "store": "inmemory",
+                "embedder": "random",
+            },
+            governance=lite_governance,
+        )
+
+        if skills_path is not None:
+            app.mount_skills(skills_path)
+
+        logger.info(
+            "OwlClaw '%s' created in Lite Mode (mock LLM, in-memory storage, "
+            "no external dependencies)",
+            name,
+        )
+        return app
 
     def mount_skills(self, path: str) -> None:
         """Mount Skills from a business application directory.
@@ -644,6 +735,7 @@ class OwlClaw:
         from owlclaw.governance import (
             BudgetConstraint,
             CircuitBreakerConstraint,
+            InMemoryLedger,
             Ledger,
             RateLimitConstraint,
             RiskConfirmationConstraint,
@@ -655,7 +747,6 @@ class OwlClaw:
         cfg = self._governance_config
         self._visibility_filter = VisibilityFilter()
 
-        # Time constraint (no Ledger dependency)
         time_cfg = (cfg.get("visibility") or {}).get("time") or {}
         self._visibility_filter.register_evaluator(TimeConstraint(time_cfg))
         risk_cfg = (cfg.get("visibility") or {}).get("risk_confirmation") or {}
@@ -664,7 +755,9 @@ class OwlClaw:
         )
 
         session_factory = cfg.get("session_factory")
+        use_inmemory = cfg.get("use_inmemory_ledger", False) or self._lite_mode
         ledger = None
+
         if session_factory is not None:
             ledger = Ledger(
                 session_factory,
@@ -675,6 +768,10 @@ class OwlClaw:
                 if isinstance(cfg.get("ledger"), dict)
                 else 5.0,
             )
+        elif use_inmemory:
+            ledger = InMemoryLedger()
+
+        if ledger is not None:
             self._ledger = ledger
             budget_cfg = (cfg.get("visibility") or {}).get("budget") or {}
             self._visibility_filter.register_evaluator(
@@ -937,13 +1034,126 @@ class OwlClaw:
         adapter = self._get_langchain_adapter()
         return cast(dict[str, Any] | str, adapter.metrics(format=format))
 
-    def run(self) -> None:
-        """Start the OwlClaw application.
+    def run(
+        self,
+        *,
+        app_dir: str | None = None,
+        hatchet_client: Any = None,
+        tenant_id: str = "default",
+    ) -> None:
+        """Start the OwlClaw application (blocking).
 
-        Initializes the Agent runtime, loads Skills, starts Hatchet worker,
-        and begins processing triggers and heartbeats.
+        Initializes the Agent runtime, loads Skills, starts governance,
+        registers triggers, and blocks until SIGINT/SIGTERM.
+
+        Args:
+            app_dir: Application directory for identity files (SOUL.md, etc.).
+                     Defaults to parent of the mounted skills path.
+            hatchet_client: Optional pre-configured HatchetClient for durable
+                            execution and cron scheduling.
+            tenant_id: Tenant identifier for multi-tenant deployments.
         """
-        raise RuntimeError(
-            "OwlClaw.run() is not implemented yet. "
-            "Use create_agent_runtime() and explicit trigger/worker startup."
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            raise RuntimeError(
+                "OwlClaw.run() cannot be called from an already-running event loop. "
+                "Use 'await app.start()' and 'await app.stop()' directly instead."
+            )
+
+        asyncio.run(self._run_blocking(
+            app_dir=app_dir,
+            hatchet_client=hatchet_client,
+            tenant_id=tenant_id,
+        ))
+
+    async def _run_blocking(
+        self,
+        *,
+        app_dir: str | None = None,
+        hatchet_client: Any = None,
+        tenant_id: str = "default",
+    ) -> None:
+        """Internal async entry point for the blocking run() method."""
+        shutdown_event = asyncio.Event()
+
+        def _signal_handler() -> None:
+            logger.info("Shutdown signal received — stopping OwlClaw '%s'", self.name)
+            shutdown_event.set()
+
+        loop = asyncio.get_running_loop()
+        if sys.platform != "win32":
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                loop.add_signal_handler(sig, _signal_handler)
+        else:
+            signal.signal(signal.SIGINT, lambda *_: _signal_handler())
+            signal.signal(signal.SIGTERM, lambda *_: _signal_handler())
+
+        logger.info("Starting OwlClaw application '%s'", self.name)
+
+        runtime = await self.start(
+            app_dir=app_dir,
+            hatchet_client=hatchet_client,
+            tenant_id=tenant_id,
         )
+
+        heartbeat_interval = self._config.get("agent", {}).get("heartbeat_interval_minutes")
+        heartbeat_task: asyncio.Task[None] | None = None
+        if heartbeat_interval and heartbeat_interval > 0:
+            heartbeat_task = asyncio.create_task(
+                self._heartbeat_loop(runtime, heartbeat_interval, tenant_id, shutdown_event)
+            )
+
+        logger.info(
+            "OwlClaw '%s' is running (runtime=%s, cron=%d triggers, heartbeat=%s). "
+            "Press Ctrl+C to stop.",
+            self.name,
+            "ready" if runtime.is_initialized else "not initialized",
+            len(self.cron_registry._registrations),  # noqa: SLF001
+            f"{heartbeat_interval}min" if heartbeat_interval else "disabled",
+        )
+
+        try:
+            await shutdown_event.wait()
+        finally:
+            logger.info("Shutting down OwlClaw '%s'...", self.name)
+            if heartbeat_task is not None:
+                heartbeat_task.cancel()
+                try:
+                    await heartbeat_task
+                except asyncio.CancelledError:
+                    pass
+            await self.stop()
+            logger.info("OwlClaw '%s' stopped.", self.name)
+
+    async def _heartbeat_loop(
+        self,
+        runtime: AgentRuntime,
+        interval_minutes: int | float,
+        tenant_id: str,
+        shutdown_event: asyncio.Event,
+    ) -> None:
+        """Periodic heartbeat that triggers Agent runs when events are pending."""
+        interval_seconds = float(interval_minutes) * 60
+        while not shutdown_event.is_set():
+            try:
+                await asyncio.wait_for(
+                    shutdown_event.wait(),
+                    timeout=interval_seconds,
+                )
+                break
+            except asyncio.TimeoutError:
+                pass
+
+            try:
+                await runtime.trigger_event(
+                    event_name="heartbeat",
+                    payload={"source": "heartbeat"},
+                    focus=None,
+                    tenant_id=tenant_id,
+                )
+            except Exception:
+                logger.exception("Heartbeat trigger failed for '%s'", self.name)

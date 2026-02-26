@@ -1753,7 +1753,7 @@ runtime = AgentRuntime(
 
 - OwlClaw 架构文档 `docs/ARCHITECTURE_ANALYSIS.md` §5（Agent 运行时设计）
 - Agent Skills 规范（agentskills.io）
-- OpenClaw 的 Agent 实现（SOUL.md、MEMORY.md、Skills）
+- 业界 Agent 框架的 Agent 实现（SOUL.md、MEMORY.md、Skills）
 - agent-tools spec（内建工具接口）
 - litellm 文档（LLM 统一调用）
 - Hatchet 文档（持久执行）

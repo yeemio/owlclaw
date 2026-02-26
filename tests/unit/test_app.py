@@ -125,9 +125,9 @@ def test_create_agent_runtime_validates_app_dir_when_provided(tmp_path):
         app.create_agent_runtime(app_dir="   ")
 
 
-def test_run_raises_until_implemented():
+def test_run_requires_mount_skills():
     app = OwlClaw("test-app")
-    with pytest.raises(RuntimeError, match="not implemented yet"):
+    with pytest.raises(RuntimeError, match="mount_skills"):
         app.run()
 
 
@@ -180,3 +180,76 @@ async def test_start_registers_cron_and_exposes_health(tmp_path):
     assert health["cron"]["total_triggers"] >= 1
 
     await app.stop()
+
+
+# --- Lite Mode tests ---
+
+
+def test_lite_creates_app_with_lite_flag():
+    app = OwlClaw.lite("demo")
+    assert app._lite_mode is True
+    assert app.name == "demo"
+
+
+def test_lite_governance_uses_inmemory_ledger():
+    app = OwlClaw.lite("demo-gov")
+    app._ensure_governance()
+    assert type(app._ledger).__name__ == "InMemoryLedger"
+    assert app._visibility_filter is not None
+
+
+def test_lite_custom_mock_responses():
+    app = OwlClaw.lite(
+        "demo-custom",
+        mock_responses={"monitor": {"content": "all clear"}},
+    )
+    assert app._lite_mode is True
+
+
+def test_normal_mode_no_inmemory_ledger_by_default():
+    app = OwlClaw("normal")
+    app.configure(governance={"router": {}})
+    app._ensure_governance()
+    assert app._ledger is None
+
+
+def test_normal_mode_inmemory_ledger_opt_in():
+    app = OwlClaw("opt-in")
+    app.configure(governance={"use_inmemory_ledger": True, "router": {}})
+    app._ensure_governance()
+    assert type(app._ledger).__name__ == "InMemoryLedger"
+
+
+@pytest.mark.asyncio
+async def test_inmemory_ledger_record_and_query():
+    from datetime import date
+    from decimal import Decimal
+
+    from owlclaw.governance import InMemoryLedger
+    from owlclaw.governance.ledger import LedgerQueryFilters
+
+    ledger = InMemoryLedger()
+    await ledger.start()
+    await ledger.record_execution(
+        tenant_id="t1",
+        agent_id="a1",
+        run_id="r1",
+        capability_name="check",
+        task_type="monitor",
+        input_params={"key": "val"},
+        output_result=None,
+        decision_reasoning=None,
+        execution_time_ms=100,
+        llm_model="mock",
+        llm_tokens_input=10,
+        llm_tokens_output=5,
+        estimated_cost=Decimal("0.001"),
+        status="success",
+    )
+    records = await ledger.query_records("t1", LedgerQueryFilters(agent_id="a1"))
+    assert len(records) == 1
+    assert records[0].capability_name == "check"
+
+    summary = await ledger.get_cost_summary("t1", "a1", date.today(), date.today())
+    assert summary.total_cost == Decimal("0.001")
+    await ledger.stop()

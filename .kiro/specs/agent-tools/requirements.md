@@ -467,7 +467,7 @@ AND 该任务不会再执行
 
 ## 参考
 
-- OpenClaw 的 memory-tool.ts 和 schedule-tool.ts
+- 业界 Agent 框架的 memory-tool 和 schedule-tool 实现
 - Agent Skills 规范（agentskills.io）
 - OpenAI Function Calling 文档
 - Hatchet Python SDK 文档

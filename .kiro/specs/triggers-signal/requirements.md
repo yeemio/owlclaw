@@ -141,7 +141,7 @@
 ## 5. 参考文档
 
 - [OwlClaw 架构分析](../../docs/ARCHITECTURE_ANALYSIS.md) §5.2.2 事件触发层
-- [OwlClaw 架构分析](../../docs/ARCHITECTURE_ANALYSIS.md) §5.2.6 OpenClaw 通道
+- [OwlClaw 架构分析](../../docs/ARCHITECTURE_ANALYSIS.md) §5.2.6 MCP 通道
 - [MCP Server Spec](../mcp-server/)
 
 ---
