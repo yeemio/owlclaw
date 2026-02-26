@@ -744,3 +744,27 @@ description: 每天早上 9 点检查库存
     assert skill.trigger_config.get("type") == "cron"
     assert skill.trigger_config.get("expression") == "0 9 * * *"
     assert skill.trigger == 'cron("0 9 * * *")'
+
+
+def test_skills_loader_hybrid_mode_uses_nl_trigger_when_owlclaw_has_no_trigger(tmp_path):
+    skill_dir = tmp_path / "hybrid-skill"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: hybrid-skill
+description: 订单通知
+owlclaw:
+  task_type: order_monitor
+---
+# 订单通知
+每周一生成订单汇总
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    skill = skills[0]
+    assert skill.parse_mode == "hybrid"
+    assert skill.trigger_config.get("type") == "cron"
+    assert skill.trigger == 'cron("0 0 * * 1")'

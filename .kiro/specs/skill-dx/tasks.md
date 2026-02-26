@@ -35,15 +35,15 @@
 
 - [x] 5.1 修改 `skills.py` 的 `_parse_skill_file()` 增加双模式路由
 - [x] 5.2 集成 skill_nl_parser + trigger_resolver
-- [ ] 5.3 实现混合模式（部分结构化 + 部分自然语言）
-- [ ] 5.4 集成测试：自然语言 SKILL.md 触发条件解析端到端
+- [x] 5.3 实现混合模式（部分结构化 + 部分自然语言）
+- [x] 5.4 集成测试：自然语言 SKILL.md 触发条件解析端到端
 
 ### Task 6: CLI 支持
 
 - [x] 6.1 实现 `owlclaw skill parse` 命令（显示解析结果）
 - [x] 6.2 实现 `owlclaw skill parse --cache` 离线预解析
-- [ ] 6.3 实现 `owlclaw skill validate` 增强（支持自然语言模式校验）
-- [ ] 6.4 单元测试：CLI 命令测试
+- [x] 6.3 实现 `owlclaw skill validate` 增强（支持自然语言模式校验）
+- [x] 6.4 单元测试：CLI 命令测试
 
 ---
 

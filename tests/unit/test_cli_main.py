@@ -172,6 +172,30 @@ def test_main_skill_search_help_uses_plain_help(monkeypatch, capsys) -> None:
     assert "--quiet" in out
 
 
+def test_main_dispatches_skill_parse(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_parse_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.skill_parse.parse_command", _fake_parse_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "parse", str(tmp_path), "--cache"])
+    cli_main.main()
+    assert captured["path"] == str(tmp_path)
+    assert captured["cache"] is True
+
+
+def test_main_skill_parse_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "parse", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill parse [PATH] [--cache]" in out
+
+
 def test_main_dispatches_skill_install_verbose_and_quiet(monkeypatch) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
     captured: dict[str, object] = {}
