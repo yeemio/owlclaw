@@ -54,17 +54,17 @@
 
 ### Task 1-ext: SkillDescriptor 扩展
 
-- [ ] 1.5 增加 `resolved_tools` 字段（工具匹配结果）
+- [x] 1.5 增加 `resolved_tools` 字段（工具匹配结果）
 
 ### Task 4: 工具语义匹配器
 
-- [ ] 4.1 创建 `owlclaw/capabilities/capability_matcher.py`
-- [ ] 4.2 实现精确名称匹配
-- [ ] 4.3 实现 embedding 相似度匹配（复用 memory embedder）
-- [ ] 4.4 实现 LLM function calling 确认匹配
-- [ ] 4.5 单元测试：工具匹配准确率测试用例集
+- [x] 4.1 创建 `owlclaw/capabilities/capability_matcher.py`
+- [x] 4.2 实现精确名称匹配
+- [x] 4.3 实现 embedding 相似度匹配（复用 memory embedder）
+- [x] 4.4 实现 LLM function calling 确认匹配
+- [x] 4.5 单元测试：工具匹配准确率测试用例集
 
 ### Task 5-ext: SkillParser 集成（Phase 2 部分）
 
-- [ ] 5.5 集成 capability_matcher 到 SkillParser
-- [ ] 5.6 集成测试：端到端自然语言 SKILL.md 加载（含工具匹配）
+- [x] 5.5 集成 capability_matcher 到 SkillParser
+- [x] 5.6 集成测试：端到端自然语言 SKILL.md 加载（含工具匹配）

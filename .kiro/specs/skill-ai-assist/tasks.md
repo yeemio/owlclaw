@@ -51,9 +51,9 @@
 
 ### Task 3: 从文档生成
 
-- [ ] 3.1 创建 `owlclaw/capabilities/skill_doc_extractor.py`
-- [ ] 3.2 实现文档读取（Markdown / 纯文本）
-- [ ] 3.3 实现 LLM 文档分析（识别可自动化流程）
-- [ ] 3.4 实现批量 SKILL.md 生成
-- [ ] 3.5 实现 `owlclaw skill create --from-doc` CLI 命令
-- [ ] 3.6 单元测试：从示例 SOP 文档生成 Skill
+- [x] 3.1 创建 `owlclaw/capabilities/skill_doc_extractor.py`
+- [x] 3.2 实现文档读取（Markdown / 纯文本）
+- [x] 3.3 实现 LLM 文档分析（识别可自动化流程）
+- [x] 3.4 实现批量 SKILL.md 生成
+- [x] 3.5 实现 `owlclaw skill create --from-doc` CLI 命令
+- [x] 3.6 单元测试：从示例 SOP 文档生成 Skill
