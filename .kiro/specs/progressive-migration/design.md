@@ -89,7 +89,49 @@ Lite Mode 下审批队列使用 InMemoryLedger，审批通过 CLI 交互完成�
 - 更新粒度：per-skill
 - 生效时间：下一次决策即生效（无需重启）
 
-### D-6: 文件结构
+### D-6: Shadow 模式衔接（OBSERVE_ONLY 路径）
+
+`migration_weight=0`（观察模式）的 OBSERVE_ONLY 路径复用 Declarative Binding 已有的 Shadow 模式（`owlclaw/capabilities/bindings/shadow.py`）：
+
+```
+OBSERVE_ONLY 路径：
+    Agent 生成决策（function calling 选择工具 + 参数）
+        │
+        ▼
+    ShadowExecutor 执行（不调用真实后端）
+        │
+        ├─ 记录"如果执行会调用什么 endpoint、什么参数"
+        ├─ 生成 Shadow Report（预期结果 + 风险评估）
+        └─ 写入 Ledger（execution_mode=observe_only）
+```
+
+Shadow 模式已在 declarative-binding spec 中实现，MigrationGate 的 OBSERVE_ONLY 直接委托给 ShadowExecutor，不需要重新实现。
+
+### D-7: 审批通知渠道
+
+审批请求的通知不新建通知子系统，而是复用已有的触发器层：
+
+| 通知方式 | 实现 | 适用场景 |
+|---------|------|---------|
+| **Signal 触发器** | `owlclaw/triggers/signal.py` | Agent 间通信、内部通知 |
+| **Webhook 触发器** | `owlclaw/triggers/webhook.py` | 外部系统回调（Slack/钉钉/企业微信 Webhook） |
+| **API 触发器** | `owlclaw/triggers/api.py` | REST API 轮询审批状态 |
+
+配置示例（`owlclaw.yaml`）：
+
+```yaml
+migration:
+  approval:
+    notify:
+      type: webhook
+      url: "${APPROVAL_WEBHOOK_URL}"
+    timeout: 24h
+    fallback: reject
+```
+
+Lite Mode 下通知降级为 CLI 输出 + structlog 日志。
+
+### D-8: 文件结构
 
 ```
 owlclaw/governance/
@@ -100,6 +142,11 @@ owlclaw/governance/
 
 owlclaw/agent/
 └── runtime.py                  # 修改：集成 MigrationGate
+
+# 复用已有组件（不新建）：
+owlclaw/capabilities/bindings/shadow.py   # Shadow 模式（OBSERVE_ONLY 路径）
+owlclaw/triggers/webhook.py               # 审批通知（Webhook 渠道）
+owlclaw/triggers/signal.py                # 审批通知（内部 Signal 渠道）
 ```
 
 ## 依赖

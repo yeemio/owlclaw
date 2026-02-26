@@ -283,12 +283,14 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 - codex-work → test-infra（继续） + architecture-roadmap（新增）
 - codex-gpt-work → quick-start + complete-workflow（新增） + owlhub/release 收尾
 
-**Phase 6 差异化能力 spec（待分配）**：
-- skill-dx（0/24）— SKILL.md 自然语言书写模式
-- skill-ai-assist（0/22）— AI 辅助 Skill 生成（依赖 skill-dx）
-- progressive-migration（0/25）— 渐进式迁移 migration_weight
+**Phase 6 差异化能力 + 生态 spec（待分配）**：
 
-建议分配策略：
-- skill-dx → codex-work（当 architecture-roadmap 完成后）
-- progressive-migration → codex-gpt-work（当 quick-start + complete-workflow 完成后）
-- skill-ai-assist → 最先空闲的 worktree（依赖 skill-dx 完成）
+| Spec | Tasks | 依赖 | 建议分配 |
+|------|-------|------|---------|
+| skill-dx（0/24） | SKILL.md 自然语言书写 | 无 | codex-work（architecture-roadmap 后） |
+| progressive-migration（0/25） | 渐进式迁移 | 无 | codex-gpt-work（quick-start 后） |
+| skills-quality（0/21） | 质量评分 + 数据飞轮 | Ledger 已完成 | 最先空闲 worktree |
+| industry-skills（0/23） | 行业 Skills 包 | owlhub + skill-templates 已完成 | 最先空闲 worktree |
+| skill-ai-assist（0/22） | AI 辅助 Skill 生成 | 依赖 skill-dx | skill-dx 完成后分配 |
+
+分配优先级：skill-dx > progressive-migration > skills-quality > industry-skills > skill-ai-assist

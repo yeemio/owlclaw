@@ -108,6 +108,8 @@
 - [ ] SKILL.md 自然语言书写模式（业务人员零门槛） → spec: skill-dx
 - [ ] AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板） → spec: skill-ai-assist
 - [ ] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
+- [ ] Skills 质量评分与数据飞轮（执行指标 → 评分 → 推荐优化） → spec: skills-quality
+- [ ] 行业 Skills 包（零售/制造/金融，9+ 个开箱即用 Skills） → spec: industry-skills
 
 ---
 
@@ -154,6 +156,8 @@
 | **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/24） | SKILL.md 自然语言书写模式（双模式解析 + 工具匹配 + 触发解析 + CLI） |
 | **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22） | AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板系统 + 校验增强） |
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | 🆕 三层齐全，待开始（0/25） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
+| **skills-quality** | `.kiro/specs/skills-quality/` | 🆕 三层齐全，待开始（0/21） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
+| **industry-skills** | `.kiro/specs/industry-skills/` | 🆕 三层齐全，待开始（0/23） | 行业 Skills 包（零售/制造/金融 3 行业 9+ Skills + 包基础设施 + OwlHub 集成） |
 
 ---
 
@@ -179,11 +183,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | Phase 5 + Phase 6：POSITIONING.md 规范化 + 3 个差异化 spec 创建（skill-dx / skill-ai-assist / progressive-migration） |
-| 批次状态 | **进行中**。Phase 5 Lite Mode 已完成；Phase 6 三个 spec 三层齐全已创建，待分配。 |
-| 已完成项 | 1) `OwlClaw.lite()` + `InMemoryLedger`（Phase 5）；2) POSITIONING.md 规范化（v1.1.0）+ 与 owlclaw_core.mdc / ARCHITECTURE_ANALYSIS.md 建立双向关联；3) 创建 quick-start/complete-workflow/architecture-roadmap 三个 spec；4) 创建 skill-dx/skill-ai-assist/progressive-migration 三个 spec（三层齐全）。 |
-| 下一待执行 | 1) 分配 skill-dx / skill-ai-assist / progressive-migration 到编码 worktree；2) codex-work 继续 test-infra + architecture-roadmap；3) codex-gpt-work 继续 quick-start + complete-workflow；4) release + owlhub 40.4 等人工凭据。 |
-| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/24)，skill-ai-assist 🆕(0/22)，progressive-migration 🆕(0/25)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 当前批次 | Phase 5 + Phase 6：产品策略完整性审查 + 全部缺失 spec 补齐 |
+| 批次状态 | **Phase 6 spec 全部创建完成**。共 5 个差异化 spec + 2 个生态 spec，待分配到编码 worktree。 |
+| 已完成项 | 1) `OwlClaw.lite()` + `InMemoryLedger`（Phase 5）；2) POSITIONING.md 规范化（v1.1.0）+ 文档关联；3) 创建 quick-start/complete-workflow/architecture-roadmap（Phase 5）；4) 创建 skill-dx/skill-ai-assist/progressive-migration（Phase 6 差异化）；5) 创建 skills-quality/industry-skills（Phase 6 生态）；6) progressive-migration design.md 补充 shadow 衔接 + 通知渠道。 |
+| 下一待执行 | 1) 分配 Phase 6 spec 到编码 worktree；2) codex-work 继续 test-infra + architecture-roadmap；3) codex-gpt-work 继续 quick-start + complete-workflow；4) release + owlhub 40.4 等人工凭据。 |
+| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/24)，skill-ai-assist 🆕(0/22)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/23)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2：unit 套件约 452s，需优化到 < 60s；2) test-infra Task 9.4/11：需 Docker Engine；3) release/owlhub 40.4：需人工凭据。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
