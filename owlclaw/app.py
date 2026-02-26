@@ -161,7 +161,7 @@ class OwlClaw:
         mock_responses: dict[str, Any] | None = None,
         heartbeat_interval_minutes: int | float = 5,
         governance: dict[str, Any] | None = None,
-    ) -> "OwlClaw":
+    ) -> OwlClaw:
         """Create an OwlClaw instance in Lite Mode — zero external dependencies.
 
         Lite Mode auto-configures:
@@ -756,7 +756,7 @@ class OwlClaw:
 
         session_factory = cfg.get("session_factory")
         use_inmemory = cfg.get("use_inmemory_ledger", False) or self._lite_mode
-        ledger = None
+        ledger: Ledger | InMemoryLedger | None = None
 
         if session_factory is not None:
             ledger = Ledger(
@@ -773,14 +773,15 @@ class OwlClaw:
 
         if ledger is not None:
             self._ledger = ledger
+            constraint_ledger = cast(Ledger, ledger)
             budget_cfg = (cfg.get("visibility") or {}).get("budget") or {}
             self._visibility_filter.register_evaluator(
-                BudgetConstraint(ledger, budget_cfg)
+                BudgetConstraint(constraint_ledger, budget_cfg)
             )
-            self._visibility_filter.register_evaluator(RateLimitConstraint(ledger))
+            self._visibility_filter.register_evaluator(RateLimitConstraint(constraint_ledger))
             cb_cfg = (cfg.get("visibility") or {}).get("circuit_breaker") or {}
             self._visibility_filter.register_evaluator(
-                CircuitBreakerConstraint(ledger, cb_cfg)
+                CircuitBreakerConstraint(constraint_ledger, cb_cfg)
             )
 
         router_cfg = cfg.get("router") or {}
@@ -1112,7 +1113,7 @@ class OwlClaw:
             "Press Ctrl+C to stop.",
             self.name,
             "ready" if runtime.is_initialized else "not initialized",
-            len(self.cron_registry._registrations),  # noqa: SLF001
+            len(self.cron_registry.list_triggers()),
             f"{heartbeat_interval}min" if heartbeat_interval else "disabled",
         )
 
