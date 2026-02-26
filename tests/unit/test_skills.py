@@ -140,6 +140,8 @@ def test_skill_to_dict(tmp_path):
     assert d["description"] == "For to_dict"
     assert "file_path" in d
     assert "metadata" in d
+    assert d["parse_mode"] == "natural_language"
+    assert isinstance(d["trigger_config"], dict)
     assert "full_content" not in d
 
 
@@ -166,6 +168,7 @@ owlclaw:
     assert skill.focus == ["inventory_monitor", "trading_decision"]
     assert skill.risk_level == "high"
     assert skill.requires_confirmation is True
+    assert skill.parse_mode == "structured"
 
 
 def test_skills_loader_focus_ignores_non_string_items(tmp_path):
@@ -718,3 +721,26 @@ def test_skills_loader_allows_explicit_enable_in_owlclaw_yaml(tmp_path, monkeypa
     skills = loader.scan()
     assert len(skills) == 1
     assert skills[0].name == "enabled-skill"
+
+
+def test_skills_loader_natural_language_mode_sets_trigger_config(tmp_path):
+    skill_dir = tmp_path / "nl-skill"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: nl-skill
+description: 每天早上 9 点检查库存
+---
+# 库存预警
+当库存不足时通知我
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    skill = skills[0]
+    assert skill.parse_mode == "natural_language"
+    assert skill.trigger_config.get("type") == "cron"
+    assert skill.trigger_config.get("expression") == "0 9 * * *"
+    assert skill.trigger == 'cron("0 9 * * *")'

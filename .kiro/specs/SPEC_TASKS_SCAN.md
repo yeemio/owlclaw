@@ -153,7 +153,7 @@
 | **quick-start** | `.kiro/specs/quick-start/` | 🆕 三层齐全，待开始（0/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
 | **complete-workflow** | `.kiro/specs/complete-workflow/` | 🆕 三层齐全，待开始（0/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
 | **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | ✅ 三层齐全，已完成（13/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
-| **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/25，P1:18 P2:7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
+| **skill-dx** | `.kiro/specs/skill-dx/` | 🟡 三层齐全，进行中（14/25，P1:14/18 P2:0/7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
 | **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22，P1:16 P2:6） | AI 辅助 Skill 生成（P1 对话式创建+模板，P2 文档提取需验证产品价值后启动） |
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | 🆕 三层齐全，待开始（0/25） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | 🆕 三层齐全，待开始（0/21） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
@@ -183,11 +183,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | spec循环批次：architecture-roadmap 全量落地 + test-infra 基线复核 |
-| 批次状态 | **进行中**。architecture-roadmap 已收口（13/13）；test-infra 仍有 4 项硬门槛待验收。 |
-| 已完成项 | 1) `docs/ARCHITECTURE_ANALYSIS.md` 新增 §10 架构演进路线（5 个方向 + 分阶段路线图）；2) `docs/POSITIONING.md` 增补增长飞轮与 §10 的引用；3) `architecture-roadmap/tasks.md` 全部勾选；4) 验证 release 资产测试断言（README 标题）通过。 |
-| 下一待执行 | 1) codex-work：test-infra 剩余（4.2/11.1/11.3/11.4）→ skill-dx P1 → skills-quality；2) codex-gpt-work：quick-start + complete-workflow → progressive-migration → industry-skills；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
-| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap ✅(13/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 当前批次 | spec循环批次：skill-dx P1 首批落地（Task 1/2/3 + 5.1/5.2 + 6.1/6.2） |
+| 批次状态 | **进行中**。architecture-roadmap 已收口（13/13）；skill-dx 已进入实现态（14/25）；test-infra 仍有 4 项硬门槛待验收。 |
+| 已完成项 | 1) 新增 `owlclaw/capabilities/skill_nl_parser.py`（模式识别、意图提取、SHA256 缓存）；2) 新增 `owlclaw/capabilities/trigger_resolver.py`（中英文时间/事件表达解析 + confidence）；3) `skills.py` 接入双模式路由与 trigger_config；4) 新增 `owlclaw skill parse` / `--cache`；5) 新增单测并通过（`41 passed`）。 |
+| 下一待执行 | 1) codex-work：skill-dx P1 剩余（5.3/5.4/6.3/6.4）→ test-infra 剩余（4.2/11.1/11.3/11.4）→ skills-quality；2) codex-gpt-work：quick-start + complete-workflow → progressive-migration → industry-skills；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
+| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(14/25，P1:14/18 P2:0/7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
