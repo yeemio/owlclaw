@@ -173,9 +173,10 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
 **当前任务**（按顺序执行）：
-1. test-infra(9/11) 收尾：Task 4.2 + 11.1 + 11.3 + 11.4（性能门槛与 CI 验收）
-2. skill-dx P2(7/7) — 工具语义匹配（`capability_matcher` + SkillParser 集成）
-3. skill-ai-assist P2(6/6) — 文档提取生成（`skill_doc_extractor` + `--from-doc` CLI）
+1. protocol-governance(0/27)：版本策略/兼容政策/错误域/门禁策略（Phase 1 + Phase 2）
+2. contract-testing(0/19)：API/MCP 契约测试体系与阻断门禁
+3. test-infra(10/11) 收尾：Task 11.3 + 11.4（CI matrix 与覆盖率门槛实跑）
+4. gateway-runtime-ops(0/18)：发布门控、回滚剧本、SLO 文档
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -210,9 +211,10 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ + local-devenv ✅ 已完成。
 
 **当前任务**（按顺序执行）：
-1. owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）
-2. release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）
-3. 待命：如编码 1 遇阻，协助 test-infra 非冲突项（CI 文档/workflow 验收）
+1. release-supply-chain(0/15)：OIDC Trusted Publishing + provenance（优先在文档/流程层推进）
+2. cross-lang-golden-path(0/16)：Java + curl 接入路径（样例与验收脚本）
+3. owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）
+4. 待命：若该 worktree 无法持续执行，由主 worktree 临时接管 #1/#2 的文档与脚本任务
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -274,6 +276,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-26 | 启动原“暂不分配”项：codex-work 追加 skill-dx P2 + skill-ai-assist P2；codex-gpt-work 保持 release/owlhub 阻塞跟踪 | P1 能力与入口已落地，具备可执行条件 |
 | 2026-02-26 | 新增 protocol-first-api-mcp 三层 spec（0/24），待下一轮统筹分配 | 响应 API/MCP 优先战略，先固化规范与执行路径 |
 | 2026-02-26 | 按发布阶段拆分 5 个子 spec：protocol-governance / gateway-runtime-ops / contract-testing / release-supply-chain / cross-lang-golden-path | 将“总纲”转为可并行执行的交付包 |
+| 2026-02-26 | 统筹重分配：codex-work 主攻 protocol-governance + contract-testing + gateway-runtime-ops + test-infra 收尾；codex-gpt-work 承担 release-supply-chain + cross-lang-golden-path | 按“单活编码 worktree”策略降低空转与冲突 |
 
 ---
 
@@ -293,14 +296,11 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | Tasks | Worktree | 执行顺序 |
 |------|-------|----------|---------|
-| skill-dx P2（0/7） | 工具语义匹配 | codex-work | #2 |
-| skill-ai-assist P2（0/6） | 文档提取生成 | codex-work | #3 |
-| test-infra 剩余（9/11） | 性能与 CI 收口 | codex-work | #1 |
-| release 剩余（25/32） | 发布凭据与发布验证 | codex-gpt-work | #1（外部依赖） |
-| owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | codex-gpt-work | #2（外部依赖） |
-| protocol-first-api-mcp（0/24） | 协议优先专项（API+MCP） | 待分配 | 高优先级（建议下一轮启动） |
-| protocol-governance（0/27） | 协议治理规则与门禁 | 待分配 | 高优先级 |
-| gateway-runtime-ops（0/18） | 网关发布/回滚/SLO | 待分配 | 高优先级 |
-| contract-testing（0/19） | API/MCP 契约测试体系 | 待分配 | 高优先级 |
-| release-supply-chain（0/15） | OIDC + provenance 发布链路 | 待分配 | 高优先级 |
-| cross-lang-golden-path（0/16） | Java + curl 接入路径 | 待分配 | 高优先级 |
+| test-infra 剩余（10/11） | CI matrix 与覆盖率门槛收口 | codex-work | #1 |
+| protocol-governance（0/27） | 协议治理规则与门禁 | codex-work | #2 |
+| contract-testing（0/19） | API/MCP 契约测试体系 | codex-work | #3 |
+| gateway-runtime-ops（0/18） | 网关发布/回滚/SLO | codex-work | #4 |
+| release-supply-chain（0/15） | OIDC + provenance 发布链路 | codex-gpt-work（或主 worktree接管） | #1 |
+| cross-lang-golden-path（0/16） | Java + curl 接入路径 | codex-gpt-work（或主 worktree接管） | #2 |
+| release 剩余（28/32） | 发布凭据与发布验证 | codex-gpt-work | #3（外部依赖） |
+| owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | codex-gpt-work | #4（外部依赖） |
