@@ -55,7 +55,7 @@ jobs:
           echo "${{ vars.OWLHUB_CNAME }}" > dist/owlhub/site/CNAME
 
       - name: Upload index artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: owlhub-index
           path: dist/owlhub/index.json
