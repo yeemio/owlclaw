@@ -52,7 +52,7 @@ owlclaw/
 │   │   └── migrate.py      # owlclaw migrate（AI 辅助迁移）
 │   ├── app.py              # OwlClaw 主入口类
 │   └── __init__.py
-├── owlclaw-mcp/            # MCP Server（OpenClaw 通道）
+├── owlclaw-mcp/            # MCP Server（通用 Agent 协议接口）
 ├── examples/               # 示例应用
 │   ├── mionyee-trading/    # 交易场景示例
 │   └── simple-cron/        # 简单 cron 替代示例
@@ -163,7 +163,7 @@ owlclaw:
 
 ## 五、Heartbeat 边界定义
 
-基于 OpenClaw 的实现经验，`_collect_pending()` 的边界：
+基于 Heartbeat 机制的设计经验，`_collect_pending()` 的边界：
 
 **允许检查（内部状态，零外部 I/O）**：
 - ✅ 事件队列（内存中的待处理事件）
