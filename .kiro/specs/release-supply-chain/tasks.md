@@ -32,7 +32,7 @@
   - 状态补充（2026-02-26）：已产出 baseline（Lint/Test/Build）与审计报告 `docs/release/release-policy-audit.json`。
   - 状态补充（2026-02-26）：新增供应链就绪审计脚本 `scripts/ops/release_supply_chain_audit.py`，最新报告 `docs/release/release-supply-chain-audit.json`（包含 release runs / environments / secrets / branch protection）。
 - [x] 3.2 校准 release 分支保护
-  - 状态补充（2026-02-26）：审计显示 `main` 当前未开启保护（HTTP 404 Branch not protected），已固化建议基线 `docs/release/release-policy-baseline.md`，待维护者应用。
+  - 状态补充（2026-02-26）：`main` 分支保护已按基线落地（required checks: Lint/Test/Build，PR review=1，CODEOWNERS review，enforce admins）；见 `docs/release/release-policy-audit.json`。
 - [x] 3.3 校准失败回滚策略
 
 ## 4. 演练与收口
@@ -42,6 +42,7 @@
   - 状态补充（2026-02-26）：新增演练 runs `22447692518`、`22447700064`，两次均在 `Publish to TestPyPI` 失败（`HTTP 403`，`TWINE_PASSWORD` 为空），Trusted Publisher/发布凭据阻塞未解除。
   - 状态补充（2026-02-26）：在 `codex-gpt-work` 的 OIDC 链路 run `22449095206` 失败于 `invalid-publisher`（token 有效但未找到匹配发布者），根因已收敛到 Trusted Publisher claim 映射。
   - 状态补充（2026-02-26）：run `22449361552`（已绑定 `environment: pypi-release`）仍在 `Publish to TestPyPI` 报 `invalid-publisher`；说明 workflow 侧 claim 规范化已完成，剩余阻塞仅在 PyPI/TestPyPI 发布者配置。
+  - 状态补充（2026-02-26）：run `22450293930` 在 `main` 分支保护与 `pypi-release` branch policy 生效后复验，仍报 `invalid-publisher`，进一步确认仅剩外部发布者映射阻塞。
 - [ ] 4.2 PyPI 正式链路演练
 - [x] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint
 

@@ -31,7 +31,8 @@ Source of truth reports:
 2. This confirms main branch still follows legacy token-based publishing path.
 3. Runs `22449095206` and `22449361552` (`codex-gpt-work`, 2026-02-26) executed OIDC publishing and failed with `invalid-publisher`.
 4. Run `22449361552` confirms normalized claim: `sub=repo:yeemio/owlclaw:environment:pypi-release`, `environment=pypi-release`.
-5. Remaining blocker is external Trusted Publisher mapping on PyPI/TestPyPI.
+5. Run `22450293930` re-validates the same `invalid-publisher` outcome after branch-protection + environment branch-policy updates.
+6. Remaining blocker is external Trusted Publisher mapping on PyPI/TestPyPI.
 
 ## Trusted Publisher Mapping Template
 
