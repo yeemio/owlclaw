@@ -517,6 +517,82 @@ def _dispatch_agent_command(argv: list[str]) -> bool:
     raise SystemExit(2)
 
 
+def _dispatch_migration_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw migration ...` via argparse."""
+    if not argv or argv[0] != "migration":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["migration"])
+
+    sub = argv[1]
+    sub_argv = argv[2:]
+    if "--help" in sub_argv or "-h" in sub_argv:
+        _print_help_and_exit(["migration", sub])
+
+    from owlclaw.cli.migration import set_command, status_command, suggest_command
+
+    if sub == "status":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migration status")
+        parser.add_argument("--config", default="")
+        ns = parser.parse_args(sub_argv)
+        status_command(config=ns.config)
+        return True
+
+    if sub == "set":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migration set")
+        parser.add_argument("skill")
+        parser.add_argument("weight", type=int)
+        parser.add_argument("--config", default="")
+        ns = parser.parse_args(sub_argv)
+        set_command(skill=ns.skill, weight=ns.weight, config=ns.config)
+        return True
+
+    if sub == "suggest":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migration suggest")
+        parser.add_argument("--config", default="")
+        ns = parser.parse_args(sub_argv)
+        suggest_command(config=ns.config)
+        return True
+
+    print(f"Error: unknown migration subcommand: {sub}", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def _dispatch_approval_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw approval ...` via argparse."""
+    if not argv or argv[0] != "approval":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["approval"])
+
+    sub = argv[1]
+    sub_argv = argv[2:]
+    if "--help" in sub_argv or "-h" in sub_argv:
+        _print_help_and_exit(["approval", sub])
+
+    from owlclaw.cli.migration import approval_approve_command, approval_list_command
+
+    if sub == "list":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw approval list")
+        parser.add_argument("--status", default="")
+        parser.add_argument("--store", default="")
+        ns = parser.parse_args(sub_argv)
+        approval_list_command(status=ns.status, store=ns.store)
+        return True
+
+    if sub == "approve":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw approval approve")
+        parser.add_argument("request_id")
+        parser.add_argument("--approver", default="cli")
+        parser.add_argument("--store", default="")
+        ns = parser.parse_args(sub_argv)
+        approval_approve_command(request_id=ns.request_id, approver=ns.approver, store=ns.store)
+        return True
+
+    print(f"Error: unknown approval subcommand: {sub}", file=sys.stderr)
+    raise SystemExit(2)
+
+
 def _dispatch_trigger_command(argv: list[str]) -> bool:
     """Dispatch `owlclaw trigger ...` using argparse for command-specific templates."""
     if not argv or argv[0] != "trigger":
@@ -949,6 +1025,60 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw agent status --agent-id <id> [OPTIONS]")
         print("\n  Show agent paused state and pending instructions.")
         sys.exit(0)
+    if argv == ["migration"]:
+        print("Usage: owlclaw migration [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Progressive migration controls.")
+        print("Commands:")
+        print("  status   Show migration_weight by skill")
+        print("  set      Set migration_weight for one skill")
+        print("  suggest  Recommend next migration_weight step")
+        print("\n  owlclaw migration status --help")
+        sys.exit(0)
+    if argv == ["migration", "status"]:
+        print("Usage: owlclaw migration status [OPTIONS]")
+        print("\n  Show migration_weight by skill from owlclaw.yaml.")
+        print("Options:")
+        print("  --config TEXT  Optional config file path")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["migration", "set"]:
+        print("Usage: owlclaw migration set SKILL WEIGHT [OPTIONS]")
+        print("\n  Set migration_weight (0-100) for one skill.")
+        print("Options:")
+        print("  --config TEXT  Optional config file path")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["migration", "suggest"]:
+        print("Usage: owlclaw migration suggest [OPTIONS]")
+        print("\n  Suggest next migration_weight step by skill.")
+        print("Options:")
+        print("  --config TEXT  Optional config file path")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["approval"]:
+        print("Usage: owlclaw approval [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Approval queue operations.")
+        print("Commands:")
+        print("  list     List approval requests")
+        print("  approve  Approve one request by id")
+        print("\n  owlclaw approval list --help")
+        sys.exit(0)
+    if argv == ["approval", "list"]:
+        print("Usage: owlclaw approval list [OPTIONS]")
+        print("\n  List approval requests from local store.")
+        print("Options:")
+        print("  --status TEXT  Optional status filter")
+        print("  --store TEXT   Optional approval store path")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["approval", "approve"]:
+        print("Usage: owlclaw approval approve REQUEST_ID [OPTIONS]")
+        print("\n  Approve one request in local store.")
+        print("Options:")
+        print("  --approver TEXT  Approver identity (default: cli)")
+        print("  --store TEXT     Optional approval store path")
+        print("  --help           Show this message and exit")
+        sys.exit(0)
     if argv == ["trigger"]:
         print("Usage: owlclaw trigger [OPTIONS] COMMAND [ARGS]...")
         print("\n  Trigger tooling commands.")
@@ -1076,6 +1206,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
     print("  agent  Manual control via signal (pause, resume, trigger, instruct, status)")
+    print("  migration Progressive migration controls")
+    print("  approval  Approval queue operations")
     print("  skill  Create, validate, list Agent Skills (SKILL.md)")
     print("  trigger Trigger templates (db-change)")
     print("  migrate Migrate legacy APIs/models to OwlClaw assets")
@@ -1224,6 +1356,16 @@ def _main_impl() -> None:
         raise SystemExit(e.exit_code) from None
     try:
         if _dispatch_agent_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_migration_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_approval_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None

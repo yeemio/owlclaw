@@ -406,3 +406,70 @@ def test_main_prints_version(monkeypatch, capsys) -> None:
     assert exc_info.value.code == 0
     out = capsys.readouterr().out.strip()
     assert out.startswith("owlclaw ")
+
+
+def test_main_dispatches_migration_status(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_status_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.status_command", _fake_status_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "migration", "status", "--config", "owlclaw.yaml"])
+    cli_main.main()
+    assert captured["config"] == "owlclaw.yaml"
+
+
+def test_main_dispatches_migration_set(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_set_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.set_command", _fake_set_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "migration", "set", "inventory-check", "70"])
+    cli_main.main()
+    assert captured["skill"] == "inventory-check"
+    assert captured["weight"] == 70
+
+
+def test_main_dispatches_migration_suggest(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_suggest_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.suggest_command", _fake_suggest_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "migration", "suggest"])
+    cli_main.main()
+    assert captured["config"] == ""
+
+
+def test_main_dispatches_approval_list(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_approval_list_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.approval_list_command", _fake_approval_list_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "approval", "list", "--status", "pending"])
+    cli_main.main()
+    assert captured["status"] == "pending"
+
+
+def test_main_dispatches_approval_approve(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_approval_approve_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.approval_approve_command", _fake_approval_approve_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "approval", "approve", "req-1", "--approver", "ops-a"])
+    cli_main.main()
+    assert captured["request_id"] == "req-1"
+    assert captured["approver"] == "ops-a"

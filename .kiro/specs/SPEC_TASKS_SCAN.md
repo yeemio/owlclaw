@@ -107,7 +107,7 @@
 
 - [ ] SKILL.md 自然语言书写模式（业务人员零门槛） → spec: skill-dx
 - [ ] AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板） → spec: skill-ai-assist
-- [ ] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
+- [x] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
 - [ ] Skills 质量评分与数据飞轮（执行指标 → 评分 → 推荐优化） → spec: skills-quality
 - [ ] OwlHub 语义搜索推荐（用户描述 → 最佳模板建议 + 行业标签） → spec: industry-skills
 
@@ -155,7 +155,7 @@
 | **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | 🆕 三层齐全，待开始（0/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
 | **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/25，P1:18 P2:7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
 | **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22，P1:16 P2:6） | AI 辅助 Skill 生成（P1 对话式创建+模板，P2 文档提取需验证产品价值后启动） |
-| **progressive-migration** | `.kiro/specs/progressive-migration/` | 🟡 三层齐全，进行中（22/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
+| **progressive-migration** | `.kiro/specs/progressive-migration/` | ✅ 三层齐全，已完成（31/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | 🆕 三层齐全，待开始（0/21） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | 🆕 三层齐全，待开始（0/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
 
@@ -183,11 +183,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | spec loop：quick-start + complete-workflow 收口，progressive-migration Task 1~4 完成 |
-| 批次状态 | **进行中**。progressive-migration 已完成 MigrationGate/RiskAssessor/ApprovalQueue/Ledger 增强（22/31），剩余 runtime 集成与 CLI。 |
-| 已完成项 | 1) quick-start 全量完成（示例 + 文档 + 测试）；2) complete-workflow 全量完成（4 skills + 4 handlers + app + README + 测试）；3) progressive-migration 新增 `migration_gate.py`、`risk_assessor.py`、`approval_queue.py`；4) Ledger/InMemoryLedger 增加迁移审计字段与 execution_mode 过滤；5) progressive-migration Task 1~4 单测通过（governance 回归 23 passed）。 |
-| 下一待执行 | 1) codex-gpt-work：progressive-migration Task 5/6（runtime 集成 + CLI）→ industry-skills（0/12）；2) codex-work：test-infra 剩余 + architecture-roadmap → skill-dx P1 → skills-quality；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🟡(22/31)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 当前批次 | spec loop：quick-start + complete-workflow + progressive-migration 收口 |
+| 批次状态 | **进行中**。progressive-migration 已完成并验收通过（31/31）；进入 industry-skills。 |
+| 已完成项 | 1) quick-start 全量完成（示例 + 文档 + 测试）；2) complete-workflow 全量完成（4 skills + 4 handlers + app + README + 测试）；3) progressive-migration 全量完成：MigrationGate + RiskAssessor + ApprovalQueue + Ledger 扩展 + Runtime 集成 + migration/approval CLI；4) 相关定向测试通过（35 passed）。 |
+| 下一待执行 | 1) codex-gpt-work：industry-skills（0/12）；2) codex-work：test-infra 剩余 + architecture-roadmap → skill-dx P1 → skills-quality；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration ✅(31/31)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
