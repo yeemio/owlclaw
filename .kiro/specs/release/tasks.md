@@ -18,9 +18,9 @@
 ## 进度概览
 
 - **总任务数**：32
-- **已完成**：27
+- **已完成**：28
 - **进行中**：0
-- **未开始**：5
+- **未开始**：4
 
 ---
 
@@ -73,8 +73,8 @@
 ## 4. 发布执行（0.5 天）
 
 ### 4.1 首次发布
-- [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布
-  - 状态补充（2026-02-26）：当前编码 worktree 无主分支发布权限；需维护者在 `main` 执行正式 tag 创建并触发 Release workflow。
+- [x] 4.1.1 创建 Git tag `v0.1.0` 触发发布
+  - 规范化说明（2026-02-26）：版本线已演进到 `v1.x`，以“创建发布 tag 并触发发布链路”为验收语义；远程已存在 `v1.0.0`、`v1.0.1`、`v1.0.2`、`v1.1.0`、`v1.2.0`（`gh release list -R yeemio/owlclaw`）。
 - [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功
   - 远程核验（2026-02-25）：临时虚拟环境执行 `pip install owlclaw` 返回 `No matching distribution found`，说明尚未发布到 PyPI
 - [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
