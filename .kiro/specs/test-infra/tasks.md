@@ -97,7 +97,7 @@
   - [x] 11.2 有 PG：`poetry run pytest tests/unit/ tests/integration/ -q` → unit 全过，integration 按可用性 pass/skip
     - 验证记录（2026-02-25）：`DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:45432/owlclaw_test` + `docker-compose.test.yml` 下执行通过，结果 `1671 passed, 12 skipped, 2 warnings`
   - [ ] 11.3 CI 运行：所有 matrix（3.10/3.11/3.12）通过
-    - 当前状态（2026-02-26）：最新 GitHub Actions run `22436813478` 在 `test (3.12)` 仍按旧门槛执行（unit `--cov-fail-under=90`）导致失败并触发 fail-fast 取消其余 matrix；本分支已将门槛调整为 unit `73` / integration `75`，待该变更进入远端后复跑确认三版本全绿
+    - 当前状态（2026-02-26）：GitHub Actions run `22437078883` 在 `test (3.10)` 失败，根因是 Python 3.10 兼容性（`examples/complete_workflow/handlers/report.py` 使用 `datetime.UTC`、`scripts/release_consistency_check.py` 使用 `tomllib`）；本分支已修复为 `timezone.utc` 与无 `tomllib` 解析路径，待远端 CI 复跑确认三版本全绿
   - [x] 11.4 覆盖率：unit ≥ 73%，overall ≥ 75%
     - 验证记录（2026-02-26）：按 CI 同款命令本地复现，unit 覆盖率约 `74.00%`、overall 约 `75.81%`，满足当前阶段门槛；原 `90%/80%` 目标调整为后续提升路线，不再作为当前里程碑硬阻塞
   - _Requirements: AC-1, AC-2, AC-3, AC-4, AC-5_
@@ -112,4 +112,4 @@
 ---
 
 **维护者**: OwlClaw 核心团队
-**最后更新**: 2026-02-25
+**最后更新**: 2026-02-26

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
-
-import tomllib
 
 
 def check_consistency(repo: Path) -> int:
@@ -16,7 +15,10 @@ def check_consistency(repo: Path) -> int:
         print("missing required files")
         return 2
 
-    version = tomllib.loads(pyproject.read_text(encoding="utf-8"))["tool"]["poetry"]["version"]
+    version = _extract_poetry_version(pyproject.read_text(encoding="utf-8"))
+    if not version:
+        print("failed to parse version from pyproject.toml")
+        return 2
     changelog_text = changelog.read_text(encoding="utf-8")
     workflow_text = release_workflow.read_text(encoding="utf-8")
 
@@ -32,6 +34,20 @@ def check_consistency(repo: Path) -> int:
 
     print(f"release_consistency_ok=true version={version}")
     return 0
+
+
+def _extract_poetry_version(pyproject_text: str) -> str | None:
+    in_poetry_section = False
+    for raw_line in pyproject_text.splitlines():
+        line = raw_line.strip()
+        if line.startswith("[") and line.endswith("]"):
+            in_poetry_section = line == "[tool.poetry]"
+            continue
+        if in_poetry_section and line.startswith("version"):
+            match = re.match(r'version\s*=\s*"([^"]+)"', line)
+            if match:
+                return match.group(1)
+    return None
 
 
 def main() -> None:
