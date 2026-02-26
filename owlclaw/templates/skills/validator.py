@@ -11,6 +11,7 @@ import yaml  # type: ignore[import-untyped]
 from croniter import croniter  # type: ignore[import-untyped]
 from jinja2 import Environment
 
+from owlclaw.capabilities.tool_schema import extract_tools_schema
 from owlclaw.templates.skills.models import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -197,7 +198,7 @@ class TemplateValidator:
             )
             return errors
         errors.extend(self._validate_frontmatter(frontmatter))
-        errors.extend(self._validate_body(body))
+        errors.extend(self._validate_body(body, frontmatter))
         return errors
 
     def _parse_skill_file(self, content: str) -> tuple[dict[str, Any], str]:
@@ -377,7 +378,7 @@ class TemplateValidator:
 
         return errors
 
-    def _validate_body(self, body: str) -> list[ValidationError]:
+    def _validate_body(self, body: str, frontmatter: dict[str, Any]) -> list[ValidationError]:
         """Validate Markdown body."""
         errors: list[ValidationError] = []
         if not body.strip():
@@ -405,7 +406,30 @@ class TemplateValidator:
                     severity="error",
                 )
             )
+        declared_tools = self._extract_tools_from_body(body)
+        if declared_tools:
+            tools_schema, _tool_errors = extract_tools_schema(frontmatter)
+            known_tools = {name for name in tools_schema if isinstance(name, str)}
+            missing = sorted(tool for tool in declared_tools if tool not in known_tools)
+            if missing:
+                errors.append(
+                    ValidationError(
+                        field="body.tools",
+                        message=f"Referenced tools missing from frontmatter tools schema: {', '.join(missing)}",
+                        severity="warning",
+                    )
+                )
         return errors
+
+    @staticmethod
+    def _extract_tools_from_body(body: str) -> set[str]:
+        tools: set[str] = set()
+        for line in body.splitlines():
+            stripped = line.strip()
+            match = re.match(r"^[-*]\s*`?([a-zA-Z0-9_-]+)`?\(", stripped)
+            if match:
+                tools.add(match.group(1))
+        return tools
 
     def _validate_trigger_syntax(self, trigger: str) -> bool:
         """Check if trigger matches supported syntax (cron/webhook/queue)."""

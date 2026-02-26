@@ -104,6 +104,12 @@ def test_skill_validate_non_skill_file_exits_with_error(tmp_path):
     assert "file is not skill.md" in result.output.lower()
 
 
+def test_skill_list_templates_command(tmp_path):
+    result = runner.invoke(skill_app, ["list-templates"])
+    assert result.exit_code == 0
+    assert "inventory-monitor" in result.output
+
+
 def test_skill_parse_outputs_resolved_metadata(tmp_path):
     skill_dir = tmp_path / "nl-parse"
     skill_dir.mkdir()
@@ -122,6 +128,23 @@ description: 每天早上 9 点巡检
     assert '"name": "nl-parse"' in result.output
     assert '"parse_mode": "natural_language"' in result.output
     assert '"trigger_config"' in result.output
+
+
+def test_skill_validate_warns_on_ambiguous_rules(tmp_path):
+    (tmp_path / "ambiguous").mkdir()
+    (tmp_path / "ambiguous" / "SKILL.md").write_text(
+        """---
+name: ambiguous
+description: 每天检查库存
+---
+# Rule
+尽快处理异常并给出合理建议
+""",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["validate", str(tmp_path / "ambiguous")])
+    assert result.exit_code == 0
+    assert "ambiguous business rule wording" in result.output.lower()
 
 
 def test_skill_validate_binding_passes_with_prerequisites_env_declared(tmp_path, monkeypatch):

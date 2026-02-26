@@ -149,6 +149,16 @@ def test_main_skill_init_help_uses_plain_help(monkeypatch, capsys) -> None:
     assert "Usage: owlclaw skill init [OPTIONS]" in out
 
 
+def test_main_skill_create_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "create", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill create [OPTIONS]" in out
+
+
 def test_main_skill_without_subcommand_uses_plain_help(monkeypatch, capsys) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
     monkeypatch.setattr("sys.argv", ["owlclaw", "skill"])
@@ -170,6 +180,67 @@ def test_main_skill_search_help_uses_plain_help(monkeypatch, capsys) -> None:
     out = capsys.readouterr().out
     assert "Usage: owlclaw skill search [OPTIONS]" in out
     assert "--quiet" in out
+
+
+def test_main_dispatches_skill_create(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_create_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.skill_create.create_command", _fake_create_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "create", "--interactive", "--output", "skills"])
+    cli_main.main()
+    assert captured["interactive"] is True
+    assert captured["output"] == "skills"
+
+
+def test_main_skill_create_from_template_generates_file(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "skill",
+            "create",
+            "--from-template",
+            "inventory-monitor",
+            "--output",
+            str(tmp_path),
+        ],
+    )
+    cli_main.main()
+    generated = tmp_path / "inventory-monitor" / "SKILL.md"
+    assert generated.exists()
+
+
+def test_main_skill_ai_assist_end_to_end_create_validate_parse(monkeypatch, tmp_path, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "skill",
+            "create",
+            "--from-template",
+            "inventory-monitor",
+            "--output",
+            str(tmp_path),
+        ],
+    )
+    cli_main.main()
+
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "validate", str(tmp_path)])
+    cli_main.main()
+    validate_out = capsys.readouterr().out
+    assert "Validated" in validate_out
+
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "parse", str(tmp_path)])
+    cli_main.main()
+    parse_out = capsys.readouterr().out
+    assert '"name": "inventory-monitor"' in parse_out
 
 
 def test_main_dispatches_skill_parse(monkeypatch, tmp_path) -> None:

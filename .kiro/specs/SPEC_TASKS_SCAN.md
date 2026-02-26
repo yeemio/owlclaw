@@ -154,7 +154,7 @@
 | **complete-workflow** | `.kiro/specs/complete-workflow/` | ✅ 三层齐全，已完成（18/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
 | **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | ✅ 三层齐全，已完成（13/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
 | **skill-dx** | `.kiro/specs/skill-dx/` | 🟡 三层齐全，进行中（18/25，P1:18/18 P2:0/7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
-| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22，P1:16 P2:6） | AI 辅助 Skill 生成（P1 对话式创建+模板，P2 文档提取需验证产品价值后启动） |
+| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🟡 三层齐全，进行中（22/28，P1:22/22 P2:0/6） | AI 辅助 Skill 生成（P1 对话式创建+模板已完成，P2 文档提取需验证产品价值后启动） |
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | 🟡 三层齐全，进行中（22/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | 🆕 三层齐全，待开始（0/21） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | 🆕 三层齐全，待开始（0/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
@@ -183,11 +183,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | review-work 审校循环：APPROVE 并合并 codex-work + codex-gpt-work 新增批次 |
-| 批次状态 | **进行中**。两编码分支最新提交已完成审校与目标测试验收；等待主 worktree 合并 review-work。 |
-| 已完成项 | 1) 审校并合并 codex-work：architecture-roadmap ✅ + skill-dx P1（18/25）落地；2) 审校并合并 codex-gpt-work：quick-start ✅(13/13)、complete-workflow ✅(18/18)、progressive-migration 推进至 22/31；3) 目标测试验收通过：skill-dx/cli 相关 `98 passed`，quick-start/complete-workflow/governance 相关 `36 passed`；4) `SPEC_TASKS_SCAN` 冲突已按最新事实口径统一；5) 合并后类型修复完成（`approval_queue` 时区 API + `skill_parse` 返回类型），并通过 `ruff`/`mypy` 与回归测试 `59 passed`。 |
-| 下一待执行 | 1) codex-work：test-infra 剩余（4.2/11.1/11.3/11.4）→ skill-ai-assist P1（依赖已满足）→ skills-quality；2) codex-gpt-work：progressive-migration Task 5/6（runtime 集成 + CLI）→ industry-skills；3) release + owlhub 外部凭据（人工）。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🟡(22/31)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 当前批次 | review-work 审校循环：审校并合并 codex-work skill-ai-assist P1 提交 |
+| 批次状态 | **进行中**。codex-work 新增提交（skill-ai-assist P1）已合并待验收；codex-gpt-work 新增提交待审校。 |
+| 已完成项 | 1) 历史审校合并保持有效：architecture-roadmap ✅、skill-dx P1（18/25）、quick-start ✅(13/13)、complete-workflow ✅(18/18)、progressive-migration（22/31）；2) 合并后类型修复保持有效（`approval_queue` 时区 API + `skill_parse` 返回类型）；3) 本轮合并 codex-work 新提交：skill-ai-assist P1 收口（22/28，P1:22/22），覆盖 `skill create` / `list-templates` / 校验增强与对应测试。 |
+| 下一待执行 | 1) 执行 codex-work 新提交定向验收并给出 APPROVE/FIX_NEEDED；2) 审校并合并 codex-gpt-work 新提交（progressive-migration Task 5/6）→ 运行目标测试；3) 完成后统一更新 checkpoint 并等待主 worktree 合并。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration 🟡(22/31)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
