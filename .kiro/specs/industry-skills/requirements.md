@@ -1,98 +1,88 @@
-# 行业 Skills 包 — 需求文档
+# OwlHub 语义搜索推荐 — 需求文档
 
-> **Spec**: industry-skills
+> **Spec**: industry-skills（已从"行业 Skills 包"降级为"搜索推荐增强"）
 > **创建日期**: 2026-02-25
-> **目标**: 为 3-5 个行业提供开箱即用的 Skills 包，作为 OwlHub 生态飞轮的启动燃料
-> **关联**: `docs/POSITIONING.md` §八 生态飞轮第 2 层
+> **调整日期**: 2026-02-25
+> **调整原因**: 自编行业 Skills 缺乏真实业务场景验证，价值存疑。真正有价值的行业 Skills 只能来自真实用户实践。OwlClaw 应做的是：当用户描述需求时，从 OwlHub 已有 Skills + 模板中推荐最匹配的起点。
+> **关联**: `docs/POSITIONING.md` §八 生态飞轮
 
 ---
 
 ## 背景
 
-POSITIONING.md 承诺的生态飞轮第 2 层：
-
-> "用户发布 Skills → OwlHub 积累 → 同行业复用 → 接入门槛持续降低"
-
-飞轮需要启动燃料——如果 OwlHub 上空空如也，没有用户会来。skill-templates spec 已完成了模板框架（5 类通用模板），但模板是骨架，不是可直接使用的 Skills。行业 Skills 包是**带 Declarative Binding、带业务规则、带触发配置的完整 SKILL.md 集合**，用户 `owlclaw skill install` 后配置连接信息即可使用。
+OwlHub 已有模板库（skill-templates spec，5 类通用模板）和 Skills 索引（owlhub spec），但搜索能力仅限关键词匹配。用户描述"我想让系统每天检查库存"时，应该能直接推荐最匹配的模板作为起点，而不是让用户自己翻目录。
 
 ## 功能需求
 
-### FR-1: 行业覆盖
+### FR-1: 语义搜索增强
 
-首批覆盖 3 个行业，每个行业 3-5 个 Skills：
-
-**零售/电商**：
-- 库存预警（低库存检测 + 补货建议）
-- 订单异常检测（超时/退货率异常/大额订单审核）
-- 促销效果监控（销量对比 + ROI 计算）
-
-**制造业**：
-- 设备维护预警（基于运行时间/故障率的预测性维护）
-- 生产排程优化（订单优先级 + 产能匹配）
-- 质检异常检测（不良率趋势 + 根因分析触发）
-
-**金融/财务**：
-- 应收账款催收（账龄分析 + 催收策略 + 升级规则）
-- 费用报销审核（合规检查 + 异常检测 + 审批路由）
-- 现金流预警（余额趋势 + 大额支出预警）
-
-### FR-2: Skills 包结构
-
-每个行业 Skills 包是一个目录：
-
-```
-owlhub/industry/retail/
-├── README.md                           # 行业包说明
-├── inventory-alert/
-│   ├── SKILL.md                        # 完整的自然语言 + owlclaw 扩展
-│   └── BINDING_TEMPLATE.yaml           # 连接模板（用户填入自己的 endpoint）
-├── order-anomaly/
-│   ├── SKILL.md
-│   └── BINDING_TEMPLATE.yaml
-└── promotion-monitor/
-    ├── SKILL.md
-    └── BINDING_TEMPLATE.yaml
-```
-
-### FR-3: 安装与配置流程
+增强 `owlclaw skill search` 命令，支持自然语言描述匹配：
 
 ```bash
-# 浏览行业 Skills
-owlclaw skill search --industry retail
+# 关键词搜索（现有）
+owlclaw skill search inventory
 
-# 安装整个行业包
-owlclaw skill install owlhub/industry/retail
-
-# 配置连接信息
-owlclaw skill configure inventory-alert --endpoint https://erp.company.com/api/v3
+# 语义搜索（新增）
+owlclaw skill search --query "我想让系统每天检查库存，低于安全线时提醒我"
 ```
 
-### FR-4: SKILL.md 质量标准
+语义搜索基于 LLM embedding 相似度，从 OwlHub index + 本地模板库中匹配。
 
-每个行业 Skill 必须满足：
-- 自然语言描述清晰（业务人员可读懂）
-- 包含 `owlclaw:` 扩展字段（触发配置 + binding 声明）
-- 包含至少 3 条业务规则
-- 包含异常处理规则（数据缺失、服务不可用时的降级策略）
-- 通过 `owlclaw skill validate` 校验
+### FR-2: 推荐结果排序
 
-### FR-5: 文档与示例
+搜索结果按相关度排序，展示：
+- Skill 名称 + 描述
+- 匹配度评分
+- 来源（OwlHub / 本地模板）
+- 一键安装命令
 
-每个行业包附带：
-- README.md：行业背景 + 使用场景 + 安装步骤
-- 配置示例：常见 ERP/CRM 的连接配置模板
-- 效果预期：Agent 启用后的预期业务价值
+### FR-3: 行业标签体系
+
+为 OwlHub 的 Skills 和模板增加行业标签（`industry` 字段）：
+
+```yaml
+# SKILL.md frontmatter
+---
+name: inventory-monitor
+industry: retail
+tags: [monitoring, inventory, alert]
+---
+```
+
+支持按行业过滤：
+
+```bash
+owlclaw skill search --industry retail
+owlclaw skill search --industry manufacturing --query "设备维护"
+```
+
+### FR-4: 包格式规范（为社区贡献做准备）
+
+定义 `package.yaml` 格式规范，为未来社区贡献的行业 Skills 包提供标准结构：
+
+```yaml
+name: retail-skills
+version: 1.0.0
+industry: retail
+description: 零售/电商行业 Agent Skills 包
+skills:
+  - inventory-alert
+  - order-anomaly
+requires:
+  owlclaw: ">=1.0.0"
+```
+
+不自编行业 Skills 内容，仅定义格式规范和安装流程。
 
 ## 非功能需求
 
-- Skills 包遵循 Agent Skills 规范（agentskills.io）
-- Binding 模板使用 `${ENV_VAR}` 引用凭据，不硬编码
-- 所有 Skills 可在 Lite Mode 下加载（mock binding）
+- 语义搜索的 LLM embedding 调用应有缓存（index 不变则不重新计算）
+- 搜索延迟 < 3 秒（含 LLM 调用）
+- 无 LLM 时降级为关键词搜索
 
 ## 验收标准
 
-1. 3 个行业、每个行业至少 3 个 Skills，共 9+ 个完整 SKILL.md
-2. 所有 Skills 通过 `owlclaw skill validate` 校验
-3. `owlclaw skill install` 可安装行业包
-4. 每个 Skill 在 Lite Mode 下可加载并被 Agent 识别
-5. 行业包 README 清晰可读
+1. `owlclaw skill search --query` 可返回语义匹配结果
+2. `owlclaw skill search --industry` 可按行业过滤
+3. `package.yaml` 格式规范文档化
+4. 现有关键词搜索行为不变（回归测试通过）
