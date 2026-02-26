@@ -183,10 +183,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | review-work 审校循环：吸收编码分支修复 + 同步 Phase 6 文档基线 |
-| 批次状态 | **进行中**。已完成审校侧修复与验收，主线 spec 已对齐到最新分配语义。 |
-| 已完成项 | 1) 吸收并验证 test-infra 相关修复（`conftest NullPool + rollback guard`、Hatchet 无效 token skip、validator/frontmatter JSON 化、smoke timeout 放宽）；2) 修复 `test_integration_fixtures` 的 `pytest-asyncio` 作用域冲突；3) 目标验证通过：`38 passed, 6 skipped`；4) release 阻塞证据补齐到 runbook/tasks，并同步 Phase 6 新 spec 口径（含 `industry-skills` 降级为搜索推荐场景）；5) 常规审校完成：`ruff check .`/`mypy owlclaw/` 清零，`test_app*` 相关单测 `31 passed`。 |
-| 下一待执行 | 1) 主 worktree 合并 review-work 并同步各子 worktree；2) codex-work 继续 test-infra Task 4.2/11.1/11.3/11.4 与 architecture-roadmap；3) codex-gpt-work 推进 quick-start + complete-workflow；4) release + owlhub 外部凭据动作。 |
+| 当前批次 | 统筹轮次：merge review-work + 同步 + Phase 6 分配 |
+| 批次状态 | **统筹完成**。review-work 已合并到 main（fast-forward，24 files），所有 worktree 已同步到最新 main。Phase 6 spec 已正式分配到编码 worktree。 |
+| 已完成项 | 1) merge review-work → main（fast-forward）；2) 同步 3 个子 worktree（codex-work stash 冲突已解决）；3) 更新 WORKTREE_ASSIGNMENTS 分配计划（Phase 6 正式分配）；4) skill-dx/skill-ai-assist 分期策略 + 文件路径引用修正。 |
+| 下一待执行 | 1) codex-work：test-infra 剩余 + architecture-roadmap → skill-dx P1 → skills-quality；2) codex-gpt-work：quick-start + complete-workflow → progressive-migration → industry-skills；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
 | 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |

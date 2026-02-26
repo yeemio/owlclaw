@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-02-25
+> **最后更新**: 2026-02-26
 
 ---
 
@@ -175,7 +175,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 1. test-infra(7/11) 剩余 Task 4/6/9.4/11（Docker/CI 验收为主）
 2. architecture-roadmap(0/13) — 架构演进路线文档（纯文档 spec）
 
-**下一任务（当前完成后）**：无。
+**下一任务（当前完成后）**：
+1. **skill-dx P1**（18 tasks）— SKILL.md 自然语言触发解析+缓存。涉及 `owlclaw/capabilities/` 新增文件。
+2. **skills-quality**（21 tasks）— Skills 质量评分。涉及 `owlclaw/governance/` 新增文件。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -214,7 +216,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 3. owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）
 4. release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）
 
-**下一任务（当前完成后）**：项目进入发布阶段，等人工提供 PyPI token。
+**下一任务（当前完成后）**：
+1. **progressive-migration**（25 tasks）— 渐进式迁移 migration_weight。涉及 `owlclaw/governance/` 新增文件。
+2. **industry-skills**（12 tasks）— OwlHub 语义搜索推荐。涉及 `owlclaw/owlhub/` + `owlclaw/cli/skill.py`。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -268,6 +272,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-25 | repo-hygiene ✅(37/37)：.editorconfig + CODEOWNERS + docs/README.md；fix(test) skills_context_cache_hits；所有 worktree 同步 | 统筹轮次：repo-hygiene backlog 收口 |
 | 2026-02-25 | Phase 5 落地收尾：Lite Mode 核心代码完成（主 worktree）；新建 quick-start/complete-workflow/architecture-roadmap spec；codex-gpt-work→quick-start+complete-workflow；codex-work→architecture-roadmap | 架构重塑：落地差距收尾 |
 | 2026-02-25 | Phase 6 差异化能力：新建 skill-dx/skill-ai-assist/progressive-migration spec（三层齐全）；POSITIONING.md 规范化 v1.1.0 + 文档关联建立 | 补齐战略讨论中识别的缺失 spec |
+| 2026-02-25 | Phase 6 补充：新建 skills-quality/industry-skills spec；skill-dx/skill-ai-assist 分期策略；industry-skills 降级为搜索推荐 | 产品策略审计 + 技术成熟度评估 |
+| 2026-02-26 | 统筹：merge review-work → main；同步所有 worktree；分配 Phase 6 计划：codex-work→skill-dx P1+skills-quality，codex-gpt-work→progressive-migration+industry-skills | 统筹轮次：Phase 6 正式分配 |
 
 ---
 
@@ -283,14 +289,16 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 - codex-work → test-infra（继续） + architecture-roadmap（新增）
 - codex-gpt-work → quick-start + complete-workflow（新增） + owlhub/release 收尾
 
-**Phase 6 差异化能力 + 生态 spec（待分配）**：
+**Phase 6 差异化能力 + 生态 spec（已分配计划）**：
 
-| Spec | Tasks | 依赖 | 建议分配 |
+| Spec | Tasks | 依赖 | 分配计划 |
 |------|-------|------|---------|
-| skill-dx（0/24） | SKILL.md 自然语言书写 | 无 | codex-work（architecture-roadmap 后） |
-| progressive-migration（0/25） | 渐进式迁移 | 无 | codex-gpt-work（quick-start 后） |
-| skills-quality（0/21） | 质量评分 + 数据飞轮 | Ledger 已完成 | 最先空闲 worktree |
-| industry-skills（0/23） | 行业 Skills 包 | owlhub + skill-templates 已完成 | 最先空闲 worktree |
-| skill-ai-assist（0/22） | AI 辅助 Skill 生成 | 依赖 skill-dx | skill-dx 完成后分配 |
+| skill-dx P1（0/18） | 触发解析+缓存 | 无 | codex-work（architecture-roadmap 后） |
+| skill-dx P2（0/7） | 工具匹配 | P1 + 用户反馈 | 暂不分配，等 P1 上线 |
+| progressive-migration（0/25） | 渐进式迁移 | 无 | codex-gpt-work（quick-start/complete-workflow 后） |
+| skills-quality（0/21） | 质量评分 + 数据飞轮 | Ledger 已完成 | codex-work（skill-dx P1 后） |
+| industry-skills（0/12） | OwlHub 语义搜索推荐 | owlhub 已完成 | codex-gpt-work（progressive-migration 后） |
+| skill-ai-assist P1（0/16） | 对话式创建+模板 | 依赖 skill-dx P1 | skill-dx P1 完成后分配 |
+| skill-ai-assist P2（0/6） | 文档提取 | P1 + 产品验证 | 暂不分配，等 P1 上线 |
 
-分配优先级：skill-dx > progressive-migration > skills-quality > industry-skills > skill-ai-assist
+分配优先级：skill-dx P1 > progressive-migration > skills-quality > industry-skills > skill-ai-assist P1
