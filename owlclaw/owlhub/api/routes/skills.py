@@ -73,7 +73,7 @@ def search_skills(
     normalized_query = query.strip().lower()
 
     items: list[SkillSearchItem] = []
-    sort_values: dict[tuple[str, str, str], int | str] = {}
+    sort_values: dict[tuple[str, str, str], int | float | str] = {}
     for entry in _iter_skills():
         manifest = entry.get("manifest", {})
         name = str(manifest.get("name", "")).strip()
@@ -100,7 +100,11 @@ def search_skills(
         elif sort_by == "updated_at":
             sort_values[skill_key] = str(entry.get("updated_at", ""))
         stats_payload = entry.get("statistics", {})
-        quality_score = float(stats_payload.get("quality_score")) if isinstance(stats_payload, dict) and isinstance(stats_payload.get("quality_score"), int | float) else None
+        quality_score: float | None = None
+        if isinstance(stats_payload, dict):
+            raw_quality = stats_payload.get("quality_score")
+            if isinstance(raw_quality, int | float):
+                quality_score = float(raw_quality)
         items.append(
             SkillSearchItem(
                 name=name,
@@ -266,16 +270,19 @@ def publish_skill(
     skills = index_data.get("skills", [])
     if not isinstance(skills, list):
         skills = []
-    entry = {
+    statistics_payload: dict[str, Any] = (
+        cast(dict[str, Any], metadata_dict.get("statistics", {}))
+        if isinstance(metadata_dict.get("statistics", {}), dict)
+        else {"total_downloads": 0, "downloads_last_30d": 0}
+    )
+    entry: dict[str, Any] = {
         "manifest": manifest_payload,
         "version_state": state,
         "published_at": now,
         "updated_at": now,
         "download_url": download_url,
         "checksum": checksum,
-        "statistics": metadata_dict.get("statistics", {})
-        if isinstance(metadata_dict.get("statistics", {}), dict)
-        else {"total_downloads": 0, "downloads_last_30d": 0},
+        "statistics": statistics_payload,
     }
     quality_payload = metadata_dict.get("quality", {})
     if isinstance(quality_payload, dict):
