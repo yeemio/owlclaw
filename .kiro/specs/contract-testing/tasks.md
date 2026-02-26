@@ -7,15 +7,15 @@
 ## 进度概览
 
 - **总任务数**：19
-- **已完成**：0
+- **已完成**：3
 - **进行中**：0
-- **未开始**：19
+- **未开始**：16
 
 ## 1. 目录与基线
 
-- [ ] 1.1 建立 `tests/contracts/api`
-- [ ] 1.2 建立 `tests/contracts/mcp`
-- [ ] 1.3 建立 `scripts/contract_diff`
+- [x] 1.1 建立 `tests/contracts/api`
+- [x] 1.2 建立 `tests/contracts/mcp`
+- [x] 1.3 建立 `scripts/contract_diff`
 
 ## 2. API 契约检测
 
