@@ -197,6 +197,8 @@ OwlClaw 不发明新格式，复用已有的开放标准：
 
 ## 八、增长飞轮
 
+增长飞轮对应的中长期技术承接已在 [docs/ARCHITECTURE_ANALYSIS.md](./ARCHITECTURE_ANALYSIS.md) §10 明确（Multi-Agent / 自我进化 / 可解释性 / OwlHub 安全治理 / 性能与规模）。
+
 ```
 业务人员写 SKILL.md（纯自然语言描述业务需求）
         │
@@ -222,7 +224,7 @@ OwlHub 积累行业 Skills 模板 → 同行业企业直接复用
 
 ## 九、架构演进方向
 
-> 详见 `docs/ARCHITECTURE_ANALYSIS.md` §10（待编写，spec: architecture-roadmap）
+> 详见 `docs/ARCHITECTURE_ANALYSIS.md` §10（spec: architecture-roadmap，已落地）
 
 | 方向 | 阶段 | 与现有架构的衔接 |
 |------|------|----------------|
