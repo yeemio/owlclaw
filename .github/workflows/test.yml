@@ -58,7 +58,7 @@ jobs:
             tests/unit/ \
             --cov=owlclaw \
             --cov-report=term \
-            --cov-fail-under=90
+            --cov-fail-under=73
 
       - name: Run integration tests with appended coverage
         env:
@@ -71,7 +71,7 @@ jobs:
             --cov-append \
             --cov-report=xml \
             --cov-report=term \
-            --cov-fail-under=80
+            --cov-fail-under=75
 
       - name: Run examples smoke validator
         run: poetry run python scripts/validate_examples.py

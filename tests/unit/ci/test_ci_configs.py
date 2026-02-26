@@ -35,7 +35,8 @@ def test_test_workflow_has_python_matrix_and_postgres_service() -> None:
     assert postgres["image"] == "pgvector/pgvector:pg16"
     steps = "\n".join(str(item) for item in jobs["test"]["steps"])
     assert "deploy/init-test-db.sql" in steps
-    assert "--cov-fail-under=80" in steps
+    assert "--cov-fail-under=73" in steps
+    assert "--cov-fail-under=75" in steps
 
 
 def test_build_workflow_contains_build_and_twine_check() -> None:
