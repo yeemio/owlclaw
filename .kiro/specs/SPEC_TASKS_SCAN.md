@@ -183,12 +183,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | review-work 审校循环：合并 codex-work 新增 skills-quality 提交 |
-| 批次状态 | **进行中**。此前 APPROVE 结果保持有效；新增提交（skills-quality P1~P5）已合并待验收。 |
-| 已完成项 | 1) 历史审校合并保持有效：quick-start ✅(13/13)、complete-workflow ✅(18/18)、architecture-roadmap ✅(13/13)、skill-dx P1（18/25）、skill-ai-assist P1（22/28）、progressive-migration ✅(31/31)、industry-skills ✅(12/12)；2) 合并后类型修复保持有效（`approval_queue` 时区 API + `skill_parse` 返回类型）；3) 新增合并 skills-quality：`quality_aggregator.py`、`quality_store.py`（含 Alembic `007_skill_quality_snapshots.py`）、`quality_detector.py`、`skill quality` CLI、VisibilityFilter 质量分注入与缓存（24/27）。 |
-| 下一待执行 | 1) 运行 skills-quality / governance / cli 定向测试并给出 APPROVE/FIX_NEEDED；2) 更新 checkpoint 为验收结果；3) 通知主 worktree 合并 review-work。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality 🟡(24/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) skills-quality Task 6：依赖 owlhub/industry-skills 路径联调；4) release/owlhub 余项需外部平台凭据与人工发布动作。 |
+| 当前批次 | review-work 审校循环：APPROVE skills-quality 并同步 release/owlhub 阻塞规范化 |
+| 批次状态 | **进行中（阶段性收口）**。两编码分支新增提交均已审校合并；剩余主要为外部凭据与分配约束阻塞项。 |
+| 已完成项 | 1) 审校合并保持有效：quick-start ✅(13/13)、complete-workflow ✅(18/18)、architecture-roadmap ✅(13/13)、skill-dx P1（18/25）、skill-ai-assist P1（22/28）、progressive-migration ✅(31/31)、industry-skills ✅(12/12)、skills-quality P1~P5（24/27）；2) 定向验收通过：`106 passed`（skills-quality/governance/cli），并通过 `ruff` + `mypy`；3) 同步 release/owlhub 阻塞事实到 spec：发布 secrets 缺失、生产凭据外部阻塞、Task 19 受 worktree 分配约束。 |
+| 下一待执行 | 1) 主 worktree 合并 `review-work`；2) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 并在 `main` 触发 `v0.1.0` 发布流；3) 统筹调整分配后推进 owlhub Task 19（需可改 `owlclaw/db/**` 与 `migrations/**`）；4) 编码分支继续 test-infra 与 skills-quality Task 6 联调收口。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality 🟡(24/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(25/32，外部阻塞)，owlhub 🟡(137/143，分配+外部阻塞)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) release：缺少 GitHub Secrets（`PYPI_TOKEN/TEST_PYPI_TOKEN`）与 `main` 分支发布动作；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞；3) owlhub Task 19：当前 worktree 分配禁止改动 `owlclaw/db/**` 与 `migrations/**`；4) test-infra Task 4.2/11.1/11.3/11.4 仍待达标。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

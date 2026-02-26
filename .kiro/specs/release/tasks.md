@@ -72,11 +72,13 @@
 
 ### 4.1 首次发布
 - [ ] 4.1.1 创建 Git tag `v0.1.0` 触发发布
+  - 状态补充（2026-02-26）：当前编码 worktree 无主分支发布权限；需维护者在 `main` 执行正式 tag 创建并触发 Release workflow。
 - [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功
   - 远程核验（2026-02-25）：临时虚拟环境执行 `pip install owlclaw` 返回 `No matching distribution found`，说明尚未发布到 PyPI
 - [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
   - 本地验证（2026-02-25）：`poetry run owlclaw --version` → `owlclaw 0.1.0`；`poetry run owlclaw skill list` 正常输出
 - [ ] 4.1.4 验证 GitHub Release 自动创建
+  - 状态补充（2026-02-26）：需在 4.1.1 tag 触发并完成 workflow 后核验；当前无法单独完成。
 
 ---
 
@@ -96,9 +98,11 @@
 
 ### 6.1 功能验收
 - [ ] `pip install owlclaw` 在干净环境中成功
+  - 状态补充（2026-02-26）：与 4.1.2 绑定，等待 TestPyPI/PyPI 发布成功后复验。
 - [x] `owlclaw --version` 输出正确版本
 - [x] examples/ 中至少 1 个示例可独立运行
 - [ ] GitHub Release 包含 changelog
+  - 状态补充（2026-02-26）：与 4.1.4 绑定，等待自动发布产物后复验。
 
 ### 6.2 文档验收
 - [x] README.md 英文完整
@@ -119,7 +123,7 @@
   - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
   - TestPyPI 实际发布验证
   - 生产发布 tag 与 GitHub Release 生成（需 main 分支发布流程）
-  - 本轮核验（2026-02-25）：`gh auth status` 正常；`gh workflow list` 可读；release workflow 失败点定位为凭据缺失而非仓内脚本错误
+  - 本轮核验（2026-02-26）：`gh auth status` 正常；`gh secret list -R yeemio/owlclaw` 仍无发布凭据；最近 release runs 均 failed，失败模式与 2026-02-25 一致（凭据缺失链路未解除）
 
 ---
 
