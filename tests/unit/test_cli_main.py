@@ -215,6 +215,27 @@ def test_main_skill_create_from_template_generates_file(monkeypatch, tmp_path) -
     assert generated.exists()
 
 
+def test_main_skill_create_from_doc_generates_file(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    source = tmp_path / "sop.md"
+    source.write_text("# Inventory Monitor\n每天早上9点检查库存\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "skill",
+            "create",
+            "--from-doc",
+            str(source),
+            "--output",
+            str(tmp_path),
+        ],
+    )
+    cli_main.main()
+    generated = tmp_path / "inventory-monitor" / "SKILL.md"
+    assert generated.exists()
+
+
 def test_main_skill_ai_assist_end_to_end_create_validate_parse(monkeypatch, tmp_path, capsys) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
 

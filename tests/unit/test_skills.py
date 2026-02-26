@@ -790,3 +790,48 @@ owlclaw:
     assert skill.parse_mode == "hybrid"
     assert skill.trigger_config.get("type") == "cron"
     assert skill.trigger == 'cron("0 0 * * 1")'
+
+
+def test_skills_loader_sets_resolved_tools_from_tools_schema(tmp_path):
+    skill_dir = tmp_path / "structured-tools"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: structured-tools
+description: use declared tools
+tools:
+  fetch-order:
+    description: fetch order
+    order_id: string
+  send-email:
+    description: notify user
+    email: string
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert sorted(skills[0].resolved_tools) == ["fetch-order", "send-email"]
+
+
+def test_skills_loader_matches_resolved_tools_from_available_tools_env(tmp_path, monkeypatch):
+    monkeypatch.setenv("OWLCLAW_AVAILABLE_TOOLS", "send-email,check-inventory")
+    skill_dir = tmp_path / "nl-tools"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: nl-tools
+description: 每天检查库存
+---
+# 规则
+每天早上 9 点检查库存，然后发送邮件提醒
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    assert "check-inventory" in skills[0].resolved_tools or "send-email" in skills[0].resolved_tools

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
 
 import typer
 
+from owlclaw.capabilities.skill_doc_extractor import SkillDocExtractor
 from owlclaw.capabilities.skill_creator import SkillConversationState, SkillCreatorAgent
 from owlclaw.capabilities.skills import SkillsLoader
 from owlclaw.cli.skill_templates import load_template
@@ -20,19 +20,30 @@ def _collect_capability_names(path: Path) -> list[str]:
 
 
 def create_command(
-    interactive: Annotated[bool, typer.Option("--interactive", help="Start conversational creation flow.")] = False,
-    from_template: Annotated[str, typer.Option("--from-template", help="Create skill from local template name.", is_flag=False)] = "",
-    from_doc: Annotated[str, typer.Option("--from-doc", help="Generate from business document (Phase 2).", is_flag=False)] = "",
-    output: Annotated[str, typer.Option("--output", help="Output directory for generated skill.", is_flag=False)] = "skills",
-    capabilities_path: Annotated[
-        str,
-        typer.Option("--capabilities-path", help="Path used to discover existing capabilities.", is_flag=False),
-    ] = "skills",
+    interactive: bool = typer.Option(False, "--interactive", help="Start conversational creation flow."),
+    from_template: str | None = typer.Option(None, "--from-template", help="Create skill from local template name."),
+    from_doc: str | None = typer.Option(None, "--from-doc", help="Generate from business document (markdown/text)."),
+    output: str = typer.Option("skills", "--output", help="Output directory for generated skill."),
+    capabilities_path: str = typer.Option("skills", "--capabilities-path", help="Path used to discover existing capabilities."),
 ) -> None:
     """Create SKILL.md using interactive mode or templates."""
     if from_doc:
-        typer.echo("Error: --from-doc is planned for Phase 2 and not available yet.", err=True)
-        raise typer.Exit(2)
+        extractor = SkillDocExtractor()
+        try:
+            written = extractor.generate_from_document(from_doc.strip(), output)
+        except FileNotFoundError as exc:
+            typer.echo(f"Error: {exc}", err=True)
+            raise typer.Exit(2) from exc
+        except ValueError as exc:
+            typer.echo(f"Error: {exc}", err=True)
+            raise typer.Exit(2) from exc
+        if not written:
+            typer.echo("No automatable sections found in source document.", err=True)
+            raise typer.Exit(1)
+        typer.echo(f"Generated {len(written)} skill file(s):")
+        for path in written:
+            typer.echo(f"- {path}")
+        return
 
     out_dir = Path(output).expanduser()
     out_dir.mkdir(parents=True, exist_ok=True)
