@@ -170,7 +170,7 @@
 | **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | 🟡 三层齐全，待实施（0/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
 | **protocol-governance** | `.kiro/specs/protocol-governance/` | ✅ 三层齐全，已完成（27/27） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
 | **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | 🟡 三层齐全，待实施（0/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
-| **contract-testing** | `.kiro/specs/contract-testing/` | 🟡 三层齐全，进行中（3/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
+| **contract-testing** | `.kiro/specs/contract-testing/` | 🟡 三层齐全，进行中（6/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
 | **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，待实施（0/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
 | **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，待实施（0/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 
@@ -198,11 +198,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | codex-work 循环：contract-testing 起步（Task 1.1~1.3） |
-| 批次状态 | **进行中**。`contract-testing` 已完成目录与脚本基线搭建。 |
-| 已完成项 | 1) 建立 `tests/contracts/api/` 与 `tests/contracts/mcp/`；2) 建立 `scripts/contract_diff/` 并新增包装入口 `run_contract_diff.py`（复用 `scripts/contract_diff.py`）；3) 新增结构测试 `tests/unit/test_contract_testing_structure.py`；4) 更新 `scripts/README.md` 与 `contract-testing/tasks.md`（进度 `3/19`）。 |
-| 下一待执行 | 1) 完成 `contract-testing` Task 2.1~2.3（OpenAPI diff + breaking 规则映射 + PR 门禁接入）；2) 完成 Task 3.1~3.4（MCP initialize/tools/resources/error 回归用例）；3) 跟踪 `test-infra` Task 11.3 远端复跑窗口。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing 🟡(3/19)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 当前批次 | codex-work 循环：contract-testing API 契约门禁（Task 2.1~2.3） |
+| 批次状态 | **进行中**。`contract-testing` 已完成目录基线与 API diff 门禁接入。 |
+| 已完成项 | 1) 建立 `tests/contracts/api/` 与 `tests/contracts/mcp/`；2) 建立 `scripts/contract_diff/` 并新增包装入口 `run_contract_diff.py`；3) 新增结构测试 `tests/unit/test_contract_testing_structure.py`；4) 新增 OpenAPI 契约夹具与门禁测试 `tests/contracts/api/test_openapi_contract_gate.py`（additive pass / breaking block）；5) 新增 `docs/protocol/OPENAPI_BREAKING_RULES.md`；6) 新增 PR 门禁工作流 `.github/workflows/contract-gate.yml` 并在 `test_ci_configs.py` 增加校验；7) 更新 `contract-testing/tasks.md` 进度到 `6/19`。 |
+| 下一待执行 | 1) 完成 `contract-testing` Task 3.1~3.4（MCP initialize/tools/resources/error 回归用例）；2) 完成 Task 4.1~4.3（对齐矩阵文档、映射填充、评审要求）；3) 跟踪 `test-infra` Task 11.3 远端复跑窗口。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing 🟡(6/19)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（当前策略是不新增 CI 订阅）；2) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
