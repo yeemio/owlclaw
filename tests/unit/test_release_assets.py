@@ -122,3 +122,5 @@ def test_release_workflow_supports_testpypi_and_pypi_publish_steps() -> None:
     assert "https://test.pypi.org/legacy/" in payload
     assert "Publish to PyPI" in payload
     assert "actions/attest-build-provenance@v2" in payload
+    assert "secrets.TEST_PYPI_TOKEN" not in payload
+    assert "secrets.PYPI_TOKEN" not in payload
