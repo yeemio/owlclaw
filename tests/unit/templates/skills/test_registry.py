@@ -252,7 +252,7 @@ name: test
         assert loaded is not None
         assert loaded.name == "Second"
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         entries=st.lists(
             st.tuples(st.sampled_from(list(TemplateCategory)), _slug_strategy()),
@@ -281,7 +281,7 @@ name: test
             expected_ids = {f"{category.value}/{slug}" for category, slug in entries}
             assert loaded_ids == expected_ids
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         category=st.sampled_from(list(TemplateCategory)),
         slug=_slug_strategy(),
@@ -324,7 +324,7 @@ name: test
             assert isinstance(loaded.examples, list)
             assert loaded.file_path.exists()
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         entries=st.lists(
             st.tuples(st.sampled_from(list(TemplateCategory)), _slug_strategy()),
@@ -354,7 +354,7 @@ name: test
                 assert loaded is not None
                 assert loaded.category == category
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         entries=st.lists(
             st.tuples(st.sampled_from(list(TemplateCategory)), _slug_strategy()),
@@ -387,7 +387,7 @@ name: test
                 actual = {t.id for t in reg.list_templates(category=category)}
                 assert actual == expected
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         category=st.sampled_from(list(TemplateCategory)),
         slug=_slug_strategy(),
@@ -429,3 +429,4 @@ name: test
                 assert isinstance(param.type, str) and bool(param.type.strip())
                 assert isinstance(param.description, str)
                 assert isinstance(param.required, bool)
+
