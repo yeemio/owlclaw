@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any
 
@@ -30,9 +30,9 @@ class ApprovalRequest:
     suggestion: dict[str, Any]
     reasoning: str | None
     status: ApprovalStatus = ApprovalStatus.PENDING
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-    expires_at: datetime = field(default_factory=lambda: datetime.now(UTC) + timedelta(hours=24))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(hours=24))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     approver: str | None = None
     approved_payload: dict[str, Any] | None = None
 
@@ -55,7 +55,7 @@ class InMemoryApprovalQueue:
         suggestion: dict[str, Any],
         reasoning: str | None = None,
     ) -> ApprovalRequest:
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         request = ApprovalRequest(
             id=str(uuid.uuid4()),
             tenant_id=tenant_id,
@@ -86,7 +86,7 @@ class InMemoryApprovalQueue:
         modified_payload: dict[str, Any] | None = None,
     ) -> ApprovalRequest:
         request = self._require_active(request_id)
-        request.updated_at = datetime.now(UTC)
+        request.updated_at = datetime.now(timezone.utc)
         request.approver = approver
         if modified_payload is None:
             request.status = ApprovalStatus.APPROVED
@@ -98,14 +98,14 @@ class InMemoryApprovalQueue:
 
     async def reject(self, request_id: str, *, approver: str) -> ApprovalRequest:
         request = self._require_active(request_id)
-        request.updated_at = datetime.now(UTC)
+        request.updated_at = datetime.now(timezone.utc)
         request.approver = approver
         request.status = ApprovalStatus.REJECTED
         request.approved_payload = None
         return request
 
     async def expire_pending(self) -> int:
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         count = 0
         for request in self._items.values():
             if request.status == ApprovalStatus.PENDING and request.expires_at <= now:
@@ -120,7 +120,7 @@ class InMemoryApprovalQueue:
         request = self._items[request_id]
         if request.status != ApprovalStatus.PENDING:
             raise ValueError(f"approval request is not pending: {request.status.value}")
-        if request.expires_at <= datetime.now(UTC):
+        if request.expires_at <= datetime.now(timezone.utc):
             request.status = ApprovalStatus.EXPIRED
             raise ValueError("approval request has expired")
         return request

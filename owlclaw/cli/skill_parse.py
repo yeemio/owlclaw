@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import typer
 
@@ -12,7 +12,7 @@ from owlclaw.capabilities.skills import SkillsLoader
 
 
 def _collect_payload(skill: Any) -> dict[str, Any]:
-    payload = skill.to_dict()
+    payload = cast(dict[str, Any], skill.to_dict())
     payload["file_path"] = str(skill.file_path)
     return payload
 
