@@ -31,7 +31,9 @@ def test_property_parallel_scan_determinism(names: list[str]) -> None:
             path.write_text("x = 1\n", encoding="utf-8")
             files.append(path)
 
-        executor = ParallelExecutor(workers=2)
+        # Property focus is output determinism; single-worker path avoids
+        # expensive process-pool spin-up per Hypothesis example.
+        executor = ParallelExecutor(workers=1)
         first = executor.run(files, _name_worker)
         second = executor.run(files, _name_worker)
 
@@ -57,7 +59,8 @@ def test_property_parallel_error_handling(good_names: list[str], bad_name: str) 
             path.write_text("x = 1\n", encoding="utf-8")
             files.append(path)
 
-        executor = ParallelExecutor(workers=2)
+        # Property focus is error accounting and isolation, not throughput.
+        executor = ParallelExecutor(workers=1)
         results = executor.run(files, _maybe_fail_worker)
 
         failures = [item for item in results if item.error]

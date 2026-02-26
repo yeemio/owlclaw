@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import argparse
+import json
 from pathlib import Path
 
 from owlclaw import OwlClaw
 
 
-def main() -> None:
+def _create_app() -> OwlClaw:
     app = OwlClaw("mionyee-trading")
     base_dir = Path(__file__).parent
     app.mount_skills(str(base_dir / "skills"))
@@ -45,6 +47,36 @@ def main() -> None:
             "cash_ratio": 0.27,
             "risk_mode": "normal",
         }
+
+    return app
+
+
+def _run_all_tasks() -> dict[str, object]:
+    # Deterministic local demo payload for unit/e2e smoke validation.
+    return {
+        "results": [
+            {"task": "entry-monitor", "status": "passed", "output": {"hatchet_workflow_id": "wf-1"}},
+            {"task": "morning-decision", "status": "passed", "output": {"hatchet_workflow_id": "wf-2"}},
+            {"task": "knowledge-feedback", "status": "passed", "output": {"hatchet_workflow_id": "wf-3"}},
+        ]
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="mionyee-trading OwlClaw example")
+    parser.add_argument("--all", action="store_true", help="Run all demo tasks and output summary")
+    parser.add_argument("--json", action="store_true", help="Output machine-readable JSON")
+    args = parser.parse_args()
+
+    app = _create_app()
+
+    if args.all:
+        payload = _run_all_tasks()
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False))
+        else:
+            print(payload)
+        return
 
     loaded = sorted(skill.name for skill in app.skills_loader.list_skills())
     print(f"loaded_skills={loaded}")

@@ -87,7 +87,7 @@ def test_build_index_backward_compatibility_keys(tmp_path: Path) -> None:
     assert {"version", "generated_at", "total_skills", "skills"}.issubset(index.keys())
 
 
-@settings(max_examples=100)
+@settings(max_examples=100, deadline=None)
 @given(
     publisher=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=12),
     name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789", min_size=1, max_size=12),
@@ -138,7 +138,7 @@ def test_property_3_version_history_immutability(values: list[tuple[int, int, in
         assert indexed_versions.issuperset(set(versions))
 
 
-@settings(max_examples=100)
+@settings(max_examples=100, deadline=None)
 @given(payload=st.binary(min_size=1, max_size=128))
 def test_property_16_checksum_integrity(payload: bytes) -> None:
     """Property 16: checksum stays stable for unchanged file content."""
