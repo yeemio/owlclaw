@@ -111,6 +111,10 @@
 - [x] Skills 质量评分与数据飞轮（执行指标 → 评分 → 推荐优化） → spec: skills-quality
 - [x] OwlHub 语义搜索推荐（用户描述 → 最佳模板建议 + 行业标签） → spec: industry-skills
 
+### Phase 7：协议优先（API + MCP）
+
+- [ ] Protocol-first 治理收口（统一版本策略 / 错误模型 / 兼容门禁 / Java Golden Path） → spec: protocol-first-api-mcp
+
 ---
 
 ## Spec 索引
@@ -158,6 +162,7 @@
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | ✅ 三层齐全，已完成（31/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | ✅ 三层齐全，已完成（27/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
+| **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | 🟡 三层齐全，待实施（0/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
 
 ---
 
@@ -186,7 +191,7 @@
 | 当前批次 | codex-work 循环：skill-dx P2 + skill-ai-assist P2 收口 |
 | 批次状态 | **已完成（本批次）**。skill-dx 从 18/25 收口到 25/25，skill-ai-assist 从 22/28 收口到 28/28；test-infra / release / owlhub 外部或性能阻塞保持不变。 |
 | 已完成项 | 1) 新增 `capability_matcher`（精确匹配 + embedding 相似度 + 可选 LLM function-call 复核）；2) `SkillsLoader` 集成 `resolved_tools` 自动解析（结构化 tools + 自然语言意图匹配）；3) 新增 `skill_doc_extractor` 与 `owlclaw skill create --from-doc`（Markdown/文本读取 + 批量生成）；4) 单测新增并通过：`test_capability_matcher.py`、`test_skill_doc_extractor.py`、`test_main_skill_create_from_doc_generates_file`，相关回归合计 `118 passed`。 |
-| 下一待执行 | 1) 继续 test-infra Task 4.2/11.1/11.3/11.4 收口；2) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 后重跑 release workflow 并完成 `pip install owlclaw` 验收；3) owlhub Task 40.4 外部阻塞项推进。 |
+| 下一待执行 | 1) 启动 protocol-first-api-mcp（Phase 1：协议宪法与契约门禁基线）；2) 继续 test-infra Task 4.2/11.1/11.3/11.4 收口；3) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 后重跑 release workflow 并完成 `pip install owlclaw` 验收；4) owlhub Task 40.4 外部阻塞项推进。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 串行耗时约 `163s`（2026-02-26），仍高于 `<60s`；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；4) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |

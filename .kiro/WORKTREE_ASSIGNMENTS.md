@@ -272,6 +272,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-26 | 统筹：merge review-work → main；同步所有 worktree；Phase 6 分配计划 | 统筹轮次 |
 | 2026-02-26 | Phase 6 全量分配：codex-work→skill-dx P1+skill-ai-assist P1+skills-quality；codex-gpt-work→progressive-migration+industry-skills。仅 P2（skill-dx P2/skill-ai-assist P2）暂不分配 | 一次分完，减少统筹轮次 |
 | 2026-02-26 | 启动原“暂不分配”项：codex-work 追加 skill-dx P2 + skill-ai-assist P2；codex-gpt-work 保持 release/owlhub 阻塞跟踪 | P1 能力与入口已落地，具备可执行条件 |
+| 2026-02-26 | 新增 protocol-first-api-mcp 三层 spec（0/24），待下一轮统筹分配 | 响应 API/MCP 优先战略，先固化规范与执行路径 |
 
 ---
 
@@ -296,3 +297,4 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | test-infra 剩余（9/11） | 性能与 CI 收口 | codex-work | #1 |
 | release 剩余（25/32） | 发布凭据与发布验证 | codex-gpt-work | #1（外部依赖） |
 | owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | codex-gpt-work | #2（外部依赖） |
+| protocol-first-api-mcp（0/24） | 协议优先专项（API+MCP） | 待分配 | 高优先级（建议下一轮启动） |
