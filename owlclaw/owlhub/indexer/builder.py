@@ -96,7 +96,8 @@ class IndexBuilder:
             version = str(manifest.get("version", "")).strip()
             description = str(manifest.get("description", "")).strip()
             tags = [tag for tag in manifest.get("tags", []) if isinstance(tag, str)]
-            search_text = " ".join(part for part in [name, description, " ".join(tags)] if part).strip().lower()
+            industry = str(manifest.get("industry", "")).strip()
+            search_text = " ".join(part for part in [name, description, " ".join(tags), industry] if part).strip().lower()
             index.append(
                 {
                     "id": f"{publisher}/{name}@{version}",
@@ -104,6 +105,7 @@ class IndexBuilder:
                     "publisher": publisher,
                     "version": version,
                     "tags": tags,
+                    "industry": industry,
                     "search_text": search_text,
                 }
             )

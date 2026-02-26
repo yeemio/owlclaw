@@ -48,17 +48,30 @@ class SkillHubApiClient:
         tags: list[str] | None = None,
         tag_mode: str = "and",
         include_draft: bool = False,
+        industry: str = "",
     ) -> list[SearchResult]:
         """Search skills via API when configured; fallback to static index as needed."""
         if self.mode == "index":
-            return self.index_client.search(query=query, tags=tags, tag_mode=tag_mode, include_draft=include_draft)
+            return self.index_client.search(
+                query=query,
+                tags=tags,
+                tag_mode=tag_mode,
+                include_draft=include_draft,
+                industry=industry,
+            )
         if self.api_base_url:
             try:
                 return self._search_via_api(query=query, tags=tags or [])
             except Exception:
                 if self.mode == "api":
                     raise
-        return self.index_client.search(query=query, tags=tags, tag_mode=tag_mode, include_draft=include_draft)
+        return self.index_client.search(
+            query=query,
+            tags=tags,
+            tag_mode=tag_mode,
+            include_draft=include_draft,
+            industry=industry,
+        )
 
     def install(
         self,

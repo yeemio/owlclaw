@@ -157,6 +157,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--no-cache", action="store_true", default=False)
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--tags", default="")
+        parser.add_argument("--industry", default="")
         parser.add_argument("--tag-mode", default="and")
         parser.add_argument("--include-draft", action="store_true", default=False)
         parser.add_argument("--install-dir", default="./.owlhub/skills")
@@ -172,6 +173,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             no_cache=ns.no_cache,
             index_url=ns.index_url,
             tags=ns.tags,
+            industry=ns.industry,
             tag_mode=ns.tag_mode,
             include_draft=ns.include_draft,
             install_dir=ns.install_dir,
@@ -185,8 +187,9 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         from owlclaw.cli.skill_hub import install_command
 
         parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill install")
-        parser.add_argument("name")
+        parser.add_argument("name", nargs="?", default="")
         parser.add_argument("--version", default="")
+        parser.add_argument("--package", default="")
         parser.add_argument("--no-deps", action="store_true", default=False)
         parser.add_argument("--force", action="store_true", default=False)
         parser.add_argument("--mode", default="auto")
@@ -202,6 +205,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         install_command(
             name=ns.name,
             version=ns.version,
+            package=ns.package,
             no_deps=ns.no_deps,
             force=ns.force,
             mode=ns.mode,
@@ -910,8 +914,9 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  publish   Publish a local skill to OwlHub API")
         print("  cache-clear  Clear local OwlHub cache")
         print("\nExamples:")
-        print("  owlclaw skill search --query monitor --tags trading --tag-mode or")
+        print("  owlclaw skill search --query monitor inventory alerts --tags trading --industry retail")
         print("  owlclaw skill install entry-monitor --verbose")
+        print("  owlclaw skill install --package ./package.yaml")
         print("  owlclaw skill publish ./my-skill --api-base-url http://localhost:8000 --api-token <token>")
         print("\n  owlclaw skill init --help | owlclaw skill search --help | owlclaw skill publish --help")
         sys.exit(0)
@@ -921,6 +926,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Options:")
         print("  -q, --query TEXT      Search query")
         print("  --tags TEXT           Comma-separated tags")
+        print("  --industry TEXT       Industry filter")
         print("  --tag-mode TEXT       and|or")
         print("  --include-draft       Include draft skills")
         print("  -v, --verbose         Show detailed progress")
@@ -928,10 +934,11 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  --help                Show this message and exit")
         sys.exit(0)
     if argv == ["skill", "install"]:
-        print("Usage: owlclaw skill install <name> [OPTIONS]")
-        print("\n  Install one skill and optional dependencies from OwlHub.")
+        print("Usage: owlclaw skill install [name] [OPTIONS]")
+        print("\n  Install one skill or a package.yaml-defined bundle from OwlHub.")
         print("Options:")
         print("  --version TEXT        Exact version")
+        print("  --package TEXT        Install from package.yaml")
         print("  --no-deps             Skip dependency install")
         print("  --force               Ignore moderation/checksum constraints")
         print("  -v, --verbose         Show detailed progress")
