@@ -18,3 +18,13 @@ def test_java_client_includes_trigger_and_query_methods() -> None:
     )
     assert "triggerAgent(" in payload
     assert "queryStatus(" in payload
+    assert "Idempotency-Key" in payload
+    assert "sendWithRetry(" in payload
+    assert "handleResponse(" in payload
+
+
+def test_curl_baseline_scripts_exist() -> None:
+    root = Path("examples/cross_lang/curl")
+    assert (root / "trigger_agent.sh").exists()
+    assert (root / "query_status.sh").exists()
+    assert (root / "error_case.sh").exists()
