@@ -7,21 +7,21 @@
 
 ## Task 1: MigrationGate 核心
 
-- [ ] 1.1 创建 `owlclaw/governance/migration_gate.py`
-- [ ] 1.2 实现 `MigrationDecision` 枚举（OBSERVE_ONLY / AUTO_EXECUTE / REQUIRE_APPROVAL）
-- [ ] 1.3 实现 `MigrationGate.evaluate()` 决策逻辑
-- [ ] 1.4 实现 `migration_weight` 配置读取（owlclaw.yaml + SKILL.md）
-- [ ] 1.5 实现配置热更新（文件监听 / API）
-- [ ] 1.6 单元测试：各阶段决策行为（weight=0/30/70/100）
+- [x] 1.1 创建 `owlclaw/governance/migration_gate.py`
+- [x] 1.2 实现 `MigrationDecision` 枚举（OBSERVE_ONLY / AUTO_EXECUTE / REQUIRE_APPROVAL）
+- [x] 1.3 实现 `MigrationGate.evaluate()` 决策逻辑
+- [x] 1.4 实现 `migration_weight` 配置读取（owlclaw.yaml + SKILL.md）
+- [x] 1.5 实现配置热更新（文件监听 / API）
+- [x] 1.6 单元测试：各阶段决策行为（weight=0/30/70/100）
 
 ## Task 2: 风险评估器
 
-- [ ] 2.1 创建 `owlclaw/governance/risk_assessor.py`
-- [ ] 2.2 实现操作类型推断（从 binding 信息：HTTP method / SQL type）
-- [ ] 2.3 实现影响范围评估
-- [ ] 2.4 实现加权风险计算
-- [ ] 2.5 实现 SKILL.md `owlclaw:` 扩展字段中的风险声明解析
-- [ ] 2.6 单元测试：各风险因素组合
+- [x] 2.1 创建 `owlclaw/governance/risk_assessor.py`
+- [x] 2.2 实现操作类型推断（从 binding 信息：HTTP method / SQL type）
+- [x] 2.3 实现影响范围评估
+- [x] 2.4 实现加权风险计算
+- [x] 2.5 实现 SKILL.md `owlclaw:` 扩展字段中的风险声明解析
+- [x] 2.6 单元测试：各风险因素组合
 
 ## Task 3: 审批队列
 
