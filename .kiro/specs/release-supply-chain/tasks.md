@@ -26,7 +26,9 @@
 ## 3. 门禁与保护
 
 - [ ] 3.1 校准 required checks
+  - 当前状态（2026-02-26）：`gh api repos/yeemio/owlclaw/branches/main/protection` 返回 `404 Branch not protected`，required checks 尚未启用（外部仓库设置项）
 - [ ] 3.2 校准 release 分支保护
+  - 当前状态（2026-02-26）：`gh api repos/yeemio/owlclaw/rulesets` 返回空数组 `[]`，未发现规则集保护（外部仓库设置项）
 - [x] 3.3 校准失败回滚策略
 
 ## 4. 演练与收口
