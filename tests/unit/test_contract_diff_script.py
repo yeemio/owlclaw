@@ -14,6 +14,8 @@ def _run_contract_diff(
     after: Path,
     mode: str = "warning",
     migration_plan: str | None = None,
+    exemption_ticket: str | None = None,
+    audit_log: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
     script = repo / "scripts" / "contract_diff.py"
     cmd = [
@@ -28,6 +30,10 @@ def _run_contract_diff(
     ]
     if migration_plan:
         cmd.extend(["--migration-plan", migration_plan])
+    if exemption_ticket:
+        cmd.extend(["--exemption-ticket", exemption_ticket])
+    if audit_log:
+        cmd.extend(["--audit-log", str(audit_log)])
     return subprocess.run(
         cmd,
         cwd=repo,
@@ -92,3 +98,28 @@ def test_contract_diff_breaking_with_migration_plan_passes_blocking_mode(tmp_pat
     assert payload["change_level"] == "breaking"
     assert payload["gate_decision"] == "pass"
 
+
+def test_contract_diff_breaking_with_exemption_records_audit(tmp_path: Path) -> None:
+    repo = Path(__file__).resolve().parents[2]
+    before = tmp_path / "before.json"
+    after = tmp_path / "after.json"
+    audit_log = tmp_path / "audit" / "gate.jsonl"
+    before.write_text(json.dumps({"paths": {"GET /v1/ping": {"summary": "ping"}}}), encoding="utf-8")
+    after.write_text(json.dumps({"paths": {"GET /v1/ping": {"summary": "pong"}}}), encoding="utf-8")
+
+    result = _run_contract_diff(
+        repo,
+        before,
+        after,
+        mode="blocking",
+        exemption_ticket="EX-2026-0001",
+        audit_log=audit_log,
+    )
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["gate_decision"] == "warn"
+    assert audit_log.exists()
+    audit_rows = audit_log.read_text(encoding="utf-8").strip().splitlines()
+    assert len(audit_rows) == 1
+    audit_payload = json.loads(audit_rows[0])
+    assert audit_payload["exemption_ticket"] == "EX-2026-0001"

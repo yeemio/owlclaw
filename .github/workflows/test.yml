@@ -60,6 +60,13 @@ jobs:
             --cov-report=term \
             --cov-fail-under=73
 
+      - name: Run protocol governance consistency checks
+        run: |
+          poetry run pytest \
+            tests/unit/test_contract_diff_script.py \
+            tests/unit/test_protocol_error_model_consistency.py \
+            -q
+
       - name: Run integration tests with appended coverage
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test
