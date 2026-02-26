@@ -183,12 +183,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | review-work 审校循环：合并 test-infra 优化 + owlhub Task19 文档对齐 |
-| 批次状态 | **进行中（阶段性收口）**。skills-quality 已完成（27/27）；owlhub 更新至 141/143；test-infra 仍有性能与 CI 门槛待收口。 |
-| 已完成项 | 1) skills-quality Task 6 已收口（发布质量分、按质量排序、低质量警告）；2) test-infra 稳定性优化合入：Hypothesis `owlclaw_fast` + 属性测试降采样 + `.env.example` 新增 `OWLCLAW_AVAILABLE_TOOLS`；3) owlhub Task 19/19.1/19.2/19.3 文档与现有实现对齐为完成。 |
+| 当前批次 | codex-work 循环：test-infra 性能压缩（二次降采样） |
+| 批次状态 | **进行中（阶段性收口）**。skills-quality 已完成（27/27）；owlhub 更新至 141/143；test-infra 仍有性能与 CI 门槛待收口。本轮将 unit 串行耗时从约 `257s` 进一步压缩至约 `163s`。 |
+| 已完成项 | 1) skills-quality Task 6 已收口（发布质量分、按质量排序、低质量警告）；2) test-infra 稳定性优化：Hypothesis `owlclaw_fast` + templates/owlhub/langfuse 属性测试降采样 + `.env.example` 新增 `OWLCLAW_AVAILABLE_TOOLS`；3) 本地复测 `poetry run pytest tests/unit/ -q`：`1645 passed, 2 warnings`。 |
 | 下一待执行 | 1) codex-work 启动 skill-dx P2（Task 1.5/4.1~4.5/5.5/5.6）并并行推进 test-infra Task 4.2/11.1/11.3/11.4；2) codex-work 启动 skill-ai-assist P2（Task 3.1~3.6，`--from-doc` 收口）；3) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 并在 `main` 触发发布流；4) owlhub Task 40.4 外部阻塞项推进。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(25/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 串行耗时约 `257s`（2026-02-26），仍高于 `<60s`；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release：缺少 GitHub Secrets（`PYPI_TOKEN/TEST_PYPI_TOKEN`）与 `main` 分支发布动作；4) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
+| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 串行耗时约 `163s`（2026-02-26），仍高于 `<60s`；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release：缺少 GitHub Secrets（`PYPI_TOKEN/TEST_PYPI_TOKEN`）与 `main` 分支发布动作；4) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

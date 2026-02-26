@@ -162,3 +162,4 @@ metadata:
         pass
     assert "skill_publish_error" in caplog.text
     assert '"mode": "api"' in caplog.text
+

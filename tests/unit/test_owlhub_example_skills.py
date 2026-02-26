@@ -17,3 +17,4 @@ def test_example_skills_have_valid_manifest_frontmatter() -> None:
     for manifest in manifests:
         result = validator.validate_manifest(manifest)
         assert result.is_valid, f"{manifest.name}: {result.errors}"
+

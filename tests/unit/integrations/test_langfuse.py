@@ -93,7 +93,7 @@ class TestLangfuseClient:
         client.end_trace(trace_id, output={"ok": True}, metadata={"cost": 1.2})
         assert sdk.ended_traces[0]["id"] == "trace-1"
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         sampling_rate=st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False),
         rand_value=st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False),
@@ -108,7 +108,7 @@ class TestLangfuseClient:
         finally:
             random.random = original_random
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         agent_id=st.from_regex(r"[a-z][a-z0-9_-]{0,12}", fullmatch=True),
         run_id=st.from_regex(r"[a-z][a-z0-9_-]{0,12}", fullmatch=True),
@@ -174,7 +174,7 @@ class TestLangfuseClient:
         assert sdk.generations[0]["usage"]["total_tokens"] == 18
         assert sdk.spans[0]["input"]["tool_name"] == "query_state"
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         prompt_tokens=st.integers(min_value=0, max_value=10000),
         completion_tokens=st.integers(min_value=0, max_value=10000),
@@ -231,7 +231,7 @@ class TestLangfuseClient:
         )
         assert span_id is None
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(duration_ms=st.floats(min_value=0, max_value=10000, allow_nan=False, allow_infinity=False))
     def test_property_tool_span_content_integrity(self, duration_ms: float) -> None:
         sdk = _FakeLangfuseSDK()
@@ -270,7 +270,7 @@ class TestLangfuseClient:
         )
         assert span_id is None
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         action=st.sampled_from(["create_trace", "end_trace", "create_llm_span", "create_tool_span", "flush"]),
     )
@@ -349,7 +349,7 @@ class TestLangfuseClient:
 
 
 class TestConfigAndHelpers:
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         sampling=st.floats(min_value=-2, max_value=2, allow_nan=False, allow_infinity=False),
         batch=st.integers(min_value=-5, max_value=20),
@@ -382,7 +382,7 @@ class TestConfigAndHelpers:
         assert cfg.public_key == "pk-x"
         assert cfg.secret_key == "sk-x"
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         prompt=st.integers(min_value=0, max_value=100000),
         completion=st.integers(min_value=0, max_value=100000),
@@ -393,7 +393,7 @@ class TestConfigAndHelpers:
         assert cost >= 0.0
         assert isinstance(cost, float)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         prompt=st.integers(min_value=0, max_value=100000),
         completion=st.integers(min_value=0, max_value=100000),
@@ -404,7 +404,7 @@ class TestConfigAndHelpers:
         parsed = TokenCalculator.extract_tokens_from_response(response)
         assert parsed == (prompt, completion, total)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         email=st.from_regex(r"[A-Za-z0-9][A-Za-z0-9._%+-]{0,20}@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", fullmatch=True),
         phone=st.from_regex(r"\d{3}-\d{3}-\d{4}", fullmatch=True),
@@ -416,14 +416,14 @@ class TestConfigAndHelpers:
         assert email not in masked
         assert phone not in masked
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(secret=st.from_regex(r"(?:sk|pk)-[A-Za-z0-9_-]{12,}", fullmatch=True))
     def test_property_secret_masking(self, secret: str) -> None:
         masked = PrivacyMasker.mask(f"token={secret}", LangfuseConfig(mask_inputs=True))
         assert secret not in masked
         assert "[MASKED_API_KEY]" in masked
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(code=st.from_regex(r"[A-Z]{6}[0-9]{4}", fullmatch=True))
     def test_property_custom_masking(self, code: str) -> None:
         cfg = LangfuseConfig(mask_inputs=True, custom_mask_patterns=[r"[A-Z]{6}[0-9]{4}"])
@@ -431,7 +431,7 @@ class TestConfigAndHelpers:
         assert code not in masked
         assert "[MASKED_CUSTOM]" in masked
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         data=st.recursive(
             st.one_of(st.text(max_size=20), st.integers(), st.booleans()),
@@ -460,7 +460,7 @@ class TestConfigAndHelpers:
         child = current.with_parent_span("span-2")
         assert child.parent_span_id == "span-2"
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=10, deadline=None)
     @given(
         trace_id=st.from_regex(r"trace-[a-z0-9]{1,8}", fullmatch=True),
         parent_span_id=st.none() | st.from_regex(r"span-[a-z0-9]{1,8}", fullmatch=True),
@@ -484,3 +484,4 @@ class TestConfigAndHelpers:
         )
         errors = validate_config(cfg)
         assert any("invalid custom mask pattern" in error for error in errors)
+

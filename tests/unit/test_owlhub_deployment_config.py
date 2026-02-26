@@ -159,3 +159,4 @@ def test_owlhub_api_deploy_workflow_contains_migration_and_smoke_checks() -> Non
     production_migration = next(step for step in production_steps if step.get("name") == "Run database migrations")
     assert "alembic -c alembic.ini upgrade head" in staging_migration["run"]
     assert "alembic -c alembic.ini upgrade head" in production_migration["run"]
+

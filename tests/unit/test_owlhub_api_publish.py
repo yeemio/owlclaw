@@ -191,7 +191,7 @@ def test_validation_integration_rejects_invalid_manifest(tmp_path: Path) -> None
         _restore_env(old)
 
 
-@settings(max_examples=40, deadline=None)
+@settings(max_examples=8, deadline=None)
 @given(
     skill_name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-", min_size=3, max_size=20).filter(
         lambda text: _NAME_RE.fullmatch(text) is not None
@@ -227,7 +227,7 @@ def test_property_1_api_publish_and_retrieval(skill_name: str, major: int, minor
             _restore_env(old)
 
 
-@settings(max_examples=30, deadline=None)
+@settings(max_examples=8, deadline=None)
 @given(
     skill_name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-", min_size=3, max_size=20).filter(
         lambda text: _NAME_RE.fullmatch(text) is not None
@@ -271,3 +271,4 @@ def test_property_15_publish_audit_log_completeness(skill_name: str, state: str)
                 assert isinstance(item.get("details", {}), dict)
         finally:
             _restore_env(old)
+
