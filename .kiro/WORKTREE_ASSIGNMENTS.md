@@ -13,6 +13,7 @@
 3. **任务分配由人工更新**，AI Agent 不得自行修改本文件
 4. **两个编码 worktree 的 spec 不得重叠**，避免合并冲突
 5. 分配变更后，人工通知各 worktree 同步（`git merge main`）
+6. **零残留规则（必须遵守）**：每轮工作结束时，**必须 commit 所有变更**，工作目录必须干净（`git status` 无 modified/untracked）。不允许留未提交修改。原因：review-work 会独立审校并修正同样的文件，如果编码 worktree 留有未提交修改，下次 `git merge main` 时会产生冲突，浪费统筹时间。违反此规则 = 给其他 worktree 制造阻塞。
 
 ---
 
