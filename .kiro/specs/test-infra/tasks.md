@@ -93,9 +93,12 @@
 
 - [ ] **Task 11**: 端到端验收
   - [ ] 11.1 无外部服务：`poetry run pytest tests/unit/ -q` → 全部通过，0 skip，< 60s
-  - [ ] 11.2 有 PG：`poetry run pytest tests/unit/ tests/integration/ -q` → unit 全过，integration 按可用性 pass/skip
+    - 当前状态（2026-02-25）：`1569 passed, 2 warnings`，耗时约 `250s`，未达 < 60s
+  - [x] 11.2 有 PG：`poetry run pytest tests/unit/ tests/integration/ -q` → unit 全过，integration 按可用性 pass/skip
+    - 验证记录（2026-02-25）：`DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:45432/owlclaw_test` + `docker-compose.test.yml` 下执行通过，结果 `1671 passed, 12 skipped, 2 warnings`
   - [ ] 11.3 CI 运行：所有 matrix（3.10/3.11/3.12）通过
   - [ ] 11.4 覆盖率：unit ≥ 90%，overall ≥ 80%
+    - 当前状态（2026-02-25）：按 CI 同款命令本地复现，unit 覆盖率约 `74%`，overall 约 `76.72%`，未达阈值（90% / 80%）
   - _Requirements: AC-1, AC-2, AC-3, AC-4, AC-5_
 
 ## Backlog
