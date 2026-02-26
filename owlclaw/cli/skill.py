@@ -12,6 +12,9 @@ from owlclaw.cli.skill_hub import (
 )
 from owlclaw.cli.skill_init import init_command
 from owlclaw.cli.skill_list import list_command, templates_command
+from owlclaw.cli.skill_parse import parse_command
+from owlclaw.cli.skill_quality import quality_command
+from owlclaw.cli.skill_templates import list_templates_command
 from owlclaw.cli.skill_validate import validate_command
 
 skill_app = typer.Typer(
@@ -20,6 +23,9 @@ skill_app = typer.Typer(
 )
 
 skill_app.command("init")(init_command)
+skill_app.command("list-templates")(list_templates_command)
+skill_app.command("parse")(parse_command)
+skill_app.command("quality")(quality_command)
 skill_app.command("validate")(validate_command)
 skill_app.command("list")(list_command)
 skill_app.command("templates")(templates_command)

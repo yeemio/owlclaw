@@ -7,6 +7,8 @@ from click.exceptions import Exit
 from typer.testing import CliRunner
 
 from owlclaw.cli.skill import skill_app
+from owlclaw.cli.skill_quality import _seed_snapshot, quality_command
+from owlclaw.governance.quality_store import SkillQualitySnapshot
 from owlclaw.templates.skills.models import ValidationError
 
 runner = CliRunner()
@@ -102,6 +104,102 @@ def test_skill_validate_non_skill_file_exits_with_error(tmp_path):
     result = runner.invoke(skill_app, ["validate", str(not_skill)])
     assert result.exit_code == 2
     assert "file is not skill.md" in result.output.lower()
+
+
+def test_skill_list_templates_command(tmp_path):
+    result = runner.invoke(skill_app, ["list-templates"])
+    assert result.exit_code == 0
+    assert "inventory-monitor" in result.output
+
+
+def test_skill_parse_outputs_resolved_metadata(tmp_path):
+    skill_dir = tmp_path / "nl-parse"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: nl-parse
+description: 每天早上 9 点巡检
+---
+# 巡检
+每天早上 9 点执行
+""",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["parse", str(tmp_path)])
+    assert result.exit_code == 0
+    assert '"name": "nl-parse"' in result.output
+    assert '"parse_mode": "natural_language"' in result.output
+    assert '"trigger_config"' in result.output
+
+
+def test_skill_validate_warns_on_ambiguous_rules(tmp_path):
+    (tmp_path / "ambiguous").mkdir()
+    (tmp_path / "ambiguous" / "SKILL.md").write_text(
+        """---
+name: ambiguous
+description: 每天检查库存
+---
+# Rule
+尽快处理异常并给出合理建议
+""",
+        encoding="utf-8",
+    )
+    result = runner.invoke(skill_app, ["validate", str(tmp_path / "ambiguous")])
+    assert result.exit_code == 0
+    assert "ambiguous business rule wording" in result.output.lower()
+
+
+def test_skill_quality_single_with_trend_and_suggestions(capsys) -> None:  # type: ignore[no-untyped-def]
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    _seed_snapshot(
+        SkillQualitySnapshot(
+            tenant_id="default",
+            skill_name="inventory-monitor",
+            window_start=now - timedelta(days=14),
+            window_end=now - timedelta(days=7),
+            metrics={"success_rate": 0.7, "intervention_rate": 0.6},
+            quality_score=0.7,
+            computed_at=now - timedelta(days=7),
+        )
+    )
+    _seed_snapshot(
+        SkillQualitySnapshot(
+            tenant_id="default",
+            skill_name="inventory-monitor",
+            window_start=now - timedelta(days=7),
+            window_end=now,
+            metrics={"success_rate": 0.5, "intervention_rate": 0.7},
+            quality_score=0.5,
+            computed_at=now,
+        )
+    )
+    quality_command("inventory-monitor", False, True, "30d", True, "default")
+    output = capsys.readouterr().out
+    assert "inventory-monitor: score=0.500" in output
+    assert "trend_points=" in output
+    assert "- Improve success rate" in output
+
+
+def test_skill_quality_all_lists_latest_scores(capsys) -> None:  # type: ignore[no-untyped-def]
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    _seed_snapshot(
+        SkillQualitySnapshot(
+            tenant_id="default",
+            skill_name="report-generator",
+            window_start=now - timedelta(days=7),
+            window_end=now,
+            metrics={},
+            quality_score=0.9,
+            computed_at=now,
+        )
+    )
+    quality_command("", True, False, "30d", False, "default")
+    output = capsys.readouterr().out
+    assert "report-generator: score=0.900" in output
 
 
 def test_skill_validate_binding_passes_with_prerequisites_env_declared(tmp_path, monkeypatch):

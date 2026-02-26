@@ -105,6 +105,25 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         )
         return True
 
+    if sub == "create":
+        from owlclaw.cli.skill_create import create_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill create")
+        parser.add_argument("--interactive", action="store_true", default=False)
+        parser.add_argument("--from-template", default="")
+        parser.add_argument("--from-doc", default="")
+        parser.add_argument("--output", default="skills")
+        parser.add_argument("--capabilities-path", default="skills")
+        ns = parser.parse_args(sub_argv)
+        create_command(
+            interactive=ns.interactive,
+            from_template=ns.from_template,
+            from_doc=ns.from_doc,
+            output=ns.output,
+            capabilities_path=ns.capabilities_path,
+        )
+        return True
+
     if sub == "validate":
         from owlclaw.cli.skill_validate import validate_command
 
@@ -114,6 +133,45 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--strict", "-s", action="store_true", default=False)
         ns = parser.parse_args(sub_argv)
         validate_command(paths=ns.paths, verbose=ns.verbose, strict=ns.strict)
+        return True
+
+    if sub == "parse":
+        from owlclaw.cli.skill_parse import parse_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill parse")
+        parser.add_argument("path", nargs="?", default=".")
+        parser.add_argument("--cache", action="store_true", default=False)
+        ns = parser.parse_args(sub_argv)
+        parse_command(path=ns.path, cache=ns.cache)
+        return True
+
+    if sub == "quality":
+        from owlclaw.cli.skill_quality import quality_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill quality")
+        parser.add_argument("skill_name", nargs="?", default="")
+        parser.add_argument("--all", action="store_true", default=False)
+        parser.add_argument("--trend", action="store_true", default=False)
+        parser.add_argument("--period", default="30d")
+        parser.add_argument("--suggest", action="store_true", default=False)
+        parser.add_argument("--tenant", default="default")
+        ns = parser.parse_args(sub_argv)
+        quality_command(
+            skill_name=ns.skill_name,
+            all=ns.all,
+            trend=ns.trend,
+            period=ns.period,
+            suggest=ns.suggest,
+            tenant=ns.tenant,
+        )
+        return True
+
+    if sub == "list-templates":
+        from owlclaw.cli.skill_templates import list_templates_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill list-templates")
+        parser.parse_args(sub_argv)
+        list_templates_command()
         return True
 
     if sub == "list":
@@ -157,6 +215,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--no-cache", action="store_true", default=False)
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--tags", default="")
+        parser.add_argument("--industry", default="")
         parser.add_argument("--tag-mode", default="and")
         parser.add_argument("--include-draft", action="store_true", default=False)
         parser.add_argument("--install-dir", default="./.owlhub/skills")
@@ -172,6 +231,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             no_cache=ns.no_cache,
             index_url=ns.index_url,
             tags=ns.tags,
+            industry=ns.industry,
             tag_mode=ns.tag_mode,
             include_draft=ns.include_draft,
             install_dir=ns.install_dir,
@@ -185,8 +245,9 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         from owlclaw.cli.skill_hub import install_command
 
         parser = argparse.ArgumentParser(add_help=False, prog="owlclaw skill install")
-        parser.add_argument("name")
+        parser.add_argument("name", nargs="?", default="")
         parser.add_argument("--version", default="")
+        parser.add_argument("--package", default="")
         parser.add_argument("--no-deps", action="store_true", default=False)
         parser.add_argument("--force", action="store_true", default=False)
         parser.add_argument("--mode", default="auto")
@@ -202,6 +263,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         install_command(
             name=ns.name,
             version=ns.version,
+            package=ns.package,
             no_deps=ns.no_deps,
             force=ns.force,
             mode=ns.mode,
@@ -517,6 +579,82 @@ def _dispatch_agent_command(argv: list[str]) -> bool:
     raise SystemExit(2)
 
 
+def _dispatch_migration_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw migration ...` via argparse."""
+    if not argv or argv[0] != "migration":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["migration"])
+
+    sub = argv[1]
+    sub_argv = argv[2:]
+    if "--help" in sub_argv or "-h" in sub_argv:
+        _print_help_and_exit(["migration", sub])
+
+    from owlclaw.cli.migration import set_command, status_command, suggest_command
+
+    if sub == "status":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migration status")
+        parser.add_argument("--config", default="")
+        ns = parser.parse_args(sub_argv)
+        status_command(config=ns.config)
+        return True
+
+    if sub == "set":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migration set")
+        parser.add_argument("skill")
+        parser.add_argument("weight", type=int)
+        parser.add_argument("--config", default="")
+        ns = parser.parse_args(sub_argv)
+        set_command(skill=ns.skill, weight=ns.weight, config=ns.config)
+        return True
+
+    if sub == "suggest":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw migration suggest")
+        parser.add_argument("--config", default="")
+        ns = parser.parse_args(sub_argv)
+        suggest_command(config=ns.config)
+        return True
+
+    print(f"Error: unknown migration subcommand: {sub}", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def _dispatch_approval_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw approval ...` via argparse."""
+    if not argv or argv[0] != "approval":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["approval"])
+
+    sub = argv[1]
+    sub_argv = argv[2:]
+    if "--help" in sub_argv or "-h" in sub_argv:
+        _print_help_and_exit(["approval", sub])
+
+    from owlclaw.cli.migration import approval_approve_command, approval_list_command
+
+    if sub == "list":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw approval list")
+        parser.add_argument("--status", default="")
+        parser.add_argument("--store", default="")
+        ns = parser.parse_args(sub_argv)
+        approval_list_command(status=ns.status, store=ns.store)
+        return True
+
+    if sub == "approve":
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw approval approve")
+        parser.add_argument("request_id")
+        parser.add_argument("--approver", default="cli")
+        parser.add_argument("--store", default="")
+        ns = parser.parse_args(sub_argv)
+        approval_approve_command(request_id=ns.request_id, approver=ns.approver, store=ns.store)
+        return True
+
+    print(f"Error: unknown approval subcommand: {sub}", file=sys.stderr)
+    raise SystemExit(2)
+
+
 def _dispatch_trigger_command(argv: list[str]) -> bool:
     """Dispatch `owlclaw trigger ...` using argparse for command-specific templates."""
     if not argv or argv[0] != "trigger":
@@ -821,9 +959,13 @@ def _print_help_and_exit(argv: list[str]) -> None:
         sys.exit(0)
     if argv == ["skill"]:
         print("Usage: owlclaw skill [OPTIONS] COMMAND [ARGS]...")
-        print("\n  Create, validate, and list Agent Skills (SKILL.md). Local only.\n")
+        print("\n  Create, parse, validate, and list Agent Skills (SKILL.md). Local only.\n")
         print("Commands:")
         print("  init      Scaffold a new SKILL.md from template")
+        print("  create    Conversationally create SKILL.md")
+        print("  list-templates  List local AI-assist templates")
+        print("  parse     Parse SKILL.md and show resolved metadata")
+        print("  quality   Show quality score/trend/suggestions")
         print("  validate  Validate SKILL.md in current dir")
         print("  list      List skills in a directory")
         print("  templates List templates from the template library")
@@ -834,8 +976,9 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  publish   Publish a local skill to OwlHub API")
         print("  cache-clear  Clear local OwlHub cache")
         print("\nExamples:")
-        print("  owlclaw skill search --query monitor --tags trading --tag-mode or")
+        print("  owlclaw skill search --query monitor inventory alerts --tags trading --industry retail")
         print("  owlclaw skill install entry-monitor --verbose")
+        print("  owlclaw skill install --package ./package.yaml")
         print("  owlclaw skill publish ./my-skill --api-base-url http://localhost:8000 --api-token <token>")
         print("\n  owlclaw skill init --help | owlclaw skill search --help | owlclaw skill publish --help")
         sys.exit(0)
@@ -845,6 +988,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Options:")
         print("  -q, --query TEXT      Search query")
         print("  --tags TEXT           Comma-separated tags")
+        print("  --industry TEXT       Industry filter")
         print("  --tag-mode TEXT       and|or")
         print("  --include-draft       Include draft skills")
         print("  -v, --verbose         Show detailed progress")
@@ -852,10 +996,11 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  --help                Show this message and exit")
         sys.exit(0)
     if argv == ["skill", "install"]:
-        print("Usage: owlclaw skill install <name> [OPTIONS]")
-        print("\n  Install one skill and optional dependencies from OwlHub.")
+        print("Usage: owlclaw skill install [name] [OPTIONS]")
+        print("\n  Install one skill or a package.yaml-defined bundle from OwlHub.")
         print("Options:")
         print("  --version TEXT        Exact version")
+        print("  --package TEXT        Install from package.yaml")
         print("  --no-deps             Skip dependency install")
         print("  --force               Ignore moderation/checksum constraints")
         print("  -v, --verbose         Show detailed progress")
@@ -948,6 +1093,60 @@ def _print_help_and_exit(argv: list[str]) -> None:
     if argv == ["agent", "status"]:
         print("Usage: owlclaw agent status --agent-id <id> [OPTIONS]")
         print("\n  Show agent paused state and pending instructions.")
+        sys.exit(0)
+    if argv == ["migration"]:
+        print("Usage: owlclaw migration [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Progressive migration controls.")
+        print("Commands:")
+        print("  status   Show migration_weight by skill")
+        print("  set      Set migration_weight for one skill")
+        print("  suggest  Recommend next migration_weight step")
+        print("\n  owlclaw migration status --help")
+        sys.exit(0)
+    if argv == ["migration", "status"]:
+        print("Usage: owlclaw migration status [OPTIONS]")
+        print("\n  Show migration_weight by skill from owlclaw.yaml.")
+        print("Options:")
+        print("  --config TEXT  Optional config file path")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["migration", "set"]:
+        print("Usage: owlclaw migration set SKILL WEIGHT [OPTIONS]")
+        print("\n  Set migration_weight (0-100) for one skill.")
+        print("Options:")
+        print("  --config TEXT  Optional config file path")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["migration", "suggest"]:
+        print("Usage: owlclaw migration suggest [OPTIONS]")
+        print("\n  Suggest next migration_weight step by skill.")
+        print("Options:")
+        print("  --config TEXT  Optional config file path")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["approval"]:
+        print("Usage: owlclaw approval [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Approval queue operations.")
+        print("Commands:")
+        print("  list     List approval requests")
+        print("  approve  Approve one request by id")
+        print("\n  owlclaw approval list --help")
+        sys.exit(0)
+    if argv == ["approval", "list"]:
+        print("Usage: owlclaw approval list [OPTIONS]")
+        print("\n  List approval requests from local store.")
+        print("Options:")
+        print("  --status TEXT  Optional status filter")
+        print("  --store TEXT   Optional approval store path")
+        print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["approval", "approve"]:
+        print("Usage: owlclaw approval approve REQUEST_ID [OPTIONS]")
+        print("\n  Approve one request in local store.")
+        print("Options:")
+        print("  --approver TEXT  Approver identity (default: cli)")
+        print("  --store TEXT     Optional approval store path")
+        print("  --help           Show this message and exit")
         sys.exit(0)
     if argv == ["trigger"]:
         print("Usage: owlclaw trigger [OPTIONS] COMMAND [ARGS]...")
@@ -1057,9 +1256,34 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("\n  Scaffold a new SKILL.md in current directory.")
         print("  --from-binding TEXT  Generate a business-rules template from existing binding SKILL.md")
         sys.exit(0)
+    if argv == ["skill", "create"]:
+        print("Usage: owlclaw skill create [OPTIONS]")
+        print("\n  Conversationally create SKILL.md via interactive prompts.")
+        print("  --interactive                Enable interactive mode")
+        print("  --from-template TEXT         Generate from local template")
+        print("  --from-doc TEXT              Generate from business doc (Phase 2, not yet available)")
+        print("  --output TEXT                Output directory (default: skills)")
+        print("  --capabilities-path TEXT     Path to discover existing capabilities")
+        sys.exit(0)
     if argv == ["skill", "validate"]:
         print("Usage: owlclaw skill validate [OPTIONS] [DIR]")
         print("\n  Validate SKILL.md (default: current dir).")
+        sys.exit(0)
+    if argv == ["skill", "parse"]:
+        print("Usage: owlclaw skill parse [PATH] [--cache]")
+        print("\n  Parse SKILL.md and output resolved parse metadata as JSON.")
+        sys.exit(0)
+    if argv == ["skill", "quality"]:
+        print("Usage: owlclaw skill quality [SKILL_NAME] [OPTIONS]")
+        print("\n  Show skill quality score, trend and suggestions.")
+        print("  --all      Show latest quality for all skills")
+        print("  --trend    Show trend points in selected period")
+        print("  --period   Period selector (e.g. 7d, 30d, 12w)")
+        print("  --suggest  Show improvement suggestions")
+        sys.exit(0)
+    if argv == ["skill", "list-templates"]:
+        print("Usage: owlclaw skill list-templates")
+        print("\n  List local AI-assist templates from ~/.owlclaw/templates.")
         sys.exit(0)
     if argv == ["skill", "list"]:
         print("Usage: owlclaw skill list [OPTIONS]")
@@ -1076,7 +1300,9 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
     print("  agent  Manual control via signal (pause, resume, trigger, instruct, status)")
-    print("  skill  Create, validate, list Agent Skills (SKILL.md)")
+    print("  migration Progressive migration controls")
+    print("  approval  Approval queue operations")
+    print("  skill  Create, parse, validate, list Agent Skills (SKILL.md)")
     print("  trigger Trigger templates (db-change)")
     print("  migrate Migrate legacy APIs/models to OwlClaw assets")
     print("  release Release validation and gate checks")
@@ -1224,6 +1450,16 @@ def _main_impl() -> None:
         raise SystemExit(e.exit_code) from None
     try:
         if _dispatch_agent_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_migration_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_approval_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None

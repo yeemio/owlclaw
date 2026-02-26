@@ -39,6 +39,11 @@ class InMemoryRecord:
     estimated_cost: Decimal
     status: str
     error_message: str | None
+    migration_weight: int | None = None
+    execution_mode: str | None = None
+    risk_level: Decimal | None = None
+    approval_by: str | None = None
+    approval_time: datetime | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -81,6 +86,11 @@ class InMemoryLedger:
         estimated_cost: Decimal,
         status: str,
         error_message: str | None = None,
+        migration_weight: int | None = None,
+        execution_mode: str | None = None,
+        risk_level: Decimal | None = None,
+        approval_by: str | None = None,
+        approval_time: datetime | None = None,
     ) -> None:
         """Store one execution record in memory."""
         def _require(value: Any, name: str) -> str:
@@ -108,6 +118,11 @@ class InMemoryLedger:
             estimated_cost=estimated_cost,
             status=status,
             error_message=error_message,
+            migration_weight=migration_weight,
+            execution_mode=execution_mode,
+            risk_level=risk_level,
+            approval_by=approval_by,
+            approval_time=approval_time,
         )
         self._records.append(record)
         if len(self._records) > self._max_records:
@@ -127,6 +142,8 @@ class InMemoryLedger:
             results = [r for r in results if r.capability_name == filters.capability_name]
         if filters.status is not None:
             results = [r for r in results if r.status == filters.status]
+        if filters.execution_mode is not None:
+            results = [r for r in results if r.execution_mode == filters.execution_mode]
         if filters.start_date is not None:
             start_dt = datetime.combine(filters.start_date, time.min, tzinfo=timezone.utc)
             results = [r for r in results if r.created_at >= start_dt]

@@ -7,13 +7,13 @@
 
 ---
 
-## The Problem
+## What is OwlClaw?
 
 Your enterprise has ERP, CRM, HR, and financial systems with years of business logic and data. They work — but they're **passive**: nothing happens unless a human acts.
 
 AI Agent frameworks (LangChain, LangGraph, CrewAI) assume you build from scratch. **None of them are designed to make existing systems intelligent.**
 
-## OwlClaw's Approach
+### OwlClaw's Approach
 
 OwlClaw gives your existing business systems AI-driven autonomy through a complete chain:
 
@@ -51,6 +51,9 @@ description: >
 No AI knowledge needed. No prompt engineering. The Agent reads this and autonomously decides when to check inventory, which warehouses to monitor, and whether to alert.
 
 ## Quick Start
+
+New here? Follow the 10-minute Lite Mode guide:
+- [docs/QUICK_START.md](docs/QUICK_START.md)
 
 ```python
 from owlclaw import OwlClaw
@@ -112,7 +115,7 @@ async def query_kb(question: str) -> str:
     return await rag_chain.ainvoke(question)
 ```
 
-## Architecture Overview
+## Architecture Overview (ASCII)
 
 ```text
 Business App Skills (SKILL.md) + Handlers/State + Declarative Bindings
@@ -206,7 +209,7 @@ poetry run ruff check .               # lint
 poetry run mypy owlclaw/              # type check
 ```
 
-## Links
+## Useful Links
 
 - Architecture: [docs/ARCHITECTURE_ANALYSIS.md](docs/ARCHITECTURE_ANALYSIS.md)
 - Positioning: [docs/POSITIONING.md](docs/POSITIONING.md)

@@ -127,3 +127,18 @@ async def test_visibility_filter_fail_open_with_real_constraint():
     out = await vf.filter_capabilities([cap], "agent1", ctx)
     assert len(out) == 1
     assert out[0].name == "expensive"
+
+
+@pytest.mark.asyncio
+async def test_visibility_filter_injects_quality_score_for_decision_context():
+    """Quality score hint should be attached for LLM tool selection context."""
+    vf = VisibilityFilter()
+    vf.configure_quality_score_injection(enabled=True, quality_scores={"inventory-monitor": 0.93})
+    cap = CapabilityView("inventory-monitor", description="Monitor stock health")
+    out = await vf.filter_capabilities(
+        [cap],
+        "agent1",
+        RunContext(tenant_id="t1", confirmed_capabilities={"inventory-monitor"}),
+    )
+    assert len(out) == 1
+    assert "quality_score=0.930" in out[0].description

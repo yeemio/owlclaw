@@ -149,6 +149,16 @@ def test_main_skill_init_help_uses_plain_help(monkeypatch, capsys) -> None:
     assert "Usage: owlclaw skill init [OPTIONS]" in out
 
 
+def test_main_skill_create_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "create", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill create [OPTIONS]" in out
+
+
 def test_main_skill_without_subcommand_uses_plain_help(monkeypatch, capsys) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
     monkeypatch.setattr("sys.argv", ["owlclaw", "skill"])
@@ -170,6 +180,120 @@ def test_main_skill_search_help_uses_plain_help(monkeypatch, capsys) -> None:
     out = capsys.readouterr().out
     assert "Usage: owlclaw skill search [OPTIONS]" in out
     assert "--quiet" in out
+
+
+def test_main_dispatches_skill_create(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_create_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.skill_create.create_command", _fake_create_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "create", "--interactive", "--output", "skills"])
+    cli_main.main()
+    assert captured["interactive"] is True
+    assert captured["output"] == "skills"
+
+
+def test_main_skill_create_from_template_generates_file(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "skill",
+            "create",
+            "--from-template",
+            "inventory-monitor",
+            "--output",
+            str(tmp_path),
+        ],
+    )
+    cli_main.main()
+    generated = tmp_path / "inventory-monitor" / "SKILL.md"
+    assert generated.exists()
+
+
+def test_main_skill_ai_assist_end_to_end_create_validate_parse(monkeypatch, tmp_path, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "skill",
+            "create",
+            "--from-template",
+            "inventory-monitor",
+            "--output",
+            str(tmp_path),
+        ],
+    )
+    cli_main.main()
+
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "validate", str(tmp_path)])
+    cli_main.main()
+    validate_out = capsys.readouterr().out
+    assert "Validated" in validate_out
+
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "parse", str(tmp_path)])
+    cli_main.main()
+    parse_out = capsys.readouterr().out
+    assert '"name": "inventory-monitor"' in parse_out
+
+
+def test_main_dispatches_skill_parse(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_parse_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.skill_parse.parse_command", _fake_parse_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "parse", str(tmp_path), "--cache"])
+    cli_main.main()
+    assert captured["path"] == str(tmp_path)
+    assert captured["cache"] is True
+
+
+def test_main_skill_parse_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "parse", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill parse [PATH] [--cache]" in out
+
+
+def test_main_dispatches_skill_quality(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_quality_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.skill_quality.quality_command", _fake_quality_command)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["owlclaw", "skill", "quality", "inventory-monitor", "--trend", "--period", "7d", "--suggest"],
+    )
+    cli_main.main()
+    assert captured["skill_name"] == "inventory-monitor"
+    assert captured["trend"] is True
+    assert captured["period"] == "7d"
+    assert captured["suggest"] is True
+
+
+def test_main_skill_quality_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "quality", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill quality [SKILL_NAME] [OPTIONS]" in out
 
 
 def test_main_dispatches_skill_install_verbose_and_quiet(monkeypatch) -> None:
@@ -406,3 +530,70 @@ def test_main_prints_version(monkeypatch, capsys) -> None:
     assert exc_info.value.code == 0
     out = capsys.readouterr().out.strip()
     assert out.startswith("owlclaw ")
+
+
+def test_main_dispatches_migration_status(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_status_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.status_command", _fake_status_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "migration", "status", "--config", "owlclaw.yaml"])
+    cli_main.main()
+    assert captured["config"] == "owlclaw.yaml"
+
+
+def test_main_dispatches_migration_set(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_set_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.set_command", _fake_set_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "migration", "set", "inventory-check", "70"])
+    cli_main.main()
+    assert captured["skill"] == "inventory-check"
+    assert captured["weight"] == 70
+
+
+def test_main_dispatches_migration_suggest(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_suggest_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.suggest_command", _fake_suggest_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "migration", "suggest"])
+    cli_main.main()
+    assert captured["config"] == ""
+
+
+def test_main_dispatches_approval_list(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_approval_list_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.approval_list_command", _fake_approval_list_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "approval", "list", "--status", "pending"])
+    cli_main.main()
+    assert captured["status"] == "pending"
+
+
+def test_main_dispatches_approval_approve(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_approval_approve_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migration.approval_approve_command", _fake_approval_approve_command)
+    monkeypatch.setattr("sys.argv", ["owlclaw", "approval", "approve", "req-1", "--approver", "ops-a"])
+    cli_main.main()
+    assert captured["request_id"] == "req-1"
+    assert captured["approver"] == "ops-a"

@@ -7,6 +7,8 @@
 | 示例 | 场景 | 复杂度 |
 |------|------|--------|
 | `cron/` | Cron 触发器完整示例（focus/治理/重试） | 中 |
+| `quick_start/` | Quick Start 最小可运行示例（Lite Mode 零依赖） | 低 |
+| `complete_workflow/` | 完整库存管理端到端示例（4 能力 + 治理） | 中 |
 | `langchain/` | LangChain runnable 集成（注册/重试/流式/追踪） | 中 |
 | `binding-http/` | Declarative Binding 示例（active/shadow/shell） | 中 |
 | `binding-openapi-e2e/` | OpenAPI 到 binding SKILL.md 的端到端流程 | 中 |

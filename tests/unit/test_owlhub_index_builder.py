@@ -13,14 +13,25 @@ from owlclaw.owlhub.indexer import IndexBuilder, SkillRepositoryCrawler
 from owlclaw.owlhub.statistics import SkillStatistics
 
 
-def _write_skill(root: Path, publisher: str, name: str, version: str, description: str) -> Path:
+def _write_skill(
+    root: Path,
+    publisher: str,
+    name: str,
+    version: str,
+    description: str,
+    *,
+    industry: str = "",
+    tags: list[str] | None = None,
+) -> Path:
     skill_dir = root / publisher / name
     skill_dir.mkdir(parents=True, exist_ok=True)
+    tags_yaml = f"tags: {tags}\n" if tags is not None else ""
+    industry_yaml = f"industry: {industry}\n" if industry else ""
     (skill_dir / "SKILL.md").write_text(
         f"""---
 name: "{name}"
 description: {description}
-metadata:
+{industry_yaml}{tags_yaml}metadata:
   version: "{version}"
 ---
 # {name}
@@ -70,6 +81,22 @@ def test_build_index_generates_search_metadata(tmp_path: Path) -> None:
     assert len(search_items) == 1
     assert search_items[0]["id"] == "acme/entry-monitor@1.0.0"
     assert "monitor" in search_items[0]["search_text"]
+
+
+def test_build_index_includes_industry_in_manifest_and_search_index(tmp_path: Path) -> None:
+    _write_skill(
+        tmp_path,
+        "acme",
+        "inventory-monitor",
+        "1.0.0",
+        "Monitor inventory thresholds.",
+        industry="retail",
+        tags=["inventory", "alert"],
+    )
+    index = IndexBuilder(SkillRepositoryCrawler()).build_index([str(tmp_path)])
+    assert index["skills"][0]["manifest"]["industry"] == "retail"
+    assert index["search_index"][0]["industry"] == "retail"
+    assert "retail" in index["search_index"][0]["search_text"]
 
 
 def test_build_index_handles_invalid_skill_frontmatter(tmp_path: Path) -> None:

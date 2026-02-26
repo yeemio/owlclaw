@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml  # type: ignore[import-untyped]
 
+from owlclaw.capabilities.skill_nl_parser import detect_parse_mode, parse_natural_language_skill
 from owlclaw.capabilities.tool_schema import extract_tools_schema
 from owlclaw.config.loader import ConfigLoadError, YAMLConfigLoader
 
@@ -28,6 +29,24 @@ _FRONTMATTER_PATTERN = re.compile(r"^---\r?\n(.*?)\r?\n---(?:\r?\n(.*))?$", re.D
 if TYPE_CHECKING:
     from owlclaw.capabilities.registry import CapabilityRegistry
     from owlclaw.governance.ledger import Ledger
+
+
+def _body_contains_trigger_hint(body_text: str) -> bool:
+    normalized = body_text.lower()
+    hints = (
+        "每天",
+        "每周",
+        "每月",
+        "当",
+        "daily",
+        "weekly",
+        "every day",
+        "every week",
+        "when",
+        "new order",
+        "inventory change",
+    )
+    return any(token in body_text or token in normalized for token in hints)
 
 
 class Skill:
@@ -53,6 +72,8 @@ class Skill:
         metadata: dict[str, Any],
         owlclaw_config: dict[str, Any] | None = None,
         full_content: str | None = None,
+        parse_mode: str = "structured",
+        trigger_config: dict[str, Any] | None = None,
     ):
         self.name = name
         self.description = description
@@ -61,6 +82,8 @@ class Skill:
         self.owlclaw_config = owlclaw_config or {}
         self._full_content = full_content
         self._is_loaded = full_content is not None
+        self.parse_mode = parse_mode if parse_mode in {"structured", "natural_language", "hybrid"} else "structured"
+        self.trigger_config = trigger_config if isinstance(trigger_config, dict) else {}
 
     @property
     def task_type(self) -> str | None:
@@ -194,6 +217,8 @@ class Skill:
             "description": self.description,
             "file_path": str(self.file_path),
             "metadata": self.metadata,
+            "parse_mode": self.parse_mode,
+            "trigger_config": self.trigger_config,
             "task_type": self.task_type,
             "constraints": self.constraints,
             "trigger": self.trigger,
@@ -334,15 +359,61 @@ class SkillsLoader:
         metadata = frontmatter_map.get("metadata", {})
         if not isinstance(metadata, dict):
             metadata = {}
+        metadata = dict(metadata)
+        top_level_tags = frontmatter_map.get("tags")
+        if isinstance(top_level_tags, list):
+            normalized_tags = [str(tag).strip() for tag in top_level_tags if isinstance(tag, str) and str(tag).strip()]
+            if normalized_tags:
+                metadata["tags"] = normalized_tags
+        top_level_industry = frontmatter_map.get("industry")
+        if isinstance(top_level_industry, str) and top_level_industry.strip():
+            metadata["industry"] = top_level_industry.strip()
         tools_schema, tool_errors = extract_tools_schema(frontmatter_map)
         if tool_errors:
             for error in tool_errors:
                 logger.warning("Skill file %s invalid tool declaration: %s", file_path, error)
-        metadata = dict(metadata)
         metadata["tools_schema"] = tools_schema
         owlclaw_config = frontmatter_map.get("owlclaw", {})
         if not isinstance(owlclaw_config, dict):
             owlclaw_config = {}
+        body_text = (_body or "").strip()
+        parse_mode = detect_parse_mode(frontmatter_map)
+        trigger_config: dict[str, Any] = {}
+        if parse_mode == "natural_language":
+            nl_result = parse_natural_language_skill(
+                skill_name=frontmatter_map["name"].strip(),
+                frontmatter=frontmatter_map,
+                body=body_text,
+            )
+            trigger_config = dict(nl_result.trigger_config)
+            trigger_type = trigger_config.get("type")
+            if trigger_type == "cron" and isinstance(trigger_config.get("expression"), str):
+                owlclaw_config["trigger"] = f'cron("{trigger_config["expression"]}")'
+            elif trigger_type == "webhook" and isinstance(trigger_config.get("event"), str):
+                owlclaw_config["trigger"] = f'webhook("{trigger_config["event"]}")'
+            elif trigger_type == "queue" and isinstance(trigger_config.get("topic"), str):
+                owlclaw_config["trigger"] = f'queue("{trigger_config["topic"]}")'
+            elif trigger_type == "db_change" and isinstance(trigger_config.get("table"), str):
+                owlclaw_config["trigger"] = f'db_change("{trigger_config["table"]}")'
+            owlclaw_config["parse_confidence"] = nl_result.confidence
+        elif parse_mode == "structured" and "trigger" not in owlclaw_config and _body_contains_trigger_hint(body_text):
+            nl_result = parse_natural_language_skill(
+                skill_name=frontmatter_map["name"].strip(),
+                frontmatter=frontmatter_map,
+                body=body_text,
+            )
+            parse_mode = "hybrid"
+            trigger_config = dict(nl_result.trigger_config)
+            trigger_type = trigger_config.get("type")
+            if trigger_type == "cron" and isinstance(trigger_config.get("expression"), str):
+                owlclaw_config["trigger"] = f'cron("{trigger_config["expression"]}")'
+            elif trigger_type == "webhook" and isinstance(trigger_config.get("event"), str):
+                owlclaw_config["trigger"] = f'webhook("{trigger_config["event"]}")'
+            elif trigger_type == "queue" and isinstance(trigger_config.get("topic"), str):
+                owlclaw_config["trigger"] = f'queue("{trigger_config["topic"]}")'
+            elif trigger_type == "db_change" and isinstance(trigger_config.get("table"), str):
+                owlclaw_config["trigger"] = f'db_change("{trigger_config["table"]}")'
+            owlclaw_config["parse_confidence"] = nl_result.confidence
         prerequisites = self._extract_prerequisites(frontmatter_map, owlclaw_config)
         ready, reasons = self._check_prerequisites(prerequisites)
         if not ready:
@@ -360,6 +431,8 @@ class SkillsLoader:
             metadata=metadata,
             owlclaw_config=owlclaw_config,
             full_content=None,
+            parse_mode=parse_mode,
+            trigger_config=trigger_config,
         )
 
     @staticmethod

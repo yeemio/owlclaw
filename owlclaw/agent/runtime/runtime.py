@@ -23,8 +23,8 @@ import math
 import os
 import time
 from collections import deque
-from decimal import Decimal
 from pathlib import Path
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 from owlclaw.agent.runtime.config import (
@@ -164,7 +164,40 @@ class AgentRuntime:
             "tools_cache_hits": 0.0,
             "llm_time_ms_total": 0.0,
         }
+        self._migration_gate = self._init_migration_gate()
+        self._approval_queue = self._init_approval_queue()
         self.is_initialized = False
+
+    def _resolve_migration_config_path(self) -> Path:
+        return Path(self.app_dir) / "owlclaw.yaml"
+
+    def _init_migration_gate(self) -> Any:
+        try:
+            from owlclaw.governance import MigrationGate
+
+            return MigrationGate(config_path=self._resolve_migration_config_path())
+        except Exception:
+            logger.debug("MigrationGate initialization failed", exc_info=True)
+            return None
+
+    def _init_approval_queue(self) -> Any:
+        try:
+            from owlclaw.config.loader import YAMLConfigLoader
+            from owlclaw.governance import InMemoryApprovalQueue
+
+            config = YAMLConfigLoader.load_dict(self._resolve_migration_config_path())
+            timeout_seconds = 24 * 60 * 60
+            migration_cfg = config.get("migration")
+            if isinstance(migration_cfg, dict):
+                approval_cfg = migration_cfg.get("approval")
+                if isinstance(approval_cfg, dict):
+                    timeout_raw = approval_cfg.get("timeout_seconds")
+                    if isinstance(timeout_raw, int) and timeout_raw > 0:
+                        timeout_seconds = timeout_raw
+            return InMemoryApprovalQueue(timeout_seconds=timeout_seconds)
+        except Exception:
+            logger.debug("Approval queue initialization failed", exc_info=True)
+            return None
 
     def _init_langfuse_client(self) -> Any | None:
         """Initialize optional Langfuse client from runtime config."""
@@ -1081,6 +1114,47 @@ class AgentRuntime:
             return {"error": f"No capability registry configured for tool '{tool_name}'"}
 
         invoke_arguments = self._normalize_capability_arguments(arguments, context)
+        capability_meta = self.registry.get_capability_metadata(tool_name)
+        skill_owlclaw = self._get_skill_owlclaw_config(tool_name)
+        migration_outcome = self._evaluate_migration(tool_name, invoke_arguments, skill_owlclaw)
+        if migration_outcome["decision"] == "observe_only":
+            observed = {
+                "status": "observe_only",
+                "tool": tool_name,
+                "reason": "migration_weight is 0 or policy returned observe_only",
+                "arguments": invoke_arguments,
+                "risk_level": migration_outcome["risk_level"],
+                "migration_weight": migration_outcome["migration_weight"],
+            }
+            await self._record_migration_non_execute(
+                context=context,
+                tool_name=tool_name,
+                capability_meta=capability_meta,
+                invoke_arguments=invoke_arguments,
+                output=observed,
+                execution_mode="observe_only",
+                migration_outcome=migration_outcome,
+            )
+            return observed
+
+        if migration_outcome["decision"] == "require_approval":
+            approval_result = await self._create_approval_request(
+                context=context,
+                tool_name=tool_name,
+                invoke_arguments=invoke_arguments,
+                migration_outcome=migration_outcome,
+            )
+            await self._record_migration_non_execute(
+                context=context,
+                tool_name=tool_name,
+                capability_meta=capability_meta,
+                invoke_arguments=invoke_arguments,
+                output=approval_result,
+                execution_mode="pending_approval",
+                migration_outcome=migration_outcome,
+            )
+            return approval_result
+
         self._perf_metrics["tool_calls"] += 1
         observation = self._observe_tool(
             trace,
@@ -1092,9 +1166,8 @@ class AgentRuntime:
             result = await self.registry.invoke_handler(tool_name, **invoke_arguments)
             execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
             if self._ledger is not None:
-                meta = self.registry.get_capability_metadata(tool_name)
-                task_type = (meta.get("task_type") or "unknown") if meta else "unknown"
-                decision_reasoning = self._build_tool_decision_reasoning(meta, context)
+                task_type = (capability_meta.get("task_type") or "unknown") if capability_meta else "unknown"
+                decision_reasoning = self._build_tool_decision_reasoning(capability_meta, context)
                 await self._ledger.record_execution(
                     tenant_id=context.tenant_id,
                     agent_id=context.agent_id,
@@ -1109,9 +1182,12 @@ class AgentRuntime:
                     llm_tokens_input=0,
                     llm_tokens_output=0,
                     estimated_cost=Decimal("0"),
-                        status="success",
-                        error_message=None,
-                    )
+                    status="success",
+                    error_message=None,
+                    migration_weight=migration_outcome["migration_weight"],
+                    execution_mode="auto",
+                    risk_level=Decimal(str(migration_outcome["risk_level"])),
+                )
             self._finish_observation(
                 observation,
                 output=result if isinstance(result, dict) else {"result": result},
@@ -1131,9 +1207,8 @@ class AgentRuntime:
             )
             if self._ledger is not None:
                 execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
-                meta = self.registry.get_capability_metadata(tool_name)
-                task_type = (meta.get("task_type") or "unknown") if meta else "unknown"
-                decision_reasoning = self._build_tool_decision_reasoning(meta, context)
+                task_type = (capability_meta.get("task_type") or "unknown") if capability_meta else "unknown"
+                decision_reasoning = self._build_tool_decision_reasoning(capability_meta, context)
                 try:
                     await self._ledger.record_execution(
                         tenant_id=context.tenant_id,
@@ -1151,6 +1226,9 @@ class AgentRuntime:
                         estimated_cost=Decimal("0"),
                         status="error",
                         error_message=str(exc),
+                        migration_weight=migration_outcome["migration_weight"],
+                        execution_mode="auto",
+                        risk_level=Decimal(str(migration_outcome["risk_level"])),
                     )
                 except Exception as ledger_exc:
                     logger.exception("Ledger record_execution failed: %s", ledger_exc)
@@ -1197,6 +1275,147 @@ class AgentRuntime:
             return f"Rate limit exceeded for tool '{tool_name}'"
         self._tool_call_timestamps.append(now)
         return None
+
+    def _get_skill_owlclaw_config(self, tool_name: str) -> dict[str, Any]:
+        if self.registry is None:
+            return {}
+        try:
+            skill = self.registry.skills_loader.get_skill(tool_name)
+        except Exception:
+            return {}
+        if skill is None:
+            return {}
+        cfg = getattr(skill, "owlclaw_config", {})
+        return cfg if isinstance(cfg, dict) else {}
+
+    def _evaluate_migration(
+        self,
+        tool_name: str,
+        invoke_arguments: dict[str, Any],
+        skill_owlclaw: dict[str, Any],
+    ) -> dict[str, Any]:
+        fallback = {
+            "decision": "auto_execute",
+            "migration_weight": 100,
+            "risk_level": 0.0,
+            "execution_probability": 1.0,
+        }
+        gate = self._migration_gate
+        if gate is None:
+            return fallback
+        action = self._build_migration_action(invoke_arguments)
+        try:
+            outcome = gate.evaluate(
+                skill_name=tool_name,
+                action=action,
+                skill_owlclaw=skill_owlclaw,
+            )
+        except Exception:
+            logger.debug("MigrationGate evaluation failed", exc_info=True)
+            return fallback
+        decision_value = getattr(outcome, "decision", "auto_execute")
+        if hasattr(decision_value, "value"):
+            decision_value = decision_value.value
+        return {
+            "decision": str(decision_value).strip().lower(),
+            "migration_weight": int(getattr(outcome, "migration_weight", 100)),
+            "risk_level": float(getattr(outcome, "risk_level", 0.0)),
+            "execution_probability": float(getattr(outcome, "execution_probability", 1.0)),
+        }
+
+    @staticmethod
+    def _build_migration_action(invoke_arguments: dict[str, Any]) -> dict[str, Any]:
+        amount_raw = invoke_arguments.get("amount", invoke_arguments.get("total_amount", 0))
+        try:
+            amount = float(amount_raw)
+        except (TypeError, ValueError):
+            amount = 0.0
+
+        scope = "single"
+        for value in invoke_arguments.values():
+            if isinstance(value, list | tuple):
+                scope = "batch" if len(value) > 1 else scope
+                break
+        operation = str(invoke_arguments.get("operation_type", "write")).strip().lower() or "write"
+        reversibility = str(invoke_arguments.get("reversibility", "reversible")).strip().lower() or "reversible"
+        return {
+            "action_type": operation,
+            "impact_scope": scope,
+            "amount": amount,
+            "reversibility": reversibility,
+        }
+
+    async def _create_approval_request(
+        self,
+        *,
+        context: AgentRunContext,
+        tool_name: str,
+        invoke_arguments: dict[str, Any],
+        migration_outcome: dict[str, Any],
+    ) -> dict[str, Any]:
+        queue = self._approval_queue
+        if queue is None:
+            return {
+                "status": "pending_approval",
+                "tool": tool_name,
+                "request_id": None,
+                "reason": "approval queue unavailable",
+                "migration_weight": migration_outcome["migration_weight"],
+            }
+        request = await queue.create(
+            tenant_id=context.tenant_id,
+            agent_id=context.agent_id,
+            skill_name=tool_name,
+            suggestion=invoke_arguments,
+            reasoning=f"risk={migration_outcome['risk_level']:.4f}",
+        )
+        return {
+            "status": "pending_approval",
+            "tool": tool_name,
+            "request_id": request.id,
+            "migration_weight": migration_outcome["migration_weight"],
+            "risk_level": migration_outcome["risk_level"],
+            "execution_probability": migration_outcome["execution_probability"],
+        }
+
+    async def _record_migration_non_execute(
+        self,
+        *,
+        context: AgentRunContext,
+        tool_name: str,
+        capability_meta: dict[str, Any] | None,
+        invoke_arguments: dict[str, Any],
+        output: dict[str, Any],
+        execution_mode: str,
+        migration_outcome: dict[str, Any],
+    ) -> None:
+        if self._ledger is None:
+            return
+        task_type = (capability_meta.get("task_type") or "unknown") if capability_meta else "unknown"
+        decision_reasoning = self._build_tool_decision_reasoning(capability_meta, context)
+        try:
+            await self._ledger.record_execution(
+                tenant_id=context.tenant_id,
+                agent_id=context.agent_id,
+                run_id=context.run_id,
+                capability_name=tool_name,
+                task_type=task_type,
+                input_params=invoke_arguments,
+                output_result=output,
+                decision_reasoning=decision_reasoning,
+                execution_time_ms=0,
+                llm_model="",
+                llm_tokens_input=0,
+                llm_tokens_output=0,
+                estimated_cost=Decimal("0"),
+                status="skipped" if execution_mode == "observe_only" else "pending",
+                error_message=None,
+                migration_weight=migration_outcome["migration_weight"],
+                execution_mode=execution_mode,
+                risk_level=Decimal(str(migration_outcome["risk_level"])),
+            )
+        except Exception:
+            logger.debug("Failed to record migration non-execute event", exc_info=True)
 
     def _normalize_capability_arguments(
         self, arguments: dict[str, Any], context: AgentRunContext

@@ -30,6 +30,7 @@ class LedgerQueryFilters:
     agent_id: str | None = None
     capability_name: str | None = None
     status: str | None = None
+    execution_mode: str | None = None
     start_date: date | None = None
     end_date: date | None = None
     limit: int | None = None
@@ -82,6 +83,11 @@ class LedgerRecord(Base):
 
     status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    migration_weight: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    execution_mode: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    risk_level: Mapped[Decimal | None] = mapped_column(DECIMAL(5, 4), nullable=True)
+    approval_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    approval_time: Mapped[Any | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[Any] = mapped_column(
         DateTime(timezone=True),
@@ -147,6 +153,11 @@ class Ledger:
         estimated_cost: Decimal,
         status: str,
         error_message: str | None = None,
+        migration_weight: int | None = None,
+        execution_mode: str | None = None,
+        risk_level: Decimal | None = None,
+        approval_by: str | None = None,
+        approval_time: datetime | None = None,
     ) -> None:
         """Enqueue one execution record (non-blocking)."""
         def _normalize_non_empty(value: Any, field_name: str) -> str:
@@ -183,6 +194,11 @@ class Ledger:
             estimated_cost=estimated_cost,
             status=status,
             error_message=error_message,
+            migration_weight=migration_weight,
+            execution_mode=execution_mode,
+            risk_level=risk_level,
+            approval_by=approval_by,
+            approval_time=approval_time,
         )
         self._write_queue.put_nowait(record)
 
@@ -202,6 +218,8 @@ class Ledger:
                 )
             if filters.status is not None:
                 stmt = stmt.where(LedgerRecord.status == filters.status)
+            if filters.execution_mode is not None:
+                stmt = stmt.where(LedgerRecord.execution_mode == filters.execution_mode)
             if filters.start_date is not None:
                 start_dt = datetime.combine(
                     filters.start_date, time.min, tzinfo=timezone.utc

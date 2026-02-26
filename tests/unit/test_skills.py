@@ -140,6 +140,8 @@ def test_skill_to_dict(tmp_path):
     assert d["description"] == "For to_dict"
     assert "file_path" in d
     assert "metadata" in d
+    assert d["parse_mode"] == "natural_language"
+    assert isinstance(d["trigger_config"], dict)
     assert "full_content" not in d
 
 
@@ -166,6 +168,29 @@ owlclaw:
     assert skill.focus == ["inventory_monitor", "trading_decision"]
     assert skill.risk_level == "high"
     assert skill.requires_confirmation is True
+    assert skill.parse_mode == "structured"
+
+
+def test_skills_loader_parses_top_level_industry_and_tags(tmp_path):
+    skill_dir = tmp_path / "inventory-monitor"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: inventory-monitor
+description: Monitor inventory threshold
+industry: retail
+tags: [inventory, alert]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("inventory-monitor")
+    assert skill is not None
+    assert skill.metadata.get("industry") == "retail"
+    assert skill.metadata.get("tags") == ["inventory", "alert"]
 
 
 def test_skills_loader_focus_ignores_non_string_items(tmp_path):
@@ -718,3 +743,50 @@ def test_skills_loader_allows_explicit_enable_in_owlclaw_yaml(tmp_path, monkeypa
     skills = loader.scan()
     assert len(skills) == 1
     assert skills[0].name == "enabled-skill"
+
+
+def test_skills_loader_natural_language_mode_sets_trigger_config(tmp_path):
+    skill_dir = tmp_path / "nl-skill"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: nl-skill
+description: 每天早上 9 点检查库存
+---
+# 库存预警
+当库存不足时通知我
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    skill = skills[0]
+    assert skill.parse_mode == "natural_language"
+    assert skill.trigger_config.get("type") == "cron"
+    assert skill.trigger_config.get("expression") == "0 9 * * *"
+    assert skill.trigger == 'cron("0 9 * * *")'
+
+
+def test_skills_loader_hybrid_mode_uses_nl_trigger_when_owlclaw_has_no_trigger(tmp_path):
+    skill_dir = tmp_path / "hybrid-skill"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: hybrid-skill
+description: 订单通知
+owlclaw:
+  task_type: order_monitor
+---
+# 订单通知
+每周一生成订单汇总
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    skills = loader.scan()
+    assert len(skills) == 1
+    skill = skills[0]
+    assert skill.parse_mode == "hybrid"
+    assert skill.trigger_config.get("type") == "cron"
+    assert skill.trigger == 'cron("0 0 * * 1")'

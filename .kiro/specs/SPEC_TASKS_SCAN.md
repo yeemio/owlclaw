@@ -99,17 +99,17 @@
 ### Phase 5：落地收尾（架构重塑）
 
 - [x] Lite Mode 零依赖启动（`OwlClaw.lite()` + `InMemoryLedger`） → 主 worktree 已实现
-- [ ] Quick Start 指南（10 分钟从安装到看见 Agent 决策） → spec: quick-start
-- [ ] 完整端到端示例（库存管理场景，可运行） → spec: complete-workflow
-- [ ] 架构演进路线章节（Multi-Agent/自我进化/可解释性/OwlHub 安全治理） → spec: architecture-roadmap
+- [x] Quick Start 指南（10 分钟从安装到看见 Agent 决策） → spec: quick-start
+- [x] 完整端到端示例（库存管理场景，可运行） → spec: complete-workflow
+- [x] 架构演进路线章节（Multi-Agent/自我进化/可解释性/OwlHub 安全治理） → spec: architecture-roadmap
 
 ### Phase 6：差异化能力（业务落地核心）
 
 - [ ] SKILL.md 自然语言书写模式（业务人员零门槛） → spec: skill-dx
 - [ ] AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板） → spec: skill-ai-assist
-- [ ] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
+- [x] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
 - [ ] Skills 质量评分与数据飞轮（执行指标 → 评分 → 推荐优化） → spec: skills-quality
-- [ ] OwlHub 语义搜索推荐（用户描述 → 最佳模板建议 + 行业标签） → spec: industry-skills
+- [x] OwlHub 语义搜索推荐（用户描述 → 最佳模板建议 + 行业标签） → spec: industry-skills
 
 ---
 
@@ -148,16 +148,16 @@
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（25/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4/6/9.4/11 待 Docker/CI 验收） |
+| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（9/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；剩余 Task 4.2/11.1/11.3/11.4） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（37/37） | 仓库卫生清理（.gitignore + 根目录清理 + deploy/ 文档化 + scripts/ README + .editorconfig + CODEOWNERS + Makefile + docs/README.md） |
-| **quick-start** | `.kiro/specs/quick-start/` | 🆕 三层齐全，待开始（0/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
-| **complete-workflow** | `.kiro/specs/complete-workflow/` | 🆕 三层齐全，待开始（0/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
-| **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | 🆕 三层齐全，待开始（0/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
-| **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/25，P1:18 P2:7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
-| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22，P1:16 P2:6） | AI 辅助 Skill 生成（P1 对话式创建+模板，P2 文档提取需验证产品价值后启动） |
-| **progressive-migration** | `.kiro/specs/progressive-migration/` | 🆕 三层齐全，待开始（0/25） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
-| **skills-quality** | `.kiro/specs/skills-quality/` | 🆕 三层齐全，待开始（0/21） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
-| **industry-skills** | `.kiro/specs/industry-skills/` | 🆕 三层齐全，待开始（0/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
+| **quick-start** | `.kiro/specs/quick-start/` | ✅ 三层齐全，已完成（13/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
+| **complete-workflow** | `.kiro/specs/complete-workflow/` | ✅ 三层齐全，已完成（18/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
+| **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | ✅ 三层齐全，已完成（13/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
+| **skill-dx** | `.kiro/specs/skill-dx/` | 🟡 三层齐全，进行中（18/25，P1:18/18 P2:0/7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
+| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🟡 三层齐全，进行中（22/28，P1:22/22 P2:0/6） | AI 辅助 Skill 生成（P1 对话式创建+模板已完成，P2 文档提取需验证产品价值后启动） |
+| **progressive-migration** | `.kiro/specs/progressive-migration/` | ✅ 三层齐全，已完成（31/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
+| **skills-quality** | `.kiro/specs/skills-quality/` | 🟡 三层齐全，进行中（24/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成；Task 6 OwlHub 联动待跨 worktree 收口） |
+| **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
 
 ---
 
@@ -183,12 +183,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | 统筹轮次：merge review-work + 同步 + Phase 6 分配 |
-| 批次状态 | **统筹完成**。review-work 已合并到 main（fast-forward，24 files），所有 worktree 已同步到最新 main。Phase 6 spec 已正式分配到编码 worktree。 |
-| 已完成项 | 1) merge review-work → main（fast-forward）；2) 同步 3 个子 worktree（codex-work stash 冲突已解决）；3) 更新 WORKTREE_ASSIGNMENTS 分配计划（Phase 6 正式分配）；4) skill-dx/skill-ai-assist 分期策略 + 文件路径引用修正。 |
-| 下一待执行 | 1) codex-work：test-infra 剩余 + architecture-roadmap → skill-dx P1 → skills-quality；2) codex-gpt-work：quick-start + complete-workflow → progressive-migration → industry-skills；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
-| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
+| 当前批次 | review-work 审校循环：APPROVE skills-quality 并同步 release/owlhub 阻塞规范化 |
+| 批次状态 | **进行中（阶段性收口）**。两编码分支新增提交均已审校合并；剩余主要为外部凭据与分配约束阻塞项。 |
+| 已完成项 | 1) 审校合并保持有效：quick-start ✅(13/13)、complete-workflow ✅(18/18)、architecture-roadmap ✅(13/13)、skill-dx P1（18/25）、skill-ai-assist P1（22/28）、progressive-migration ✅(31/31)、industry-skills ✅(12/12)、skills-quality P1~P5（24/27）；2) 定向验收通过：`106 passed`（skills-quality/governance/cli），并通过 `ruff` + `mypy`；3) 同步 release/owlhub 阻塞事实到 spec：发布 secrets 缺失、生产凭据外部阻塞、Task 19 受 worktree 分配约束。 |
+| 下一待执行 | 1) 主 worktree 合并 `review-work`；2) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 并在 `main` 触发 `v0.1.0` 发布流；3) 统筹调整分配后推进 owlhub Task 19（需可改 `owlclaw/db/**` 与 `migrations/**`）；4) 编码分支继续 test-infra 与 skills-quality Task 6 联调收口。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality 🟡(24/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(25/32，外部阻塞)，owlhub 🟡(137/143，分配+外部阻塞)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) release：缺少 GitHub Secrets（`PYPI_TOKEN/TEST_PYPI_TOKEN`）与 `main` 分支发布动作；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞；3) owlhub Task 19：当前 worktree 分配禁止改动 `owlclaw/db/**` 与 `migrations/**`；4) test-infra Task 4.2/11.1/11.3/11.4 仍待达标。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
