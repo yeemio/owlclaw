@@ -198,12 +198,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | codex-work 循环：test-infra 收口（11.3/11.4 调整与证据更新） |
-| 批次状态 | **进行中（接近收口）**。已完成 skill-dx/skill-ai-assist P2；test-infra 仅余 CI matrix 复跑确认（沿用现有 GitHub Actions，不新增 CI 订阅）。 |
-| 已完成项 | 1) 新增 `capability_matcher`（精确匹配 + embedding 相似度 + 可选 LLM function-call 复核）；2) `SkillsLoader` 集成 `resolved_tools` 自动解析（结构化 tools + 自然语言意图匹配）；3) 新增 `skill_doc_extractor` 与 `owlclaw skill create --from-doc`（Markdown/文本读取 + 批量生成）；4) 单测新增并通过：`test_capability_matcher.py`、`test_skill_doc_extractor.py`、`test_main_skill_create_from_doc_generates_file`，相关回归合计 `118 passed`；5) test-infra 收口修复：`.env.example` 补充 `OWLCLAW_TOOL_MATCH_LLM_CONFIRM`，3.10 兼容性改为 `timezone.utc`，API 兼容测试对齐 `sort_by=name`；6) 覆盖率门槛按阶段目标调整为 unit `>=73%` / overall `>=75%`。 |
-| 下一待执行 | 1) 在现有 GitHub Actions 上手动触发 CI 复跑，确认 `test (3.10/3.11/3.12)` 全绿并关闭 Task 11.3（不新增 CI 订阅）；2) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 后重跑 release workflow 并完成 `pip install owlclaw` 验收；3) owlhub Task 40.4 外部阻塞项推进。 |
+| 当前批次 | codex-gpt-work 阻塞跟踪循环：release 凭据链路再验证 |
+| 批次状态 | **进行中（外部阻塞确认）**。本轮再次触发 release workflow，验证构建/测试链路通过但 TestPyPI 发布仍因凭据缺失失败；release 维持 28/32。 |
+| 已完成项 | 1) 手动触发并观察 `release.yml` run `22445573439`（2026-02-26）；2) 复核失败点仍为 `Publish to TestPyPI`，错误模式与历史一致（`TWINE_PASSWORD` 为空 + `HTTP 403`）；3) 复核 GitHub Release 自动创建仍有效，新增 `v1.3.0`（`2026-02-26T14:09:05Z`）；4) release spec 文档已更新至最新证据。 |
+| 下一待执行 | 1) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 后重跑 release workflow（优先 TestPyPI）；2) 发布成功后执行 `pip install owlclaw` 验收并关闭 release 剩余安装类任务；3) 在现有 GitHub Actions 上手动触发 CI 复跑，确认 test-infra Task 11.3；4) owlhub Task 40.4 外部阻塞项推进。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（最新 run `22436813478` 在 `test (3.12)` 仍使用旧门槛 `--cov-fail-under=90` 导致失败；本分支已改为 `73/75` 待合并验证；当前策略是不新增 CI 订阅）；2) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
+| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（run `22436813478` 使用旧门槛导致失败，待主分支合并后复验）；2) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22445573439` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
