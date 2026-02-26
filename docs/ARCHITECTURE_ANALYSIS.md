@@ -3,6 +3,7 @@
 > **创建时间**: 2026-02-10
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`
 > **目的**: 基于外部调研和内部代码分析，回答"OwlClaw 到底怎么做"
+> **关联文档**: `docs/POSITIONING.md`（产品定位与差异化价值）
 
 ---
 
