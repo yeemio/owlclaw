@@ -65,4 +65,5 @@ logs/
 # Local agent/runtime caches and generated protocol drill artifacts
 .owlclaw/
 docs/protocol/reports/
+docs/protocol/cross_lang_validation_latest.md
 docs/ops/reports/

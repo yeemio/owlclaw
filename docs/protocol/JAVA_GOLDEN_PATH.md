@@ -1,78 +1,72 @@
 # Java Golden Path
 
-Last updated: 2026-02-26
+> Scope: reproducible Java + curl onboarding path for OwlClaw API.
+> Last Updated: 2026-02-26
 
-## Goal
+## 1. Environment Baseline
 
-Provide a low-friction Java and curl integration path for protocol validation.
+- JDK: `17`
+- Build tool: Maven `3.9+`
+- API endpoint baseline: `http://localhost:8000`
 
-## Prerequisites
+## 2. Core Scenarios
 
-1. JDK 17
-2. Maven 3.9+
-3. Reachable gateway endpoint
-4. Optional API token (`OWLCLAW_API_TOKEN`)
+1. Trigger Agent
+2. Query Status
+3. Error Handling (invalid payload)
 
-## Java Baseline
+Java assets:
 
-Project location:
+- `examples/cross_lang/java/src/main/java/dev/owlclaw/examples/OwlClawApiClient.java`
 
-`examples/cross_lang/java`
+curl assets:
 
-Quick compile check:
+- `examples/cross_lang/curl/trigger_agent.sh`
+- `examples/cross_lang/curl/query_status.sh`
+- `examples/cross_lang/curl/error_case.sh`
 
-```bash
-cd examples/cross_lang/java
-mvn -q -DskipTests package
+## 3. Reliability Defaults
+
+- request timeout configured in Java client
+- retry wrapper for transient IO failures
+- idempotency key header for trigger requests
+
+## 4. Validation
+
+Run:
+
+```powershell
+pwsh -File scripts/verify_cross_lang.ps1
 ```
 
-Run scenario examples:
+Expected checks:
 
-```bash
-export OWLCLAW_GATEWAY_BASE_URL=http://localhost:8000
-export OWLCLAW_API_TOKEN=<token>
+- java project files exist
+- java trigger/query methods exist
+- curl parity scripts exist
 
-# Trigger scenario
-java -cp target/classes io.owlclaw.examples.crosslang.Main trigger
+## 5. Thresholds and Acceptance Matrix
 
-# Query scenario
-java -cp target/classes io.owlclaw.examples.crosslang.Main query <run_id>
+Thresholds:
 
-# Error contract scenario
-java -cp target/classes io.owlclaw.examples.crosslang.Main error
-```
+- JDK 17 baseline enforced
+- local scenario response target: `<= 2s`
+- core scenario pass rate: `100%`
 
-## curl Baseline
+Acceptance matrix:
 
-Scripts:
+| Scenario | Java | curl | Evidence |
+|---|---|---|---|
+| Trigger | yes | yes | verification log |
+| Query | yes | yes | verification log |
+| Error handling | yes | yes | verification log |
+| Retry + idempotency | yes | yes | client + curl script config |
 
-1. `scripts/cross_lang/trigger_agent.sh`
-2. `scripts/cross_lang/query_status.sh`
-3. `scripts/cross_lang/error_scenario.sh`
+## 6. T+0 ~ T+15 Playbook
 
-Example:
+- `T+0`: cross-language verification fails, stop rollout.
+- `T+3`: classify contract drift vs sample bug vs environment issue.
+- `T+6`: patch sample/script and rerun.
+- `T+10`: add regression assertion for failure mode.
+- `T+15`: publish updated guidance and recovery note.
 
-```bash
-export OWLCLAW_GATEWAY_BASE_URL=http://localhost:8000
-./scripts/cross_lang/trigger_agent.sh
-```
-
-## Scenario Mapping
-
-| Scenario | Java | curl |
-|---|---|---|
-| Trigger agent | `Main trigger` -> `GatewayClient.triggerAgent` | `trigger_agent.sh` |
-| Query status | `Main query` -> `GatewayClient.queryRunStatus` | `query_status.sh` |
-| Error contract | `Main error` -> invalid payload path | `error_scenario.sh` |
-
-## Verification
-
-Use:
-
-`scripts/verify_cross_lang.ps1`
-
-The script validates the presence of required Java and curl artifacts.
-
-Field alignment check:
-
-`python scripts/cross_lang/compare_response_fields.py --java-json examples/cross_lang/fixtures/java_trigger_response.json --curl-json examples/cross_lang/fixtures/curl_trigger_response.json`
