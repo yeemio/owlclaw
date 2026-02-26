@@ -145,7 +145,7 @@
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | ✅ 三层齐全，已完成（14/14） | 示例（非交易场景、LangChain、3 行业 Skills、mionyee-trading 完整示例、批量验证脚本、CI 接入、文档对齐全部完成） |
 | cli-migrate | `.kiro/specs/cli-migrate/` | ✅ 三层齐全，已完成（24/24） | AI 辅助迁移工具（binding、dry-run、报告、冲突处理、Python 扫描与真实 handler 生成、配置校验与迁移向导全部完成） |
-| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（27/32） | PyPI + GitHub 发布 |
+| release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（28/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
 | **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（9/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；剩余 Task 4.2/11.1/11.3/11.4） |
@@ -184,10 +184,10 @@
 |------|---|
 | 最后更新 | 2026-02-26 |
 | 当前批次 | codex-gpt-work 收尾循环：release 最新远程实跑核验 + 阻塞收敛 |
-| 批次状态 | **进行中（阶段性收口）**。release 更新至 27/32（GitHub Release 自动创建与 changelog 验收已完成）；owlhub 141/143 仍受 40.4 外部阻塞；test-infra 仍有性能与 CI 门槛待收口。 |
-| 已完成项 | 1) 触发并观察 `release.yml`（run `22433883650`，2026-02-26）完成端到端链路核验；2) release task 4.1.4 已验收（自动创建 `v1.2.0`）；3) release task 6.1「GitHub Release 包含 changelog」已验收；4) release tasks 文档与阻塞说明已同步到最新证据。 |
+| 批次状态 | **进行中（阶段性收口）**。release 更新至 28/32（tag 触发链路、GitHub Release 自动创建与 changelog 验收已完成）；owlhub 141/143 仍受 40.4 外部阻塞；test-infra 仍有性能与 CI 门槛待收口。 |
+| 已完成项 | 1) 触发并观察 `release.yml`（run `22433883650`，2026-02-26）完成端到端链路核验；2) release task 4.1.1 已按现状规范化验收（`v1.0.0~v1.2.0` 发布 tag 已存在）；3) release task 4.1.4 已验收（自动创建 `v1.2.0`）；4) release task 6.1「GitHub Release 包含 changelog」已验收；5) release tasks 文档与阻塞说明已同步到最新证据。 |
 | 下一待执行 | 1) codex-work 启动 skill-dx P2（Task 1.5/4.1~4.5/5.5/5.6）并并行推进 test-infra Task 4.2/11.1/11.3/11.4；2) codex-work 启动 skill-ai-assist P2（Task 3.1~3.6，`--from-doc` 收口）；3) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 后重跑 release workflow（优先 TestPyPI）并完成 `pip install owlclaw` 验收；4) owlhub Task 40.4 外部阻塞项推进。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(27/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 串行耗时约 `257s`（2026-02-26），仍高于 `<60s`；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` 在 TestPyPI 步骤报 `HTTP 403`（`TWINE_PASSWORD` 为空）；4) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
