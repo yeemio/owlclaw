@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -70,7 +70,7 @@ async def test_reject_and_expire_flow() -> None:
         skill_name="daily-report",
         suggestion={"action": "publish"},
     )
-    expired_request.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    expired_request.expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
     expired_count = await queue.expire_pending()
     assert expired_count == 1
     rows = await queue.list(tenant_id="default", status=ApprovalStatus.EXPIRED)
