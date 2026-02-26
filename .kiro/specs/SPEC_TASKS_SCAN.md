@@ -183,10 +183,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | 统筹轮次：merge review-work + 同步 + Phase 6 分配 |
-| 批次状态 | **统筹完成**。review-work 已合并到 main（fast-forward，24 files），所有 worktree 已同步到最新 main。Phase 6 spec 已正式分配到编码 worktree。 |
-| 已完成项 | 1) merge review-work → main（fast-forward）；2) 同步 3 个子 worktree（codex-work stash 冲突已解决）；3) 更新 WORKTREE_ASSIGNMENTS 分配计划（Phase 6 正式分配）；4) skill-dx/skill-ai-assist 分期策略 + 文件路径引用修正。 |
-| 下一待执行 | 1) codex-work：test-infra 剩余 + architecture-roadmap → skill-dx P1 → skills-quality；2) codex-gpt-work：quick-start + complete-workflow → progressive-migration → industry-skills；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
+| 当前批次 | review-work 循环：统筹后首轮审校巡检（无增量分支） |
+| 批次状态 | **进行中**。编码分支相对 `main` 暂无新增提交；常规审校任务已执行并通过。 |
+| 已完成项 | 1) 同步确认：`git merge main` 已 up-to-date；2) 扫描确认：`git log main..codex-work` 与 `git log main..codex-gpt-work` 均为空；3) 全局质量检查：`poetry run ruff check .` 与 `poetry run mypy owlclaw/` 均通过。 |
+| 下一待执行 | 1) 等待编码 worktree 产出首批 Phase 6 提交并进入审校；2) 持续跟踪 test-infra/release/owlhub 阻塞项；3) 若持续无增量，执行下一轮 spec 一致性巡检。 |
 | 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |
