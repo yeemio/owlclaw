@@ -34,7 +34,7 @@ def test_property_26_cli_api_backward_compatibility(tmp_path: Path, monkeypatch)
     assert len(expected) == 1
 
     def fake_urlopen(request: Request, timeout: int):  # noqa: ARG001
-        if request.full_url.endswith("/api/v1/skills?query=phase3&tags="):
+        if request.full_url.endswith("/api/v1/skills?query=phase3&tags=&sort_by=name"):
             payload = {
                 "total": 1,
                 "page": 1,

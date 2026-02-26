@@ -97,8 +97,9 @@
   - [x] 11.2 有 PG：`poetry run pytest tests/unit/ tests/integration/ -q` → unit 全过，integration 按可用性 pass/skip
     - 验证记录（2026-02-25）：`DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:45432/owlclaw_test` + `docker-compose.test.yml` 下执行通过，结果 `1671 passed, 12 skipped, 2 warnings`
   - [ ] 11.3 CI 运行：所有 matrix（3.10/3.11/3.12）通过
+    - 当前状态（2026-02-26）：GitHub Actions run `22434830388` 在 `test (3.10)` 的 unit collection 阶段失败（`datetime.UTC` 仅 3.11+ 可用）；已在 `tests/unit/governance/test_approval_queue.py` 修复为 `timezone.utc`，待远端 CI 复跑确认三版本全绿
   - [ ] 11.4 覆盖率：unit ≥ 90%，overall ≥ 80%
-    - 当前状态（2026-02-26）：按 CI 同款命令本地复现，unit 覆盖率约 `74%`，overall 约 `76.72%`，未达阈值（90% / 80%）
+    - 当前状态（2026-02-26）：按 CI 同款命令本地复现，unit 覆盖率约 `74.00%`（`tests/unit --cov-fail-under=90` 失败），overall 约 `75.81%`（`tests/integration --cov-append --cov-fail-under=80` 失败），未达阈值（90% / 80%）
   - _Requirements: AC-1, AC-2, AC-3, AC-4, AC-5_
 
 ## Backlog
