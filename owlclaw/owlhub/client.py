@@ -38,6 +38,8 @@ class SearchResult:
     industry: str = ""
     source: str = "owlhub"
     score: float | None = None
+    quality_score: float | None = None
+    low_quality_warning: bool = False
 
 
 class OwlHubClient:
@@ -74,6 +76,7 @@ class OwlHubClient:
         include_draft: bool = False,
         include_hidden: bool = False,
         industry: str = "",
+        sort_by: str = "name",
     ) -> list[SearchResult]:
         """Search skills by name/description and optional tags."""
         data = self._load_index()
@@ -116,6 +119,12 @@ class OwlHubClient:
                     continue
                 if normalized_mode == "or" and requested_tags.isdisjoint(skill_tags):
                     continue
+            statistics = entry.get("statistics", {})
+            quality_score = None
+            if isinstance(statistics, dict):
+                raw_quality = statistics.get("quality_score")
+                if isinstance(raw_quality, int | float):
+                    quality_score = float(raw_quality)
             results.append(
                 SearchResult(
                     name=name,
@@ -130,10 +139,23 @@ class OwlHubClient:
                     if isinstance(manifest.get("dependencies", {}), dict)
                     else {},
                     industry=skill_industry,
+                    quality_score=quality_score,
+                    low_quality_warning=quality_score is not None and quality_score < 0.5,
                 )
             )
 
-        results.sort(key=lambda item: (item.name, item.version), reverse=False)
+        normalized_sort = sort_by.strip().lower()
+        if normalized_sort == "quality_score":
+            results.sort(
+                key=lambda item: (
+                    item.quality_score if item.quality_score is not None else -1.0,
+                    item.name,
+                    item.version,
+                ),
+                reverse=True,
+            )
+        else:
+            results.sort(key=lambda item: (item.name, item.version), reverse=False)
         return results
 
     def install(

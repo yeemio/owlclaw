@@ -108,7 +108,7 @@
 - [ ] SKILL.md 自然语言书写模式（业务人员零门槛） → spec: skill-dx
 - [ ] AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板） → spec: skill-ai-assist
 - [x] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
-- [ ] Skills 质量评分与数据飞轮（执行指标 → 评分 → 推荐优化） → spec: skills-quality
+- [x] Skills 质量评分与数据飞轮（执行指标 → 评分 → 推荐优化） → spec: skills-quality
 - [x] OwlHub 语义搜索推荐（用户描述 → 最佳模板建议 + 行业标签） → spec: industry-skills
 
 ---
@@ -156,7 +156,7 @@
 | **skill-dx** | `.kiro/specs/skill-dx/` | 🟡 三层齐全，进行中（18/25，P1:18/18 P2:0/7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
 | **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🟡 三层齐全，进行中（22/28，P1:22/22 P2:0/6） | AI 辅助 Skill 生成（P1 对话式创建+模板已完成，P2 文档提取需验证产品价值后启动） |
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | ✅ 三层齐全，已完成（31/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
-| **skills-quality** | `.kiro/specs/skills-quality/` | 🟡 三层齐全，进行中（24/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成；Task 6 OwlHub 联动待跨 worktree 收口） |
+| **skills-quality** | `.kiro/specs/skills-quality/` | ✅ 三层齐全，已完成（27/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
 
 ---
@@ -183,11 +183,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | review-work 审校循环：APPROVE skills-quality 并同步 release/owlhub 阻塞规范化 |
-| 批次状态 | **进行中（阶段性收口）**。两编码分支新增提交均已审校合并；剩余主要为外部凭据与分配约束阻塞项。 |
-| 已完成项 | 1) 审校合并保持有效：quick-start ✅(13/13)、complete-workflow ✅(18/18)、architecture-roadmap ✅(13/13)、skill-dx P1（18/25）、skill-ai-assist P1（22/28）、progressive-migration ✅(31/31)、industry-skills ✅(12/12)、skills-quality P1~P5（24/27）；2) 定向验收通过：`106 passed`（skills-quality/governance/cli），并通过 `ruff` + `mypy`；3) 同步 release/owlhub 阻塞事实到 spec：发布 secrets 缺失、生产凭据外部阻塞、Task 19 受 worktree 分配约束。 |
-| 下一待执行 | 1) 主 worktree 合并 `review-work`；2) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 并在 `main` 触发 `v0.1.0` 发布流；3) 统筹调整分配后推进 owlhub Task 19（需可改 `owlclaw/db/**` 与 `migrations/**`）；4) 编码分支继续 test-infra 与 skills-quality Task 6 联调收口。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality 🟡(24/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(25/32，外部阻塞)，owlhub 🟡(137/143，分配+外部阻塞)，其余 spec 全部 ✅。 |
+| 当前批次 | spec loop：skills-quality Task 6 收口（OwlHub 联动） |
+| 批次状态 | **进行中（阶段性收口）**。skills-quality 已完成（27/27）；当前剩余主要为 release/owlhub 外部凭据或分配约束阻塞项。 |
+| 已完成项 | 1) skills-quality Task 6 全量完成：发布附带匿名质量评分、搜索支持按质量排序、低质量告警标记；2) 定向验收通过：`test_cli_api_client`、`test_owlhub_api_routes`、`test_owlhub_cli_client`；3) 代码质量检查通过（ruff）。 |
+| 下一待执行 | 1) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 并在 `main` 触发 `v0.1.0` 发布流；2) 统筹调整分配后推进 owlhub Task 19（需可改 `owlclaw/db/**` 与 `migrations/**`）；3) codex-work 继续 test-infra 剩余 2 tasks。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(25/32，外部阻塞)，owlhub 🟡(137/143，分配+外部阻塞)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) release：缺少 GitHub Secrets（`PYPI_TOKEN/TEST_PYPI_TOKEN`）与 `main` 分支发布动作；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞；3) owlhub Task 19：当前 worktree 分配禁止改动 `owlclaw/db/**` 与 `migrations/**`；4) test-infra Task 4.2/11.1/11.3/11.4 仍待达标。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
