@@ -183,9 +183,9 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | spec循环批次：Phase 5 收口 + skill-dx P1 收口 + progressive-migration Task 1~4 完成 |
-| 批次状态 | **进行中**。quick-start/complete-workflow/architecture-roadmap 已收口；skill-dx P1 已完成；progressive-migration 进入实现态（22/31）；test-infra 仍有 4 项硬门槛待验收。 |
-| 已完成项 | 1) quick-start 全量完成（示例 + 文档 + 测试）；2) complete-workflow 全量完成（4 skills + 4 handlers + app + README + 测试）；3) 新增 `skill_nl_parser.py` 与 `trigger_resolver.py`，`skills.py` 完成 structured/natural_language/hybrid 路由与 `trigger_config`；4) 新增 `owlclaw skill parse` / `--cache`，并增强 `skill validate` 自然语言模式校验；5) progressive-migration 新增 `migration_gate.py`、`risk_assessor.py`、`approval_queue.py`，并扩展 Ledger/InMemoryLedger 审计字段与 execution_mode 过滤。 |
+| 当前批次 | review-work 审校循环：APPROVE 并合并 codex-work + codex-gpt-work 新增批次 |
+| 批次状态 | **进行中**。两编码分支最新提交已完成审校与目标测试验收；等待主 worktree 合并 review-work。 |
+| 已完成项 | 1) 审校并合并 codex-work：architecture-roadmap ✅ + skill-dx P1（18/25）落地；2) 审校并合并 codex-gpt-work：quick-start ✅(13/13)、complete-workflow ✅(18/18)、progressive-migration 推进至 22/31；3) 目标测试验收通过：skill-dx/cli 相关 `98 passed`，quick-start/complete-workflow/governance 相关 `36 passed`；4) `SPEC_TASKS_SCAN` 冲突已按最新事实口径统一。 |
 | 下一待执行 | 1) codex-work：test-infra 剩余（4.2/11.1/11.3/11.4）→ skill-ai-assist P1（依赖已满足）→ skills-quality；2) codex-gpt-work：progressive-migration Task 5/6（runtime 集成 + CLI）→ industry-skills；3) release + owlhub 外部凭据（人工）。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🟡(22/31)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(9/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
