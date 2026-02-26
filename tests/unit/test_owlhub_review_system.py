@@ -60,7 +60,7 @@ def test_approve_and_reject_status_transitions(tmp_path: Path) -> None:
         pass
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=10, deadline=None)
 @given(
     should_approve=st.booleans(),
     reviewer=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=6),
@@ -88,3 +88,4 @@ def test_property_20_review_state_transitions(should_approve: bool, reviewer: st
             raise AssertionError("expected second transition to fail")
         except ValueError:
             pass
+

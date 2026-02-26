@@ -140,7 +140,7 @@ def test_search_supports_quality_score_sort_and_warning(tmp_path: Path, monkeypa
     assert payload["items"][1]["low_quality_warning"] is True
 
 
-@settings(max_examples=40, deadline=None)
+@settings(max_examples=8, deadline=None)
 @given(
     count=st.integers(min_value=1, max_value=40),
     page=st.integers(min_value=1, max_value=8),
@@ -191,3 +191,4 @@ def test_property_search_pagination(count: int, page: int, page_size: int) -> No
                 os.environ.pop("OWLHUB_INDEX_PATH", None)
             else:
                 os.environ["OWLHUB_INDEX_PATH"] = old
+

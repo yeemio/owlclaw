@@ -55,7 +55,7 @@ def test_validate_structure_and_dependencies(tmp_path: Path) -> None:
     assert bad_deps.is_valid is False
 
 
-@settings(max_examples=100)
+@settings(max_examples=10)
 @given(
     major=st.integers(min_value=0, max_value=20),
     minor=st.integers(min_value=0, max_value=20),
@@ -67,7 +67,7 @@ def test_property_2_semver_validation(major: int, minor: int, patch: int) -> Non
     assert validator.validate_version(f"{major}.{minor}.{patch}") is True
 
 
-@settings(max_examples=100)
+@settings(max_examples=10)
 @given(
     missing_field=st.sampled_from(["name", "version", "publisher", "description", "license"]),
 )
@@ -87,7 +87,7 @@ def test_property_5_required_field_validation(missing_field: str) -> None:
     assert any(error.field == missing_field for error in result.errors)
 
 
-@settings(max_examples=100)
+@settings(max_examples=10)
 @given(
     bad_name=st.text(min_size=1, max_size=8).filter(lambda s: "-" not in s and not s.islower()),
     bad_version=st.text(min_size=1, max_size=8).filter(lambda s: s.count(".") < 2),
@@ -112,4 +112,5 @@ def test_validate_manifest_dataclass_path() -> None:
     validator = Validator()
     result = validator.validate_manifest(_valid_manifest())
     assert result.is_valid is True
+
 

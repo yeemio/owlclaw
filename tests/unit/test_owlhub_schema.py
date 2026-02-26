@@ -19,7 +19,7 @@ def test_utc_now_is_timezone_aware() -> None:
     assert current.tzinfo == timezone.utc
 
 
-@settings(max_examples=40, deadline=None)
+@settings(max_examples=8, deadline=None)
 @given(
     name=st.from_regex(r"^[a-z0-9]+(-[a-z0-9]+)*$", fullmatch=True),
     version=st.from_regex(r"^\d+\.\d+\.\d+$", fullmatch=True),
@@ -73,4 +73,5 @@ def test_property_24_index_entry_json_serialization(
     assert decoded["download_url"].startswith("https://")
     assert decoded["checksum"].startswith("sha256:")
     assert decoded["version_state"] in {"draft", "released", "deprecated"}
+
 

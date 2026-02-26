@@ -84,3 +84,4 @@ def test_auth_bypass_with_forged_bearer_token_is_rejected() -> None:
         json={"name": "demo"},
     )
     assert response.status_code == 401
+

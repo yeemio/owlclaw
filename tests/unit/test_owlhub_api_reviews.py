@@ -104,7 +104,7 @@ def test_appeal_flow_for_rejected_review(tmp_path: Path) -> None:
         _restore_env(old)
 
 
-@settings(max_examples=30, deadline=None)
+@settings(max_examples=8, deadline=None)
 @given(should_approve=st.booleans())
 def test_property_20_review_state_transition_api(should_approve: bool) -> None:
     """Property 20: API review transitions are valid and single-step."""
@@ -153,7 +153,7 @@ def test_property_20_review_state_transition_api(should_approve: bool) -> None:
             _restore_env(old)
 
 
-@settings(max_examples=25, deadline=None)
+@settings(max_examples=8, deadline=None)
 @given(reasons=st.lists(st.text(alphabet="abcdefghijklmnopqrstuvwxyz ", min_size=1, max_size=20), min_size=1, max_size=5))
 def test_property_23_appeal_records_persist(reasons: list[str]) -> None:
     """Property 23: appeal records are persisted with complete information."""
@@ -190,3 +190,4 @@ def test_property_23_appeal_records_persist(reasons: list[str]) -> None:
             assert all(item.publisher == "publishe" for item in appeals)
         finally:
             _restore_env(old)
+

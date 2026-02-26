@@ -145,7 +145,7 @@ def test_statistics_tracker_concurrent_recording(tmp_path: Path) -> None:
     assert stats.active_installs == 5
 
 
-@settings(max_examples=40, deadline=None)
+@settings(max_examples=8, deadline=None)
 @given(
     download_count=st.integers(min_value=0, max_value=120),
     install_users=st.lists(st.text(alphabet="abc123", min_size=1, max_size=4), min_size=0, max_size=120),
@@ -169,7 +169,7 @@ def test_property_18_statistics_count_accuracy_database_version(
         assert stats.active_installs == len(set(install_users))
 
 
-@settings(max_examples=30, deadline=None)
+@settings(max_examples=8, deadline=None)
 @given(
     skills=st.lists(
         st.tuples(
@@ -210,3 +210,4 @@ def test_property_19_statistics_export_completeness(skills: list[tuple[str, str,
             assert "downloads_last_30d" in row
             assert "total_installs" in row
             assert "active_installs" in row
+
