@@ -41,15 +41,15 @@
 
 ## Task 5: Agent Runtime 集成
 
-- [ ] 5.1 修改 `owlclaw/agent/runtime.py`：在决策执行前插入 MigrationGate
-- [ ] 5.2 实现 OBSERVE_ONLY 路径（记录但不执行）
-- [ ] 5.3 实现 REQUIRE_APPROVAL 路径（发送审批请求 + 等待/异步）
-- [ ] 5.4 集成测试：端到端迁移决策流程
+- [x] 5.1 修改 `owlclaw/agent/runtime.py`：在决策执行前插入 MigrationGate
+- [x] 5.2 实现 OBSERVE_ONLY 路径（记录但不执行）
+- [x] 5.3 实现 REQUIRE_APPROVAL 路径（发送审批请求 + 等待/异步）
+- [x] 5.4 集成测试：端到端迁移决策流程
 
 ## Task 6: CLI 支持
 
-- [ ] 6.1 实现 `owlclaw migration status` 命令（显示各 Skill 的 weight 和统计）
-- [ ] 6.2 实现 `owlclaw migration set <skill> <weight>` 命令（运行时调整）
-- [ ] 6.3 实现 `owlclaw migration suggest` 命令（基于历史数据的升级建议）
-- [ ] 6.4 实现 `owlclaw approval list` / `owlclaw approval approve <id>` 命令
-- [ ] 6.5 单元测试：CLI 命令测试
+- [x] 6.1 实现 `owlclaw migration status` 命令（显示各 Skill 的 weight 和统计）
+- [x] 6.2 实现 `owlclaw migration set <skill> <weight>` 命令（运行时调整）
+- [x] 6.3 实现 `owlclaw migration suggest` 命令（基于历史数据的升级建议）
+- [x] 6.4 实现 `owlclaw approval list` / `owlclaw approval approve <id>` 命令
+- [x] 6.5 单元测试：CLI 命令测试

@@ -35,6 +35,9 @@ class SearchResult:
     download_url: str
     checksum: str
     dependencies: dict[str, str]
+    industry: str = ""
+    source: str = "owlhub"
+    score: float | None = None
 
 
 class OwlHubClient:
@@ -70,10 +73,12 @@ class OwlHubClient:
         tag_mode: str = "and",
         include_draft: bool = False,
         include_hidden: bool = False,
+        industry: str = "",
     ) -> list[SearchResult]:
         """Search skills by name/description and optional tags."""
         data = self._load_index()
         normalized_query = query.strip().lower()
+        normalized_industry = industry.strip().lower()
         requested_tags = {tag.strip().lower() for tag in (tags or []) if tag.strip()}
         normalized_mode = tag_mode.strip().lower()
         if normalized_mode not in {"and", "or"}:
@@ -89,6 +94,11 @@ class OwlHubClient:
                 continue
             version = str(manifest.get("version", "")).strip()
             version_state = str(entry.get("version_state", "released")).strip().lower()
+            skill_industry = str(manifest.get("industry", "")).strip().lower()
+            if not skill_industry:
+                metadata = manifest.get("metadata", {})
+                if isinstance(metadata, dict):
+                    skill_industry = str(metadata.get("industry", "")).strip().lower()
             skill_tags = {
                 str(tag).strip().lower()
                 for tag in manifest.get("tags", [])
@@ -98,6 +108,8 @@ class OwlHubClient:
             if normalized_query and normalized_query not in f"{name} {description}".lower():
                 continue
             if not include_draft and version_state == "draft":
+                continue
+            if normalized_industry and skill_industry != normalized_industry:
                 continue
             if requested_tags:
                 if normalized_mode == "and" and not requested_tags.issubset(skill_tags):
@@ -117,6 +129,7 @@ class OwlHubClient:
                     dependencies=manifest.get("dependencies", {})
                     if isinstance(manifest.get("dependencies", {}), dict)
                     else {},
+                    industry=skill_industry,
                 )
             )
 

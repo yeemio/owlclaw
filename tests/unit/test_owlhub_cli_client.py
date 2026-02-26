@@ -64,6 +64,7 @@ def _build_index_file(
     publisher: str,
     version: str,
     tags: list[str] | None = None,
+    industry: str = "",
     version_state: str = "released",
     dependencies: dict[str, str] | None = None,
 ) -> Path:
@@ -81,6 +82,7 @@ def _build_index_file(
                     "description": f"{name} description",
                     "license": "MIT",
                     "tags": tags if tags is not None else ["demo"],
+                    "industry": industry,
                     "dependencies": dependencies if dependencies is not None else {},
                 },
                 "download_url": str(archive_path),
@@ -147,7 +149,7 @@ def test_cli_search_install_and_installed_flow(tmp_path: Path, monkeypatch) -> N
     assert result_search.exit_code == 0
     assert "entry-monitor@1.0.0" in result_search.output
     assert "[released]" in result_search.output
-    assert "[demo]" in result_search.output
+    assert "tags=demo" in result_search.output
 
     result_install = runner.invoke(
         skill_app,
@@ -499,6 +501,145 @@ def test_tag_filter_supports_and_or(tmp_path: Path) -> None:
     or_results = client.search(query="entry", tags=["trading", "missing"], tag_mode="or")
     assert len(and_results) == 0
     assert len(or_results) == 1
+
+
+def test_search_filters_by_industry(tmp_path: Path) -> None:
+    archive = _build_skill_archive(tmp_path, name="inventory-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(
+        tmp_path,
+        archive,
+        name="inventory-monitor",
+        publisher="acme",
+        version="1.0.0",
+        industry="retail",
+    )
+    client = OwlHubClient(index_url=str(tmp_path / "index.json"), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    retail = client.search(query="inventory", industry="retail")
+    other = client.search(query="inventory", industry="manufacturing")
+    assert len(retail) == 1
+    assert retail[0].industry == "retail"
+    assert other == []
+
+
+def test_cli_search_semantic_query_includes_templates(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="inventory-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(
+        tmp_path,
+        archive,
+        name="inventory-monitor",
+        publisher="acme",
+        version="1.0.0",
+        industry="retail",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    class _FakeSearcher:
+        def __init__(self, *, cache_path, model="text-embedding-3-small", dimensions=1536):  # noqa: ARG002
+            return None
+
+        def rank(self, query, documents, *, top_k=10):  # noqa: ARG002
+            preferred = []
+            for doc in documents:
+                if doc.doc_id.startswith("template:"):
+                    preferred.append((doc.doc_id, 0.99))
+            preferred.extend((doc.doc_id, 0.5) for doc in documents if doc.doc_id.startswith("owlhub:"))
+            return preferred[:top_k]
+
+    monkeypatch.setattr("owlclaw.cli.skill_hub.SemanticSearcher", _FakeSearcher)
+    handled = _dispatch_skill_command(["skill", "search", "--query", "每天检查库存"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "install: owlclaw skill init --template" in captured.out
+    assert "score=" in captured.out
+
+
+def test_cli_search_semantic_fallback_to_keyword(tmp_path: Path, monkeypatch, capsys) -> None:
+    archive = _build_skill_archive(tmp_path, name="inventory-monitor", publisher="acme", version="1.0.0")
+    _build_index_file(tmp_path, archive, name="inventory-monitor", publisher="acme", version="1.0.0")
+    monkeypatch.chdir(tmp_path)
+
+    class _BrokenSearcher:
+        def __init__(self, *, cache_path, model="text-embedding-3-small", dimensions=1536):  # noqa: ARG002
+            return None
+
+        def rank(self, query, documents, *, top_k=10):  # noqa: ARG002
+            raise RuntimeError("embedding unavailable")
+
+    monkeypatch.setattr("owlclaw.cli.skill_hub.SemanticSearcher", _BrokenSearcher)
+    handled = _dispatch_skill_command(["skill", "search", "--query", "inventory", "--verbose"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "fallback to keyword search" in captured.out.lower()
+    assert "inventory-monitor@1.0.0" in captured.out
+
+
+def test_cli_install_from_package_yaml(tmp_path: Path, monkeypatch, capsys) -> None:
+    first = _build_skill_archive(tmp_path, name="inventory-monitor", publisher="acme", version="1.0.0")
+    second = _build_skill_archive(tmp_path, name="order-alert", publisher="acme", version="1.0.0")
+    checksum_first = IndexBuilder().calculate_checksum(first)
+    checksum_second = IndexBuilder().calculate_checksum(second)
+    index = {
+        "version": "1.0",
+        "generated_at": "2026-02-24T00:00:00+00:00",
+        "total_skills": 2,
+        "skills": [
+            {
+                "manifest": {
+                    "name": "inventory-monitor",
+                    "publisher": "acme",
+                    "version": "1.0.0",
+                    "description": "inventory monitor",
+                    "license": "MIT",
+                    "tags": ["inventory"],
+                    "industry": "retail",
+                    "dependencies": {},
+                },
+                "download_url": str(first),
+                "checksum": checksum_first,
+                "published_at": "2026-02-24T00:00:00+00:00",
+                "updated_at": "2026-02-24T00:00:00+00:00",
+                "version_state": "released",
+            },
+            {
+                "manifest": {
+                    "name": "order-alert",
+                    "publisher": "acme",
+                    "version": "1.0.0",
+                    "description": "order alert",
+                    "license": "MIT",
+                    "tags": ["order"],
+                    "industry": "retail",
+                    "dependencies": {},
+                },
+                "download_url": str(second),
+                "checksum": checksum_second,
+                "published_at": "2026-02-24T00:00:00+00:00",
+                "updated_at": "2026-02-24T00:00:00+00:00",
+                "version_state": "released",
+            },
+        ],
+    }
+    (tmp_path / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
+    (tmp_path / "package.yaml").write_text(
+        """name: retail-skills
+version: 1.0.0
+industry: retail
+description: retail starter package
+skills:
+  - inventory-monitor
+  - order-alert
+requires:
+  owlclaw: ">=1.0.0"
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(["skill", "install", "--package", "./package.yaml"])
+    assert handled is True
+    captured = capsys.readouterr()
+    assert "Installed 2 skills from package" in captured.out
+    assert (tmp_path / ".owlhub" / "skills" / "inventory-monitor" / "1.0.0").exists()
+    assert (tmp_path / ".owlhub" / "skills" / "order-alert" / "1.0.0").exists()
 
 
 def test_update_noop_when_latest_installed(tmp_path: Path) -> None:

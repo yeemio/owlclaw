@@ -171,6 +171,28 @@ owlclaw:
     assert skill.parse_mode == "structured"
 
 
+def test_skills_loader_parses_top_level_industry_and_tags(tmp_path):
+    skill_dir = tmp_path / "inventory-monitor"
+    skill_dir.mkdir()
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: inventory-monitor
+description: Monitor inventory threshold
+industry: retail
+tags: [inventory, alert]
+---
+# Body
+""",
+        encoding="utf-8",
+    )
+    loader = SkillsLoader(tmp_path)
+    loader.scan()
+    skill = loader.get_skill("inventory-monitor")
+    assert skill is not None
+    assert skill.metadata.get("industry") == "retail"
+    assert skill.metadata.get("tags") == ["inventory", "alert"]
+
+
 def test_skills_loader_focus_ignores_non_string_items(tmp_path):
     """focus should only keep non-empty string items."""
     skill_dir = tmp_path / "focus-mixed"

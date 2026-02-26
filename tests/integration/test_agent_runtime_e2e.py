@@ -12,6 +12,8 @@ from owlclaw.agent.runtime.config import load_runtime_config
 from owlclaw.agent.runtime.context import AgentRunContext
 from owlclaw.agent.runtime.memory import MemorySystem
 from owlclaw.agent.runtime.runtime import AgentRuntime
+from owlclaw.capabilities.registry import CapabilityRegistry
+from owlclaw.capabilities.skills import SkillsLoader
 
 
 def _make_app_dir(tmp_path: Path) -> str:
@@ -106,3 +108,41 @@ async def test_e2e_error_recovery_with_fallback(mock_llm, tmp_path: Path) -> Non
     await rt.setup()
     result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
     assert result["status"] == "completed"
+
+
+@pytest.mark.asyncio
+@patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+async def test_e2e_migration_observe_only_flow(mock_llm, tmp_path: Path) -> None:
+    app_dir = tmp_path / "app"
+    app_dir.mkdir(parents=True, exist_ok=True)
+    _make_app_dir(app_dir)
+    (app_dir / "owlclaw.yaml").write_text(
+        "skills:\n  market-scan:\n    migration_weight: 0\n",
+        encoding="utf-8",
+    )
+    skill_dir = app_dir / "skills" / "market-scan"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: market-scan
+description: scan market
+owlclaw:
+  task_type: trading_decision
+---
+# Guide
+""",
+        encoding="utf-8",
+    )
+
+    tc = _make_tool_call("market-scan", {"symbol": "AAPL"})
+    mock_llm.side_effect = [_make_llm_response(tool_calls=[tc]), _make_llm_response("done")]
+    loader = SkillsLoader(app_dir / "skills")
+    loader.scan()
+    registry = CapabilityRegistry(loader)
+    handler = AsyncMock(return_value={"ok": True})
+    registry.register_handler("market-scan", handler)
+    rt = AgentRuntime(agent_id="bot", app_dir=str(app_dir), registry=registry)
+    await rt.setup()
+    result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+    assert result["status"] == "completed"
+    handler.assert_not_called()

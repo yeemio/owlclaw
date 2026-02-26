@@ -25,6 +25,7 @@ class SkillManifest:
     description: str
     license: str
     tags: list[str] = field(default_factory=list)
+    industry: str | None = None
     dependencies: dict[str, str] = field(default_factory=dict)
     repository: str | None = None
     homepage: str | None = None

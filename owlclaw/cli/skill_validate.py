@@ -105,7 +105,6 @@ def _validate_natural_language_mode(path: Path) -> list[ValidationError]:
         return []
     parts = text.split("---", 2)
     body = parts[2] if len(parts) >= 3 else text
-    body_lower = body.lower()
     trigger_hints = (
         "每天",
         "每周",

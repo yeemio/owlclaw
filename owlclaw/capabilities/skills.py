@@ -359,11 +359,19 @@ class SkillsLoader:
         metadata = frontmatter_map.get("metadata", {})
         if not isinstance(metadata, dict):
             metadata = {}
+        metadata = dict(metadata)
+        top_level_tags = frontmatter_map.get("tags")
+        if isinstance(top_level_tags, list):
+            normalized_tags = [str(tag).strip() for tag in top_level_tags if isinstance(tag, str) and str(tag).strip()]
+            if normalized_tags:
+                metadata["tags"] = normalized_tags
+        top_level_industry = frontmatter_map.get("industry")
+        if isinstance(top_level_industry, str) and top_level_industry.strip():
+            metadata["industry"] = top_level_industry.strip()
         tools_schema, tool_errors = extract_tools_schema(frontmatter_map)
         if tool_errors:
             for error in tool_errors:
                 logger.warning("Skill file %s invalid tool declaration: %s", file_path, error)
-        metadata = dict(metadata)
         metadata["tools_schema"] = tools_schema
         owlclaw_config = frontmatter_map.get("owlclaw", {})
         if not isinstance(owlclaw_config, dict):
