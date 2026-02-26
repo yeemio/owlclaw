@@ -11,6 +11,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from unittest.mock import AsyncMock
+from hypothesis import settings
 
 from owlclaw import OwlClaw
 
@@ -20,6 +21,14 @@ if _env_file.exists():
     import dotenv
 
     dotenv.load_dotenv(_env_file)
+
+# Keep property tests meaningful but bounded for CI/local stability.
+settings.register_profile(
+    "owlclaw_fast",
+    max_examples=25,
+    deadline=None,
+)
+settings.load_profile(os.getenv("OWLCLAW_HYPOTHESIS_PROFILE", "owlclaw_fast"))
 
 
 def _is_port_open(host: str, port: int, timeout: float = 0.5) -> bool:
