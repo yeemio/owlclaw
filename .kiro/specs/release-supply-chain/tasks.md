@@ -7,9 +7,9 @@
 ## 进度概览
 
 - **总任务数**：15
-- **已完成**：11
+- **已完成**：9
 - **进行中**：0
-- **未开始**：4
+- **未开始**：6
 
 ## 1. OIDC 发布
 
@@ -25,17 +25,18 @@
 
 ## 3. 门禁与保护
 
-- [x] 3.1 校准 required checks
-  - 状态补充（2026-02-26）：已产出 baseline（Lint/Test/Build）与审计报告 `docs/release/release-policy-audit.json`。
-- [x] 3.2 校准 release 分支保护
-  - 状态补充（2026-02-26）：审计显示 `main` 当前未开启保护（HTTP 404 Branch not protected），已固化建议基线 `docs/release/release-policy-baseline.md`，待维护者应用。
+- [ ] 3.1 校准 required checks
+  - 当前状态（2026-02-26）：`gh api repos/yeemio/owlclaw/branches/main/protection` 返回 `404 Branch not protected`，required checks 尚未启用（外部仓库设置项）
+- [ ] 3.2 校准 release 分支保护
+  - 当前状态（2026-02-26）：`gh api repos/yeemio/owlclaw/rulesets` 返回空数组 `[]`，未发现规则集保护（外部仓库设置项）
 - [x] 3.3 校准失败回滚策略
 
 ## 4. 演练与收口
 
 - [ ] 4.1 TestPyPI 全链路演练
-  - 状态补充（2026-02-26）：run `22446541468` 已执行演练但在 TestPyPI 上传阶段失败（`HTTP 403`，`TWINE_PASSWORD` 为空），主分支仍为旧 token 链路。
+  - 演练记录（2026-02-26）：`gh workflow run release.yml -f target=testpypi` 已执行；run `22446541468` 在 `Publish to TestPyPI` 返回 `HTTP 403 Forbidden`，阻塞点为 Trusted Publisher 绑定未完成（对应 Task 1.1）
 - [ ] 4.2 PyPI 正式链路演练
+  - 当前状态（2026-02-26）：前置 TestPyPI OIDC 未打通，正式链路演练顺延（依赖 Task 1.2/3.1/3.2）
 - [x] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint
 
 ## 5. 阈值与剧本固化
