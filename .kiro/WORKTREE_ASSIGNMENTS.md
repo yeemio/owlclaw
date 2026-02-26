@@ -38,7 +38,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：按需，无固定 spec 分配。
+**当前编码任务**：Phase 5 落地收尾核心代码（Lite Mode 已完成）。
 
 ---
 
@@ -171,9 +171,11 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
 
-**当前任务**：test-infra(7/11) 剩余 Task 4/6/9.4/11（Docker/CI 验收为主）。
+**当前任务**：
+1. test-infra(7/11) 剩余 Task 4/6/9.4/11（Docker/CI 验收为主）
+2. architecture-roadmap(0/13) — 架构演进路线文档（纯文档 spec）
 
-**下一任务（当前完成后）**：capabilities-skills ✅(115/115) 已全部完成，无需接续。
+**下一任务（当前完成后）**：无。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -206,9 +208,13 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ + local-devenv ✅ 已完成。
 
-**当前任务**：owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）+ release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）。
+**当前任务**：
+1. quick-start(0/13) — Quick Start 指南 + 最小示例
+2. complete-workflow(0/18) — 完整端到端示例（库存管理场景）
+3. owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）
+4. release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）
 
-**下一任务（当前完成后）**：capabilities-skills ✅(115/115) 已全部完成。项目进入发布阶段，等人工提供 PyPI token。
+**下一任务（当前完成后）**：项目进入发布阶段，等人工提供 PyPI token。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -260,6 +266,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-25 | 合并 review-work（6 commits：test-infra Task 3/9.1~9.3 + queue修复）→ main；repo-hygiene ✅(7/7)；test-infra 7/11；local-devenv 4/10；codex-work 任务更新为 test-infra Task 4/6/9.4/11 | 统筹轮次：review-work 合并 + 冲突解决 |
 | 2026-02-25 | 合并 review-work(11)+codex-gpt-work(11)+codex-work(5) → main；capabilities-skills ✅(115/115)；local-devenv ✅(10/10)；owlhub 137/143；release 25/32；test-infra 7/11 | 统筹轮次：三分支全合并 + 所有 worktree 同步 |
 | 2026-02-25 | repo-hygiene ✅(37/37)：.editorconfig + CODEOWNERS + docs/README.md；fix(test) skills_context_cache_hits；所有 worktree 同步 | 统筹轮次：repo-hygiene backlog 收口 |
+| 2026-02-25 | Phase 5 落地收尾：Lite Mode 核心代码完成（主 worktree）；新建 quick-start/complete-workflow/architecture-roadmap spec；codex-gpt-work→quick-start+complete-workflow；codex-work→architecture-roadmap | 架构重塑：落地差距收尾 |
 
 ---
 
@@ -271,6 +278,6 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **全部 spec 已分配完毕 ✅**
 
-新增 3 个 spec 已分配：
-- codex-work → repo-hygiene + test-infra
-- codex-gpt-work → local-devenv + capabilities-skills 收尾
+新增 3 个 Phase 5 spec 已分配：
+- codex-work → test-infra（继续） + architecture-roadmap（新增）
+- codex-gpt-work → quick-start + complete-workflow（新增） + owlhub/release 收尾

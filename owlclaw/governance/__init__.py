@@ -14,6 +14,7 @@ from owlclaw.governance.ledger import (
     LedgerQueryFilters,
     LedgerRecord,
 )
+from owlclaw.governance.ledger_inmemory import InMemoryLedger
 from owlclaw.governance.router import ModelSelection, Router
 from owlclaw.governance.visibility import (
     CapabilityView,
@@ -29,6 +30,7 @@ __all__ = [
     "CircuitState",
     "CostSummary",
     "FilterResult",
+    "InMemoryLedger",
     "Ledger",
     "LedgerQueryFilters",
     "LedgerRecord",

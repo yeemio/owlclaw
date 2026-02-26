@@ -10,7 +10,7 @@
 
 ## Introduction
 
-mcp-server（MCP Server）是 OwlClaw 的 MCP 协议服务器实现,用于将 OwlClaw 的业务能力通过 Model Context Protocol (MCP) 暴露给外部 AI Agent 系统。作为 OwlClaw 与 OpenClaw、Kiro IDE 等 AI 系统的标准通道,mcp-server 负责协议实现、能力发现、工具调用、资源访问和治理集成。
+mcp-server（MCP Server）是 OwlClaw 的 MCP 协议服务器实现,用于将 OwlClaw 的业务能力通过 Model Context Protocol (MCP) 暴露给外部 AI Agent 系统。作为 OwlClaw 与 Kiro IDE 等外部 AI 系统的标准通道,mcp-server 负责协议实现、能力发现、工具调用、资源访问和治理集成。
 
 根据 OwlClaw 的核心定位"让已有业务系统获得 AI 自主能力",mcp-server 是实现跨系统 AI 协作的关键基础设施。它使得 OwlClaw 注册的业务函数(@handler)和 Skills 知识能够被其他 AI Agent 发现和调用,同时保持 OwlClaw 的治理边界(审计、限流、预算)。
 
@@ -19,7 +19,7 @@ MCP 协议由 Anthropic 发起并开源(modelcontextprotocol.io),已成为 AI Ag
 ## Glossary
 
 - **MCP_Server**: Model Context Protocol 服务器,实现 MCP 协议规范的服务端
-- **MCP_Client**: MCP 协议客户端,如 OpenClaw、Kiro IDE、Claude Desktop
+- **MCP_Client**: MCP 协议客户端,如 Kiro IDE、Claude Desktop
 - **MCP_Protocol**: Model Context Protocol,Anthropic 发起的 AI Agent 互操作协议
 - **Tool**: MCP 协议中的可调用函数,对应 OwlClaw 的 @handler 能力
 - **Resource**: MCP 协议中的可读取文档,对应 OwlClaw 的 SKILL.md 知识
