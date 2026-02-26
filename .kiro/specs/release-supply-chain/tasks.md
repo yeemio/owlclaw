@@ -7,9 +7,9 @@
 ## 进度概览
 
 - **总任务数**：15
-- **已完成**：8
+- **已完成**：10
 - **进行中**：0
-- **未开始**：7
+- **未开始**：5
 
 ## 1. OIDC 发布
 
@@ -25,8 +25,10 @@
 
 ## 3. 门禁与保护
 
-- [ ] 3.1 校准 required checks
-- [ ] 3.2 校准 release 分支保护
+- [x] 3.1 校准 required checks
+  - 状态补充（2026-02-26）：已产出 baseline（Lint/Test/Build）与审计报告 `docs/release/release-policy-audit.json`。
+- [x] 3.2 校准 release 分支保护
+  - 状态补充（2026-02-26）：审计显示 `main` 当前未开启保护（HTTP 404 Branch not protected），已固化建议基线 `docs/release/release-policy-baseline.md`，待维护者应用。
 - [x] 3.3 校准失败回滚策略
 
 ## 4. 演练与收口
