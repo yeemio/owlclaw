@@ -158,12 +158,24 @@ class VisibilityFilter:
     def __init__(self) -> None:
         self._evaluators: list[ConstraintEvaluator] = []
         self._risk_gate = RiskGate()
+        self._inject_quality_score = False
+        self._quality_cache: dict[str, float] = {}
 
     def register_evaluator(self, evaluator: ConstraintEvaluator) -> None:
         """Register a constraint evaluator."""
         if not hasattr(evaluator, "evaluate") or not callable(evaluator.evaluate):
             raise TypeError("evaluator must provide an evaluate(capability, agent_id, context) method")
         self._evaluators.append(evaluator)
+
+    def configure_quality_score_injection(self, *, enabled: bool, quality_scores: dict[str, float] | None = None) -> None:
+        """Enable/disable quality score hints in capability descriptions."""
+        self._inject_quality_score = bool(enabled)
+        if isinstance(quality_scores, dict):
+            self._quality_cache = {
+                str(name).strip(): float(score)
+                for name, score in quality_scores.items()
+                if str(name).strip()
+            }
 
     async def filter_capabilities(
         self,
@@ -206,8 +218,22 @@ class VisibilityFilter:
                     "; ".join(reasons),
                 )
                 continue
+            if self._inject_quality_score:
+                self._inject_quality_hint(cap)
             filtered.append(cap)
         return filtered
+
+    def _inject_quality_hint(self, capability: CapabilityView) -> None:
+        score = self._quality_cache.get(capability.name)
+        if score is None:
+            return
+        hint = f"[quality_score={score:.3f}]"
+        if hint in capability.description:
+            return
+        if capability.description:
+            capability.description = f"{capability.description} {hint}"
+        else:
+            capability.description = hint
 
     def _evaluate_risk_gate(
         self,

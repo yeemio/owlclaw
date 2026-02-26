@@ -267,6 +267,35 @@ def test_main_skill_parse_help_uses_plain_help(monkeypatch, capsys) -> None:
     assert "Usage: owlclaw skill parse [PATH] [--cache]" in out
 
 
+def test_main_dispatches_skill_quality(monkeypatch) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_quality_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.skill_quality.quality_command", _fake_quality_command)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["owlclaw", "skill", "quality", "inventory-monitor", "--trend", "--period", "7d", "--suggest"],
+    )
+    cli_main.main()
+    assert captured["skill_name"] == "inventory-monitor"
+    assert captured["trend"] is True
+    assert captured["period"] == "7d"
+    assert captured["suggest"] is True
+
+
+def test_main_skill_quality_help_uses_plain_help(monkeypatch, capsys) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    monkeypatch.setattr("sys.argv", ["owlclaw", "skill", "quality", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        cli_main.main()
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert "Usage: owlclaw skill quality [SKILL_NAME] [OPTIONS]" in out
+
+
 def test_main_dispatches_skill_install_verbose_and_quiet(monkeypatch) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
     captured: dict[str, object] = {}

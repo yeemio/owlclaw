@@ -151,6 +151,16 @@ async def test_filter_fail_open_on_evaluator_exception():
 
 
 @pytest.mark.asyncio
+async def test_filter_injects_quality_score_hint_when_enabled():
+    vf = VisibilityFilter()
+    cap = CapabilityView("inventory-monitor", description="Check stock levels")
+    vf.configure_quality_score_injection(enabled=True, quality_scores={"inventory-monitor": 0.81234})
+    out = await vf.filter_capabilities([cap], "agent1", RunContext(tenant_id="t1", confirmed_capabilities={"inventory-monitor"}))
+    assert len(out) == 1
+    assert "[quality_score=0.812]" in out[0].description
+
+
+@pytest.mark.asyncio
 async def test_filter_skips_invalid_capability_entries():
     vf = VisibilityFilter()
     caps = [CapabilityView("only"), object()]  # type: ignore[list-item]
