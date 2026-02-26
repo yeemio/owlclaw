@@ -100,3 +100,12 @@ def test_contract_gate_workflow_contains_openapi_gate_step() -> None:
     assert "tests/contracts/api/test_openapi_contract_gate.py" in steps
     assert "tests/contracts/mcp/test_mcp_contract_regression.py" in steps
     assert "contract_testing_drill.py" in steps
+
+
+def test_gateway_ops_gate_workflow_contains_drill_step() -> None:
+    payload = _load_yaml(Path(".github/workflows/gateway-ops-gate.yml"))
+    jobs = payload.get("jobs", {})
+    assert "gateway-ops" in jobs
+    steps = "\n".join(str(item) for item in jobs["gateway-ops"]["steps"])
+    assert "test_gateway_ops_gate.py" in steps
+    assert "gateway_ops_drill.py" in steps

@@ -16,6 +16,8 @@
 | `contract_diff/run_contract_diff.py` | 契约门禁包装入口（用于 PR/nightly 统一调用） | `poetry run python scripts/contract_diff/run_contract_diff.py --help` | CI 使用 |
 | `contract_diff/contract_testing_drill.py` | 执行 contract-testing breaking 注入演练并产出报告 | `poetry run python scripts/contract_diff/contract_testing_drill.py` | CI 使用 |
 | `protocol_governance_drill.py` | 执行 breaking 注入/豁免审计演练并产出证据报告 | `poetry run python scripts/protocol_governance_drill.py` | CI 使用 |
+| `gateway_ops_gate.py` | 网关发布门禁决策与回滚执行辅助 | `poetry run python scripts/gateway_ops_gate.py` | CI 使用 |
+| `gateway_ops_drill.py` | 执行 canary 回滚/全量成功演练并产出报告 | `poetry run python scripts/gateway_ops_drill.py` | CI 使用 |
 | `test_queue_trigger.py` | 队列触发链路本地回归脚本 | `poetry run python scripts/test_queue_trigger.py` | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
 | `test_template.py` | 测试模板脚手架检查 | `poetry run python scripts/test_template.py --help` | 本地开发使用 |
