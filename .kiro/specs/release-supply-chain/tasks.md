@@ -35,6 +35,7 @@
 
 - [ ] 4.1 TestPyPI 全链路演练
   - 状态补充（2026-02-26）：run `22446541468` 已执行演练但在 TestPyPI 上传阶段失败（`HTTP 403`，`TWINE_PASSWORD` 为空），主分支仍为旧 token 链路。
+  - 状态补充（2026-02-26）：新增演练 runs `22447692518`、`22447700064`，两次均在 `Publish to TestPyPI` 失败（`HTTP 403`，`TWINE_PASSWORD` 为空），Trusted Publisher/发布凭据阻塞未解除。
 - [ ] 4.2 PyPI 正式链路演练
 - [x] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint
 

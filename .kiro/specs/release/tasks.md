@@ -68,6 +68,7 @@
   - 状态补充（2026-02-25）：workflow_dispatch run `22404173746` 执行到 TestPyPI 发布阶段后返回 `HTTP 403 Forbidden`，日志显示 `TWINE_PASSWORD` 为空，根因仍是 3.1.2 未完成。
   - 状态补充（2026-02-26）：workflow_dispatch run `22433883650` 再次失败于 `Publish to TestPyPI`，日志仍显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
   - 状态补充（2026-02-26）：workflow_dispatch run `22445573439` 再次失败于 `Publish to TestPyPI`，`TWINE_PASSWORD` 仍为空并返回 `HTTP 403 Forbidden`。
+  - 状态补充（2026-02-26）：workflow_dispatch runs `22447692518`、`22447700064` 再次失败于 `Publish to TestPyPI`，日志持续显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
 
 ---
 
