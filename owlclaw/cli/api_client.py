@@ -104,7 +104,7 @@ class SkillHubApiClient:
         if not self.validator.validate_structure(skill_path).is_valid:
             raise ValueError("invalid skill package structure")
         manifest = _read_manifest(skill_path / "SKILL.md")
-        payload = {
+        payload: dict[str, Any] = {
             "publisher": str(manifest.get("publisher", "")).strip(),
             "skill_name": str(manifest.get("name", "")).strip(),
             "version": str(manifest.get("version", "")).strip(),
@@ -116,9 +116,12 @@ class SkillHubApiClient:
                 "download_url": str((skill_path.resolve()).as_posix()),
             },
         }
-        quality_payload = _load_anonymized_quality(skill_name=payload["skill_name"], root=skill_path.parent)
+        skill_name = str(payload.get("skill_name", "")).strip()
+        quality_payload = _load_anonymized_quality(skill_name=skill_name, root=skill_path.parent)
         if quality_payload:
-            payload["metadata"]["quality"] = quality_payload
+            metadata = payload.get("metadata", {})
+            if isinstance(metadata, dict):
+                metadata["quality"] = quality_payload
         response = self._request_json("POST", "/api/v1/skills", body=payload)
         return response if isinstance(response, dict) else {}
 
