@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -63,17 +65,58 @@ jobs:
 
       - name: Publish to TestPyPI
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi' }}
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
-        run: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
 
       - name: Publish to PyPI
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+      - name: Attest build provenance
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "dist/*"
+
+      - name: Smoke install published package
         env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-        run: twine upload dist/*
+          RELEASE_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'pypi' }}
+        run: |
+          VERSION=$(python -c "import tomllib, pathlib; d=tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8')); print(d['tool']['poetry']['version'])")
+          python -m venv .venv-smoke
+          . .venv-smoke/bin/activate
+          python -m pip install --upgrade pip
+          if [ "${RELEASE_TARGET}" = "testpypi" ]; then
+            pip install -i https://test.pypi.org/simple/ "owlclaw==${VERSION}"
+          else
+            pip install "owlclaw==${VERSION}"
+          fi
+          python -c "import owlclaw; print(owlclaw.__version__)"
+
+      - name: Archive release report
+        env:
+          RELEASE_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'pypi' }}
+        run: |
+          VERSION=$(python -c "import tomllib, pathlib; d=tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8')); print(d['tool']['poetry']['version'])")
+          mkdir -p release-artifacts
+          cat > release-artifacts/release-report.json <<JSON
+          {
+            "version": "${VERSION}",
+            "commit": "${GITHUB_SHA}",
+            "run_id": "${GITHUB_RUN_ID}",
+            "target": "${RELEASE_TARGET}"
+          }
+          JSON
+
+      - name: Upload release report
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-report
+          path: release-artifacts/release-report.json
 
       - name: Create GitHub Release
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}

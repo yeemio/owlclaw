@@ -171,7 +171,7 @@
 | **protocol-governance** | `.kiro/specs/protocol-governance/` | ✅ 三层齐全，已完成（27/27） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
 | **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | ✅ 三层齐全，已完成（18/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
 | **contract-testing** | `.kiro/specs/contract-testing/` | ✅ 三层齐全，已完成（19/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
-| **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，待实施（0/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
+| **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，进行中（8/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
 | **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，待实施（0/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 
 ---
@@ -198,12 +198,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | codex-work 循环：gateway-runtime-ops 收口完成（18/18） |
-| 批次状态 | **已完成（本批次）**。`gateway-runtime-ops` 全部任务与验收已闭环。 |
-| 已完成项 | 1) `contract-testing` 全部收口（`19/19`）；2) 新增运维文档 `docs/ops/gateway-rollout-policy.md`、`gateway-runbook.md`、`gateway-slo.md`、`gateway-alerting.md`；3) 新增模板 `docs/ops/templates/GATEWAY_ACCEPTANCE_MATRIX_TEMPLATE.md`；4) 新增工程脚本 `scripts/gateway_ops_gate.py`（gate evaluator + rollback executor）与 `scripts/gateway_ops_drill.py`（canary 回滚/全量成功演练）；5) 新增工作流 `.github/workflows/gateway-ops-gate.yml` 接入 pipeline gate；6) 新增测试 `test_gateway_runtime_ops_docs.py`、`test_gateway_ops_gate.py`、`test_gateway_ops_drill.py` 并通过；7) `gateway-runtime-ops/tasks.md` 更新为 `18/18`。 |
-| 下一待执行 | 1) 跟踪 `test-infra` Task 11.3 远端复跑窗口并尝试收口；2) 启动 `release-supply-chain` Task 1.1~1.3（OIDC Trusted Publishing 基线）；3) 启动 `cross-lang-golden-path` Task 1.1~1.3（Java/curl 基线）。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（当前策略是不新增 CI 订阅）；2) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
+| 当前批次 | codex-work 循环：release-supply-chain OIDC 与 provenance 基线（1.3 + 2.* + 5.*） |
+| 批次状态 | **进行中**。已完成 gateway-runtime-ops 收口，并推进 release-supply-chain 可仓库内任务。 |
+| 已完成项 | 1) `gateway-runtime-ops` 全部收口（`18/18`）；2) `.github/workflows/release.yml` 切换到 `pypa/gh-action-pypi-publish` OIDC 发布路径；3) 新增 provenance 步骤 `actions/attest-build-provenance@v2`；4) 新增发布后 `pip install` smoke 与发布报告 artifact 归档；5) 更新 `tests/unit/ci/test_ci_configs.py` 对齐 release workflow；6) 更新 `docs/release/CREDENTIAL_AUDIT.md` 与 `docs/RELEASE_RUNBOOK.md`（OIDC + 回滚/重试）；7) 新增 `docs/release/SUPPLY_CHAIN_POLICY.md`；8) `release-supply-chain/tasks.md` 进度更新为 `8/15`。 |
+| 下一待执行 | 1) 跟踪 `test-infra` Task 11.3 远端复跑窗口并尝试收口；2) 推进 `release-supply-chain` 外部依赖任务 1.1/1.2 与 3.1/3.2（Trusted Publisher 与分支保护实际配置）；3) 启动 `cross-lang-golden-path` Task 1.1~1.3（Java/curl 基线）。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，release-supply-chain 🟡(8/15)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（当前策略是不新增 CI 订阅）；2) release-supply-chain Task 1.1/1.2/3.1/3.2：需仓库维护者在 PyPI/TestPyPI 与 GitHub Settings 完成 Trusted Publisher/required checks/branch protection 实际配置；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
