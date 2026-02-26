@@ -13,9 +13,6 @@ build/
 venv/
 env/
 
-# Poetry
-poetry.lock
-
 # IDE
 .idea/
 .vscode/
