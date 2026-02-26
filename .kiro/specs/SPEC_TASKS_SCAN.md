@@ -168,7 +168,7 @@
 | **skills-quality** | `.kiro/specs/skills-quality/` | ✅ 三层齐全，已完成（27/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
 | **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | 🟡 三层齐全，待实施（0/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
-| **protocol-governance** | `.kiro/specs/protocol-governance/` | 🟡 三层齐全，进行中（9/27） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
+| **protocol-governance** | `.kiro/specs/protocol-governance/` | 🟡 三层齐全，进行中（12/27） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
 | **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | 🟡 三层齐全，待实施（0/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
 | **contract-testing** | `.kiro/specs/contract-testing/` | 🟡 三层齐全，待实施（0/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
 | **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，待实施（0/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
@@ -199,10 +199,10 @@
 |------|---|
 | 最后更新 | 2026-02-26 |
 | 当前批次 | codex-work 循环：protocol-governance Phase 1 起步（1.1 版本策略） |
-| 批次状态 | **进行中**。已完成 protocol-governance Task 1.1.* + 1.2.* + 1.3.*，协议治理文档四件套已完成其三。 |
-| 已完成项 | 1) 新增 `docs/protocol/VERSIONING.md`；2) 新增 `docs/protocol/COMPATIBILITY_POLICY.md`；3) 新增 `docs/protocol/ERROR_MODEL.md`；4) 固化统一错误域字段（`code/category/retryable/incident_id`）；5) 输出 API/MCP 错误映射矩阵与重试/告警语义；6) 更新 `protocol-governance/tasks.md` 进度到 `9/27`。 |
-| 下一待执行 | 1) 完成 `protocol-governance` Task 2.1.*（协议 diff 结果解析与 change-level 映射）；2) 完成 Task 2.2.*（warning/blocking/豁免审计流程）；3) 完成 Task 2.3.*（错误映射一致性测试并接入 CI）。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance 🟡(9/27，进行中)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 批次状态 | **进行中**。`protocol-governance` 已从文档基线进入工程化实现阶段。 |
+| 已完成项 | 1) 新增 `docs/protocol/VERSIONING.md`；2) 新增 `docs/protocol/COMPATIBILITY_POLICY.md`；3) 新增 `docs/protocol/ERROR_MODEL.md`；4) 新增 `scripts/contract_diff.py`（支持 diff 解析与 `change_level` 归类）；5) 落地 warning gate 决策路径并支持报告输出；6) 新增 `tests/unit/test_contract_diff_script.py`（3 项通过）；7) 更新 `protocol-governance/tasks.md` 进度到 `12/27`。 |
+| 下一待执行 | 1) 完成 `protocol-governance` Task 2.2.2/2.2.3（blocking 模式与豁免审计流程）；2) 完成 Task 2.3.*（错误映射一致性测试并接入 CI 必跑）；3) 完成 Task 3.*（breaking 注入演练、例外审批演练与治理报告）。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance 🟡(12/27，进行中)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（当前策略是不新增 CI 订阅）；2) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
