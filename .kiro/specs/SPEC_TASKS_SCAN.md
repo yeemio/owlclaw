@@ -140,7 +140,7 @@
 | cli-skill | `.kiro/specs/cli-skill/` | ✅ 三层齐全，已完成（7/7） | `owlclaw skill` CLI（init/validate/list，纯本地） |
 | **declarative-binding** | `.kiro/specs/declarative-binding/` | ✅ 三层齐全，已完成（26/26） | 声明式工具绑定（Task 0~19 全部完成：契约/schema + Resolver/Registry + HTTP/Queue/SQL Executor + BindingTool/Ledger + Skills 自动注册 + CLI 验证扩展 + Shadow 报告链路 + 安全/治理集成 + SKILL.md 最小模式/简化 tools + reference examples + 文档/模板联动 + BindingGenerator(OpenAPI/ORM) + cli-migrate output-mode 集成 + 三角色工作流文档/示例 + `skill init --from-binding`） |
 | skill-templates | `.kiro/specs/skill-templates/` | ✅ 三层齐全，已完成（149/149） | SKILL.md 分类模板库（monitoring/analysis/workflow/integration/report） |
-| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（137/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库；release gate 已实现，Task 40.4 外部阻塞） |
+| owlhub | `.kiro/specs/owlhub/` | 🟡 三层齐全，收尾中（141/143） | OwlHub Skills 注册中心（Phase 1 GitHub 索引 → Phase 2 静态站点 → Phase 3 数据库；release gate 已实现，Task 40.4 外部阻塞） |
 | cli-scan | `.kiro/specs/cli-scan/` | ✅ 三层齐全，已完成（80/80） | AST 扫描器（Task 1~20 已完成，包含属性测试/集成测试/最终验收） |
 | mcp-server | `.kiro/specs/mcp-server/` | ✅ 三层齐全，已完成（12/12） | owlclaw-mcp |
 | examples | `.kiro/specs/examples/` | ✅ 三层齐全，已完成（14/14） | 示例（非交易场景、LangChain、3 行业 Skills、mionyee-trading 完整示例、批量验证脚本、CI 接入、文档对齐全部完成） |
@@ -183,12 +183,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | spec loop：skills-quality Task 6 收口（OwlHub 联动） |
-| 批次状态 | **进行中（阶段性收口）**。skills-quality 已完成（27/27）；当前剩余主要为 release/owlhub 外部凭据或分配约束阻塞项。 |
-| 已完成项 | 1) skills-quality Task 6 全量完成：发布附带匿名质量评分、搜索支持按质量排序、低质量告警标记；2) 定向验收通过：`test_cli_api_client`、`test_owlhub_api_routes`、`test_owlhub_cli_client`；3) 代码质量检查通过（ruff）。 |
-| 下一待执行 | 1) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 并在 `main` 触发 `v0.1.0` 发布流；2) 统筹调整分配后推进 owlhub Task 19（需可改 `owlclaw/db/**` 与 `migrations/**`）；3) codex-work 继续 test-infra 剩余 2 tasks。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(25/32，外部阻塞)，owlhub 🟡(137/143，分配+外部阻塞)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) release：缺少 GitHub Secrets（`PYPI_TOKEN/TEST_PYPI_TOKEN`）与 `main` 分支发布动作；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞；3) owlhub Task 19：当前 worktree 分配禁止改动 `owlclaw/db/**` 与 `migrations/**`；4) test-infra Task 4.2/11.1/11.3/11.4 仍待达标。 |
+| 当前批次 | review-work 审校循环：合并 test-infra 优化 + owlhub Task19 文档对齐 |
+| 批次状态 | **进行中（阶段性收口）**。skills-quality 已完成（27/27）；owlhub 更新至 141/143；test-infra 仍有性能与 CI 门槛待收口。 |
+| 已完成项 | 1) skills-quality Task 6 已收口（发布质量分、按质量排序、低质量警告）；2) test-infra 稳定性优化合入：Hypothesis `owlclaw_fast` + 属性测试降采样 + `.env.example` 新增 `OWLCLAW_AVAILABLE_TOOLS`；3) owlhub Task 19/19.1/19.2/19.3 文档与现有实现对齐为完成。 |
+| 下一待执行 | 1) 继续 test-infra Task 4.2/11.1/11.3/11.4 收口；2) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 并在 `main` 触发发布流；3) owlhub Task 40.4 外部阻塞项推进。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(25/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 串行耗时约 `257s`（2026-02-26），仍高于 `<60s`；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release：缺少 GitHub Secrets（`PYPI_TOKEN/TEST_PYPI_TOKEN`）与 `main` 分支发布动作；4) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

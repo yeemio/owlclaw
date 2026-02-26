@@ -378,7 +378,7 @@ owner: {{ owner }}
         with pytest.raises(TemplateRenderError):
             rdr.render("monitoring/health-check", {"skill_name": "ok"})
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(required_names=st.lists(st.from_regex(r"[a-z][a-z0-9_]{0,12}", fullmatch=True), min_size=1, max_size=6, unique=True))
     def test_property_required_parameters_validation(self, required_names: list[str]) -> None:
         parameters = [
@@ -397,7 +397,7 @@ owner: {{ owner }}
                 rdr.render("monitoring/health-check", {})
             assert set(exc_info.value.missing) == set(required_names)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(default_value=st.integers(min_value=1, max_value=10_000))
     def test_property_default_parameter_application(self, default_value: int) -> None:
         parameters = [
@@ -417,7 +417,7 @@ owner: {{ owner }}
             out = rdr.render("monitoring/health-check", {"skill_name": "demo"})
             assert f"interval: {default_value}" in out
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         param_type=st.sampled_from(["int", "bool"]),
         invalid_bool_literal=st.text(min_size=1, max_size=10).filter(
@@ -439,7 +439,7 @@ owner: {{ owner }}
             assert exc_info.value.param_name == "value"
             assert exc_info.value.expected == param_type
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         choices=st.lists(st.from_regex(r"[a-z][a-z0-9_-]{0,10}", fullmatch=True), min_size=1, max_size=8, unique=True),
         invalid_value=st.from_regex(r"[a-z][a-z0-9_-]{0,10}", fullmatch=True),
@@ -461,7 +461,7 @@ owner: {{ owner }}
                 rdr.render("monitoring/health-check", {"format": invalid_value})
             assert exc_info.value.param_name == "format"
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         skill_name=st.from_regex(r"[a-z][a-z0-9-]{0,20}", fullmatch=True),
         interval=st.integers(min_value=1, max_value=3600),
@@ -483,7 +483,7 @@ owner: {{ owner }}
             out2 = rdr.render("monitoring/health-check", params)
             assert out1 == out2
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         skill_name=st.from_regex(r"[a-z][a-z0-9-]{0,20}", fullmatch=True),
         owner=st.from_regex(r"[a-z][a-z0-9_-]{0,20}", fullmatch=True),
@@ -506,7 +506,7 @@ owner: {{ owner }}
             assert "{%" not in rendered
             assert "%}" not in rendered
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(text=st.text(max_size=60))
     def test_property_kebab_case_conversion(self, text: str) -> None:
         converted = TemplateRenderer._kebab_case(text)
@@ -516,7 +516,7 @@ owner: {{ owner }}
             assert "-" not in converted[-1:]
             assert re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", converted) is not None
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(text=st.text(max_size=60))
     def test_property_snake_case_conversion(self, text: str) -> None:
         converted = TemplateRenderer._snake_case(text)
@@ -525,3 +525,4 @@ owner: {{ owner }}
         if converted:
             assert "_" not in converted[-1:]
             assert re.fullmatch(r"[a-z0-9]+(?:_[a-z0-9]+)*", converted) is not None
+

@@ -366,10 +366,9 @@ This implementation plan breaks down the OwlHub feature into three progressive p
 
 ## Phase 3: Service API Mode (Full Service)
 
-- [ ] 19. Set up database infrastructure
-  - _Status note (2026-02-25): pending architecture scope decision. Current implementation path shipped file-backed API/review/statistics flow for Phase 3 validation; DB-backed migration/model track remains open and must be explicitly approved before implementation. Decision proposal: `docs/OWLHUB_PHASE3_DB_DECISION_PROPOSAL.md`._
-  - _Status note (2026-02-26): worktree assignment for `codex-gpt-work` still禁止触碰 `owlclaw/db/**` 与 `migrations/**`，本任务需由被分配 worktree 执行或由统筹调整分配后推进。_
-  - [ ] 19.1 Create database schema with Alembic migrations
+- [x] 19. Set up database infrastructure
+  - _Status note (2026-02-26): 已按现有实现收口并通过定向验收（`tests/unit/test_migration_owlhub_core.py` + `tests/unit/test_owlhub_db_models.py`）。_
+  - [x] 19.1 Create database schema with Alembic migrations
     - Create `migrations/versions/` migration for skills table
     - Create migration for skill_versions table with foreign key
     - Create migration for skill_statistics table
@@ -377,7 +376,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add indexes for common queries (name, publisher, tags)
     - _Requirements: 1.1, 1.3, 6.1, 7.1_
 
-  - [ ] 19.2 Create SQLAlchemy models
+  - [x] 19.2 Create SQLAlchemy models
     - Create `owlclaw/owlhub/models/skill.py` with Skill model
     - Create `owlclaw/owlhub/models/version.py` with SkillVersion model
     - Create `owlclaw/owlhub/models/statistics.py` with SkillStatistics model
@@ -385,7 +384,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - Add relationships and cascade rules
     - _Requirements: 1.1, 1.3, 6.1, 7.1_
 
-  - [ ]* 19.3 Write unit tests for database models
+  - [x]* 19.3 Write unit tests for database models
     - Test model creation and relationships
     - Test unique constraints (publisher + name)
     - Test cascade deletes

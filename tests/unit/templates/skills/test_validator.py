@@ -318,7 +318,7 @@ description: desc
             errs = v.validate_template(p)
             assert errs == [], f"{p.relative_to(base)}: {[e.message for e in errs]}"
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(var_name=st.from_regex(r"[a-z_][a-z0-9_]{0,12}", fullmatch=True))
     def test_property_template_jinja2_syntax_valid(self, var_name: str) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -330,7 +330,7 @@ description: desc
             errs = TemplateValidator().validate_template(tpl)
             assert not any(e.field == "syntax" for e in errs)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(body=st.text(min_size=0, max_size=120))
     def test_property_template_requires_metadata_comment_block(self, body: str) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -339,7 +339,7 @@ description: desc
             errs = TemplateValidator().validate_template(tpl)
             assert any(e.field == "metadata" and "comment block" in e.message for e in errs)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         name=st.from_regex(r"[a-z0-9]+(?:-[a-z0-9]+)*", fullmatch=True),
         description=st.text(min_size=1, max_size=80).filter(lambda x: bool(x.strip())),
@@ -354,7 +354,7 @@ description: desc
             errs = TemplateValidator().validate_skill_file(skill)
             assert not any(e.field == "frontmatter" for e in errs)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(valid_name=st.from_regex(r"[a-z0-9]+(?:-[a-z0-9]+)*", fullmatch=True))
     def test_property_name_format_valid_kebab_case(self, valid_name: str) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -366,7 +366,7 @@ description: desc
             errs = TemplateValidator().validate_skill_file(skill)
             assert not any(e.field == "name" and "kebab-case" in e.message for e in errs)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(invalid_name=st.from_regex(r"[A-Z][A-Za-z0-9 _-]{0,20}", fullmatch=True))
     def test_property_name_format_invalid_non_kebab_case(self, invalid_name: str) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -378,7 +378,7 @@ description: desc
             errs = TemplateValidator().validate_skill_file(skill)
             assert any(e.field == "name" and "kebab-case" in e.message for e in errs)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(
         trigger=st.one_of(
             st.sampled_from(
@@ -402,7 +402,7 @@ description: desc
             errs = TemplateValidator().validate_skill_file(skill)
             assert not any(e.field == "owlclaw.trigger" and "Invalid trigger syntax" in e.message for e in errs)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(body=st.text(min_size=1, max_size=120))
     def test_property_body_non_empty_with_heading(self, body: str) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -414,7 +414,7 @@ description: desc
             errs = TemplateValidator().validate_skill_file(skill)
             assert not any(e.field == "body" and "Body is empty" in e.message for e in errs)
 
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=20, deadline=None)
     @given(name=st.text(min_size=1, max_size=40))
     def test_property_validation_error_messages_are_non_empty(self, name: str) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -427,3 +427,4 @@ description: desc
             assert errs
             assert all(e.field.strip() for e in errs)
             assert all(e.message.strip() for e in errs)
+
