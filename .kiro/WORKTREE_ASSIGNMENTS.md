@@ -273,6 +273,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-26 | Phase 6 全量分配：codex-work→skill-dx P1+skill-ai-assist P1+skills-quality；codex-gpt-work→progressive-migration+industry-skills。仅 P2（skill-dx P2/skill-ai-assist P2）暂不分配 | 一次分完，减少统筹轮次 |
 | 2026-02-26 | 启动原“暂不分配”项：codex-work 追加 skill-dx P2 + skill-ai-assist P2；codex-gpt-work 保持 release/owlhub 阻塞跟踪 | P1 能力与入口已落地，具备可执行条件 |
 | 2026-02-26 | 新增 protocol-first-api-mcp 三层 spec（0/24），待下一轮统筹分配 | 响应 API/MCP 优先战略，先固化规范与执行路径 |
+| 2026-02-26 | 按发布阶段拆分 5 个子 spec：protocol-governance / gateway-runtime-ops / contract-testing / release-supply-chain / cross-lang-golden-path | 将“总纲”转为可并行执行的交付包 |
 
 ---
 
@@ -298,3 +299,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | release 剩余（25/32） | 发布凭据与发布验证 | codex-gpt-work | #1（外部依赖） |
 | owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | codex-gpt-work | #2（外部依赖） |
 | protocol-first-api-mcp（0/24） | 协议优先专项（API+MCP） | 待分配 | 高优先级（建议下一轮启动） |
+| protocol-governance（0/10） | 协议治理规则与门禁 | 待分配 | 高优先级 |
+| gateway-runtime-ops（0/9） | 网关发布/回滚/SLO | 待分配 | 高优先级 |
+| contract-testing（0/10） | API/MCP 契约测试体系 | 待分配 | 高优先级 |
+| release-supply-chain（0/8） | OIDC + provenance 发布链路 | 待分配 | 高优先级 |
+| cross-lang-golden-path（0/9） | Java + curl 接入路径 | 待分配 | 高优先级 |
