@@ -9,9 +9,9 @@
 ## 进度概览
 
 - **总任务数**：27
-- **已完成**：24
+- **已完成**：27
 - **进行中**：0
-- **未开始**：3
+- **未开始**：0
 
 ---
 
@@ -69,9 +69,12 @@
 
 ## 验收清单
 
-- [ ] 治理文档与规则齐全
-- [ ] warning/blocking 均可运行
-- [ ] 演练完成并留档
+- [x] 治理文档与规则齐全
+  - 验证：`docs/protocol/VERSIONING.md`、`COMPATIBILITY_POLICY.md`、`ERROR_MODEL.md`、`GOVERNANCE_GATE_POLICY.md` 均已创建并互相引用
+- [x] warning/blocking 均可运行
+  - 验证：`tests/unit/test_contract_diff_script.py` 覆盖 warning/blocking/豁免审计路径并通过
+- [x] 演练完成并留档
+  - 验证：`scripts/protocol_governance_drill.py` 可生成 `docs/protocol/reports/governance-drill-latest.md`；`tests/unit/test_protocol_governance_drill.py` 通过
 
 ---
 
