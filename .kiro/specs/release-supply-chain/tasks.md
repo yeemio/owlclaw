@@ -7,9 +7,9 @@
 ## 进度概览
 
 - **总任务数**：15
-- **已完成**：10
+- **已完成**：11
 - **进行中**：0
-- **未开始**：5
+- **未开始**：4
 
 ## 1. OIDC 发布
 
@@ -19,7 +19,7 @@
 
 ## 2. 验证与证明
 
-- [ ] 2.1 发布后执行 `pip install` smoke
+- [x] 2.1 发布后执行 `pip install` smoke
 - [x] 2.2 生成并上传 provenance/attestation
 - [x] 2.3 归档发布报告（version/commit/run）
 

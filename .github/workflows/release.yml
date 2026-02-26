@@ -81,10 +81,26 @@ jobs:
           packages-dir: dist/
           skip-existing: true
 
-      - name: Generate build provenance
-        uses: actions/attest-build-provenance@v1
+      - name: Attest build provenance
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.target == 'pypi' }}
+        uses: actions/attest-build-provenance@v2
         with:
           subject-path: "dist/*"
+
+      - name: Smoke install published package
+        env:
+          RELEASE_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'pypi' }}
+        run: |
+          VERSION=$(python -c "import tomllib, pathlib; d=tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8')); print(d['tool']['poetry']['version'])")
+          python -m venv .venv-smoke
+          . .venv-smoke/bin/activate
+          python -m pip install --upgrade pip
+          if [ "${RELEASE_TARGET}" = "testpypi" ]; then
+            pip install -i https://test.pypi.org/simple/ "owlclaw==${VERSION}"
+          else
+            pip install "owlclaw==${VERSION}"
+          fi
+          python -c "import owlclaw; print(owlclaw.__version__)"
 
       - name: Generate release report
         run: |
