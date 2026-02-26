@@ -24,6 +24,7 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 - **集成**：Hatchet MIT（持久执行）、litellm（LLM）、Langfuse（可观测）、Agent Skills 规范（知识文档）
 - **生态定位**：编排框架（LangChain）给 Agent 手和脚，OwlClaw 给 Agent 大脑和心跳——生态位互补，不是竞争
 - **架构文档**：`docs/ARCHITECTURE_ANALYSIS.md`（v4.5，唯一架构真源）
+- **定位文档**：`docs/POSITIONING.md`（产品定位与差异化价值唯一真源）
 
 ---
 
@@ -39,6 +40,7 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 | **Spec 标准** | `.cursor/rules/owlclaw_spec_standards.mdc` | ✅ |
 | **数据库规范** | `.cursor/rules/owlclaw_database.mdc` | ✅ |
 | **数据库架构** | `docs/DATABASE_ARCHITECTURE.md` | ✅ |
+| **产品定位** | `docs/POSITIONING.md` | ✅ |
 
 ---
 
@@ -58,6 +60,7 @@ OwlClaw 是一个**面向成熟业务应用的 Agent 基础设施**，核心理�
 | 测试 | `.cursor/rules/owlclaw_testing.mdc` | 测试规范（pytest、覆盖率） |
 | 写/改 spec | `.cursor/rules/owlclaw_spec_standards.mdc` | Spec 文档标准 |
 | 写/改 spec | `.kiro/SPEC_DOCUMENTATION_STANDARD.md` | Spec 三层文档结构详细规范 |
+| 定位/生态 | `docs/POSITIONING.md` | 产品定位、差异化价值、生态关系（唯一真源） |
 
 ### AI 工作流程
 

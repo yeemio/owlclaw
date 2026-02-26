@@ -103,6 +103,12 @@
 - [ ] 完整端到端示例（库存管理场景，可运行） → spec: complete-workflow
 - [ ] 架构演进路线章节（Multi-Agent/自我进化/可解释性/OwlHub 安全治理） → spec: architecture-roadmap
 
+### Phase 6：差异化能力（业务落地核心）
+
+- [ ] SKILL.md 自然语言书写模式（业务人员零门槛） → spec: skill-dx
+- [ ] AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板） → spec: skill-ai-assist
+- [ ] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
+
 ---
 
 ## Spec 索引
@@ -145,6 +151,9 @@
 | **quick-start** | `.kiro/specs/quick-start/` | 🆕 三层齐全，待开始（0/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
 | **complete-workflow** | `.kiro/specs/complete-workflow/` | 🆕 三层齐全，待开始（0/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
 | **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | 🆕 三层齐全，待开始（0/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
+| **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/24） | SKILL.md 自然语言书写模式（双模式解析 + 工具匹配 + 触发解析 + CLI） |
+| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22） | AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板系统 + 校验增强） |
+| **progressive-migration** | `.kiro/specs/progressive-migration/` | 🆕 三层齐全，待开始（0/25） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 
 ---
 
@@ -170,11 +179,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-25 |
-| 当前批次 | Phase 5 落地收尾：Lite Mode 核心代码完成 + 3 个新 spec 创建 |
-| 批次状态 | **进行中**。Lite Mode 已实现（`OwlClaw.lite()` + `InMemoryLedger`），新 spec 待分配。 |
-| 已完成项 | 1) `OwlClaw.lite()` 类方法实现（`owlclaw/app.py`）；2) `InMemoryLedger` 实现（`owlclaw/governance/ledger_inmemory.py`）；3) `_ensure_governance()` 支持 `use_inmemory_ledger` 标志；4) 测试更新（19 passed）；5) 创建 quick-start/complete-workflow/architecture-roadmap 三个 spec（三层齐全）。 |
-| 下一待执行 | 1) 分配 quick-start + complete-workflow → codex-gpt-work；2) 分配 architecture-roadmap → codex-work（或 codex-gpt-work）；3) codex-work 继续 test-infra 剩余 Task；4) release + owlhub 40.4 等人工凭据。 |
-| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 当前批次 | Phase 5 + Phase 6：POSITIONING.md 规范化 + 3 个差异化 spec 创建（skill-dx / skill-ai-assist / progressive-migration） |
+| 批次状态 | **进行中**。Phase 5 Lite Mode 已完成；Phase 6 三个 spec 三层齐全已创建，待分配。 |
+| 已完成项 | 1) `OwlClaw.lite()` + `InMemoryLedger`（Phase 5）；2) POSITIONING.md 规范化（v1.1.0）+ 与 owlclaw_core.mdc / ARCHITECTURE_ANALYSIS.md 建立双向关联；3) 创建 quick-start/complete-workflow/architecture-roadmap 三个 spec；4) 创建 skill-dx/skill-ai-assist/progressive-migration 三个 spec（三层齐全）。 |
+| 下一待执行 | 1) 分配 skill-dx / skill-ai-assist / progressive-migration 到编码 worktree；2) codex-work 继续 test-infra + architecture-roadmap；3) codex-gpt-work 继续 quick-start + complete-workflow；4) release + owlhub 40.4 等人工凭据。 |
+| 验收快照 | quick-start 🆕(0/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/24)，skill-ai-assist 🆕(0/22)，progressive-migration 🆕(0/25)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2：unit 套件约 452s，需优化到 < 60s；2) test-infra Task 9.4/11：需 Docker Engine；3) release/owlhub 40.4：需人工凭据。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

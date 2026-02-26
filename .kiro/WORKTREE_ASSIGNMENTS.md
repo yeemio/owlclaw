@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-02-23
+> **最后更新**: 2026-02-25
 
 ---
 
@@ -267,6 +267,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-25 | 合并 review-work(11)+codex-gpt-work(11)+codex-work(5) → main；capabilities-skills ✅(115/115)；local-devenv ✅(10/10)；owlhub 137/143；release 25/32；test-infra 7/11 | 统筹轮次：三分支全合并 + 所有 worktree 同步 |
 | 2026-02-25 | repo-hygiene ✅(37/37)：.editorconfig + CODEOWNERS + docs/README.md；fix(test) skills_context_cache_hits；所有 worktree 同步 | 统筹轮次：repo-hygiene backlog 收口 |
 | 2026-02-25 | Phase 5 落地收尾：Lite Mode 核心代码完成（主 worktree）；新建 quick-start/complete-workflow/architecture-roadmap spec；codex-gpt-work→quick-start+complete-workflow；codex-work→architecture-roadmap | 架构重塑：落地差距收尾 |
+| 2026-02-25 | Phase 6 差异化能力：新建 skill-dx/skill-ai-assist/progressive-migration spec（三层齐全）；POSITIONING.md 规范化 v1.1.0 + 文档关联建立 | 补齐战略讨论中识别的缺失 spec |
 
 ---
 
@@ -281,3 +282,13 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 新增 3 个 Phase 5 spec 已分配：
 - codex-work → test-infra（继续） + architecture-roadmap（新增）
 - codex-gpt-work → quick-start + complete-workflow（新增） + owlhub/release 收尾
+
+**Phase 6 差异化能力 spec（待分配）**：
+- skill-dx（0/24）— SKILL.md 自然语言书写模式
+- skill-ai-assist（0/22）— AI 辅助 Skill 生成（依赖 skill-dx）
+- progressive-migration（0/25）— 渐进式迁移 migration_weight
+
+建议分配策略：
+- skill-dx → codex-work（当 architecture-roadmap 完成后）
+- progressive-migration → codex-gpt-work（当 quick-start + complete-workflow 完成后）
+- skill-ai-assist → 最先空闲的 worktree（依赖 skill-dx 完成）
