@@ -52,6 +52,9 @@ No AI knowledge needed. No prompt engineering. The Agent reads this and autonomo
 
 ## Quick Start
 
+New here? Follow the 10-minute Lite Mode guide:
+- [docs/QUICK_START.md](docs/QUICK_START.md)
+
 ```python
 from owlclaw import OwlClaw
 

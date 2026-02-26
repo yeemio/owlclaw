@@ -8,6 +8,16 @@ from owlclaw.governance.constraints import (
     RiskConfirmationConstraint,
     TimeConstraint,
 )
+from owlclaw.governance.approval_queue import (
+    ApprovalRequest,
+    ApprovalStatus,
+    InMemoryApprovalQueue,
+)
+from owlclaw.governance.migration_gate import (
+    MigrationDecision,
+    MigrationGate,
+    MigrationOutcome,
+)
 from owlclaw.governance.ledger import (
     CostSummary,
     Ledger,
@@ -15,6 +25,7 @@ from owlclaw.governance.ledger import (
     LedgerRecord,
 )
 from owlclaw.governance.ledger_inmemory import InMemoryLedger
+from owlclaw.governance.risk_assessor import RiskAssessor, RiskBreakdown
 from owlclaw.governance.router import ModelSelection, Router
 from owlclaw.governance.visibility import (
     CapabilityView,
@@ -24,18 +35,26 @@ from owlclaw.governance.visibility import (
 )
 
 __all__ = [
+    "ApprovalRequest",
+    "ApprovalStatus",
     "BudgetConstraint",
     "CapabilityView",
     "CircuitBreakerConstraint",
     "CircuitState",
     "CostSummary",
     "FilterResult",
+    "InMemoryApprovalQueue",
     "InMemoryLedger",
     "Ledger",
     "LedgerQueryFilters",
     "LedgerRecord",
     "ModelSelection",
+    "MigrationDecision",
+    "MigrationGate",
+    "MigrationOutcome",
     "RateLimitConstraint",
+    "RiskAssessor",
+    "RiskBreakdown",
     "RiskConfirmationConstraint",
     "Router",
     "RunContext",
