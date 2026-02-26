@@ -105,8 +105,8 @@
 
 ### Phase 6：差异化能力（业务落地核心）
 
-- [ ] SKILL.md 自然语言书写模式（业务人员零门槛） → spec: skill-dx
-- [ ] AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板） → spec: skill-ai-assist
+- [x] SKILL.md 自然语言书写模式（业务人员零门槛） → spec: skill-dx
+- [x] AI 辅助 Skill 生成（对话式创建 + 文档提取 + 模板） → spec: skill-ai-assist
 - [x] 渐进式迁移 migration_weight（0%→100% 逐步放权） → spec: progressive-migration
 - [x] Skills 质量评分与数据飞轮（执行指标 → 评分 → 推荐优化） → spec: skills-quality
 - [x] OwlHub 语义搜索推荐（用户描述 → 最佳模板建议 + 行业标签） → spec: industry-skills
@@ -153,8 +153,8 @@
 | **quick-start** | `.kiro/specs/quick-start/` | ✅ 三层齐全，已完成（13/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
 | **complete-workflow** | `.kiro/specs/complete-workflow/` | ✅ 三层齐全，已完成（18/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
 | **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | ✅ 三层齐全，已完成（13/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
-| **skill-dx** | `.kiro/specs/skill-dx/` | 🟡 三层齐全，进行中（18/25，P1:18/18 P2:0/7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存已完成，P2 工具语义匹配已转入执行） |
-| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🟡 三层齐全，进行中（22/28，P1:22/22 P2:0/6） | AI 辅助 Skill 生成（P1 对话式创建+模板已完成，P2 文档提取已转入执行） |
+| **skill-dx** | `.kiro/specs/skill-dx/` | ✅ 三层齐全，已完成（25/25） | SKILL.md 自然语言书写模式（P1 触发解析+缓存 + P2 工具语义匹配/解析集成全部完成） |
+| **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | ✅ 三层齐全，已完成（28/28） | AI 辅助 Skill 生成（P1 对话式创建+模板 + P2 文档提取 `--from-doc` 全部完成） |
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | ✅ 三层齐全，已完成（31/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | ✅ 三层齐全，已完成（27/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
@@ -183,11 +183,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | review-work 审校循环：合并 test-infra 二次降采样 + release 28/32 证据更新 |
-| 批次状态 | **进行中（阶段性收口）**。release 更新至 28/32（tag 触发链路、GitHub Release 自动创建与 changelog 验收完成）；test-infra 仍有性能与 CI 门槛待收口；owlhub 141/143 剩余外部阻塞。 |
-| 已完成项 | 1) skills-quality Task 6 已收口（发布质量分、按质量排序、低质量警告）；2) test-infra 稳定性优化（二次降采样）合入：Hypothesis `owlclaw_fast` + templates/owlhub/langfuse 属性测试样本下调，本地 unit 复测 `1645 passed`；3) release 证据更新：run `22433883650`、GitHub Release `v1.2.0` 自动创建与 changelog 核验，并将 4.1.1 规范化验收为“发布 tag 触发链路已存在”。 |
-| 下一待执行 | 1) 继续 test-infra Task 4.2/11.1/11.3/11.4 收口；2) codex-work 推进 skill-dx P2 与 skill-ai-assist P2；3) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 后重跑 release workflow 并完成 `pip install owlclaw` 验收；4) owlhub Task 40.4 外部阻塞项推进。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx 🟡(18/25，P1:18/18 P2:0/7)，skill-ai-assist 🟡(22/28，P1:22/22 P2:0/6)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 当前批次 | codex-work 循环：skill-dx P2 + skill-ai-assist P2 收口 |
+| 批次状态 | **已完成（本批次）**。skill-dx 从 18/25 收口到 25/25，skill-ai-assist 从 22/28 收口到 28/28；test-infra / release / owlhub 外部或性能阻塞保持不变。 |
+| 已完成项 | 1) 新增 `capability_matcher`（精确匹配 + embedding 相似度 + 可选 LLM function-call 复核）；2) `SkillsLoader` 集成 `resolved_tools` 自动解析（结构化 tools + 自然语言意图匹配）；3) 新增 `skill_doc_extractor` 与 `owlclaw skill create --from-doc`（Markdown/文本读取 + 批量生成）；4) 单测新增并通过：`test_capability_matcher.py`、`test_skill_doc_extractor.py`、`test_main_skill_create_from_doc_generates_file`，相关回归合计 `118 passed`。 |
+| 下一待执行 | 1) 继续 test-infra Task 4.2/11.1/11.3/11.4 收口；2) 维护者补齐 `PYPI_TOKEN/TEST_PYPI_TOKEN` 后重跑 release workflow 并完成 `pip install owlclaw` 验收；3) owlhub Task 40.4 外部阻塞项推进。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，test-infra 🟡(9/11)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 串行耗时约 `163s`（2026-02-26），仍高于 `<60s`；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release：`gh secret list -R yeemio/owlclaw` 未见 `PYPI_TOKEN/TEST_PYPI_TOKEN`，run `22433883650` TestPyPI 步骤 `HTTP 403`（`TWINE_PASSWORD` 为空）；4) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

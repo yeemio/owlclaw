@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml  # type: ignore[import-untyped]
 
+from owlclaw.capabilities.capability_matcher import CapabilityMatcher, extract_tool_intents, parse_available_tools
 from owlclaw.capabilities.skill_nl_parser import detect_parse_mode, parse_natural_language_skill
 from owlclaw.capabilities.tool_schema import extract_tools_schema
 from owlclaw.config.loader import ConfigLoadError, YAMLConfigLoader
@@ -74,6 +75,7 @@ class Skill:
         full_content: str | None = None,
         parse_mode: str = "structured",
         trigger_config: dict[str, Any] | None = None,
+        resolved_tools: list[str] | None = None,
     ):
         self.name = name
         self.description = description
@@ -84,6 +86,7 @@ class Skill:
         self._is_loaded = full_content is not None
         self.parse_mode = parse_mode if parse_mode in {"structured", "natural_language", "hybrid"} else "structured"
         self.trigger_config = trigger_config if isinstance(trigger_config, dict) else {}
+        self.resolved_tools = [item for item in (resolved_tools or []) if isinstance(item, str) and item.strip()]
 
     @property
     def task_type(self) -> str | None:
@@ -219,6 +222,7 @@ class Skill:
             "metadata": self.metadata,
             "parse_mode": self.parse_mode,
             "trigger_config": self.trigger_config,
+            "resolved_tools": self.resolved_tools,
             "task_type": self.task_type,
             "constraints": self.constraints,
             "trigger": self.trigger,
@@ -379,6 +383,7 @@ class SkillsLoader:
         body_text = (_body or "").strip()
         parse_mode = detect_parse_mode(frontmatter_map)
         trigger_config: dict[str, Any] = {}
+        resolved_tools: list[str] = []
         if parse_mode == "natural_language":
             nl_result = parse_natural_language_skill(
                 skill_name=frontmatter_map["name"].strip(),
@@ -423,6 +428,15 @@ class SkillsLoader:
                 "; ".join(reasons),
             )
             return None
+        if tools_schema:
+            resolved_tools = sorted(name for name in tools_schema if isinstance(name, str) and name.strip())
+        else:
+            available_tools = parse_available_tools()
+            if available_tools:
+                matcher = CapabilityMatcher()
+                intents = extract_tool_intents(frontmatter=frontmatter_map, body=body_text)
+                matches = matcher.resolve(tool_intents=intents, available_tools=available_tools)
+                resolved_tools = sorted({item.tool_name for item in matches})
 
         return Skill(
             name=frontmatter_map["name"].strip(),
@@ -433,6 +447,7 @@ class SkillsLoader:
             full_content=None,
             parse_mode=parse_mode,
             trigger_config=trigger_config,
+            resolved_tools=resolved_tools,
         )
 
     @staticmethod

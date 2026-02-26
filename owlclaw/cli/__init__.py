@@ -1264,7 +1264,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("\n  Conversationally create SKILL.md via interactive prompts.")
         print("  --interactive                Enable interactive mode")
         print("  --from-template TEXT         Generate from local template")
-        print("  --from-doc TEXT              Generate from business doc (Phase 2, not yet available)")
+        print("  --from-doc TEXT              Generate from business doc (markdown/text)")
         print("  --output TEXT                Output directory (default: skills)")
         print("  --capabilities-path TEXT     Path to discover existing capabilities")
         sys.exit(0)
