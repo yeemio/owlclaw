@@ -16,6 +16,7 @@
 - [ ] 1.1 配置 TestPyPI Trusted Publisher
   - 状态补充（2026-02-26）：在 `codex-gpt-work` 触发 run `22449095206`，`pypa/gh-action-pypi-publish@release/v1` 返回 `invalid-publisher`，说明 TestPyPI 尚未配置与当前 claim 匹配的 Trusted Publisher（`workflow_ref=.github/workflows/release.yml@refs/heads/codex-gpt-work`）。
   - 状态补充（2026-02-26）：已在 workflow 增加固定 `environment: pypi-release` 并验证 run `22449361552`；当前 claim 为 `sub=repo:yeemio/owlclaw:environment:pypi-release`、`environment=pypi-release`，仍返回 `invalid-publisher`，说明 TestPyPI 侧尚未建立该发布者映射。
+  - 状态补充（2026-02-26）：已新增 claims 提取脚本 `scripts/ops/extract_trusted_publisher_claims.py`，并基于 run `22450293930` 生成 `docs/release/trusted-publisher-claims.json`（owner/repo/workflow/environment 映射模板可直接用于平台配置）。
 - [ ] 1.2 配置 PyPI Trusted Publisher
   - 状态补充（2026-02-26）：与 1.1 同源，需在 PyPI 侧补齐 Trusted Publisher 映射后复跑正式链路。
 - [x] 1.3 调整 workflow 使用 OIDC
