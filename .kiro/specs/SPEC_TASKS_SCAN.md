@@ -183,12 +183,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | spec loop：industry-skills 收口 |
-| 批次状态 | **进行中**。industry-skills 已完成并验收通过（12/12）；等待下一分配任务。 |
-| 已完成项 | 1) industry-skills 全量完成：`skill search` 语义检索（OwlHub + 本地模板）+ embedding 缓存 + 余弦排序 + 关键词降级；2) 新增 `--industry` 过滤并贯通 index/search；3) `package.yaml` 规范文档 + `skill install --package` 批量安装；4) 对应单测通过（含语义检索 mock、行业过滤、包安装流程）。 |
-| 下一待执行 | 1) codex-gpt-work：release 收尾（外部凭据项）与 owlhub 外部阻塞项跟进；2) codex-work：test-infra 剩余 + architecture-roadmap → skill-dx P1 → skills-quality；3) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration ✅(31/31)，skills-quality 🆕(0/21)，industry-skills ✅(12/12)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
+| 当前批次 | spec loop：release + owlhub 阻塞核验与规范化 |
+| 批次状态 | **进行中（阶段性收口）**。industry-skills 已完成；release/owlhub 仅剩外部或统筹分配阻塞项，本轮已完成最新核验与文档同步。 |
+| 已完成项 | 1) 核验 release 外部条件：`gh auth status` 正常，`gh secret list -R yeemio/owlclaw` 仍无 `PYPI_TOKEN/TEST_PYPI_TOKEN`，release workflow 最近运行持续失败（凭据缺失链路未解除）；2) 更新 release tasks 未勾项状态注释（2026-02-26）；3) 更新 owlhub tasks 对 Task 19（分配禁止触碰 db/migrations）与 Task 40.4（生产凭据阻塞）的状态注释。 |
+| 下一待执行 | 1) 统筹/维护者补齐 GitHub Secrets 并在 main 触发 `v0.1.0` 发布流；2) 统筹调整任务分配（若要继续推进 owlhub Task 19，需分配到允许改动 `owlclaw/db` 与 `migrations` 的 worktree）；3) codex-work 按既定顺序继续 test-infra + architecture-roadmap + skill-dx P1。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration ✅(31/31)，skills-quality 🆕(0/21)，industry-skills ✅(12/12)，test-infra 🟡(7/11)，release 🟡(25/32，外部阻塞)，owlhub 🟡(137/143，Task 19 分配阻塞 + Task 40.4 外部阻塞)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) release：缺少 GitHub Secrets（`PYPI_TOKEN/TEST_PYPI_TOKEN`）与 main 分支发布动作；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞；3) owlhub Task 19：当前 worktree 分配禁止改动 `owlclaw/db/**` 与 `migrations/**`。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
