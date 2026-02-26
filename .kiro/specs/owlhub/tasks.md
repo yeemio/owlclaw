@@ -912,6 +912,7 @@ This implementation plan breaks down the OwlHub feature into three progressive p
     - _Requirements: 8.1, 8.2_
     - _Status note (2026-02-25): blocked by external production credentials/environment ownership; local production-like validation completed via integration tests and deployment smoke checks. Runbook + automation ready: `docs/owlhub/production_rollout.md`, `scripts/owlhub_release_gate.py`. CLI gate 命名已落地：`owlclaw release gate owlhub`（见 `docs/OWLHUB_CLI_NAMING_DECISION_PROPOSAL.md` 与 `docs/owlhub/cli_reference.md`）。_
     - _Status note (2026-02-26): blocker remains unchanged; no production credentials/ownership handoff available in current worktree context._
+    - _Status note (2026-02-26): remote registry repo is still absent (`gh repo view yeemio/owlhub` and `gh repo view owlclaw/owlhub` both return repository not found), so production deployment target is not yet available._
 
 ## Notes
 
