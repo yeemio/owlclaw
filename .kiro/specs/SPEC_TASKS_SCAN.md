@@ -100,7 +100,7 @@
 
 - [x] Lite Mode 零依赖启动（`OwlClaw.lite()` + `InMemoryLedger`） → 主 worktree 已实现
 - [x] Quick Start 指南（10 分钟从安装到看见 Agent 决策） → spec: quick-start
-- [ ] 完整端到端示例（库存管理场景，可运行） → spec: complete-workflow
+- [x] 完整端到端示例（库存管理场景，可运行） → spec: complete-workflow
 - [ ] 架构演进路线章节（Multi-Agent/自我进化/可解释性/OwlHub 安全治理） → spec: architecture-roadmap
 
 ### Phase 6：差异化能力（业务落地核心）
@@ -151,7 +151,7 @@
 | **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（7/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；Task 4/6/9.4/11 待 Docker/CI 验收） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（37/37） | 仓库卫生清理（.gitignore + 根目录清理 + deploy/ 文档化 + scripts/ README + .editorconfig + CODEOWNERS + Makefile + docs/README.md） |
 | **quick-start** | `.kiro/specs/quick-start/` | ✅ 三层齐全，已完成（13/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
-| **complete-workflow** | `.kiro/specs/complete-workflow/` | 🆕 三层齐全，待开始（0/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
+| **complete-workflow** | `.kiro/specs/complete-workflow/` | ✅ 三层齐全，已完成（18/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
 | **architecture-roadmap** | `.kiro/specs/architecture-roadmap/` | 🆕 三层齐全，待开始（0/13） | 架构演进路线（Multi-Agent/自我进化/可解释性/OwlHub 安全/性能规模） |
 | **skill-dx** | `.kiro/specs/skill-dx/` | 🆕 三层齐全，待开始（0/25，P1:18 P2:7） | SKILL.md 自然语言书写模式（P1 触发解析+缓存，P2 工具匹配需用户反馈后启动） |
 | **skill-ai-assist** | `.kiro/specs/skill-ai-assist/` | 🆕 三层齐全，待开始（0/22，P1:16 P2:6） | AI 辅助 Skill 生成（P1 对话式创建+模板，P2 文档提取需验证产品价值后启动） |
@@ -183,11 +183,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | spec loop：quick-start 全量收口（13/13） |
-| 批次状态 | **进行中**。quick-start 已实现+验收+打勾；继续推进 complete-workflow。 |
-| 已完成项 | 1) 新增 `examples/quick_start/` 最小示例（`app.py` + `SOUL.md` + `IDENTITY.md` + `SKILL.md`）；2) 新增 `docs/QUICK_START.md`（10 分钟上手指南）；3) `README.md` 增加 Quick Start 链接；4) 新增 `tests/unit/test_quick_start_assets.py` 并通过；5) quick-start tasks 全部勾选。 |
-| 下一待执行 | 1) codex-gpt-work：complete-workflow（0/18）→ progressive-migration（0/25）→ industry-skills（0/12）；2) codex-work：test-infra 剩余 + architecture-roadmap → skill-dx P1 → skills-quality；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow 🆕(0/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
+| 当前批次 | spec loop：quick-start + complete-workflow 收口（13/13 + 18/18） |
+| 批次状态 | **进行中**。Phase 5 的 quick-start 与 complete-workflow 已完成，进入 progressive-migration。 |
+| 已完成项 | 1) quick-start 全量完成（示例 + 文档 + 测试）；2) 新增 `examples/complete_workflow/` 完整示例（4 skills + 4 handlers + app + README + 配置）；3) 新增 `tests/unit/test_complete_workflow_assets.py` 并通过；4) complete-workflow tasks 全部勾选。 |
+| 下一待执行 | 1) codex-gpt-work：progressive-migration（0/25）→ industry-skills（0/12）；2) codex-work：test-infra 剩余 + architecture-roadmap → skill-dx P1 → skills-quality；3) release + owlhub 外部凭据（人工）；4) skill-ai-assist P1 在 skill-dx P1 完成后分配。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap 🆕(0/13)，skill-dx 🆕(0/25，P1:18 P2:7)，skill-ai-assist 🆕(0/22，P1:16 P2:6)，progressive-migration 🆕(0/25)，skills-quality 🆕(0/21)，industry-skills 🆕(0/12，已降级为搜索推荐)，test-infra 🟡(7/11)，release 🟡(25/32)，owlhub 🟡(137/143)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 4.2/11.1：unit 耗时仍高于 < 60s 门槛；2) test-infra Task 11.3/11.4：需 CI matrix 与覆盖率门槛实跑结果；3) release/owlhub 余项需外部平台凭据与人工发布动作。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
