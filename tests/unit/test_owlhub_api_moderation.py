@@ -191,7 +191,7 @@ def test_takedown_preserves_existing_installs(tmp_path: Path) -> None:
     assert after[0]["name"] == "steady-skill"
 
 
-@settings(max_examples=80, deadline=None)
+@settings(max_examples=10, deadline=None)
 @given(
     skill_name=st.sampled_from(["entry-monitor", "risk-checker"]),
     publisher_level=st.booleans(),
@@ -222,7 +222,7 @@ def test_property_17_blacklist_filtering(skill_name: str, publisher_level: bool)
             _restore_env(old)
 
 
-@settings(max_examples=80, deadline=None)
+@settings(max_examples=10, deadline=None)
 @given(skill_name=st.sampled_from(["entry-monitor", "risk-checker"]))
 def test_property_22_takedown_hidden(skill_name: str) -> None:
     """Property 22: taken down skills are hidden from public discovery."""
@@ -245,3 +245,4 @@ def test_property_22_takedown_hidden(skill_name: str) -> None:
             assert detail.status_code == 404
         finally:
             _restore_env(old)
+

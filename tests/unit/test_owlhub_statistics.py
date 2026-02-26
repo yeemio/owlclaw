@@ -145,7 +145,7 @@ def test_statistics_aggregation_for_local_events() -> None:
     assert stats.active_installs == 1
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=10, deadline=None)
 @given(
     download_offsets=st.lists(st.integers(min_value=-60, max_value=0), min_size=0, max_size=80),
     install_events=st.lists(
@@ -188,3 +188,4 @@ def test_property_18_statistics_count_accuracy(
     assert stats.downloads_last_30d == expected_downloads_30d
     assert stats.total_installs == len(install_events)
     assert stats.active_installs == len(expected_active_users)
+

@@ -154,3 +154,4 @@ def test_publish_generates_manifest_checksum_without_download_url(tmp_path: Path
         assert len(checksum) == 71
     finally:
         _restore_env(old)
+

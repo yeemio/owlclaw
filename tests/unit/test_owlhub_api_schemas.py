@@ -111,3 +111,4 @@ def test_app_health_and_search_endpoints() -> None:
     assert metrics.status_code == 200
     assert "owlhub_api_requests_total" in metrics.text
     assert "owlhub_api_error_rate" in metrics.text
+

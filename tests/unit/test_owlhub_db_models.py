@@ -30,3 +30,4 @@ def test_postgresql_ddl_includes_tags_array_and_metadata_jsonb() -> None:
     version_sql = str(CreateTable(SkillVersion.__table__).compile(dialect=postgresql.dialect()))
     assert "tags VARCHAR(64)[]" in skill_sql
     assert "metadata_json JSONB" in version_sql
+

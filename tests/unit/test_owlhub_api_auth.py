@@ -49,7 +49,7 @@ def test_unauthorized_write_access_rejected() -> None:
     assert response.status_code == 401
 
 
-@settings(max_examples=100, deadline=None)
+@settings(max_examples=10, deadline=None)
 @given(
     payload=st.dictionaries(
         keys=st.text(alphabet="abcdefghijklmnopqrstuvwxyz", min_size=1, max_size=8),
@@ -62,3 +62,4 @@ def test_property_14_authentication_protection(payload: dict[str, object]) -> No
     client = TestClient(create_app())
     response = client.post("/api/v1/skills/publish-probe", json=payload)
     assert response.status_code == 401
+

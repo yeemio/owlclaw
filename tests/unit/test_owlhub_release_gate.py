@@ -101,3 +101,4 @@ def test_run_release_gate_all_checks_pass(monkeypatch, tmp_path: Path) -> None:
     )
     assert report.passed is True
     assert len(report.checks) == 4
+
