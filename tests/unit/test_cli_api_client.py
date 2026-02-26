@@ -92,12 +92,13 @@ metadata:
 """,
         encoding="utf-8",
     )
-    called = {"auth": "", "name": ""}
+    called = {"auth": "", "name": "", "quality_score": None}
 
     def fake_urlopen(request: Request, timeout: int):  # noqa: ARG001
         called["auth"] = request.headers.get("Authorization", "")
         body = json.loads((request.data or b"{}").decode("utf-8"))
         called["name"] = body.get("skill_name", "")
+        called["quality_score"] = body.get("metadata", {}).get("quality", {}).get("quality_score")
         return _FakeResponse(json.dumps({"accepted": True, "review_id": "r1", "status": "pending"}))
 
     monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
@@ -111,6 +112,59 @@ metadata:
     assert called["auth"] == "Bearer token-123"
     assert called["name"] == "entry-monitor"
     assert response["review_id"] == "r1"
+
+
+def test_publish_attaches_anonymized_quality_when_snapshot_exists(tmp_path: Path, monkeypatch) -> None:
+    archive = _build_skill_archive(tmp_path, name="inventory-monitor", publisher="acme", version="1.0.0")
+    index_file = _build_index_file(tmp_path, archive, name="inventory-monitor", publisher="acme", version="1.0.0")
+    index_client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+
+    skill_dir = tmp_path / "publish-skill"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: "inventory-monitor"
+publisher: "acme"
+description: "inventory monitor"
+license: "MIT"
+metadata:
+  version: "1.0.0"
+---
+# inventory-monitor
+""",
+        encoding="utf-8",
+    )
+    quality_dir = tmp_path / ".owlclaw" / "quality"
+    quality_dir.mkdir(parents=True, exist_ok=True)
+    (quality_dir / "snapshots.json").write_text(
+        json.dumps(
+            [
+                {
+                    "skill_name": "inventory-monitor",
+                    "quality_score": 0.82,
+                    "sample_size": 15,
+                    "computed_at": "2026-02-26T10:00:00+00:00",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    captured: dict[str, object] = {}
+
+    def fake_urlopen(request: Request, timeout: int):  # noqa: ARG001
+        body = json.loads((request.data or b"{}").decode("utf-8"))
+        captured["quality"] = body.get("metadata", {}).get("quality")
+        return _FakeResponse(json.dumps({"accepted": True, "review_id": "r1", "status": "pending"}))
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    client = SkillHubApiClient(index_client=index_client, api_base_url="http://hub.local", api_token="token-123", mode="api")
+    response = client.publish(skill_path=skill_dir)
+    assert response["accepted"] is True
+    assert isinstance(captured.get("quality"), dict)
+    quality = captured["quality"]
+    assert isinstance(quality, dict)
+    assert quality.get("quality_score") == 0.82
+    assert quality.get("sample_size") == 15
 
 
 def test_api_get_cache_hit_and_no_cache_bypass(tmp_path: Path, monkeypatch) -> None:
