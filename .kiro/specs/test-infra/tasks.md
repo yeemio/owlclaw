@@ -97,7 +97,8 @@
   - [x] 11.2 有 PG：`poetry run pytest tests/unit/ tests/integration/ -q` → unit 全过，integration 按可用性 pass/skip
     - 验证记录（2026-02-25）：`DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:45432/owlclaw_test` + `docker-compose.test.yml` 下执行通过，结果 `1671 passed, 12 skipped, 2 warnings`
   - [ ] 11.3 CI 运行：所有 matrix（3.10/3.11/3.12）通过
-    - 当前状态（2026-02-26）：`22437078883` 的 Python 3.10 兼容失败已在本分支修复（`datetime.UTC` -> `timezone.utc`、`tomllib` 依赖移除；另修复 `test_release_assets.py` 对 OIDC 发布模型的旧断言）；复跑 `22449635486` 与 `22450808679` 均显示三版本已通过 unit 与协议检查，但在 integration 步骤（`Run integration tests with appended coverage`）长时间无结束（>25 分钟），目前改为 CI integration 卡住阻塞，待进一步定位
+    - 当前状态（2026-02-26）：`22437078883` 的 Python 3.10 兼容失败已在本分支修复（`datetime.UTC` -> `timezone.utc`、`tomllib` 依赖移除；另修复 `test_release_assets.py` 对 OIDC 发布模型的旧断言）；复跑 `22449635486` 与 `22450808679` 均显示三版本已通过 unit 与协议检查，但在 integration 步骤（`Run integration tests with appended coverage`）长时间无结束（>25 分钟）
+    - 缓解动作（2026-02-26）：`.github/workflows/test.yml` 的 integration 步骤新增 `timeout 900s` 防挂上限，避免 matrix 无限等待；下一轮复跑用于确认是否在超时窗口内通过，或产出可诊断失败
   - [x] 11.4 覆盖率：unit ≥ 73%，overall ≥ 75%
     - 验证记录（2026-02-26）：按 CI 同款命令本地复现，unit 覆盖率约 `74.00%`、overall 约 `75.81%`，满足当前阶段门槛；原 `90%/80%` 目标调整为后续提升路线，不再作为当前里程碑硬阻塞
   - _Requirements: AC-1, AC-2, AC-3, AC-4, AC-5_

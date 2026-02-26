@@ -75,7 +75,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test
           OWLCLAW_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/owlclaw_test
         run: |
-          poetry run pytest \
+          timeout 900s poetry run pytest \
             tests/integration/ \
             --cov=owlclaw \
             --cov-append \
