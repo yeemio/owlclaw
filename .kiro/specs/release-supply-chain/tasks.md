@@ -34,6 +34,8 @@
   - 当前状态（2026-02-26）：`gh api repos/yeemio/owlclaw/rulesets` 返回空数组 `[]`，未发现规则集保护（外部仓库设置项）
 - [x] 3.3 校准失败回滚策略
 
+说明（2026-02-26）：已新增供应链就绪审计脚本 `scripts/ops/release_supply_chain_audit.py` 并生成 `docs/release/release-supply-chain-audit.json`，用于持续追踪 required checks / branch protection / environment / secrets 状态。
+
 ## 4. 演练与收口
 
 - [ ] 4.1 TestPyPI 全链路演练

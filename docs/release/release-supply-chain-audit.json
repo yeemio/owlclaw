@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-02-26T15:51:16.938549+00:00",
+  "repo": "yeemio/owlclaw",
+  "branch": "main",
+  "release_runs": {
+    "runs": [
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-26T15:42:35Z",
+        "databaseId": 22449361552,
+        "displayTitle": "Release",
+        "headBranch": "codex-gpt-work",
+        "status": "completed",
+        "updatedAt": "2026-02-26T15:45:44Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22449361552"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-26T15:36:07Z",
+        "databaseId": 22449095206,
+        "displayTitle": "Release",
+        "headBranch": "codex-gpt-work",
+        "status": "completed",
+        "updatedAt": "2026-02-26T15:39:26Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22449095206"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-26T15:01:38Z",
+        "databaseId": 22447700064,
+        "displayTitle": "Release",
+        "headBranch": "main",
+        "status": "completed",
+        "updatedAt": "2026-02-26T15:04:44Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22447700064"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-26T15:01:27Z",
+        "databaseId": 22447692518,
+        "displayTitle": "Release",
+        "headBranch": "main",
+        "status": "completed",
+        "updatedAt": "2026-02-26T15:04:49Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22447692518"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-26T14:31:44Z",
+        "databaseId": 22446541468,
+        "displayTitle": "Release",
+        "headBranch": "main",
+        "status": "completed",
+        "updatedAt": "2026-02-26T14:34:57Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22446541468"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-26T14:06:04Z",
+        "databaseId": 22445573439,
+        "displayTitle": "Release",
+        "headBranch": "main",
+        "status": "completed",
+        "updatedAt": "2026-02-26T14:09:15Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22445573439"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-26T08:24:39Z",
+        "databaseId": 22433883650,
+        "displayTitle": "Release",
+        "headBranch": "main",
+        "status": "completed",
+        "updatedAt": "2026-02-26T08:27:48Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22433883650"
+      },
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-25T15:43:15Z",
+        "databaseId": 22404173746,
+        "displayTitle": "Release",
+        "headBranch": "main",
+        "status": "completed",
+        "updatedAt": "2026-02-25T15:46:28Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22404173746"
+      }
+    ]
+  },
+  "environments": {
+    "total_count": 2,
+    "environments": [
+      {
+        "name": "owlhub-staging",
+        "created_at": "2026-02-25T02:22:51Z",
+        "updated_at": "2026-02-25T02:22:51Z",
+        "deployment_branch_policy": null
+      },
+      {
+        "name": "pypi-release",
+        "created_at": "2026-02-26T15:42:37Z",
+        "updated_at": "2026-02-26T15:42:37Z",
+        "deployment_branch_policy": null
+      }
+    ]
+  },
+  "secrets": {
+    "count": 0,
+    "names": []
+  },
+  "branch_protection": {
+    "protected": false,
+    "response": {
+      "raw": "{\"message\":\"Branch not protected\",\"documentation_url\":\"https://docs.github.com/rest/branches/branch-protection#get-branch-protection\",\"status\":\"404\"}gh: Branch not protected (HTTP 404)"
+    }
+  }
+}
