@@ -10,7 +10,7 @@
 
 > **状态**：进行中  
 > **预估工作量**：3-5 天  
-> **最后更新**：2026-02-25  
+> **最后更新**：2026-02-26  
 > **执行原则**：本清单内所有任务均须专业、认真完成，不区分可选与必选。
 
 ---
@@ -18,9 +18,9 @@
 ## 进度概览
 
 - **总任务数**：32
-- **已完成**：25
+- **已完成**：27
 - **进行中**：0
-- **未开始**：7
+- **未开始**：5
 
 ---
 
@@ -63,8 +63,10 @@
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
 - [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
   - 状态补充（2026-02-25）：`gh secret list -R yeemio/owlclaw` 未返回 `PYPI_TOKEN/TEST_PYPI_TOKEN`，需维护者在仓库 Actions Secrets 补齐。
+  - 状态补充（2026-02-26）：再次核验 `gh secret list -R yeemio/owlclaw` 仍为空，发布凭据仍未配置。
 - [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
   - 状态补充（2026-02-25）：workflow_dispatch run `22404173746` 执行到 TestPyPI 发布阶段后返回 `HTTP 403 Forbidden`，日志显示 `TWINE_PASSWORD` 为空，根因仍是 3.1.2 未完成。
+  - 状态补充（2026-02-26）：workflow_dispatch run `22433883650` 再次失败于 `Publish to TestPyPI`，日志仍显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
 
 ---
 
@@ -77,8 +79,8 @@
   - 远程核验（2026-02-25）：临时虚拟环境执行 `pip install owlclaw` 返回 `No matching distribution found`，说明尚未发布到 PyPI
 - [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
   - 本地验证（2026-02-25）：`poetry run owlclaw --version` → `owlclaw 0.1.0`；`poetry run owlclaw skill list` 正常输出
-- [ ] 4.1.4 验证 GitHub Release 自动创建
-  - 状态补充（2026-02-26）：需在 4.1.1 tag 触发并完成 workflow 后核验；当前无法单独完成。
+- [x] 4.1.4 验证 GitHub Release 自动创建
+  - 远程核验（2026-02-26）：release run `22433883650` 在失败前已由 semantic-release 自动创建 `v1.2.0`，`gh release view v1.2.0` 可见发布时间 `2026-02-26T08:27:41Z`。
 
 ---
 
@@ -101,8 +103,8 @@
   - 状态补充（2026-02-26）：与 4.1.2 绑定，等待 TestPyPI/PyPI 发布成功后复验。
 - [x] `owlclaw --version` 输出正确版本
 - [x] examples/ 中至少 1 个示例可独立运行
-- [ ] GitHub Release 包含 changelog
-  - 状态补充（2026-02-26）：与 4.1.4 绑定，等待自动发布产物后复验。
+- [x] GitHub Release 包含 changelog
+  - 远程核验（2026-02-26）：`gh release view v1.2.0` 的 release body 包含版本标题 `## v1.2.0 (2026-02-26)` 与分组变更日志条目。
 
 ### 6.2 文档验收
 - [x] README.md 英文完整
@@ -122,10 +124,10 @@
 - 外部平台操作待执行（非仓内可自动完成）：
   - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
   - TestPyPI 实际发布验证
-  - 生产发布 tag 与 GitHub Release 生成（需 main 分支发布流程）
-  - 本轮核验（2026-02-26）：`gh auth status` 正常；`gh secret list -R yeemio/owlclaw` 仍无发布凭据；最近 release runs 均 failed，失败模式与 2026-02-25 一致（凭据缺失链路未解除）
+  - PyPI 发布后安装验收（`pip install owlclaw`）
+  - 本轮核验（2026-02-26）：`gh auth status` 正常；`gh secret list -R yeemio/owlclaw` 仍无发布凭据；release run `22433883650` 在 `Publish to TestPyPI` 以 `HTTP 403 Forbidden` 失败（`TWINE_PASSWORD` 为空）；GitHub Release 自动创建已验证（`v1.2.0`）。
 
 ---
 
 **维护者**：OwlClaw Team  
-**最后更新**：2026-02-25
+**最后更新**：2026-02-26
