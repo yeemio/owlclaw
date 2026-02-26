@@ -97,3 +97,4 @@ def test_contract_gate_workflow_contains_openapi_gate_step() -> None:
     assert "contract-gate" in jobs
     steps = "\n".join(str(item) for item in jobs["contract-gate"]["steps"])
     assert "tests/contracts/api/test_openapi_contract_gate.py" in steps
+    assert "tests/contracts/mcp/test_mcp_contract_regression.py" in steps
