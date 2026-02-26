@@ -65,3 +65,4 @@ logs/
 # Local agent/runtime caches and generated protocol drill artifacts
 .owlclaw/
 docs/protocol/reports/
+docs/ops/reports/
