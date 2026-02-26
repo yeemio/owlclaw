@@ -172,7 +172,7 @@
 | **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | ✅ 三层齐全，已完成（18/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
 | **contract-testing** | `.kiro/specs/contract-testing/` | ✅ 三层齐全，已完成（19/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
 | **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，进行中（8/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
-| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | 🟡 三层齐全，进行中（8/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
+| **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | ✅ 三层齐全，已完成（16/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 
 ---
 
@@ -198,11 +198,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-26 |
-| 当前批次 | codex-work 循环：cross-lang-golden-path 稳定性与 curl 对照（1.4 + 2.* + 3.*） |
-| 批次状态 | **进行中**。cross-lang 已从骨架推进到错误处理、超时重试幂等与 curl 对照基线。 |
-| 已完成项 | 1) `gateway-runtime-ops` 全部收口（`18/18`）；2) `release-supply-chain` 推进到 `8/15`（OIDC workflow + provenance + smoke + report + policy 文档）；3) 新增 Java 示例基线 `examples/cross_lang/java/`（`pom.xml` + `OwlClawApiClient.java` + README）；4) Java 客户端补齐错误处理、超时、重试、幂等键支持；5) 新增 curl 对照脚本 `examples/cross_lang/curl/trigger_agent.sh`、`query_status.sh`、`error_case.sh`；6) 更新 `tests/unit/test_cross_lang_java_assets.py` 校验 Java/curl 资产；7) `cross-lang-golden-path/tasks.md` 进度更新为 `8/16`。 |
-| 下一待执行 | 1) 跟踪 `test-infra` Task 11.3 远端复跑窗口并尝试收口；2) 推进 `release-supply-chain` 外部依赖任务 1.1/1.2 与 3.1/3.2（Trusted Publisher 与分支保护实际配置）；3) 推进 `cross-lang-golden-path` Task 4.* + 5.*（JAVA_GOLDEN_PATH 文档、验证脚本、阈值与剧本）。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，release-supply-chain 🟡(8/15)，cross-lang-golden-path 🟡(8/16)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 当前批次 | codex-work 循环：cross-lang-golden-path 收口完成（16/16） |
+| 批次状态 | **已完成（本批次）**。cross-lang-golden-path 全部任务与验收闭环完成。 |
+| 已完成项 | 1) `gateway-runtime-ops` 全部收口（`18/18`）；2) `release-supply-chain` 推进到 `8/15`（OIDC workflow + provenance + smoke + report + policy 文档）；3) cross-lang 新增 Java 示例工程与客户端实现（触发/查询/错误处理/超时/重试/幂等）；4) 新增 curl 对照脚本（触发/查询/错误场景）；5) 新增 `docs/protocol/JAVA_GOLDEN_PATH.md`；6) 新增 `scripts/verify_cross_lang.ps1` 与验证报告输出；7) 新增测试 `test_cross_lang_java_assets.py` 与 `test_verify_cross_lang_script.py` 并通过；8) `cross-lang-golden-path/tasks.md` 更新为 `16/16`。 |
+| 下一待执行 | 1) 跟踪 `test-infra` Task 11.3 远端复跑窗口并尝试收口；2) 推进 `release-supply-chain` 外部依赖任务 1.1/1.2 与 3.1/3.2（Trusted Publisher 与分支保护实际配置）；3) 继续评估 release/owlhub 外部阻塞解除路径。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，release-supply-chain 🟡(8/15)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（当前策略是不新增 CI 订阅）；2) release-supply-chain Task 1.1/1.2/3.1/3.2：需仓库维护者在 PyPI/TestPyPI 与 GitHub Settings 完成 Trusted Publisher/required checks/branch protection 实际配置；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
