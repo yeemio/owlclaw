@@ -216,6 +216,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
         parser.add_argument("--index-url", default="./index.json")
         parser.add_argument("--tags", default="")
         parser.add_argument("--industry", default="")
+        parser.add_argument("--sort-by", default="name")
         parser.add_argument("--tag-mode", default="and")
         parser.add_argument("--include-draft", action="store_true", default=False)
         parser.add_argument("--install-dir", default="./.owlhub/skills")
@@ -232,6 +233,7 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
             index_url=ns.index_url,
             tags=ns.tags,
             industry=ns.industry,
+            sort_by=ns.sort_by,
             tag_mode=ns.tag_mode,
             include_draft=ns.include_draft,
             install_dir=ns.install_dir,
@@ -976,7 +978,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  publish   Publish a local skill to OwlHub API")
         print("  cache-clear  Clear local OwlHub cache")
         print("\nExamples:")
-        print("  owlclaw skill search --query monitor inventory alerts --tags trading --industry retail")
+        print("  owlclaw skill search --query monitor inventory alerts --tags trading --industry retail --sort-by quality_score")
         print("  owlclaw skill install entry-monitor --verbose")
         print("  owlclaw skill install --package ./package.yaml")
         print("  owlclaw skill publish ./my-skill --api-base-url http://localhost:8000 --api-token <token>")
@@ -989,6 +991,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  -q, --query TEXT      Search query")
         print("  --tags TEXT           Comma-separated tags")
         print("  --industry TEXT       Industry filter")
+        print("  --sort-by TEXT        name|quality_score")
         print("  --tag-mode TEXT       and|or")
         print("  --include-draft       Include draft skills")
         print("  -v, --verbose         Show detailed progress")

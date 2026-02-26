@@ -45,6 +45,7 @@ def search_command(
     index_url: str = typer.Option("./index.json", "--index-url", help="Path/URL to index.json."),
     tags: str = typer.Option("", "--tags", help="Comma-separated tags filter."),
     industry: str = typer.Option("", "--industry", help="Industry filter (e.g. retail)."),
+    sort_by: str = typer.Option("name", "--sort-by", help="Sort by: name or quality_score."),
     tag_mode: str = typer.Option("and", "--tag-mode", help="Tag filter mode: and/or."),
     include_draft: bool = typer.Option(False, "--include-draft", help="Include draft versions in results."),
     mode: str = typer.Option("auto", "--mode", help="Hub mode: auto/index/api."),
@@ -81,6 +82,7 @@ def search_command(
         industry=industry,
         tag_mode=tag_mode,
         include_draft=include_draft,
+        sort_by=sort_by,
         verbose=verbose,
         quiet=quiet,
     )
@@ -90,10 +92,12 @@ def search_command(
     for item in results:
         rendered_tags = ",".join(item.tags) if item.tags else "-"
         score_text = f" score={item.score:.3f}" if item.score is not None else ""
+        quality_text = f" quality={item.quality_score:.3f}" if item.quality_score is not None else ""
+        warning_text = " [LOW_QUALITY]" if item.low_quality_warning else ""
         install_hint = _format_install_hint(item)
         _echo(f"{item.name}@{item.version} [{item.version_state}] ({item.publisher}) [{item.source}] - {item.description}", quiet=quiet)
         _echo(
-            f"  tags={rendered_tags} industry={item.industry or '-'}{score_text}",
+            f"  tags={rendered_tags} industry={item.industry or '-'}{score_text}{quality_text}{warning_text}",
             quiet=quiet,
             color="blue",
         )
@@ -242,6 +246,7 @@ def _search_with_semantic_ranking(
     industry: str,
     tag_mode: str,
     include_draft: bool,
+    sort_by: str,
     verbose: bool,
     quiet: bool,
 ) -> list[SearchResult]:
@@ -253,6 +258,7 @@ def _search_with_semantic_ranking(
             tag_mode=tag_mode,
             include_draft=include_draft,
             industry=industry,
+            sort_by=sort_by,
         )
 
     owlhub_candidates = client.search(
@@ -261,6 +267,7 @@ def _search_with_semantic_ranking(
         tag_mode=tag_mode,
         include_draft=include_draft,
         industry=industry,
+        sort_by=sort_by,
     )
     template_candidates = _build_template_candidates(industry=industry)
     all_candidates = owlhub_candidates + template_candidates
@@ -309,6 +316,7 @@ def _search_with_semantic_ranking(
             tag_mode=tag_mode,
             include_draft=include_draft,
             industry=industry,
+            sort_by=sort_by,
         )
         keyword_results.extend(_keyword_template_candidates(normalized_query, industry=industry))
         return keyword_results

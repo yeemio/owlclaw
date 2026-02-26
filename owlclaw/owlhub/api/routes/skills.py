@@ -65,7 +65,7 @@ def search_skills(
     request: Request,
     query: str = "",
     tags: str = "",
-    sort_by: str = Query("name", pattern="^(name|updated_at|downloads)$"),
+    sort_by: str = Query("name", pattern="^(name|updated_at|downloads|quality_score)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
 ) -> SkillSearchResponse:
@@ -73,7 +73,7 @@ def search_skills(
     normalized_query = query.strip().lower()
 
     items: list[SkillSearchItem] = []
-    sort_values: dict[tuple[str, str, str], int | str] = {}
+    sort_values: dict[tuple[str, str, str], int | float | str] = {}
     for entry in _iter_skills():
         manifest = entry.get("manifest", {})
         name = str(manifest.get("name", "")).strip()
@@ -93,8 +93,18 @@ def search_skills(
             stats = entry.get("statistics", {})
             downloads = int(stats.get("total_downloads", 0)) if isinstance(stats, dict) else 0
             sort_values[skill_key] = downloads
+        elif sort_by == "quality_score":
+            stats = entry.get("statistics", {})
+            quality = float(stats.get("quality_score", 0.0)) if isinstance(stats, dict) and isinstance(stats.get("quality_score"), int | float) else 0.0
+            sort_values[skill_key] = quality
         elif sort_by == "updated_at":
             sort_values[skill_key] = str(entry.get("updated_at", ""))
+        stats_payload = entry.get("statistics", {})
+        quality_score: float | None = None
+        if isinstance(stats_payload, dict):
+            raw_quality = stats_payload.get("quality_score")
+            if isinstance(raw_quality, int | float):
+                quality_score = float(raw_quality)
         items.append(
             SkillSearchItem(
                 name=name,
@@ -103,11 +113,15 @@ def search_skills(
                 description=description,
                 tags=skill_tags,
                 version_state=str(entry.get("version_state", "released")),
+                quality_score=quality_score,
+                low_quality_warning=quality_score is not None and quality_score < 0.5,
             )
         )
 
     if sort_by == "downloads":
         items.sort(key=lambda item: int(sort_values.get((item.publisher, item.name, item.version), 0)), reverse=True)
+    elif sort_by == "quality_score":
+        items.sort(key=lambda item: float(sort_values.get((item.publisher, item.name, item.version), 0.0)), reverse=True)
     elif sort_by == "updated_at":
         items.sort(key=lambda item: str(sort_values.get((item.publisher, item.name, item.version), "")), reverse=True)
     else:
@@ -256,17 +270,28 @@ def publish_skill(
     skills = index_data.get("skills", [])
     if not isinstance(skills, list):
         skills = []
-    entry = {
+    statistics_payload: dict[str, Any] = (
+        cast(dict[str, Any], metadata_dict.get("statistics", {}))
+        if isinstance(metadata_dict.get("statistics", {}), dict)
+        else {"total_downloads": 0, "downloads_last_30d": 0}
+    )
+    entry: dict[str, Any] = {
         "manifest": manifest_payload,
         "version_state": state,
         "published_at": now,
         "updated_at": now,
         "download_url": download_url,
         "checksum": checksum,
-        "statistics": metadata_dict.get("statistics", {})
-        if isinstance(metadata_dict.get("statistics", {}), dict)
-        else {"total_downloads": 0, "downloads_last_30d": 0},
+        "statistics": statistics_payload,
     }
+    quality_payload = metadata_dict.get("quality", {})
+    if isinstance(quality_payload, dict):
+        raw_score = quality_payload.get("quality_score")
+        raw_samples = quality_payload.get("sample_size", 0)
+        if isinstance(raw_score, int | float):
+            entry["statistics"]["quality_score"] = float(raw_score)
+            entry["statistics"]["quality_samples"] = int(raw_samples) if isinstance(raw_samples, int) else 0
+            entry["statistics"]["quality_source"] = "anonymous_aggregate"
     replaced = False
     for idx, existing in enumerate(skills):
         manifest = existing.get("manifest", {})

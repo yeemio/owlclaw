@@ -521,6 +521,61 @@ def test_search_filters_by_industry(tmp_path: Path) -> None:
     assert other == []
 
 
+def test_search_supports_quality_score_sort_and_low_quality_warning(tmp_path: Path, monkeypatch, capsys) -> None:
+    first = _build_skill_archive(tmp_path, name="high-skill", publisher="acme", version="1.0.0")
+    second = _build_skill_archive(tmp_path, name="low-skill", publisher="acme", version="1.0.0")
+    index = {
+        "version": "1.0",
+        "generated_at": "2026-02-24T00:00:00+00:00",
+        "total_skills": 2,
+        "skills": [
+            {
+                "manifest": {
+                    "name": "high-skill",
+                    "publisher": "acme",
+                    "version": "1.0.0",
+                    "description": "high quality",
+                    "license": "MIT",
+                    "tags": ["quality"],
+                    "dependencies": {},
+                },
+                "download_url": str(first),
+                "checksum": IndexBuilder().calculate_checksum(first),
+                "published_at": "2026-02-24T00:00:00+00:00",
+                "updated_at": "2026-02-24T00:00:00+00:00",
+                "version_state": "released",
+                "statistics": {"quality_score": 0.91},
+            },
+            {
+                "manifest": {
+                    "name": "low-skill",
+                    "publisher": "acme",
+                    "version": "1.0.0",
+                    "description": "low quality",
+                    "license": "MIT",
+                    "tags": ["quality"],
+                    "dependencies": {},
+                },
+                "download_url": str(second),
+                "checksum": IndexBuilder().calculate_checksum(second),
+                "published_at": "2026-02-24T00:00:00+00:00",
+                "updated_at": "2026-02-24T00:00:00+00:00",
+                "version_state": "released",
+                "statistics": {"quality_score": 0.21},
+            },
+        ],
+    }
+    (tmp_path / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    handled = _dispatch_skill_command(["skill", "search", "--sort-by", "quality_score"])
+    assert handled is True
+    captured = capsys.readouterr()
+    high_pos = captured.out.find("high-skill@1.0.0")
+    low_pos = captured.out.find("low-skill@1.0.0")
+    assert high_pos != -1 and low_pos != -1 and high_pos < low_pos
+    assert "[LOW_QUALITY]" in captured.out
+
+
 def test_cli_search_semantic_query_includes_templates(tmp_path: Path, monkeypatch, capsys) -> None:
     archive = _build_skill_archive(tmp_path, name="inventory-monitor", publisher="acme", version="1.0.0")
     _build_index_file(

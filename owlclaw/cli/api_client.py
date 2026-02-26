@@ -49,6 +49,7 @@ class SkillHubApiClient:
         tag_mode: str = "and",
         include_draft: bool = False,
         industry: str = "",
+        sort_by: str = "name",
     ) -> list[SearchResult]:
         """Search skills via API when configured; fallback to static index as needed."""
         if self.mode == "index":
@@ -58,10 +59,11 @@ class SkillHubApiClient:
                 tag_mode=tag_mode,
                 include_draft=include_draft,
                 industry=industry,
+                sort_by=sort_by,
             )
         if self.api_base_url:
             try:
-                return self._search_via_api(query=query, tags=tags or [])
+                return self._search_via_api(query=query, tags=tags or [], sort_by=sort_by)
             except Exception:
                 if self.mode == "api":
                     raise
@@ -71,6 +73,7 @@ class SkillHubApiClient:
             tag_mode=tag_mode,
             include_draft=include_draft,
             industry=industry,
+            sort_by=sort_by,
         )
 
     def install(
@@ -101,7 +104,7 @@ class SkillHubApiClient:
         if not self.validator.validate_structure(skill_path).is_valid:
             raise ValueError("invalid skill package structure")
         manifest = _read_manifest(skill_path / "SKILL.md")
-        payload = {
+        payload: dict[str, Any] = {
             "publisher": str(manifest.get("publisher", "")).strip(),
             "skill_name": str(manifest.get("name", "")).strip(),
             "version": str(manifest.get("version", "")).strip(),
@@ -113,11 +116,17 @@ class SkillHubApiClient:
                 "download_url": str((skill_path.resolve()).as_posix()),
             },
         }
+        skill_name = str(payload.get("skill_name", "")).strip()
+        quality_payload = _load_anonymized_quality(skill_name=skill_name, root=skill_path.parent)
+        if quality_payload:
+            metadata = payload.get("metadata", {})
+            if isinstance(metadata, dict):
+                metadata["quality"] = quality_payload
         response = self._request_json("POST", "/api/v1/skills", body=payload)
         return response if isinstance(response, dict) else {}
 
-    def _search_via_api(self, *, query: str, tags: list[str]) -> list[SearchResult]:
-        params = {"query": query, "tags": ",".join(tags)}
+    def _search_via_api(self, *, query: str, tags: list[str], sort_by: str) -> list[SearchResult]:
+        params = {"query": query, "tags": ",".join(tags), "sort_by": sort_by}
         query_text = urllib.parse.urlencode(params)
         payload = self._request_json("GET", f"/api/v1/skills?{query_text}")
         if not isinstance(payload, dict):
@@ -140,6 +149,10 @@ class SkillHubApiClient:
                     download_url="",
                     checksum="",
                     dependencies={},
+                    quality_score=float(item["quality_score"])
+                    if isinstance(item.get("quality_score"), int | float)
+                    else None,
+                    low_quality_warning=bool(item.get("low_quality_warning", False)),
                 )
             )
         return results
@@ -194,3 +207,31 @@ def _is_cache_fresh(path: Path, *, ttl_seconds: int) -> bool:
 
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _load_anonymized_quality(*, skill_name: str, root: Path) -> dict[str, Any] | None:
+    """Load local aggregated quality payload for publish metadata, if present."""
+    path = root / ".owlclaw" / "quality" / "snapshots.json"
+    if not path.exists():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    rows = raw if isinstance(raw, list) else []
+    candidates = [row for row in rows if isinstance(row, dict) and str(row.get("skill_name", "")).strip() == skill_name]
+    if not candidates:
+        return None
+    latest = sorted(candidates, key=lambda row: str(row.get("computed_at", "")))[-1]
+    raw_score = latest.get("quality_score")
+    if not isinstance(raw_score, int | float):
+        return None
+    sample_size = latest.get("sample_size", latest.get("total_runs", 0))
+    if not isinstance(sample_size, int):
+        sample_size = 0
+    return {
+        "quality_score": float(raw_score),
+        "sample_size": max(0, sample_size),
+        "computed_at": str(latest.get("computed_at", "")),
+        "source": "anonymous_aggregate",
+    }

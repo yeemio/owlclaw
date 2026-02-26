@@ -50,6 +50,8 @@ class SkillSearchItem(BaseModel):
     description: str
     tags: list[str] = Field(default_factory=list)
     version_state: str = "released"
+    quality_score: float | None = None
+    low_quality_warning: bool = False
 
 
 class SkillSearchResponse(BaseModel):

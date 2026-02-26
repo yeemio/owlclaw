@@ -89,6 +89,57 @@ def test_read_only_endpoints(tmp_path: Path, monkeypatch) -> None:
     assert len(versions.json()) == 2
 
 
+def test_search_supports_quality_score_sort_and_warning(tmp_path: Path, monkeypatch) -> None:
+    index = {
+        "version": "1.0",
+        "generated_at": "2026-02-24T00:00:00+00:00",
+        "total_skills": 2,
+        "skills": [
+            {
+                "manifest": {
+                    "name": "high-skill",
+                    "publisher": "acme",
+                    "version": "1.0.0",
+                    "description": "high quality",
+                    "tags": ["quality"],
+                    "dependencies": {},
+                },
+                "version_state": "released",
+                "updated_at": "2026-02-24T00:00:00+00:00",
+                "statistics": {"total_downloads": 1, "quality_score": 0.9},
+            },
+            {
+                "manifest": {
+                    "name": "low-skill",
+                    "publisher": "acme",
+                    "version": "1.0.0",
+                    "description": "low quality",
+                    "tags": ["quality"],
+                    "dependencies": {},
+                },
+                "version_state": "released",
+                "updated_at": "2026-02-24T00:00:00+00:00",
+                "statistics": {"total_downloads": 10, "quality_score": 0.3},
+            },
+        ],
+    }
+    index_path = tmp_path / "index-quality.json"
+    index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2), encoding="utf-8")
+    monkeypatch.setenv("OWLHUB_INDEX_PATH", str(index_path))
+    _load_index.cache_clear()
+
+    client = TestClient(create_app())
+    response = client.get("/api/v1/skills", params={"sort_by": "quality_score"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["items"][0]["name"] == "high-skill"
+    assert payload["items"][0]["quality_score"] == 0.9
+    assert payload["items"][0]["low_quality_warning"] is False
+    assert payload["items"][1]["name"] == "low-skill"
+    assert payload["items"][1]["quality_score"] == 0.3
+    assert payload["items"][1]["low_quality_warning"] is True
+
+
 @settings(max_examples=40, deadline=None)
 @given(
     count=st.integers(min_value=1, max_value=40),
