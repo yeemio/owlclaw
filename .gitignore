@@ -61,3 +61,7 @@ logs/
 
 # External dependencies (submodules / vendored projects)
 .langfuse/
+
+# Local agent/runtime caches and generated protocol drill artifacts
+.owlclaw/
+docs/protocol/reports/

@@ -38,6 +38,7 @@ def test_test_workflow_has_python_matrix_and_postgres_service() -> None:
     assert "--cov-fail-under=73" in steps
     assert "--cov-fail-under=75" in steps
     assert "test_protocol_error_model_consistency.py" in steps
+    assert "protocol_governance_drill.py" in steps
 
 
 def test_build_workflow_contains_build_and_twine_check() -> None:
