@@ -29,20 +29,20 @@
 
 ## Task 2：Mionyee 接入胶水
 
-- [ ] 2.1 在 Mionyee 的 LLM 调用入口替换为 GovernanceProxy
+- [x] 2.1 在 Mionyee 的 LLM 调用入口替换为 GovernanceProxy
   - 目标文件：`mionyee/mionyee/ai/client.py`（或等效入口）
   - 改动量：5-10 行
-- [ ] 2.2 编写 Mionyee 侧的 owlclaw.yaml 配置
+- [x] 2.2 编写 Mionyee 侧的 owlclaw.yaml 配置
   - 预算上限、限流 QPS、熔断阈值
-- [ ] 2.3 集成测试：Mionyee LLM 调用经过治理代理
+- [x] 2.3 集成测试：Mionyee LLM 调用经过治理代理
   - 文件：`tests/integration/test_mionyee_governance.py`
   - 验证：预算拦截、限流、熔断、审计记录
 
 ## Task 3：Ledger 审计查询
 
-- [ ] 3.1 确认 Ledger 已有能力满足审计需求（复用 governance spec 实现）
-- [ ] 3.2 补充 CLI 查询命令（如需）：`owlclaw ledger query --caller mionyee.*`
-- [ ] 3.3 验收：所有 LLM 调用/拦截事件可通过 CLI 查询
+- [x] 3.1 确认 Ledger 已有能力满足审计需求（复用 governance spec 实现）
+- [x] 3.2 补充 CLI 查询命令（如需）：`owlclaw ledger query --caller mionyee.*`
+- [x] 3.3 验收：所有 LLM 调用/拦截事件可通过 CLI 查询
 
 ## Task 4：性能验证
 
