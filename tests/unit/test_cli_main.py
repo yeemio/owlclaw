@@ -430,11 +430,37 @@ def test_main_migrate_scan_help_uses_plain_help(monkeypatch, capsys) -> None:
     out = capsys.readouterr().out
     assert "Usage: owlclaw migrate scan [OPTIONS]" in out
     assert "--project" in out
-    assert "--output-mode [handler|binding|both]" in out
+    assert "--output-mode [handler|binding|both|mcp]" in out
     assert "--dry-run" in out
     assert "--report-json" in out
     assert "--report-md" in out
     assert "--force" in out
+
+
+def test_main_dispatches_migrate_scan_with_mcp_output_mode(monkeypatch, tmp_path) -> None:
+    cli_main = importlib.import_module("owlclaw.cli.__init__")
+    captured: dict[str, object] = {}
+
+    def _fake_run_migrate_scan_command(**kwargs):  # type: ignore[no-untyped-def]
+        captured.update(kwargs)
+
+    monkeypatch.setattr("owlclaw.cli.migrate.scan_cli.run_migrate_scan_command", _fake_run_migrate_scan_command)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "owlclaw",
+            "migrate",
+            "scan",
+            "--openapi",
+            str(tmp_path / "openapi.yaml"),
+            "--output-mode",
+            "mcp",
+            "--output",
+            str(tmp_path / "out"),
+        ],
+    )
+    cli_main.main()
+    assert captured["output_mode"] == "mcp"
 
 
 def test_main_dispatches_migrate_init(monkeypatch, tmp_path) -> None:

@@ -123,3 +123,36 @@ def test_generate_from_orm_output_passes_skill_validate(tmp_path, monkeypatch) -
     result = runner.invoke(skill_app, ["validate", str(skill_dir)])
     assert result.exit_code == 0
     assert "OK:" in result.output
+
+
+def test_generate_mcp_tool_definition_from_openapi() -> None:
+    generator = BindingGenerator()
+    endpoint = OpenAPIEndpoint(
+        method="post",
+        path="/orders",
+        operation_id="create-order",
+        description="Create one order",
+        request_body={
+            "content": {
+                "application/json": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {"order_id": {"type": "string"}},
+                        "required": ["order_id"],
+                    }
+                }
+            }
+        },
+        responses={"201": {"description": "created"}},
+        security=[{"BearerAuth": []}],
+        security_schemes={"BearerAuth": {"type": "http", "scheme": "bearer"}},
+        server_url="https://api.example.com",
+    )
+
+    payload = generator.generate_mcp_tool_definition(endpoint)
+    assert payload["name"] == "create-order"
+    assert payload["binding"]["type"] == "http"
+    assert payload["binding"]["method"] == "POST"
+    assert payload["binding"]["url"] == "https://api.example.com/orders"
+    assert payload["inputSchema"]["required"] == ["order_id"]
+    assert payload["prerequisites"]["env"] == ["BEARERAUTH_TOKEN"]

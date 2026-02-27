@@ -38,9 +38,9 @@
 
 ## Task 4：业务工具自动生成
 
-- [ ] 4.1 扩展 `owlclaw migrate` 支持 `--output-mode mcp`
+- [x] 4.1 扩展 `owlclaw migrate` 支持 `--output-mode mcp`
   - 从 OpenAPI 文档生成 MCP 工具定义
-- [ ] 4.2 单元测试：MCP 工具生成逻辑
+- [x] 4.2 单元测试：MCP 工具生成逻辑
 - [ ] 4.3 集成测试：生成的 MCP Server 可被 OpenClaw 连接
 
 ## Task 5：A2A Agent Card

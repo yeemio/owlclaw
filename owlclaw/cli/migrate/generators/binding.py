@@ -159,6 +159,25 @@ class BindingGenerator:
             prerequisites_env=[operation.connection_env],
         )
 
+    def generate_mcp_tool_definition(self, endpoint: OpenAPIEndpoint) -> dict[str, Any]:
+        """Generate one MCP tool definition payload from OpenAPI endpoint."""
+        tool_name = _operation_name(endpoint)
+        headers, prerequisite_env, _warnings = self._build_security_headers(endpoint)
+        return {
+            "name": tool_name,
+            "description": _description(endpoint),
+            "inputSchema": self._build_openapi_parameters_schema(endpoint),
+            "binding": {
+                "type": "http",
+                "method": endpoint.method.upper(),
+                "url": self._compose_url(endpoint),
+                "headers": headers,
+            },
+            "prerequisites": {
+                "env": sorted(prerequisite_env),
+            },
+        }
+
     def _compose_url(self, endpoint: OpenAPIEndpoint) -> str:
         base = endpoint.server_url.rstrip("/")
         if base:
