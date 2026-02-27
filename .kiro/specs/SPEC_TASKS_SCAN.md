@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.5（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-26
+> **最后更新**: 2026-02-27
 
 ---
 
@@ -93,7 +93,7 @@
 ### Phase 4：开发基础设施统一（新增）
 
 - [x] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
-- [ ] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
+- [x] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
 - [x] 仓库卫生清理（根目录整洁、.gitignore 完整、deploy/ 文档化） → spec: repo-hygiene
 
 ### Phase 5：落地收尾（架构重塑）
@@ -113,7 +113,7 @@
 
 ### Phase 7：协议优先（API + MCP）
 
-- [ ] Protocol-first 治理收口（统一版本策略 / 错误模型 / 兼容门禁 / Java Golden Path） → spec: protocol-first-api-mcp
+- [x] Protocol-first 治理收口（统一版本策略 / 错误模型 / 兼容门禁 / Java Golden Path） → spec: protocol-first-api-mcp
 - [x] 协议治理规范化（版本/兼容/错误域/门禁） → spec: protocol-governance
 - [x] 网关运行与发布运维标准化（canary/rollback/SLO） → spec: gateway-runtime-ops
 - [x] API + MCP 契约测试体系（diff + replay + blocking gate） → spec: contract-testing
@@ -157,7 +157,7 @@
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（28/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（10/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；性能 <60s 已降级为长期优化项，覆盖率门槛已调整为当前阶段可执行值，剩余 Task 11.3） |
+| **test-infra** | `.kiro/specs/test-infra/` | ✅ 三层齐全，已完成（11/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；含 CI matrix 验收闭环） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（37/37） | 仓库卫生清理（.gitignore + 根目录清理 + deploy/ 文档化 + scripts/ README + .editorconfig + CODEOWNERS + Makefile + docs/README.md） |
 | **quick-start** | `.kiro/specs/quick-start/` | ✅ 三层齐全，已完成（13/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
 | **complete-workflow** | `.kiro/specs/complete-workflow/` | ✅ 三层齐全，已完成（18/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
@@ -167,11 +167,11 @@
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | ✅ 三层齐全，已完成（31/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | ✅ 三层齐全，已完成（27/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
-| **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | 🟡 三层齐全，待实施（0/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
+| **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | ✅ 三层齐全，已完成（24/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
 | **protocol-governance** | `.kiro/specs/protocol-governance/` | ✅ 三层齐全，已完成（27/27） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
 | **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | ✅ 三层齐全，已完成（18/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
 | **contract-testing** | `.kiro/specs/contract-testing/` | ✅ 三层齐全，已完成（19/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
-| **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，进行中（9/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
+| **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，进行中（11/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
 | **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | ✅ 三层齐全，已完成（16/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 
 ---
@@ -197,13 +197,13 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-26 |
-| 当前批次 | codex-gpt-work 执行循环：release 外部阻塞证据自动化 |
-| 批次状态 | **进行中（阶段性收口）**。gateway-runtime-ops 已完成（18/18）；contract-testing 已完成（19/19）；cross-lang-golden-path 已完成（16/16）；release-supply-chain 维持 9/15，新增自动化审计产物用于持续复核外部阻塞。 |
-| 已完成项 | 1) `gateway-runtime-ops` 全部收口（18/18）；2) `release-supply-chain` 推进到 9/15（OIDC workflow + provenance + smoke + report + policy 文档 + checkpoint 同步）；3) cross-lang 新增 Java 示例工程与客户端实现（触发/查询/错误处理/超时/重试/幂等），并完成 `docs/protocol/JAVA_GOLDEN_PATH.md`、`docs/protocol/cross-lang-acceptance.md`、`scripts/verify_cross_lang.ps1` 与相关单测；4) 定位 run `22437078883` 失败根因并完成本地修复：`datetime.UTC` -> `timezone.utc`，`tomllib` 依赖移除；5) 新增并执行 `scripts/ops/release_supply_chain_audit.py`，生成 `docs/release/release-supply-chain-audit.json`，并同步到 `docs/release/release-supply-chain-playbook.md`；6) release 证据收敛：主分支 runs `22446541468`、`22447692518`、`22447700064` 为旧链路 `403`，OIDC runs `22449095206`、`22449361552` 显示 `invalid-publisher`；7) 复核 owlhub 生产发布目标仓库状态：`gh repo view yeemio/owlhub` 与 `gh repo view owlclaw/owlhub` 均 not found。 |
-| 下一待执行 | 1) 触发并跟踪 `test-infra` Task 11.3 远端 CI matrix（3.10/3.11/3.12）复跑；2) 维护者在 TestPyPI/PyPI 创建 Trusted Publisher（`owner=yeemio`、`repo=owlclaw`、`workflow=.github/workflows/release.yml`、`environment=pypi-release`），并完成 required checks/branch protection；3) 外部配置完成后重跑 TestPyPI/PyPI 链路并收口 release-supply-chain Task 4.1/4.2。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，release-supply-chain 🟡(9/15)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 11.3：需远端 CI 复跑确认（已完成本地修复，待验证）；2) release-supply-chain Task 1.1/1.2/3.1/3.2：需仓库维护者在 PyPI/TestPyPI 与 GitHub Settings 完成 Trusted Publisher/required checks/branch protection 实际配置（主分支 runs `22446541468`、`22447692518`、`22447700064` 为 `403`，`codex-gpt-work` runs `22449095206`、`22449361552` 为 `invalid-publisher`）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞，且目标仓库 `yeemio/owlhub` / `owlclaw/owlhub` 当前均不存在。 |
+| 最后更新 | 2026-02-27 |
+| 当前批次 | codex-work 循环：protocol-first-api-mcp 规范化收口 |
+| 批次状态 | **已完成（本批次）**。`protocol-first-api-mcp` 汇总子 spec 结果后闭环完成（24/24）。 |
+| 已完成项 | 1) `protocol-first-api-mcp/tasks.md` 由 `0/24` 规范化为 `24/24` 并补充子 spec 证据映射；2) `requirements.md` 全量验收勾选对齐并更新状态为已完成；3) `design.md` 更新为已完成并补充实施映射（protocol-governance/contract-testing/gateway-runtime-ops/cross-lang-golden-path）；4) 新增 `docs/protocol/PROTOCOL_FIRST_PHASE_SUMMARY.md` 输出协议优先阶段总结（决策/结果/遗留）；5) Phase 7 总纲“Protocol-first 治理收口”勾选完成，Spec 索引状态改为 ✅ `24/24`；6) 通过 `gh api` 验证 `main` 分支保护已启用（required checks: Lint/Test/Build），`release-supply-chain` Task 3.1 收口；7) 通过 `gh api` 创建并验证 release 规则集 `release-branch-protection`（ID `13307033`），`release-supply-chain` Task 3.2 收口；8) 触发 run `22473801915` 复测 release 链路，确认当前阻塞集中在 TestPyPI Trusted Publisher（`Publish to TestPyPI` 403）；9) OIDC 证据补充：runs `22449095206`、`22449361552` 返回 `invalid-publisher`，说明 claim 侧已规范化、阻塞点在外部发布者映射；10) 新增 `scripts/release_oidc_preflight.py` 与 `docs/release/TRUSTED_PUBLISHER_SETUP.md`，将外部配置转为可执行收口清单与自动诊断报告；11) 生成 `docs/release/reports/release-oidc-preflight-latest.md`，报告状态 `BLOCKED`（exit code `3`），确认仓库侧基线已满足、剩余为 TestPyPI/PyPI Trusted Publisher 外部配置。 |
+| 下一待执行 | 1) 由维护者按 `docs/release/TRUSTED_PUBLISHER_SETUP.md` 完成 TestPyPI/PyPI Trusted Publisher 配置（任务 1.1/1.2）；2) 配置后执行 `poetry run python scripts/release_oidc_preflight.py --repo yeemio/owlclaw --run-id <最新run>` 确认阻塞信号消失；3) 复跑 release 链路并收口 Task 4.1/4.2；4) 继续跟踪 `release`/`owlhub` 外部阻塞项。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) release-supply-chain Task 1.1/1.2：需仓库维护者在 PyPI/TestPyPI 配置 Trusted Publisher（runs `22471143360`、`22473801915` 为 `403`，runs `22449095206`、`22449361552` 为 `invalid-publisher`）；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 

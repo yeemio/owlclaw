@@ -8,6 +8,7 @@
 | 脚本 | 用途 | 典型命令 | 分类 |
 |---|---|---|---|
 | `release_preflight.py` | 发布前门禁检查（版本/变更/工件前置条件） | `poetry run python scripts/release_preflight.py` | CI 使用 |
+| `release_oidc_preflight.py` | OIDC 发布预检（workflow/分支保护/ruleset/403 阻塞诊断） | `poetry run python scripts/release_oidc_preflight.py --run-id <id>` | 本地开发使用 |
 | `owlhub_release_gate.py` | OwlHub 发布闸门验证 | `poetry run python scripts/owlhub_release_gate.py --help` | CI 使用 |
 | `owlhub_build_index.py` | 生成 OwlHub index 数据 | `poetry run python scripts/owlhub_build_index.py --help` | CI 使用 |
 | `owlhub_generate_site.py` | 生成 OwlHub 静态站点内容 | `poetry run python scripts/owlhub_generate_site.py --help` | CI 使用 |

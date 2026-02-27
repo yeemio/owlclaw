@@ -12,6 +12,10 @@ Required external setup:
 2. Bind to repository `yeemio/owlclaw` and workflow `.github/workflows/release.yml`
 3. Restrict to expected trigger (tag/manual release)
 
+Detailed field-level setup guide:
+
+- `docs/release/TRUSTED_PUBLISHER_SETUP.md`
+
 Validation:
 
 ```bash
@@ -33,6 +37,12 @@ Inspect latest run:
 ```bash
 gh run list -R yeemio/owlclaw --workflow release.yml --limit 5
 gh run view <RUN_ID> -R yeemio/owlclaw
+```
+
+Run OIDC preflight diagnostics (workflow + branch protection + ruleset + 403 blocker detection):
+
+```bash
+poetry run python scripts/release_oidc_preflight.py --repo yeemio/owlclaw --run-id <RUN_ID>
 ```
 
 If run fails at OIDC validation, verify Trusted Publisher subject mapping first.
