@@ -25,6 +25,7 @@ from owlclaw.governance.ledger import (
     LedgerRecord,
 )
 from owlclaw.governance.ledger_inmemory import InMemoryLedger
+from owlclaw.governance.proxy import GovernanceProxy, GovernanceRejectedError
 from owlclaw.governance.risk_assessor import RiskAssessor, RiskBreakdown
 from owlclaw.governance.router import ModelSelection, Router
 from owlclaw.governance.visibility import (
@@ -52,6 +53,8 @@ __all__ = [
     "MigrationDecision",
     "MigrationGate",
     "MigrationOutcome",
+    "GovernanceProxy",
+    "GovernanceRejectedError",
     "RateLimitConstraint",
     "RiskAssessor",
     "RiskBreakdown",

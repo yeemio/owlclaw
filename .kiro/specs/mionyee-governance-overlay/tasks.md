@@ -8,22 +8,22 @@
 
 ## Task 0：Spec 文档与契约
 
-- [ ] 0.1 requirements.md / design.md / tasks.md 三层齐全
-- [ ] 0.2 与 SPEC_TASKS_SCAN.md Phase 8.1 对齐
+- [x] 0.1 requirements.md / design.md / tasks.md 三层齐全
+- [x] 0.2 与 SPEC_TASKS_SCAN.md Phase 8.1 对齐
 
 ## Task 1：GovernanceProxy 核心
 
-- [ ] 1.1 实现 `owlclaw.governance.proxy.GovernanceProxy` 类
+- [x] 1.1 实现 `owlclaw.governance.proxy.GovernanceProxy` 类
   - 文件：`owlclaw/governance/proxy.py`
   - 接口：`async acompletion(model, messages, caller, **kwargs) -> dict`
   - 内部调用链：budget_check → rate_limit_check → circuit_breaker_check → litellm.acompletion → ledger_record
-- [ ] 1.2 实现 `GovernanceProxy.from_config(path)` 工厂方法
+- [x] 1.2 实现 `GovernanceProxy.from_config(path)` 工厂方法
   - 从 owlclaw.yaml 加载治理配置
   - 复用 `owlclaw.config` 统一配置系统
-- [ ] 1.3 实现降级模式（passthrough）
+- [x] 1.3 实现降级模式（passthrough）
   - 治理层异常时直通 litellm，不阻塞业务
   - 记录降级事件到本地日志
-- [ ] 1.4 单元测试：GovernanceProxy 的预算/限流/熔断/降级逻辑
+- [x] 1.4 单元测试：GovernanceProxy 的预算/限流/熔断/降级逻辑
   - 文件：`tests/unit/governance/test_proxy.py`
   - 覆盖：正常调用、预算拦截、限流拒绝、熔断触发、降级直通
 
