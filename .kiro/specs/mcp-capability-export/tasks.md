@@ -13,12 +13,12 @@
 
 ## Task 1：MCP 架构 Spike
 
-- [ ] 1.1 验证 `owlclaw serve --http` 在 OpenClaw 中的连接体验
-- [ ] 1.2 验证延迟（p95 < 500ms）
-- [ ] 1.3 验证 stdio 桥接模式是否需要
-- [ ] 1.4 输出可运行 demo：OpenClaw → OwlClaw MCP Server → 模拟业务 API
-- [ ] 1.5 输出用户配置文档草稿
-- [ ] 1.6 决策：默认推荐 HTTP 还是 stdio
+- [x] 1.1 验证 `owlclaw serve --http` 在 OpenClaw 中的连接体验
+- [x] 1.2 验证延迟（p95 < 500ms）
+- [x] 1.3 验证 stdio 桥接模式是否需要
+- [x] 1.4 输出可运行 demo：OpenClaw → OwlClaw MCP Server → 模拟业务 API
+- [x] 1.5 输出用户配置文档草稿
+- [x] 1.6 决策：默认推荐 HTTP 还是 stdio
 
 ## Task 2：治理工具 MCP Server
 
