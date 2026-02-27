@@ -70,7 +70,7 @@
   - 状态补充（2026-02-26）：workflow_dispatch run `22433883650` 再次失败于 `Publish to TestPyPI`，日志仍显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
   - 状态补充（2026-02-26）：workflow_dispatch run `22445573439` 再次失败于 `Publish to TestPyPI`，`TWINE_PASSWORD` 仍为空并返回 `HTTP 403 Forbidden`。
   - 状态补充（2026-02-26）：workflow_dispatch runs `22447692518`、`22447700064` 再次失败于 `Publish to TestPyPI`，日志持续显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
-  - 状态补充（2026-02-27）：workflow_dispatch runs `22473801915`、`22475093887` 继续失败于 `Publish to TestPyPI`，`scripts/release_oidc_preflight.py` 对应报告均为 `BLOCKED`（Trusted Publisher 未生效）。
+  - 状态补充（2026-02-27）：workflow_dispatch runs `22473801915`、`22475093887`、`22477795502` 继续失败于 `Publish to TestPyPI`，`scripts/release_oidc_preflight.py` 对应报告均为 `BLOCKED`（Trusted Publisher 未生效）。
 
 ---
 
@@ -130,9 +130,10 @@
   - PyPI/TestPyPI Trusted Publisher 映射创建
   - TestPyPI 实际发布验证
   - PyPI 发布后安装验收（`pip install owlclaw`）
-  - 本轮核验（2026-02-27）：`gh auth status` 正常；`main` 分支保护与 `release/*` 规则集已到位；release runs `22473801915`、`22475093887` 仍在 `Publish to TestPyPI` 失败并报 `HTTP 403 Forbidden`。
+  - 本轮核验（2026-02-27）：`gh auth status` 正常；`main` 分支保护与 `release/*` 规则集已到位；release runs `22473801915`、`22475093887`、`22477795502` 仍在 `Publish to TestPyPI` 失败并报 `HTTP 403 Forbidden`。
 
 ---
 
 **维护者**：OwlClaw Team  
 **最后更新**：2026-02-27
+
