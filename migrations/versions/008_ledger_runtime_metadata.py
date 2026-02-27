@@ -1,7 +1,7 @@
 """Add runtime metadata columns to ledger_records.
 
 Revision ID: 008_ledger_runtime_metadata
-Revises: 007_skill_quality
+Revises: 007_skill_quality_snapshots
 Create Date: 2026-02-27
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "008_ledger_runtime_metadata"
-down_revision: str | None = "007_skill_quality"
+down_revision: str | None = "007_skill_quality_snapshots"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
