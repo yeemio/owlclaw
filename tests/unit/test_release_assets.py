@@ -99,6 +99,14 @@ def test_release_runbook_exists_for_external_steps() -> None:
     assert "Configure Trusted Publishing (OIDC)" in payload
     assert "Dry-run To TestPyPI" in payload
     assert "Production Release" in payload
+    assert "release_oidc_preflight.py" in payload
+
+
+def test_trusted_publisher_setup_doc_has_required_fields() -> None:
+    payload = Path("docs/release/TRUSTED_PUBLISHER_SETUP.md").read_text(encoding="utf-8")
+    assert "Owner: `yeemio`" in payload
+    assert "Repository name: `owlclaw`" in payload
+    assert "Workflow filename: `.github/workflows/release.yml`" in payload
 
 
 def test_release_workflow_is_tag_triggered() -> None:

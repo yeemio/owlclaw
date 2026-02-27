@@ -1,8 +1,8 @@
 # Design: Release Supply Chain
 
 > **目标**：把发布链路提升到“默认安全 + 可追溯”。  
-> **状态**：设计中  
-> **最后更新**：2026-02-26
+> **状态**：进行中  
+> **最后更新**：2026-02-27
 
 ## 1. 发布链路
 
@@ -15,6 +15,7 @@ Tag -> Release Workflow -> OIDC Auth -> Publish -> Attestation -> Verification
 - workflow 开始：校验 tag/branch/required checks
 - publish 后：执行安装 smoke + provenance 归档
 - 失败路径：触发回滚/重试 runbook
+- 发布前预检：执行 `scripts/release_oidc_preflight.py` 输出 OIDC 诊断报告
 
 ## 3. 错误处理
 
@@ -39,4 +40,4 @@ Tag -> Release Workflow -> OIDC Auth -> Publish -> Attestation -> Verification
 ---
 
 **维护者**：Release 工程组  
-**最后更新**：2026-02-26
+**最后更新**：2026-02-27

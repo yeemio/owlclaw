@@ -14,7 +14,9 @@
 ## 1. OIDC 发布
 
 - [ ] 1.1 配置 TestPyPI Trusted Publisher
+  - 前置（2026-02-27）：新增 `docs/release/TRUSTED_PUBLISHER_SETUP.md`，固化外部配置字段（owner/repo/workflow/environment）
 - [ ] 1.2 配置 PyPI Trusted Publisher
+  - 前置（2026-02-27）：新增 `scripts/release_oidc_preflight.py`，可在配置后快速验证仓库侧基线与 run 日志阻塞信号
 - [x] 1.3 调整 workflow 使用 OIDC
 
 ## 2. 验证与证明
@@ -37,6 +39,8 @@
   - 演练记录（2026-02-26）：run `22446541468` 在 `Publish to TestPyPI` 返回 `HTTP 403 Forbidden`，阻塞点为 Trusted Publisher 绑定未完成（对应 Task 1.1）
   - 演练记录（2026-02-27）：run `22471143360` 在 `Publish to TestPyPI` 再次返回 `HTTP 403 Forbidden`，说明 workflow 和分支保护已就绪，但 TestPyPI Trusted Publisher 仍未绑定
   - 演练记录（2026-02-27）：run `22473801915` 在 `Publish to TestPyPI` 再次返回 `HTTP 403 Forbidden`，日志显示 wheel 上传后被 TestPyPI 拒绝，阻塞点仍是 Trusted Publisher 绑定缺失
+  - 诊断命令（2026-02-27）：`poetry run python scripts/release_oidc_preflight.py --repo yeemio/owlclaw --run-id 22473801915`（输出 `docs/release/reports/release-oidc-preflight-latest.md`）
+  - 诊断结果（2026-02-27）：preflight 报告状态 `BLOCKED`，退出码 `3`，仓库侧基线已通过（workflow/protection/ruleset），剩余阻塞为 Trusted Publisher 绑定
 - [ ] 4.2 PyPI 正式链路演练
   - 当前状态（2026-02-27）：前置 TestPyPI OIDC 未打通，正式链路演练顺延（依赖 Task 1.2）
 - [x] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint
