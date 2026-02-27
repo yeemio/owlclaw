@@ -29,7 +29,7 @@ def run_migrate_scan_command(
     force: bool = False,
 ) -> None:
     mode = output_mode.strip().lower()
-    if mode not in {"handler", "binding", "both"}:
+    if mode not in {"handler", "binding", "both", "mcp"}:
         raise typer.Exit(2)
     if not openapi.strip() and not orm.strip() and not project.strip():
         raise typer.Exit(2)
@@ -43,12 +43,24 @@ def run_migrate_scan_command(
     previews: dict[str, str] = {}
     binding_count = 0
     handler_count = 0
+    mcp_count = 0
     manual_review_items: list[str] = []
 
     if openapi.strip():
         endpoints = _load_openapi_endpoints(Path(openapi))
         for endpoint in endpoints:
             result = generator.generate_from_openapi(endpoint)
+            if mode == "mcp":
+                target = output_dir / "mcp_tools" / f"{result.skill_name}.json"
+                _check_conflict(target, dry_run=dry_run, force=force)
+                tool_payload = generator.generate_mcp_tool_definition(endpoint)
+                rendered = json.dumps(tool_payload, ensure_ascii=False, indent=2)
+                if not dry_run:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_text(rendered + "\n", encoding="utf-8")
+                previews[str(target)] = _preview_lines(rendered)
+                endpoint_results.append(str(target))
+                mcp_count += 1
             if mode in {"binding", "both"}:
                 target = output_dir / result.skill_name / "SKILL.md"
                 _check_conflict(target, dry_run=dry_run, force=force)
@@ -116,6 +128,7 @@ def run_migrate_scan_command(
         "generated_count": len(generated),
         "generated_binding_count": binding_count,
         "generated_handler_count": handler_count,
+        "generated_mcp_count": mcp_count,
         "generated_files": generated,
         "manual_review": sorted(set(manual_review_items)),
         "stats": {
@@ -275,6 +288,7 @@ def _render_report_markdown(payload: dict[str, Any]) -> str:
         f"- generated_count: `{payload['generated_count']}`",
         f"- generated_binding_count: `{payload['generated_binding_count']}`",
         f"- generated_handler_count: `{payload['generated_handler_count']}`",
+        f"- generated_mcp_count: `{payload.get('generated_mcp_count', 0)}`",
         "",
         "## Stats",
         "",

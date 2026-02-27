@@ -50,3 +50,15 @@ def test_validate_migrate_config_command_rejects_unknown_key(tmp_path: Path) -> 
         validate_migrate_config_command(config=str(config))
     assert exc_info.value.exit_code == 2
 
+
+def test_validate_migrate_config_command_accepts_mcp_mode(tmp_path: Path) -> None:
+    config = tmp_path / ".owlclaw-migrate.yaml"
+    config.write_text(
+        (
+            "openapi: ./openapi.yaml\n"
+            "output: ./out\n"
+            "output_mode: mcp\n"
+        ),
+        encoding="utf-8",
+    )
+    validate_migrate_config_command(config=str(config))

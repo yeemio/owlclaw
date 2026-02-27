@@ -259,3 +259,45 @@ def test_migrate_scan_project_marks_missing_type_hint_for_manual_review(tmp_path
     report = json.loads((out / "migration_report.json").read_text(encoding="utf-8"))
     assert report["stats"]["manual_review_count"] >= 1
     assert any("missing type hint" in item for item in report["manual_review"])
+
+
+def test_migrate_scan_openapi_mcp_generates_tool_definition_json(tmp_path: Path) -> None:
+    spec = tmp_path / "openapi.yaml"
+    spec.write_text(
+        (
+            "openapi: 3.0.3\n"
+            "servers:\n"
+            "  - url: https://api.example.com\n"
+            "paths:\n"
+            "  /orders:\n"
+            "    post:\n"
+            "      operationId: create-order\n"
+            "      description: create order\n"
+            "      requestBody:\n"
+            "        content:\n"
+            "          application/json:\n"
+            "            schema:\n"
+            "              type: object\n"
+            "              properties:\n"
+            "                order_id: {type: string}\n"
+            "              required: [order_id]\n"
+            "      responses:\n"
+            "        '201': {description: created}\n"
+        ),
+        encoding="utf-8",
+    )
+
+    run_migrate_scan_command(openapi=str(spec), output_mode="mcp", output=str(tmp_path))
+
+    generated = tmp_path / "mcp_tools" / "create-order.json"
+    assert generated.exists()
+    payload = json.loads(generated.read_text(encoding="utf-8"))
+    assert payload["name"] == "create-order"
+    assert payload["binding"]["url"] == "https://api.example.com/orders"
+    assert payload["binding"]["method"] == "POST"
+    assert payload["inputSchema"]["required"] == ["order_id"]
+
+    report_payload = json.loads((tmp_path / "migration_report.json").read_text(encoding="utf-8"))
+    assert report_payload["generated_mcp_count"] == 1
+    assert report_payload["generated_binding_count"] == 0
+    assert report_payload["generated_handler_count"] == 0
