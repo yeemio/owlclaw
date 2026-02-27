@@ -8,8 +8,8 @@
 
 ## Task 0：Spec 文档与契约
 
-- [ ] 0.1 requirements.md / design.md / tasks.md 三层齐全
-- [ ] 0.2 与 SPEC_TASKS_SCAN.md Phase 8.2 对齐
+- [x] 0.1 requirements.md / design.md / tasks.md 三层齐全
+- [x] 0.2 与 SPEC_TASKS_SCAN.md Phase 8.2 对齐
 
 ## Task 1：MCP 架构 Spike
 
@@ -22,10 +22,10 @@
 
 ## Task 2：治理工具 MCP Server
 
-- [ ] 2.1 实现 `governance_budget_status` MCP 工具
-- [ ] 2.2 实现 `governance_audit_query` MCP 工具
-- [ ] 2.3 实现 `governance_rate_limit_status` MCP 工具
-- [ ] 2.4 单元测试：3 个治理工具
+- [x] 2.1 实现 `governance_budget_status` MCP 工具
+- [x] 2.2 实现 `governance_audit_query` MCP 工具
+- [x] 2.3 实现 `governance_rate_limit_status` MCP 工具
+- [x] 2.4 单元测试：3 个治理工具
   - 文件：`tests/unit/mcp/test_governance_tools.py`
 
 ## Task 3：持久任务工具 MCP Server
