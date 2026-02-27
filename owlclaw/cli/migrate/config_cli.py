@@ -29,8 +29,8 @@ def validate_migrate_config_command(*, config: str = ".owlclaw-migrate.yaml") ->
         raise typer.Exit(2)
 
     mode = str(payload.get("output_mode", "handler")).strip().lower()
-    if mode not in {"handler", "binding", "both"}:
-        typer.echo("invalid output_mode, expected handler|binding|both", err=True)
+    if mode not in {"handler", "binding", "both", "mcp"}:
+        typer.echo("invalid output_mode, expected handler|binding|both|mcp", err=True)
         raise typer.Exit(2)
 
     has_input = any(str(payload.get(name, "")).strip() for name in ("project", "openapi", "orm"))
@@ -64,7 +64,7 @@ def init_migrate_config_command(
     if interactive:
         entered_project = input(f"project path [{cfg_project}]: ").strip()
         entered_output = input(f"output dir [{cfg_output}]: ").strip()
-        entered_mode = input(f"output_mode handler|binding|both [{cfg_mode}]: ").strip().lower()
+        entered_mode = input(f"output_mode handler|binding|both|mcp [{cfg_mode}]: ").strip().lower()
         if entered_project:
             cfg_project = entered_project
         if entered_output:
@@ -72,8 +72,8 @@ def init_migrate_config_command(
         if entered_mode:
             cfg_mode = entered_mode
 
-    if cfg_mode not in {"handler", "binding", "both"}:
-        typer.echo("invalid output_mode, expected handler|binding|both", err=True)
+    if cfg_mode not in {"handler", "binding", "both", "mcp"}:
+        typer.echo("invalid output_mode, expected handler|binding|both|mcp", err=True)
         raise typer.Exit(2)
 
     payload: dict[str, Any] = {
@@ -85,4 +85,3 @@ def init_migrate_config_command(
     }
     config_path.write_text(yaml.safe_dump(payload, sort_keys=False, allow_unicode=True), encoding="utf-8")
     typer.echo(f"created: {config_path}")
-

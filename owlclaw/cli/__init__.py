@@ -493,6 +493,47 @@ def _dispatch_memory_command(argv: list[str]) -> bool:
     raise SystemExit(2)
 
 
+def _dispatch_ledger_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw ledger ...` via argparse."""
+    if not argv or argv[0] != "ledger":
+        return False
+    if len(argv) < 2:
+        _print_help_and_exit(["ledger"])
+
+    sub = argv[1]
+    sub_argv = argv[2:]
+    if "--help" in sub_argv or "-h" in sub_argv:
+        _print_help_and_exit(["ledger", sub])
+
+    if sub == "query":
+        from owlclaw.cli.ledger import query_command
+
+        parser = argparse.ArgumentParser(add_help=False, prog="owlclaw ledger query")
+        parser.add_argument("--tenant", default="default")
+        parser.add_argument("--agent-id", default="")
+        parser.add_argument("--caller", default="")
+        parser.add_argument("--caller-prefix", default="")
+        parser.add_argument("--status", default="")
+        parser.add_argument("--limit", type=int, default=20)
+        parser.add_argument("--order", choices=["asc", "desc"], default="desc")
+        parser.add_argument("--database-url", default="")
+        ns = parser.parse_args(sub_argv)
+        query_command(
+            tenant=ns.tenant,
+            agent_id=ns.agent_id,
+            caller=ns.caller,
+            caller_prefix=ns.caller_prefix,
+            status=ns.status,
+            limit=ns.limit,
+            order_desc=(ns.order == "desc"),
+            database_url=ns.database_url,
+        )
+        return True
+
+    print(f"Error: unknown ledger subcommand: {sub}", file=sys.stderr)
+    raise SystemExit(2)
+
+
 def _dispatch_agent_command(argv: list[str]) -> bool:
     """Dispatch `owlclaw agent ...` signal operations via argparse."""
     if not argv or argv[0] != "agent":
@@ -773,7 +814,7 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
         parser.add_argument("--path", default=".")
         parser.add_argument("--project", default="")
         parser.add_argument("--output", default="")
-        parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
+        parser.add_argument("--output-mode", choices=["handler", "binding", "both", "mcp"], default="handler")
         parser.add_argument("--force", action="store_true", default=False)
         parser.add_argument("--non-interactive", action="store_true", default=False)
         ns = parser.parse_args(argv[2:])
@@ -797,7 +838,7 @@ def _dispatch_migrate_command(argv: list[str]) -> bool:
     parser.add_argument("--project", default="")
     parser.add_argument("--openapi", default="")
     parser.add_argument("--orm", default="")
-    parser.add_argument("--output-mode", choices=["handler", "binding", "both"], default="handler")
+    parser.add_argument("--output-mode", choices=["handler", "binding", "both", "mcp"], default="handler")
     parser.add_argument("--output", "--path", "-o", "-p", dest="output", default=".")
     parser.add_argument("--dry-run", action="store_true", default=False)
     parser.add_argument("--report-json", default="")
@@ -869,6 +910,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Commands:")
         print("  db     Database: init, migrate, status")
         print("  memory Agent memory: list, prune, reset, stats")
+        print("  ledger Query governance audit ledger")
         print("  agent  Manual control via signal (pause/resume/trigger/instruct/status)")
         print("  skill  Create, validate, list Agent Skills (SKILL.md)")
         print("  trigger Trigger templates (db-change)")
@@ -1066,6 +1108,27 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Usage: owlclaw memory migrate-backend --agent <name> --source-backend <x> --target-backend <y> [OPTIONS]")
         print("\n  Migrate memory entries between storage backends.")
         sys.exit(0)
+    if argv == ["ledger"]:
+        print("Usage: owlclaw ledger [OPTIONS] COMMAND [ARGS]...")
+        print("\n  Governance ledger query operations.")
+        print("Commands:")
+        print("  query   Query ledger records with tenant/agent/caller filters")
+        print("\n  owlclaw ledger query --help")
+        sys.exit(0)
+    if argv == ["ledger", "query"]:
+        print("Usage: owlclaw ledger query [OPTIONS]")
+        print("\n  Query governance ledger records.")
+        print("Options:")
+        print("  --tenant TEXT         Tenant id (default: default)")
+        print("  --agent-id TEXT       Agent id filter")
+        print("  --caller TEXT         Exact caller filter")
+        print("  --caller-prefix TEXT  Caller prefix filter (e.g. mionyee.)")
+        print("  --status TEXT         status filter")
+        print("  --limit INTEGER       Max records (default: 20)")
+        print("  --order [asc|desc]    Sort by created_at (default: desc)")
+        print("  --database-url TEXT   Optional database URL override")
+        print("  --help                Show this message and exit")
+        sys.exit(0)
     if argv == ["agent"]:
         print("Usage: owlclaw agent [OPTIONS] COMMAND [ARGS]...")
         print("\n  Manual signal operations for an agent.")
@@ -1188,7 +1251,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  --path TEXT                     Directory for config file (default: .)")
         print("  --project TEXT                  Default project path")
         print("  --output TEXT                   Default output directory")
-        print("  --output-mode [handler|binding|both]")
+        print("  --output-mode [handler|binding|both|mcp]")
         print("                                  Default output mode")
         print("  --force                         Overwrite existing config")
         print("  --non-interactive               Use provided options only")
@@ -1226,7 +1289,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  --project TEXT                 Python project path for handler migration scan")
         print("  --openapi TEXT                 OpenAPI spec path (.yaml/.yml/.json)")
         print("  --orm TEXT                     ORM operations descriptor path (.yaml/.yml/.json)")
-        print("  --output-mode [handler|binding|both]")
+        print("  --output-mode [handler|binding|both|mcp]")
         print("                                 Output type (default: handler)")
         print("  --output, --path TEXT          Output directory (default: .)")
         print("  --dry-run                      Preview generated file paths without writing")
@@ -1302,6 +1365,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  --version, -V  Show installed version and exit")
     print("  db     Database: init, migrate, status, revision, rollback")
     print("  memory Agent memory: list, prune, reset, stats, migrate-backend")
+    print("  ledger Query governance audit ledger")
     print("  agent  Manual control via signal (pause, resume, trigger, instruct, status)")
     print("  migration Progressive migration controls")
     print("  approval  Approval queue operations")
@@ -1448,6 +1512,11 @@ def _main_impl() -> None:
         raise
     try:
         if _dispatch_memory_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_ledger_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None

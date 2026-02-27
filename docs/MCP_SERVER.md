@@ -11,11 +11,25 @@ Current MVP scope:
 - `resources/list`
 - `resources/read`
 - stdio line processing (`process_stdio_line`)
+- HTTP transport adapter (`create_mcp_http_app`)
 
 Out of current MVP scope:
-- HTTP/SSE transport
 - Prompt/Sampling support
 - standalone `owlclaw-mcp` package layout
+
+## HTTP Transport (Spike)
+
+```python
+from owlclaw.mcp import McpProtocolServer, create_mcp_http_app
+
+server = McpProtocolServer.from_app(app)
+http_app = create_mcp_http_app(server=server, agent_card_url="http://127.0.0.1:8080")
+```
+
+Exposed endpoints:
+- `POST /mcp`
+- `GET /health`
+- `GET /.well-known/agent.json`
 
 ## Quick Start
 
@@ -74,4 +88,3 @@ Implemented JSON-RPC/MCP error codes:
 - `-32001`: tool not found
 - `-32002`: resource not found
 - `-32005`: internal execution error
-
