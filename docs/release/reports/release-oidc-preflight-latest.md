@@ -1,6 +1,6 @@
 # Release OIDC Preflight Report
 
-> generated_at: 2026-02-27 06:42:23Z
+> generated_at: 2026-02-27 06:15:04Z
 > repo: yeemio/owlclaw
 > run_id: 22475093887
 > status: BLOCKED

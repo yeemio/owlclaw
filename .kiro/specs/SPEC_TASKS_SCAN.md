@@ -149,6 +149,16 @@
 - [ ] Mionyee AI 权重提升 — 各维度分析注册为 OwlClaw Capabilities，Agent 通过 function calling 自主决定权重 → 需 mionyee-governance-overlay + mionyee-hatchet-migration 完成后评估
 - [ ] 代理模式 MVP — 用 Mionyee 真实数据或开源 ERP（ERPNext/Odoo）做 Reference Implementation → 需 Phase 8.1-8.2 完成后评估
 
+**Phase 8.5：闭环可证明性 + 韧性基线（决策 D14，2026-02-27 批准）**
+
+> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` §4.14 + GPT-5.3 红军审视 + 人工补强
+> **优先级**: 高（与 Phase 8.1 并行，发布前必须完成）
+> **前置**: 无硬前置，可立即启动
+
+- [ ] D14-1 运行模式契约落地 — `app.start()` docstring 明确 heartbeat 外部驱动责任 + `app.run()` docstring 明确内建 heartbeat + 集成文档（quick-start/complete-workflow）补充服务化 heartbeat 配置示例 → 涉及 `owlclaw/app.py` + `docs/`
+- [ ] D14-2 端到端闭环发布门禁 — CI 自动化验收用例：外部事件→Trigger→决策→Capability→回写→Ledger→可观测全链路（mock LLM + 真实 Trigger + 真实 Ledger），失败阻断发布 → 新增 `tests/integration/test_e2e_closed_loop.py` + `release-supply-chain` spec 联动
+- [ ] D14-3 Heartbeat 韧性最小实现 — `HeartbeatChecker._check_database_events()` 接入 Ledger 表查询（只读，有索引）+ SLO 验收（漏检<5%，延迟<500ms，误触<1%）+ 集成测试 → 涉及 `owlclaw/agent/runtime/heartbeat.py` + `tests/`
+
 ---
 
 ## Spec 索引
@@ -204,7 +214,7 @@
 | **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | ✅ 三层齐全，已完成（16/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 | **mionyee-governance-overlay** | `.kiro/specs/mionyee-governance-overlay/` | 🟡 三层齐全，待实施（0/12） | Mionyee 治理叠加（预算/限流/熔断包裹 LLM 调用） |
 | **mionyee-hatchet-migration** | `.kiro/specs/mionyee-hatchet-migration/` | 🟡 三层齐全，待实施（0/15） | Mionyee 调度迁移（APScheduler → Hatchet 持久执行） |
-| **mcp-capability-export** | `.kiro/specs/mcp-capability-export/` | 🟡 三层齐全，进行中（6/18） | MCP 能力输出（治理/持久任务/业务接入作为 MCP Server 暴露 + A2A Agent Card） |
+| **mcp-capability-export** | `.kiro/specs/mcp-capability-export/` | 🟡 三层齐全，待实施（0/18） | MCP 能力输出（治理/持久任务/业务接入作为 MCP Server 暴露 + A2A Agent Card） |
 | **openclaw-skill-pack** | `.kiro/specs/openclaw-skill-pack/` | 🟡 三层齐全，待实施（0/14） | OpenClaw Skill 包（owlclaw-for-openclaw 发布到 ClawHub） |
 | **content-launch** | `.kiro/specs/content-launch/` | 🟡 三层齐全，待实施（0/16） | 内容营销启动（第一篇技术文章 + Mionyee 案例 + 咨询方案模板） |
 
@@ -232,12 +242,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-27 |
-| 当前批次 | codex-gpt-work：Phase 8.2 `mcp-capability-export` Task 0 + Task 2（治理 MCP 工具） |
-| 批次状态 | **进行中**。已完成治理 MCP 工具第一批实现与单测（预算/审计/限流 3 工具），下一步进入 Task 1 Spike 与 Task 3 持久任务工具。 |
-| 已完成项 | 1) 新增 `owlclaw.mcp.governance_tools.register_governance_mcp_tools`；2) 实现 `governance_budget_status`、`governance_audit_query`、`governance_rate_limit_status` 三个 MCP 工具；3) 新增单测 `tests/unit/mcp/test_governance_tools.py`，并通过定向回归（新增 3 项 + 既有 MCP 13 项）；4) `mcp-capability-export/tasks.md` 已回写 Task 0/2 勾选状态。 |
-| 下一待执行 | 1) `mcp-capability-export` Task 1：完成 MCP 架构 Spike（HTTP/stdio 体验、延迟、demo、接入文档）；2) `mcp-capability-export` Task 3：实现 `task_create/task_status/task_cancel` 与单测；3) 并行跟踪外部阻塞：release-supply-chain Trusted Publisher 与 owlhub 40.4 生产凭据。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8：mionyee-governance-overlay 🟡(0/12)，mionyee-hatchet-migration 🟡(0/15)，mcp-capability-export 🟡(6/18)，openclaw-skill-pack 🟡(0/14)，content-launch 🟡(0/16)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) Phase 8 代码任务无外部阻塞，可继续推进。 |
+| 当前批次 | **主 worktree**：D14 闭环可证明性决策落地 — 架构文档 + 决策签署 + SPEC_TASKS_SCAN 更新 |
+| 批次状态 | **完成**。D14-1/D14-2/D14-3 三项决策已写入 ARCHITECTURE_ANALYSIS.md §4.14 + DUAL_MODE_ARCHITECTURE_DECISION.md 签署表。Phase 8.5 功能清单已添加。 |
+| 已完成项 | 1) D1-R 至 D13 全部签署；2) D14-1/D14-2/D14-3 签署（运行模式契约 + 闭环门禁 + Heartbeat 韧性）；3) ARCHITECTURE_ANALYSIS.md v4.7；4) Phase 7 全部审校合并；5) Phase 8 五个 spec + Phase 8.5 三项闭环任务已纳入清单。 |
+| 下一待执行 | 1) Phase 8.5 D14-1：app.start()/run() docstring 契约化 + 集成文档补充；2) Phase 8.5 D14-2：端到端闭环 CI 验收用例；3) Phase 8.5 D14-3：HeartbeatChecker DB 事件源实现 + SLO 测试；4) Phase 8.1 并行：mionyee-governance-overlay + mionyee-hatchet-migration。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143)，Phase 8：mionyee-governance-overlay 🟡(0/12)，mionyee-hatchet-migration 🟡(0/15)，mcp-capability-export 🟡(0/18)，openclaw-skill-pack 🟡(0/14)，content-launch 🟡(0/16)，Phase 8.5：D14-1 🟡(0/1)，D14-2 🟡(0/1)，D14-3 🟡(0/1)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) Phase 8 + 8.5 无阻塞，可立即启动。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
