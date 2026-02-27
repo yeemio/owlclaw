@@ -135,6 +135,16 @@ async def test_ledger_query_isolates_tenants(_migrated_async_url) -> None:
     try:
         session_factory = create_session_factory(engine)
         ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+        async with session_factory() as session:
+            await session.execute(
+                text(
+                    """
+                    DELETE FROM ledger_records
+                    WHERE tenant_id IN ('tenant-a', 'tenant-b')
+                    """
+                )
+            )
+            await session.commit()
 
         await ledger.record_execution(
             tenant_id="tenant-a",
@@ -169,9 +179,10 @@ async def test_ledger_query_isolates_tenants(_migrated_async_url) -> None:
             status="success",
         )
 
-        first_record = ledger._write_queue.get_nowait()
-        second_record = ledger._write_queue.get_nowait()
-        await ledger._flush_batch([first_record, second_record])
+        batch = []
+        while not ledger._write_queue.empty():
+            batch.append(ledger._write_queue.get_nowait())
+        await ledger._flush_batch(batch)
 
         result_a = await ledger.query_records("tenant-a", LedgerQueryFilters())
         result_b = await ledger.query_records("tenant-b", LedgerQueryFilters())
