@@ -151,3 +151,52 @@ def write_generated_hatchet_module(jobs: list[APSchedulerJob], output_path: str 
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(render_hatchet_module(jobs), encoding="utf-8")
     return target
+
+
+def simulate_apscheduler_execution(job: APSchedulerJob) -> dict[str, Any]:
+    """Simulate APScheduler execution output for deterministic migration replay."""
+    return {
+        "status": "ok",
+        "job_name": job.name,
+        "source": job.func_ref,
+        "scenario_id": job.kwargs.get("scenario_id", ""),
+        "symbol": job.kwargs.get("symbol", ""),
+        "action": job.kwargs.get("action", ""),
+    }
+
+
+def simulate_hatchet_execution(job: APSchedulerJob) -> dict[str, Any]:
+    """Simulate Hatchet execution output for deterministic migration replay."""
+    return {
+        "status": "ok",
+        "job_name": job.name,
+        "source": job.func_ref,
+        "workflow_name": _to_kebab_case(job.name),
+        "scenario_id": job.kwargs.get("scenario_id", ""),
+        "symbol": job.kwargs.get("symbol", ""),
+        "action": job.kwargs.get("action", ""),
+    }
+
+
+def dual_run_replay_compare(jobs: list[APSchedulerJob]) -> dict[str, Any]:
+    """Compare APScheduler and Hatchet simulated outputs for migration replay."""
+    compared = 0
+    matched = 0
+    mismatches: list[dict[str, Any]] = []
+
+    for job in jobs:
+        aps = simulate_apscheduler_execution(job)
+        hatchet = simulate_hatchet_execution(job)
+        compared += 1
+        fields = ("status", "job_name", "source", "scenario_id", "symbol", "action")
+        if all(aps.get(field) == hatchet.get(field) for field in fields):
+            matched += 1
+            continue
+        mismatches.append({"job_name": job.name, "apscheduler": aps, "hatchet": hatchet})
+
+    return {
+        "compared": compared,
+        "matched": matched,
+        "mismatches": mismatches,
+        "match_rate": (matched / compared) if compared else 0.0,
+    }

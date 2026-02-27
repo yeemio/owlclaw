@@ -4,10 +4,13 @@ from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
 from owlclaw.integrations.hatchet_migration import (
     APSchedulerJob,
     classify_job_complexity,
+    dual_run_replay_compare,
     load_jobs_from_mionyee_scenarios,
     render_hatchet_module,
     render_hatchet_workflow,
     select_canary_batch,
+    simulate_apscheduler_execution,
+    simulate_hatchet_execution,
     write_generated_hatchet_module,
 )
 from owlclaw.integrations.langfuse import (
@@ -42,10 +45,13 @@ __all__ = [
     "HatchetConfig",
     "APSchedulerJob",
     "classify_job_complexity",
+    "dual_run_replay_compare",
     "load_jobs_from_mionyee_scenarios",
     "render_hatchet_module",
     "render_hatchet_workflow",
     "select_canary_batch",
+    "simulate_apscheduler_execution",
+    "simulate_hatchet_execution",
     "write_generated_hatchet_module",
     "LLMSpanData",
     "LangfuseClient",

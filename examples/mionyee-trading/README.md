@@ -28,3 +28,5 @@ poetry run python examples/mionyee-trading/app.py
 - It avoids external dependencies and keeps behavior deterministic.
 - `ai/client.py` shows the mionyee-side replacement from direct `litellm.acompletion`
   to `GovernanceProxy.acompletion`.
+- Scheduler migration supports dual-run switch via `SCHEDULER_BACKEND=dual`
+  with canary job list in `owlclaw.yaml`.

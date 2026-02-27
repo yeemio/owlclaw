@@ -16,3 +16,10 @@ governance:
     tenant_id: mionyee
     agent_id: mionyee.proxy
     passthrough_on_error: true
+
+migration:
+  scheduler_backend: ${SCHEDULER_BACKEND}
+  dual_run:
+    enabled: true
+    canary_jobs:
+      - mionyee task 1
