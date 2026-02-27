@@ -8,9 +8,9 @@
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
 
-> **目标**：定义 OwlClaw 的 PyPI 发布流程和 GitHub 开源准备  
+> **目标**：定义 OwlClaw 的 PyPI 发布流程和 GitHub 开源准备（Trusted Publishing 优先）  
 > **状态**：进行中（发布资产已就绪，外部发布联调待执行）  
-> **最后更新**：2026-02-25
+> **最后更新**：2026-02-27
 
 ---
 
@@ -35,7 +35,7 @@ GitHub Actions: release.yml
     ├── Step 1: Checkout + Setup Python
     ├── Step 2: Run tests (poetry run pytest)
     ├── Step 3: Build packages (poetry build)
-    ├── Step 4: Publish to PyPI (poetry publish)
+    ├── Step 4: Publish to TestPyPI/PyPI (OIDC Trusted Publishing)
     ├── Step 5: Create GitHub Release + Changelog
     └── Step 6: Notify (success/failure)
 ```
@@ -101,7 +101,9 @@ jobs:
       - run: poetry install
       - run: poetry run pytest
       - run: poetry build
-      - run: poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
@@ -128,11 +130,11 @@ Pre-release Checklist:
 ### 3.1 发布流程
 
 ```
-git tag v0.1.0
+git tag v1.x.x
     → GitHub Actions triggered
     → pytest (all tests pass)
-    → poetry build (sdist + wheel)
-    → poetry publish (upload to PyPI)
+    → python -m build (sdist + wheel)
+    → pypa/gh-action-pypi-publish (OIDC upload to TestPyPI/PyPI)
     → gh release create (GitHub Release + notes)
     → notification (success/failure)
 ```
@@ -143,7 +145,7 @@ git tag v0.1.0
 
 ### 4.1 发布失败
 
-**场景**：PyPI 上传失败（网络、认证、版本冲突）
+**场景**：PyPI/TestPyPI 上传失败（OIDC 交换失败、配置错误、版本冲突）
 
 **处理**：GitHub Actions 标记为失败，通知维护者手动处理。版本号不可重复使用。
 
@@ -161,7 +163,16 @@ git tag v0.1.0
 
 | 变量 | 说明 | 存储位置 |
 |------|------|---------|
-| `PYPI_TOKEN` | PyPI API token | GitHub Secrets |
+| `ACTIONS_ID_TOKEN_REQUEST_TOKEN` | GitHub OIDC token（Actions 注入） | GitHub Actions runtime |
+| `ACTIONS_ID_TOKEN_REQUEST_URL` | GitHub OIDC endpoint（Actions 注入） | GitHub Actions runtime |
+
+### 5.2 平台配置
+
+| 项 | 说明 |
+|------|------|
+| Trusted Publisher | PyPI/TestPyPI 需配置 `owner=yeemio`、`repo=owlclaw`、`workflow=.github/workflows/release.yml`（详见 `docs/release/TRUSTED_PUBLISHER_SETUP.md`） |
+| Branch Protection | `main` 需开启 required checks（Lint/Test/Build）与 PR 审核策略 |
+| Ruleset Policy | `release/*` 规则集已启用（required checks + PR review + non-fast-forward + deletion 限制） |
 
 ---
 
@@ -183,23 +194,23 @@ python -c "from owlclaw import OwlClaw; print('OK')"
 ## 7. 迁移计划
 
 ### 7.1 Phase 1：准备（1-2 天）
-- [ ] 确认 pyproject.toml 包元数据完整
-- [ ] 创建 PyPI 账号和 token
-- [ ] 配置 GitHub Actions secrets
-- [ ] 编写 CHANGELOG.md
-- [ ] 编写 CONTRIBUTING.md
+- [x] 确认 pyproject.toml 包元数据完整
+- [ ] 创建 PyPI/TestPyPI Trusted Publisher 映射
+- [x] 校验 GitHub Actions OIDC 权限与 environment 策略
+- [x] 编写 CHANGELOG.md
+- [x] 编写 CONTRIBUTING.md
 
 ### 7.2 Phase 2：发布（1 天）
-- [ ] 创建 release workflow
+- [x] 创建 release workflow
 - [ ] 测试 tag-triggered 发布流程
 - [ ] 发布 v0.1.0 到 PyPI
 
 ### 7.3 Phase 3：社区（1-2 天）
-- [ ] 创建 Issue 模板
-- [ ] 启用 Discussions
-- [ ] 编写 README 英文版
+- [x] 创建 Issue 模板
+- [x] 启用 Discussions
+- [x] 编写 README 英文版
 
 ---
 
 **维护者**：OwlClaw Team  
-**最后更新**：2026-02-22
+**最后更新**：2026-02-27

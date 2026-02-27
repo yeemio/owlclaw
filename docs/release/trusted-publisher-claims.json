@@ -1,0 +1,20 @@
+{
+  "repo": "yeemio/owlclaw",
+  "run_id": 22450293930,
+  "claims": {
+    "sub": "repo:yeemio/owlclaw:environment:pypi-release",
+    "repository": "yeemio/owlclaw",
+    "repository_owner": "yeemio",
+    "repository_owner_id": "4082754",
+    "workflow_ref": "yeemio/owlclaw/.github/workflows/release.yml@refs/heads/codex-gpt-work",
+    "job_workflow_ref": "yeemio/owlclaw/.github/workflows/release.yml@refs/heads/codex-gpt-work",
+    "ref": "refs/heads/codex-gpt-work",
+    "environment": "pypi-release"
+  },
+  "mapping_template": {
+    "owner": "yeemio",
+    "repository": "owlclaw",
+    "workflow": ".github/workflows/release.yml",
+    "environment": "pypi-release"
+  }
+}

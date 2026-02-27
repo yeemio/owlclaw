@@ -2,68 +2,25 @@
 
 from __future__ import annotations
 
-import os
-import subprocess
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
-from testcontainers.postgres import PostgresContainer
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from owlclaw.db.session import create_session_factory
 from owlclaw.governance.ledger import Ledger, LedgerQueryFilters
 
-os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
-
 pytestmark = pytest.mark.integration
 
 
-def _sync_url_to_async(url: str) -> str:
-    value = url.strip()
-    if value.startswith("postgresql+psycopg2://"):
-        return "postgresql+asyncpg://" + value[len("postgresql+psycopg2://") :]
-    if value.startswith("postgresql://"):
-        return "postgresql+asyncpg://" + value[len("postgresql://") :]
-    return value
-
-
-def _run_migrations(sync_url: str, project_root: Path) -> None:
-    env = os.environ.copy()
-    env["OWLCLAW_DATABASE_URL"] = sync_url
-    subprocess.run(
-        ["alembic", "-c", "alembic.ini", "upgrade", "head"],
-        cwd=project_root,
-        env=env,
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-
-
-@pytest.fixture(scope="module")
-def pg_container():
-    try:
-        with PostgresContainer("pgvector/pgvector:pg16") as postgres:
-            yield postgres
-    except Exception as exc:
-        pytest.skip(f"Docker unavailable for governance integration test: {exc}")
-
-
-@pytest.fixture(scope="module")
-def _migrated_async_url(pg_container):
-    project_root = Path(__file__).resolve().parents[2]
-    sync_url = pg_container.get_connection_url()
-    _run_migrations(sync_url, project_root)
-    return _sync_url_to_async(sync_url)
-
-
 @pytest.mark.asyncio
-async def test_ledger_migration_creates_expected_table_shape(_migrated_async_url) -> None:
-    engine = create_async_engine(_migrated_async_url, pool_pre_ping=True)
+async def test_ledger_migration_creates_expected_table_shape(
+    db_engine: AsyncEngine,
+    run_migrations: None,
+) -> None:
     try:
-        async with engine.connect() as conn:
+        async with db_engine.connect() as conn:
             table_exists = await conn.scalar(
                 text(
                     """
@@ -126,15 +83,27 @@ async def test_ledger_migration_creates_expected_table_shape(_migrated_async_url
             assert "idx_ledger_tenant_capability" in index_names
             assert "idx_ledger_tenant_created" in index_names
     finally:
-        await engine.dispose()
+        pass
 
 
 @pytest.mark.asyncio
-async def test_ledger_query_isolates_tenants(_migrated_async_url) -> None:
-    engine = create_async_engine(_migrated_async_url, pool_pre_ping=True)
+async def test_ledger_query_isolates_tenants(
+    db_engine: AsyncEngine,
+    run_migrations: None,
+) -> None:
     try:
-        session_factory = create_session_factory(engine)
+        session_factory = create_session_factory(db_engine)
         ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+        async with session_factory() as session:
+            await session.execute(
+                text(
+                    """
+                    DELETE FROM ledger_records
+                    WHERE tenant_id IN ('tenant-a', 'tenant-b')
+                    """
+                )
+            )
+            await session.commit()
 
         await ledger.record_execution(
             tenant_id="tenant-a",
@@ -169,9 +138,10 @@ async def test_ledger_query_isolates_tenants(_migrated_async_url) -> None:
             status="success",
         )
 
-        first_record = ledger._write_queue.get_nowait()
-        second_record = ledger._write_queue.get_nowait()
-        await ledger._flush_batch([first_record, second_record])
+        batch = []
+        while not ledger._write_queue.empty():
+            batch.append(ledger._write_queue.get_nowait())
+        await ledger._flush_batch(batch)
 
         result_a = await ledger.query_records("tenant-a", LedgerQueryFilters())
         result_b = await ledger.query_records("tenant-b", LedgerQueryFilters())
@@ -184,4 +154,4 @@ async def test_ledger_query_isolates_tenants(_migrated_async_url) -> None:
         assert result_b[0].tenant_id == "tenant-b"
         assert result_b[0].capability_name == "cap-B"
     finally:
-        await engine.dispose()
+        pass

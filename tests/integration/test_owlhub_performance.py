@@ -119,7 +119,8 @@ def test_performance_concurrent_api_requests_handling(tmp_path: Path) -> None:
             statuses = list(pool.map(call_once, range(total_requests)))
         elapsed = time.perf_counter() - started
         assert all(status == 200 for status in statuses)
-        assert elapsed < 15.0
+        # Shared runners and Windows can show higher scheduling jitter under thread load.
+        assert elapsed < 20.0
     finally:
         _restore_env(old)
 

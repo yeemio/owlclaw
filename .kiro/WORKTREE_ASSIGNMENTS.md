@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-02-26
+> **最后更新**: 2026-02-27
 
 ---
 
@@ -39,7 +39,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：Phase 5 落地收尾核心代码（Lite Mode 已完成）。
+**当前编码任务**：Phase 8 双模接入架构决策落地 + 统筹协调。
 
 ---
 
@@ -162,27 +162,24 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| triggers-webhook | 18/18 ✅ | — |
-| triggers-queue | 89/89 ✅ | — |
-| triggers-db-change | 11/11 ✅ | — |
-| triggers-api | 11/11 ✅ | — |
-| triggers-signal | 15/15 ✅ | — |
-| cli-scan | 80/80 ✅ | — |
-| declarative-binding | 26/26 ✅ | — |
+| protocol-governance | 27/27 ✅ | — |
+| contract-testing | 19/19 ✅ | — |
+| test-infra | 11/11 ✅ | — |
+| **mionyee-governance-overlay** | 0/12 🟡 | `owlclaw/governance/proxy.py`, `tests/unit/test_governance_proxy.py` |
+| **mionyee-hatchet-migration** | 0/15 🟡 | `owlclaw/integrations/hatchet/migration.py`, `tests/unit/test_hatchet_migration.py` |
 
-**前置条件**：triggers 族全部 ✅ + cli-scan ✅ 已全部完成。
+**前置条件**：Phase 7 全部 ✅ 已完成。Phase 8.1 无前置阻塞。
 
 **当前任务**（按顺序执行）：
-1. test-infra(9/11) 收尾：Task 4.2 + 11.1 + 11.3 + 11.4（性能门槛与 CI 验收）
-2. skill-dx P2(7/7) — 工具语义匹配（`capability_matcher` + SkillParser 集成）
-3. skill-ai-assist P2(6/6) — 文档提取生成（`skill_doc_extractor` + `--from-doc` CLI）
+1. mionyee-governance-overlay(0/12)：GovernanceProxy 实现 + Mionyee LLM 调用包裹（预算/限流/熔断/审计）
+2. mionyee-hatchet-migration(0/15)：APScheduler 任务盘点 + 迁移工具 + 灰度切换
 
 **禁止触碰**（分配给编码 2 的路径）：
 
-- `owlclaw/security/**`
-- `owlclaw/integrations/llm/**`
-- `owlclaw/config/**`
-- `owlclaw/owlhub/**`（industry-skills 分配给编码 2）
+- `owlclaw_mcp/**`（mcp-capability-export 归编码 2）
+- `.kiro/specs/mcp-capability-export/**`
+- `.kiro/specs/openclaw-skill-pack/**`
+- `.kiro/specs/content-launch/**`
 
 ---
 
@@ -198,30 +195,29 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| e2e-validation | 85/85 ✅ | `tests/integration/test_e2e*.py` |
-| mcp-server | 12/12 ✅ | `owlclaw_mcp/**` |
-| owlhub | 141/143 🟡 | Task 40.4 外部阻塞（生产部署） |
-| examples | 14/14 ✅ | `examples/**`, `tests/unit/test_examples*.py` |
-| cli-migrate | 24/24 ✅ | `owlclaw/cli/migrate.py`, `tests/unit/test_cli_migrate*.py` |
-| ci-setup | 12/12 ✅ | `.github/workflows/**` |
-| release | 25/32 🟡 | `pyproject.toml`, `CHANGELOG.md`, `.github/workflows/release*.yml` |
-| local-devenv | 10/10 ✅ | `docker-compose.*.yml`, `Makefile`, `.env.example`, `docs/DEVELOPMENT.md` |
+| gateway-runtime-ops | 18/18 ✅ | — |
+| release-supply-chain | 11/15 🟡 | 外部阻塞（Trusted Publisher） |
+| cross-lang-golden-path | 16/16 ✅ | — |
+| release | 28/32 🟡 | 外部阻塞（PYPI_TOKEN） |
+| owlhub | 141/143 🟡 | 外部阻塞（生产凭据） |
+| **mcp-capability-export** | 0/18 🟡 | `owlclaw_mcp/**`, `owlclaw/capabilities/mcp_server.py` |
+| **openclaw-skill-pack** | 0/14 🟡 | `skills/owlclaw-for-openclaw/`, `tests/unit/test_openclaw_skill.py` |
+| **content-launch** | 0/16 🟡 | `docs/content/`, `docs/consulting/` |
 
-**前置条件**：skill-templates ✅ + e2e-validation ✅ + mcp-server ✅ + local-devenv ✅ 已完成。
+**前置条件**：Phase 7 全部 ✅ 已完成。Phase 8.2 无前置阻塞。
 
 **当前任务**（按顺序执行）：
-1. owlhub 收尾（Task 40.4 外部阻塞，等生产凭据）
-2. release 剩余 7 tasks（PyPI token/tag/验证，需人工凭据）
-3. 待命：如编码 1 遇阻，协助 test-infra 非冲突项（CI 文档/workflow 验收）
+1. mcp-capability-export(0/18)：MCP 架构 Spike + 治理/持久任务/业务接入 MCP Server + A2A Agent Card
+2. openclaw-skill-pack(0/14)：owlclaw-for-openclaw Skill 包开发 + ClawHub 发布
+3. content-launch(0/16)：第一篇技术文章 + Mionyee 案例材料 + 咨询方案模板
+4. release/owlhub/release-supply-chain 外部阻塞项跟踪：凭据就绪后立即切换实操验收
 
 **禁止触碰**（分配给编码 1 的路径）：
 
-- `owlclaw/db/**`
-- `owlclaw/cli/db*.py`
-- `migrations/`
-- `owlclaw/agent/runtime/**`
-- `owlclaw/capabilities/skill_creator.py`（skill-ai-assist 分配给编码 1）
-- `owlclaw/capabilities/skill_nl_parser.py`（skill-dx 分配给编码 1）
+- `.kiro/specs/mionyee-governance-overlay/**`
+- `.kiro/specs/mionyee-hatchet-migration/**`
+- `owlclaw/governance/proxy.py`（mionyee-governance-overlay 归编码 1）
+- `owlclaw/integrations/hatchet/migration.py`（mionyee-hatchet-migration 归编码 1）
 
 ---
 
@@ -274,6 +270,11 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-26 | 启动原“暂不分配”项：codex-work 追加 skill-dx P2 + skill-ai-assist P2；codex-gpt-work 保持 release/owlhub 阻塞跟踪 | P1 能力与入口已落地，具备可执行条件 |
 | 2026-02-26 | 新增 protocol-first-api-mcp 三层 spec（0/24），待下一轮统筹分配 | 响应 API/MCP 优先战略，先固化规范与执行路径 |
 | 2026-02-26 | 按发布阶段拆分 5 个子 spec：protocol-governance / gateway-runtime-ops / contract-testing / release-supply-chain / cross-lang-golden-path | 将“总纲”转为可并行执行的交付包 |
+| 2026-02-26 | 统筹重分配：codex-work 主攻 protocol-governance + contract-testing + gateway-runtime-ops + test-infra 收尾；codex-gpt-work 承担 release-supply-chain + cross-lang-golden-path | 按“单活编码 worktree”策略降低空转与冲突 |
+| 2026-02-26 | 新一轮统筹：codex-gpt-work 标记为暂停待命；release-supply-chain + cross-lang-golden-path 并入 codex-work/main；test-infra 11.3 调整为外部条件项（不新增 CI 订阅） | 响应“停用新增 CI + 单活推进”决策 |
+| 2026-02-26 | 重新分配：恢复 codex-gpt-work 并行执行，任务拆分为 codex-work（protocol-governance + contract-testing + test-infra联动）与 codex-gpt-work（gateway-runtime-ops + release-supply-chain + cross-lang-golden-path） | 响应“重新分配”，提升并行吞吐并保持低冲突边界 |
+
+| 2026-02-27 | Phase 8 分配：codex-work → mionyee-governance-overlay + mionyee-hatchet-migration；codex-gpt-work → mcp-capability-export + openclaw-skill-pack + content-launch | 双模架构决策批准后，Phase 7 全部完成，启动 Phase 8 双模接入 + OpenClaw 生态 |
 
 ---
 
@@ -281,26 +282,17 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 以下 spec 尚未分配到任何编码 worktree，等当前批次完成后按优先级分配：
 
-**Phase 1 + Phase 2 integrations 全部完成 ✅**
+**Phase 1-7 全部已分配完毕 ✅**
 
-**全部 spec 已分配完毕 ✅**
-
-新增 3 个 Phase 5 spec 已分配：
-- codex-work → test-infra（继续） + architecture-roadmap（新增）
-- codex-gpt-work → quick-start + complete-workflow（新增） + owlhub/release 收尾
-
-**Phase 6 全部已分配** ✅（含 P2）
+**Phase 8 全部已分配** ✅（2026-02-27）
 
 | Spec | Tasks | Worktree | 执行顺序 |
 |------|-------|----------|---------|
-| skill-dx P2（0/7） | 工具语义匹配 | codex-work | #2 |
-| skill-ai-assist P2（0/6） | 文档提取生成 | codex-work | #3 |
-| test-infra 剩余（9/11） | 性能与 CI 收口 | codex-work | #1 |
-| release 剩余（25/32） | 发布凭据与发布验证 | codex-gpt-work | #1（外部依赖） |
-| owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | codex-gpt-work | #2（外部依赖） |
-| protocol-first-api-mcp（0/24） | 协议优先专项（API+MCP） | 待分配 | 高优先级（建议下一轮启动） |
-| protocol-governance（0/27） | 协议治理规则与门禁 | 待分配 | 高优先级 |
-| gateway-runtime-ops（0/18） | 网关发布/回滚/SLO | 待分配 | 高优先级 |
-| contract-testing（0/19） | API/MCP 契约测试体系 | 待分配 | 高优先级 |
-| release-supply-chain（0/15） | OIDC + provenance 发布链路 | 待分配 | 高优先级 |
-| cross-lang-golden-path（0/16） | Java + curl 接入路径 | 待分配 | 高优先级 |
+| mionyee-governance-overlay（0/12） | GovernanceProxy + Mionyee LLM 治理包裹 | codex-work | #1 |
+| mionyee-hatchet-migration（0/15） | APScheduler → Hatchet 迁移工具 + 灰度 | codex-work | #2 |
+| mcp-capability-export（0/18） | MCP Server 能力输出 + A2A Agent Card | codex-gpt-work | #1 |
+| openclaw-skill-pack（0/14） | owlclaw-for-openclaw Skill 包 | codex-gpt-work | #2 |
+| content-launch（0/16） | 技术文章 + 案例材料 + 咨询模板 | codex-gpt-work | #3 |
+| release-supply-chain 剩余（11/15） | Trusted Publisher 外部配置 | main | 外部依赖 |
+| release 剩余（28/32） | 发布凭据与发布验证 | main | 外部依赖 |
+| owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | main | 外部依赖 |

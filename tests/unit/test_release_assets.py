@@ -96,9 +96,18 @@ def test_contributing_has_pr_and_style_guidance() -> None:
 
 def test_release_runbook_exists_for_external_steps() -> None:
     payload = Path("docs/RELEASE_RUNBOOK.md").read_text(encoding="utf-8")
-    assert "Configure GitHub Secrets" in payload
+    assert "Configure Trusted Publishing (OIDC)" in payload
     assert "Dry-run To TestPyPI" in payload
+    assert "Production Release (PyPI)" in payload
     assert "Production Release" in payload
+    assert "release_oidc_preflight.py" in payload
+
+
+def test_trusted_publisher_setup_doc_has_required_fields() -> None:
+    payload = Path("docs/release/TRUSTED_PUBLISHER_SETUP.md").read_text(encoding="utf-8")
+    assert "Owner: `yeemio`" in payload
+    assert "Repository name: `owlclaw`" in payload
+    assert "Workflow filename: `.github/workflows/release.yml`" in payload
 
 
 def test_release_workflow_is_tag_triggered() -> None:
@@ -118,7 +127,10 @@ def test_release_workflow_is_tag_triggered() -> None:
 def test_release_workflow_supports_testpypi_and_pypi_publish_steps() -> None:
     payload = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
     assert "Publish to TestPyPI" in payload
-    assert "secrets.TEST_PYPI_TOKEN" in payload
+    assert "pypa/gh-action-pypi-publish@release/v1" in payload
+    assert "id-token: write" in payload
     assert "https://test.pypi.org/legacy/" in payload
     assert "Publish to PyPI" in payload
-    assert "secrets.PYPI_TOKEN" in payload
+    assert "actions/attest-build-provenance@v2" in payload
+    assert "secrets.TEST_PYPI_TOKEN" not in payload
+    assert "secrets.PYPI_TOKEN" not in payload

@@ -1,9 +1,10 @@
-# OwlClaw 定位：Business System Intelligence
+# OwlClaw 定位：Your AI-Powered One-Person Company OS
 
-> **版本**: v1.1.0 (2026-02-25)
+> **版本**: v2.0.0 (2026-02-27)
 > **角色**: OwlClaw 的产品定位、差异化价值和生态关系的**唯一真源**
 > **关联文档**:
 > - `docs/ARCHITECTURE_ANALYSIS.md` — 架构设计（技术真源）
+> - `docs/DUAL_MODE_ARCHITECTURE_DECISION.md` — 双模架构决策（已批准）
 > - `.cursor/rules/owlclaw_core.mdc` — 工作指导总纲（流程真源）
 > - `README.md` — 对外入口（引用本文档定位叙事）
 
@@ -11,13 +12,17 @@
 
 ## 一、核心问题
 
-企业拥有大量已建成的信息化系统——ERP、CRM、HR、财务、供应链、工单系统。这些系统中沉淀了海量的业务数据和业务逻辑，但它们是**被动的**：只有人来操作，系统才会响应。
+AI Agent 面对的接入对象不是简单的"有 AI / 无 AI"二分法，而是一个**三段光谱**：
 
-AI Agent 技术的出现带来了一个新的可能性：**让这些系统自己观察、自己判断、自己行动**。但当前的 AI Agent 框架几乎全部假设你从零开始构建——LangChain 要你写 Python 编排链，LangGraph 要你设计状态机，CrewAI 要你编排多 Agent 协作。
+| 段位 | 代表 | AI 能力现状 | 核心痛点 | OwlClaw 价值 |
+|------|------|-----------|---------|-------------|
+| **A 段：有 AI + 有生态** | OpenClaw（233K stars） | 完整 Agent 运行时 + 5700+ Skills | 缺业务系统接入、缺企业治理、缺持久执行 | 业务接入层 + 企业治理 |
+| **B 段：有 AI + 有瓶颈** | Vibecoding 产物（如 Mionyee） | 有 LLM 调用 + 有知识循环，但 AI 被规则稀释 | 治理缺失、调度脆弱、AI 权重失衡 | 治理强化 + 持久执行 + AI-first 升级 |
+| **C 段：无 AI 能力** | 传统 ERP/CRM/HR | 仅有 API/DB/消息队列 | 从零赋予 AI 自主能力 | 全栈赋能（SKILL.md + Binding + Agent） |
 
-**没有一个框架是为"让已有系统变聪明"而设计的。**
+**关键洞察**：B 段（vibecoding 产物）是**最大的增量市场**。AI 编程工具（Cursor/Copilot/Windsurf）正在大规模产出 B 段应用——它们天然具备 AI 调用能力，但缺乏生产级治理和持久执行。这些应用的开发者通常不是 AI 专家，是"会用 AI 工具的业务开发者"。
 
-这就是 OwlClaw 要解决的问题。
+**没有一个框架是为"让已有系统变聪明"而设计的。** 编排框架（LangChain/LangGraph/CrewAI）假设你从零开始构建。OwlClaw 解决的是另一个问题：**让已有的系统获得 AI 自主能力，无需重写业务代码。**
 
 ---
 
@@ -136,10 +141,10 @@ async def query_kb(question: str) -> str:
     return await rag_chain.ainvoke(question)
 ```
 
-### 与个人 AI 助理的关系：不同问题域
+### 与个人 AI 助理的关系：互补而非竞争
 
-| 维度 | 个人 AI 助理 | OwlClaw |
-|------|-------------|---------|
+| 维度 | 个人 AI 助理（如 OpenClaw） | OwlClaw |
+|------|---------------------------|---------|
 | 核心问题 | "如何让 AI 帮我做事" | "如何让现有系统自己变聪明" |
 | 入口 | 对话（IM 渠道） | 业务事件（Cron/Webhook/Queue/DB/API） |
 | 价值来源 | 个人效率提升 | 企业数据资产激活 |
@@ -149,6 +154,16 @@ async def query_kb(question: str) -> str:
 | 规模 | 单用户单 Agent | 多租户多 Agent 多业务系统 |
 
 两者通过 MCP 协议互通：OwlClaw 的 MCP Server 将业务能力暴露为通用 Agent 协议接口，任何 MCP 客户端均可连接。
+
+**OwlClaw 对 OpenClaw 生态的具体价值**：
+
+| OwlClaw 提供的能力 | 交付形式 | OpenClaw 用户获得什么 |
+|-------------------|---------|-------------------|
+| 业务系统自动接入 | MCP Server（`owlclaw migrate` 生成） | 一条命令连上 ERP/CRM/数据库 |
+| 预算/限流/熔断 | MCP Server（治理网关） | 不再烧钱跑飞 |
+| 持久后台任务 | MCP Server（Hatchet 包装） | 关掉 OpenClaw 任务也不丢 |
+| 业务知识注入 | SKILL.md（兼容格式） | Agent 理解业务上下文 |
+| 审计 + 权限控制 | MCP Server（Ledger + 可见性过滤） | 企业场景可用 |
 
 ### 与真正的竞品的关系
 
@@ -189,13 +204,86 @@ OwlClaw 不发明新格式，复用已有的开放标准：
 
 ---
 
-## 七、一句话定位
+## 七、双重定位
+
+### 技术定位（面向开发者）
 
 > **LangChain 给了 Agent 手和脚（编排能力），OwlClaw 给了 Agent 大脑和心跳（自驱能力）。OwlClaw 让已有的业务系统获得 AI 自主能力，无需重写一行业务代码。**
 
+### 战略定位（面向市场）
+
+> **Your AI-Powered One-Person Company OS** — OwlClaw（后台：业务连接 + 治理 + 持久执行）+ OpenClaw（前台：对外沟通 + 内容分发 + 日常协调）= 一个人干一个团队的活。
+
+| 维度 | "Agent 基础设施"定位 | "AI 一人企业 OS"定位 |
+|------|---------------------|---------------------|
+| **开源吸引力** | "又一个框架"，审美疲劳 | "一个人干一个团队的活"，直击时代情绪 |
+| **企业获客** | 要解释 Agent → 治理 → 为什么需要（链条长） | "帮你用 AI 把企业变成一个人就能运转"（一句话说清） |
+| **政府关系** | 无法对接政策 | 直接对接"AI 一人企业"扶持政策 |
+| **README 第一句** | "Agent infrastructure for business applications" | "Your AI-powered one-person company OS" |
+| **付费意愿** | 为"技术升级"买单（低） | 为"组织升级"买单（高一个数量级） |
+
 ---
 
-## 八、增长飞轮
+## 八、开源边界
+
+**MIT 开源的是产品代码和使用文档**——用户拿到代码就能跑起来。
+
+```
+MIT 开源（公开仓库）：
+  owlclaw/                    # Python SDK 全部源码
+  owlclaw-mcp/                # MCP Server 源码
+  tests/                      # 测试代码
+  examples/                   # 示例应用
+  README.md / docs/API.md     # 使用文档
+  docs/QUICKSTART.md          # 快速上手
+  docs/SKILL_GUIDE.md         # SKILL.md 编写指南
+  docs/INTEGRATION_GUIDE.md   # 接入指南
+  CONTRIBUTING.md             # 贡献指南
+  LICENSE                     # MIT
+
+不开源（不进入公开仓库）：
+  .kiro/                      # Spec 文档（需求/设计/任务）
+  .cursor/rules/              # AI 工作规范
+  docs/ARCHITECTURE_ANALYSIS.md           # 架构决策过程
+  docs/DUAL_MODE_ARCHITECTURE_DECISION.md # 架构决策
+  docs/POSITIONING.md                     # 产品定位策略
+```
+
+**判定规则**：用户用这个东西需不需要看这个文件？需要 → 开源。不需要 → 不开源。
+
+---
+
+## 九、商业化路径
+
+一人公司最现实的商业化路径：**开源建立信誉 + 政策红利获客 + 咨询/实施赚钱**。
+
+```
+开源 OwlClaw（建立技术信誉）
+  │
+  ├─ 线上：OpenClaw 生态（获取开发者用户 + 口碑）
+  │   • ClawHub 发布 Skills
+  │   • 社区回答问题 + 技术文章
+  │
+  ├─ 线下：政策对接（批量获客 + 政府背书）
+  │   • 对接"AI 一人企业"孵化器
+  │   • 成为技术服务商 / 培训提供方
+  │   • 收入：培训费 + 实施费（政府/孵化器买单）
+  │
+  ├─ 案例：Mionyee 实战 + 培训学员案例
+  │
+  └─ 咨询/实施收入
+      • 来源 1：孵化器培训后的深度实施
+      • 来源 2：通过线上内容吸引的中小企业客户
+      • 定价：培训 ¥3,000-¥10,000/人；项目实施 ¥5,000-¥50,000
+```
+
+**远期演化**：培训学员中出现高频需求 → 标准化为 Pro 功能；孵化器要求多租户管理 → 按需做 Enterprise 功能。被需求拉动的自然演化，不提前投入。
+
+详细分析见 `docs/DUAL_MODE_ARCHITECTURE_DECISION.md` §6-§7。
+
+---
+
+## 十、增长飞轮
 
 增长飞轮对应的中长期技术承接已在 [docs/ARCHITECTURE_ANALYSIS.md](./ARCHITECTURE_ANALYSIS.md) §10 明确（Multi-Agent / 自我进化 / 可解释性 / OwlHub 安全治理 / 性能与规模）。
 
@@ -222,7 +310,7 @@ OwlHub 积累行业 Skills 模板 → 同行业企业直接复用
 
 ---
 
-## 九、架构演进方向
+## 十一、架构演进方向
 
 > 详见 `docs/ARCHITECTURE_ANALYSIS.md` §10（spec: architecture-roadmap，已落地）
 
@@ -335,17 +423,29 @@ OwlHub 积累行业 Skills 模板 → 同行业企业直接复用
 | 示例集（非交易 + LangChain + 3 行业 + mionyee） | examples |
 | 端到端验证（mionyee 3 任务 + 决策质量对比） | e2e-validation |
 
-### S8：架构前瞻（文档规划）
+### S8：双模接入 + OpenClaw 生态（决策已批准 2026-02-27）
+
+| 产品能力 | Spec |
+|---------|------|
+| Mionyee 治理叠加（预算/限流/熔断包裹 LLM 调用） | mionyee-governance-overlay |
+| Mionyee 调度迁移（APScheduler → Hatchet 持久执行） | mionyee-hatchet-migration |
+| MCP 能力输出（治理/持久任务/业务接入作为 MCP Server 暴露） | mcp-capability-export |
+| OpenClaw Skill 包（owlclaw-for-openclaw 发布到 ClawHub） | openclaw-skill-pack |
+| 内容营销启动（第一篇技术文章 + 社区切入） | content-launch |
+
+### S9：架构前瞻（文档规划）
 
 | 产品能力 | Spec |
 |---------|------|
 | 架构演进路线（Multi-Agent/自我进化/可解释性/安全/性能） | architecture-roadmap |
+| AI 一人企业 OS 前瞻（OwlClaw + OpenClaw 协作模式，架构预留） | — |
 
 ### 统计
 
-50 项产品能力，覆盖 9 个阶段，映射到 41 个 spec。实时进度见 `SPEC_TASKS_SCAN.md`。
+57 项产品能力，覆盖 10 个阶段，映射到 46 个 spec。实时进度见 `SPEC_TASKS_SCAN.md`。
 
 ---
 
 **维护者**: yeemio
 **下次审核**: 2026-03-15
+**变更记录**: v2.0.0 (2026-02-27) — 基于 DUAL_MODE_ARCHITECTURE_DECISION.md 批准，补充三段光谱定位、AI 一人企业 OS 战略定位、开源边界、商业化路径、S8 双模接入能力矩阵

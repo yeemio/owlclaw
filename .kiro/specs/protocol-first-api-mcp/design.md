@@ -1,8 +1,8 @@
 # Design: Protocol-first API + MCP
 
 > **目标**：构建 OwlClaw 的统一协议产品面（API + MCP），以 Gateway-first 方式服务跨语言接入。  
-> **状态**：设计中  
-> **最后更新**：2026-02-26
+> **状态**：已完成（通过子 spec 实施与验收）  
+> **最后更新**：2026-02-27
 
 ---
 
@@ -388,5 +388,13 @@ protocol:
 
 ---
 
+## 12. 实施映射
+
+- 协议治理与错误模型：`protocol-governance`（27/27）
+- API/MCP 契约门禁：`contract-testing`（19/19）
+- 网关发布与运维：`gateway-runtime-ops`（18/18）
+- 跨语言接入路径：`cross-lang-golden-path`（16/16）
+- 发布供应链安全（外部依赖项）：`release-supply-chain`（9/15，继续推进）
+
 **维护者**：OwlClaw 架构组  
-**最后更新**：2026-02-26
+**最后更新**：2026-02-27
