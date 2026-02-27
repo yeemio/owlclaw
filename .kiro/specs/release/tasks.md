@@ -10,7 +10,7 @@
 
 > **状态**：进行中  
 > **预估工作量**：3-5 天  
-> **最后更新**：2026-02-26  
+> **最后更新**：2026-02-27  
 > **执行原则**：本清单内所有任务均须专业、认真完成，不区分可选与必选。
 
 ---
@@ -70,6 +70,7 @@
   - 状态补充（2026-02-26）：workflow_dispatch run `22433883650` 再次失败于 `Publish to TestPyPI`，日志仍显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
   - 状态补充（2026-02-26）：workflow_dispatch run `22445573439` 再次失败于 `Publish to TestPyPI`，`TWINE_PASSWORD` 仍为空并返回 `HTTP 403 Forbidden`。
   - 状态补充（2026-02-26）：workflow_dispatch runs `22447692518`、`22447700064` 再次失败于 `Publish to TestPyPI`，日志持续显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
+  - 状态补充（2026-02-27）：workflow_dispatch runs `22473801915`、`22475093887` 继续失败于 `Publish to TestPyPI`，`scripts/release_oidc_preflight.py` 对应报告均为 `BLOCKED`（Trusted Publisher 未生效）。
 
 ---
 
@@ -79,7 +80,8 @@
 - [x] 4.1.1 创建 Git tag `v0.1.0` 触发发布
   - 规范化说明（2026-02-26）：版本线已演进到 `v1.x`，以“创建发布 tag 并触发发布链路”为验收语义；远程已存在 `v1.0.0`、`v1.0.1`、`v1.0.2`、`v1.1.0`、`v1.2.0`（`gh release list -R yeemio/owlclaw`）。
 - [ ] 4.1.2 验证 PyPI 安装：干净环境 `pip install owlclaw` 成功
-  - 远程核验（2026-02-25）：临时虚拟环境执行 `pip install owlclaw` 返回 `No matching distribution found`，说明尚未发布到 PyPI
+  - 远程核验（2026-02-25）：临时虚拟环境执行 `pip install owlclaw` 返回 `No matching distribution found`，说明尚未发布到 PyPI。
+  - 当前状态（2026-02-27）：仍依赖 3.1.2/3.1.3 打通后复验。
 - [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
   - 本地验证（2026-02-25）：`poetry run owlclaw --version` → `owlclaw 0.1.0`；`poetry run owlclaw skill list` 正常输出
 - [x] 4.1.4 验证 GitHub Release 自动创建
@@ -128,9 +130,9 @@
   - PyPI/TestPyPI Trusted Publisher 映射创建
   - TestPyPI 实际发布验证
   - PyPI 发布后安装验收（`pip install owlclaw`）
-  - 本轮核验（2026-02-26）：`gh auth status` 正常；`main` 分支保护与 `pypi-release` environment branch policy 已到位；release run `22450293930` 仍在 `Publish to TestPyPI` 失败并报 `invalid-publisher`（Trusted Publisher 映射缺失）。
+  - 本轮核验（2026-02-27）：`gh auth status` 正常；`main` 分支保护与 `release/*` 规则集已到位；release runs `22473801915`、`22475093887` 仍在 `Publish to TestPyPI` 失败并报 `HTTP 403 Forbidden`。
 
 ---
 
 **维护者**：OwlClaw Team  
-**最后更新**：2026-02-26
+**最后更新**：2026-02-27

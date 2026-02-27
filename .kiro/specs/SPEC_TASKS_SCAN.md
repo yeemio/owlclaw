@@ -234,7 +234,7 @@
 | 最后更新 | 2026-02-27 |
 | 当前批次 | **统筹轮次**：merge review-work → main + Phase 8 spec 分配 + worktree 同步 |
 | 批次状态 | **完成**。Phase 7 spec 全部通过审校合并到 main（protocol-governance ✅、contract-testing ✅、gateway-runtime-ops ✅、cross-lang-golden-path ✅、protocol-first-api-mcp ✅、test-infra ✅）。Phase 8 五个新 spec 三层文档已创建（2026-02-27）。双模架构决策 13 项已批准。 |
-| 已完成项 | 1) 决策文档 13 项全部签署（D1-R 至 D13）；2) POSITIONING.md v2.0.0 + ARCHITECTURE_ANALYSIS.md v4.6（§4.13）；3) Phase 7 全部 spec 审校通过合并；4) release OIDC 证据链补齐 + 分支保护规则集落地；5) Phase 8 五个新 spec 三层文档创建完毕。 |
+| 已完成项 | 1) 决策文档 13 项全部签署（D1-R 至 D13）；2) POSITIONING.md v2.0.0 + ARCHITECTURE_ANALYSIS.md v4.6（§4.13）；3) Phase 7 全部 spec 审校通过合并；4) release OIDC 证据链补齐 + 分支保护规则集落地；5) Phase 8 五个新 spec 三层文档创建完毕；6) `release` spec 三层文档按 28/32 实况规范化（完成项勾选对齐 + Trusted Publisher 外部阻塞保留）。 |
 | 下一待执行 | 1) Phase 8.1 启动：mionyee-governance-overlay（GovernanceProxy 实现 + Mionyee 接入）+ mionyee-hatchet-migration（任务盘点 + 迁移工具）；2) Phase 8.2：mcp-capability-export MCP Spike + openclaw-skill-pack 开发；3) 外部阻塞收口：release-supply-chain Trusted Publisher 配置 + owlhub 40.4 生产凭据。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8：mionyee-governance-overlay 🟡(0/12)，mionyee-hatchet-migration 🟡(0/15)，mcp-capability-export 🟡(0/18)，openclaw-skill-pack 🟡(0/14)，content-launch 🟡(0/16)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) Phase 8 spec 三层文档已齐全，无阻塞。 |
@@ -252,4 +252,5 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：若某功能在 spec 中记录了 SKIP/外部依赖测试，后续具备条件时必须回补真实环境验收并更新本清单
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
+
 
