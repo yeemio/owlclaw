@@ -55,7 +55,8 @@ def test_release_workflow_contains_release_commands() -> None:
     steps = "\n".join(str(item) for item in jobs["release"]["steps"])
     assert "semantic-release version" in steps
     assert "semantic-release publish" in steps
-    assert "twine upload dist/*" in steps
+    assert "pypa/gh-action-pypi-publish@release/v1" in steps
+    assert "'repository-url': 'https://test.pypi.org/legacy/'" in steps
 
 
 def test_releaserc_contains_required_plugins() -> None:
