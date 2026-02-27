@@ -30,10 +30,10 @@
 
 ## Task 3：持久任务工具 MCP Server
 
-- [ ] 3.1 实现 `task_create` MCP 工具（Hatchet workflow 包装）
-- [ ] 3.2 实现 `task_status` MCP 工具
-- [ ] 3.3 实现 `task_cancel` MCP 工具
-- [ ] 3.4 单元测试：3 个任务工具
+- [x] 3.1 实现 `task_create` MCP 工具（Hatchet workflow 包装）
+- [x] 3.2 实现 `task_status` MCP 工具
+- [x] 3.3 实现 `task_cancel` MCP 工具
+- [x] 3.4 单元测试：3 个任务工具
   - 文件：`tests/unit/mcp/test_task_tools.py`
 
 ## Task 4：业务工具自动生成
