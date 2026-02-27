@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from json import JSONDecodeError
+
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -19,7 +21,17 @@ def create_mcp_http_app(
     """Create HTTP MCP app exposing `/mcp` and optional agent card endpoint."""
 
     async def _mcp_endpoint(request: Request) -> JSONResponse:
-        payload = await request.json()
+        try:
+            payload = await request.json()
+        except JSONDecodeError:
+            return JSONResponse(
+                {
+                    "jsonrpc": "2.0",
+                    "id": None,
+                    "error": {"code": -32700, "message": "parse error"},
+                },
+                status_code=400,
+            )
         if not isinstance(payload, dict):
             return JSONResponse(
                 {
