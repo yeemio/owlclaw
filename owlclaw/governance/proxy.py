@@ -68,6 +68,11 @@ class GovernanceProxy:
         self._lock = asyncio.Lock()
         self._ledger = InMemoryLedger(max_records=20_000)
 
+    @property
+    def ledger(self) -> InMemoryLedger:
+        """Expose audit ledger for query/reporting."""
+        return self._ledger
+
     @classmethod
     def from_config(cls, path: str) -> GovernanceProxy:
         """Create proxy from owlclaw.yaml-like config."""
