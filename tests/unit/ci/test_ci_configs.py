@@ -60,6 +60,7 @@ def test_release_workflow_contains_release_commands() -> None:
     assert "pypa/gh-action-pypi-publish@release/v1" in steps
     assert "actions/attest-build-provenance@v2" in steps
     assert "Upload release report" in steps
+    assert "'repository-url': 'https://test.pypi.org/legacy/'" in steps
 
 
 def test_releaserc_contains_required_plugins() -> None:

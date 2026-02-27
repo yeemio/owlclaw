@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - py310 fallback
+    import tomli as tomllib  # type: ignore[no-redef]
 
 def check_consistency(repo: Path) -> int:
     pyproject = repo / "pyproject.toml"
@@ -37,17 +40,18 @@ def check_consistency(repo: Path) -> int:
 
 
 def _extract_poetry_version(pyproject_text: str) -> str | None:
-    in_poetry_section = False
-    for raw_line in pyproject_text.splitlines():
-        line = raw_line.strip()
-        if line.startswith("[") and line.endswith("]"):
-            in_poetry_section = line == "[tool.poetry]"
-            continue
-        if in_poetry_section and line.startswith("version"):
-            match = re.match(r'version\s*=\s*"([^"]+)"', line)
-            if match:
-                return match.group(1)
-    return None
+    try:
+        payload = tomllib.loads(pyproject_text)
+    except Exception:
+        return None
+    tool = payload.get("tool")
+    if not isinstance(tool, dict):
+        return None
+    poetry = tool.get("poetry")
+    if not isinstance(poetry, dict):
+        return None
+    version = poetry.get("version")
+    return version if isinstance(version, str) else None
 
 
 def main() -> None:

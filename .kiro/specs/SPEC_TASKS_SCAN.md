@@ -1,6 +1,6 @@
 # SPEC_TASKS_SCAN — OwlClaw 功能清单总览
 
-> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.5（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成）+ `docs/DATABASE_ARCHITECTURE.md`
+> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.6（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
 > **最后更新**: 2026-02-27
 
@@ -120,6 +120,35 @@
 - [ ] 发布供应链安全（OIDC Trusted Publishing + provenance） → spec: release-supply-chain
 - [x] 跨语言接入黄金路径（Java + curl 可执行验收） → spec: cross-lang-golden-path
 
+### Phase 8：双模接入 + OpenClaw 生态（决策已批准 2026-02-27）
+
+> **来源**: `docs/DUAL_MODE_ARCHITECTURE_DECISION.md` §5 验收路线图 + `docs/ARCHITECTURE_ANALYSIS.md` §4.13
+> **优先级**: 高（Phase 3 release 收口后立即启动）
+> **前置**: Phase 1-2 核心模块已完成，Phase 3 release/owlhub 收口中
+
+**Phase 8.1：Mionyee 增强模式验证（对应决策 Phase 1，4-8 周）**
+
+- [ ] Mionyee 治理叠加 — OwlClaw 治理代理包裹 Mionyee LLM 调用（预算上限 + 限流 + 熔断 + 审计） → spec: mionyee-governance-overlay
+- [ ] Mionyee 调度迁移 — 48 个 APScheduler 任务迁移到 Hatchet（进程重启恢复 + 分布式执行） → spec: mionyee-hatchet-migration
+
+**Phase 8.2：MCP 能力输出 + OpenClaw 切入（对应决策 Phase 1.5 + Phase 2，5-7 周）**
+
+- [ ] MCP 架构 Spike — 验证 OwlClaw MCP Server 在 OpenClaw 中的实际接入体验（连接模式 + 延迟 + 配置步骤 ≤ 3 步） → spec: mcp-capability-export
+- [ ] MCP 能力输出 — 治理层/持久任务/业务接入作为 MCP Server 暴露（`owlclaw migrate` 生成业务 MCP Server） → spec: mcp-capability-export
+- [ ] OpenClaw Skill 包 — 打包 `owlclaw-for-openclaw` 发布到 ClawHub（SKILL.md 兼容性测试 + 安装教程） → spec: openclaw-skill-pack
+- [ ] A2A Agent Card — 静态 JSON 实现 `/.well-known/agent.json`（成本极低，战略预留） → spec: mcp-capability-export
+
+**Phase 8.3：内容营销 + 咨询准备（对应决策 Phase 2-3，持续）**
+
+- [ ] 第一篇技术文章 — 解决具体痛点的教程（非产品介绍），发布到 Reddit/HN/掘金/V2EX → spec: content-launch
+- [ ] Mionyee 案例材料 — 治理后成本降低 X%、调度稳定性提升的真实数据 → spec: content-launch
+- [ ] 咨询方案模板 — "AI 智能化转型"标准咨询方案（调研→实施→交付→维护） → spec: content-launch
+
+**Phase 8.4：深度集成（对应决策 Phase 3，按需）**
+
+- [ ] Mionyee AI 权重提升 — 各维度分析注册为 OwlClaw Capabilities，Agent 通过 function calling 自主决定权重 → 需 mionyee-governance-overlay + mionyee-hatchet-migration 完成后评估
+- [ ] 代理模式 MVP — 用 Mionyee 真实数据或开源 ERP（ERPNext/Odoo）做 Reference Implementation → 需 Phase 8.1-8.2 完成后评估
+
 ---
 
 ## Spec 索引
@@ -173,6 +202,11 @@
 | **contract-testing** | `.kiro/specs/contract-testing/` | ✅ 三层齐全，已完成（19/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
 | **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，进行中（11/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
 | **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | ✅ 三层齐全，已完成（16/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
+| **mionyee-governance-overlay** | `.kiro/specs/mionyee-governance-overlay/` | 🟡 三层齐全，待实施（0/12） | Mionyee 治理叠加（预算/限流/熔断包裹 LLM 调用） |
+| **mionyee-hatchet-migration** | `.kiro/specs/mionyee-hatchet-migration/` | 🟡 三层齐全，待实施（0/15） | Mionyee 调度迁移（APScheduler → Hatchet 持久执行） |
+| **mcp-capability-export** | `.kiro/specs/mcp-capability-export/` | 🟡 三层齐全，待实施（0/18） | MCP 能力输出（治理/持久任务/业务接入作为 MCP Server 暴露 + A2A Agent Card） |
+| **openclaw-skill-pack** | `.kiro/specs/openclaw-skill-pack/` | 🟡 三层齐全，待实施（0/14） | OpenClaw Skill 包（owlclaw-for-openclaw 发布到 ClawHub） |
+| **content-launch** | `.kiro/specs/content-launch/` | 🟡 三层齐全，待实施（0/16） | 内容营销启动（第一篇技术文章 + Mionyee 案例 + 咨询方案模板） |
 
 ---
 
@@ -198,12 +232,12 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-27 |
-| 当前批次 | codex-work 循环：protocol-first-api-mcp 规范化收口 |
-| 批次状态 | **已完成（本批次）**。`protocol-first-api-mcp` 汇总子 spec 结果后闭环完成（24/24）。 |
-| 已完成项 | 1) `protocol-first-api-mcp/tasks.md` 由 `0/24` 规范化为 `24/24` 并补充子 spec 证据映射；2) `requirements.md` 全量验收勾选对齐并更新状态为已完成；3) `design.md` 更新为已完成并补充实施映射（protocol-governance/contract-testing/gateway-runtime-ops/cross-lang-golden-path）；4) 新增 `docs/protocol/PROTOCOL_FIRST_PHASE_SUMMARY.md` 输出协议优先阶段总结（决策/结果/遗留）；5) Phase 7 总纲“Protocol-first 治理收口”勾选完成，Spec 索引状态改为 ✅ `24/24`；6) 通过 `gh api` 验证 `main` 分支保护已启用（required checks: Lint/Test/Build），`release-supply-chain` Task 3.1 收口；7) 通过 `gh api` 创建并验证 release 规则集 `release-branch-protection`（ID `13307033`），`release-supply-chain` Task 3.2 收口；8) 触发 run `22473801915` 与 `22475093887` 复测 release 链路，确认当前阻塞集中在 TestPyPI Trusted Publisher（`Publish to TestPyPI` 403）；9) 新增 `scripts/release_oidc_preflight.py` 与 `docs/release/TRUSTED_PUBLISHER_SETUP.md`，将外部配置转为可执行收口清单与自动诊断报告；10) 生成 `docs/release/reports/release-oidc-preflight-latest.md`，报告状态 `BLOCKED`（exit code `3`），确认仓库侧基线已满足、剩余为 TestPyPI/PyPI Trusted Publisher 外部配置。 |
-| 下一待执行 | 1) 由维护者按 `docs/release/TRUSTED_PUBLISHER_SETUP.md` 完成 TestPyPI/PyPI Trusted Publisher 配置（任务 1.1/1.2）；2) 配置后执行 `poetry run python scripts/release_oidc_preflight.py --repo yeemio/owlclaw --run-id <最新run>` 确认阻塞信号消失；3) 复跑 release 链路并收口 Task 4.1/4.2；4) 继续跟踪 `release`/`owlhub` 外部阻塞项。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) release-supply-chain Task 1.1/1.2：需仓库维护者在 PyPI/TestPyPI 配置 Trusted Publisher（run `22471143360`、`22473801915`、`22475093887` 在 TestPyPI 上传阶段均 `403`）；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
+| 当前批次 | **统筹轮次**：merge review-work → main + Phase 8 spec 分配 + worktree 同步 |
+| 批次状态 | **完成**。Phase 7 spec 全部通过审校合并到 main（protocol-governance ✅、contract-testing ✅、gateway-runtime-ops ✅、cross-lang-golden-path ✅、protocol-first-api-mcp ✅、test-infra ✅）。Phase 8 五个新 spec 三层文档已创建（2026-02-27）。双模架构决策 13 项已批准。 |
+| 已完成项 | 1) 决策文档 13 项全部签署（D1-R 至 D13）；2) POSITIONING.md v2.0.0 + ARCHITECTURE_ANALYSIS.md v4.6（§4.13）；3) Phase 7 全部 spec 审校通过合并；4) release OIDC 证据链补齐 + 分支保护规则集落地；5) Phase 8 五个新 spec 三层文档创建完毕。 |
+| 下一待执行 | 1) Phase 8.1 启动：mionyee-governance-overlay（GovernanceProxy 实现 + Mionyee 接入）+ mionyee-hatchet-migration（任务盘点 + 迁移工具）；2) Phase 8.2：mcp-capability-export MCP Spike + openclaw-skill-pack 开发；3) 外部阻塞收口：release-supply-chain Trusted Publisher 配置 + owlhub 40.4 生产凭据。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8：mionyee-governance-overlay 🟡(0/12)，mionyee-hatchet-migration 🟡(0/15)，mcp-capability-export 🟡(0/18)，openclaw-skill-pack 🟡(0/14)，content-launch 🟡(0/16)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) Phase 8 spec 三层文档已齐全，无阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
@@ -218,5 +252,4 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：若某功能在 spec 中记录了 SKIP/外部依赖测试，后续具备条件时必须回补真实环境验收并更新本清单
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
-
 
