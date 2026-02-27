@@ -6,11 +6,12 @@ import asyncio
 import logging
 import time
 import uuid
+from collections.abc import Awaitable, Callable
 from collections import deque
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from decimal import Decimal
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from owlclaw.config.loader import YAMLConfigLoader
 from owlclaw.governance.ledger_inmemory import InMemoryLedger

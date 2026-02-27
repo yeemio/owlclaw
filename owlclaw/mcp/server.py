@@ -275,6 +275,48 @@ class McpProtocolServer:
             },
         ]
 
+    def build_agent_card(
+        self,
+        *,
+        url: str = "http://localhost:8080",
+        name: str = "OwlClaw",
+        description: str = "AI-powered business system intelligence",
+        version: str = "0.1.0",
+    ) -> dict[str, Any]:
+        """Build a static A2A Agent Card payload."""
+        governance_tools: list[str] = []
+        task_tools: list[str] = []
+        business_tools: list[str] = []
+
+        for tool_name in sorted(self.registry.handlers):
+            if tool_name.startswith("governance_"):
+                governance_tools.append(tool_name)
+            elif tool_name.startswith("task_"):
+                task_tools.append(tool_name)
+            else:
+                business_tools.append(tool_name)
+        if self.signal_router is not None:
+            business_tools.extend(sorted(_SIGNAL_TOOL_TO_TYPE))
+
+        return {
+            "name": name,
+            "description": description,
+            "url": url,
+            "version": version,
+            "capabilities": {
+                "governance": governance_tools,
+                "tasks": task_tools,
+                "business": business_tools,
+            },
+            "authentication": {
+                "schemes": ["bearer"],
+            },
+            "protocols": {
+                "mcp": {"transport": ["http", "stdio"]},
+                "a2a": {"version": "0.1.0"},
+            },
+        }
+
     def _handle_resources_list(self) -> dict[str, Any]:
         self._refresh_resource_cache()
         resources = [
