@@ -113,7 +113,7 @@
 
 ### Phase 7：协议优先（API + MCP）
 
-- [ ] Protocol-first 治理收口（统一版本策略 / 错误模型 / 兼容门禁 / Java Golden Path） → spec: protocol-first-api-mcp
+- [x] Protocol-first 治理收口（统一版本策略 / 错误模型 / 兼容门禁 / Java Golden Path） → spec: protocol-first-api-mcp
 - [x] 协议治理规范化（版本/兼容/错误域/门禁） → spec: protocol-governance
 - [x] 网关运行与发布运维标准化（canary/rollback/SLO） → spec: gateway-runtime-ops
 - [x] API + MCP 契约测试体系（diff + replay + blocking gate） → spec: contract-testing
@@ -167,7 +167,7 @@
 | **progressive-migration** | `.kiro/specs/progressive-migration/` | ✅ 三层齐全，已完成（31/31） | 渐进式迁移 migration_weight（MigrationGate + 风险评估 + 审批队列 + Ledger 增强 + CLI） |
 | **skills-quality** | `.kiro/specs/skills-quality/` | ✅ 三层齐全，已完成（27/27） | Skills 质量评分（执行指标采集 + 评分模型 + 趋势告警 + CLI + Agent/OwlHub 集成） |
 | **industry-skills** | `.kiro/specs/industry-skills/` | ✅ 三层齐全，已完成（12/12） | OwlHub 语义搜索推荐（embedding 匹配 + 行业标签 + 包格式规范） |
-| **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | 🟡 三层齐全，待实施（0/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
+| **protocol-first-api-mcp** | `.kiro/specs/protocol-first-api-mcp/` | ✅ 三层齐全，已完成（24/24） | 协议优先专项（Gateway-first、API/MCP 契约与版本治理、跨语言 Golden Path） |
 | **protocol-governance** | `.kiro/specs/protocol-governance/` | ✅ 三层齐全，已完成（27/27） | 协议治理基线（版本策略、兼容政策、错误模型、门禁策略） |
 | **gateway-runtime-ops** | `.kiro/specs/gateway-runtime-ops/` | ✅ 三层齐全，已完成（18/18） | 网关发布与运维（灰度、回滚、SLO、运行手册） |
 | **contract-testing** | `.kiro/specs/contract-testing/` | ✅ 三层齐全，已完成（19/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
@@ -198,9 +198,9 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-27 |
-| 当前批次 | codex-work 循环：test-infra 11.3 远端 matrix 收口完成 |
-| 批次状态 | **已完成（本批次）**。test-infra 全部任务闭环完成（11/11）。 |
-| 已完成项 | 1) `gateway-runtime-ops` 全部收口（`18/18`）；2) `release-supply-chain` 推进到 `9/15`（OIDC workflow + provenance + smoke + report + policy 文档 + checkpoint 同步）；3) cross-lang 新增 Java 示例工程与客户端实现（触发/查询/错误处理/超时/重试/幂等）；4) 新增 curl 对照脚本（触发/查询/错误场景）；5) 新增 `docs/protocol/JAVA_GOLDEN_PATH.md`；6) 新增 `scripts/verify_cross_lang.ps1` 与验证报告输出；7) 新增测试 `test_cross_lang_java_assets.py` 与 `test_verify_cross_lang_script.py` 并通过；8) `cross-lang-golden-path/tasks.md` 更新为 `16/16`；9) 完成 3.10 兼容修复（`datetime.UTC` -> `timezone.utc`、移除 `tomllib` 依赖）；10) 修复 `tests/unit/test_release_assets.py` 与 OIDC 发布模型对齐；11) 纳管 `poetry.lock` 以稳定依赖解算；12) 补齐 ledger metadata Alembic 迁移并修正 revision 链；13) run `22470055705` 三版本 matrix 全绿，`test-infra` 收口为 `11/11`。 |
+| 当前批次 | codex-work 循环：protocol-first-api-mcp 规范化收口 |
+| 批次状态 | **已完成（本批次）**。`protocol-first-api-mcp` 汇总子 spec 结果后闭环完成（24/24）。 |
+| 已完成项 | 1) `protocol-first-api-mcp/tasks.md` 由 `0/24` 规范化为 `24/24` 并补充子 spec 证据映射；2) `requirements.md` 全量验收勾选对齐并更新状态为已完成；3) `design.md` 更新为已完成并补充实施映射（protocol-governance/contract-testing/gateway-runtime-ops/cross-lang-golden-path）；4) 新增 `docs/protocol/PROTOCOL_FIRST_PHASE_SUMMARY.md` 输出协议优先阶段总结（决策/结果/遗留）；5) Phase 7 总纲“Protocol-first 治理收口”勾选完成，Spec 索引状态改为 ✅ `24/24`。 |
 | 下一待执行 | 1) 推进 `release-supply-chain` 外部依赖任务 1.1/1.2 与 3.1/3.2（Trusted Publisher 与分支保护实际配置）；2) 在外部配置完成后复跑 release 链路并收口 Task 4.1/4.2；3) 继续跟踪 `release`/`owlhub` 外部阻塞项。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，test-infra ✅(11/11)，release-supply-chain 🟡(9/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) release-supply-chain Task 1.1/1.2/3.1/3.2：需仓库维护者在 PyPI/TestPyPI 与 GitHub Settings 完成 Trusted Publisher/required checks/branch protection 实际配置（run `22446541468` 在 TestPyPI 上传阶段 `403`；`branches/main/protection` 返回 `404 Branch not protected`；`rulesets` 为空）；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
