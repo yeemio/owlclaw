@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.5（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成）+ `docs/DATABASE_ARCHITECTURE.md`
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-26
+> **最后更新**: 2026-02-27
 
 ---
 
@@ -93,7 +93,7 @@
 ### Phase 4：开发基础设施统一（新增）
 
 - [x] 统一本地开发环境（一条命令启动全部依赖，PG 镜像与 CI 一致） → spec: local-devenv
-- [ ] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
+- [x] 测试分层清晰（unit 零外部依赖，integration 优雅 skip，CI 与本地镜像） → spec: test-infra
 - [x] 仓库卫生清理（根目录整洁、.gitignore 完整、deploy/ 文档化） → spec: repo-hygiene
 
 ### Phase 5：落地收尾（架构重塑）
@@ -157,7 +157,7 @@
 | release | `.kiro/specs/release/` | 🟡 三层齐全，进行中（28/32） | PyPI + GitHub 发布 |
 | ci-setup | `.kiro/specs/ci-setup/` | ✅ 三层齐全，已完成（12/12） | GitHub Actions CI（lint/test/build/release + pre-commit/dependabot + CI 文档与配置测试） |
 | **local-devenv** | `.kiro/specs/local-devenv/` | ✅ 三层齐全，已完成（10/10） | 统一本地开发环境（docker-compose.dev/test/minimal + Makefile + .env.example + DEVELOPMENT.md） |
-| **test-infra** | `.kiro/specs/test-infra/` | 🟡 三层齐全，进行中（10/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；性能 <60s 已降级为长期优化项，覆盖率门槛已调整为当前阶段可执行值，剩余 Task 11.3） |
+| **test-infra** | `.kiro/specs/test-infra/` | ✅ 三层齐全，已完成（11/11） | 测试基础设施统一（skip 机制 + unit 纯净化 + 共享 fixtures + 覆盖率分层 + CI 镜像对齐；含 CI matrix 验收闭环） |
 | **repo-hygiene** | `.kiro/specs/repo-hygiene/` | ✅ 三层齐全，已完成（37/37） | 仓库卫生清理（.gitignore + 根目录清理 + deploy/ 文档化 + scripts/ README + .editorconfig + CODEOWNERS + Makefile + docs/README.md） |
 | **quick-start** | `.kiro/specs/quick-start/` | ✅ 三层齐全，已完成（13/13） | Quick Start 指南（10 分钟上手 + 最小示例） |
 | **complete-workflow** | `.kiro/specs/complete-workflow/` | ✅ 三层齐全，已完成（18/18） | 完整端到端示例（库存管理场景，4 个能力 + 治理 + 触发器） |
@@ -197,13 +197,13 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-26 |
-| 当前批次 | codex-work 循环：test-infra 11.3 远端复跑与阻塞复盘 |
-| 批次状态 | **进行中**。3.10 兼容修复后远端复跑进入 integration 阶段卡住，阻塞从“兼容错误”迁移为“CI integration 长时无结束”。 |
-| 已完成项 | 1) `gateway-runtime-ops` 全部收口（`18/18`）；2) `release-supply-chain` 推进到 `9/15`（OIDC workflow + provenance + smoke + report + policy 文档 + checkpoint 同步）；3) cross-lang 新增 Java 示例工程与客户端实现（触发/查询/错误处理/超时/重试/幂等）；4) 新增 curl 对照脚本（触发/查询/错误场景）；5) 新增 `docs/protocol/JAVA_GOLDEN_PATH.md`；6) 新增 `scripts/verify_cross_lang.ps1` 与验证报告输出；7) 新增测试 `test_cross_lang_java_assets.py` 与 `test_verify_cross_lang_script.py` 并通过；8) `cross-lang-golden-path/tasks.md` 更新为 `16/16`；9) 完成 3.10 兼容修复（`datetime.UTC` -> `timezone.utc`、移除 `tomllib` 依赖）；10) 修复 `tests/unit/test_release_assets.py` 与 OIDC 发布模型对齐；11) 拉取 release 演练证据 run `22446541468`，确认 TestPyPI OIDC 发布阻塞为 `403 Forbidden`。 |
-| 下一待执行 | 1) 继续定位 `test-infra` Task 11.3 的 integration 长时无结束问题（优先锁定卡住用例并评估 CI timeout/拆分策略）；2) 推进 `release-supply-chain` 外部依赖任务 1.1/1.2 与 3.1/3.2（Trusted Publisher 与分支保护实际配置）；3) 在外部配置完成后复跑 release 链路并收口 Task 4.1/4.2。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，release-supply-chain 🟡(9/15)，test-infra 🟡(10/11，仅 11.3 待远端复跑)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) test-infra Task 11.3：`22449635486`、`22450808679` 均在三版本通过 unit 后卡在 integration 步骤（`Run integration tests with appended coverage`）超过 25 分钟未结束；已在 `test.yml` 增加 integration `timeout 900s`，待下一轮复跑确认；2) release-supply-chain Task 1.1/1.2/3.1/3.2：需仓库维护者在 PyPI/TestPyPI 与 GitHub Settings 完成 Trusted Publisher/required checks/branch protection 实际配置（run `22446541468` 在 TestPyPI 上传阶段 `403`；`branches/main/protection` 返回 `404 Branch not protected`；`rulesets` 为空）；3) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
+| 最后更新 | 2026-02-27 |
+| 当前批次 | codex-work 循环：test-infra 11.3 远端 matrix 收口完成 |
+| 批次状态 | **已完成（本批次）**。test-infra 全部任务闭环完成（11/11）。 |
+| 已完成项 | 1) `gateway-runtime-ops` 全部收口（`18/18`）；2) `release-supply-chain` 推进到 `9/15`（OIDC workflow + provenance + smoke + report + policy 文档 + checkpoint 同步）；3) cross-lang 新增 Java 示例工程与客户端实现（触发/查询/错误处理/超时/重试/幂等）；4) 新增 curl 对照脚本（触发/查询/错误场景）；5) 新增 `docs/protocol/JAVA_GOLDEN_PATH.md`；6) 新增 `scripts/verify_cross_lang.ps1` 与验证报告输出；7) 新增测试 `test_cross_lang_java_assets.py` 与 `test_verify_cross_lang_script.py` 并通过；8) `cross-lang-golden-path/tasks.md` 更新为 `16/16`；9) 完成 3.10 兼容修复（`datetime.UTC` -> `timezone.utc`、移除 `tomllib` 依赖）；10) 修复 `tests/unit/test_release_assets.py` 与 OIDC 发布模型对齐；11) 纳管 `poetry.lock` 以稳定依赖解算；12) 补齐 ledger metadata Alembic 迁移并修正 revision 链；13) run `22470055705` 三版本 matrix 全绿，`test-infra` 收口为 `11/11`。 |
+| 下一待执行 | 1) 推进 `release-supply-chain` 外部依赖任务 1.1/1.2 与 3.1/3.2（Trusted Publisher 与分支保护实际配置）；2) 在外部配置完成后复跑 release 链路并收口 Task 4.1/4.2；3) 继续跟踪 `release`/`owlhub` 外部阻塞项。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，test-infra ✅(11/11)，release-supply-chain 🟡(9/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) release-supply-chain Task 1.1/1.2/3.1/3.2：需仓库维护者在 PyPI/TestPyPI 与 GitHub Settings 完成 Trusted Publisher/required checks/branch protection 实际配置（run `22446541468` 在 TestPyPI 上传阶段 `403`；`branches/main/protection` 返回 `404 Branch not protected`；`rulesets` 为空）；2) owlhub Task 40.4：生产凭据/环境所有权外部阻塞。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
