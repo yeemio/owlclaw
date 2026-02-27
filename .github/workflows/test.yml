@@ -82,6 +82,9 @@ jobs:
         run: |
           timeout 20m poetry run pytest \
             tests/integration/ \
+            -vv \
+            --maxfail=5 \
+            --durations=20 \
             --cov=owlclaw \
             --cov-append \
             --cov-report=xml \

@@ -10,7 +10,7 @@
 
 > **目标**：定义 OwlClaw 的 PyPI 发布流程和 GitHub 开源准备（Trusted Publishing 优先）  
 > **状态**：进行中（发布资产已就绪，外部发布联调待执行）  
-> **最后更新**：2026-02-26
+> **最后更新**：2026-02-27
 
 ---
 
@@ -170,9 +170,9 @@ git tag v1.x.x
 
 | 项 | 说明 |
 |------|------|
-| Trusted Publisher | PyPI/TestPyPI 需配置 `owner=yeemio`、`repo=owlclaw`、`workflow=.github/workflows/release.yml`、`environment=pypi-release` |
+| Trusted Publisher | PyPI/TestPyPI 需配置 `owner=yeemio`、`repo=owlclaw`、`workflow=.github/workflows/release.yml`（详见 `docs/release/TRUSTED_PUBLISHER_SETUP.md`） |
 | Branch Protection | `main` 需开启 required checks（Lint/Test/Build）与 PR 审核策略 |
-| Environment Policy | `pypi-release` 允许 `main` 与 `codex-gpt-work` 触发 |
+| Ruleset Policy | `release/*` 规则集已启用（required checks + PR review + non-fast-forward + deletion 限制） |
 
 ---
 
@@ -194,23 +194,23 @@ python -c "from owlclaw import OwlClaw; print('OK')"
 ## 7. 迁移计划
 
 ### 7.1 Phase 1：准备（1-2 天）
-- [ ] 确认 pyproject.toml 包元数据完整
+- [x] 确认 pyproject.toml 包元数据完整
 - [ ] 创建 PyPI/TestPyPI Trusted Publisher 映射
-- [ ] 校验 GitHub Actions OIDC 权限与 environment 策略
-- [ ] 编写 CHANGELOG.md
-- [ ] 编写 CONTRIBUTING.md
+- [x] 校验 GitHub Actions OIDC 权限与 environment 策略
+- [x] 编写 CHANGELOG.md
+- [x] 编写 CONTRIBUTING.md
 
 ### 7.2 Phase 2：发布（1 天）
-- [ ] 创建 release workflow
+- [x] 创建 release workflow
 - [ ] 测试 tag-triggered 发布流程
 - [ ] 发布 v0.1.0 到 PyPI
 
 ### 7.3 Phase 3：社区（1-2 天）
-- [ ] 创建 Issue 模板
-- [ ] 启用 Discussions
-- [ ] 编写 README 英文版
+- [x] 创建 Issue 模板
+- [x] 启用 Discussions
+- [x] 编写 README 英文版
 
 ---
 
 **维护者**：OwlClaw Team  
-**最后更新**：2026-02-22
+**最后更新**：2026-02-27
