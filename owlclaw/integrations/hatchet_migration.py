@@ -44,8 +44,12 @@ def _to_pascal_case(value: str) -> str:
     normalized = re.sub(r"[^a-zA-Z0-9]+", " ", value).strip()
     parts = [part for part in normalized.split(" ") if part]
     if not parts:
-        return "GeneratedWorkflow"
-    return "".join(part.capitalize() for part in parts) + "Workflow"
+        base = "Generated"
+    else:
+        base = "".join(part.capitalize() for part in parts)
+    if base[0].isdigit():
+        base = f"Workflow{base}"
+    return f"{base}Workflow"
 
 
 def _to_kebab_case(value: str) -> str:
@@ -88,13 +92,23 @@ def render_hatchet_module(jobs: list[APSchedulerJob]) -> str:
         "hatchet = Hatchet()",
         "",
     ]
+    used_function_names: dict[str, int] = {}
+
+    def _unique_function_name(base_name: str) -> str:
+        counter = used_function_names.get(base_name, 0)
+        used_function_names[base_name] = counter + 1
+        if counter == 0:
+            return f"{base_name}_run"
+        return f"{base_name}_run_{counter + 1}"
+
     for job in jobs:
         class_name = _to_pascal_case(job.name)
+        function_name = _unique_function_name(class_name)
         task_name = _to_kebab_case(job.name)
         blocks.extend(
             [
                 f"@hatchet.task(name=\"{task_name}\", on_crons=[\"{job.cron}\"])",
-                f"async def {class_name}_run(input_data, ctx):",
+                f"async def {function_name}(input_data, ctx):",
                 f"    \"\"\"Generated from APScheduler job: {job.func_ref}\"\"\"",
                 "    return {",
                 "        \"status\": \"ok\",",

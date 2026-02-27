@@ -78,3 +78,19 @@ def test_load_jobs_from_mionyee_scenarios_and_render_module(tmp_path: Path) -> N
     output = write_generated_hatchet_module(jobs, tmp_path / "generated.py")
     assert output.exists()
     assert "@hatchet.task" in output.read_text(encoding="utf-8")
+
+
+def test_render_hatchet_workflow_prefixes_numeric_identifier() -> None:
+    job = APSchedulerJob(name="123 daily task", cron="0 9 * * 1-5", func_ref="mionyee.scheduler.entry_monitor")
+    rendered = render_hatchet_workflow(job)
+    assert "async def Workflow123DailyTaskWorkflow_run" in rendered
+
+
+def test_render_hatchet_module_uses_unique_function_names_for_collisions() -> None:
+    jobs = [
+        APSchedulerJob(name="daily task", cron="0 9 * * 1-5", func_ref="mionyee.scheduler.a"),
+        APSchedulerJob(name="daily-task", cron="0 10 * * 1-5", func_ref="mionyee.scheduler.b"),
+    ]
+    rendered = render_hatchet_module(jobs)
+    assert "async def DailyTaskWorkflow_run(" in rendered
+    assert "async def DailyTaskWorkflow_run_2(" in rendered
