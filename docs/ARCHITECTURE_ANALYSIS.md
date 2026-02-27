@@ -1563,6 +1563,73 @@ MIT 开源产品代码 + 使用文档；不开源研发过程文档（`.kiro/`�
 | D8 双协议 | §4.7 接入协议语言无关 | 具体化，MCP + A2A |
 | D9 Agent Registry | §4.10 Skills 生态 | 扩展，Agent 级别的注册 |
 
+### 4.14 决策14：运行模式契约 + 闭环可证明性门禁 + Heartbeat 韧性基线
+
+> **批准日期**: 2026-02-27
+> **触发**: GPT-5.3 红军审视 + 人工补强，识别出"闭环可证明性"缺口
+> **关联**: §4.3 事件触发器统一层、§4.13 双模接入架构、§5.1 整体架构
+
+#### D14-1 运行模式契约表
+
+OwlClaw 提供两种启动模式，**heartbeat 的驱动责任明确归属**：
+
+| 启动方式 | API | Heartbeat 驱动方 | 适用场景 |
+|---------|-----|-----------------|---------|
+| **独立进程模式** | `app.run()` → `_run_blocking()` | OwlClaw 内建（`_heartbeat_loop`，间隔由 `heartbeat_interval_minutes` 配置） | CLI 启动、Docker 容器、独立部署 |
+| **嵌入式/服务化模式** | `app.start()` → 返回 `AgentRuntime` | **调用方负责**（Hatchet Cron / K8s CronJob / 外部调度器周期调用 `runtime.trigger_event("heartbeat", ...)`) | FastAPI 嵌入、微服务集成、测试 |
+
+**契约规则**：
+- `start()` 的 docstring 和返回值文档**必须**明确标注：heartbeat 不会自动启动，调用方需自行安排周期触发或外部调度。
+- `run()` 的 docstring **必须**明确标注：内建 heartbeat loop，进程退出时自动清理。
+- 集成文档（quick-start、complete-workflow）中的服务化示例**必须**包含外部 heartbeat 配置示例。
+
+#### D14-2 端到端闭环发布门禁
+
+**发布门禁用例**：任何 OwlClaw 版本发布前，必须通过以下端到端验收：
+
+```
+外部事件进入（Webhook/Queue/DB-Change/Cron/API 任选一）
+    → Trigger 层接收并转换
+    → runtime.trigger_event() 创建 AgentRunContext
+    → Agent 决策循环（LLM function calling 选择 Capability）
+    → Capability 执行（至少一次真实工具调用）
+    → 结果回写（Memory 持久化 或 外部系统写入）
+    → Ledger 审计记录（含 token 成本、延迟、决策路径）
+    → 可观测验证（Langfuse trace 链路完整 或 结构化日志可追溯）
+```
+
+**验收标准**：
+- 全链路在 CI 中可自动化执行（使用 mock LLM + 真实 Trigger + 真实 Ledger）
+- 链路中任一环节失败 → 发布阻断
+- 验收结果作为 release checklist 的必选项，记录在 `release-supply-chain` spec 中
+
+#### D14-3 Heartbeat 韧性基线（最小可用事件源 + SLO）
+
+HeartbeatChecker 当前 5 个事件源均为占位实现。作为"漏事件补偿"的韧性层，需实现**至少一个真实事件源**：
+
+**最小实现**：`_check_database_events()` — 查询 Ledger 表中最近 N 分钟内是否有未处理的 pending 事件记录。选择 DB 而非 Queue 的原因：Ledger 是 OwlClaw 自有组件，无外部依赖，部署门槛最低。
+
+**SLO 定义**：
+
+| 指标 | 目标 | 测量方式 |
+|------|------|---------|
+| 漏检率 | < 5%（每 100 个真实事件，heartbeat 兜底检查遗漏 ≤ 5 个） | 集成测试：注入事件后验证 heartbeat 轮询是否检出 |
+| 检查延迟 | < 500ms（单次 `check_events()` 耗时） | 性能测试：DB 查询 + 结果判断的 P99 延迟 |
+| 误触率 | < 1%（无事件时误报有事件） | 集成测试：空 Ledger 下连续 100 次检查，误报 ≤ 1 次 |
+
+**实现约束**：
+- `_check_database_events()` 使用只读查询，不修改 Ledger 数据
+- 查询必须有索引支撑，避免全表扫描
+- 其余 4 个事件源保持占位，待各 Trigger 集成时按需接入
+
+#### 与既有决策的关系
+
+| 新决策 | 关联 | 关系 |
+|--------|------|------|
+| D14-1 运行模式契约 | §5.1 整体架构 `app.run()` / `app.start()` | 明确化，消除集成方误用风险 |
+| D14-2 闭环门禁 | §4.13 双模接入 Phase 8.1 Mionyee 验证 | 将 Mionyee 验证提升为通用发布门禁 |
+| D14-3 Heartbeat 韧性 | §4.3 事件触发器统一层 + §4.13 D3 Heartbeat 节流器 | 补齐兜底能力，从"成本优化"升级为"韧性保障" |
+
 ---
 
 ## 五、OwlClaw 架构设计（v3 — Agent 自驱动）
@@ -2831,7 +2898,7 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 
 ---
 
-> **文档版本**: v4.6（v4.5 + §4.13 双模接入架构：三段光谱、三轨接入、模式感知事件驱动、MCP 能力输出、开源保护策略）
+> **文档版本**: v4.7（v4.6 + §4.14 运行模式契约 + 闭环可证明性门禁 + Heartbeat 韧性基线）
 > **创建时间**: 2026-02-10
 > **最后更新**: 2026-02-27
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`
