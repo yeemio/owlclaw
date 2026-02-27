@@ -1497,6 +1497,72 @@ IT 运维操作（一次性）：
 
 这实现了 OwlClaw 的产品愿景："Markdown 即 AI 能力"——业务开发者用 SKILL.md 描述业务接口，OwlClaw 的 Agent 自动理解并使用，**无需 AI 开发团队**。
 
+### 4.13 决策13：双模接入架构（三段光谱 + 三轨接入）
+
+> **批准日期**: 2026-02-27
+> **决策文档**: `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（完整分析 + 13 项子决策）
+
+#### 三段光谱
+
+OwlClaw 面对的接入对象是一个三段光谱，而非"有 AI / 无 AI"二分法：
+
+| 段位 | 代表 | 接入模式 | OwlClaw 价值 |
+|------|------|---------|-------------|
+| **A 段** | OpenClaw（有 AI + 有生态） | 协调模式 | 业务接入层 + 企业治理（MCP Server 能力输出） |
+| **B 段** | Vibecoding 产物（有 AI + 有瓶颈） | 增强模式 | 治理强化 + 持久执行 + AI-first 升级 |
+| **C 段** | 传统 ERP/CRM/HR（无 AI） | 代理模式 | 全栈赋能（SKILL.md + Binding + Agent） |
+
+#### 三轨接入（D4-R）
+
+| 轨道 | 适用模式 | 接入方式 |
+|------|---------|---------|
+| **Binding 轨** | 代理模式 | `migrate --output-mode binding` 自动生成声明式绑定 SKILL.md |
+| **Handler 轨** | 增强模式 | `@app.handler` 注册已有函数为 capability |
+| **Protocol 轨** | 协调模式 | MCP Server + A2A Agent Card |
+
+三轨不是新增概念，是对 §4.12 Declarative Binding、§4.8 编排框架标准接入、§4.11 Protocol-first 的分类命名。
+
+#### 模式感知事件驱动（D1-R）
+
+| 模式 | 主驱动 |
+|------|--------|
+| 协调模式 | 协调事件驱动（对方 Agent 请求 + 业务系统事件推送） |
+| 增强模式 | 治理事件 + 业务时钟（治理审批请求 + 原系统定时任务） |
+| 代理模式 | 业务事件 + 业务时钟（Cron/Webhook/Queue/DB-Change） |
+
+所有模式的事件最终进入 OwlClaw 事件队列，由 Heartbeat 节流器统一调度。
+
+#### 双协议（D8）
+
+- **MCP**：工具接入协议（已有实现，Phase 1-2 重点）
+- **A2A**：Agent 间协作协议（Phase 1 仅实现 Agent Card 静态 JSON，Task 管理推迟到有真实协调需求时）
+
+#### MCP 能力输出（面向 OpenClaw 生态）
+
+OwlClaw 的核心能力通过 MCP Server 暴露给外部 Agent（如 OpenClaw）：
+
+| 能力 | MCP Server 工具 |
+|------|----------------|
+| 业务系统自动接入 | `owlclaw migrate` 生成的业务 MCP Server |
+| 预算/限流/熔断 | 治理网关 MCP Server |
+| 持久后台任务 | Hatchet 包装 MCP Server |
+| 审计 + 权限控制 | Ledger + 可见性过滤 MCP Server |
+
+MCP Server 的工具粒度遵循单一职责、清晰参数原则，适合被 OpenClaw Agent 调用。
+
+#### 开源保护策略
+
+MIT 开源产品代码 + 使用文档；不开源研发过程文档（`.kiro/`、`.cursor/rules/`、架构决策、定位策略）。对外文档侧重"how to use"而非"how to modify"，形成知识壁垒。详见 `docs/POSITIONING.md` §8。
+
+#### 与既有决策的关系
+
+| 新决策 | 关联既有决策 | 关系 |
+|--------|-----------|------|
+| D4-R 三轨接入 | §4.12 Declarative Binding + §4.8 编排框架接入 + §4.11 Protocol-first | 分类命名，无冲突 |
+| D1-R 模式感知事件驱动 | §4.3 事件触发器统一层 | 扩展，按模式区分事件源 |
+| D8 双协议 | §4.7 接入协议语言无关 | 具体化，MCP + A2A |
+| D9 Agent Registry | §4.10 Skills 生态 | 扩展，Agent 级别的注册 |
+
 ---
 
 ## 五、OwlClaw 架构设计（v3 — Agent 自驱动）
@@ -2765,10 +2831,11 @@ OwlClaw 集成的是已经做好的：持久执行、LLM、可观测、对话、
 
 ---
 
-> **文档版本**: v4.5（v4.4 + §4.12 补充：cli-migrate 作为 Binding 自动生成路径，取代 connections 概念和 Skill Pack 方案）
+> **文档版本**: v4.6（v4.5 + §4.13 双模接入架构：三段光谱、三轨接入、模式感知事件驱动、MCP 能力输出、开源保护策略）
 > **创建时间**: 2026-02-10
-> **最后更新**: 2026-02-24
+> **最后更新**: 2026-02-27
 > **前置文档**: `DEEP_ANALYSIS_AND_DISCUSSION.md`
+> **决策文档**: `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（2026-02-27 批准）
 > **文档维护**: 本文档应随架构决策变化持续更新。
 
 ## LangChain Integration Update (2026-02-24)
