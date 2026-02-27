@@ -1,46 +1,47 @@
 # Tasks: Cross-language Golden Path
 
-> **状态**：未开始  
+> **状态**：已完成  
 > **预估工作量**：4-6 天  
 > **最后更新**：2026-02-26
 
 ## 进度概览
 
 - **总任务数**：16
-- **已完成**：0
+- **已完成**：16
 - **进行中**：0
-- **未开始**：16
+- **未开始**：0
 
 ## 1. Java 示例工程
 
-- [ ] 1.1 初始化 Java 示例项目结构
-- [ ] 1.2 实现触发场景
-- [ ] 1.3 实现查询场景
-- [ ] 1.4 实现错误处理场景
+- [x] 1.1 初始化 Java 示例项目结构
+- [x] 1.2 实现触发场景
+- [x] 1.3 实现查询场景
+- [x] 1.4 实现错误处理场景
 
 ## 2. 稳定性能力
 
-- [ ] 2.1 增加超时配置示例
-- [ ] 2.2 增加重试策略示例
-- [ ] 2.3 增加幂等键示例
+- [x] 2.1 增加超时配置示例
+- [x] 2.2 增加重试策略示例
+- [x] 2.3 增加幂等键示例
 
 ## 3. curl 对照
 
-- [ ] 3.1 编写同场景 curl 脚本
-- [ ] 3.2 对照 Java 响应字段一致性
+- [x] 3.1 编写同场景 curl 脚本
+- [x] 3.2 对照 Java 响应字段一致性
 
 ## 4. 文档与验收
 
-- [ ] 4.1 编写 `JAVA_GOLDEN_PATH.md`
-- [ ] 4.2 编写 `verify_cross_lang.ps1`
-- [ ] 4.3 执行验收并产出结果
-- [ ] 4.4 更新 `SPEC_TASKS_SCAN` checkpoint
+- [x] 4.1 编写 `JAVA_GOLDEN_PATH.md`
+- [x] 4.2 编写 `verify_cross_lang.ps1`
+- [x] 4.3 执行验收并产出结果
+  - 状态补充（2026-02-26）：已执行 `mvn -q -DskipTests package`、`java -cp target/classes io.owlclaw.examples.crosslang.Main`、`verify_cross_lang.ps1 -Strict`、`compare_response_fields.py`，结果归档于 `docs/protocol/cross-lang-acceptance.md`。
+- [x] 4.4 更新 `SPEC_TASKS_SCAN` checkpoint
 
 ## 5. 阈值与剧本固化
 
-- [ ] 5.1 固化 JDK/时延/通过率阈值
-- [ ] 5.2 增加验收矩阵并绑定日志证据
-- [ ] 5.3 完成 T+0~T+15 处置剧本演练
+- [x] 5.1 固化 JDK/时延/通过率阈值
+- [x] 5.2 增加验收矩阵并绑定日志证据
+- [x] 5.3 完成 T+0~T+15 处置剧本演练
 
 ---
 

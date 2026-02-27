@@ -91,13 +91,13 @@
 
 ### Phase 7：验收（P0）
 
-- [ ] **Task 11**: 端到端验收
+- [x] **Task 11**: 端到端验收
   - [x] 11.1 无外部服务：`poetry run pytest tests/unit/ -q` → 全部通过，0 skip；耗时改为观测指标（非硬阻塞）
     - 当前状态（2026-02-26）：`1645 passed, 2 warnings`，耗时约 `163s`（较优化前约 `338s` 已明显下降）
   - [x] 11.2 有 PG：`poetry run pytest tests/unit/ tests/integration/ -q` → unit 全过，integration 按可用性 pass/skip
     - 验证记录（2026-02-25）：`DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:45432/owlclaw_test` + `docker-compose.test.yml` 下执行通过，结果 `1671 passed, 12 skipped, 2 warnings`
-  - [ ] 11.3 CI 运行：所有 matrix（3.10/3.11/3.12）通过
-    - 当前状态（2026-02-26）：最新 GitHub Actions run `22436813478` 在 `test (3.12)` 仍按旧门槛执行（unit `--cov-fail-under=90`）导致失败并触发 fail-fast 取消其余 matrix；本分支已将门槛调整为 unit `73` / integration `75`，待该变更进入远端后复跑确认三版本全绿
+  - [x] 11.3 CI 运行：所有 matrix（3.10/3.11/3.12）通过
+    - 验证记录（2026-02-27）：GitHub Actions run `22470055705`（branch `codex-work`）三版本均 `completed/success`；期间已完成 3.10 兼容修复、release 资产断言与 OIDC 对齐、`poetry.lock` 纳管、ledger schema 迁移补齐、integration 防挂超时与夹具探针在 CI 的稳定化处理
   - [x] 11.4 覆盖率：unit ≥ 73%，overall ≥ 75%
     - 验证记录（2026-02-26）：按 CI 同款命令本地复现，unit 覆盖率约 `74.00%`、overall 约 `75.81%`，满足当前阶段门槛；原 `90%/80%` 目标调整为后续提升路线，不再作为当前里程碑硬阻塞
   - _Requirements: AC-1, AC-2, AC-3, AC-4, AC-5_
@@ -112,4 +112,4 @@
 ---
 
 **维护者**: OwlClaw 核心团队
-**最后更新**: 2026-02-25
+**最后更新**: 2026-02-27

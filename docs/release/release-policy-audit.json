@@ -1,0 +1,95 @@
+{
+  "generated_at": "2026-02-26T16:09:14.418792+00:00",
+  "repo": "yeemio/owlclaw",
+  "branch": "main",
+  "protection": {
+    "protected": true,
+    "api_response": {
+      "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection",
+      "required_status_checks": {
+        "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/required_status_checks",
+        "strict": true,
+        "contexts": [
+          "Lint",
+          "Test",
+          "Build"
+        ],
+        "contexts_url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/required_status_checks/contexts",
+        "checks": [
+          {
+            "context": "Lint",
+            "app_id": null
+          },
+          {
+            "context": "Test",
+            "app_id": null
+          },
+          {
+            "context": "Build",
+            "app_id": null
+          }
+        ]
+      },
+      "required_pull_request_reviews": {
+        "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/required_pull_request_reviews",
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": true,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 1
+      },
+      "required_signatures": {
+        "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/required_signatures",
+        "enabled": false
+      },
+      "enforce_admins": {
+        "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/enforce_admins",
+        "enabled": true
+      },
+      "required_linear_history": {
+        "enabled": false
+      },
+      "allow_force_pushes": {
+        "enabled": false
+      },
+      "allow_deletions": {
+        "enabled": false
+      },
+      "block_creations": {
+        "enabled": false
+      },
+      "required_conversation_resolution": {
+        "enabled": false
+      },
+      "lock_branch": {
+        "enabled": false
+      },
+      "allow_fork_syncing": {
+        "enabled": false
+      }
+    }
+  },
+  "workflows": {
+    "workflows": [
+      "Build",
+      "Lint",
+      "owlhub-api-deploy",
+      "owlhub-build-index",
+      "Release",
+      "Test",
+      "Dependabot Updates"
+    ]
+  },
+  "recommendation": {
+    "branch": "main",
+    "required_checks": [
+      "Lint",
+      "Test",
+      "Build"
+    ],
+    "strict_status_checks": true,
+    "required_approving_review_count": 1,
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": true,
+    "enforce_admins": true
+  }
+}

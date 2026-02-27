@@ -61,12 +61,15 @@
 
 ### 3.1 GitHub Actions
 - [x] 3.1.1 创建 `.github/workflows/release.yml`（tag-triggered）
-- [ ] 3.1.2 配置 PyPI token 到 GitHub Secrets
-  - 状态补充（2026-02-25）：`gh secret list -R yeemio/owlclaw` 未返回 `PYPI_TOKEN/TEST_PYPI_TOKEN`，需维护者在仓库 Actions Secrets 补齐。
-  - 状态补充（2026-02-26）：再次核验 `gh secret list -R yeemio/owlclaw` 仍为空，发布凭据仍未配置。
+- [ ] 3.1.2 配置 PyPI/TestPyPI Trusted Publisher（或临时 token 回退）
+  - 状态补充（2026-02-26）：`gh secret list -R yeemio/owlclaw` 仍为空；当前策略已切换为 OIDC Trusted Publishing 优先。
+  - 状态补充（2026-02-26）：`codex-gpt-work` runs `22449095206`、`22449361552`、`22450293930` 均报 `invalid-publisher`；当前阻塞是 PyPI/TestPyPI 端未建立匹配映射。
+  - 状态补充（2026-02-26）：claim 与映射模板已固化在 `docs/release/trusted-publisher-claims.json`。
 - [ ] 3.1.3 测试发布流程（先发布到 TestPyPI）
   - 状态补充（2026-02-25）：workflow_dispatch run `22404173746` 执行到 TestPyPI 发布阶段后返回 `HTTP 403 Forbidden`，日志显示 `TWINE_PASSWORD` 为空，根因仍是 3.1.2 未完成。
   - 状态补充（2026-02-26）：workflow_dispatch run `22433883650` 再次失败于 `Publish to TestPyPI`，日志仍显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
+  - 状态补充（2026-02-26）：workflow_dispatch run `22445573439` 再次失败于 `Publish to TestPyPI`，`TWINE_PASSWORD` 仍为空并返回 `HTTP 403 Forbidden`。
+  - 状态补充（2026-02-26）：workflow_dispatch runs `22447692518`、`22447700064` 再次失败于 `Publish to TestPyPI`，日志持续显示 `TWINE_PASSWORD` 为空并返回 `HTTP 403 Forbidden`。
 
 ---
 
@@ -80,7 +83,7 @@
 - [x] 4.1.3 验证 CLI：`owlclaw --version` 和 `owlclaw skill list` 正常  
   - 本地验证（2026-02-25）：`poetry run owlclaw --version` → `owlclaw 0.1.0`；`poetry run owlclaw skill list` 正常输出
 - [x] 4.1.4 验证 GitHub Release 自动创建
-  - 远程核验（2026-02-26）：release run `22433883650` 在失败前已由 semantic-release 自动创建 `v1.2.0`，`gh release view v1.2.0` 可见发布时间 `2026-02-26T08:27:41Z`。
+  - 远程核验（2026-02-26）：release run `22433883650` 在失败前已由 semantic-release 自动创建 `v1.2.0`，`gh release view v1.2.0` 可见发布时间 `2026-02-26T08:27:41Z`；后续 run `22445573439` 同样在失败前自动创建 `v1.3.0`（`2026-02-26T14:09:05Z`）。
 
 ---
 
@@ -122,10 +125,10 @@
 
 ### 7.2 阻塞
 - 外部平台操作待执行（非仓内可自动完成）：
-  - GitHub Secrets：`PYPI_TOKEN` / `TEST_PYPI_TOKEN`
+  - PyPI/TestPyPI Trusted Publisher 映射创建
   - TestPyPI 实际发布验证
   - PyPI 发布后安装验收（`pip install owlclaw`）
-  - 本轮核验（2026-02-26）：`gh auth status` 正常；`gh secret list -R yeemio/owlclaw` 仍无发布凭据；release run `22433883650` 在 `Publish to TestPyPI` 以 `HTTP 403 Forbidden` 失败（`TWINE_PASSWORD` 为空）；GitHub Release 自动创建已验证（`v1.2.0`）。
+  - 本轮核验（2026-02-26）：`gh auth status` 正常；`main` 分支保护与 `pypi-release` environment branch policy 已到位；release run `22450293930` 仍在 `Publish to TestPyPI` 失败并报 `invalid-publisher`（Trusted Publisher 映射缺失）。
 
 ---
 
