@@ -136,7 +136,7 @@
 - [ ] MCP 架构 Spike — 验证 OwlClaw MCP Server 在 OpenClaw 中的实际接入体验（连接模式 + 延迟 + 配置步骤 ≤ 3 步） → spec: mcp-capability-export
 - [ ] MCP 能力输出 — 治理层/持久任务/业务接入作为 MCP Server 暴露（`owlclaw migrate` 生成业务 MCP Server） → spec: mcp-capability-export
 - [ ] OpenClaw Skill 包 — 打包 `owlclaw-for-openclaw` 发布到 ClawHub（SKILL.md 兼容性测试 + 安装教程） → spec: openclaw-skill-pack
-- [ ] A2A Agent Card — 静态 JSON 实现 `/.well-known/agent.json`（成本极低，战略预留） → spec: mcp-capability-export
+- [x] A2A Agent Card — 静态 JSON 实现 `/.well-known/agent.json`（成本极低，战略预留） → spec: mcp-capability-export
 
 **Phase 8.3：内容营销 + 咨询准备（对应决策 Phase 2-3，持续）**
 
@@ -214,7 +214,7 @@
 | **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | ✅ 三层齐全，已完成（16/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
 | **mionyee-governance-overlay** | `.kiro/specs/mionyee-governance-overlay/` | 🟡 三层齐全，待实施（0/12） | Mionyee 治理叠加（预算/限流/熔断包裹 LLM 调用） |
 | **mionyee-hatchet-migration** | `.kiro/specs/mionyee-hatchet-migration/` | 🟡 三层齐全，待实施（0/15） | Mionyee 调度迁移（APScheduler → Hatchet 持久执行） |
-| **mcp-capability-export** | `.kiro/specs/mcp-capability-export/` | 🟡 三层齐全，进行中（6/18） | MCP 能力输出（治理/持久任务/业务接入作为 MCP Server 暴露 + A2A Agent Card） |
+| **mcp-capability-export** | `.kiro/specs/mcp-capability-export/` | 🟡 三层齐全，进行中（13/18） | MCP 能力输出（治理/持久任务/业务接入作为 MCP Server 暴露 + A2A Agent Card） |
 | **openclaw-skill-pack** | `.kiro/specs/openclaw-skill-pack/` | 🟡 三层齐全，待实施（0/14） | OpenClaw Skill 包（owlclaw-for-openclaw 发布到 ClawHub） |
 | **content-launch** | `.kiro/specs/content-launch/` | 🟡 三层齐全，待实施（0/16） | 内容营销启动（第一篇技术文章 + Mionyee 案例 + 咨询方案模板） |
 
@@ -242,11 +242,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-27 |
-| 当前批次 | review-work 审校循环：D14 决策落地对齐 + Phase 8.2 MCP 治理工具并入 |
-| 批次状态 | **进行中**。D14-1/D14-2/D14-3 决策文档已落地（ARCH v4.7），并已完成 `mcp-capability-export` Task 0/2（治理 MCP 工具 + 单测）；下一步进入 Task 1 Spike、Task 3 持久任务工具与 D14 实装。 |
-| 已完成项 | 1) D1-R 至 D14-3 决策已签署；2) `docs/ARCHITECTURE_ANALYSIS.md` 升级至 v4.7 并新增 §4.14；3) Phase 7 全部 spec 审校通过合并；4) `release` spec 三层文档按 28/32 实况规范化，外部阻塞口径固定；5) 新增 `owlclaw.mcp.governance_tools.register_governance_mcp_tools` 并实现 `governance_budget_status`、`governance_audit_query`、`governance_rate_limit_status`；6) 新增 `tests/unit/mcp/test_governance_tools.py` 并完成回归验证；7) `mcp-capability-export/tasks.md` 已回写 Task 0/2 勾选状态。 |
-| 下一待执行 | 1) `mcp-capability-export` Task 1：完成 MCP 架构 Spike（HTTP/stdio 体验、延迟、demo、接入文档）；2) `mcp-capability-export` Task 3：实现 `task_create/task_status/task_cancel` 与单测；3) D14-1/D14-2/D14-3 实装：运行模式契约文档、闭环 CI 验收、Heartbeat DB 事件源与 SLO 测试；4) 并行跟踪外部阻塞：release-supply-chain Trusted Publisher 与 owlhub 40.4。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8：mionyee-governance-overlay 🟡(0/12)，mionyee-hatchet-migration 🟡(0/15)，mcp-capability-export 🟡(6/18)，openclaw-skill-pack 🟡(0/14)，content-launch 🟡(0/16)，Phase 8.5：D14-1 🟡(0/1)，D14-2 🟡(0/1)，D14-3 🟡(0/1)，其余 spec 全部 ✅。 |
+| 当前批次 | codex-gpt-work：Phase 8.2 `mcp-capability-export` Task 3 + Task 5（持久任务 MCP 工具 + A2A Agent Card） |
+| 批次状态 | **进行中**。`mcp-capability-export` 已完成 Task 0/2/3/5（13/18），剩余 Task 1（Spike）、Task 4（migrate 输出 MCP）、Task 6（端到端验收）。 |
+| 已完成项 | 1) D1-R 至 D14-3 决策已签署；2) `docs/ARCHITECTURE_ANALYSIS.md` 升级至 v4.7 并新增 §4.14；3) Phase 7 全部 spec 审校通过合并；4) `release` spec 三层文档按 28/32 实况规范化，外部阻塞口径固定；5) 完成治理 MCP 工具：`governance_budget_status`/`governance_audit_query`/`governance_rate_limit_status`；6) 完成持久任务 MCP 工具：`task_create`/`task_status`/`task_cancel`；7) 完成 A2A Agent Card：新增 `create_agent_card_app` 与 `/.well-known/agent.json` 端点；8) 新增并通过单测：`tests/unit/mcp/test_governance_tools.py`、`tests/unit/mcp/test_task_tools.py`、`tests/unit/mcp/test_agent_card.py`。 |
+| 下一待执行 | 1) `mcp-capability-export` Task 1：完成 MCP 架构 Spike（HTTP/stdio 体验、延迟、demo、接入文档）；2) `mcp-capability-export` Task 4：扩展 `owlclaw migrate --output-mode mcp` 与对应测试；3) D14-1/D14-2/D14-3 实装：运行模式契约文档、闭环 CI 验收、Heartbeat DB 事件源与 SLO 测试；4) 并行跟踪外部阻塞：release-supply-chain Trusted Publisher 与 owlhub 40.4。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8：mionyee-governance-overlay 🟡(0/12)，mionyee-hatchet-migration 🟡(0/15)，mcp-capability-export 🟡(13/18)，openclaw-skill-pack 🟡(0/14)，content-launch 🟡(0/16)，Phase 8.5：D14-1 🟡(0/1)，D14-2 🟡(0/1)，D14-3 🟡(0/1)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) Phase 8 与 Phase 8.5 代码任务无外部阻塞，可继续推进。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

@@ -45,9 +45,9 @@
 
 ## Task 5：A2A Agent Card
 
-- [ ] 5.1 实现 `/.well-known/agent.json` 静态 JSON 端点
-- [ ] 5.2 Agent Card 内容符合 A2A v0.1.0 规范
-- [ ] 5.3 测试：HTTP GET 返回正确的 Agent Card
+- [x] 5.1 实现 `/.well-known/agent.json` 静态 JSON 端点
+- [x] 5.2 Agent Card 内容符合 A2A v0.1.0 规范
+- [x] 5.3 测试：HTTP GET 返回正确的 Agent Card
 
 ## Task 6：端到端验收
 
