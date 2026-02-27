@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - py310 fallback
+    import tomli as tomllib  # type: ignore[no-redef]
 
 
 def check_consistency(repo: Path) -> int:
