@@ -128,6 +128,7 @@ def test_release_workflow_supports_testpypi_and_pypi_publish_steps() -> None:
     payload = Path(".github/workflows/release.yml").read_text(encoding="utf-8")
     assert "Publish to TestPyPI" in payload
     assert "pypa/gh-action-pypi-publish@release/v1" in payload
+    assert "id-token: write" in payload
     assert "https://test.pypi.org/legacy/" in payload
     assert "Publish to PyPI" in payload
     assert "actions/attest-build-provenance@v2" in payload

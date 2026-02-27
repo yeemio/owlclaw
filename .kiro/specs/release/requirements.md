@@ -176,8 +176,8 @@ OwlClaw 目前是私有仓库开发阶段。架构文档 §5.4 定义了开源�
 - CI 流程就绪（ci-setup spec）
 
 ### 6.2 外部依赖
-- PyPI 账号和 API token
-- GitHub Actions secrets 配置
+- PyPI/TestPyPI 账号权限与 Trusted Publisher 映射
+- GitHub Actions OIDC 与 environment 配置
 
 ---
 

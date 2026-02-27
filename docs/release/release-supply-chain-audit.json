@@ -1,9 +1,19 @@
 {
-  "generated_at": "2026-02-26T15:51:16.938549+00:00",
+  "generated_at": "2026-02-26T16:09:26.475246+00:00",
   "repo": "yeemio/owlclaw",
   "branch": "main",
   "release_runs": {
     "runs": [
+      {
+        "conclusion": "failure",
+        "createdAt": "2026-02-26T16:05:20Z",
+        "databaseId": 22450293930,
+        "displayTitle": "Release",
+        "headBranch": "codex-gpt-work",
+        "status": "completed",
+        "updatedAt": "2026-02-26T16:08:38Z",
+        "url": "https://github.com/yeemio/owlclaw/actions/runs/22450293930"
+      },
       {
         "conclusion": "failure",
         "createdAt": "2026-02-26T15:42:35Z",
@@ -73,16 +83,6 @@
         "status": "completed",
         "updatedAt": "2026-02-26T08:27:48Z",
         "url": "https://github.com/yeemio/owlclaw/actions/runs/22433883650"
-      },
-      {
-        "conclusion": "failure",
-        "createdAt": "2026-02-25T15:43:15Z",
-        "databaseId": 22404173746,
-        "displayTitle": "Release",
-        "headBranch": "main",
-        "status": "completed",
-        "updatedAt": "2026-02-25T15:46:28Z",
-        "url": "https://github.com/yeemio/owlclaw/actions/runs/22404173746"
       }
     ]
   },
@@ -99,7 +99,10 @@
         "name": "pypi-release",
         "created_at": "2026-02-26T15:42:37Z",
         "updated_at": "2026-02-26T15:42:37Z",
-        "deployment_branch_policy": null
+        "deployment_branch_policy": {
+          "protected_branches": false,
+          "custom_branch_policies": true
+        }
       }
     ]
   },
@@ -108,9 +111,69 @@
     "names": []
   },
   "branch_protection": {
-    "protected": false,
+    "protected": true,
     "response": {
-      "raw": "{\"message\":\"Branch not protected\",\"documentation_url\":\"https://docs.github.com/rest/branches/branch-protection#get-branch-protection\",\"status\":\"404\"}gh: Branch not protected (HTTP 404)"
+      "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection",
+      "required_status_checks": {
+        "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/required_status_checks",
+        "strict": true,
+        "contexts": [
+          "Lint",
+          "Test",
+          "Build"
+        ],
+        "contexts_url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/required_status_checks/contexts",
+        "checks": [
+          {
+            "context": "Lint",
+            "app_id": null
+          },
+          {
+            "context": "Test",
+            "app_id": null
+          },
+          {
+            "context": "Build",
+            "app_id": null
+          }
+        ]
+      },
+      "required_pull_request_reviews": {
+        "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/required_pull_request_reviews",
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": true,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 1
+      },
+      "required_signatures": {
+        "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/required_signatures",
+        "enabled": false
+      },
+      "enforce_admins": {
+        "url": "https://api.github.com/repos/yeemio/owlclaw/branches/main/protection/enforce_admins",
+        "enabled": true
+      },
+      "required_linear_history": {
+        "enabled": false
+      },
+      "allow_force_pushes": {
+        "enabled": false
+      },
+      "allow_deletions": {
+        "enabled": false
+      },
+      "block_creations": {
+        "enabled": false
+      },
+      "required_conversation_resolution": {
+        "enabled": false
+      },
+      "lock_branch": {
+        "enabled": false
+      },
+      "allow_fork_syncing": {
+        "enabled": false
+      }
     }
   }
 }
