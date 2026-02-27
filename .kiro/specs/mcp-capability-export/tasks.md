@@ -51,7 +51,7 @@
 
 ## Task 6：端到端验收
 
-- [ ] 6.1 OpenClaw 用户 3 步内连上 OwlClaw MCP Server
-- [ ] 6.2 治理工具在 OpenClaw 中可调用
-- [ ] 6.3 持久任务在 OpenClaw 关闭后继续执行
-- [ ] 6.4 业务 MCP Server 可被 OpenClaw 发现和使用
+- [x] 6.1 OpenClaw 用户 3 步内连上 OwlClaw MCP Server
+- [x] 6.2 治理工具在 OpenClaw 中可调用
+- [x] 6.3 持久任务在 OpenClaw 关闭后继续执行
+- [x] 6.4 业务 MCP Server 可被 OpenClaw 发现和使用
