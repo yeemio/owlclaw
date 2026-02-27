@@ -1,0 +1,15 @@
+{
+  "openapi": "3.0.3",
+  "paths": {
+    "/v1/ping": {
+      "get": {
+        "summary": "Ping"
+      }
+    },
+    "/v1/status": {
+      "get": {
+        "summary": "Status"
+      }
+    }
+  }
+}

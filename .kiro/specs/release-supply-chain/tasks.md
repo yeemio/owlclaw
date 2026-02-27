@@ -2,49 +2,54 @@
 
 > **状态**：进行中  
 > **预估工作量**：3-4 天  
-> **最后更新**：2026-02-26
+> **最后更新**：2026-02-27
 
 ## 进度概览
 
 - **总任务数**：15
-- **已完成**：10
+- **已完成**：11
 - **进行中**：0
-- **未开始**：5
+- **未开始**：4
 
 ## 1. OIDC 发布
 
 - [ ] 1.1 配置 TestPyPI Trusted Publisher
+  - 前置（2026-02-27）：新增 `docs/release/TRUSTED_PUBLISHER_SETUP.md`，固化外部配置字段（owner/repo/workflow/environment）
   - 状态补充（2026-02-26）：在 `codex-gpt-work` 触发 run `22449095206`，`pypa/gh-action-pypi-publish@release/v1` 返回 `invalid-publisher`，说明 TestPyPI 尚未配置与当前 claim 匹配的 Trusted Publisher（`workflow_ref=.github/workflows/release.yml@refs/heads/codex-gpt-work`）。
   - 状态补充（2026-02-26）：已在 workflow 增加固定 `environment: pypi-release` 并验证 run `22449361552`；当前 claim 为 `sub=repo:yeemio/owlclaw:environment:pypi-release`、`environment=pypi-release`，仍返回 `invalid-publisher`，说明 TestPyPI 侧尚未建立该发布者映射。
   - 状态补充（2026-02-26）：已新增 claims 提取脚本 `scripts/ops/extract_trusted_publisher_claims.py`，并基于 run `22450293930` 生成 `docs/release/trusted-publisher-claims.json`（owner/repo/workflow/environment 映射模板可直接用于平台配置）。
 - [ ] 1.2 配置 PyPI Trusted Publisher
-  - 状态补充（2026-02-26）：与 1.1 同源，需在 PyPI 侧补齐 Trusted Publisher 映射后复跑正式链路。
+  - 前置（2026-02-27）：新增 `scripts/release_oidc_preflight.py`，可在配置后快速验证仓库侧基线与 run 日志阻塞信号
 - [x] 1.3 调整 workflow 使用 OIDC
 
 ## 2. 验证与证明
 
-- [ ] 2.1 发布后执行 `pip install` smoke
+- [x] 2.1 发布后执行 `pip install` smoke
 - [x] 2.2 生成并上传 provenance/attestation
 - [x] 2.3 归档发布报告（version/commit/run）
 
 ## 3. 门禁与保护
 
 - [x] 3.1 校准 required checks
-  - 状态补充（2026-02-26）：已产出 baseline（Lint/Test/Build）与审计报告 `docs/release/release-policy-audit.json`。
-  - 状态补充（2026-02-26）：新增供应链就绪审计脚本 `scripts/ops/release_supply_chain_audit.py`，最新报告 `docs/release/release-supply-chain-audit.json`（包含 release runs / environments / secrets / branch protection）。
+  - 验证（2026-02-27）：`gh api repos/yeemio/owlclaw/branches/main/protection` 返回 `200`，`required_status_checks.contexts = [Lint, Test, Build]`，`strict = true`
 - [x] 3.2 校准 release 分支保护
+  - 验证（2026-02-27）：已通过 API 创建规则集 `release-branch-protection`（ID `13307033`），匹配 `refs/heads/release/*`，启用 required checks（`Lint/Test/Build`）+ PR review + non-fast-forward + deletion 限制
   - 状态补充（2026-02-26）：`main` 分支保护已按基线落地（required checks: Lint/Test/Build，PR review=1，CODEOWNERS review，enforce admins）；见 `docs/release/release-policy-audit.json`。
 - [x] 3.3 校准失败回滚策略
 
 ## 4. 演练与收口
 
 - [ ] 4.1 TestPyPI 全链路演练
-  - 状态补充（2026-02-26）：run `22446541468` 已执行演练但在 TestPyPI 上传阶段失败（`HTTP 403`，`TWINE_PASSWORD` 为空），主分支仍为旧 token 链路。
-  - 状态补充（2026-02-26）：新增演练 runs `22447692518`、`22447700064`，两次均在 `Publish to TestPyPI` 失败（`HTTP 403`，`TWINE_PASSWORD` 为空），Trusted Publisher/发布凭据阻塞未解除。
-  - 状态补充（2026-02-26）：在 `codex-gpt-work` 的 OIDC 链路 run `22449095206` 失败于 `invalid-publisher`（token 有效但未找到匹配发布者），根因已收敛到 Trusted Publisher claim 映射。
-  - 状态补充（2026-02-26）：run `22449361552`（已绑定 `environment: pypi-release`）仍在 `Publish to TestPyPI` 报 `invalid-publisher`；说明 workflow 侧 claim 规范化已完成，剩余阻塞仅在 PyPI/TestPyPI 发布者配置。
-  - 状态补充（2026-02-26）：run `22450293930` 在 `main` 分支保护与 `pypi-release` branch policy 生效后复验，仍报 `invalid-publisher`，进一步确认仅剩外部发布者映射阻塞。
+  - 演练记录（2026-02-26）：run `22446541468` 在 `Publish to TestPyPI` 返回 `HTTP 403 Forbidden`，阻塞点为 Trusted Publisher 绑定未完成（对应 Task 1.1）
+  - 演练记录（2026-02-26）：runs `22447692518`、`22447700064` 在 `Publish to TestPyPI` 均返回 `HTTP 403 Forbidden`（`TWINE_PASSWORD` 为空），阻塞点仍为发布凭据/Trusted Publisher 绑定未完成
+  - 演练记录（2026-02-26）：OIDC runs `22449095206`、`22449361552` 返回 `invalid-publisher`，进一步确认阻塞点是 Trusted Publisher claim 映射缺失
+  - 演练记录（2026-02-26）：run `22450293930` 在主分支保护与 `pypi-release` branch policy 生效后复验，仍报 `invalid-publisher`，进一步确认仓库侧已就绪、阻塞在外部映射
+  - 演练记录（2026-02-27）：run `22471143360` 在 `Publish to TestPyPI` 再次返回 `HTTP 403 Forbidden`，说明 workflow 和分支保护已就绪，但 TestPyPI Trusted Publisher 仍未绑定
+  - 演练记录（2026-02-27）：run `22473801915` 在 `Publish to TestPyPI` 再次返回 `HTTP 403 Forbidden`，日志显示 wheel 上传后被 TestPyPI 拒绝，阻塞点仍是 Trusted Publisher 绑定缺失
+  - 诊断命令（2026-02-27）：`poetry run python scripts/release_oidc_preflight.py --repo yeemio/owlclaw --run-id 22473801915`（输出 `docs/release/reports/release-oidc-preflight-latest.md`）
+  - 诊断结果（2026-02-27）：preflight 报告状态 `BLOCKED`，退出码 `3`，仓库侧基线已通过（workflow/protection/ruleset），剩余阻塞为 Trusted Publisher 绑定
 - [ ] 4.2 PyPI 正式链路演练
+  - 当前状态（2026-02-27）：前置 TestPyPI OIDC 未打通，正式链路演练顺延（依赖 Task 1.2）
 - [x] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint
 
 ## 5. 阈值与剧本固化
@@ -56,4 +61,4 @@
 ---
 
 **维护者**：Release 工程组  
-**最后更新**：2026-02-26
+**最后更新**：2026-02-27

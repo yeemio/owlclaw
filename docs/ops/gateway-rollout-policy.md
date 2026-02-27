@@ -1,52 +1,49 @@
 # Gateway Rollout Policy
 
-Last updated: 2026-02-26
+> Scope: staged rollout policy for API/MCP gateway changes.
+> Last Updated: 2026-02-26
 
-## Scope
+## 1. Rollout Ratios
 
-This policy defines staged rollout gates for gateway-facing changes (API and MCP paths).
+Default staged rollout:
 
-## Staged Ratios
+1. canary: `5%`
+2. expansion: `25%`
+3. full rollout: `100%`
 
-1. Canary: 5%
-2. Expansion: 25%
-3. Full rollout: 100%
+High-risk changes (protocol or auth model change):
 
-## Observation Windows
+1. canary: `1%`
+2. expansion: `10%`
+3. full rollout: `100%`
 
-1. Canary window: 10 minutes minimum
-2. Expansion window: 15 minutes minimum
-3. Full rollout verification window: 15 minutes minimum
+## 2. Observation Windows
 
-## Promotion Criteria
+- canary minimum observation window: `10 minutes`
+- expansion minimum observation window: `15 minutes`
+- full rollout verification window: `30 minutes`
 
-All criteria must pass in the current stage window:
+No stage promotion is allowed before the minimum window closes.
 
-1. 5xx error rate <= 2.0%
-2. P95 latency regression <= 40% versus baseline
-3. Readiness probe success rate >= 99.5%
-4. No unresolved `critical` alerts
+## 3. Promotion and Block Conditions
 
-## Block Conditions
+Promotion requires all conditions:
 
-Any single condition blocks promotion:
+- error rate `<= 2%`
+- p95 latency increase `<= 40%` versus baseline
+- no sustained critical alerts in current window
 
-1. 5xx error rate > 2.0%
-2. P95 latency regression > 40%
-3. Missing metrics for required probes
-4. Alerting pipeline unavailable
+Block conditions:
 
-## Auto vs Manual Promotion Boundary
+- missing metrics for required SLO signals
+- alerting pipeline unavailable
+- rollback in progress
 
-1. Canary to expansion can be automated after all promotion criteria pass.
-2. Expansion to full rollout requires manual approval when any warning alert was active in the window.
-3. Full rollout requires manual approval if there was a rollback in the last 24 hours.
+When blocked, rollout stops at current stage and requires on-call review.
 
-## Evidence Requirements
+## 4. Approval Boundaries
 
-Each stage must archive:
+- automatic promotion: canary -> expansion only when all SLO checks pass
+- manual approval required: expansion -> full rollout for high-risk changes
+- manual override must include incident/reference ticket and audit note
 
-1. Gate decision summary
-2. Dashboard snapshot link
-3. Alert status summary
-4. Run identifier and commit SHA

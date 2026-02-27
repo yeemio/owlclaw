@@ -2,26 +2,27 @@
 
 This runbook covers external steps that cannot be completed from repository code alone.
 
-## 1. Configure GitHub Secrets
+## 1. Configure Trusted Publishing (OIDC)
 
-Required repository secrets:
+Preferred path: use PyPI/TestPyPI Trusted Publisher (no long-lived token in workflow).
 
-- `PYPI_TOKEN` (production PyPI token)
-- `TEST_PYPI_TOKEN` (optional, for TestPyPI dry-run)
+Required external setup:
 
-Path:
+1. PyPI/TestPyPI project settings -> Trusted Publishers
+2. Bind to repository `yeemio/owlclaw` and workflow `.github/workflows/release.yml`
+3. Restrict to expected trigger (tag/manual release)
 
-1. GitHub repository -> `Settings` -> `Secrets and variables` -> `Actions`
-2. Create or rotate tokens with least privilege
+Detailed field-level setup guide:
 
-Verification (CLI):
+- `docs/release/TRUSTED_PUBLISHER_SETUP.md`
+
+Validation:
 
 ```bash
-gh auth status
-gh secret list -R yeemio/owlclaw
+gh workflow view release.yml -R yeemio/owlclaw
 ```
 
-Expected: secret names include `PYPI_TOKEN` and `TEST_PYPI_TOKEN`.
+Legacy fallback (not preferred): token-based upload via `PYPI_TOKEN`/`TEST_PYPI_TOKEN`.
 
 ## 2. Dry-run To TestPyPI
 
@@ -38,14 +39,13 @@ gh run list -R yeemio/owlclaw --workflow release.yml --limit 5
 gh run view <RUN_ID> -R yeemio/owlclaw
 ```
 
-If run fails at token validation or with 403/TWINE password empty, return to step 1 and configure missing secrets.
-
-Alternative manual upload:
+Run OIDC preflight diagnostics (workflow + branch protection + ruleset + 403 blocker detection):
 
 ```bash
-python -m build
-twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+poetry run python scripts/release_oidc_preflight.py --repo yeemio/owlclaw --run-id <RUN_ID>
 ```
+
+If run fails at OIDC validation, verify Trusted Publisher subject mapping first.
 
 Verify installation:
 
@@ -57,7 +57,7 @@ owlclaw --version
 owlclaw skill list
 ```
 
-## 3. Production Release
+## 3. Production Release (PyPI)
 
 Tag-driven workflow trigger:
 
@@ -78,8 +78,11 @@ Expected behavior:
 
 1. Install deps and run tests
 2. Build package
-3. Publish to PyPI
-4. Create GitHub Release from `CHANGELOG.md`
+3. Publish to PyPI via OIDC Trusted Publishing
+4. Attest build provenance
+5. Smoke install `owlclaw==<version>`
+6. Upload release report artifact
+7. Create GitHub Release from `CHANGELOG.md`
 
 ## 4. Post-release Verification
 
@@ -91,7 +94,17 @@ owlclaw --version
 owlclaw skill list
 ```
 
-## 5. Community Settings
+## 5. Rollback / Retry
+
+If publish or smoke install fails:
+
+1. Stop follow-up release jobs.
+2. Check release report artifact and workflow logs.
+3. Fix configuration issue (OIDC subject / package metadata / install index).
+4. Re-run workflow from failed job.
+5. Announce status in release channel and attach incident id.
+
+## 6. Community Settings
 
 Current state (2026-02-25):
 

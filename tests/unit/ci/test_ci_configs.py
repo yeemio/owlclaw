@@ -37,6 +37,8 @@ def test_test_workflow_has_python_matrix_and_postgres_service() -> None:
     assert "deploy/init-test-db.sql" in steps
     assert "--cov-fail-under=73" in steps
     assert "--cov-fail-under=75" in steps
+    assert "test_protocol_error_model_consistency.py" in steps
+    assert "protocol_governance_drill.py" in steps
 
 
 def test_build_workflow_contains_build_and_twine_check() -> None:
@@ -56,6 +58,8 @@ def test_release_workflow_contains_release_commands() -> None:
     assert "semantic-release version" in steps
     assert "semantic-release publish" in steps
     assert "pypa/gh-action-pypi-publish@release/v1" in steps
+    assert "actions/attest-build-provenance@v2" in steps
+    assert "Upload release report" in steps
     assert "'repository-url': 'https://test.pypi.org/legacy/'" in steps
 
 
@@ -88,3 +92,22 @@ def test_dependabot_config_contains_pip_and_actions() -> None:
     updates = payload.get("updates", [])
     ecosystems = {entry["package-ecosystem"] for entry in updates}
     assert ecosystems == {"pip", "github-actions"}
+
+
+def test_contract_gate_workflow_contains_openapi_gate_step() -> None:
+    payload = _load_yaml(Path(".github/workflows/contract-gate.yml"))
+    jobs = payload.get("jobs", {})
+    assert "contract-gate" in jobs
+    steps = "\n".join(str(item) for item in jobs["contract-gate"]["steps"])
+    assert "tests/contracts/api/test_openapi_contract_gate.py" in steps
+    assert "tests/contracts/mcp/test_mcp_contract_regression.py" in steps
+    assert "contract_testing_drill.py" in steps
+
+
+def test_gateway_ops_gate_workflow_contains_drill_step() -> None:
+    payload = _load_yaml(Path(".github/workflows/gateway-ops-gate.yml"))
+    jobs = payload.get("jobs", {})
+    assert "gateway-ops" in jobs
+    steps = "\n".join(str(item) for item in jobs["gateway-ops"]["steps"])
+    assert "test_gateway_ops_gate.py" in steps
+    assert "gateway_ops_drill.py" in steps
