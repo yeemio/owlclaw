@@ -94,3 +94,5 @@ def test_render_hatchet_module_uses_unique_function_names_for_collisions() -> No
     rendered = render_hatchet_module(jobs)
     assert "async def DailyTaskWorkflow_run(" in rendered
     assert "async def DailyTaskWorkflow_run_2(" in rendered
+    assert '@hatchet.task(name="daily-task"' in rendered
+    assert '@hatchet.task(name="daily-task-2"' in rendered

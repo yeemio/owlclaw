@@ -93,6 +93,7 @@ def render_hatchet_module(jobs: list[APSchedulerJob]) -> str:
         "",
     ]
     used_function_names: dict[str, int] = {}
+    used_task_names: dict[str, int] = {}
 
     def _unique_function_name(base_name: str) -> str:
         counter = used_function_names.get(base_name, 0)
@@ -101,10 +102,17 @@ def render_hatchet_module(jobs: list[APSchedulerJob]) -> str:
             return f"{base_name}_run"
         return f"{base_name}_run_{counter + 1}"
 
+    def _unique_task_name(base_name: str) -> str:
+        counter = used_task_names.get(base_name, 0)
+        used_task_names[base_name] = counter + 1
+        if counter == 0:
+            return base_name
+        return f"{base_name}-{counter + 1}"
+
     for job in jobs:
         class_name = _to_pascal_case(job.name)
         function_name = _unique_function_name(class_name)
-        task_name = _to_kebab_case(job.name)
+        task_name = _unique_task_name(_to_kebab_case(job.name))
         blocks.extend(
             [
                 f"@hatchet.task(name=\"{task_name}\", on_crons=[\"{job.cron}\"])",
