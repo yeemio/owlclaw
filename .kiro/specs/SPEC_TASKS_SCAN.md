@@ -247,10 +247,10 @@
 | 最后更新 | 2026-02-28 |
 | 当前批次 | review-work 审校循环：Phase 8.1 已完成，Phase 8.2/8.3 并行推进 |
 | 批次状态 | **进行中**。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 12/14；`content-launch` 已完成 Task 0 与 Task 4（6/16）。 |
-| 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）并补充模板验证测试。 |
-| 下一待执行 | 1) `openclaw-skill-pack` Task 3.3/3.4：等待 PR 审核合并后验证可搜索/可安装；2) `openclaw-skill-pack` Task 2.1/2.3：在真实 OpenClaw 最新稳定版执行解析与调用验收；3) `content-launch` Task 1/2/3/5：真实数据采集、首篇文章发布与效果评估；4) D14-1/D14-2/D14-3 实装。 |
+| 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（脚本+指南+单测）。 |
+| 下一待执行 | 1) 从 Mionyee 导出 4 份真实 CSV 并运行采集脚本生成对比表；2) `content-launch` Task 2：基于真实对比数据确定文章方向并完成英文稿；3) `openclaw-skill-pack` Task 3.3/3.4：等待 PR 审核合并后验证可搜索/可安装；4) D14-1/D14-2/D14-3 实装。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(12/14)，content-launch 🟡(6/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 🟡(0/1)，D14-2 🟡(0/1)，D14-3 🟡(0/1)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 2.1/2.3 需真实 OpenClaw 最新稳定版运行环境（当前 worktree 无 `openclaw` 可执行程序）；4) `openclaw-skill-pack` Task 3.3/3.4 依赖外部仓库 PR 审核合并与线上索引刷新（PR: https://github.com/openclaw/clawhub/pull/556）；5) `content-launch` Task 1/2/3/5 依赖 Mionyee 真实运行数据与外部发布渠道。 |
+| 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 2.1/2.3 需真实 OpenClaw 最新稳定版运行环境（当前 worktree 无 `openclaw` 可执行程序）；4) `openclaw-skill-pack` Task 3.3/3.4 依赖外部仓库 PR 审核合并与线上索引刷新（PR: https://github.com/openclaw/clawhub/pull/556）；5) `content-launch` Task 1/2/3/5 需 Mionyee 真实导出数据与外部发布渠道（脚手架已就绪）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
@@ -265,6 +265,7 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：若某功能在 spec 中记录了 SKIP/外部依赖测试，后续具备条件时必须回补真实环境验收并更新本清单
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
+
 
 
 
