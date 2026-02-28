@@ -17,6 +17,8 @@
 - [ ] 1.2 收集调度迁移前后的任务执行数据（成功率、恢复时间）
 - [ ] 1.3 整理数据为对比表格和图表
 - [ ] 1.4 数据真实性确认（禁止编造）
+  - 采集脚手架已就绪：`scripts/content/collect_mionyee_case_data.py`
+  - 操作指引：`docs/content/mionyee-data-collection-guide.md`
 
 ## Task 2：第一篇技术文章
 
