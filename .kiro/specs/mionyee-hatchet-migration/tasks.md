@@ -32,14 +32,14 @@
 - [x] 3.1 生成 Hatchet workflow 文件
 - [x] 3.2 配置双跑模式（APScheduler + Hatchet 同时执行）
 - [x] 3.3 运行 1 周，对比执行结果（仓库等效：Replay 双跑对比）
-- [ ] 3.4 确认一致后关闭 APScheduler 侧
+- [x] 3.4 确认一致后关闭 APScheduler 侧
 
 ## Task 4：全量迁移
 
-- [ ] 4.1 迁移有状态 Cron 任务（~10 个）
-- [ ] 4.2 迁移链式任务（~8 个）
-- [ ] 4.3 迁移剩余简单 Cron 任务（~25 个）
-- [ ] 4.4 关闭 APScheduler，Hatchet 完全接管
+- [x] 4.1 迁移有状态 Cron 任务（~10 个）
+- [x] 4.2 迁移链式任务（~8 个）
+- [x] 4.3 迁移剩余简单 Cron 任务（~25 个）
+- [x] 4.4 关闭 APScheduler，Hatchet 完全接管
 
 ## Task 5：验收
 

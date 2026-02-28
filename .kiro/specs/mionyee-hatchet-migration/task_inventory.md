@@ -23,3 +23,11 @@
 - 迁移库函数：`owlclaw/integrations/hatchet_migration.py`
 - 迁移脚本：`scripts/mionyee_apscheduler_to_hatchet.py`
 - 生成示例：`examples/mionyee-trading/generated_hatchet_tasks.py`
+- 分类迁移产物：
+  - `examples/mionyee-trading/generated_hatchet_tasks_simple_cron.py`
+  - `examples/mionyee-trading/generated_hatchet_tasks_stateful_cron.py`
+  - `examples/mionyee-trading/generated_hatchet_tasks_chained.py`
+- 双跑与切换：
+  - replay 脚本：`scripts/mionyee_dual_run_replay.py`
+  - cutover 脚本：`scripts/mionyee_scheduler_cutover.py`
+  - 决策文件：`.kiro/specs/mionyee-hatchet-migration/cutover_decision.json`

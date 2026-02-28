@@ -1,6 +1,7 @@
 """External integrations — Hatchet, litellm, Langfuse (isolated layer)."""
 
 from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
+from owlclaw.integrations.hatchet_cutover import build_cutover_decision, normalize_scheduler_backend
 from owlclaw.integrations.hatchet_migration import (
     APSchedulerJob,
     classify_job_complexity,
@@ -11,6 +12,8 @@ from owlclaw.integrations.hatchet_migration import (
     select_canary_batch,
     simulate_apscheduler_execution,
     simulate_hatchet_execution,
+    split_jobs_by_complexity,
+    write_complexity_modules,
     write_generated_hatchet_module,
 )
 from owlclaw.integrations.langfuse import (
@@ -43,6 +46,8 @@ from owlclaw.integrations.llm import (
 __all__ = [
     "HatchetClient",
     "HatchetConfig",
+    "build_cutover_decision",
+    "normalize_scheduler_backend",
     "APSchedulerJob",
     "classify_job_complexity",
     "dual_run_replay_compare",
@@ -52,6 +57,8 @@ __all__ = [
     "select_canary_batch",
     "simulate_apscheduler_execution",
     "simulate_hatchet_execution",
+    "split_jobs_by_complexity",
+    "write_complexity_modules",
     "write_generated_hatchet_module",
     "LLMSpanData",
     "LangfuseClient",

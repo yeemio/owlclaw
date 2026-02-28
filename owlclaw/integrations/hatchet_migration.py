@@ -40,6 +40,18 @@ def select_canary_batch(jobs: list[APSchedulerJob], *, max_jobs: int = 5) -> lis
     return sorted(simple_jobs, key=lambda item: item.name)[:max(0, max_jobs)]
 
 
+def split_jobs_by_complexity(jobs: list[APSchedulerJob]) -> dict[str, list[APSchedulerJob]]:
+    """Split jobs by migration complexity buckets."""
+    buckets: dict[str, list[APSchedulerJob]] = {
+        "simple_cron": [],
+        "stateful_cron": [],
+        "chained": [],
+    }
+    for job in jobs:
+        buckets[classify_job_complexity(job)].append(job)
+    return buckets
+
+
 def _to_pascal_case(value: str) -> str:
     normalized = re.sub(r"[^a-zA-Z0-9]+", " ", value).strip()
     parts = [part for part in normalized.split(" ") if part]
@@ -151,6 +163,19 @@ def write_generated_hatchet_module(jobs: list[APSchedulerJob], output_path: str 
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(render_hatchet_module(jobs), encoding="utf-8")
     return target
+
+
+def write_complexity_modules(jobs: list[APSchedulerJob], output_dir: str | Path) -> dict[str, Path]:
+    """Write one generated module per complexity bucket."""
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    buckets = split_jobs_by_complexity(jobs)
+    outputs: dict[str, Path] = {}
+    for name, bucket_jobs in buckets.items():
+        path = out_dir / f"generated_hatchet_tasks_{name}.py"
+        path.write_text(render_hatchet_module(bucket_jobs), encoding="utf-8")
+        outputs[name] = path
+    return outputs
 
 
 def simulate_apscheduler_execution(job: APSchedulerJob) -> dict[str, Any]:
