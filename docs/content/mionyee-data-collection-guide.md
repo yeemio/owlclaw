@@ -63,6 +63,27 @@ poetry run python scripts/content/select_article_direction.py \
 - `title`：推荐标题
 - `rationale`：基于真实指标的选择依据
 
+## 发布结果归档与验收（Task 2.6/2.7/5.1）
+
+先填写模板：
+
+- `docs/content/publication-evidence-template.json`
+
+然后执行：
+
+```bash
+poetry run python scripts/content/record_publication_results.py \
+  --input-json ./docs/content/publication-evidence-template.json \
+  --output-json ./docs/content/publication-evidence.json \
+  --output-md ./docs/content/publication-evidence.md
+```
+
+脚本会自动给出：
+
+- `meets_task_2_6`：是否满足 Reddit/HN 英文发布
+- `meets_task_2_7`：是否满足掘金/V2EX 中文发布
+- `meets_task_5_1`：是否满足至少 2 个渠道发布
+
 ## 真实性规则
 
 - 仅允许使用导出的原始数据文件做聚合

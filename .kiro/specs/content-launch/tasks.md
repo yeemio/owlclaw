@@ -34,6 +34,9 @@
 - [x] 2.5 编写中文版（掘金/V2EX 用）
 - [ ] 2.6 发布到 Reddit/HN（英文版）
 - [ ] 2.7 发布到掘金/V2EX（中文版）
+  - 发布证据脚本：`scripts/content/record_publication_results.py`
+  - 证据模板：`docs/content/publication-evidence-template.json`
+  - 验收测试：`tests/unit/test_publication_results.py`
 
 ## Task 3：Mionyee 案例材料
 
@@ -54,6 +57,7 @@
 ## Task 5：验收
 
 - [ ] 5.1 第一篇文章已发布到 ≥ 2 个渠道
+  - 可执行验收：`scripts/content/record_publication_results.py --input-json ...`
 - [x] 5.2 文章代码示例可运行
 - [ ] 5.3 Mionyee 案例材料完成
 - [x] 5.4 咨询方案模板完成且可参数化
