@@ -1,0 +1,12 @@
+{
+  "compared": 3,
+  "matched": 3,
+  "mismatches": [],
+  "match_rate": 1.0,
+  "mode": "all",
+  "jobs": [
+    "mionyee task 1",
+    "mionyee task 2",
+    "mionyee task 3"
+  ]
+}

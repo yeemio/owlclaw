@@ -1,6 +1,6 @@
 # SPEC_TASKS_SCAN — OwlClaw 功能清单总览
 
-> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.6（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
+> **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.7（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
 > **最后更新**: 2026-02-28
 
@@ -128,8 +128,8 @@
 
 **Phase 8.1：Mionyee 增强模式验证（对应决策 Phase 1，4-8 周）**
 
-- [ ] Mionyee 治理叠加 — OwlClaw 治理代理包裹 Mionyee LLM 调用（预算上限 + 限流 + 熔断 + 审计） → spec: mionyee-governance-overlay
-- [ ] Mionyee 调度迁移 — 48 个 APScheduler 任务迁移到 Hatchet（进程重启恢复 + 分布式执行） → spec: mionyee-hatchet-migration
+- [x] Mionyee 治理叠加 — OwlClaw 治理代理包裹 Mionyee LLM 调用（预算上限 + 限流 + 熔断 + 审计） → spec: mionyee-governance-overlay
+- [x] Mionyee 调度迁移 — 48 个 APScheduler 任务迁移到 Hatchet（进程重启恢复 + 分布式执行） → spec: mionyee-hatchet-migration
 
 **Phase 8.2：MCP 能力输出 + OpenClaw 切入（对应决策 Phase 1.5 + Phase 2，5-7 周）**
 
@@ -212,8 +212,8 @@
 | **contract-testing** | `.kiro/specs/contract-testing/` | ✅ 三层齐全，已完成（19/19） | API/MCP 契约测试体系（diff 检测、回归、对齐矩阵） |
 | **release-supply-chain** | `.kiro/specs/release-supply-chain/` | 🟡 三层齐全，进行中（11/15） | 发布供应链安全（OIDC、attestation、发布门禁） |
 | **cross-lang-golden-path** | `.kiro/specs/cross-lang-golden-path/` | ✅ 三层齐全，已完成（16/16） | 跨语言落地路径（Java/curl 场景化接入与验收） |
-| **mionyee-governance-overlay** | `.kiro/specs/mionyee-governance-overlay/` | 🟡 三层齐全，待实施（0/12） | Mionyee 治理叠加（预算/限流/熔断包裹 LLM 调用） |
-| **mionyee-hatchet-migration** | `.kiro/specs/mionyee-hatchet-migration/` | 🟡 三层齐全，待实施（0/15） | Mionyee 调度迁移（APScheduler → Hatchet 持久执行） |
+| **mionyee-governance-overlay** | `.kiro/specs/mionyee-governance-overlay/` | ✅ 三层齐全，已完成（14/14） | Mionyee 治理叠加（预算/限流/熔断包裹 LLM 调用） |
+| **mionyee-hatchet-migration** | `.kiro/specs/mionyee-hatchet-migration/` | ✅ 三层齐全，已完成（15/15） | Mionyee 调度迁移（APScheduler → Hatchet 持久执行） |
 | **mcp-capability-export** | `.kiro/specs/mcp-capability-export/` | ✅ 三层齐全，已完成（18/18） | MCP 能力输出（治理/持久任务/业务接入作为 MCP Server 暴露 + A2A Agent Card） |
 | **openclaw-skill-pack** | `.kiro/specs/openclaw-skill-pack/` | 🟡 三层齐全，进行中（12/14） | OpenClaw Skill 包（owlclaw-for-openclaw 发布到 ClawHub） |
 | **content-launch** | `.kiro/specs/content-launch/` | 🟡 三层齐全，进行中（6/16） | 内容营销启动（第一篇技术文章 + Mionyee 案例 + 咨询方案模板） |
@@ -242,11 +242,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-28 |
-| 当前批次 | codex-gpt-work：Phase 8.3 `content-launch` Task 1（真实数据采集脚手架） |
-| 批次状态 | **进行中**。`content-launch` 当前仍为 6/16，已补齐 Task 1 的可执行采集链路，等待 Mionyee 真实导出数据填充。 |
-| 已完成项 | 1) D1-R 至 D14-3 决策已签署；2) `docs/ARCHITECTURE_ANALYSIS.md` 升级至 v4.7 并新增 §4.14；3) Phase 7 全部 spec 审校通过合并；4) `release` spec 三层文档按 28/32 实况规范化，外部阻塞口径固定；5) 完成治理 MCP 工具：`governance_budget_status`/`governance_audit_query`/`governance_rate_limit_status`；6) 完成持久任务 MCP 工具：`task_create`/`task_status`/`task_cancel`；7) 完成业务 MCP 工具生成链路：`owlclaw migrate --output-mode mcp` + `register_generated_mcp_tools`；8) 完成 A2A Agent Card：新增 `create_agent_card_app` 与 `/.well-known/agent.json` 端点；9) 完成 MCP 架构 Spike：新增 HTTP transport `create_mcp_http_app`、集成压测 `tests/integration/test_mcp_spike_transport_integration.py`、可运行 demo `scripts/mcp_spike_demo.py`、接入文档 `docs/mcp/OPENCLAW_SPIKE.md`；10) 本地 spike 结果（120 次样本）：HTTP p95=2.11ms、stdio p95=3.02ms，均满足 `<500ms`；11) 完成 OpenClaw 端到端验收：新增 `tests/integration/test_mcp_openclaw_e2e_acceptance.py`；12) 完成 `skills/owlclaw-for-openclaw/` 基础包与兼容测试；13) 完成 ClawHub 发布前置（PR: `openclaw/clawhub#556`）；14) 完成中英教程并通过复现测试；15) 新增咨询方案模板与 3 个场景变体：`docs/consulting/ai-transformation-template.md`、`scenario-report-insight.md`、`scenario-customer-followup.md`、`scenario-inventory-alert.md`；16) 新增模板参数化验证测试 `tests/unit/test_content_consulting_templates.py`（2 passed）；17) 新增 Mionyee 数据采集链路：`scripts/content/collect_mionyee_case_data.py` + `scripts/content/verify_mionyee_case_inputs.py` + `docs/content/mionyee-data-collection-guide.md` + `docs/content/mionyee-data-export-checklist.md` + `tests/unit/test_mionyee_case_data_pipeline.py` + `tests/unit/test_mionyee_input_validation.py`（合计 3 passed），支持输入校验、源文件哈希与真实性约束。 |
-| 下一待执行 | 1) 从 Mionyee 导出 4 份真实 CSV（llm before/after + scheduler before/after）并运行采集脚本生成对比表；2) `content-launch` Task 2：基于真实对比数据确定文章方向并完成英文稿；3) `openclaw-skill-pack` Task 3.3/3.4：等待 PR 审核合并后验证可搜索/可安装。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8：mionyee-governance-overlay 🟡(0/12)，mionyee-hatchet-migration 🟡(0/15)，mcp-capability-export ✅(18/18)，openclaw-skill-pack 🟡(12/14)，content-launch 🟡(6/16)，Phase 8.5：D14-1 🟡(0/1)，D14-2 🟡(0/1)，D14-3 🟡(0/1)，其余 spec 全部 ✅。 |
+| 当前批次 | review-work 审校循环：Phase 8.1 已完成，Phase 8.2/8.3 并行推进 |
+| 批次状态 | **进行中**。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 12/14；`content-launch` 已完成 Task 0 与 Task 4（6/16）。 |
+| 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（脚本+指南+单测）。 |
+| 下一待执行 | 1) 从 Mionyee 导出 4 份真实 CSV 并运行采集脚本生成对比表；2) `content-launch` Task 2：基于真实对比数据确定文章方向并完成英文稿；3) `openclaw-skill-pack` Task 3.3/3.4：等待 PR 审核合并后验证可搜索/可安装；4) D14-1/D14-2/D14-3 实装。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(12/14)，content-launch 🟡(6/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 🟡(0/1)，D14-2 🟡(0/1)，D14-3 🟡(0/1)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 2.1/2.3 需真实 OpenClaw 最新稳定版运行环境（当前 worktree 无 `openclaw` 可执行程序）；4) `openclaw-skill-pack` Task 3.3/3.4 依赖外部仓库 PR 审核合并与线上索引刷新（PR: https://github.com/openclaw/clawhub/pull/556）；5) `content-launch` Task 1/2/3/5 需 Mionyee 真实导出数据与外部发布渠道（脚手架已就绪）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
@@ -262,4 +262,8 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：若某功能在 spec 中记录了 SKIP/外部依赖测试，后续具备条件时必须回补真实环境验收并更新本清单
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
+
+
+
+
 

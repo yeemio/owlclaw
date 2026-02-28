@@ -38,7 +38,7 @@ class _DurableTaskClient:
         self._seq += 1
         task_id = f"sched-{self._seq}"
         self._states[task_id] = {"id": task_id, "status": "scheduled", "task_name": task_name, "input": kwargs}
-        asyncio.get_running_loop().create_task(self._complete_after_delay(task_id, delay=max(delay_seconds / 1000.0, 0.05)))
+        asyncio.get_running_loop().create_task(self._complete_after_delay(task_id, delay=max(float(delay_seconds), 0.05)))
         return task_id
 
     async def get_task_status(self, task_id: str) -> dict[str, Any]:

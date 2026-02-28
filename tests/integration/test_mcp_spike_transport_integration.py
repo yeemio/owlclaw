@@ -116,3 +116,20 @@ async def test_mcp_stdio_transport_latency(tmp_path: Path) -> None:
     sorted_samples = sorted(samples_ms)
     p95_ms = sorted_samples[int(len(sorted_samples) * 0.95) - 1]
     assert p95_ms < 500
+
+
+@pytest.mark.asyncio
+async def test_mcp_http_transport_returns_parse_error_for_invalid_json(tmp_path: Path) -> None:
+    app = _build_app(tmp_path)
+    server = McpProtocolServer.from_app(app)
+    http_app = create_mcp_http_app(server=server, agent_card_url="http://127.0.0.1:8080")
+
+    with TestClient(http_app) as client:
+        response = client.post(
+            "/mcp",
+            content="{invalid-json",
+            headers={"content-type": "application/json"},
+        )
+        assert response.status_code == 400
+        payload = response.json()
+        assert payload["error"]["code"] == -32700

@@ -1,6 +1,26 @@
 """External integrations — Hatchet, litellm, Langfuse (isolated layer)."""
 
 from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
+from owlclaw.integrations.hatchet_acceptance import (
+    build_status_snapshot,
+    evaluate_e2e_acceptance,
+    verify_restart_recovery,
+)
+from owlclaw.integrations.hatchet_cutover import build_cutover_decision, normalize_scheduler_backend
+from owlclaw.integrations.hatchet_migration import (
+    APSchedulerJob,
+    classify_job_complexity,
+    dual_run_replay_compare,
+    load_jobs_from_mionyee_scenarios,
+    render_hatchet_module,
+    render_hatchet_workflow,
+    select_canary_batch,
+    simulate_apscheduler_execution,
+    simulate_hatchet_execution,
+    split_jobs_by_complexity,
+    write_complexity_modules,
+    write_generated_hatchet_module,
+)
 from owlclaw.integrations.langfuse import (
     LangfuseClient,
     LangfuseConfig,
@@ -31,6 +51,23 @@ from owlclaw.integrations.llm import (
 __all__ = [
     "HatchetClient",
     "HatchetConfig",
+    "build_status_snapshot",
+    "evaluate_e2e_acceptance",
+    "verify_restart_recovery",
+    "build_cutover_decision",
+    "normalize_scheduler_backend",
+    "APSchedulerJob",
+    "classify_job_complexity",
+    "dual_run_replay_compare",
+    "load_jobs_from_mionyee_scenarios",
+    "render_hatchet_module",
+    "render_hatchet_workflow",
+    "select_canary_batch",
+    "simulate_apscheduler_execution",
+    "simulate_hatchet_execution",
+    "split_jobs_by_complexity",
+    "write_complexity_modules",
+    "write_generated_hatchet_module",
     "LLMSpanData",
     "LangfuseClient",
     "LangfuseConfig",
