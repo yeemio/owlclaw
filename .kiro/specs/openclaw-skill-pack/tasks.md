@@ -8,17 +8,17 @@
 
 ## Task 0：Spec 文档与契约
 
-- [ ] 0.1 requirements.md / design.md / tasks.md 三层齐全
-- [ ] 0.2 与 SPEC_TASKS_SCAN.md Phase 8.2 对齐
+- [x] 0.1 requirements.md / design.md / tasks.md 三层齐全
+- [x] 0.2 与 SPEC_TASKS_SCAN.md Phase 8.2 对齐
 
 ## Task 1：Skill 包开发
 
-- [ ] 1.1 创建 `owlclaw-for-openclaw/` 目录结构
-- [ ] 1.2 编写主 SKILL.md（兼容 Agent Skills 规范）
-- [ ] 1.3 编写子 Skills（governance.md / persistent-tasks.md / business-connect.md）
-- [ ] 1.4 编写示例（budget-control.md / background-task.md / database-connect.md）
-- [ ] 1.5 编写 README.md（安装说明 + 快速上手）
-- [ ] 1.6 编写 OpenClaw 配置示例（owlclaw.example.json）
+- [x] 1.1 创建 `owlclaw-for-openclaw/` 目录结构
+- [x] 1.2 编写主 SKILL.md（兼容 Agent Skills 规范）
+- [x] 1.3 编写子 Skills（governance.md / persistent-tasks.md / business-connect.md）
+- [x] 1.4 编写示例（budget-control.md / background-task.md / database-connect.md）
+- [x] 1.5 编写 README.md（安装说明 + 快速上手）
+- [x] 1.6 编写 OpenClaw 配置示例（owlclaw.example.json）
 
 ## Task 2：兼容性验证
 
