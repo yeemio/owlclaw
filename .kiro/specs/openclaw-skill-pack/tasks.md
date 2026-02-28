@@ -28,8 +28,8 @@
 
 ## Task 3：ClawHub 发布
 
-- [ ] 3.1 Fork `openclaw/clawhub` 仓库
-- [ ] 3.2 添加 `owlclaw-for-openclaw/` 到 ClawHub
+- [x] 3.1 Fork `openclaw/clawhub` 仓库
+- [x] 3.2 添加 `owlclaw-for-openclaw/` 到 ClawHub
 - [ ] 3.3 提交 PR 并通过审核
 - [ ] 3.4 验证 Skill 包在 ClawHub 可搜索、可安装
 
