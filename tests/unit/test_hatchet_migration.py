@@ -11,6 +11,8 @@ from owlclaw.integrations.hatchet_migration import (
     render_hatchet_module,
     render_hatchet_workflow,
     select_canary_batch,
+    split_jobs_by_complexity,
+    write_complexity_modules,
     write_generated_hatchet_module,
 )
 
@@ -79,7 +81,6 @@ def test_load_jobs_from_mionyee_scenarios_and_render_module(tmp_path: Path) -> N
     assert output.exists()
     assert "@hatchet.task" in output.read_text(encoding="utf-8")
 
-
 def test_render_hatchet_workflow_prefixes_numeric_identifier() -> None:
     job = APSchedulerJob(name="123 daily task", cron="0 9 * * 1-5", func_ref="mionyee.scheduler.entry_monitor")
     rendered = render_hatchet_workflow(job)
@@ -96,3 +97,19 @@ def test_render_hatchet_module_uses_unique_function_names_for_collisions() -> No
     assert "async def DailyTaskWorkflow_run_2(" in rendered
     assert '@hatchet.task(name="daily-task"' in rendered
     assert '@hatchet.task(name="daily-task-2"' in rendered
+
+def test_split_jobs_by_complexity_and_write_modules(tmp_path: Path) -> None:
+    jobs = [
+        APSchedulerJob(name="simple", cron="0 9 * * 1-5", func_ref="x"),
+        APSchedulerJob(name="stateful", cron="0 10 * * 1-5", func_ref="x", stateful=True),
+        APSchedulerJob(name="chained", cron="0 11 * * 1-5", func_ref="x", depends_on=["simple"]),
+    ]
+    buckets = split_jobs_by_complexity(jobs)
+    assert len(buckets["simple_cron"]) == 1
+    assert len(buckets["stateful_cron"]) == 1
+    assert len(buckets["chained"]) == 1
+
+    outputs = write_complexity_modules(jobs, tmp_path)
+    assert outputs["simple_cron"].exists()
+    assert outputs["stateful_cron"].exists()
+    assert outputs["chained"].exists()

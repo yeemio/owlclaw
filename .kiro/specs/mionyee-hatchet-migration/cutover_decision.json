@@ -1,0 +1,8 @@
+{
+  "recommended_backend": "hatchet",
+  "reason": "replay_consistent",
+  "allow_disable_apscheduler": true,
+  "report": ".kiro/specs/mionyee-hatchet-migration/dual_run_replay_report_all.json",
+  "config": "examples/mionyee-trading/owlclaw.yaml",
+  "applied": true
+}

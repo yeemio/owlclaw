@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from owlclaw.integrations.hatchet_migration import (
     load_jobs_from_mionyee_scenarios,
     select_canary_batch,
+    write_complexity_modules,
     write_generated_hatchet_module,
 )
 
@@ -28,10 +30,23 @@ def main() -> int:
         action="store_true",
         help="Generate only canary batch jobs",
     )
+    parser.add_argument(
+        "--by-complexity",
+        action="store_true",
+        help="Generate one file per complexity bucket",
+    )
     args = parser.parse_args()
 
     jobs = load_jobs_from_mionyee_scenarios(args.input)
     selected = select_canary_batch(jobs) if args.canary_only else jobs
+    if args.by_complexity:
+        outputs = write_complexity_modules(selected, Path(args.output).parent)
+        print(
+            "generated_complexity="
+            + ",".join(f"{name}:{path}" for name, path in outputs.items())
+            + f" jobs={len(selected)}"
+        )
+        return 0
     target = write_generated_hatchet_module(selected, args.output)
     print(f"generated={target} jobs={len(selected)}")
     return 0
