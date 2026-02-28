@@ -10,13 +10,21 @@
 
 ### 1.1 任务分类
 
-Mionyee 的 48 个 APScheduler 任务按复杂度分类：
+Mionyee 目标业务态的 48 个 APScheduler 任务按复杂度分类：
 
 | 类别 | 数量（估计） | 迁移复杂度 | 说明 |
 |------|------------|-----------|------|
 | 简单 Cron | ~30 | 低 | 固定时间触发，无状态 |
 | 有状态 Cron | ~10 | 中 | 依赖上次执行结果 |
 | 链式任务 | ~8 | 高 | 多步骤，有依赖关系 |
+
+仓库等效验证使用 3 个任务样本（来自 `config/e2e/scenarios/mionyee-tasks.json`）：
+
+| 类别 | 样本数 | 代表任务 |
+|------|--------|---------|
+| 简单 Cron | 1 | mionyee task 1 |
+| 有状态 Cron | 1 | mionyee task 2 |
+| 链式任务 | 1 | mionyee task 3（依赖 task 1） |
 
 ### 1.2 迁移路径
 
@@ -62,22 +70,27 @@ class CheckStockPriceWorkflow:
 
 ## 3. 迁移工具
 
-提供 `owlclaw migrate --apscheduler` 命令（或独立脚本），扫描 Mionyee 的 APScheduler 配置，生成 Hatchet workflow 骨架。
+当前实现为独立脚本链路：
 
-输入：Mionyee 的 scheduler 配置文件/代码
-输出：Hatchet workflow Python 文件 + cron 表达式
+- `scripts/mionyee_apscheduler_to_hatchet.py`
+- `scripts/mionyee_dual_run_replay.py`
+- `scripts/mionyee_scheduler_cutover.py`
+- `scripts/mionyee_migration_acceptance.py`
+
+输入：`config/e2e/scenarios/mionyee-tasks.json`（等效入口）  
+输出：Hatchet workflow Python 文件 + 双跑报告 + cutover 决策 + 最终验收报告
 
 ## 4. 灰度迁移
 
 1. 先迁移 5 个低风险简单 Cron 任务
-2. 双跑 1 周（APScheduler + Hatchet 同时执行，对比结果）
+2. 双跑 1 周（APScheduler + Hatchet 同时执行，对比结果，仓库等效为 replay 对比）
 3. 确认一致后关闭 APScheduler 侧
 4. 逐批迁移剩余任务
 
 ## 5. 回滚方案
 
 - APScheduler 配置保留不删除
-- 环境变量 `SCHEDULER_BACKEND=apscheduler|hatchet` 控制切换
+- 环境变量/配置 `SCHEDULER_BACKEND=apscheduler|dual|hatchet` 控制切换
 - 回滚操作：改环境变量 + 重启
 
 ## 6. 部署
@@ -90,3 +103,4 @@ Hatchet 与 Mionyee 同机部署（复用 OwlClaw 的 Hatchet 集成层 `owlclaw
 - **集成测试**：迁移后任务的触发时间和执行结果与原始一致
 - **恢复测试**：进程 kill 后任务自动恢复
 - **灰度测试**：双跑对比结果一致性
+- **最终验收**：`final_acceptance_report.json` gate 必须为 `passed=true`
