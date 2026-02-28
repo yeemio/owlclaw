@@ -17,6 +17,7 @@
 
 ### FR-3 发布门禁
 - [x] 发布前通过契约测试、安全检查、基础安装验证
+- [x] 发布前通过闭环门禁测试（外部 Trigger → runtime 决策 → Capability 执行 → Ledger 审计 → 可观测日志），用例：`tests/integration/test_e2e_closed_loop.py`
 
 ## 2. DoD
 
@@ -40,6 +41,7 @@
 |------|--------|------|------|
 | TestPyPI 发布 | OIDC 成功 | workflow 日志 | [ ] |
 | PyPI 发布 | 包可安装 | smoke 日志 | [ ] |
+| 闭环门禁 | D14-2 全链路通过 | `tests/integration/test_e2e_closed_loop.py` | [x] |
 | provenance | 产物可追溯 | attestation 文件 | [x] |
 | 失败回滚 | runbook 可执行 | 演练记录 | [x] |
 

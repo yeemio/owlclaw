@@ -359,7 +359,11 @@ class AgentRuntime:
             await self._identity_loader.load()
             hb_config = self.config.get("heartbeat", {})
             if hb_config.get("enabled", True):
-                self._heartbeat_checker = HeartbeatChecker(self.agent_id, hb_config)
+                self._heartbeat_checker = HeartbeatChecker(
+                    self.agent_id,
+                    hb_config,
+                    ledger=self._ledger,
+                )
             self.is_initialized = True
             logger.info("AgentRuntime '%s' initialized", self.agent_id)
         except Exception as exc:
@@ -579,7 +583,7 @@ class AgentRuntime:
         if context.trigger == "heartbeat" and self._heartbeat_checker is not None:
             has_events = self._heartbeat_payload_has_events(context.payload)
             if not has_events:
-                has_events = await self._heartbeat_checker.check_events()
+                has_events = await self._heartbeat_checker.check_events(context.tenant_id)
             if not has_events:
                 logger.info(
                     "Heartbeat no events, skipping LLM agent_id=%s run_id=%s",
