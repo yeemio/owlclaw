@@ -1,0 +1,16 @@
+[
+  {
+    "channel": "reddit",
+    "language": "en",
+    "title": "How I stopped my AI app from burning $50/day on runaway LLM calls",
+    "url": "https://www.reddit.com/r/openclaw/comments/example",
+    "published_at": "2026-03-01T09:00:00Z"
+  },
+  {
+    "channel": "juejin",
+    "language": "zh",
+    "title": "一条命令把 OpenClaw 连到你的业务数据库",
+    "url": "https://juejin.cn/post/example",
+    "published_at": "2026-03-01T10:00:00Z"
+  }
+]

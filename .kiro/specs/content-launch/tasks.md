@@ -25,12 +25,18 @@
 ## Task 2：第一篇技术文章
 
 - [ ] 2.1 根据 Mionyee 数据选择文章方向（A/B/C）
+  - 决策脚本已就绪：`scripts/content/select_article_direction.py`
+  - 决策测试已就绪：`tests/unit/test_select_article_direction.py`
+  - 待真实数据：`docs/content/mionyee-case-data.json`
 - [x] 2.2 编写文章草稿（英文版）
 - [x] 2.3 编写可运行代码示例（pip install owlclaw → 3 步上手）
 - [x] 2.4 代码示例可复现性验证
 - [x] 2.5 编写中文版（掘金/V2EX 用）
 - [ ] 2.6 发布到 Reddit/HN（英文版）
 - [ ] 2.7 发布到掘金/V2EX（中文版）
+  - 发布证据脚本：`scripts/content/record_publication_results.py`
+  - 证据模板：`docs/content/publication-evidence-template.json`
+  - 验收测试：`tests/unit/test_publication_results.py`
 
 ## Task 3：Mionyee 案例材料
 
@@ -51,6 +57,7 @@
 ## Task 5：验收
 
 - [ ] 5.1 第一篇文章已发布到 ≥ 2 个渠道
+  - 可执行验收：`scripts/content/record_publication_results.py --input-json ...`
 - [x] 5.2 文章代码示例可运行
 - [ ] 5.3 Mionyee 案例材料完成
 - [x] 5.4 咨询方案模板完成且可参数化

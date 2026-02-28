@@ -47,9 +47,45 @@ poetry run python scripts/content/collect_mionyee_case_data.py \
 - `mionyee-case-data.json`：结构化指标与源文件哈希
 - `mionyee-case-data.md`：可直接引用的对比表
 
+## 基于真实数据选择文章方向（Task 2.1）
+
+当 `mionyee-case-data.json` 生成后，执行：
+
+```bash
+poetry run python scripts/content/select_article_direction.py \
+  --input-json ./docs/content/mionyee-case-data.json \
+  --output-json ./docs/content/article-direction-decision.json
+```
+
+输出字段：
+
+- `direction`：`A` / `B` / `C`
+- `title`：推荐标题
+- `rationale`：基于真实指标的选择依据
+
+## 发布结果归档与验收（Task 2.6/2.7/5.1）
+
+先填写模板：
+
+- `docs/content/publication-evidence-template.json`
+
+然后执行：
+
+```bash
+poetry run python scripts/content/record_publication_results.py \
+  --input-json ./docs/content/publication-evidence-template.json \
+  --output-json ./docs/content/publication-evidence.json \
+  --output-md ./docs/content/publication-evidence.md
+```
+
+脚本会自动给出：
+
+- `meets_task_2_6`：是否满足 Reddit/HN 英文发布
+- `meets_task_2_7`：是否满足掘金/V2EX 中文发布
+- `meets_task_5_1`：是否满足至少 2 个渠道发布
+
 ## 真实性规则
 
 - 仅允许使用导出的原始数据文件做聚合
 - 报告必须保留源文件 SHA256
 - 未拿到真实数据时不得填写“结果”段落
-
