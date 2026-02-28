@@ -1,0 +1,10 @@
+{
+  "compared": 1,
+  "matched": 1,
+  "mismatches": [],
+  "match_rate": 1.0,
+  "mode": "canary",
+  "jobs": [
+    "mionyee task 1"
+  ]
+}
