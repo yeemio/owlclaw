@@ -35,9 +35,9 @@
 
 ## Task 4：教程编写
 
-- [ ] 4.1 编写教程："How to connect OpenClaw to your business database in one command"
-- [ ] 4.2 教程可复现性验证（从零开始跟教程走一遍）
-- [ ] 4.3 准备中文版教程（掘金/V2EX 发布用）
+- [x] 4.1 编写教程："How to connect OpenClaw to your business database in one command"
+- [x] 4.2 教程可复现性验证（从零开始跟教程走一遍）
+- [x] 4.3 准备中文版教程（掘金/V2EX 发布用）
 
 ## Task 5：验收
 
