@@ -34,9 +34,12 @@
 
 ## Task 3：Mionyee 案例材料
 
-- [ ] 3.1 编写案例文档（背景→方案→实施→结果）
+- [x] 3.1 编写案例文档（背景→方案→实施→结果）
 - [ ] 3.2 附真实数据对比（before vs after）
-- [ ] 3.3 案例可用于两个场景验证（技术文章素材 + 咨询附件）
+- [x] 3.3 案例可用于两个场景验证（技术文章素材 + 咨询附件）
+  - 案例文档：`docs/content/mionyee-case-study.md`
+  - 结构验证测试：`tests/unit/test_mionyee_case_study_material.py`
+  - 当前仍待 `3.2` 真实数据填充（`mionyee-case-data.md/.json`）
 
 ## Task 4：咨询方案模板
 
