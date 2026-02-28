@@ -215,7 +215,7 @@
 | **mionyee-governance-overlay** | `.kiro/specs/mionyee-governance-overlay/` | ✅ 三层齐全，已完成（14/14） | Mionyee 治理叠加（预算/限流/熔断包裹 LLM 调用） |
 | **mionyee-hatchet-migration** | `.kiro/specs/mionyee-hatchet-migration/` | ✅ 三层齐全，已完成（15/15） | Mionyee 调度迁移（APScheduler → Hatchet 持久执行） |
 | **mcp-capability-export** | `.kiro/specs/mcp-capability-export/` | ✅ 三层齐全，已完成（18/18） | MCP 能力输出（治理/持久任务/业务接入作为 MCP Server 暴露 + A2A Agent Card） |
-| **openclaw-skill-pack** | `.kiro/specs/openclaw-skill-pack/` | 🟡 三层齐全，进行中（9/14） | OpenClaw Skill 包（owlclaw-for-openclaw 发布到 ClawHub） |
+| **openclaw-skill-pack** | `.kiro/specs/openclaw-skill-pack/` | 🟡 三层齐全，进行中（11/14） | OpenClaw Skill 包（owlclaw-for-openclaw 发布到 ClawHub） |
 | **content-launch** | `.kiro/specs/content-launch/` | 🟡 三层齐全，待实施（0/16） | 内容营销启动（第一篇技术文章 + Mionyee 案例 + 咨询方案模板） |
 
 ---
@@ -241,13 +241,13 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-27 |
-| 当前批次 | codex-work 循环：mionyee-hatchet-migration Task 5 验收收口 |
-| 批次状态 | **已完成**。`mionyee-hatchet-migration` Task 0~5 全部完成（实现+验收通过），codex-work 当前分配 spec 已清空待下一轮统筹。 |
-| 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）：任务盘点、迁移生成、双跑回放、cutover 切换与最终验收，新增 `scripts/mionyee_migration_acceptance.py`、`hatchet_acceptance.py` 与最终验收报告；4) `openclaw-skill-pack` 已完成 Task 0/1，Task 2 完成 2.2（9/14），含结构测试与兼容契约测试。 |
-| 下一待执行 | 1) `openclaw-skill-pack` Task 2.1/2.3/3/4：真实 OpenClaw 验证、ClawHub 发布流程、教程复现；2) D14-1/D14-2/D14-3 实装；3) content-launch 启动。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(9/14)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8：content-launch 🟡(0/16)，Phase 8.5：D14-1 🟡(0/1)，D14-2 🟡(0/1)，D14-3 🟡(0/1)，其余 spec 全部 ✅。 |
-| 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 2.1/2.3 需真实 OpenClaw 最新稳定版运行环境（当前 worktree 无 `openclaw` 可执行程序）。 |
+| 最后更新 | 2026-02-28 |
+| 当前批次 | review-work 审校循环：Phase 8.1 已完成，Phase 8.2 openclaw-skill-pack 持续推进 |
+| 批次状态 | **进行中**。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 Task 0/1，Task 2 完成 2.2 子项，Task 3 完成 3.1/3.2，当前进度 11/14。 |
+| 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）：包含最终验收脚本与报告（gate passed）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试，并完成 ClawHub 发布前置：fork + 提交 + PR `openclaw/clawhub#556`。 |
+| 下一待执行 | 1) `openclaw-skill-pack` Task 3.3/3.4：等待 PR 审核合并后验证可搜索/可安装；2) `openclaw-skill-pack` Task 2.1/2.3：在真实 OpenClaw 最新稳定版执行解析与调用验收；3) `openclaw-skill-pack` Task 4：教程编写与复现验证；4) D14-1/D14-2/D14-3 实装。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(11/14)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8：content-launch 🟡(0/16)，Phase 8.5：D14-1 🟡(0/1)，D14-2 🟡(0/1)，D14-3 🟡(0/1)，其余 spec 全部 ✅。 |
+| 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 2.1/2.3 需真实 OpenClaw 最新稳定版运行环境（当前 worktree 无 `openclaw` 可执行程序）；4) `openclaw-skill-pack` Task 3.3/3.4 依赖外部仓库 PR 审核合并与线上索引刷新（PR: https://github.com/openclaw/clawhub/pull/556）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
 
