@@ -242,9 +242,6 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-02-28 |
-| 字段 | 值 |
-|------|---|
-| 最后更新 | 2026-02-28 |
 | 当前批次 | review-work 审校循环：Phase 8.1 已完成，Phase 8.2/8.3 并行推进 |
 | 批次状态 | **进行中**。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 12/14；`content-launch` 已完成 Task 0 与 Task 4（6/16）。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（脚本+指南+单测）。 |
