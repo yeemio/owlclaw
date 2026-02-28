@@ -28,3 +28,8 @@ def test_build_cutover_decision_recommends_dual_on_mismatch() -> None:
     decision = build_cutover_decision(match_rate=0.9, mismatch_count=1)
     assert decision["recommended_backend"] == "dual"
     assert decision["allow_disable_apscheduler"] is False
+
+
+def test_build_cutover_decision_rejects_invalid_match_rate() -> None:
+    with pytest.raises(ValueError, match="match_rate must be a finite value"):
+        build_cutover_decision(match_rate=1.2, mismatch_count=0)
