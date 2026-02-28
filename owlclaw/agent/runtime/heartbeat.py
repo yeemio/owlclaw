@@ -7,7 +7,10 @@ placeholder checks returning False until integrations are implemented.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from datetime import datetime, timedelta, timezone
+from time import monotonic
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -31,7 +34,13 @@ class HeartbeatChecker:
             - enabled: if False, check_events() always returns False
     """
 
-    def __init__(self, agent_id: str, config: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self,
+        agent_id: str,
+        config: dict[str, Any] | None = None,
+        *,
+        ledger: Any | None = None,
+    ) -> None:
         if not isinstance(agent_id, str) or not agent_id.strip():
             raise ValueError("agent_id must be a non-empty string")
         self.agent_id = agent_id.strip()
@@ -39,6 +48,23 @@ class HeartbeatChecker:
         self._enabled = self._normalize_enabled(cfg.get("enabled", True))
         self._event_sources = self._normalize_event_sources(
             cfg.get("event_sources", _DEFAULT_EVENT_SOURCES)
+        )
+        self._ledger = ledger
+        self._database_session_factory = cfg.get("database_session_factory")
+        self._database_lookback_seconds = self._normalize_positive_number(
+            cfg.get("database_lookback_seconds", cfg.get("database_lookback_minutes", 5) * 60),
+            default=300.0,
+        )
+        self._database_query_timeout_seconds = self._normalize_positive_number(
+            cfg.get("database_query_timeout_seconds", 0.5),
+            default=0.5,
+        )
+        self._database_latency_warn_ms = self._normalize_positive_number(
+            cfg.get("database_latency_warn_ms", 500),
+            default=500.0,
+        )
+        self._database_pending_statuses = self._normalize_pending_statuses(
+            cfg.get("database_pending_statuses", ["pending", "queued"]),
         )
 
     @staticmethod
@@ -75,7 +101,42 @@ class HeartbeatChecker:
                 normalized.append(source)
         return normalized if normalized else list(_DEFAULT_EVENT_SOURCES)
 
-    async def check_events(self) -> bool:
+    @staticmethod
+    def _normalize_positive_number(raw: Any, *, default: float) -> float:
+        if isinstance(raw, bool):
+            return default
+        if isinstance(raw, int | float):
+            value = float(raw)
+            return value if value > 0 else default
+        if isinstance(raw, str):
+            value = raw.strip()
+            if not value:
+                return default
+            try:
+                parsed = float(value)
+            except ValueError:
+                return default
+            return parsed if parsed > 0 else default
+        return default
+
+    @staticmethod
+    def _normalize_pending_statuses(raw: Any) -> tuple[str, ...]:
+        if isinstance(raw, str):
+            items: list[Any] = [raw]
+        elif isinstance(raw, list | tuple | set):
+            items = list(raw)
+        else:
+            items = ["pending", "queued"]
+        normalized: list[str] = []
+        for item in items:
+            if not isinstance(item, str):
+                continue
+            status = item.strip().lower()
+            if status and status not in normalized:
+                normalized.append(status)
+        return tuple(normalized or ["pending", "queued"])
+
+    async def check_events(self, tenant_id: str = "default") -> bool:
         """Check if there are pending events in any configured source.
 
         Returns:
@@ -91,31 +152,33 @@ class HeartbeatChecker:
 
         for source in self._event_sources:
             try:
-                if await self._check_source(source):
+                if await self._check_source(source, tenant_id=tenant_id):
                     logger.info(
-                        "HeartbeatChecker found events agent_id=%s source=%s",
+                        "HeartbeatChecker found events agent_id=%s source=%s tenant_id=%s",
                         self.agent_id,
                         source,
+                        tenant_id,
                     )
                     return True
             except Exception as e:
                 logger.warning(
-                    "HeartbeatChecker error checking source=%s agent_id=%s: %s",
+                    "HeartbeatChecker error checking source=%s agent_id=%s tenant_id=%s: %s",
                     source,
                     self.agent_id,
+                    tenant_id,
                     e,
                     exc_info=True,
                 )
         return False
 
-    async def _check_source(self, source: str) -> bool:
+    async def _check_source(self, source: str, *, tenant_id: str) -> bool:
         """Check a specific event source. Returns True if events exist."""
         if source == "webhook":
             return await self._check_webhook_events()
         if source == "queue":
             return await self._check_queue_events()
         if source == "database":
-            return await self._check_database_events()
+            return await self._check_database_events(tenant_id=tenant_id)
         if source == "schedule":
             return await self._check_schedule_events()
         if source == "external_api":
@@ -131,9 +194,73 @@ class HeartbeatChecker:
         """Check for new queue messages. MVP: not implemented, returns False."""
         return False
 
-    async def _check_database_events(self) -> bool:
-        """Check for database change events. MVP: not implemented, returns False."""
-        return False
+    def _resolve_database_session_factory(self) -> Any | None:
+        configured = self._database_session_factory
+        if callable(configured):
+            return configured
+        if self._ledger is None:
+            return None
+        candidate = getattr(self._ledger, "_session_factory", None)  # noqa: SLF001
+        return candidate if callable(candidate) else None
+
+    async def _check_database_events(self, *, tenant_id: str) -> bool:
+        """Check pending events via read-only ledger table query."""
+        session_factory = self._resolve_database_session_factory()
+        if session_factory is None:
+            return False
+
+        from sqlalchemy import select
+
+        from owlclaw.governance.ledger import LedgerRecord
+
+        started = monotonic()
+        window_start = datetime.now(timezone.utc) - timedelta(seconds=self._database_lookback_seconds)
+
+        async def _query_recent_pending() -> bool:
+            async with session_factory() as session:
+                stmt = (
+                    select(LedgerRecord.id)
+                    .where(LedgerRecord.tenant_id == tenant_id)
+                    .where(LedgerRecord.agent_id == self.agent_id)
+                    .where(LedgerRecord.status.in_(self._database_pending_statuses))
+                    .where(LedgerRecord.created_at >= window_start)
+                    .order_by(LedgerRecord.created_at.desc())
+                    .limit(1)
+                )
+                result = await session.execute(stmt)
+                return result.scalar_one_or_none() is not None
+
+        try:
+            has_events = await asyncio.wait_for(
+                _query_recent_pending(),
+                timeout=self._database_query_timeout_seconds,
+            )
+        except asyncio.TimeoutError:
+            logger.warning(
+                "HeartbeatChecker database check timed out agent_id=%s tenant_id=%s timeout=%ss",
+                self.agent_id,
+                tenant_id,
+                self._database_query_timeout_seconds,
+            )
+            return False
+        except Exception:
+            logger.warning(
+                "HeartbeatChecker database check failed agent_id=%s tenant_id=%s",
+                self.agent_id,
+                tenant_id,
+                exc_info=True,
+            )
+            return False
+
+        elapsed_ms = (monotonic() - started) * 1000
+        if elapsed_ms > self._database_latency_warn_ms:
+            logger.warning(
+                "HeartbeatChecker database check slow agent_id=%s tenant_id=%s elapsed_ms=%.2f",
+                self.agent_id,
+                tenant_id,
+                elapsed_ms,
+            )
+        return has_events
 
     async def _check_schedule_events(self) -> bool:
         """Check for due scheduled tasks. MVP: not implemented, returns False."""
