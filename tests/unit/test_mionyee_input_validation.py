@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
+
+from scripts.content.verify_mionyee_case_inputs import build_report
 
 
 def _write(path: Path, text: str) -> None:
@@ -19,17 +20,10 @@ def test_verify_mionyee_inputs_pass(tmp_path: Path) -> None:
     _write(tmp_path / "scheduler_after.csv", "total_tasks,success_tasks,failed_tasks,recovery_seconds\n10,10,0,8\n")
 
     output = tmp_path / "validation.json"
-    cmd = [
-        "poetry",
-        "run",
-        "python",
-        "scripts/content/verify_mionyee_case_inputs.py",
-        "--input-dir",
-        str(tmp_path),
-        "--output",
-        str(output),
-    ]
-    subprocess.run(cmd, check=True, cwd=Path(__file__).resolve().parents[2])
+    output.write_text(
+        json.dumps(build_report(tmp_path), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["status"] == "pass"
@@ -41,17 +35,10 @@ def test_verify_mionyee_inputs_fail_for_missing_and_empty(tmp_path: Path) -> Non
     _write(tmp_path / "scheduler_before.csv", "total_tasks,success_tasks,failed_tasks,recovery_seconds\n1,1,0,1\n")
 
     output = tmp_path / "validation.json"
-    cmd = [
-        "poetry",
-        "run",
-        "python",
-        "scripts/content/verify_mionyee_case_inputs.py",
-        "--input-dir",
-        str(tmp_path),
-        "--output",
-        str(output),
-    ]
-    subprocess.run(cmd, check=True, cwd=Path(__file__).resolve().parents[2])
+    output.write_text(
+        json.dumps(build_report(tmp_path), indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["status"] == "fail"
