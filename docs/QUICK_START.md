@@ -42,11 +42,6 @@ quick-start-demo/
 You are an inventory operations assistant.
 ```
 
-### `skills/inventory-check/SKILL.md`
-
-```yaml
----
-
 ### `IDENTITY.md`
 
 ```markdown
@@ -57,6 +52,9 @@ You are an inventory operations assistant.
   - inventory-check
 ```
 
+### `skills/inventory-check/SKILL.md`
+
+```yaml
 ---
 name: inventory-check
 description: Check stock level and decide whether to reorder.
@@ -139,7 +137,35 @@ python examples/quick_start/app.py --once
 
 ---
 
-## 7. 下一步
+## 7. 服务化嵌入模式（`app.start()`）
+
+当你把 OwlClaw 嵌入 FastAPI / 微服务时，建议使用 `await app.start()`。  
+此模式下 **不会自动启动 heartbeat 循环**，必须由外部调度器周期触发：
+
+```python
+import asyncio
+from pathlib import Path
+
+from owlclaw import OwlClaw
+
+APP_DIR = Path(__file__).resolve().parent
+app = OwlClaw.lite("inventory-agent", skills_path=str(APP_DIR / "skills"))
+
+async def service_bootstrap() -> None:
+    runtime = await app.start(app_dir=str(APP_DIR))
+    try:
+        while True:
+            await runtime.trigger_event("heartbeat", {"source": "external-scheduler"})
+            await asyncio.sleep(60)
+    finally:
+        await app.stop()
+```
+
+如果你希望框架自动管理 heartbeat，使用阻塞模式 `app.run(...)` 即可。
+
+---
+
+## 8. 下一步
 
 - 架构总览：[ARCHITECTURE_ANALYSIS.md](./ARCHITECTURE_ANALYSIS.md)
 - 示例索引：[examples/README.md](../examples/README.md)
