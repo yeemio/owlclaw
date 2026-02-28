@@ -50,6 +50,12 @@ def main() -> int:
     )
     parser.add_argument("--apply", action="store_true", help="Apply recommended backend into config")
     parser.add_argument(
+        "--force-backend",
+        choices=["apscheduler", "dual", "hatchet"],
+        default="",
+        help="Force apply backend instead of recommendation",
+    )
+    parser.add_argument(
         "--output",
         default=".kiro/specs/mionyee-hatchet-migration/cutover_decision.json",
         help="Output decision JSON path",
@@ -64,8 +70,11 @@ def main() -> int:
     decision["report"] = str(args.report)
     decision["config"] = str(args.config)
 
+    target_backend = args.force_backend or str(decision["recommended_backend"])
+    decision["target_backend"] = target_backend
+
     if args.apply:
-        _apply_backend(args.config, str(decision["recommended_backend"]))
+        _apply_backend(args.config, target_backend)
         decision["applied"] = True
     else:
         decision["applied"] = False
