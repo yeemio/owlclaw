@@ -58,6 +58,7 @@
 
 - [ ] 5.1 第一篇文章已发布到 ≥ 2 个渠道
   - 可执行验收：`scripts/content/record_publication_results.py --input-json ...`
+  - 汇总收口评估：`scripts/content/assess_content_launch_readiness.py`
 - [x] 5.2 文章代码示例可运行
 - [ ] 5.3 Mionyee 案例材料完成
 - [x] 5.4 咨询方案模板完成且可参数化

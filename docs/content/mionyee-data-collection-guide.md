@@ -84,6 +84,21 @@ poetry run python scripts/content/record_publication_results.py \
 - `meets_task_2_7`：是否满足掘金/V2EX 中文发布
 - `meets_task_5_1`：是否满足至少 2 个渠道发布
 
+## 一键收口评估（外部输入到位后）
+
+```bash
+poetry run python scripts/content/assess_content_launch_readiness.py \
+  --case-data-json ./docs/content/mionyee-case-data.json \
+  --case-data-md ./docs/content/mionyee-case-data.md \
+  --direction-json ./docs/content/article-direction-decision.json \
+  --publication-json ./docs/content/publication-evidence.json \
+  --case-study-md ./docs/content/mionyee-case-study.md \
+  --output-json ./docs/content/content-launch-readiness.json \
+  --output-md ./docs/content/content-launch-readiness.md
+```
+
+该报告会输出当前剩余未满足的外部收口项列表。
+
 ## 真实性规则
 
 - 仅允许使用导出的原始数据文件做聚合
