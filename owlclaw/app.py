@@ -982,10 +982,16 @@ class OwlClaw:
         hatchet_client: Any = None,
         tenant_id: str = "default",
     ) -> AgentRuntime:
-        """Start runtime + governance + cron registration.
+        """Start runtime + governance + trigger registration in embedded mode.
 
-        This method keeps `run()` intentionally unimplemented while providing
-        an explicit startup path for tests and production bootstrapping.
+        This API is intended for service-style integration (`await app.start()`).
+        It does not create a background heartbeat loop. Callers must schedule
+        heartbeat externally (for example Hatchet Cron, Kubernetes CronJob, or
+        their own scheduler that periodically calls
+        `runtime.trigger_event("heartbeat", ...)`).
+
+        Use `run()` when you need OwlClaw to manage its own blocking lifecycle
+        with a built-in heartbeat loop.
         """
         runtime = self.create_agent_runtime(app_dir=app_dir, hatchet_client=hatchet_client)
         await runtime.setup()
@@ -1042,10 +1048,14 @@ class OwlClaw:
         hatchet_client: Any = None,
         tenant_id: str = "default",
     ) -> None:
-        """Start the OwlClaw application (blocking).
+        """Start the OwlClaw application in standalone blocking mode.
 
         Initializes the Agent runtime, loads Skills, starts governance,
         registers triggers, and blocks until SIGINT/SIGTERM.
+
+        Unlike `start()`, `run()` manages an internal heartbeat loop based on
+        `heartbeat_interval_minutes`. The heartbeat task is cancelled and
+        cleaned up automatically during shutdown.
 
         Args:
             app_dir: Application directory for identity files (SOUL.md, etc.).

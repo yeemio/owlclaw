@@ -42,6 +42,28 @@ python examples/complete_workflow/app.py --once
 python examples/complete_workflow/app.py
 ```
 
+## 服务化模式 heartbeat 配置（`app.start()`）
+
+把该示例嵌入已有服务时，使用 `await app.start()` 启动。此模式下 heartbeat
+需要外部调度器负责周期触发：
+
+```python
+import asyncio
+
+from examples.complete_workflow.app import app
+
+async def run_service_mode() -> None:
+    runtime = await app.start()
+    try:
+        while True:
+            await runtime.trigger_event("heartbeat", {"source": "service-scheduler"})
+            await asyncio.sleep(300)  # 5 minutes
+    finally:
+        await app.stop()
+```
+
+如果需要框架自动心跳循环，请直接运行 `app.run()` 阻塞模式。
+
 ## 代码结构
 
 ```text
