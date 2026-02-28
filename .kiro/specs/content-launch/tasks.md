@@ -25,6 +25,9 @@
 ## Task 2：第一篇技术文章
 
 - [ ] 2.1 根据 Mionyee 数据选择文章方向（A/B/C）
+  - 决策脚本已就绪：`scripts/content/select_article_direction.py`
+  - 决策测试已就绪：`tests/unit/test_select_article_direction.py`
+  - 待真实数据：`docs/content/mionyee-case-data.json`
 - [x] 2.2 编写文章草稿（英文版）
 - [x] 2.3 编写可运行代码示例（pip install owlclaw → 3 步上手）
 - [x] 2.4 代码示例可复现性验证
