@@ -1,0 +1,24 @@
+{
+  "recovery": {
+    "before_count": 3,
+    "after_count": 3,
+    "recovered_count": 3,
+    "recovered": true
+  },
+  "status_snapshot": {
+    "backend": "hatchet",
+    "compared": 3,
+    "matched": 3,
+    "match_rate": 1.0,
+    "mismatch_count": 0
+  },
+  "rollback_verified": true,
+  "generated_files_ok": true,
+  "gate": {
+    "recovery_ok": true,
+    "status_ok": true,
+    "rollback_verified": true,
+    "generated_files_ok": true,
+    "passed": true
+  }
+}

@@ -1,6 +1,11 @@
 """External integrations — Hatchet, litellm, Langfuse (isolated layer)."""
 
 from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig
+from owlclaw.integrations.hatchet_acceptance import (
+    build_status_snapshot,
+    evaluate_e2e_acceptance,
+    verify_restart_recovery,
+)
 from owlclaw.integrations.hatchet_cutover import build_cutover_decision, normalize_scheduler_backend
 from owlclaw.integrations.hatchet_migration import (
     APSchedulerJob,
@@ -46,6 +51,9 @@ from owlclaw.integrations.llm import (
 __all__ = [
     "HatchetClient",
     "HatchetConfig",
+    "build_status_snapshot",
+    "evaluate_e2e_acceptance",
+    "verify_restart_recovery",
     "build_cutover_decision",
     "normalize_scheduler_backend",
     "APSchedulerJob",
