@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck
+.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console
 
 ## Show available commands
 help:
@@ -13,6 +13,7 @@ help:
 	@echo "  test-int     Run integration tests only"
 	@echo "  lint         Run Ruff checks"
 	@echo "  typecheck    Run MyPy checks"
+	@echo "  build-console Build frontend assets into owlclaw/web/static"
 	@echo ""
 	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
@@ -55,3 +56,7 @@ lint:
 ## Run static type check
 typecheck:
 	poetry run mypy owlclaw/
+
+## Build console frontend assets
+build-console:
+	cd owlclaw/web/frontend && npm install && npm run build

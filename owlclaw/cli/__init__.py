@@ -899,6 +899,38 @@ def _dispatch_release_command(argv: list[str]) -> bool:
     return True
 
 
+def _dispatch_start_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw start` via argparse."""
+    if not argv or argv[0] != "start":
+        return False
+    if "--help" in argv or "-h" in argv:
+        _print_help_and_exit(["start"])
+    from owlclaw.cli.start import start_command
+
+    parser = argparse.ArgumentParser(add_help=False, prog="owlclaw start")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8000)
+    ns = parser.parse_args(argv[1:])
+    start_command(host=ns.host, port=ns.port)
+    return True
+
+
+def _dispatch_console_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw console` via argparse."""
+    if not argv or argv[0] != "console":
+        return False
+    if "--help" in argv or "-h" in argv:
+        _print_help_and_exit(["console"])
+    from owlclaw.cli.console import console_command
+
+    parser = argparse.ArgumentParser(add_help=False, prog="owlclaw console")
+    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--no-open", action="store_true", default=False)
+    ns = parser.parse_args(argv[1:])
+    console_command(port=ns.port, open_browser=not ns.no_open)
+    return True
+
+
 def _print_help_and_exit(argv: list[str]) -> None:
     """Print plain help when Typer/Rich make_metavar bug triggers (--help)."""
     argv = [a for a in argv if a not in ("--help", "-h")]
@@ -916,7 +948,25 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  trigger Trigger templates (db-change)")
         print("  migrate Migrate legacy APIs/models to OwlClaw assets")
         print("  release Release validation and gate checks")
+        print("  start   Start local console host")
+        print("  console Open console in browser")
         print("\n  owlclaw db --help   owlclaw skill --help")
+        sys.exit(0)
+    if argv == ["start"]:
+        print("Usage: owlclaw start [OPTIONS]")
+        print("\n  Start local OwlClaw host with optional console mount.")
+        print("Options:")
+        print("  --host TEXT     Bind host (default: 127.0.0.1)")
+        print("  --port INTEGER  Bind port (default: 8000)")
+        print("  --help          Show this message and exit")
+        sys.exit(0)
+    if argv == ["console"]:
+        print("Usage: owlclaw console [OPTIONS]")
+        print("\n  Open OwlClaw Console URL in browser.")
+        print("Options:")
+        print("  --port INTEGER  Console port (default: 8000)")
+        print("  --no-open       Do not open browser")
+        print("  --help          Show this message and exit")
         sys.exit(0)
     if argv == ["db"]:
         print("Usage: owlclaw db [OPTIONS] COMMAND [ARGS]...")
@@ -1373,6 +1423,8 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  trigger Trigger templates (db-change)")
     print("  migrate Migrate legacy APIs/models to OwlClaw assets")
     print("  release Release validation and gate checks")
+    print("  start   Start local console host")
+    print("  console Open console in browser")
     sys.exit(0)
 
 
@@ -1552,6 +1604,16 @@ def _main_impl() -> None:
         raise SystemExit(e.exit_code) from None
     try:
         if _dispatch_release_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_start_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
+    try:
+        if _dispatch_console_command(sys.argv[1:]):
             return
     except ClickExit as e:
         raise SystemExit(e.exit_code) from None
