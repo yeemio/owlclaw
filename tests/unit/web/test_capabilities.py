@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -11,6 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from owlclaw.web import create_console_app
+from owlclaw.web.providers import capabilities as capabilities_module
 from owlclaw.web.providers.capabilities import DefaultCapabilitiesProvider
 
 
@@ -243,3 +245,104 @@ async def test_default_capabilities_provider_get_schema_from_signature() -> None
 
 async def _async_value(value: Any) -> Any:
     return value
+
+
+@pytest.mark.asyncio
+async def test_default_capabilities_provider_returns_empty_without_registry() -> None:
+    provider = DefaultCapabilitiesProvider(capability_registry=None, stats_fetcher=lambda _tenant_id: _async_value({}))
+    items = await provider.list_capabilities(tenant_id="default", category=None)
+    assert items == []
+
+
+@pytest.mark.asyncio
+async def test_default_capabilities_provider_schema_none_for_missing_registry_and_handler() -> None:
+    provider_without_registry = DefaultCapabilitiesProvider(capability_registry=None, stats_fetcher=lambda _tenant_id: _async_value({}))
+    assert await provider_without_registry.get_capability_schema("any") is None
+
+    provider_with_registry = DefaultCapabilitiesProvider(
+        capability_registry=_FakeRegistry(),  # type: ignore[arg-type]
+        stats_fetcher=lambda _tenant_id: _async_value({}),
+    )
+    assert await provider_with_registry.get_capability_schema("missing") is None
+
+
+def test_default_capabilities_provider_schema_wraps_non_object_parameters_schema() -> None:
+    class _SchemaOnlyHandler:
+        parameters_schema = {"x": {"type": "string"}}
+
+        def __call__(self, x: str) -> dict[str, Any]:
+            _ = x
+            return {"ok": True}
+
+    provider = DefaultCapabilitiesProvider(capability_registry=None, stats_fetcher=lambda _tenant_id: _async_value({}))
+    schema = provider._build_schema_from_handler(_SchemaOnlyHandler())
+    assert schema["type"] == "object"
+    assert schema["properties"]["x"]["type"] == "string"
+
+
+def test_default_capabilities_provider_schema_handles_type_hints_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _handler(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        _ = (args, kwargs)
+        return {"ok": True}
+
+    provider = DefaultCapabilitiesProvider(capability_registry=None, stats_fetcher=lambda _tenant_id: _async_value({}))
+    monkeypatch.setattr(capabilities_module, "get_type_hints", lambda _callable: (_ for _ in ()).throw(RuntimeError("boom")))
+    schema = provider._build_schema_from_handler(_handler)
+    assert schema["type"] == "object"
+    assert schema["properties"] == {}
+    assert schema["required"] == []
+
+
+def test_default_capabilities_provider_annotation_to_schema_covers_core_types() -> None:
+    provider = DefaultCapabilitiesProvider(capability_registry=None, stats_fetcher=lambda _tenant_id: _async_value({}))
+    assert provider._annotation_to_schema(inspect.Parameter.empty)["type"] == "string"
+    assert provider._annotation_to_schema(str)["type"] == "string"
+    assert provider._annotation_to_schema(int)["type"] == "integer"
+    assert provider._annotation_to_schema(float)["type"] == "number"
+    assert provider._annotation_to_schema(bool)["type"] == "boolean"
+    assert provider._annotation_to_schema(dict)["type"] == "object"
+    assert provider._annotation_to_schema(list)["type"] == "array"
+    assert provider._annotation_to_schema(list[int])["items"]["type"] == "integer"
+    assert provider._annotation_to_schema(dict[str, Any])["type"] == "object"
+    assert provider._annotation_to_schema(int | None)["type"] == "integer"
+    assert provider._annotation_to_schema(int | str | None)["type"] == "string"
+
+
+@pytest.mark.asyncio
+async def test_default_capabilities_provider_collect_stats_aggregates_rows(monkeypatch: pytest.MonkeyPatch) -> None:
+    rows = [
+        ("cap_a", 4, 3, 12.5),
+        ("cap_b", 0, 0, None),
+    ]
+
+    class _FakeResult:
+        def all(self) -> list[tuple[str, int, int, float | None]]:
+            return rows
+
+    class _FakeSession:
+        async def execute(self, _statement: Any) -> _FakeResult:
+            return _FakeResult()
+
+    class _FakeSessionContext:
+        async def __aenter__(self) -> _FakeSession:
+            return _FakeSession()
+
+        async def __aexit__(self, exc_type: Any, exc: Any, tb: Any) -> bool:
+            _ = (exc_type, exc, tb)
+            return False
+
+    def _fake_create_session_factory(_engine: Any):
+        def _factory() -> _FakeSessionContext:
+            return _FakeSessionContext()
+
+        return _factory
+
+    monkeypatch.setattr(capabilities_module, "get_engine", lambda: object())
+    monkeypatch.setattr(capabilities_module, "create_session_factory", _fake_create_session_factory)
+
+    provider = DefaultCapabilitiesProvider(capability_registry=None, stats_fetcher=lambda _tenant_id: _async_value({}))
+    stats = await provider._collect_capability_stats("tenant-a")
+    assert stats["cap_a"]["executions"] == 4
+    assert stats["cap_a"]["success_rate"] == 0.75
+    assert stats["cap_a"]["avg_latency_ms"] == 12.5
+    assert stats["cap_b"]["success_rate"] == 0.0

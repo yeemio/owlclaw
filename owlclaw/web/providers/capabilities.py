@@ -158,9 +158,9 @@ class DefaultCapabilitiesProvider:
             return {"type": "number"}
         if annotation in {bool}:
             return {"type": "boolean"}
-        if annotation in {dict, dict[str, Any]}:
+        if annotation is dict:
             return {"type": "object"}
-        if annotation in {list, list[Any]}:
+        if annotation is list:
             return {"type": "array"}
 
         origin = get_origin(annotation)
@@ -171,8 +171,8 @@ class DefaultCapabilitiesProvider:
         if origin in {dict}:
             return {"type": "object"}
         if origin in {types.UnionType, Union}:
-            args = [arg for arg in get_args(annotation) if arg is not type(None)]
-            if len(args) == 1:
-                return self._annotation_to_schema(args[0])
+            union_args = [arg for arg in get_args(annotation) if arg is not type(None)]
+            if len(union_args) == 1:
+                return self._annotation_to_schema(union_args[0])
             return {"type": "string"}
         return {"type": "string"}
