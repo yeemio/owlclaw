@@ -401,5 +401,61 @@ git worktree add -b review-work D:\AI\owlclaw-review main
 
 ---
 
+## 未来改进方案（已调研，暂缓实施）
+
+> **来源**：2026-03-02 多 Agent 并行工作流调研（对标 Claude Code Agent Teams、Codex multi-agent、dmux、Reflag 等）
+> **决策**：P0（契约先行）和 P1（共享信箱）已实施。以下方案记录备用，待条件成熟或需求明确时启动。
+
+### P2：自动状态检测（替代手动 WORKING/IDLE/DONE 标记）
+
+**问题**：当前工作状态依赖编码 worktree 手动维护 `工作状态` 字段，可能遗忘或不及时。
+
+**方案**：统筹时自动检测：
+- 检查 Codex 进程是否在运行（`tasklist | findstr codex`）
+- 结合 `git status` + 分支 log 时间戳：最近 5 分钟有 commit → WORKING；超过 30 分钟无活动 + working tree 干净 → IDLE
+- 写一个 `scripts/detect_worktree_status.py` 脚本，统筹循环 Step 1 调用
+
+**投入**：中（需要写检测脚本 + 跨平台适配）
+**收益**：中（去掉手动标记的认知负担）
+**前置**：无
+
+### P3：review-work 自动轮询（push 触发自动审校）
+
+**问题**：审校完全依赖人工触发，编码分支 push 后可能等很久才被审校。
+
+**方案**：
+- 方案 A：GitHub Actions webhook — 编码分支 push → 自动触发 lint/test → 通过后自动通知 review-work
+- 方案 B：review-work 的 Codex 配置为自动轮询模式 — 启动后定期检查编码分支是否有新 commit
+- 方案 C：Codex multi-agent 原生支持（`[agents]` section + `monitor` role）— 等 Codex multi-agent 功能稳定后直接使用
+
+**投入**：中（GitHub Actions 配置 + Codex 配置调整）
+**收益**：高（减少人工触发，缩短反馈周期）
+**前置**：需评估 Codex multi-agent 功能成熟度
+
+### P4：小 PR 频繁合并 + Feature Flag
+
+**问题**：当前编码分支生命周期长（整个 spec 完成才审校合并），merge 冲突风险高。
+
+**方案**：
+- 将大 spec 拆成可独立合并的小 PR，每个 PR 对应 1-2 个 task
+- 对于用户可见的功能（如 Web Console），用 feature flag 包裹，合并到 main 但不激活
+- 工具参考：Reflag（MCP 集成，Agent 自动管理 flag）、Unleash（Claude Code 集成）
+
+**投入**：高（流程重构 + 可能引入 feature flag 依赖）
+**收益**：高（减少分支生命周期，降低 merge 冲突，更快反馈）
+**前置**：需评估 OwlClaw 是否需要 feature flag（基础设施项目 vs Web 应用的差异）
+
+### 行业参考
+
+| 工具/平台 | 核心思路 | 与我们的关系 |
+|-----------|---------|-------------|
+| Claude Code Agent Teams | Agent 间直接通信 + 共享任务列表 | P1 共享信箱是简化版；未来可迁移到原生支持 |
+| Codex multi-agent (`team.toml`) | 角色化 Agent + orchestrator 自动调度 | P3 自动轮询的终极形态 |
+| dmux | tmux + worktree 自动管理 + 智能合并 | 我们的手动 worktree 管理的自动化版本 |
+| Reflag / Unleash | Feature flag 治理 + MCP 集成 | P4 的工具选型参考 |
+| Vibe Kanban | Kanban 看板管理多 Agent | 可视化统筹的参考方向 |
+
+---
+
 **维护者**: yeemio  
-**下次审核**: 2026-03-01
+**下次审核**: 2026-03-15
