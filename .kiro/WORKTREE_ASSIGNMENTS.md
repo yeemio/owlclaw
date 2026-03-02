@@ -167,7 +167,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex\` |
 | 分支 | `codex-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `WORKING` |
+| 工作状态 | `DONE` |
 
 **当前分配的 spec**：
 
@@ -178,15 +178,11 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | test-infra | 11/11 ✅ | — |
 | mionyee-governance-overlay | 14/14 ✅ | — |
 | mionyee-hatchet-migration | 15/15 ✅ | — |
-| **console-backend-api** | 11/11 🔧 审校修复中 | `owlclaw/web/contracts.py`, `owlclaw/web/api/`, `owlclaw/web/providers/`, `tests/unit/web/`, `tests/integration/test_console_api.py` |
+| **console-backend-api** | 11/11 ✅ | `owlclaw/web/contracts.py`, `owlclaw/web/api/`, `owlclaw/web/providers/`, `tests/unit/web/`, `tests/integration/test_console_api.py` |
 
-**前置条件**：Task 0-10 已实现（41 tests passed），审校结论 `FIX_NEEDED`（见 `.kiro/reviews/2026-03-02-console-review-round2.md`）。
+**状态**：已完成，经 9 轮审校后 APPROVE 并合并到 main。
 
-**当前任务**（审校修复，优先级 P0）：
-1. **[P0] 统一错误响应模型**：所有 4xx/5xx 使用 `ErrorResponse`（`{"error": {...}}`），不再用 `HTTPException(detail=...)`。补测试断言错误 JSON 结构。
-2. **[P0] 固定并输出后端真实契约文档**：REST 路径/参数/响应字段 + WebSocket 消息类型（`overview`/`triggers`/`ledger`），供前端对齐。
-3. **[P1] 补契约一致性测试**：至少 1 条端到端路径覆盖 Governance + Ledger + WS 消息类型。
-4. **零残留**：每轮工作结束必须 commit 所有变更，working tree clean。
+**当前任务**：Phase 9 console-backend-api 已完成。等待下一轮分配。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -206,7 +202,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `WORKING` |
+| 工作状态 | `DONE` |
 
 **当前分配的 spec**：
 
@@ -220,21 +216,12 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | mcp-capability-export | 18/18 ✅ | — |
 | openclaw-skill-pack | 12/14 🟡 | 外部阻塞（PR 合并） |
 | content-launch | 14/16 🟡 | 外部阻塞（发布证据） |
-| **console-frontend** | 10/10 🔧 审校修复中 | `owlclaw/web/frontend/`, `owlclaw/web/static/` |
-| **console-integration** | 0/5 ⬜ | `owlclaw/web/mount.py`, `owlclaw/cli/console.py`, `pyproject.toml`（extras） |
+| **console-frontend** | 10/10 ✅ | `owlclaw/web/frontend/`, `owlclaw/web/static/` |
+| **console-integration** | 5/5 ✅ | `owlclaw/web/mount.py`, `owlclaw/cli/console.py`, `pyproject.toml`（extras） |
 
-**前置条件**：Task 0-9 已实现（build + 4 tests passed），审校结论 `FIX_NEEDED`（见 `.kiro/reviews/2026-03-02-console-review-round2.md`）。
+**状态**：已完成，经 9 轮审校后 APPROVE 并合并到 main。
 
-**当前任务**（审校修复，优先级 P0）：
-1. **[P0] 重做 `useApi.ts` 为后端契约映射层**：统一路径/参数/字段映射，严格按后端真实契约取数。具体修复：
-   - Governance：`/governance?granularity=...` → `/governance/budget` + `/governance/circuit-breakers` + `/governance/visibility-matrix`
-   - Ledger：参数 `agent/capability/start_time/end_time` → `agent_id/capability_name/start_date/end_date`；响应字段 `records` → `items`
-   - Agents/Capabilities/Triggers：统一按 `{"items": [...]}` 解析
-2. **[P0] 修复 WebSocket 消息类型**：`useWebSocket.ts` 监听类型从 `overview_update/trigger_event/ledger_new` → `overview/triggers/ledger`
-3. **[P1] 补契约一致性测试**：至少覆盖 Governance + Ledger + WS 消息类型
-4. **零残留**：每轮工作结束必须 commit 所有变更，working tree clean。
-5. 修复完成后继续 `console-integration` Task 0-4
-6. Phase 8 外部阻塞项跟踪：openclaw-skill-pack/content-launch/release/owlhub 凭据就绪后收口
+**当前任务**：Phase 9 console-frontend + console-integration 已完成。Phase 8 外部阻塞项跟踪：openclaw-skill-pack/content-launch/release/owlhub 凭据就绪后收口。等待下一轮分配。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -332,6 +319,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-02-28 | 统筹同步：merge review-work → main；回写 Phase 8 与 D14 实际完成度（D14-1/2/3 ✅，content-launch 14/16，openclaw-skill-pack 12/14） | 防止分配表与 SPEC_TASKS_SCAN 漂移 |
 | 2026-02-28 | Phase 9 分配：codex-work → console-backend-api（0/11）；codex-gpt-work → console-frontend（0/10）+ console-integration（0/5）。Phase 8 外部阻塞项留 main 跟踪 | D15 Web Console 架构决策批准 + spec 三层文档创建完成，启动 Phase 9 实现 |
 | 2026-03-02 | 审校修复分配：merge review-work 审校报告 → main；codex-work console-backend-api 11/11 🔧 需修复 P0（ErrorResponse 统一 + 契约文档输出）；codex-gpt-work console-frontend 10/10 🔧 需修复 P0（useApi.ts 契约映射 + WS 消息类型）。编码分支代码未合并（FIX_NEEDED） | 审校发现前后端 API 契约漂移 + WS 协议不一致 + 错误响应未统一 |
+| 2026-03-02 | Phase 9 完成：merge review-work（APPROVE，9 轮审校）→ main。console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)。160 文件 +17,584 行。两个编码 worktree 状态改为 DONE | 审校通过，Phase 9 Web Console 全部合并到 main |
 
 ---
 
