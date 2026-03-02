@@ -49,6 +49,7 @@
   - 演练记录（2026-02-27）：run `22475093887`、`22477795502` 再次在 `Publish to TestPyPI` 返回 `HTTP 403 Forbidden`，保持与 `22473801915` 一致的阻塞结论（Trusted Publisher 绑定缺失）
   - 诊断命令（2026-02-27）：`poetry run python scripts/release_oidc_preflight.py --repo yeemio/owlclaw --run-id 22475093887`、`22477795502`（刷新 `docs/release/reports/release-oidc-preflight-latest.md`）
   - 诊断结果（2026-02-27）：preflight 报告状态 `BLOCKED`（exit code `3`），仓库侧基线已通过（workflow/protection/ruleset），剩余阻塞为 Trusted Publisher 绑定
+  - 诊断补充（2026-03-02）：`scripts/release_oidc_preflight.py` 已增强为 gh API 失败时降级产出报告；复跑 `--run-id 22477795502` 结果仍为 `BLOCKED`，并新增提示 `failed to fetch .../branches/main/protection: Branch not protected (HTTP 404)`（见 `docs/release/reports/release-oidc-preflight-latest.md`）。
 - [ ] 4.2 PyPI 正式链路演练
   - 当前状态（2026-02-27）：前置 TestPyPI OIDC 未打通，正式链路演练顺延（依赖 Task 1.2）
 - [x] 4.3 更新 `SPEC_TASKS_SCAN` checkpoint
