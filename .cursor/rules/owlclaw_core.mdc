@@ -208,6 +208,9 @@ cd D:\AI\owlclaw-codex-gpt && codex
              cd D:\AI\owlclaw-codex-gpt && git merge main
              若有冲突 → 就地解决（通常只有 SPEC_TASKS_SCAN.md），取最新进度版本
              ⚠️ 跳过此步会导致编码 worktree 读到旧任务分配，继续执行已完成的旧 spec
+             ⚠️ **禁止手动 cp tracked 文件到 worktree**（如 `.cursor/rules/*.mdc`）。
+             这些文件是 Git tracked 的，`git merge main` 会自动同步。
+             手动 cp 会覆盖 tracked 文件，导致下次 merge 时报 "local changes would be overwritten" 错误。
 
 4. Assign  — 检查各编码 worktree 是否完成当前 spec：
              完成 → 从 WORKTREE_ASSIGNMENTS.md「下一轮待分配」中选下一个 spec
@@ -220,12 +223,16 @@ cd D:\AI\owlclaw-codex-gpt && codex
 6. Commit  — 若本轮有 main 变更（merge 或文档更新）：
              git add -A && git commit -m "chore(orchestrate): <本轮操作摘要>"
 
-7. Push    — 将 main 推送到 remote：
-             git push
+7. Push    — 将 main 和所有子分支推送到 remote：
+             git push                                          # main
+             cd D:\AI\owlclaw-review    && git push            # review-work
+             cd D:\AI\owlclaw-codex     && git push            # codex-work
+             cd D:\AI\owlclaw-codex-gpt && git push            # codex-gpt-work
              说明：main 分支使用 GitHub Rulesets（非 legacy branch protection），
              仓库管理员已配置为 bypass actor，可直接 push。
              Ruleset ID: main-branch-protection，规则：PR required + Test/Build status checks + no force push + no deletion。
              管理员 push 时 GitHub 会显示 "Bypassed rule violations" 提示，这是正常行为。
+             子分支无保护规则，直接 push 即可。若某分支 up-to-date 则跳过。
 
 8. Report  — 输出状态总览表：
              | Worktree | 分支 | 当前 spec | 进度 | 健康 | 待处理 |
