@@ -137,6 +137,18 @@ def test_capabilities_schema_route_returns_404_when_missing() -> None:
     assert payload["error"]["message"] == "Capability schema not found"
 
 
+def test_capabilities_invalid_category_returns_error_response_shape() -> None:
+    provider = _CapabilitiesProviderStub()
+    app = _build_app(provider)
+    client = TestClient(app)
+
+    response = client.get("/api/v1/capabilities?category=invalid")
+    assert response.status_code == 422
+    payload = response.json()
+    assert payload["error"]["code"] == "VALIDATION_ERROR"
+    assert "Request validation failed" in payload["error"]["message"]
+
+
 @dataclass
 class _FakeBindingConfig:
     type: str = "http"
