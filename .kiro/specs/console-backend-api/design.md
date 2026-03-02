@@ -487,31 +487,31 @@ console:
 
 ### 7.1 Phase 1：框架搭建（2-3 天）
 
-- [ ] 创建 `owlclaw/web/` 包结构
-- [ ] 实现 contracts.py（全部 Protocol）
-- [ ] 实现 API 框架（路由挂载 + 认证 + 错误处理 + 分页）
-- [ ] 实现 deps.py 依赖注入
+- [x] 创建 `owlclaw/web/` 包结构
+- [x] 实现 contracts.py（全部 Protocol）
+- [x] 实现 API 框架（路由挂载 + 认证 + 错误处理 + 分页）
+- [x] 实现 deps.py 依赖注入
 
 ### 7.2 Phase 2：核心 API（3-4 天）
 
-- [ ] 实现 Overview Provider + API
-- [ ] 实现 Governance Provider + API
-- [ ] 实现 Ledger Provider + API
-- [ ] 实现 Capabilities Provider + API
+- [x] 实现 Overview Provider + API
+- [x] 实现 Governance Provider + API
+- [x] 实现 Ledger Provider + API
+- [x] 实现 Capabilities Provider + API
 
 ### 7.3 Phase 3：扩展 API（2-3 天）
 
-- [ ] 实现 Agents Provider + API
-- [ ] 实现 Triggers Provider + API
-- [ ] 实现 Settings Provider + API
-- [ ] 实现 WebSocket 实时推送
+- [x] 实现 Agents Provider + API
+- [x] 实现 Triggers Provider + API
+- [x] 实现 Settings Provider + API
+- [x] 实现 WebSocket 实时推送
 
 ### 7.4 Phase 4：测试与验收（1-2 天）
 
-- [ ] 单元测试全覆盖
-- [ ] 集成测试
-- [ ] 架构隔离扫描
-- [ ] 性能基准测试
+- [x] 单元测试全覆盖
+- [x] 集成测试
+- [x] 架构隔离扫描
+- [x] 性能基准测试
 
 ---
 
@@ -533,3 +533,4 @@ console:
 
 **维护者**：yeemio  
 **最后更新**：2026-03-02
+
