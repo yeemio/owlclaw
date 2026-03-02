@@ -6,6 +6,9 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
+
+import scripts.release_oidc_preflight as preflight
 
 
 def _write_json(path: Path, payload: object) -> None:
@@ -128,3 +131,14 @@ def test_release_oidc_preflight_detects_trusted_publisher_blocker(tmp_path: Path
     assert "status: BLOCKED" in payload
     assert "Trusted Publisher" in payload
     report.unlink(missing_ok=True)
+
+
+def test_load_json_input_falls_back_on_gh_failure() -> None:
+    with patch.object(preflight, "run_gh", side_effect=RuntimeError("gh: Branch not protected (HTTP 404)")):
+        payload, warning = preflight.load_json_input(
+            path="",
+            gh_cmd=["api", "repos/yeemio/owlclaw/branches/main/protection"],
+            default={},
+        )
+    assert payload == {}
+    assert "failed to fetch api repos/yeemio/owlclaw/branches/main/protection" in warning

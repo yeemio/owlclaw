@@ -38,22 +38,35 @@ def main() -> None:
     repo_root = Path(__file__).resolve().parents[1]
 
     workflow_data = load_workflow(repo_root / args.workflow)
-    branch_protection = load_json_input(
+    branch_protection, branch_warning = load_json_input(
         args.branch_protection_json,
         ["api", f"repos/{args.repo}/branches/main/protection"],
+        default={},
     )
-    rulesets = load_json_input(
+    rulesets, ruleset_warning = load_json_input(
         args.rulesets_json,
         ["api", f"repos/{args.repo}/rulesets"],
+        default=[],
     )
+
+    warnings: list[str] = []
+    if branch_warning:
+        warnings.append(branch_warning)
+    if ruleset_warning:
+        warnings.append(ruleset_warning)
 
     run_log = ""
     if args.run_log:
         run_log = Path(args.run_log).read_text(encoding="utf-8")
     elif args.run_id:
-        run_log = run_gh(["run", "view", str(args.run_id), "--repo", args.repo, "--log"])
+        try:
+            run_log = run_gh(["run", "view", str(args.run_id), "--repo", args.repo, "--log"])
+        except RuntimeError as exc:
+            warnings.append(f"failed to read run log from gh: {exc}")
 
     result = evaluate(workflow_data, branch_protection, rulesets, run_log)
+    if warnings:
+        result.details.extend(warnings)
     report_path = repo_root / args.output
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(render_report(args, result), encoding="utf-8")
@@ -187,10 +200,13 @@ def load_workflow(path: Path) -> dict[str, object]:
     return payload
 
 
-def load_json_input(path: str, gh_cmd: list[str]) -> object:
+def load_json_input(path: str, gh_cmd: list[str], default: object) -> tuple[object, str]:
     if path:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
-    return json.loads(run_gh(gh_cmd))
+        return json.loads(Path(path).read_text(encoding="utf-8")), ""
+    try:
+        return json.loads(run_gh(gh_cmd)), ""
+    except RuntimeError as exc:
+        return default, f"failed to fetch {' '.join(gh_cmd)}: {exc}"
 
 
 def run_gh(args: list[str]) -> str:

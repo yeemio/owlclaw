@@ -1,6 +1,6 @@
 # Release OIDC Preflight Report
 
-> generated_at: 2026-02-27 08:00:34Z
+> generated_at: 2026-03-02 08:52:46Z
 > repo: yeemio/owlclaw
 > run_id: 22477795502
 > status: BLOCKED
@@ -8,13 +8,15 @@
 ## Checks
 
 - workflow_oidc_publish: PASS
-- main_branch_protection: PASS
+- main_branch_protection: FAIL
 - release_ruleset: PASS
 - trusted_publisher_blocker: DETECTED
 
 ## Findings
 
+- main branch protection does not enforce strict Lint/Test/Build checks
 - latest release run indicates TestPyPI 403 Forbidden (Trusted Publisher binding missing)
+- failed to fetch api repos/yeemio/owlclaw/branches/main/protection: gh: Branch not protected (HTTP 404)
 
 ## Manual Trusted Publisher Checklist
 
