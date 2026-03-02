@@ -87,11 +87,11 @@
 - `src/components/data/VisibilityMatrix.tsx`
 
 **实现**：
-- [ ] 3.1 实现预算消耗趋势图（Recharts 折线图，支持天/周/月粒度切换）
-- [ ] 3.2 实现限流/熔断状态卡片（open/closed/half-open 视觉区分）
-- [ ] 3.3 实现能力可见性矩阵（Agent × Capability 热力图）
-- [ ] 3.4 实现 migration_weight 进度条
-- [ ] 3.5 实现 Skills 质量排行列表
+- [x] 3.1 实现预算消耗趋势图（Recharts 折线图，支持天/周/月粒度切换）
+- [x] 3.2 实现限流/熔断状态卡片（open/closed/half-open 视觉区分）
+- [x] 3.3 实现能力可见性矩阵（Agent × Capability 热力图）
+- [x] 3.4 实现 migration_weight 进度条
+- [x] 3.5 实现 Skills 质量排行列表
 
 **验收**：
 - 趋势图数据正确，粒度切换流畅
