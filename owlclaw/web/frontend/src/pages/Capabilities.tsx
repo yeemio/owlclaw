@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { EmptyState } from "@/components/data/EmptyState";
 import { SchemaViewer } from "@/components/data/SchemaViewer";
 import { type CapabilityCategory, useCapabilities } from "@/hooks/useApi";
 import { PageShell } from "@/pages/PageShell";
@@ -79,27 +80,39 @@ export function CapabilitiesPage() {
       {tab === "scan" ? (
         <section className="rounded-xl border border-border/70 bg-card/90 p-4">
           <h2 className="text-sm font-semibold">Scan Candidates</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {data.scan_candidates.map((item, idx) => (
-              <li key={`${item.module}-${item.function}-${idx}`} className="rounded border border-border/60 bg-background/70 px-3 py-2">
-                <p className="font-medium">{item.function}</p>
-                <p className="text-xs text-muted-foreground">{item.module}</p>
-                <pre className="mt-1 text-xs text-muted-foreground">{item.signature}</pre>
-              </li>
-            ))}
-          </ul>
+          {data.scan_candidates.length === 0 ? (
+            <div className="mt-3">
+              <EmptyState title="No scan candidates" description="Run cli-scan to discover candidate functions." />
+            </div>
+          ) : (
+            <ul className="mt-3 space-y-2 text-sm">
+              {data.scan_candidates.map((item, idx) => (
+                <li key={`${item.module}-${item.function}-${idx}`} className="rounded border border-border/60 bg-background/70 px-3 py-2">
+                  <p className="font-medium">{item.function}</p>
+                  <p className="text-xs text-muted-foreground">{item.module}</p>
+                  <pre className="mt-1 text-xs text-muted-foreground">{item.signature}</pre>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       ) : tab === "migration" ? (
         <section className="rounded-xl border border-border/70 bg-card/90 p-4">
           <h2 className="text-sm font-semibold">Migration Progress</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {data.migration_progress.map((item) => (
-              <li key={item.capability} className="flex items-center justify-between rounded border border-border/60 bg-background/70 px-3 py-2">
-                <span>{item.capability}</span>
-                <span className="text-xs text-muted-foreground">{item.status}</span>
-              </li>
-            ))}
-          </ul>
+          {data.migration_progress.length === 0 ? (
+            <div className="mt-3">
+              <EmptyState title="No migration data" description="Run cli-migrate to generate migration progress artifacts." />
+            </div>
+          ) : (
+            <ul className="mt-3 space-y-2 text-sm">
+              {data.migration_progress.map((item) => (
+                <li key={item.capability} className="flex items-center justify-between rounded border border-border/60 bg-background/70 px-3 py-2">
+                  <span>{item.capability}</span>
+                  <span className="text-xs text-muted-foreground">{item.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       ) : (
         <div className="grid gap-3 xl:grid-cols-[1.1fr_1fr]">

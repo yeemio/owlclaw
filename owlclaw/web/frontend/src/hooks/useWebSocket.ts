@@ -7,11 +7,16 @@ type OverviewWsMessage = {
   data: OverviewSnapshot;
 };
 
-type AnyWsMessage = OverviewWsMessage | { type: string; data?: unknown };
+type LedgerWsMessage = { type: "ledger_new" };
+type TriggerWsMessage = { type: "trigger_event" };
+
+type AnyWsMessage = OverviewWsMessage | LedgerWsMessage | TriggerWsMessage | { type: string; data?: unknown };
 
 function getWebSocketUrl(): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/api/v1/ws`;
+  const token = localStorage.getItem("owlclaw_token");
+  const query = token ? `?token=${encodeURIComponent(token)}` : "";
+  return `${protocol}//${window.location.host}/api/v1/ws${query}`;
 }
 
 export function useConsoleWebSocket() {
@@ -37,6 +42,12 @@ export function useConsoleWebSocket() {
           const payload = JSON.parse(event.data) as AnyWsMessage;
           if (payload.type === "overview_update" && payload.data) {
             queryClient.setQueryData(["overview"], payload.data);
+          }
+          if (payload.type === "ledger_new") {
+            queryClient.invalidateQueries({ queryKey: ["ledger"] });
+          }
+          if (payload.type === "trigger_event") {
+            queryClient.invalidateQueries({ queryKey: ["triggers"] });
           }
         } catch {
           // Ignore malformed websocket messages to keep UI alive.

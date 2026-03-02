@@ -193,12 +193,12 @@
 - `src/components/data/EmptyState.tsx`
 
 **实现**：
-- [ ] 8.1 实现 WebSocket 连接管理（自动重连 + 认证）
-- [ ] 8.2 实现 Overview/Ledger/Triggers 实时更新
-- [ ] 8.3 实现空状态组件（图标 + 说明 + 引导操作）
-- [ ] 8.4 实现错误边界（全局 ErrorBoundary + Toast）
-- [ ] 8.5 构建优化（路由级代码分割 + 图表按需加载）
-- [ ] 8.6 验证 gzip 后 bundle < 500KB
+- [x] 8.1 实现 WebSocket 连接管理（自动重连 + 认证）
+- [x] 8.2 实现 Overview/Ledger/Triggers 实时更新
+- [x] 8.3 实现空状态组件（图标 + 说明 + 引导操作）
+- [x] 8.4 实现错误边界（全局 ErrorBoundary + Toast）
+- [x] 8.5 构建优化（路由级代码分割 + 图表按需加载）
+- [x] 8.6 验证 gzip 后 bundle < 500KB
 
 **验收**：
 - WebSocket 实时更新生效
@@ -216,9 +216,9 @@
 - `e2e/` — Playwright E2E 测试
 
 **实现**：
-- [ ] 9.1 核心组件单元测试（DataTable、Filters、MetricCard、HealthIndicator）
-- [ ] 9.2 页面组件测试（mock API，验证数据渲染）
-- [ ] 9.3 E2E 测试：Overview → Governance → Ledger 筛选流程
+- [x] 9.1 核心组件单元测试（DataTable、Filters、MetricCard、HealthIndicator）
+- [x] 9.2 页面组件测试（mock API，验证数据渲染）
+- [x] 9.3 E2E 测试：Overview → Governance → Ledger 筛选流程
 
 **验收**：
 - 组件测试覆盖核心交互

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/data/EmptyState";
 import { LedgerDetail } from "@/components/data/LedgerDetail";
 import { LedgerFilters } from "@/components/data/LedgerFilters";
 import { LedgerTimeline } from "@/components/data/LedgerTimeline";
@@ -61,23 +62,32 @@ export function LedgerPage() {
   return (
     <PageShell title="Ledger" description="Execution audit records with query filters, pagination, and record detail.">
       <LedgerFilters value={draftFilters} onChange={setDraftFilters} onApply={applyFilters} onReset={resetFilters} />
-      <div className="grid gap-3 xl:grid-cols-[1.5fr_1fr]">
-        <LedgerTimeline
-          records={data.records}
-          total={data.total}
-          limit={data.limit}
-          offset={data.offset}
-          view={view}
-          selectedId={selectedRecord?.id ?? null}
-          onSelect={setSelectedRecord}
-          onViewChange={setView}
-          onPageChange={(nextOffset) => {
-            setOffset(nextOffset);
-            setSelectedRecord(null);
-          }}
+      {data.records.length === 0 ? (
+        <EmptyState
+          title="No ledger records"
+          description="Try broadening filters or trigger a run to generate audit records."
+          actionLabel="Reset Filters"
+          onAction={resetFilters}
         />
-        <LedgerDetail record={selectedRecord} />
-      </div>
+      ) : (
+        <div className="grid gap-3 xl:grid-cols-[1.5fr_1fr]">
+          <LedgerTimeline
+            records={data.records}
+            total={data.total}
+            limit={data.limit}
+            offset={data.offset}
+            view={view}
+            selectedId={selectedRecord?.id ?? null}
+            onSelect={setSelectedRecord}
+            onViewChange={setView}
+            onPageChange={(nextOffset) => {
+              setOffset(nextOffset);
+              setSelectedRecord(null);
+            }}
+          />
+          <LedgerDetail record={selectedRecord} />
+        </div>
+      )}
     </PageShell>
   );
 }

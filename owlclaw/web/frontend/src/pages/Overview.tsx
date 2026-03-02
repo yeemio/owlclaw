@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { MetricCard } from "@/components/charts/MetricCard";
 import { AlertBanner } from "@/components/data/AlertBanner";
 import { HealthIndicator } from "@/components/data/HealthIndicator";
 import { OnboardingCard } from "@/components/data/OnboardingCard";
+import { useToast } from "@/components/system/Toast";
 import { type HealthStatus, useOverview } from "@/hooks/useApi";
 import { useConsoleWebSocket } from "@/hooks/useWebSocket";
 import { PageShell } from "@/pages/PageShell";
@@ -32,8 +34,15 @@ function deriveHealthStatus(okCount: number, totalCount: number): HealthStatus {
 }
 
 export function OverviewPage() {
+  const { pushToast } = useToast();
   useConsoleWebSocket();
   const { data, isLoading, isError, error } = useOverview();
+
+  useEffect(() => {
+    if (isError) {
+      pushToast("Overview request failed");
+    }
+  }, [isError, pushToast]);
 
   if (isLoading) {
     return <PageShell title="Overview" description="Loading overview metrics..." />;
