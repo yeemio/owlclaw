@@ -196,6 +196,24 @@
 - [x] 构建流程集成 — 前端 Vite build → `owlclaw/web/static/` → Python 包发布包含静态文件 → spec: console-integration
 - [x] pyproject.toml 更新 — 新增 `console` extras（可选依赖） → spec: console-integration
 
+### Phase 10：架构审计修复（2026-03-02 审计发现）
+
+> **来源**: 总架构师全面审计（架构设计 → Spec → 代码实现三层审视）
+> **优先级**: P0 Critical 必须修复 + P1 High 尽快修复
+
+**Phase 10.1：Critical 修复（阻断性，交付前必须完成）**
+
+- [ ] C1 修复 CircuitBreaker 状态匹配 — `"failure"` → `"error"` / `"timeout"`，熔断器核心保护恢复 → spec: audit-fix-critical
+- [ ] C2 修复 Console API 挂载路径 — `owlclaw.web.api.app` → `owlclaw.web.app`，Console 端到端可用 → spec: audit-fix-critical
+
+**Phase 10.2：High 修复（重要功能缺陷）**
+
+- [ ] H1 Heartbeat 事件源补全 — schedule 接入 Hatchet + database 状态修正 + 扩展点文档 → spec: audit-fix-high
+- [ ] H2 成本追踪实现 — LLM token usage → estimated_cost → BudgetConstraint 生效 → spec: audit-fix-high
+- [ ] H3 litellm embedding 隔离 — 添加 aembedding 门面 + 重构 embedder_litellm → spec: audit-fix-high
+- [ ] H4 Console Governance 前端映射 — CircuitBreaker name + VisibilityMatrix 分组 → spec: audit-fix-high
+- [ ] H5 治理 fail-policy 配置 — fail-open / fail-close 可配置 → spec: audit-fix-high
+
 ---
 
 ## Spec 索引
@@ -257,6 +275,8 @@
 | **console-backend-api** | `.kiro/specs/console-backend-api/` | ✅ 三层齐全，已完成（11/11） | Console REST API（查询契约层 + 7 数据 API + 认证 + 分页 + WebSocket + 架构隔离验证）。经 9 轮审校 APPROVE |
 | **console-frontend** | `.kiro/specs/console-frontend/` | ✅ 三层齐全，已完成（10/10） | Console 前端 SPA（9 页面 + React + Tailwind + Shadcn/ui + 暗色主题 + WebSocket + 测试）。经 9 轮审校 APPROVE |
 | **console-integration** | `.kiro/specs/console-integration/` | ✅ 三层齐全，已完成（5/5） | Console 集成（`owlclaw start` 挂载 + CLI + 构建流程 + 打包 + 集成测试）。经 9 轮审校 APPROVE |
+| **audit-fix-critical** | `.kiro/specs/audit-fix-critical/` | ✅ 三层齐全，待实现（0/11） | 架构审计 Critical 修复：C1 熔断器状态匹配 + C2 Console API 挂载路径 |
+| **audit-fix-high** | `.kiro/specs/audit-fix-high/` | ✅ 三层齐全，待实现（0/23） | 架构审计 High 修复：H1 Heartbeat + H2 成本追踪 + H3 Embedding 隔离 + H4 Governance 映射 + H5 fail-policy |
 
 ---
 
@@ -282,11 +302,11 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-03-02 |
-| 当前批次 | **Phase 9 已完成并合并**：console-backend-api 11/11 ✅，console-frontend 10/10 ✅，console-integration 5/5 ✅。经 9 轮审校后 APPROVE，160 文件 +17,584 行已合并到 main。 |
+| 当前批次 | **Phase 10 架构审计修复**：audit-fix-critical（0/11，C1 熔断器 + C2 Console mount）+ audit-fix-high（0/23，H1-H5）。Phase 9 已完成并合并。 |
 | 批次状态 | **进行中**。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 18/22（新增收口：Task 2.1/2.3/5.2/5.3）；`content-launch` 已完成 Task 0、Task 1 脚手架、Task 2.2/2.3/2.4/2.5、Task 3.1/3.3、Task 4、Task 5.2/5.4（14/16）；Phase 8.5 `D14-1/2/3` 已全部落地（3/3）。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）。 |
-| 下一待执行 | **Phase 8 外部阻塞项**：1) `content-launch` 真实数据 + 外部发布（2/16 未完成）；2) `openclaw-skill-pack` PR 合并（4/22 未完成）；3) `release-supply-chain` Trusted Publisher 配置（4/15 未完成）；4) `release` PyPI 发布 + 社区反馈（4/32 未完成）；5) `owlhub` 生产凭据（2/143 未完成）。**所有未完成项均为外部不可控依赖**（PyPI 配置/外部 PR/真实数据/生产凭据）。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，**Phase 9**：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，其余 spec 全部 ✅。 |
+| 下一待执行 | **Phase 10 立即启动**：1) `audit-fix-critical` C1+C2（阻断性，codex-work）；2) `audit-fix-high` H3+H4+H5（codex-work 后续）；3) `audit-fix-high` H1+H2（codex-gpt-work）；4) `audit-fix-high` Task 5 文档更新。**Phase 8 外部阻塞项不变**：content-launch / openclaw-skill-pack / release-supply-chain / release / owlhub。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，Phase 9：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，**Phase 10**：audit-fix-critical ⬜(0/11)，audit-fix-high ⬜(0/23)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 3.3/3.4/5.1/5.4 依赖外部仓库 PR 审核合并、线上索引刷新与真实下载量周期（PR: https://github.com/openclaw/clawhub/pull/556`，当前 state=OPEN）；4) `content-launch` Task 1/2/3.2/5 需 Mionyee 真实导出数据与外部发布渠道（脚手架与验收脚本已就绪）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |
