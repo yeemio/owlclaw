@@ -52,6 +52,39 @@ export type GovernanceSnapshot = {
   skills_quality_rank: SkillQualityItem[];
 };
 
+export type LedgerStatus = "success" | "failed" | "running";
+
+export type LedgerRecord = {
+  id: string;
+  timestamp: string;
+  agent: string;
+  capability: string;
+  status: LedgerStatus;
+  cost_usd: number;
+  model: string;
+  latency_ms: number;
+  input: string;
+  output: string;
+  reasoning: string;
+};
+
+export type LedgerFilters = {
+  agent?: string;
+  capability?: string;
+  status?: LedgerStatus | "";
+  start_time?: string;
+  end_time?: string;
+  min_cost?: number;
+  max_cost?: number;
+};
+
+export type PaginatedLedger = {
+  records: LedgerRecord[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
 function toNumber(value: unknown): number {
   if (typeof value === "number") {
     return value;
@@ -109,6 +142,61 @@ function normalizeGovernanceSnapshot(raw: unknown): GovernanceSnapshot {
   };
 }
 
+function normalizeLedgerRecord(raw: unknown): LedgerRecord {
+  const item = (raw as Partial<LedgerRecord>) ?? {};
+  return {
+    id: String(item.id ?? ""),
+    timestamp: String(item.timestamp ?? ""),
+    agent: String(item.agent ?? "unknown"),
+    capability: String(item.capability ?? "unknown"),
+    status: ((item.status ?? "success") as LedgerStatus),
+    cost_usd: toNumber(item.cost_usd),
+    model: String(item.model ?? "unknown"),
+    latency_ms: toNumber(item.latency_ms),
+    input: String(item.input ?? ""),
+    output: String(item.output ?? ""),
+    reasoning: String(item.reasoning ?? ""),
+  };
+}
+
+function normalizePaginatedLedger(raw: unknown, limit: number, offset: number): PaginatedLedger {
+  const input = (raw as Partial<PaginatedLedger>) ?? {};
+  return {
+    records: Array.isArray(input.records) ? input.records.map((record) => normalizeLedgerRecord(record)) : [],
+    total: toNumber(input.total),
+    limit: toNumber(input.limit) || limit,
+    offset: toNumber(input.offset) || offset,
+  };
+}
+
+function buildLedgerQuery(filters: LedgerFilters, limit: number, offset: number): string {
+  const params = new URLSearchParams();
+  if (filters.agent) {
+    params.set("agent", filters.agent);
+  }
+  if (filters.capability) {
+    params.set("capability", filters.capability);
+  }
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+  if (filters.start_time) {
+    params.set("start_time", filters.start_time);
+  }
+  if (filters.end_time) {
+    params.set("end_time", filters.end_time);
+  }
+  if (typeof filters.min_cost === "number") {
+    params.set("min_cost", String(filters.min_cost));
+  }
+  if (typeof filters.max_cost === "number") {
+    params.set("max_cost", String(filters.max_cost));
+  }
+  params.set("limit", String(limit));
+  params.set("offset", String(offset));
+  return params.toString();
+}
+
 export function useOverview() {
   return useQuery({
     queryKey: ["overview"],
@@ -122,6 +210,19 @@ export function useGovernance(granularity: "day" | "week" | "month" = "day") {
     queryKey: ["governance", granularity],
     queryFn: async () =>
       normalizeGovernanceSnapshot(await apiFetch<unknown>(`/governance?granularity=${granularity}`)),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useLedger(filters: LedgerFilters, limit = 20, offset = 0) {
+  return useQuery({
+    queryKey: ["ledger", filters, limit, offset],
+    queryFn: async () =>
+      normalizePaginatedLedger(
+        await apiFetch<unknown>(`/ledger?${buildLedgerQuery(filters, limit, offset)}`),
+        limit,
+        offset
+      ),
     refetchInterval: 30_000,
   });
 }
