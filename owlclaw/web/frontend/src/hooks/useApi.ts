@@ -85,6 +85,40 @@ export type PaginatedLedger = {
   offset: number;
 };
 
+export type AgentStatus = "active" | "idle" | "error";
+
+export type AgentSummary = {
+  id: string;
+  name: string;
+  role: string;
+  status: AgentStatus;
+  identity_summary: string;
+};
+
+export type AgentRunRecord = {
+  timestamp: string;
+  capability: string;
+  status: LedgerStatus;
+  cost_usd: number;
+};
+
+export type AgentDetail = {
+  id: string;
+  name: string;
+  role: string;
+  status: AgentStatus;
+  identity: Record<string, string>;
+  memory: {
+    short_term_count: number;
+    long_term_count: number;
+  };
+  knowledge: {
+    skills: string[];
+    references_count: number;
+  };
+  recent_runs: AgentRunRecord[];
+};
+
 function toNumber(value: unknown): number {
   if (typeof value === "number") {
     return value;
@@ -169,6 +203,50 @@ function normalizePaginatedLedger(raw: unknown, limit: number, offset: number): 
   };
 }
 
+function normalizeAgentSummary(raw: unknown): AgentSummary {
+  const item = (raw as Partial<AgentSummary>) ?? {};
+  return {
+    id: String(item.id ?? ""),
+    name: String(item.name ?? "Unnamed Agent"),
+    role: String(item.role ?? "agent"),
+    status: (item.status ?? "idle") as AgentStatus,
+    identity_summary: String(item.identity_summary ?? ""),
+  };
+}
+
+function normalizeAgentDetail(raw: unknown): AgentDetail {
+  const item = (raw as Partial<AgentDetail>) ?? {};
+  const memory = item.memory ?? { short_term_count: 0, long_term_count: 0 };
+  const knowledge = item.knowledge ?? { skills: [], references_count: 0 };
+
+  return {
+    id: String(item.id ?? ""),
+    name: String(item.name ?? "Unnamed Agent"),
+    role: String(item.role ?? "agent"),
+    status: (item.status ?? "idle") as AgentStatus,
+    identity:
+      typeof item.identity === "object" && item.identity
+        ? Object.fromEntries(Object.entries(item.identity).map(([key, value]) => [key, String(value)]))
+        : {},
+    memory: {
+      short_term_count: toNumber(memory.short_term_count),
+      long_term_count: toNumber(memory.long_term_count),
+    },
+    knowledge: {
+      skills: Array.isArray(knowledge.skills) ? knowledge.skills.map((skill) => String(skill)) : [],
+      references_count: toNumber(knowledge.references_count),
+    },
+    recent_runs: Array.isArray(item.recent_runs)
+      ? item.recent_runs.map((run) => ({
+          timestamp: String((run as AgentRunRecord).timestamp ?? ""),
+          capability: String((run as AgentRunRecord).capability ?? "unknown"),
+          status: ((run as AgentRunRecord).status ?? "success") as LedgerStatus,
+          cost_usd: toNumber((run as AgentRunRecord).cost_usd),
+        }))
+      : [],
+  };
+}
+
 function buildLedgerQuery(filters: LedgerFilters, limit: number, offset: number): string {
   const params = new URLSearchParams();
   if (filters.agent) {
@@ -223,6 +301,27 @@ export function useLedger(filters: LedgerFilters, limit = 20, offset = 0) {
         limit,
         offset
       ),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useAgents() {
+  return useQuery({
+    queryKey: ["agents"],
+    queryFn: async () => {
+      const raw = await apiFetch<unknown>("/agents");
+      const items = Array.isArray(raw) ? raw : [];
+      return items.map((item) => normalizeAgentSummary(item));
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+export function useAgentDetail(agentId: string | null) {
+  return useQuery({
+    queryKey: ["agent", agentId],
+    queryFn: async () => normalizeAgentDetail(await apiFetch<unknown>(`/agents/${agentId}`)),
+    enabled: Boolean(agentId),
     refetchInterval: 30_000,
   });
 }
