@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-02-28（Phase 9 spec 三层文档已创建 + 隔离架构写入）
+> **最后更新**: 2026-03-02（Phase 9 `console-frontend` Task 0-1 已完成并通过构建验收）
 
 ---
 
@@ -179,7 +179,7 @@
 
 **Phase 9.2：Console 前端 SPA**
 
-- [ ] 前端工程脚手架 — Vite + React + TypeScript + Tailwind + Shadcn/ui + 暗色主题 + 路由 + API Client 类型生成 → spec: console-frontend
+- [x] 前端工程脚手架 — Vite + React + TypeScript + Tailwind + Shadcn/ui + 暗色主题 + 路由 + API Client 类型生成 → spec: console-frontend
 - [ ] Overview 页面 — 系统健康指示灯 + 指标卡片（成本/执行/成功率/Agent）+ 告警横幅 + 自动刷新 + **首次使用引导卡片**（链接 Quick Start/完整示例/SKILL.md 编写指南） → spec: console-frontend
 - [ ] Governance 页面 — 预算消耗趋势图 + 限流/熔断状态卡片 + 能力可见性矩阵 + migration_weight 进度条 + Skills 质量排行 → spec: console-frontend
 - [ ] Ledger 页面 — 执行审计时间线 + 多维筛选面板 + 详情展开（输入/输出/成本/模型/延迟） → spec: console-frontend
@@ -255,7 +255,7 @@
 | **openclaw-skill-pack** | `.kiro/specs/openclaw-skill-pack/` | 🟡 三层齐全，进行中（12/14） | OpenClaw Skill 包（owlclaw-for-openclaw 发布到 ClawHub） |
 | **content-launch** | `.kiro/specs/content-launch/` | 🟡 三层齐全，进行中（14/16） | 内容营销启动（第一篇技术文章 + Mionyee 案例 + 咨询方案模板） |
 | **console-backend-api** | `.kiro/specs/console-backend-api/` | ✅ 三层齐全，待实现（0/11） | Console REST API（查询契约层 + 7 数据 API + 认证 + 分页 + WebSocket + 架构隔离验证） |
-| **console-frontend** | `.kiro/specs/console-frontend/` | ✅ 三层齐全，待实现（0/10） | Console 前端 SPA（9 页面 + React + Tailwind + Shadcn/ui + 暗色主题 + WebSocket + 测试） |
+| **console-frontend** | `.kiro/specs/console-frontend/` | 🟡 三层齐全，进行中（2/10） | Console 前端 SPA（9 页面 + React + Tailwind + Shadcn/ui + 暗色主题 + WebSocket + 测试） |
 | **console-integration** | `.kiro/specs/console-integration/` | ✅ 三层齐全，待实现（0/5） | Console 集成（`owlclaw start` 挂载 + CLI + 构建流程 + 打包 + 集成测试） |
 
 ---
@@ -281,12 +281,12 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-02-28 |
-| 当前批次 | Phase 9 Web Console spec 三层文档已创建（console-backend-api 0/11 + console-frontend 0/10 + console-integration 0/5）；隔离架构已写入 ARCHITECTURE_ANALYSIS.md §4.15 + owlclaw_architecture.mdc + owlclaw_development.mdc；Phase 8 剩余项均为外部阻塞 |
+| 最后更新 | 2026-03-02 |
+| 当前批次 | Phase 9 Web Console 开发进行中：`console-frontend` 已完成 Task 0（脚手架）+ Task 1（布局/路由/API Client/TanStack Query）并通过 `npm run build` 产出 `owlclaw/web/static/`；`console-backend-api` 仍为 0/11，`console-integration` 仍为 0/5。 |
 | 批次状态 | **进行中**。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 12/14；`content-launch` 已完成 Task 0、Task 1 脚手架、Task 2.2/2.3/2.4/2.5、Task 3.1/3.3、Task 4、Task 5.2/5.4（14/16）；Phase 8.5 `D14-1/2/3` 已全部落地（3/3）。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）。 |
-| 下一待执行 | **Phase 9 实现**：1) `console-backend-api` Task 0（查询契约层 + 包结构）→ Task 1（API 框架）→ Task 2-8（7 个数据 API）→ Task 9（WebSocket）→ Task 10（隔离验证）；2) `console-frontend` Task 0（脚手架）→ Task 1-7（页面）→ Task 8-9（优化+测试）；3) `console-integration` Task 0-4（挂载+CLI+打包+测试）。**Phase 8 外部阻塞项**：4) `content-launch` 真实数据 + 外部发布；5) `openclaw-skill-pack` PR 合并；6) `release-supply-chain` Trusted Publisher 配置。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(12/14)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，**Phase 9**：console-backend-api ⬜(0/11)，console-frontend ⬜(0/10)，console-integration ⬜(0/5)，其余 spec 全部 ✅。 |
+| 下一待执行 | **Phase 9 实现**：1) `console-frontend` Task 2（Overview 页面）→ Task 3（Governance 页面）→ Task 4（Ledger 页面）；2) `console-backend-api` Task 0（查询契约层 + 包结构）→ Task 1（API 框架）→ Task 2-8（7 个数据 API）；3) `console-integration` Task 0-4（挂载+CLI+打包+测试，前后端就绪后执行）。**Phase 8 外部阻塞项**：4) `content-launch` 真实数据 + 外部发布；5) `openclaw-skill-pack` PR 合并；6) `release-supply-chain` Trusted Publisher 配置。 |
+| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(12/14)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，**Phase 9**：console-backend-api ⬜(0/11)，console-frontend 🟡(2/10)，console-integration ⬜(0/5)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 2.1/2.3 需真实 OpenClaw 最新稳定版运行环境（已验证 PyPI `openclaw==2026.2.25` 实际为 `cmdop` 包装且不提供 OpenClaw CLI，故无法替代真实环境）；4) `openclaw-skill-pack` Task 3.3/3.4 依赖外部仓库 PR 审核合并与线上索引刷新（PR: https://github.com/openclaw/clawhub/pull/556`，当前 state=OPEN）；5) `content-launch` Task 1/2/3.2/5 需 Mionyee 真实导出数据与外部发布渠道（脚手架与验收脚本已就绪）。 |
 | 健康状态 | 正常 |
 | 连续无进展轮数 | 0 |

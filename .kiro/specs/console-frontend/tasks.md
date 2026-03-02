@@ -14,12 +14,12 @@
 - `owlclaw/web/frontend/` — 完整前端工程目录
 
 **实现**：
-- [ ] 0.1 初始化 Vite + React + TypeScript 项目（`owlclaw/web/frontend/`）
-- [ ] 0.2 配置 Tailwind CSS + 暗色主题
-- [ ] 0.3 安装并配置 Shadcn/ui 组件库
-- [ ] 0.4 配置 Vite 构建输出到 `owlclaw/web/static/`
-- [ ] 0.5 配置开发代理（`/api` → `http://localhost:8000`）
-- [ ] 0.6 配置 TypeScript 类型生成脚本（从 OpenAPI Schema）
+- [x] 0.1 初始化 Vite + React + TypeScript 项目（`owlclaw/web/frontend/`）
+- [x] 0.2 配置 Tailwind CSS + 暗色主题
+- [x] 0.3 安装并配置 Shadcn/ui 组件库
+- [x] 0.4 配置 Vite 构建输出到 `owlclaw/web/static/`
+- [x] 0.5 配置开发代理（`/api` → `http://localhost:8000`）
+- [x] 0.6 配置 TypeScript 类型生成脚本（从 OpenAPI Schema）
 
 **验收**：
 - `pnpm dev` 启动开发服务器
@@ -39,11 +39,11 @@
 - `src/components/layout/Layout.tsx`
 
 **实现**：
-- [ ] 1.1 实现 Layout 组件（Sidebar + Header + Content Area）
-- [ ] 1.2 实现 Sidebar 导航（9 个页面入口 + 分组分隔线）
-- [ ] 1.3 配置 React Router 路由
-- [ ] 1.4 实现 API Client（fetch wrapper + Token 认证）
-- [ ] 1.5 配置 TanStack Query Provider
+- [x] 1.1 实现 Layout 组件（Sidebar + Header + Content Area）
+- [x] 1.2 实现 Sidebar 导航（9 个页面入口 + 分组分隔线）
+- [x] 1.3 配置 React Router 路由
+- [x] 1.4 实现 API Client（fetch wrapper + Token 认证）
+- [x] 1.5 配置 TanStack Query Provider
 
 **验收**：
 - 侧边栏导航可切换页面
