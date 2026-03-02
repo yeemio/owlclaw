@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-02-28
+> **最后更新**: 2026-02-28（Phase 9 分配）
 
 ---
 
@@ -39,7 +39,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：Phase 8 双模接入架构决策落地 + 统筹协调。
+**当前编码任务**：Phase 9 Web Console 统筹协调 + Phase 8 外部阻塞项跟踪。
 
 ---
 
@@ -165,21 +165,27 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | protocol-governance | 27/27 ✅ | — |
 | contract-testing | 19/19 ✅ | — |
 | test-infra | 11/11 ✅ | — |
-| **mionyee-governance-overlay** | 14/14 ✅ | `owlclaw/governance/proxy.py`, `tests/unit/governance/test_proxy.py` |
-| **mionyee-hatchet-migration** | 15/15 ✅ | `owlclaw/integrations/hatchet_migration.py`, `tests/unit/test_hatchet_migration.py` |
+| mionyee-governance-overlay | 14/14 ✅ | — |
+| mionyee-hatchet-migration | 15/15 ✅ | — |
+| **console-backend-api** | 0/11 ⬜ | `owlclaw/web/contracts.py`, `owlclaw/web/api/`, `owlclaw/web/providers/`, `tests/unit/web/`, `tests/integration/test_console_api.py` |
 
-**前置条件**：Phase 7 全部 ✅ 已完成。Phase 8.1 无前置阻塞。
+**前置条件**：Phase 1-8 核心模块已完成（数据源就绪）。无前置阻塞。
 
 **当前任务**（按顺序执行）：
-1. Phase 8.1 代码与文档已交接审校（见 `.kiro/specs/PHASE8_1_HANDOFF.md`），等待下一轮分配
-2. 协助主 worktree 跟踪 release-supply-chain 外部依赖就绪后的收口验证
+1. `console-backend-api` Task 0：查询契约层 + 包结构（`owlclaw/web/contracts.py` + 包初始化）
+2. `console-backend-api` Task 1：API 框架（路由挂载 + 认证 + 错误处理 + 分页）
+3. `console-backend-api` Task 2-8：7 个数据 API（Overview → Governance → Ledger → Capabilities → Triggers → Agents → Settings）
+4. `console-backend-api` Task 9：WebSocket 实时推送
+5. `console-backend-api` Task 10：架构隔离验证 + 集成测试
 
 **禁止触碰**（分配给编码 2 的路径）：
 
-- `owlclaw_mcp/**`（mcp-capability-export 归编码 2）
-- `.kiro/specs/mcp-capability-export/**`
-- `.kiro/specs/openclaw-skill-pack/**`
-- `.kiro/specs/content-launch/**`
+- `owlclaw/web/frontend/**`（console-frontend 归编码 2）
+- `owlclaw/web/static/**`（构建产物归编码 2）
+- `owlclaw/web/mount.py`（console-integration 归编码 2）
+- `owlclaw/cli/console.py`（console-integration 归编码 2）
+- `.kiro/specs/console-frontend/**`
+- `.kiro/specs/console-integration/**`
 
 ---
 
@@ -200,24 +206,28 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | cross-lang-golden-path | 16/16 ✅ | — |
 | release | 28/32 🟡 | 外部阻塞（PYPI_TOKEN） |
 | owlhub | 141/143 🟡 | 外部阻塞（生产凭据） |
-| **mcp-capability-export** | 18/18 ✅ | `owlclaw/mcp/**`, `tests/integration/test_mcp_*` |
-| **openclaw-skill-pack** | 12/14 🟡 | `skills/owlclaw-for-openclaw/`, `tests/unit/test_openclaw_skill.py` |
-| **content-launch** | 14/16 🟡 | `docs/content/`, `docs/consulting/`, `scripts/content/` |
+| mcp-capability-export | 18/18 ✅ | — |
+| openclaw-skill-pack | 12/14 🟡 | 外部阻塞（PR 合并） |
+| content-launch | 14/16 🟡 | 外部阻塞（发布证据） |
+| **console-frontend** | 0/10 ⬜ | `owlclaw/web/frontend/`, `owlclaw/web/static/` |
+| **console-integration** | 0/5 ⬜ | `owlclaw/web/mount.py`, `owlclaw/cli/console.py`, `pyproject.toml`（extras） |
 
-**前置条件**：Phase 7 全部 ✅ 已完成。Phase 8.2 无前置阻塞。
+**前置条件**：console-frontend Task 0-1（脚手架+布局）可立即启动；Task 2+ 页面实现需 console-backend-api 对应 API 就绪。console-integration 需前后端均就绪。
 
 **当前任务**（按顺序执行）：
-1. openclaw-skill-pack(12/14)：收口 Task 3.3/3.4（外部 PR 合并后验证可搜索/可安装）
-2. content-launch(14/16)：收口 Task 2.6/2.7/5.1（外部发布证据回填）
-3. mcp-capability-export(18/18)：已完成，保持回归监控
-4. release/owlhub/release-supply-chain 外部阻塞项跟踪：凭据就绪后立即切换实操验收
+1. `console-frontend` Task 0：工程脚手架（Vite + React + TypeScript + Tailwind + Shadcn/ui）
+2. `console-frontend` Task 1：布局系统 + 路由（Sidebar + Content + React Router + API Client）
+3. `console-frontend` Task 2-7：页面实现（与 console-backend-api 进度同步推进）
+4. `console-frontend` Task 8-9：WebSocket + 优化 + 测试
+5. `console-integration` Task 0-4：挂载 + CLI + 打包 + 集成测试
+6. Phase 8 外部阻塞项跟踪：openclaw-skill-pack/content-launch/release/owlhub 凭据就绪后收口
 
 **禁止触碰**（分配给编码 1 的路径）：
 
-- `.kiro/specs/mionyee-governance-overlay/**`
-- `.kiro/specs/mionyee-hatchet-migration/**`
-- `owlclaw/governance/proxy.py`（mionyee-governance-overlay 归编码 1）
-- `owlclaw/integrations/hatchet/migration.py`（mionyee-hatchet-migration 归编码 1）
+- `owlclaw/web/contracts.py`（console-backend-api 归编码 1）
+- `owlclaw/web/api/**`（console-backend-api 归编码 1）
+- `owlclaw/web/providers/**`（console-backend-api 归编码 1）
+- `.kiro/specs/console-backend-api/**`
 
 ---
 
@@ -231,6 +241,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | database-core | governance | Ledger 持久化依赖 `owlclaw.db` 的 Base/session，database-core 接口变更需同步 | 阻塞中（governance 未分配） |
 | integrations-llm | agent-runtime | runtime 的 function calling 循环依赖 `litellm.acompletion`，接口变更需同步 | 待关注 |
 | security | governance | 数据脱敏可能需要与 visibility 过滤协调 | 待关注 |
+| console-backend-api | console-frontend | 前端 TypeScript 类型从后端 OpenAPI Schema 生成，API 变更需重新生成 | **活跃**（Phase 9 并行开发） |
+| console-backend-api + console-frontend | console-integration | 集成依赖前后端均就绪 | **活跃**（Phase 9 顺序依赖） |
 
 **规则**：
 - 审校 worktree 在每轮 Review Loop 中检查编码分支的变更是否影响其他 spec，有则更新本表
@@ -276,6 +288,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | 2026-02-27 | Phase 8 分配：codex-work → mionyee-governance-overlay + mionyee-hatchet-migration；codex-gpt-work → mcp-capability-export + openclaw-skill-pack + content-launch | 双模架构决策批准后，Phase 7 全部完成，启动 Phase 8 双模接入 + OpenClaw 生态 |
 | 2026-02-28 | 统筹同步：merge review-work → main；回写 Phase 8 与 D14 实际完成度（D14-1/2/3 ✅，content-launch 14/16，openclaw-skill-pack 12/14） | 防止分配表与 SPEC_TASKS_SCAN 漂移 |
+| 2026-02-28 | Phase 9 分配：codex-work → console-backend-api（0/11）；codex-gpt-work → console-frontend（0/10）+ console-integration（0/5）。Phase 8 外部阻塞项留 main 跟踪 | D15 Web Console 架构决策批准 + spec 三层文档创建完成，启动 Phase 9 实现 |
 
 ---
 
@@ -283,17 +296,22 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 以下 spec 尚未分配到任何编码 worktree，等当前批次完成后按优先级分配：
 
-**Phase 1-7 全部已分配完毕 ✅**
+**Phase 1-8 全部已分配完毕 ✅**
 
-**Phase 8 全部已分配** ✅（2026-02-27）
+**Phase 9 全部已分配** ✅（2026-02-28）
 
 | Spec | Tasks | Worktree | 执行顺序 |
 |------|-------|----------|---------|
-| mionyee-governance-overlay（14/14） | GovernanceProxy + Mionyee LLM 治理包裹 | codex-work | 已完成 |
-| mionyee-hatchet-migration（15/15） | APScheduler → Hatchet 迁移工具 + 灰度 | codex-work | 已完成 |
-| mcp-capability-export（18/18） | MCP Server 能力输出 + A2A Agent Card | codex-gpt-work | 已完成 |
-| openclaw-skill-pack（12/14） | owlclaw-for-openclaw Skill 包 | codex-gpt-work | 收尾中 |
-| content-launch（14/16） | 技术文章 + 案例材料 + 咨询模板 | codex-gpt-work | 收尾中 |
-| release-supply-chain 剩余（11/15） | Trusted Publisher 外部配置 | main | 外部依赖 |
-| release 剩余（28/32） | 发布凭据与发布验证 | main | 外部依赖 |
-| owlhub 剩余（141/143） | Task 40.4 生产部署收尾 | main | 外部依赖 |
+| console-backend-api（0/11） | 查询契约层 + 7 数据 API + WebSocket + 隔离验证 | codex-work | 立即启动 |
+| console-frontend（0/10） | React SPA 9 页面 + WebSocket + 测试 | codex-gpt-work | 立即启动（脚手架先行） |
+| console-integration（0/5） | 挂载 + CLI + 打包 + 集成测试 | codex-gpt-work | 前后端就绪后 |
+
+**Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
+
+| Spec | 剩余 | 阻塞原因 |
+|------|------|---------|
+| release-supply-chain（11/15） | Trusted Publisher 外部配置 | 需维护者操作 PyPI |
+| release（28/32） | 发布凭据与发布验证 | 需 PYPI_TOKEN |
+| owlhub（141/143） | Task 40.4 生产部署收尾 | 需生产凭据 |
+| openclaw-skill-pack（12/14） | PR 合并 + 线上验证 | 需外部仓库审核 |
+| content-launch（14/16） | 外部发布证据回填 | 需真实数据 + 发布渠道 |
