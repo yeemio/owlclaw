@@ -14,6 +14,12 @@
 4. **两个编码 worktree 的 spec 不得重叠**，避免合并冲突
 5. 分配变更后，人工通知各 worktree 同步（`git merge main`）
 6. **零残留规则（必须遵守）**：每轮工作结束时，**必须 commit 所有变更**，工作目录必须干净（`git status` 无 modified/untracked）。不允许留未提交修改。原因：review-work 会独立审校并修正同样的文件，如果编码 worktree 留有未提交修改，下次 `git merge main` 时会产生冲突，浪费统筹时间。违反此规则 = 给其他 worktree 制造阻塞。
+7. **工作状态标记（并行协调）**：每个编码 worktree 在下方分配表中维护 `工作状态` 字段，取值：
+   - `IDLE`：空闲，无活跃 Codex 会话。统筹可自由 merge/分配。
+   - `WORKING`：Codex 正在执行，工作目录可能有未提交改动。**统筹跳过该 worktree 的 `git merge main`**，避免冲突打断编码。统筹仅读取分支 log 评估进度。
+   - `DONE`：本轮工作已完成并 commit，等待统筹 merge + 审校。统筹正常 merge。
+   - 编码 worktree 在 Codex 会话**启动时**将状态改为 `WORKING`，**结束时**改为 `DONE`（已 commit）或 `IDLE`（无产出）。
+   - **统筹判断规则**：若状态为 `WORKING` 但 `git status` 干净且分支有新 commit → 视为 `DONE`，可 merge。若状态为 `IDLE` 但 `git status` 有残留 → 真违规，统筹标记并要求清理。
 
 ---
 
@@ -157,6 +163,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex\` |
 | 分支 | `codex-work` |
 | 角色 | 编码：功能实现 + 测试 |
+| 工作状态 | `WORKING` |
 
 **当前分配的 spec**：
 
@@ -195,6 +202,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
+| 工作状态 | `WORKING` |
 
 **当前分配的 spec**：
 

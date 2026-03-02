@@ -202,12 +202,14 @@ cd D:\AI\owlclaw-codex-gpt && codex
 2. Merge   — 检查 review-work 是否有待合并内容：
              有 → git merge review-work（在主 worktree 执行）
 
-3. Sync    — **main 每次有新 commit 后（无论来自 merge 还是文档更新），必须立即同步所有子 worktree**：
-             cd D:\AI\owlclaw-review    && git merge main
-             cd D:\AI\owlclaw-codex     && git merge main
-             cd D:\AI\owlclaw-codex-gpt && git merge main
+3. Sync    — **main 每次有新 commit 后，同步子 worktree**（需检查工作状态）：
+             先读取 WORKTREE_ASSIGNMENTS.md 中各编码 worktree 的 `工作状态` 字段：
+             - `IDLE` 或 `DONE` → 正常执行 `git merge main`
+             - `WORKING` → **跳过该 worktree 的 merge**，在报告中标注"编码进行中，跳过同步"
+               （原因：WORKING 状态下工作目录可能有未提交改动，强制 merge 会冲突打断编码）
+             - 若无法确定状态（字段缺失），用 `git status` 判断：干净 → merge；有残留 → 跳过
+             review-work 始终同步：cd D:\AI\owlclaw-review && git merge main
              若有冲突 → 就地解决（通常只有 SPEC_TASKS_SCAN.md），取最新进度版本
-             ⚠️ 跳过此步会导致编码 worktree 读到旧任务分配，继续执行已完成的旧 spec
              ⚠️ **禁止手动 cp tracked 文件到 worktree**（如 `.cursor/rules/*.mdc`）。
              这些文件是 Git tracked 的，`git merge main` 会自动同步。
              手动 cp 会覆盖 tracked 文件，导致下次 merge 时报 "local changes would be overwritten" 错误。
