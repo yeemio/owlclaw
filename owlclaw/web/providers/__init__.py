@@ -5,27 +5,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from owlclaw.web.providers.governance import DefaultGovernanceProvider
 from owlclaw.web.providers.overview import DefaultOverviewProvider
-
-
-class _EmptyGovernanceProvider:
-    async def get_budget_trend(
-        self,
-        tenant_id: str,
-        start_date: Any,
-        end_date: Any,
-        granularity: str,
-    ) -> list[dict[str, Any]]:
-        _ = (tenant_id, start_date, end_date, granularity)
-        return []
-
-    async def get_circuit_breaker_states(self, tenant_id: str) -> list[dict[str, Any]]:
-        _ = tenant_id
-        return []
-
-    async def get_visibility_matrix(self, tenant_id: str, agent_id: str | None) -> dict[str, Any]:
-        _ = (tenant_id, agent_id)
-        return {"items": []}
 
 
 class _EmptyTriggersProvider:
@@ -115,7 +96,7 @@ def create_default_provider_bundle() -> dict[str, Any]:
     """Create default provider set for API bootstrap."""
     return {
         "overview": DefaultOverviewProvider(),
-        "governance": _EmptyGovernanceProvider(),
+        "governance": DefaultGovernanceProvider(),
         "triggers": _EmptyTriggersProvider(),
         "agents": _EmptyAgentsProvider(),
         "capabilities": _EmptyCapabilitiesProvider(),
@@ -124,4 +105,4 @@ def create_default_provider_bundle() -> dict[str, Any]:
     }
 
 
-__all__ = ["DefaultOverviewProvider", "create_default_provider_bundle"]
+__all__ = ["DefaultOverviewProvider", "DefaultGovernanceProvider", "create_default_provider_bundle"]

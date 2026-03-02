@@ -88,10 +88,10 @@
 - `owlclaw/web/api/governance.py` — Governance 路由
 
 **实现**：
-- [ ] 3.1 实现 `DefaultGovernanceProvider`：预算消耗趋势（按天/周/月聚合）
-- [ ] 3.2 实现限流/熔断状态查询
-- [ ] 3.3 实现能力可见性矩阵（Agent × Capability）
-- [ ] 3.4 实现 `GET /api/v1/governance/budget`、`GET /api/v1/governance/circuit-breakers`、`GET /api/v1/governance/visibility-matrix` 路由
+- [x] 3.1 实现 `DefaultGovernanceProvider`：预算消耗趋势（按天/周/月聚合）
+- [x] 3.2 实现限流/熔断状态查询
+- [x] 3.3 实现能力可见性矩阵（Agent × Capability）
+- [x] 3.4 实现 `GET /api/v1/governance/budget`、`GET /api/v1/governance/circuit-breakers`、`GET /api/v1/governance/visibility-matrix` 路由
 
 **验收**：
 - 预算趋势返回按时间粒度聚合的数据
