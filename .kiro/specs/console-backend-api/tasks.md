@@ -110,9 +110,9 @@
 - `owlclaw/web/api/ledger.py` — Ledger 路由
 
 **实现**：
-- [ ] 4.1 实现 `DefaultLedgerProvider`：多维筛选 + 分页 + 排序
-- [ ] 4.2 实现记录详情查询（输入/输出/成本/模型/延迟/决策推理）
-- [ ] 4.3 实现 `GET /api/v1/ledger`（列表 + 筛选 + 分页）和 `GET /api/v1/ledger/{id}`（详情）路由
+- [x] 4.1 实现 `DefaultLedgerProvider`：多维筛选 + 分页 + 排序
+- [x] 4.2 实现记录详情查询（输入/输出/成本/模型/延迟/决策推理）
+- [x] 4.3 实现 `GET /api/v1/ledger`（列表 + 筛选 + 分页）和 `GET /api/v1/ledger/{id}`（详情）路由
 
 **验收**：
 - 筛选参数（agent_id/capability/时间/成本/状态）正确过滤

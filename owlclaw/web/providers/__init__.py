@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any
 
 from owlclaw.web.providers.governance import DefaultGovernanceProvider
+from owlclaw.web.providers.ledger import DefaultLedgerProvider
 from owlclaw.web.providers.overview import DefaultOverviewProvider
 
 
@@ -49,37 +51,6 @@ class _EmptyCapabilitiesProvider:
         return None
 
 
-class _EmptyLedgerProvider:
-    async def query_records(
-        self,
-        tenant_id: str,
-        agent_id: str | None,
-        capability_name: str | None,
-        status: str | None,
-        start_date: Any,
-        end_date: Any,
-        limit: int,
-        offset: int,
-        order_by: str | None,
-    ) -> tuple[list[dict[str, Any]], int]:
-        _ = (
-            tenant_id,
-            agent_id,
-            capability_name,
-            status,
-            start_date,
-            end_date,
-            limit,
-            offset,
-            order_by,
-        )
-        return [], 0
-
-    async def get_record_detail(self, record_id: str, tenant_id: str) -> dict[str, Any] | None:
-        _ = (record_id, tenant_id)
-        return None
-
-
 class _EmptySettingsProvider:
     async def get_settings(self, tenant_id: str) -> dict[str, Any]:
         _ = tenant_id
@@ -100,9 +71,9 @@ def create_default_provider_bundle() -> dict[str, Any]:
         "triggers": _EmptyTriggersProvider(),
         "agents": _EmptyAgentsProvider(),
         "capabilities": _EmptyCapabilitiesProvider(),
-        "ledger": _EmptyLedgerProvider(),
+        "ledger": DefaultLedgerProvider(),
         "settings": _EmptySettingsProvider(),
     }
 
 
-__all__ = ["DefaultOverviewProvider", "DefaultGovernanceProvider", "create_default_provider_bundle"]
+__all__ = ["DefaultOverviewProvider", "DefaultGovernanceProvider", "DefaultLedgerProvider", "create_default_provider_bundle"]

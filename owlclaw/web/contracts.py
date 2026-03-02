@@ -122,6 +122,8 @@ class LedgerProvider(Protocol):
         status: str | None,
         start_date: date | None,
         end_date: date | None,
+        min_cost: Decimal | None,
+        max_cost: Decimal | None,
         limit: int,
         offset: int,
         order_by: str | None,
