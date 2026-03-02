@@ -111,7 +111,7 @@ git add -A && git commit -m "message"
 <type>(<scope>): <description>
 
 type: feat | fix | refactor | test | docs | chore
-scope: agent | governance | triggers | integrations | cli | mcp | skills
+scope: agent | governance | triggers | integrations | cli | mcp | skills | web
 ```
 
 ### 4.3 提交最小化原则
@@ -198,4 +198,21 @@ async def advanced_memory_search(self, query: str) -> list[str]:
 
 ---
 
-**执行承诺**：Poetry 管理依赖 · 先规划后执行 · 完整实现所有功能 · 禁止 TODO 预留 · Git 提交最小化
+## 七、Console 影响评估
+
+当修改底层 Spec（agent-runtime、governance、triggers-*、capabilities-skills、integrations-* 等）的 tasks.md 时，若变更涉及以下任一情况，须在 task 描述中标注 `[console-impact]`：
+
+1. **数据模型变更**：Ledger 字段增删、Trigger 状态结构变化、Agent 运行时状态新增属性
+2. **查询接口变更**：`list_capabilities()`、`query_records()`、`get_cost_summary()` 等被 Console 依赖的方法签名变化
+3. **新增可观测数据**：新的指标、新的状态枚举值、新的审计事件类型
+
+标注 `[console-impact]` 后，在 `console-backend-api` 的 tasks.md 中同步新增对应的 Provider 适配 task。
+
+不需要标注的情况：
+- 纯内部重构（不改变对外接口）
+- 性能优化（不改变返回数据结构）
+- 新增底层功能但 Console 暂不展示
+
+---
+
+**执行承诺**：Poetry 管理依赖 · 先规划后执行 · 完整实现所有功能 · 禁止 TODO 预留 · Git 提交最小化 · 底层变更评估 Console 影响

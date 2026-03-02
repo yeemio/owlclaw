@@ -440,12 +440,27 @@ OwlHub 积累行业 Skills 模板 → 同行业企业直接复用
 | 架构演进路线（Multi-Agent/自我进化/可解释性/安全/性能） | architecture-roadmap |
 | AI 一人企业 OS 前瞻（OwlClaw + OpenClaw 协作模式，架构预留） | — |
 
+### S10：Web Console（治理控制面 + 统一入口，决策 D15 已批准 2026-02-27）
+
+| 产品能力 | Spec |
+|---------|------|
+| Console 后端 REST API（Overview/Agents/Governance/Capabilities/Triggers/Ledger/Settings） | console-backend-api |
+| Console 前端 SPA（React + Tailwind + Shadcn/ui，内嵌 Python 包） | console-frontend |
+| Overview 页面（系统健康 + 关键指标 + 告警横幅） | console-frontend |
+| Governance 页面（预算趋势 + 限流/熔断状态 + 能力可见性矩阵） | console-frontend |
+| Ledger 页面（执行审计时间线 + 多维筛选 + 详情展开） | console-frontend |
+| Agents 页面（Agent 列表 + 身份 + 记忆 + 知识库 + 运行历史） | console-frontend |
+| Capabilities 页面（Handlers + Skills + Bindings + Schema + 调用统计） | console-frontend |
+| Triggers 页面（6 类触发器状态 + 执行历史 + 下次触发） | console-frontend |
+| Settings 页面（配置查看 + MCP 连接 + 系统信息） | console-frontend |
+| Console 集成（`owlclaw start` 自动挂载 + 同端口服务） | console-integration |
+
 ### 统计
 
-57 项产品能力，覆盖 10 个阶段，映射到 46 个 spec。实时进度见 `SPEC_TASKS_SCAN.md`。
+67 项产品能力，覆盖 11 个阶段，映射到 49 个 spec。实时进度见 `SPEC_TASKS_SCAN.md`。
 
 ---
 
 **维护者**: yeemio
 **下次审核**: 2026-03-15
-**变更记录**: v2.0.0 (2026-02-27) — 基于 DUAL_MODE_ARCHITECTURE_DECISION.md 批准，补充三段光谱定位、AI 一人企业 OS 战略定位、开源边界、商业化路径、S8 双模接入能力矩阵
+**变更记录**: v2.1.0 (2026-02-27) — 新增 S10 Web Console 能力矩阵（决策 D15）；v2.0.0 (2026-02-27) — 基于 DUAL_MODE_ARCHITECTURE_DECISION.md 批准，补充三段光谱定位、AI 一人企业 OS 战略定位、开源边界、商业化路径、S8 双模接入能力矩阵

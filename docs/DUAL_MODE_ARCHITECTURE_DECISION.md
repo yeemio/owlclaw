@@ -1272,6 +1272,7 @@ OwlClaw 做什么（后台）：
 | D14-1 运行模式契约 | run() 内建 heartbeat，start() 外部负责 heartbeat | ☑ | 2026-02-27 | start() docstring 必须明确标注；集成文档必须包含外部 heartbeat 示例 |
 | D14-2 闭环发布门禁 | 外部事件→决策→执行→回写→审计全链路验收 | ☑ | 2026-02-27 | CI 自动化执行（mock LLM + 真实 Trigger + 真实 Ledger），失败阻断发布 |
 | D14-3 Heartbeat 韧性 | DB 事件源最小实现 + SLO（漏检<5%，延迟<500ms，误触<1%） | ☑ | 2026-02-27 | 选 Ledger 表查询（自有组件，零外部依赖）；其余 4 源保持占位 |
+| D15 Web Console | 内建 Web Console：治理控制面 + 统一入口（React SPA 内嵌 Python 包） | ☑ | 2026-02-27 | Phase 1 只读 MVP（展示+监控）；RBAC/多租户留企业版；深链接 Hatchet/Langfuse 不重造 |
 
 ---
 
