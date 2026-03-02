@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 from time import perf_counter
 from typing import Any
 
@@ -95,6 +96,10 @@ class TestHeartbeatCheckerNoEvents:
             config={"event_sources": {"WEBHOOK", "queue", "unknown"}},
         )
         assert set(checker._event_sources) == {"webhook", "queue"}
+
+    def test_database_pending_statuses_defaults_to_runtime_retriable_statuses(self) -> None:
+        checker = HeartbeatChecker(agent_id="bot")
+        assert checker._database_pending_statuses == ("error", "timeout", "pending")
 
 
 class TestHeartbeatCheckerWithEvents:
@@ -249,3 +254,107 @@ async def test_database_source_latency_under_500ms() -> None:
     await checker.check_events("tenant-a")
     elapsed_ms = (perf_counter() - started) * 1000
     assert elapsed_ms < 500
+
+
+class _ScheduleClient:
+    def __init__(self, tasks: list[dict[str, Any]]) -> None:
+        self._tasks = tasks
+        self.called = False
+
+    async def list_scheduled_tasks(self) -> list[dict[str, Any]]:
+        self.called = True
+        return self._tasks
+
+
+@pytest.mark.asyncio
+async def test_schedule_source_detects_due_tasks() -> None:
+    now = datetime.now(timezone.utc)
+    client = _ScheduleClient(
+        tasks=[
+            {
+                "id": "task-1",
+                "scheduled_at": (now - timedelta(seconds=10)).isoformat(),
+            }
+        ]
+    )
+    checker = HeartbeatChecker(
+        agent_id="bot",
+        config={
+            "event_sources": ["schedule"],
+            "schedule_client": client,
+        },
+    )
+    assert await checker.check_events("tenant-a") is True
+    assert client.called is True
+
+
+@pytest.mark.asyncio
+async def test_schedule_source_ignores_future_tasks() -> None:
+    now = datetime.now(timezone.utc)
+    checker = HeartbeatChecker(
+        agent_id="bot",
+        config={
+            "event_sources": ["schedule"],
+            "schedule_client": _ScheduleClient(
+                tasks=[
+                    {
+                        "id": "task-future",
+                        "scheduled_at": (now + timedelta(minutes=5)).isoformat(),
+                    }
+                ]
+            ),
+        },
+    )
+    assert await checker.check_events("tenant-a") is False
+
+
+@pytest.mark.asyncio
+async def test_schedule_source_can_use_due_window() -> None:
+    now = datetime.now(timezone.utc)
+    checker = HeartbeatChecker(
+        agent_id="bot",
+        config={
+            "event_sources": ["schedule"],
+            "schedule_client": _ScheduleClient(
+                tasks=[
+                    {
+                        "id": "task-near-future",
+                        "scheduled_at": (now + timedelta(seconds=15)).isoformat(),
+                    }
+                ]
+            ),
+            "schedule_due_window_seconds": 30,
+        },
+    )
+    assert await checker.check_events("tenant-a") is True
+
+
+@pytest.mark.asyncio
+async def test_schedule_source_handles_missing_due_timestamp_as_actionable() -> None:
+    checker = HeartbeatChecker(
+        agent_id="bot",
+        config={
+            "event_sources": ["schedule"],
+            "schedule_client": _ScheduleClient(tasks=[{"id": "task-queued"}]),
+        },
+    )
+    assert await checker.check_events("tenant-a") is True
+
+
+@pytest.mark.asyncio
+async def test_extension_sources_enabled_emit_warning(caplog: pytest.LogCaptureFixture) -> None:
+    checker = HeartbeatChecker(
+        agent_id="bot",
+        config={
+            "event_sources": ["webhook", "queue", "external_api"],
+            "webhook_enabled": True,
+            "queue_enabled": True,
+            "external_api_enabled": True,
+        },
+    )
+    with caplog.at_level("WARNING"):
+        assert await checker.check_events("tenant-a") is False
+    messages = [record.message for record in caplog.records]
+    assert any("webhook source enabled but no implementation" in message for message in messages)
+    assert any("queue source enabled but no implementation" in message for message in messages)
+    assert any("external_api source enabled but no implementation" in message for message in messages)

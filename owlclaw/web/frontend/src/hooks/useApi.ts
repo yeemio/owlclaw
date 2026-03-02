@@ -176,6 +176,16 @@ export type SettingsSnapshot = {
   docs: { title: string; url: string }[];
 };
 
+type CircuitBreakerInput = Partial<CircuitBreakerState> & {
+  capability_name?: string;
+};
+
+type VisibilityItemInput = Partial<VisibilityRow> & {
+  agent_id?: string;
+  capability_name?: string;
+  visible?: boolean;
+};
+
 function toNumber(value: unknown): number {
   if (typeof value === "number") {
     return value;
@@ -201,6 +211,35 @@ function normalizeOverviewSnapshot(raw: unknown): OverviewSnapshot {
 
 function normalizeGovernanceSnapshot(raw: unknown): GovernanceSnapshot {
   const input = (raw as Partial<GovernanceSnapshot>) ?? {};
+  const rawCircuitBreakers = Array.isArray(input.circuit_breakers) ? input.circuit_breakers : [];
+  const rawVisibility = Array.isArray(input.visibility) ? input.visibility : [];
+  const groupedVisibility = new Map<string, Record<string, boolean>>();
+  const normalizedVisibilityRows: VisibilityRow[] = [];
+
+  for (const item of rawVisibility) {
+    const row = item as VisibilityItemInput;
+    if (typeof row.capabilities === "object" && row.capabilities) {
+      normalizedVisibilityRows.push({
+        agent: String(row.agent ?? row.agent_id ?? "unknown"),
+        capabilities: row.capabilities,
+      });
+      continue;
+    }
+    const agentId = String(row.agent_id ?? row.agent ?? "unknown");
+    const capabilityName = String(row.capability_name ?? "");
+    if (!capabilityName) {
+      continue;
+    }
+    if (!groupedVisibility.has(agentId)) {
+      groupedVisibility.set(agentId, {});
+    }
+    groupedVisibility.get(agentId)![capabilityName] = Boolean(row.visible);
+  }
+
+  for (const [agent, capabilities] of groupedVisibility.entries()) {
+    normalizedVisibilityRows.push({ agent, capabilities });
+  }
+
   return {
     budget_trend: Array.isArray(input.budget_trend)
       ? input.budget_trend.map((item) => ({
@@ -208,21 +247,11 @@ function normalizeGovernanceSnapshot(raw: unknown): GovernanceSnapshot {
           cost: toNumber((item as BudgetTrendInput).cost ?? (item as BudgetTrendInput).total_cost),
         }))
       : [],
-    circuit_breakers: Array.isArray(input.circuit_breakers)
-      ? input.circuit_breakers.map((item) => ({
-          name: String((item as CircuitBreakerState).name ?? "unknown"),
-          state: ((item as CircuitBreakerState).state ?? "closed") as CircuitBreakerState["state"],
-        }))
-      : [],
-    visibility: Array.isArray(input.visibility)
-      ? input.visibility.map((item) => ({
-          agent: String((item as VisibilityRow).agent ?? "unknown"),
-          capabilities:
-            typeof (item as VisibilityRow).capabilities === "object" && (item as VisibilityRow).capabilities
-              ? (item as VisibilityRow).capabilities
-              : {},
-        }))
-      : [],
+    circuit_breakers: rawCircuitBreakers.map((item) => ({
+      name: String((item as CircuitBreakerInput).name ?? (item as CircuitBreakerInput).capability_name ?? "unknown"),
+      state: ((item as CircuitBreakerInput).state ?? "closed") as CircuitBreakerState["state"],
+    })),
+    visibility: normalizedVisibilityRows,
     migration_weight: toNumber(input.migration_weight),
     skills_quality_rank: Array.isArray(input.skills_quality_rank)
       ? input.skills_quality_rank.map((item) => ({
