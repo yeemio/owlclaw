@@ -150,11 +150,11 @@
 - `src/components/data/SchemaViewer.tsx`
 
 **实现**：
-- [ ] 6.1 实现 Handlers/Skills/Bindings 分类标签页
-- [ ] 6.2 实现 JSON Schema 查看器（语法高亮）
-- [ ] 6.3 实现调用统计图（执行次数/成功率/平均延迟）
-- [ ] 6.4 实现扫描结果标签页（cli-scan 产物）
-- [ ] 6.5 实现迁移进度标签页（cli-migrate 产物）
+- [x] 6.1 实现 Handlers/Skills/Bindings 分类标签页
+- [x] 6.2 实现 JSON Schema 查看器（语法高亮）
+- [x] 6.3 实现调用统计图（执行次数/成功率/平均延迟）
+- [x] 6.4 实现扫描结果标签页（cli-scan 产物）
+- [x] 6.5 实现迁移进度标签页（cli-migrate 产物）
 
 **验收**：
 - 三类能力正确分类展示
@@ -173,9 +173,9 @@
 - `src/pages/ExternalDashboard.tsx`
 
 **实现**：
-- [ ] 7.1 实现 Triggers 页面（6 类统一列表 + 执行历史 + 下次触发倒计时）
-- [ ] 7.2 实现 Settings 页面（配置树 + MCP 状态 + DB 状态 + 版本信息 + 文档链接）
-- [ ] 7.3 实现 Traces/Workflows 页面（Langfuse/Hatchet 深链接 + 连接状态）
+- [x] 7.1 实现 Triggers 页面（6 类统一列表 + 执行历史 + 下次触发倒计时）
+- [x] 7.2 实现 Settings 页面（配置树 + MCP 状态 + DB 状态 + 版本信息 + 文档链接）
+- [x] 7.3 实现 Traces/Workflows 页面（Langfuse/Hatchet 深链接 + 连接状态）
 
 **验收**：
 - 触发器列表包含所有 6 类

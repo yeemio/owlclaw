@@ -119,6 +119,56 @@ export type AgentDetail = {
   recent_runs: AgentRunRecord[];
 };
 
+export type CapabilityCategory = "handler" | "skill" | "binding";
+
+export type CapabilityItem = {
+  name: string;
+  category: CapabilityCategory;
+  schema: Record<string, unknown>;
+  stats: {
+    executions: number;
+    success_rate: number;
+    avg_latency_ms: number;
+  };
+};
+
+export type ScanCandidate = {
+  module: string;
+  function: string;
+  signature: string;
+};
+
+export type MigrationItem = {
+  capability: string;
+  status: "migrated" | "pending" | "binding_ready";
+};
+
+export type CapabilitiesSnapshot = {
+  capabilities: CapabilityItem[];
+  scan_candidates: ScanCandidate[];
+  migration_progress: MigrationItem[];
+};
+
+export type TriggerItem = {
+  id: string;
+  type: string;
+  name: string;
+  next_run: string;
+  last_status: "success" | "failed" | "running";
+};
+
+export type TriggersSnapshot = {
+  triggers: TriggerItem[];
+};
+
+export type SettingsSnapshot = {
+  config: Record<string, unknown>;
+  mcp_status: { connected_clients: number; server_up: boolean };
+  db_status: { migration_version: string; healthy: boolean };
+  version: { app_version: string; build_time: string; commit_hash: string; provenance: string };
+  docs: { title: string; url: string }[];
+};
+
 function toNumber(value: unknown): number {
   if (typeof value === "number") {
     return value;
@@ -247,6 +297,82 @@ function normalizeAgentDetail(raw: unknown): AgentDetail {
   };
 }
 
+function normalizeCapabilitiesSnapshot(raw: unknown): CapabilitiesSnapshot {
+  const input = (raw as Partial<CapabilitiesSnapshot>) ?? {};
+  return {
+    capabilities: Array.isArray(input.capabilities)
+      ? input.capabilities.map((item) => {
+          const cap = (item as Partial<CapabilityItem>) ?? {};
+          return {
+            name: String(cap.name ?? "unknown"),
+            category: (cap.category ?? "handler") as CapabilityCategory,
+            schema: (cap.schema as Record<string, unknown>) ?? {},
+            stats: {
+              executions: toNumber(cap.stats?.executions),
+              success_rate: toNumber(cap.stats?.success_rate),
+              avg_latency_ms: toNumber(cap.stats?.avg_latency_ms),
+            },
+          };
+        })
+      : [],
+    scan_candidates: Array.isArray(input.scan_candidates)
+      ? input.scan_candidates.map((item) => ({
+          module: String((item as ScanCandidate).module ?? ""),
+          function: String((item as ScanCandidate).function ?? ""),
+          signature: String((item as ScanCandidate).signature ?? ""),
+        }))
+      : [],
+    migration_progress: Array.isArray(input.migration_progress)
+      ? input.migration_progress.map((item) => ({
+          capability: String((item as MigrationItem).capability ?? ""),
+          status: ((item as MigrationItem).status ?? "pending") as MigrationItem["status"],
+        }))
+      : [],
+  };
+}
+
+function normalizeTriggersSnapshot(raw: unknown): TriggersSnapshot {
+  const input = (raw as Partial<TriggersSnapshot>) ?? {};
+  return {
+    triggers: Array.isArray(input.triggers)
+      ? input.triggers.map((item) => ({
+          id: String((item as TriggerItem).id ?? ""),
+          type: String((item as TriggerItem).type ?? ""),
+          name: String((item as TriggerItem).name ?? ""),
+          next_run: String((item as TriggerItem).next_run ?? ""),
+          last_status: ((item as TriggerItem).last_status ?? "success") as TriggerItem["last_status"],
+        }))
+      : [],
+  };
+}
+
+function normalizeSettingsSnapshot(raw: unknown): SettingsSnapshot {
+  const input = (raw as Partial<SettingsSnapshot>) ?? {};
+  return {
+    config: (input.config as Record<string, unknown>) ?? {},
+    mcp_status: {
+      connected_clients: toNumber(input.mcp_status?.connected_clients),
+      server_up: Boolean(input.mcp_status?.server_up),
+    },
+    db_status: {
+      migration_version: String(input.db_status?.migration_version ?? "unknown"),
+      healthy: Boolean(input.db_status?.healthy),
+    },
+    version: {
+      app_version: String(input.version?.app_version ?? "unknown"),
+      build_time: String(input.version?.build_time ?? "unknown"),
+      commit_hash: String(input.version?.commit_hash ?? "unknown"),
+      provenance: String(input.version?.provenance ?? "unknown"),
+    },
+    docs: Array.isArray(input.docs)
+      ? input.docs.map((item) => ({
+          title: String((item as { title: string }).title ?? ""),
+          url: String((item as { url: string }).url ?? ""),
+        }))
+      : [],
+  };
+}
+
 function buildLedgerQuery(filters: LedgerFilters, limit: number, offset: number): string {
   const params = new URLSearchParams();
   if (filters.agent) {
@@ -322,6 +448,30 @@ export function useAgentDetail(agentId: string | null) {
     queryKey: ["agent", agentId],
     queryFn: async () => normalizeAgentDetail(await apiFetch<unknown>(`/agents/${agentId}`)),
     enabled: Boolean(agentId),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useCapabilities() {
+  return useQuery({
+    queryKey: ["capabilities"],
+    queryFn: async () => normalizeCapabilitiesSnapshot(await apiFetch<unknown>("/capabilities")),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useTriggers() {
+  return useQuery({
+    queryKey: ["triggers"],
+    queryFn: async () => normalizeTriggersSnapshot(await apiFetch<unknown>("/triggers")),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useSettings() {
+  return useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => normalizeSettingsSnapshot(await apiFetch<unknown>("/settings")),
     refetchInterval: 30_000,
   });
 }
