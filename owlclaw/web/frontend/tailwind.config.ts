@@ -1,21 +1,25 @@
 import type { Config } from "tailwindcss";
 
-export default {
+const config: Config = {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        background: "hsl(220 16% 9%)",
-        foreground: "hsl(210 20% 96%)",
-        card: "hsl(222 16% 12%)",
-        border: "hsl(220 12% 24%)",
-        primary: "hsl(174 90% 36%)",
-        muted: "hsl(220 12% 18%)",
-        danger: "hsl(0 72% 52%)",
-        warning: "hsl(38 92% 52%)",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: "hsl(var(--card))",
+        "card-foreground": "hsl(var(--card-foreground))",
+        primary: "hsl(var(--primary))",
+        "primary-foreground": "hsl(var(--primary-foreground))",
+        muted: "hsl(var(--muted))",
+        "muted-foreground": "hsl(var(--muted-foreground))",
+        border: "hsl(var(--border))",
+        ring: "hsl(var(--ring))",
       },
     },
   },
   plugins: [],
-} satisfies Config;
+};
+
+export default config;

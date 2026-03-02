@@ -13,7 +13,7 @@ help:
 	@echo "  test-int     Run integration tests only"
 	@echo "  lint         Run Ruff checks"
 	@echo "  typecheck    Run MyPy checks"
-	@echo "  build-console Build frontend and output to owlclaw/web/static"
+	@echo "  build-console Build frontend assets into owlclaw/web/static"
 	@echo ""
 	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
@@ -57,6 +57,6 @@ lint:
 typecheck:
 	poetry run mypy owlclaw/
 
-## Build web console frontend
+## Build console frontend assets
 build-console:
-	cd owlclaw/web/frontend && npm run build
+	cd owlclaw/web/frontend && npm install && npm run build

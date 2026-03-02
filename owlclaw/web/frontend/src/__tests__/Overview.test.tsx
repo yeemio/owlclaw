@@ -1,25 +1,44 @@
 import { render, screen } from "@testing-library/react";
-import Overview from "@/pages/Overview";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastProvider } from "@/components/system/Toast";
+import { OverviewPage } from "@/pages/Overview";
 
-vi.mock("@/hooks/useWebSocket", () => ({ useConsoleWebSocket: () => undefined }));
-vi.mock("@/hooks/useApi", () => ({
-  useOverview: () => ({
-    data: {
-      total_cost_today: "1.00",
-      total_executions_today: 1,
-      success_rate_today: 1,
-      active_agents: 1,
-      health_checks: [{ component: "runtime", healthy: true }],
-    },
-    isLoading: false,
-    error: null,
-  }),
+vi.mock("@/hooks/useApi", async () => {
+  const actual = await vi.importActual<typeof import("@/hooks/useApi")>("@/hooks/useApi");
+  return {
+    ...actual,
+    useOverview: () => ({
+      data: {
+        total_cost_today: 12.5,
+        total_executions_today: 42,
+        success_rate_today: 0.9,
+        active_agents: 3,
+        health_checks: [{ component: "Runtime", healthy: true }],
+        alerts: [{ level: "warning", message: "Rate limit at 80%" }],
+      },
+      isLoading: false,
+      isError: false,
+      error: null,
+    }),
+  };
+});
+
+vi.mock("@/hooks/useWebSocket", () => ({
+  useConsoleWebSocket: () => undefined,
 }));
 
-describe("Overview page", () => {
-  it("renders overview payload", async () => {
-    render(<Overview />);
-    expect(await screen.findByTestId("overview-page")).toBeInTheDocument();
-    expect(screen.getByText("Health")).toBeInTheDocument();
+describe("OverviewPage", () => {
+  it("renders overview data from hook", () => {
+    const queryClient = new QueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <OverviewPage />
+        </ToastProvider>
+      </QueryClientProvider>
+    );
+    expect(screen.getByText("Overview")).toBeInTheDocument();
+    expect(screen.getByText("Rate limit at 80%")).toBeInTheDocument();
+    expect(screen.getByText("Active Agents")).toBeInTheDocument();
   });
 });

@@ -1,19 +1,17 @@
-"""Console mount helpers for Starlette/FastAPI hosts."""
+"""Console mounting utilities for OwlClaw web integration."""
 
 from __future__ import annotations
 
+import importlib
 import logging
 from pathlib import Path
-from typing import Any, MutableMapping
+from typing import Any
 
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, RedirectResponse, Response
+from starlette.responses import RedirectResponse, Response
 from starlette.staticfiles import StaticFiles
-
-from owlclaw.web.app import create_console_app
 
 logger = logging.getLogger(__name__)
 
@@ -21,51 +19,62 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 
 class SPAStaticFiles(StaticFiles):
-    """Static files app with SPA fallback to index.html for unknown paths."""
+    """Serve static files and fallback to index.html for client-side routes."""
 
-    async def get_response(self, path: str, scope: MutableMapping[str, Any]) -> Response:
+    async def get_response(self, path: str, scope: dict[str, Any]) -> Response:
         try:
             response = await super().get_response(path, scope)
-            if response.status_code != 404:
-                return response
         except StarletteHTTPException as exc:
-            if exc.status_code != 404:
-                raise
-        index_file = Path(self.directory) / "index.html"  # type: ignore[arg-type]
-        return FileResponse(index_file)
+            if exc.status_code == 404 and "." not in path.split("/")[-1]:
+                return await super().get_response("index.html", scope)
+            raise
+        is_not_found = response.status_code == 404
+        has_extension = "." in path.split("/")[-1]
+        if is_not_found and not has_extension:
+            return await super().get_response("index.html", scope)
+        return response
 
 
-class _RootRedirectMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):  # type: ignore[no-untyped-def]
-        if request.url.path == "/":
-            return RedirectResponse(url="/console/")
-        return await call_next(request)
+def _has_route(app: Starlette, path: str) -> bool:
+    for route in app.routes:
+        route_path = getattr(route, "path", None)
+        if route_path == path:
+            return True
+    return False
 
 
-class _RestorePrefixApp:
-    """Re-attach stripped mount prefix before delegating to sub-app."""
-
-    def __init__(self, app, prefix: str) -> None:  # type: ignore[no-untyped-def]
-        self._app = app
-        self._prefix = prefix
-
-    async def __call__(self, scope, receive, send):  # type: ignore[no-untyped-def]
-        if scope["type"] in {"http", "websocket"}:
-            patched = dict(scope)
-            patched["path"] = f"{self._prefix}{scope['path']}"
-            return await self._app(patched, receive, send)
-        return await self._app(scope, receive, send)
+def _load_console_api_app() -> Any | None:
+    try:
+        module = importlib.import_module("owlclaw.web.api.app")
+    except ModuleNotFoundError:
+        return None
+    factory = getattr(module, "create_console_app", None)
+    if factory is None:
+        return None
+    return factory()
 
 
-def mount_console(app: Starlette) -> bool:
-    """Mount console API + static frontend. Return True when mounted."""
-    index_html = STATIC_DIR / "index.html"
-    if not index_html.exists():
-        logger.info("Console static files not found at %s, skip mounting", STATIC_DIR)
+def mount_console(app: Starlette, *, api_app: Any | None = None) -> bool:
+    """Mount Console static + API routes when assets are available.
+
+    Returns True when console static files are mounted, False otherwise.
+    """
+    index_file = STATIC_DIR / "index.html"
+    if not index_file.exists():
+        logger.info("Console static files not found at %s; skip mounting", STATIC_DIR)
         return False
 
-    app.mount("/api/v1", _RestorePrefixApp(create_console_app(), "/api/v1"))
-    app.mount("/console", SPAStaticFiles(directory=str(STATIC_DIR), html=True), name="console-static")
-    app.add_middleware(_RootRedirectMiddleware)
-    logger.info("Console mounted (api=/api/v1, ui=/console/)")
+    resolved_api_app = api_app if api_app is not None else _load_console_api_app()
+    if resolved_api_app is not None and not _has_route(app, "/api/v1"):
+        app.mount("/api/v1", resolved_api_app)
+
+    if not _has_route(app, "/console"):
+        app.mount("/console", SPAStaticFiles(directory=str(STATIC_DIR), html=True))
+
+    if not _has_route(app, "/"):
+        async def console_root_redirect(_: Request) -> RedirectResponse:
+            return RedirectResponse(url="/console/", status_code=307)
+        app.add_route("/", console_root_redirect)
+
+    logger.info("Console mounted at /console/ (API mounted=%s)", resolved_api_app is not None)
     return True

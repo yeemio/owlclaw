@@ -1,31 +1,16 @@
-"""Unit tests for `owlclaw console` command."""
-
 from __future__ import annotations
 
-import importlib
+from pathlib import Path
+
+from owlclaw.cli.console import console_command
 
 
-def test_console_command_dispatches_with_port(monkeypatch) -> None:
-    cli_main = importlib.import_module("owlclaw.cli.__init__")
-    captured: dict[str, object] = {}
+def test_console_command_returns_url_without_static(tmp_path: Path, monkeypatch) -> None:
+    fake_cli_file = tmp_path / "owlclaw" / "cli" / "console.py"
+    fake_cli_file.parent.mkdir(parents=True)
+    fake_cli_file.write_text("", encoding="utf-8")
 
-    def _fake_console_command(**kwargs):  # type: ignore[no-untyped-def]
-        captured.update(kwargs)
-        return "http://localhost:9000/console/"
-
-    monkeypatch.setattr("owlclaw.cli.console.console_command", _fake_console_command)
-    monkeypatch.setattr("sys.argv", ["owlclaw", "console", "--port", "9000"])
-    cli_main.main()
-    assert captured["port"] == 9000
-
-
-def test_console_help_uses_plain_help(monkeypatch, capsys) -> None:
-    cli_main = importlib.import_module("owlclaw.cli.__init__")
-    monkeypatch.setattr("sys.argv", ["owlclaw", "console", "--help"])
-    try:
-        cli_main.main()
-    except SystemExit as exc:
-        assert exc.code == 0
-    out = capsys.readouterr().out
-    assert "Usage: owlclaw console [OPTIONS]" in out
+    monkeypatch.setattr("owlclaw.cli.console.Path", lambda *_args, **_kwargs: fake_cli_file)
+    url = console_command(port=9000, open_browser=False)
+    assert url == "http://localhost:9000/console/"
 

@@ -1,23 +1,27 @@
-"""Console CLI helpers."""
+"""CLI command for opening OwlClaw Console."""
 
 from __future__ import annotations
 
 import webbrowser
 from pathlib import Path
 
-import typer
-
 
 def console_command(*, port: int = 8000, open_browser: bool = True) -> str:
-    """Open OwlClaw Console URL in browser and return URL."""
-    static_index = Path(__file__).resolve().parents[1] / "web" / "static" / "index.html"
+    """Open Console URL in browser and return URL string."""
     url = f"http://localhost:{port}/console/"
+    static_index = Path(__file__).resolve().parents[1] / "web" / "static" / "index.html"
+
     if not static_index.exists():
-        typer.echo("Console static files not found. Install extras: pip install owlclaw[console]")
+        print("Console static files not found. Install extras: pip install owlclaw[console]")
+        print(f"Expected: {static_index}")
         return url
 
-    typer.echo(f"Opening Console: {url}")
+    print(f"Console URL: {url}")
     if open_browser:
-        webbrowser.open(url)
+        try:
+            webbrowser.open(url)
+        except Exception:
+            # Browser open failures should not break CLI usage.
+            pass
     return url
 

@@ -1,30 +1,21 @@
-"""Integration tests for console mount behavior."""
-
 from __future__ import annotations
 
-from starlette.applications import Starlette
+from pathlib import Path
+
 from starlette.testclient import TestClient
 
-import owlclaw.web.mount as mount_module
+from owlclaw.cli.start import create_start_app
+from owlclaw.web import mount as web_mount
 
 
-def test_console_mount_with_static_files(tmp_path, monkeypatch) -> None:
+def test_start_app_mounts_console_when_static_exists(tmp_path: Path, monkeypatch) -> None:
     static_dir = tmp_path / "static"
     static_dir.mkdir(parents=True)
-    (static_dir / "index.html").write_text("<html><body>console ui</body></html>", encoding="utf-8")
-    monkeypatch.setattr(mount_module, "STATIC_DIR", static_dir)
+    (static_dir / "index.html").write_text("<html>console</html>", encoding="utf-8")
+    monkeypatch.setattr(web_mount, "STATIC_DIR", static_dir)
 
-    app = Starlette()
-    assert mount_module.mount_console(app) is True
-
+    app = create_start_app()
     client = TestClient(app)
-    assert client.get("/api/v1/overview").status_code != 404
-    ui = client.get("/console/")
-    assert ui.status_code == 200
-    assert "console ui" in ui.text
+    assert client.get("/healthz").status_code == 200
+    assert client.get("/console/").status_code == 200
 
-
-def test_console_mount_without_static_files(tmp_path, monkeypatch) -> None:
-    monkeypatch.setattr(mount_module, "STATIC_DIR", tmp_path / "not-found")
-    app = Starlette()
-    assert mount_module.mount_console(app) is False

@@ -1,18 +1,30 @@
-import { fmtCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-type Props = {
-  title: string;
-  value: number;
-  delta?: number;
+type MetricCardProps = {
+  label: string;
+  value: string;
+  trend?: number | null;
 };
 
-export function MetricCard({ title, value, delta = 0 }: Props): JSX.Element {
-  const trend = delta >= 0 ? "▲" : "▼";
+function trendText(trend: number): string {
+  const sign = trend > 0 ? "+" : "";
+  return `${sign}${trend.toFixed(1)}%`;
+}
+
+export function MetricCard({ label, value, trend }: MetricCardProps) {
+  const isPositive = (trend ?? 0) >= 0;
+
   return (
-    <div className="rounded-lg border border-border bg-card p-4" data-testid="metric-card">
-      <p className="text-xs text-foreground/70">{title}</p>
-      <p className="mt-2 text-2xl font-bold text-foreground">{fmtCurrency(value)}</p>
-      <p className="mt-1 text-xs text-foreground/70">{trend} {Math.abs(delta).toFixed(1)}%</p>
-    </div>
+    <article className="rounded-xl border border-border/70 bg-card/90 p-4">
+      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+      <div className="mt-3 flex items-end justify-between">
+        <p className="text-2xl font-semibold tracking-tight">{value}</p>
+        {typeof trend === "number" && (
+          <p className={cn("text-xs font-medium", isPositive ? "text-emerald-300" : "text-red-300")}>
+            {trendText(trend)}
+          </p>
+        )}
+      </div>
+    </article>
   );
 }

@@ -1,40 +1,76 @@
-import { useOverview } from "@/hooks/useApi";
-import { useConsoleWebSocket } from "@/hooks/useWebSocket";
+import { useEffect } from "react";
 import { MetricCard } from "@/components/charts/MetricCard";
+import { AlertBanner } from "@/components/data/AlertBanner";
 import { HealthIndicator } from "@/components/data/HealthIndicator";
-import { EmptyState } from "@/components/data/EmptyState";
+import { OnboardingCard } from "@/components/data/OnboardingCard";
+import { useToast } from "@/components/system/useToast";
+import { type HealthStatus, useOverview } from "@/hooks/useApi";
+import { useConsoleWebSocket } from "@/hooks/useWebSocket";
+import { PageShell } from "@/pages/PageShell";
 
-export default function Overview(): JSX.Element {
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function deriveHealthStatus(okCount: number, totalCount: number): HealthStatus {
+  if (totalCount === 0) {
+    return "degraded";
+  }
+  if (okCount === totalCount) {
+    return "healthy";
+  }
+  if (okCount > 0) {
+    return "degraded";
+  }
+  return "unhealthy";
+}
+
+export function OverviewPage() {
+  const { pushToast } = useToast();
   useConsoleWebSocket();
-  const { data, isLoading, error } = useOverview();
+  const { data, isLoading, isError, error } = useOverview();
+
+  useEffect(() => {
+    if (isError) {
+      pushToast("Overview request failed");
+    }
+  }, [isError, pushToast]);
 
   if (isLoading) {
-    return <div className="text-foreground">Loading overview...</div>;
-  }
-  if (error || !data) {
-    return <EmptyState title="Overview unavailable" description="Check API and token settings." />;
+    return <PageShell title="Overview" description="Loading overview metrics..." />;
   }
 
+  if (isError || !data) {
+    return (
+      <PageShell
+        title="Overview"
+        description={`Failed to load overview metrics${error instanceof Error ? `: ${error.message}` : "."}`}
+      />
+    );
+  }
+
+  const healthyCount = data.health_checks.filter((item) => item.healthy).length;
+  const healthStatus = deriveHealthStatus(healthyCount, data.health_checks.length);
+
   return (
-    <section className="space-y-4" data-testid="overview-page">
-      <div className="rounded-lg border border-border bg-card p-4">
-        <p className="text-sm text-foreground">Get started</p>
-        <p className="mt-1 text-xs text-foreground/70">Quick Start | Complete Workflow | SKILL.md Guide</p>
+    <PageShell title="Overview" description="Real-time system health and key runtime signals for the current tenant.">
+      <AlertBanner alerts={data.alerts} />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Cost Today" value={formatCurrency(data.total_cost_today)} />
+        <MetricCard label="Executions Today" value={data.total_executions_today.toLocaleString()} />
+        <MetricCard label="Success Rate" value={formatPercent(data.success_rate_today)} />
+        <MetricCard label="Active Agents" value={data.active_agents.toLocaleString()} />
       </div>
-      <div className="grid gap-3 md:grid-cols-4">
-        <MetricCard title="Cost Today" value={Number(data.total_cost_today)} delta={2.3} />
-        <MetricCard title="Executions" value={data.total_executions_today} delta={1.2} />
-        <MetricCard title="Success" value={data.success_rate_today * 100} delta={0.4} />
-        <MetricCard title="Active Agents" value={data.active_agents} delta={0} />
-      </div>
-      <div className="rounded-lg border border-border bg-card p-4">
-        <h2 className="mb-2 text-sm text-foreground">Health</h2>
-        <div className="grid gap-2 md:grid-cols-2">
-          {data.health_checks.map((item) => (
-            <HealthIndicator key={item.component} item={item} />
-          ))}
-        </div>
-      </div>
-    </section>
+      <HealthIndicator status={healthStatus} checks={data.health_checks} />
+      <OnboardingCard />
+    </PageShell>
   );
 }

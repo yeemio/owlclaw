@@ -1,29 +1,28 @@
+import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "node:path";
 
+// https://vite.dev/config/
 export default defineConfig({
+  base: "/console/",
   plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  base: "/console/",
+  server: {
+    host: "0.0.0.0",
+    port: 5173,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: "../static",
     emptyOutDir: true,
-  },
-  server: {
-    proxy: {
-      "/api": "http://localhost:8000",
-    },
-  },
-  test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
-    include: ["src/__tests__/**/*.test.ts", "src/__tests__/**/*.test.tsx"],
-    exclude: ["e2e/**", "node_modules/**"],
   },
 });
