@@ -22,9 +22,9 @@
 
 ## Task 2：兼容性验证
 
-- [ ] 2.1 在 OpenClaw 最新稳定版中测试 SKILL.md 解析
+- [x] 2.1 在 OpenClaw 最新稳定版中测试 SKILL.md 解析
 - [x] 2.2 验证 `owlclaw:` 扩展字段不影响 OpenClaw 解析
-- [ ] 2.3 验证 OpenClaw Agent 能正确发现和调用 OwlClaw MCP 工具
+- [x] 2.3 验证 OpenClaw Agent 能正确发现和调用 OwlClaw MCP 工具
 
 ## Task 3：ClawHub 发布
 
@@ -42,6 +42,6 @@
 ## Task 5：验收
 
 - [ ] 5.1 Skill 包在 ClawHub 可安装
-- [ ] 5.2 安装步骤 ≤ 3 步
-- [ ] 5.3 教程 ≤ 10 分钟可完成
+- [x] 5.2 安装步骤 ≤ 3 步
+- [x] 5.3 教程 ≤ 10 分钟可完成
 - [ ] 5.4 Phase 2 结束时评估下载量（止损线：< 100 则启动 Plan B）
