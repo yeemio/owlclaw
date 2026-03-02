@@ -380,6 +380,21 @@ def _dispatch_skill_command(argv: list[str]) -> bool:
     raise SystemExit(2)
 
 
+def _dispatch_console_command(argv: list[str]) -> bool:
+    """Dispatch `owlclaw console` via argparse."""
+    if not argv or argv[0] != "console":
+        return False
+    if "--help" in argv or "-h" in argv:
+        _print_help_and_exit(["console"])
+    parser = argparse.ArgumentParser(add_help=False, prog="owlclaw console")
+    parser.add_argument("--port", type=int, default=8000)
+    ns = parser.parse_args(argv[1:])
+    from owlclaw.cli.console import console_command
+
+    console_command(port=ns.port)
+    return True
+
+
 def _dispatch_memory_command(argv: list[str]) -> bool:
     """Dispatch `owlclaw memory ...` using argparse for Typer option-parse compatibility."""
     if not argv or argv[0] != "memory":
@@ -913,6 +928,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("  ledger Query governance audit ledger")
         print("  agent  Manual control via signal (pause/resume/trigger/instruct/status)")
         print("  skill  Create, validate, list Agent Skills (SKILL.md)")
+        print("  console Open Console URL in browser")
         print("  trigger Trigger templates (db-change)")
         print("  migrate Migrate legacy APIs/models to OwlClaw assets")
         print("  release Release validation and gate checks")
@@ -1076,6 +1092,13 @@ def _print_help_and_exit(argv: list[str]) -> None:
         print("Options:")
         print("  --config TEXT  Optional config file path")
         print("  --help         Show this message and exit")
+        sys.exit(0)
+    if argv == ["console"]:
+        print("Usage: owlclaw console [OPTIONS]")
+        print("\n  Open OwlClaw Console in browser.")
+        print("Options:")
+        print("  --port INTEGER  Console host port (default: 8000)")
+        print("  --help          Show this message and exit")
         sys.exit(0)
     if argv == ["memory"]:
         print("Usage: owlclaw memory [OPTIONS] COMMAND [ARGS]...")
@@ -1370,6 +1393,7 @@ def _print_help_and_exit(argv: list[str]) -> None:
     print("  migration Progressive migration controls")
     print("  approval  Approval queue operations")
     print("  skill  Create, parse, validate, list Agent Skills (SKILL.md)")
+    print("  console Open Console URL in browser")
     print("  trigger Trigger templates (db-change)")
     print("  migrate Migrate legacy APIs/models to OwlClaw assets")
     print("  release Release validation and gate checks")
@@ -1510,6 +1534,11 @@ def _main_impl() -> None:
         raise
     except Exception:
         raise
+    try:
+        if _dispatch_console_command(sys.argv[1:]):
+            return
+    except ClickExit as e:
+        raise SystemExit(e.exit_code) from None
     try:
         if _dispatch_memory_command(sys.argv[1:]):
             return

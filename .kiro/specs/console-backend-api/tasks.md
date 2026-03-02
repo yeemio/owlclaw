@@ -2,7 +2,7 @@
 
 > **Spec**: console-backend-api  
 > **Design**: `design.md`  
-> **最后更新**: 2026-02-28
+> **最后更新**: 2026-03-02
 
 ---
 
@@ -17,9 +17,9 @@
 - `owlclaw/web/providers/__init__.py`
 
 **实现**：
-- [ ] 0.1 创建 `owlclaw/web/` 包结构（`__init__.py` + `contracts.py` + `api/` + `providers/`）
-- [ ] 0.2 实现 `contracts.py`：定义 `OverviewProvider`、`GovernanceProvider`、`TriggersProvider`、`AgentsProvider`、`CapabilitiesProvider`、`LedgerProvider`、`SettingsProvider` 共 7 个 Protocol 接口
-- [ ] 0.3 定义共享数据类：`HealthStatus`、`OverviewMetrics`、`PaginatedResult`
+- [x] 0.1 创建 `owlclaw/web/` 包结构（`__init__.py` + `contracts.py` + `api/` + `providers/`）
+- [x] 0.2 实现 `contracts.py`：定义 `OverviewProvider`、`GovernanceProvider`、`TriggersProvider`、`AgentsProvider`、`CapabilitiesProvider`、`LedgerProvider`、`SettingsProvider` 共 7 个 Protocol 接口
+- [x] 0.3 定义共享数据类：`HealthStatus`、`OverviewMetrics`、`PaginatedResult`
 
 **验收**：
 - `from owlclaw.web.contracts import OverviewProvider` 可导入
@@ -40,14 +40,14 @@
 - `owlclaw/web/app.py` — `create_console_app()` 组装入口
 
 **实现**：
-- [ ] 1.1 实现 `create_api_app()` 工厂函数，挂载到 `/api/v1/` 前缀
-- [ ] 1.2 实现 `TokenAuthMiddleware`：从 `OWLCLAW_CONSOLE_TOKEN` 读取，空则跳过认证
-- [ ] 1.3 实现 CORS 中间件配置（`OWLCLAW_CONSOLE_CORS_ORIGINS`）
-- [ ] 1.4 实现统一错误处理（`ErrorResponse` 格式 + 全局异常处理器）
-- [ ] 1.5 实现 `PaginatedResponse` 通用分页响应模型
-- [ ] 1.6 实现 `deps.py` Provider 注册表和 `Depends` 函数
-- [ ] 1.7 实现 `create_console_app()` 组装 Provider 实例并创建 FastAPI 应用
-- [ ] 1.8 OpenAPI Schema 自动生成验证（`/api/v1/openapi.json` 可访问）
+- [x] 1.1 实现 `create_api_app()` 工厂函数，挂载到 `/api/v1/` 前缀
+- [x] 1.2 实现 `TokenAuthMiddleware`：从 `OWLCLAW_CONSOLE_TOKEN` 读取，空则跳过认证
+- [x] 1.3 实现 CORS 中间件配置（`OWLCLAW_CONSOLE_CORS_ORIGINS`）
+- [x] 1.4 实现统一错误处理（`ErrorResponse` 格式 + 全局异常处理器）
+- [x] 1.5 实现 `PaginatedResponse` 通用分页响应模型
+- [x] 1.6 实现 `deps.py` Provider 注册表和 `Depends` 函数
+- [x] 1.7 实现 `create_console_app()` 组装 Provider 实例并创建 FastAPI 应用
+- [x] 1.8 OpenAPI Schema 自动生成验证（`/api/v1/openapi.json` 可访问）
 
 **验收**：
 - `GET /api/v1/openapi.json` 返回 200
@@ -66,10 +66,10 @@
 - `owlclaw/web/api/overview.py` — Overview 路由
 
 **实现**：
-- [ ] 2.1 实现 `DefaultOverviewProvider`：聚合 Runtime/DB/Hatchet/LLM/Langfuse 连通性检查
-- [ ] 2.2 实现今日成本/执行次数/成功率/活跃 Agent 指标聚合（从 Ledger 查询）
-- [ ] 2.3 实现 `GET /api/v1/overview` 路由
-- [ ] 2.4 Overview 指标缓存（TTL 30s，避免频繁聚合查询）
+- [x] 2.1 实现 `DefaultOverviewProvider`：聚合 Runtime/DB/Hatchet/LLM/Langfuse 连通性检查
+- [x] 2.2 实现今日成本/执行次数/成功率/活跃 Agent 指标聚合（从 Ledger 查询）
+- [x] 2.3 实现 `GET /api/v1/overview` 路由
+- [x] 2.4 Overview 指标缓存（TTL 30s，避免频繁聚合查询）
 
 **验收**：
 - `GET /api/v1/overview` 返回 `OverviewMetrics` 结构
@@ -88,10 +88,10 @@
 - `owlclaw/web/api/governance.py` — Governance 路由
 
 **实现**：
-- [ ] 3.1 实现 `DefaultGovernanceProvider`：预算消耗趋势（按天/周/月聚合）
-- [ ] 3.2 实现限流/熔断状态查询
-- [ ] 3.3 实现能力可见性矩阵（Agent × Capability）
-- [ ] 3.4 实现 `GET /api/v1/governance/budget`、`GET /api/v1/governance/circuit-breakers`、`GET /api/v1/governance/visibility-matrix` 路由
+- [x] 3.1 实现 `DefaultGovernanceProvider`：预算消耗趋势（按天/周/月聚合）
+- [x] 3.2 实现限流/熔断状态查询
+- [x] 3.3 实现能力可见性矩阵（Agent × Capability）
+- [x] 3.4 实现 `GET /api/v1/governance/budget`、`GET /api/v1/governance/circuit-breakers`、`GET /api/v1/governance/visibility-matrix` 路由
 
 **验收**：
 - 预算趋势返回按时间粒度聚合的数据
@@ -110,9 +110,9 @@
 - `owlclaw/web/api/ledger.py` — Ledger 路由
 
 **实现**：
-- [ ] 4.1 实现 `DefaultLedgerProvider`：多维筛选 + 分页 + 排序
-- [ ] 4.2 实现记录详情查询（输入/输出/成本/模型/延迟/决策推理）
-- [ ] 4.3 实现 `GET /api/v1/ledger`（列表 + 筛选 + 分页）和 `GET /api/v1/ledger/{id}`（详情）路由
+- [x] 4.1 实现 `DefaultLedgerProvider`：多维筛选 + 分页 + 排序
+- [x] 4.2 实现记录详情查询（输入/输出/成本/模型/延迟/决策推理）
+- [x] 4.3 实现 `GET /api/v1/ledger`（列表 + 筛选 + 分页）和 `GET /api/v1/ledger/{id}`（详情）路由
 
 **验收**：
 - 筛选参数（agent_id/capability/时间/成本/状态）正确过滤
@@ -131,10 +131,10 @@
 - `owlclaw/web/api/capabilities.py` — Capabilities 路由
 
 **实现**：
-- [ ] 5.1 实现 `DefaultCapabilitiesProvider`：从 CapabilityRegistry 获取 Handlers/Skills/Bindings 分类列表
-- [ ] 5.2 实现 JSON Schema 查看
-- [ ] 5.3 实现调用统计（从 Ledger 聚合）
-- [ ] 5.4 实现 `GET /api/v1/capabilities`（列表 + 分类筛选）和 `GET /api/v1/capabilities/{name}/schema`（Schema 查看）路由
+- [x] 5.1 实现 `DefaultCapabilitiesProvider`：从 CapabilityRegistry 获取 Handlers/Skills/Bindings 分类列表
+- [x] 5.2 实现 JSON Schema 查看
+- [x] 5.3 实现调用统计（从 Ledger 聚合）
+- [x] 5.4 实现 `GET /api/v1/capabilities`（列表 + 分类筛选）和 `GET /api/v1/capabilities/{name}/schema`（Schema 查看）路由
 
 **验收**：
 - 列表按 handler/skill/binding 分类
@@ -153,9 +153,9 @@
 - `owlclaw/web/api/triggers.py` — Triggers 路由
 
 **实现**：
-- [ ] 6.1 实现 `DefaultTriggersProvider`：聚合 6 类触发器状态（cron/webhook/queue/db_change/api/signal）
-- [ ] 6.2 实现执行历史查询
-- [ ] 6.3 实现 `GET /api/v1/triggers`（统一列表）和 `GET /api/v1/triggers/{id}/history`（执行历史）路由
+- [x] 6.1 实现 `DefaultTriggersProvider`：聚合 6 类触发器状态（cron/webhook/queue/db_change/api/signal）
+- [x] 6.2 实现执行历史查询
+- [x] 6.3 实现 `GET /api/v1/triggers`（统一列表）和 `GET /api/v1/triggers/{id}/history`（执行历史）路由
 
 **验收**：
 - 6 类触发器在统一格式中返回
@@ -174,9 +174,9 @@
 - `owlclaw/web/api/agents.py` — Agents 路由
 
 **实现**：
-- [ ] 7.1 实现 `DefaultAgentsProvider`：Agent 列表（身份配置 + 记忆统计 + 知识库挂载）
-- [ ] 7.2 实现 Agent 详情（运行历史从 Ledger 聚合）
-- [ ] 7.3 实现 `GET /api/v1/agents`（列表）和 `GET /api/v1/agents/{id}`（详情）路由
+- [x] 7.1 实现 `DefaultAgentsProvider`：Agent 列表（身份配置 + 记忆统计 + 知识库挂载）
+- [x] 7.2 实现 Agent 详情（运行历史从 Ledger 聚合）
+- [x] 7.3 实现 `GET /api/v1/agents`（列表）和 `GET /api/v1/agents/{id}`（详情）路由
 
 **验收**：
 - Agent 列表包含身份信息（SOUL.md 摘要）
@@ -194,10 +194,10 @@
 - `owlclaw/web/api/settings.py` — Settings 路由
 
 **实现**：
-- [ ] 8.1 实现 `DefaultSettingsProvider`：运行时配置（只读，敏感字段脱敏）
-- [ ] 8.2 实现 MCP Server 状态 + DB 迁移版本 + 版本号/构建时间/commit hash
-- [ ] 8.3 实现 OwlHub 连接状态
-- [ ] 8.4 实现 `GET /api/v1/settings` 路由
+- [x] 8.1 实现 `DefaultSettingsProvider`：运行时配置（只读，敏感字段脱敏）
+- [x] 8.2 实现 MCP Server 状态 + DB 迁移版本 + 版本号/构建时间/commit hash
+- [x] 8.3 实现 OwlHub 连接状态
+- [x] 8.4 实现 `GET /api/v1/settings` 路由
 
 **验收**：
 - 敏感字段（API key、密码）显示为 `***`
@@ -215,10 +215,10 @@
 - `owlclaw/web/api/ws.py` — WebSocket 路由
 
 **实现**：
-- [ ] 9.1 实现 WebSocket 端点 `/api/v1/ws`（认证 + 连接管理）
-- [ ] 9.2 实现 Overview 指标定时推送（30s 间隔）
-- [ ] 9.3 实现 Trigger 事件推送
-- [ ] 9.4 实现 Ledger 新记录推送
+- [x] 9.1 实现 WebSocket 端点 `/api/v1/ws`（认证 + 连接管理）
+- [x] 9.2 实现 Overview 指标定时推送（30s 间隔）
+- [x] 9.3 实现 Trigger 事件推送
+- [x] 9.4 实现 Ledger 新记录推送
 
 **验收**：
 - WebSocket 可连接并接收 JSON 消息
@@ -237,17 +237,20 @@
 - `tests/integration/test_console_api.py` — 集成测试
 
 **实现**：
-- [ ] 10.1 实现 AST 导入扫描：验证 `owlclaw/web/api/` 中无 `from owlclaw.agent`、`from owlclaw.governance`、`from owlclaw.triggers`、`from owlclaw.capabilities` 的直接导入
-- [ ] 10.2 实现集成测试：FastAPI TestClient + mock Provider 覆盖全部 API 端点
-- [ ] 10.3 性能基准测试：核心 API P95 < 200ms
+- [x] 10.1 实现 AST 导入扫描：验证 `owlclaw/web/api/` 中无 `from owlclaw.agent`、`from owlclaw.governance`、`from owlclaw.triggers`、`from owlclaw.capabilities` 的直接导入
+- [x] 10.2 实现集成测试：FastAPI TestClient + mock Provider 覆盖全部 API 端点
+- [x] 10.3 性能基准测试：核心 API P95 < 200ms
+- [x] 10.4 输出并固定后端契约文档：`docs/CONSOLE_BACKEND_CONTRACT.md`（REST 路径/参数/响应 + WS 消息类型 + ErrorResponse）
+- [x] 10.5 补契约一致性回归：新增 Governance + Ledger + WS 消息类型组合测试，并补 422 参数校验错误的统一 `ErrorResponse` 断言
 
 **验收**：
 - 架构隔离扫描通过（CI 门禁）
 - 集成测试覆盖全部 API 端点
 - 性能基准满足 NFR-1
+- 契约文档与 API 实现一致，契约一致性测试通过
 - `poetry run pytest tests/unit/web/ tests/integration/test_console_api.py` 全部通过
 
 ---
 
 **维护者**：yeemio  
-**最后更新**：2026-02-28
+**最后更新**：2026-03-02
