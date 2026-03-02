@@ -2,7 +2,7 @@
 
 > **目标**：实现 Console REST API 后端，通过查询契约层与底层模块解耦  
 > **状态**：设计完成  
-> **最后更新**：2026-02-28
+> **最后更新**：2026-03-02
 
 ---
 
@@ -413,6 +413,8 @@ Background task polls providers at intervals:
 Push JSON messages to connected clients
 ```
 
+消息契约固定为三类：`overview`、`triggers`、`ledger`，用于前端缓存增量更新。
+
 ---
 
 ## 4. 错误处理
@@ -433,7 +435,7 @@ Push JSON messages to connected clients
 
 **场景**：无效的筛选参数
 
-**处理**：FastAPI/Pydantic 自动校验，返回 422 + 详细字段错误。
+**处理**：由全局异常处理器拦截 `RequestValidationError`，返回 422 且使用统一 `ErrorResponse` 结构（`code=VALIDATION_ERROR`，`details.errors` 包含字段错误明细）。
 
 ---
 
@@ -530,4 +532,4 @@ console:
 ---
 
 **维护者**：yeemio  
-**最后更新**：2026-02-28
+**最后更新**：2026-03-02

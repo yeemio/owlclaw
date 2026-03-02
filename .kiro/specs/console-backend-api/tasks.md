@@ -240,11 +240,14 @@
 - [x] 10.1 实现 AST 导入扫描：验证 `owlclaw/web/api/` 中无 `from owlclaw.agent`、`from owlclaw.governance`、`from owlclaw.triggers`、`from owlclaw.capabilities` 的直接导入
 - [x] 10.2 实现集成测试：FastAPI TestClient + mock Provider 覆盖全部 API 端点
 - [x] 10.3 性能基准测试：核心 API P95 < 200ms
+- [x] 10.4 输出并固定后端契约文档：`docs/CONSOLE_BACKEND_CONTRACT.md`（REST 路径/参数/响应 + WS 消息类型 + ErrorResponse）
+- [x] 10.5 补契约一致性回归：新增 Governance + Ledger + WS 消息类型组合测试，并补 422 参数校验错误的统一 `ErrorResponse` 断言
 
 **验收**：
 - 架构隔离扫描通过（CI 门禁）
 - 集成测试覆盖全部 API 端点
 - 性能基准满足 NFR-1
+- 契约文档与 API 实现一致，契约一致性测试通过
 - `poetry run pytest tests/unit/web/ tests/integration/test_console_api.py` 全部通过
 
 ---
