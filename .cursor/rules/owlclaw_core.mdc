@@ -220,7 +220,14 @@ cd D:\AI\owlclaw-codex-gpt && codex
 6. Commit  — 若本轮有 main 变更（merge 或文档更新）：
              git add -A && git commit -m "chore(orchestrate): <本轮操作摘要>"
 
-7. Report  — 输出状态总览表：
+7. Push    — 将 main 推送到 remote：
+             git push
+             说明：main 分支使用 GitHub Rulesets（非 legacy branch protection），
+             仓库管理员已配置为 bypass actor，可直接 push。
+             Ruleset ID: main-branch-protection，规则：PR required + Test/Build status checks + no force push + no deletion。
+             管理员 push 时 GitHub 会显示 "Bypassed rule violations" 提示，这是正常行为。
+
+8. Report  — 输出状态总览表：
              | Worktree | 分支 | 当前 spec | 进度 | 健康 | 待处理 |
              每行一个 worktree，含 review-work 的审校状态
 ```
