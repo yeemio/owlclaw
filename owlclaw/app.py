@@ -12,6 +12,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, cast
 
+from starlette.applications import Starlette
+
 from owlclaw.agent import AgentRuntime
 from owlclaw.capabilities.bindings import BindingTool
 from owlclaw.capabilities.knowledge import KnowledgeInjector
@@ -36,6 +38,7 @@ from owlclaw.triggers.db_change import (
     PostgresNotifyAdapter,
 )
 from owlclaw.triggers.signal import AgentStateManager
+from owlclaw.web.mount import mount_console
 
 logger = logging.getLogger(__name__)
 
@@ -1030,6 +1033,13 @@ class OwlClaw:
             "api_registered_endpoints": len(self.api_trigger_server._configs) if self.api_trigger_server else 0,  # noqa: SLF001
             "governance_enabled": self._ledger is not None,
         }
+
+    def create_http_app(self) -> Starlette:
+        """Create a Starlette host app and attempt to mount console routes."""
+        app = Starlette(routes=[])
+        mounted = mount_console(app)
+        logger.info("Console mount status: %s", "enabled" if mounted else "disabled")
+        return app
 
     def langchain_health_status(self) -> dict[str, Any]:
         """Return LangChain integration health summary."""

@@ -14,9 +14,9 @@
 - `owlclaw/web/mount.py`
 
 **实现**：
-- [ ] 0.1 实现 `mount_console(app)` 函数：检测 `owlclaw/web/static/index.html`，存在则挂载 Console API 和静态文件
-- [ ] 0.2 实现 SPA fallback 中间件：非 API 路径返回 `index.html`
-- [ ] 0.3 实现根路径 `/` 重定向到 `/console/`
+- [x] 0.1 实现 `mount_console(app)` 函数：检测 `owlclaw/web/static/index.html`，存在则挂载 Console API 和静态文件
+- [x] 0.2 实现 SPA fallback 中间件：非 API 路径返回 `index.html`
+- [x] 0.3 实现根路径 `/` 重定向到 `/console/`
 
 **验收**：
 - 有静态文件时 `/console/` 返回 HTML
@@ -34,9 +34,9 @@
 - `owlclaw/app.py`（或 `owlclaw/cli/start.py`，视现有实现）
 
 **实现**：
-- [ ] 1.1 在应用启动流程中调用 `mount_console(app)`
-- [ ] 1.2 路由优先级正确：API > MCP > Webhook > Console Static > Root Redirect
-- [ ] 1.3 日志输出 Console 挂载状态
+- [x] 1.1 在应用启动流程中调用 `mount_console(app)`
+- [x] 1.2 路由优先级正确：API > MCP > Webhook > Console Static > Root Redirect
+- [x] 1.3 日志输出 Console 挂载状态
 
 **验收**：
 - `owlclaw start` 后 `/console/` 可访问（有静态文件时）
@@ -54,10 +54,10 @@
 - `owlclaw/cli/__init__.py`（注册命令）
 
 **实现**：
-- [ ] 2.1 实现 `owlclaw console` 命令：打开浏览器 + 显示 URL
-- [ ] 2.2 支持 `--port` 参数（默认 8000）
-- [ ] 2.3 无静态文件时提示安装 `owlclaw[console]`
-- [ ] 2.4 注册到 CLI 命令组
+- [x] 2.1 实现 `owlclaw console` 命令：打开浏览器 + 显示 URL
+- [x] 2.2 支持 `--port` 参数（默认 8000）
+- [x] 2.3 无静态文件时提示安装 `owlclaw[console]`
+- [x] 2.4 注册到 CLI 命令组
 
 **验收**：
 - `owlclaw console` 输出 URL 并尝试打开浏览器
@@ -75,10 +75,10 @@
 - `Makefile`（或构建脚本）
 
 **实现**：
-- [ ] 3.1 配置 `pyproject.toml` package-data 包含 `owlclaw/web/static/**`
-- [ ] 3.2 配置 `[tool.poetry.extras]` 新增 `console` 组
-- [ ] 3.3 添加构建脚本（`make build-console` 或 `scripts/build_console.sh`）
-- [ ] 3.4 验证 `poetry build` 后 wheel 包含静态文件
+- [x] 3.1 配置 `pyproject.toml` package-data 包含 `owlclaw/web/static/**`
+- [x] 3.2 配置 `[tool.poetry.extras]` 新增 `console` 组
+- [x] 3.3 添加构建脚本（`make build-console` 或 `scripts/build_console.sh`）
+- [x] 3.4 验证 `poetry build` 后 wheel 包含静态文件
 
 **验收**：
 - `poetry build` 产出的 wheel 包含 `owlclaw/web/static/` 目录
@@ -96,9 +96,9 @@
 - `docs/CONSOLE_DEVELOPMENT.md`
 
 **实现**：
-- [ ] 4.1 集成测试：完整启动 → Console 可访问 → API 返回数据
-- [ ] 4.2 集成测试：无静态文件 → 优雅降级 → Agent 正常
-- [ ] 4.3 编写 Console 开发指南（前端开发流程、构建、调试）
+- [x] 4.1 集成测试：完整启动 → Console 可访问 → API 返回数据
+- [x] 4.2 集成测试：无静态文件 → 优雅降级 → Agent 正常
+- [x] 4.3 编写 Console 开发指南（前端开发流程、构建、调试）
 
 **验收**：
 - 集成测试覆盖挂载和降级两种场景
