@@ -174,9 +174,9 @@
 - `owlclaw/web/api/agents.py` — Agents 路由
 
 **实现**：
-- [ ] 7.1 实现 `DefaultAgentsProvider`：Agent 列表（身份配置 + 记忆统计 + 知识库挂载）
-- [ ] 7.2 实现 Agent 详情（运行历史从 Ledger 聚合）
-- [ ] 7.3 实现 `GET /api/v1/agents`（列表）和 `GET /api/v1/agents/{id}`（详情）路由
+- [x] 7.1 实现 `DefaultAgentsProvider`：Agent 列表（身份配置 + 记忆统计 + 知识库挂载）
+- [x] 7.2 实现 Agent 详情（运行历史从 Ledger 聚合）
+- [x] 7.3 实现 `GET /api/v1/agents`（列表）和 `GET /api/v1/agents/{id}`（详情）路由
 
 **验收**：
 - Agent 列表包含身份信息（SOUL.md 摘要）
@@ -194,10 +194,10 @@
 - `owlclaw/web/api/settings.py` — Settings 路由
 
 **实现**：
-- [ ] 8.1 实现 `DefaultSettingsProvider`：运行时配置（只读，敏感字段脱敏）
-- [ ] 8.2 实现 MCP Server 状态 + DB 迁移版本 + 版本号/构建时间/commit hash
-- [ ] 8.3 实现 OwlHub 连接状态
-- [ ] 8.4 实现 `GET /api/v1/settings` 路由
+- [x] 8.1 实现 `DefaultSettingsProvider`：运行时配置（只读，敏感字段脱敏）
+- [x] 8.2 实现 MCP Server 状态 + DB 迁移版本 + 版本号/构建时间/commit hash
+- [x] 8.3 实现 OwlHub 连接状态
+- [x] 8.4 实现 `GET /api/v1/settings` 路由
 
 **验收**：
 - 敏感字段（API key、密码）显示为 `***`
@@ -215,10 +215,10 @@
 - `owlclaw/web/api/ws.py` — WebSocket 路由
 
 **实现**：
-- [ ] 9.1 实现 WebSocket 端点 `/api/v1/ws`（认证 + 连接管理）
-- [ ] 9.2 实现 Overview 指标定时推送（30s 间隔）
-- [ ] 9.3 实现 Trigger 事件推送
-- [ ] 9.4 实现 Ledger 新记录推送
+- [x] 9.1 实现 WebSocket 端点 `/api/v1/ws`（认证 + 连接管理）
+- [x] 9.2 实现 Overview 指标定时推送（30s 间隔）
+- [x] 9.3 实现 Trigger 事件推送
+- [x] 9.4 实现 Ledger 新记录推送
 
 **验收**：
 - WebSocket 可连接并接收 JSON 消息
@@ -237,9 +237,9 @@
 - `tests/integration/test_console_api.py` — 集成测试
 
 **实现**：
-- [ ] 10.1 实现 AST 导入扫描：验证 `owlclaw/web/api/` 中无 `from owlclaw.agent`、`from owlclaw.governance`、`from owlclaw.triggers`、`from owlclaw.capabilities` 的直接导入
-- [ ] 10.2 实现集成测试：FastAPI TestClient + mock Provider 覆盖全部 API 端点
-- [ ] 10.3 性能基准测试：核心 API P95 < 200ms
+- [x] 10.1 实现 AST 导入扫描：验证 `owlclaw/web/api/` 中无 `from owlclaw.agent`、`from owlclaw.governance`、`from owlclaw.triggers`、`from owlclaw.capabilities` 的直接导入
+- [x] 10.2 实现集成测试：FastAPI TestClient + mock Provider 覆盖全部 API 端点
+- [x] 10.3 性能基准测试：核心 API P95 < 200ms
 
 **验收**：
 - 架构隔离扫描通过（CI 门禁）

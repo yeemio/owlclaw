@@ -2,36 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
+from owlclaw.web.providers.agents import DefaultAgentsProvider
 from owlclaw.web.providers.capabilities import DefaultCapabilitiesProvider
 from owlclaw.web.providers.governance import DefaultGovernanceProvider
 from owlclaw.web.providers.ledger import DefaultLedgerProvider
 from owlclaw.web.providers.overview import DefaultOverviewProvider
+from owlclaw.web.providers.settings import DefaultSettingsProvider
 from owlclaw.web.providers.triggers import DefaultTriggersProvider
-
-
-class _EmptyAgentsProvider:
-    async def list_agents(self, tenant_id: str) -> list[dict[str, Any]]:
-        _ = tenant_id
-        return []
-
-    async def get_agent_detail(self, agent_id: str, tenant_id: str) -> dict[str, Any] | None:
-        _ = (agent_id, tenant_id)
-        return None
-
-
-class _EmptySettingsProvider:
-    async def get_settings(self, tenant_id: str) -> dict[str, Any]:
-        _ = tenant_id
-        return {"console": {"enabled": True}}
-
-    async def get_system_info(self) -> dict[str, Any]:
-        return {
-            "version": "unknown",
-            "build_time": datetime.now(timezone.utc).isoformat(),
-        }
 
 
 def create_default_provider_bundle() -> dict[str, Any]:
@@ -40,18 +19,20 @@ def create_default_provider_bundle() -> dict[str, Any]:
         "overview": DefaultOverviewProvider(),
         "governance": DefaultGovernanceProvider(),
         "triggers": DefaultTriggersProvider(),
-        "agents": _EmptyAgentsProvider(),
+        "agents": DefaultAgentsProvider(),
         "capabilities": DefaultCapabilitiesProvider(),
         "ledger": DefaultLedgerProvider(),
-        "settings": _EmptySettingsProvider(),
+        "settings": DefaultSettingsProvider(),
     }
 
 
 __all__ = [
     "DefaultOverviewProvider",
     "DefaultGovernanceProvider",
+    "DefaultAgentsProvider",
     "DefaultCapabilitiesProvider",
     "DefaultLedgerProvider",
+    "DefaultSettingsProvider",
     "DefaultTriggersProvider",
     "create_default_provider_bundle",
 ]
