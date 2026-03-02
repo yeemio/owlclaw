@@ -748,7 +748,8 @@ class OwlClaw:
         )
 
         cfg = self._governance_config
-        self._visibility_filter = VisibilityFilter()
+        fail_policy = cfg.get("fail_policy", "open")
+        self._visibility_filter = VisibilityFilter(fail_policy=str(fail_policy))
 
         time_cfg = (cfg.get("visibility") or {}).get("time") or {}
         self._visibility_filter.register_evaluator(TimeConstraint(time_cfg))

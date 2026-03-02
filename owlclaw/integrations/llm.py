@@ -100,6 +100,59 @@ async def acompletion(**kwargs: Any) -> Any:
         raise
 
 
+async def aembedding(**kwargs: Any) -> Any:
+    """Async embedding facade. All embedding callers must use this."""
+    import litellm
+
+    return await litellm.aembedding(**kwargs)
+
+
+@dataclass(frozen=True)
+class CostInfo:
+    """Normalized token and cost info for one model call."""
+
+    prompt_tokens: int
+    completion_tokens: int
+    total_cost: float
+
+
+def extract_cost_info(response: Any, *, model: str) -> CostInfo:
+    """Extract usage tokens and estimated cost from a litellm-like response."""
+    usage = (
+        response.get("usage")
+        if isinstance(response, dict)
+        else getattr(response, "usage", None)
+    )
+    if usage is None:
+        return CostInfo(prompt_tokens=0, completion_tokens=0, total_cost=0.0)
+
+    if isinstance(usage, dict):
+        prompt_tokens = usage.get("prompt_tokens", 0)
+        completion_tokens = usage.get("completion_tokens", 0)
+    else:
+        prompt_tokens = getattr(usage, "prompt_tokens", 0)
+        completion_tokens = getattr(usage, "completion_tokens", 0)
+
+    try:
+        prompt = max(0, int(prompt_tokens))
+    except (TypeError, ValueError):
+        prompt = 0
+    try:
+        completion = max(0, int(completion_tokens))
+    except (TypeError, ValueError):
+        completion = 0
+
+    if model.strip().lower() == "mock":
+        return CostInfo(prompt_tokens=prompt, completion_tokens=completion, total_cost=0.0)
+
+    total_cost = TokenCalculator.calculate_cost(model, prompt, completion)
+    return CostInfo(
+        prompt_tokens=prompt,
+        completion_tokens=completion,
+        total_cost=max(0.0, round(float(total_cost), 6)),
+    )
+
+
 # ---------------------------------------------------------------------------
 # LLM error types (Task 6.1)
 # ---------------------------------------------------------------------------

@@ -151,6 +151,25 @@ async def test_filter_fail_open_on_evaluator_exception():
 
 
 @pytest.mark.asyncio
+async def test_filter_fail_close_on_evaluator_exception() -> None:
+    class Raising:
+        async def evaluate(self, capability, agent_id, context):
+            raise ValueError("broken")
+
+    vf = VisibilityFilter(fail_policy="close")
+    vf.register_evaluator(Raising())
+    caps = [CapabilityView("only")]
+    ctx = RunContext(tenant_id="t1")
+    out = await vf.filter_capabilities(caps, "agent1", ctx)
+    assert out == []
+
+
+def test_visibility_filter_invalid_fail_policy_raises() -> None:
+    with pytest.raises(ValueError, match="fail_policy"):
+        VisibilityFilter(fail_policy="invalid")
+
+
+@pytest.mark.asyncio
 async def test_filter_injects_quality_score_hint_when_enabled():
     vf = VisibilityFilter()
     cap = CapabilityView("inventory-monitor", description="Check stock levels")

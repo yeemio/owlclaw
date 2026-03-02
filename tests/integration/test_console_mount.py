@@ -13,9 +13,11 @@ def test_start_app_mounts_console_when_static_exists(tmp_path: Path, monkeypatch
     static_dir.mkdir(parents=True)
     (static_dir / "index.html").write_text("<html>console</html>", encoding="utf-8")
     monkeypatch.setattr(web_mount, "STATIC_DIR", static_dir)
+    monkeypatch.delenv("OWLCLAW_CONSOLE_TOKEN", raising=False)
 
     app = create_start_app()
     client = TestClient(app)
     assert client.get("/healthz").status_code == 200
     assert client.get("/console/").status_code == 200
+    assert client.get("/api/v1/overview").status_code == 200
 

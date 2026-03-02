@@ -51,7 +51,7 @@ async def test_circuit_failures_below_threshold_visible():
     """When failures below threshold, visible."""
     ledger = AsyncMock(spec=Ledger)
     ledger.query_records = AsyncMock(
-        return_value=[_record("failure"), _record("failure")]
+        return_value=[_record("error"), _record("error")]
     )
     c = CircuitBreakerConstraint(ledger, {"failure_threshold": 3})
     cap = CapabilityView("x", constraints={})
@@ -66,9 +66,9 @@ async def test_circuit_failures_at_threshold_opens():
     ledger = AsyncMock(spec=Ledger)
     ledger.query_records = AsyncMock(
         return_value=[
-            _record("failure"),
-            _record("failure"),
-            _record("failure"),
+            _record("error"),
+            _record("error"),
+            _record("error"),
         ]
     )
     c = CircuitBreakerConstraint(ledger, {"failure_threshold": 3})
@@ -87,7 +87,7 @@ async def test_circuit_on_success_resets():
     cap = CapabilityView("x", constraints={})
     ctx = RunContext(tenant_id="t1")
     ledger.query_records = AsyncMock(
-        return_value=[_record("failure"), _record("failure")]
+        return_value=[_record("error"), _record("error")]
     )
     r1 = await c.evaluate(cap, "agent1", ctx)
     assert r1.visible is False
@@ -95,3 +95,35 @@ async def test_circuit_on_success_resets():
     ledger.query_records = AsyncMock(return_value=[])
     r2 = await c.evaluate(cap, "agent1", ctx)
     assert r2.visible is True
+
+
+@pytest.mark.asyncio
+async def test_circuit_consecutive_timeouts_open_circuit() -> None:
+    """Consecutive timeout statuses should count as failures."""
+    ledger = AsyncMock(spec=Ledger)
+    ledger.query_records = AsyncMock(
+        return_value=[_record("timeout"), _record("timeout"), _record("timeout")]
+    )
+    constraint = CircuitBreakerConstraint(ledger, {"failure_threshold": 3})
+    cap = CapabilityView("x", constraints={})
+    ctx = RunContext(tenant_id="t1")
+
+    result = await constraint.evaluate(cap, "agent1", ctx)
+
+    assert result.visible is False
+
+
+@pytest.mark.asyncio
+async def test_circuit_mixed_error_timeout_counts_together() -> None:
+    """Error and timeout should be treated as the same failure class."""
+    ledger = AsyncMock(spec=Ledger)
+    ledger.query_records = AsyncMock(
+        return_value=[_record("error"), _record("timeout"), _record("success")]
+    )
+    constraint = CircuitBreakerConstraint(ledger, {"failure_threshold": 2})
+    cap = CapabilityView("x", constraints={})
+    ctx = RunContext(tenant_id="t1")
+
+    result = await constraint.evaluate(cap, "agent1", ctx)
+
+    assert result.visible is False

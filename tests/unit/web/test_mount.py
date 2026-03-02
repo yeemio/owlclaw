@@ -44,3 +44,11 @@ def test_mount_console_mounts_routes_and_fallback(tmp_path: Path, monkeypatch) -
     assert client.get("/console/").status_code == 200
     assert client.get("/console/route/not-found").status_code == 200
     assert client.get("/api/v1/overview").json() == {"status": "ok"}
+
+
+def test_load_console_api_app_returns_app(monkeypatch) -> None:
+    monkeypatch.delenv("OWLCLAW_CONSOLE_TOKEN", raising=False)
+
+    app = web_mount._load_console_api_app()
+
+    assert app is not None

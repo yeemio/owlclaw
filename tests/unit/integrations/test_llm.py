@@ -21,7 +21,9 @@ from owlclaw.integrations.llm import (
     TaskTypeRouting,
     TokenEstimator,
     ToolsConverter,
+    aembedding,
     acompletion,
+    extract_cost_info,
 )
 
 
@@ -646,3 +648,27 @@ async def test_acompletion_records_error_generation_on_failure() -> None:
 
     assert len(recorded) == 1
     assert recorded[0]["metadata"]["status"] == "error"
+
+
+def test_extract_cost_info_returns_usage_and_cost() -> None:
+    resp = _fake_litellm_response("ok", [], 1000, 500)
+    info = extract_cost_info(resp, model="gpt-4o-mini")
+    assert info.prompt_tokens == 1000
+    assert info.completion_tokens == 500
+    assert info.total_cost > 0
+
+
+def test_extract_cost_info_mock_model_forces_zero_cost() -> None:
+    resp = _fake_litellm_response("ok", [], 1000, 500)
+    info = extract_cost_info(resp, model="mock")
+    assert info.prompt_tokens == 1000
+    assert info.completion_tokens == 500
+    assert info.total_cost == 0.0
+
+
+@pytest.mark.asyncio
+async def test_aembedding_delegates_to_litellm() -> None:
+    with patch("litellm.aembedding", new_callable=AsyncMock) as mock:
+        mock.return_value = {"data": [{"embedding": [0.1, 0.2]}]}
+        result = await aembedding(model="text-embedding-3-small", input=["hello"])
+    assert result["data"][0]["embedding"] == [0.1, 0.2]

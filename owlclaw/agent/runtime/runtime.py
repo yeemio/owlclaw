@@ -754,7 +754,7 @@ class AgentRuntime:
 
             try:
                 llm_started_ns = time.perf_counter_ns()
-                response, model_used, llm_tokens_input, llm_tokens_output = await self._call_llm_completion(
+                response, model_used, llm_tokens_input, llm_tokens_output, llm_cost = await self._call_llm_completion(
                     call_kwargs,
                     timeout=llm_timeout,
                 )
@@ -766,6 +766,7 @@ class AgentRuntime:
                     model=model_used,
                     llm_tokens_input=llm_tokens_input,
                     llm_tokens_output=llm_tokens_output,
+                    estimated_cost=llm_cost,
                     execution_time_ms=llm_elapsed_ms,
                     status="success",
                     error_message=None,
@@ -782,6 +783,7 @@ class AgentRuntime:
                     model=model_used,
                     llm_tokens_input=0,
                     llm_tokens_output=0,
+                    estimated_cost=Decimal("0"),
                     execution_time_ms=int(llm_timeout * 1000),
                     status="timeout",
                     error_message=f"LLM call timed out after {llm_timeout:.1f}s",
@@ -799,6 +801,7 @@ class AgentRuntime:
                     model=model_used,
                     llm_tokens_input=0,
                     llm_tokens_output=0,
+                    estimated_cost=Decimal("0"),
                     execution_time_ms=0,
                     status="error",
                     error_message=str(exc),
@@ -892,7 +895,7 @@ class AgentRuntime:
         call_kwargs: dict[str, Any],
         *,
         timeout: float,
-    ) -> tuple[Any, str, int, int]:
+    ) -> tuple[Any, str, int, int, Decimal]:
         """Call LLM facade with retry and fallback model support."""
         retries_raw = self.config.get("llm_retry_attempts", _DEFAULT_LLM_RETRY_ATTEMPTS)
         if isinstance(retries_raw, bool):
@@ -923,8 +926,14 @@ class AgentRuntime:
                         llm_integration.acompletion(**kwargs),
                         timeout=timeout,
                     )
-                    prompt_tokens, completion_tokens = self._extract_usage_tokens(response)
-                    return response, model_name, prompt_tokens, completion_tokens
+                    cost_info = llm_integration.extract_cost_info(response, model=model_name)
+                    return (
+                        response,
+                        model_name,
+                        cost_info.prompt_tokens,
+                        cost_info.completion_tokens,
+                        Decimal(str(cost_info.total_cost)),
+                    )
                 except asyncio.TimeoutError:
                     raise
                 except Exception as exc:
@@ -942,6 +951,7 @@ class AgentRuntime:
         model: str,
         llm_tokens_input: int,
         llm_tokens_output: int,
+        estimated_cost: Decimal,
         execution_time_ms: int,
         status: str,
         error_message: str | None,
@@ -963,7 +973,7 @@ class AgentRuntime:
                 llm_model=model or "",
                 llm_tokens_input=max(0, int(llm_tokens_input)),
                 llm_tokens_output=max(0, int(llm_tokens_output)),
-                estimated_cost=Decimal("0"),
+                estimated_cost=max(Decimal("0"), estimated_cost),
                 status=status,
                 error_message=error_message,
             )
