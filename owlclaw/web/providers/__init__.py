@@ -9,22 +9,7 @@ from owlclaw.web.providers.capabilities import DefaultCapabilitiesProvider
 from owlclaw.web.providers.governance import DefaultGovernanceProvider
 from owlclaw.web.providers.ledger import DefaultLedgerProvider
 from owlclaw.web.providers.overview import DefaultOverviewProvider
-
-
-class _EmptyTriggersProvider:
-    async def list_triggers(self, tenant_id: str) -> list[dict[str, Any]]:
-        _ = tenant_id
-        return []
-
-    async def get_trigger_history(
-        self,
-        trigger_id: str,
-        tenant_id: str,
-        limit: int,
-        offset: int,
-    ) -> tuple[list[dict[str, Any]], int]:
-        _ = (trigger_id, tenant_id, limit, offset)
-        return [], 0
+from owlclaw.web.providers.triggers import DefaultTriggersProvider
 
 
 class _EmptyAgentsProvider:
@@ -54,7 +39,7 @@ def create_default_provider_bundle() -> dict[str, Any]:
     return {
         "overview": DefaultOverviewProvider(),
         "governance": DefaultGovernanceProvider(),
-        "triggers": _EmptyTriggersProvider(),
+        "triggers": DefaultTriggersProvider(),
         "agents": _EmptyAgentsProvider(),
         "capabilities": DefaultCapabilitiesProvider(),
         "ledger": DefaultLedgerProvider(),
@@ -67,5 +52,6 @@ __all__ = [
     "DefaultGovernanceProvider",
     "DefaultCapabilitiesProvider",
     "DefaultLedgerProvider",
+    "DefaultTriggersProvider",
     "create_default_provider_bundle",
 ]

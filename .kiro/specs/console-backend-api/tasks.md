@@ -153,9 +153,9 @@
 - `owlclaw/web/api/triggers.py` — Triggers 路由
 
 **实现**：
-- [ ] 6.1 实现 `DefaultTriggersProvider`：聚合 6 类触发器状态（cron/webhook/queue/db_change/api/signal）
-- [ ] 6.2 实现执行历史查询
-- [ ] 6.3 实现 `GET /api/v1/triggers`（统一列表）和 `GET /api/v1/triggers/{id}/history`（执行历史）路由
+- [x] 6.1 实现 `DefaultTriggersProvider`：聚合 6 类触发器状态（cron/webhook/queue/db_change/api/signal）
+- [x] 6.2 实现执行历史查询
+- [x] 6.3 实现 `GET /api/v1/triggers`（统一列表）和 `GET /api/v1/triggers/{id}/history`（执行历史）路由
 
 **验收**：
 - 6 类触发器在统一格式中返回
