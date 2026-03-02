@@ -2,7 +2,7 @@
 
 > **Spec**: console-backend-api  
 > **Design**: `design.md`  
-> **最后更新**: 2026-02-28
+> **最后更新**: 2026-03-02
 
 ---
 
@@ -17,9 +17,9 @@
 - `owlclaw/web/providers/__init__.py`
 
 **实现**：
-- [ ] 0.1 创建 `owlclaw/web/` 包结构（`__init__.py` + `contracts.py` + `api/` + `providers/`）
-- [ ] 0.2 实现 `contracts.py`：定义 `OverviewProvider`、`GovernanceProvider`、`TriggersProvider`、`AgentsProvider`、`CapabilitiesProvider`、`LedgerProvider`、`SettingsProvider` 共 7 个 Protocol 接口
-- [ ] 0.3 定义共享数据类：`HealthStatus`、`OverviewMetrics`、`PaginatedResult`
+- [x] 0.1 创建 `owlclaw/web/` 包结构（`__init__.py` + `contracts.py` + `api/` + `providers/`）
+- [x] 0.2 实现 `contracts.py`：定义 `OverviewProvider`、`GovernanceProvider`、`TriggersProvider`、`AgentsProvider`、`CapabilitiesProvider`、`LedgerProvider`、`SettingsProvider` 共 7 个 Protocol 接口
+- [x] 0.3 定义共享数据类：`HealthStatus`、`OverviewMetrics`、`PaginatedResult`
 
 **验收**：
 - `from owlclaw.web.contracts import OverviewProvider` 可导入
@@ -40,14 +40,14 @@
 - `owlclaw/web/app.py` — `create_console_app()` 组装入口
 
 **实现**：
-- [ ] 1.1 实现 `create_api_app()` 工厂函数，挂载到 `/api/v1/` 前缀
-- [ ] 1.2 实现 `TokenAuthMiddleware`：从 `OWLCLAW_CONSOLE_TOKEN` 读取，空则跳过认证
-- [ ] 1.3 实现 CORS 中间件配置（`OWLCLAW_CONSOLE_CORS_ORIGINS`）
-- [ ] 1.4 实现统一错误处理（`ErrorResponse` 格式 + 全局异常处理器）
-- [ ] 1.5 实现 `PaginatedResponse` 通用分页响应模型
-- [ ] 1.6 实现 `deps.py` Provider 注册表和 `Depends` 函数
-- [ ] 1.7 实现 `create_console_app()` 组装 Provider 实例并创建 FastAPI 应用
-- [ ] 1.8 OpenAPI Schema 自动生成验证（`/api/v1/openapi.json` 可访问）
+- [x] 1.1 实现 `create_api_app()` 工厂函数，挂载到 `/api/v1/` 前缀
+- [x] 1.2 实现 `TokenAuthMiddleware`：从 `OWLCLAW_CONSOLE_TOKEN` 读取，空则跳过认证
+- [x] 1.3 实现 CORS 中间件配置（`OWLCLAW_CONSOLE_CORS_ORIGINS`）
+- [x] 1.4 实现统一错误处理（`ErrorResponse` 格式 + 全局异常处理器）
+- [x] 1.5 实现 `PaginatedResponse` 通用分页响应模型
+- [x] 1.6 实现 `deps.py` Provider 注册表和 `Depends` 函数
+- [x] 1.7 实现 `create_console_app()` 组装 Provider 实例并创建 FastAPI 应用
+- [x] 1.8 OpenAPI Schema 自动生成验证（`/api/v1/openapi.json` 可访问）
 
 **验收**：
 - `GET /api/v1/openapi.json` 返回 200
@@ -66,10 +66,10 @@
 - `owlclaw/web/api/overview.py` — Overview 路由
 
 **实现**：
-- [ ] 2.1 实现 `DefaultOverviewProvider`：聚合 Runtime/DB/Hatchet/LLM/Langfuse 连通性检查
-- [ ] 2.2 实现今日成本/执行次数/成功率/活跃 Agent 指标聚合（从 Ledger 查询）
-- [ ] 2.3 实现 `GET /api/v1/overview` 路由
-- [ ] 2.4 Overview 指标缓存（TTL 30s，避免频繁聚合查询）
+- [x] 2.1 实现 `DefaultOverviewProvider`：聚合 Runtime/DB/Hatchet/LLM/Langfuse 连通性检查
+- [x] 2.2 实现今日成本/执行次数/成功率/活跃 Agent 指标聚合（从 Ledger 查询）
+- [x] 2.3 实现 `GET /api/v1/overview` 路由
+- [x] 2.4 Overview 指标缓存（TTL 30s，避免频繁聚合查询）
 
 **验收**：
 - `GET /api/v1/overview` 返回 `OverviewMetrics` 结构
@@ -250,4 +250,4 @@
 ---
 
 **维护者**：yeemio  
-**最后更新**：2026-02-28
+**最后更新**：2026-03-02
