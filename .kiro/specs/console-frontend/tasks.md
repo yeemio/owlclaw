@@ -62,12 +62,12 @@
 - `src/components/data/HealthIndicator.tsx`
 
 **实现**：
-- [ ] 2.1 实现健康指示灯组件（绿/黄/红，对应 healthy/degraded/unhealthy）
-- [ ] 2.2 实现指标卡片组件（成本/执行/成功率/Agent，带趋势箭头）
-- [ ] 2.3 实现告警横幅组件
-- [ ] 2.4 实现首次使用引导卡片（链接 Quick Start/示例/SKILL.md 指南）
-- [ ] 2.5 接入 `useOverview()` hook，30s 自动刷新
-- [ ] 2.6 接入 WebSocket 实时更新
+- [x] 2.1 实现健康指示灯组件（绿/黄/红，对应 healthy/degraded/unhealthy）
+- [x] 2.2 实现指标卡片组件（成本/执行/成功率/Agent，带趋势箭头）
+- [x] 2.3 实现告警横幅组件
+- [x] 2.4 实现首次使用引导卡片（链接 Quick Start/示例/SKILL.md 指南）
+- [x] 2.5 接入 `useOverview()` hook，30s 自动刷新
+- [x] 2.6 接入 WebSocket 实时更新
 
 **验收**：
 - Overview 页面数据从 API 正确获取
