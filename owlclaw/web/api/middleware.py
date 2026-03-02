@@ -5,7 +5,8 @@ from __future__ import annotations
 import os
 from collections.abc import Awaitable, Callable
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
@@ -91,6 +92,40 @@ def add_cors_middleware(app: FastAPI) -> None:
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Register global exception handlers using unified error shape."""
+
+    @app.exception_handler(HTTPException)
+    async def handle_http_exception(_: Request, exc: HTTPException) -> JSONResponse:
+        code = "HTTP_ERROR"
+        if exc.status_code == 404:
+            code = "NOT_FOUND"
+        elif exc.status_code == 401:
+            code = "UNAUTHORIZED"
+        elif exc.status_code == 403:
+            code = "FORBIDDEN"
+        elif exc.status_code == 422:
+            code = "VALIDATION_ERROR"
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "error": {
+                    "code": code,
+                    "message": str(exc.detail),
+                },
+            },
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Request validation failed.",
+                    "details": {"errors": exc.errors()},
+                },
+            },
+        )
 
     @app.exception_handler(Exception)
     async def handle_unexpected(_: Request, exc: Exception) -> JSONResponse:

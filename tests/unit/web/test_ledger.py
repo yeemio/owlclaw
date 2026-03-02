@@ -128,6 +128,9 @@ def test_ledger_detail_route_returns_404_when_not_found() -> None:
 
     response = client.get("/api/v1/ledger/missing")
     assert response.status_code == 404
+    payload = response.json()
+    assert payload["error"]["code"] == "NOT_FOUND"
+    assert payload["error"]["message"] == "Ledger record not found"
 
 
 def test_ledger_detail_route_returns_payload() -> None:

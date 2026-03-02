@@ -132,6 +132,9 @@ def test_agents_detail_route_returns_404_when_missing() -> None:
     client = TestClient(app)
     response = client.get("/api/v1/agents/missing")
     assert response.status_code == 404
+    payload = response.json()
+    assert payload["error"]["code"] == "NOT_FOUND"
+    assert payload["error"]["message"] == "Agent not found"
 
 
 @dataclass

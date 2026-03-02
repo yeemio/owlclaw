@@ -165,3 +165,23 @@ def test_console_api_overview_p95_under_200ms() -> None:
     p95_index = max(0, int(len(sorted_durations) * 0.95) - 1)
     p95_ms = sorted_durations[p95_index]
     assert p95_ms < 200.0
+
+
+def test_console_contract_alignment_for_governance_ledger_and_ws() -> None:
+    client = _create_client()
+
+    governance = client.get("/api/v1/governance/budget?granularity=day")
+    assert governance.status_code == 200
+    governance_payload = governance.json()
+    assert isinstance(governance_payload, dict)
+    assert "items" in governance_payload
+
+    ledger = client.get("/api/v1/ledger?agent_id=agent-1&capability_name=cap-a")
+    assert ledger.status_code == 200
+    ledger_payload = ledger.json()
+    assert "items" in ledger_payload
+    assert "records" not in ledger_payload
+
+    with client.websocket_connect("/api/v1/ws") as ws:
+        message_types = [ws.receive_json()["type"] for _ in range(3)]
+    assert message_types == ["overview", "triggers", "ledger"]

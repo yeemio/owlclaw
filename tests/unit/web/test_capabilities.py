@@ -132,6 +132,9 @@ def test_capabilities_schema_route_returns_404_when_missing() -> None:
 
     response = client.get("/api/v1/capabilities/missing/schema")
     assert response.status_code == 404
+    payload = response.json()
+    assert payload["error"]["code"] == "NOT_FOUND"
+    assert payload["error"]["message"] == "Capability schema not found"
 
 
 @dataclass
