@@ -7,4 +7,8 @@ class ResizeObserverMock {
 }
 
 // Recharts needs ResizeObserver in test runtime.
-(globalThis as any).ResizeObserver = ResizeObserverMock;
+Object.defineProperty(globalThis, "ResizeObserver", {
+  configurable: true,
+  writable: true,
+  value: ResizeObserverMock,
+});

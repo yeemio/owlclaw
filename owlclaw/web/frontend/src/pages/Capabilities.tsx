@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { EmptyState } from "@/components/data/EmptyState";
 import { SchemaViewer } from "@/components/data/SchemaViewer";
@@ -49,15 +49,11 @@ export function CapabilitiesPage() {
   const category = categoryForTab(tab);
   const filtered = category ? data.capabilities.filter((item) => item.category === category) : data.capabilities;
   const selected = filtered.find((item) => item.name === selectedName) ?? filtered[0] ?? null;
-  const chartData = useMemo(
-    () =>
-      filtered.map((item) => ({
-        name: item.name.length > 18 ? `${item.name.slice(0, 18)}...` : item.name,
-        executions: item.stats.executions,
-        successRate: Math.round(item.stats.success_rate * 100),
-      })),
-    [filtered]
-  );
+  const chartData = filtered.map((item) => ({
+    name: item.name.length > 18 ? `${item.name.slice(0, 18)}...` : item.name,
+    executions: item.stats.executions,
+    successRate: Math.round(item.stats.success_rate * 100),
+  }));
 
   return (
     <PageShell title="Capabilities" description="Capability catalog, schema inspection, and migration visibility.">

@@ -79,7 +79,7 @@ export type LedgerFilters = {
 };
 
 export type PaginatedLedger = {
-  records: LedgerRecord[];
+  items: LedgerRecord[];
   total: number;
   limit: number;
   offset: number;
@@ -227,16 +227,22 @@ function normalizeGovernanceSnapshot(raw: unknown): GovernanceSnapshot {
 }
 
 function normalizeLedgerRecord(raw: unknown): LedgerRecord {
-  const item = (raw as Partial<LedgerRecord>) ?? {};
+  const item = (raw as Partial<LedgerRecord> & {
+    created_at?: string;
+    agent_id?: string;
+    capability_name?: string;
+    estimated_cost?: number | string;
+    execution_time_ms?: number | string;
+  }) ?? {};
   return {
     id: String(item.id ?? ""),
-    timestamp: String(item.timestamp ?? ""),
-    agent: String(item.agent ?? "unknown"),
-    capability: String(item.capability ?? "unknown"),
+    timestamp: String(item.timestamp ?? item.created_at ?? ""),
+    agent: String(item.agent ?? item.agent_id ?? "unknown"),
+    capability: String(item.capability ?? item.capability_name ?? "unknown"),
     status: ((item.status ?? "success") as LedgerStatus),
-    cost_usd: toNumber(item.cost_usd),
+    cost_usd: toNumber(item.cost_usd ?? item.estimated_cost),
     model: String(item.model ?? "unknown"),
-    latency_ms: toNumber(item.latency_ms),
+    latency_ms: toNumber(item.latency_ms ?? item.execution_time_ms),
     input: String(item.input ?? ""),
     output: String(item.output ?? ""),
     reasoning: String(item.reasoning ?? ""),
@@ -245,8 +251,13 @@ function normalizeLedgerRecord(raw: unknown): LedgerRecord {
 
 function normalizePaginatedLedger(raw: unknown, limit: number, offset: number): PaginatedLedger {
   const input = (raw as Partial<PaginatedLedger>) ?? {};
+  const rawList =
+    (raw as { items?: unknown[]; records?: unknown[] })?.items ??
+    (raw as { items?: unknown[]; records?: unknown[] })?.records ??
+    input.items ??
+    [];
   return {
-    records: Array.isArray(input.records) ? input.records.map((record) => normalizeLedgerRecord(record)) : [],
+    items: Array.isArray(rawList) ? rawList.map((record) => normalizeLedgerRecord(record)) : [],
     total: toNumber(input.total),
     limit: toNumber(input.limit) || limit,
     offset: toNumber(input.offset) || offset,
@@ -262,6 +273,34 @@ function normalizeAgentSummary(raw: unknown): AgentSummary {
     status: (item.status ?? "idle") as AgentStatus,
     identity_summary: String(item.identity_summary ?? ""),
   };
+}
+
+function extractItems(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) {
+    return raw;
+  }
+  if (typeof raw !== "object" || raw === null) {
+    return [];
+  }
+  const input = raw as {
+    items?: unknown[];
+    records?: unknown[];
+    capabilities?: unknown[];
+    triggers?: unknown[];
+  };
+  if (Array.isArray(input.items)) {
+    return input.items;
+  }
+  if (Array.isArray(input.records)) {
+    return input.records;
+  }
+  if (Array.isArray(input.capabilities)) {
+    return input.capabilities;
+  }
+  if (Array.isArray(input.triggers)) {
+    return input.triggers;
+  }
+  return [];
 }
 
 function normalizeAgentDetail(raw: unknown): AgentDetail {
@@ -376,19 +415,19 @@ function normalizeSettingsSnapshot(raw: unknown): SettingsSnapshot {
 function buildLedgerQuery(filters: LedgerFilters, limit: number, offset: number): string {
   const params = new URLSearchParams();
   if (filters.agent) {
-    params.set("agent", filters.agent);
+    params.set("agent_id", filters.agent);
   }
   if (filters.capability) {
-    params.set("capability", filters.capability);
+    params.set("capability_name", filters.capability);
   }
   if (filters.status) {
     params.set("status", filters.status);
   }
   if (filters.start_time) {
-    params.set("start_time", filters.start_time);
+    params.set("start_date", filters.start_time);
   }
   if (filters.end_time) {
-    params.set("end_time", filters.end_time);
+    params.set("end_date", filters.end_time);
   }
   if (typeof filters.min_cost === "number") {
     params.set("min_cost", String(filters.min_cost));
@@ -412,8 +451,25 @@ export function useOverview() {
 export function useGovernance(granularity: "day" | "week" | "month" = "day") {
   return useQuery({
     queryKey: ["governance", granularity],
-    queryFn: async () =>
-      normalizeGovernanceSnapshot(await apiFetch<unknown>(`/governance?granularity=${granularity}`)),
+    queryFn: async () => {
+      const [budgetRaw, circuitRaw, visibilityRaw] = await Promise.all([
+        apiFetch<unknown>(`/governance/budget?granularity=${granularity}`),
+        apiFetch<unknown>("/governance/circuit-breakers"),
+        apiFetch<unknown>("/governance/visibility-matrix"),
+      ]);
+      const budgetObj = (budgetRaw as Record<string, unknown>) ?? {};
+      return normalizeGovernanceSnapshot({
+        budget_trend: extractItems(budgetRaw),
+        circuit_breakers: extractItems(circuitRaw),
+        visibility: extractItems(visibilityRaw),
+        migration_weight: budgetObj.migration_weight,
+        skills_quality_rank:
+          budgetObj.skills_quality_rank ??
+          budgetObj.skill_quality_rank ??
+          budgetObj.skills_quality ??
+          [],
+      });
+    },
     refetchInterval: 30_000,
   });
 }
@@ -434,11 +490,7 @@ export function useLedger(filters: LedgerFilters, limit = 20, offset = 0) {
 export function useAgents() {
   return useQuery({
     queryKey: ["agents"],
-    queryFn: async () => {
-      const raw = await apiFetch<unknown>("/agents");
-      const items = Array.isArray(raw) ? raw : [];
-      return items.map((item) => normalizeAgentSummary(item));
-    },
+    queryFn: async () => extractItems(await apiFetch<unknown>("/agents")).map((item) => normalizeAgentSummary(item)),
     refetchInterval: 30_000,
   });
 }
@@ -455,7 +507,15 @@ export function useAgentDetail(agentId: string | null) {
 export function useCapabilities() {
   return useQuery({
     queryKey: ["capabilities"],
-    queryFn: async () => normalizeCapabilitiesSnapshot(await apiFetch<unknown>("/capabilities")),
+    queryFn: async () => {
+      const raw = await apiFetch<unknown>("/capabilities");
+      const obj = (raw as Record<string, unknown>) ?? {};
+      return normalizeCapabilitiesSnapshot({
+        capabilities: extractItems(raw),
+        scan_candidates: obj.scan_candidates ?? obj.scan_results ?? [],
+        migration_progress: obj.migration_progress ?? obj.migrations ?? [],
+      });
+    },
     refetchInterval: 30_000,
   });
 }
@@ -463,7 +523,10 @@ export function useCapabilities() {
 export function useTriggers() {
   return useQuery({
     queryKey: ["triggers"],
-    queryFn: async () => normalizeTriggersSnapshot(await apiFetch<unknown>("/triggers")),
+    queryFn: async () => {
+      const raw = await apiFetch<unknown>("/triggers");
+      return normalizeTriggersSnapshot({ triggers: extractItems(raw) });
+    },
     refetchInterval: 30_000,
   });
 }

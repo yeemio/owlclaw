@@ -3,7 +3,7 @@ import { MetricCard } from "@/components/charts/MetricCard";
 import { AlertBanner } from "@/components/data/AlertBanner";
 import { HealthIndicator } from "@/components/data/HealthIndicator";
 import { OnboardingCard } from "@/components/data/OnboardingCard";
-import { useToast } from "@/components/system/Toast";
+import { useToast } from "@/components/system/useToast";
 import { type HealthStatus, useOverview } from "@/hooks/useApi";
 import { useConsoleWebSocket } from "@/hooks/useWebSocket";
 import { PageShell } from "@/pages/PageShell";

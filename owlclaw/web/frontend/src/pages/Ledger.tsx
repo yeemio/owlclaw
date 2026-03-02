@@ -62,7 +62,7 @@ export function LedgerPage() {
   return (
     <PageShell title="Ledger" description="Execution audit records with query filters, pagination, and record detail.">
       <LedgerFilters value={draftFilters} onChange={setDraftFilters} onApply={applyFilters} onReset={resetFilters} />
-      {data.records.length === 0 ? (
+      {data.items.length === 0 ? (
         <EmptyState
           title="No ledger records"
           description="Try broadening filters or trigger a run to generate audit records."
@@ -72,7 +72,7 @@ export function LedgerPage() {
       ) : (
         <div className="grid gap-3 xl:grid-cols-[1.5fr_1fr]">
           <LedgerTimeline
-            records={data.records}
+            records={data.items}
             total={data.total}
             limit={data.limit}
             offset={data.offset}

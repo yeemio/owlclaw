@@ -3,12 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { type OverviewSnapshot } from "@/hooks/useApi";
 
 type OverviewWsMessage = {
-  type: "overview_update";
+  type: "overview";
   data: OverviewSnapshot;
 };
 
-type LedgerWsMessage = { type: "ledger_new" };
-type TriggerWsMessage = { type: "trigger_event" };
+type LedgerWsMessage = { type: "ledger" };
+type TriggerWsMessage = { type: "triggers" };
 
 type AnyWsMessage = OverviewWsMessage | LedgerWsMessage | TriggerWsMessage | { type: string; data?: unknown };
 
@@ -40,13 +40,13 @@ export function useConsoleWebSocket() {
       ws.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data) as AnyWsMessage;
-          if (payload.type === "overview_update" && payload.data) {
+          if (payload.type === "overview" && payload.data) {
             queryClient.setQueryData(["overview"], payload.data);
           }
-          if (payload.type === "ledger_new") {
+          if (payload.type === "ledger") {
             queryClient.invalidateQueries({ queryKey: ["ledger"] });
           }
-          if (payload.type === "trigger_event") {
+          if (payload.type === "triggers") {
             queryClient.invalidateQueries({ queryKey: ["triggers"] });
           }
         } catch {
