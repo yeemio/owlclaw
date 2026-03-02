@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from owlclaw.web.api.capabilities import router as capabilities_router
 from owlclaw.web.api.governance import router as governance_router
 from owlclaw.web.api.ledger import router as ledger_router
 from owlclaw.web.api.middleware import TokenAuthMiddleware, add_cors_middleware, register_exception_handlers
@@ -36,6 +37,7 @@ def create_api_app() -> FastAPI:
 
     app.include_router(overview_router, prefix="/api/v1", tags=["overview"])
     app.include_router(governance_router, prefix="/api/v1", tags=["governance"])
+    app.include_router(capabilities_router, prefix="/api/v1", tags=["capabilities"])
     app.include_router(ledger_router, prefix="/api/v1", tags=["ledger"])
     return app
 

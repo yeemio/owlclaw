@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from decimal import Decimal
 from typing import Any
 
+from owlclaw.web.providers.capabilities import DefaultCapabilitiesProvider
 from owlclaw.web.providers.governance import DefaultGovernanceProvider
 from owlclaw.web.providers.ledger import DefaultLedgerProvider
 from owlclaw.web.providers.overview import DefaultOverviewProvider
@@ -37,20 +37,6 @@ class _EmptyAgentsProvider:
         return None
 
 
-class _EmptyCapabilitiesProvider:
-    async def list_capabilities(
-        self,
-        tenant_id: str,
-        category: str | None,
-    ) -> list[dict[str, Any]]:
-        _ = (tenant_id, category)
-        return []
-
-    async def get_capability_schema(self, capability_name: str) -> dict[str, Any] | None:
-        _ = capability_name
-        return None
-
-
 class _EmptySettingsProvider:
     async def get_settings(self, tenant_id: str) -> dict[str, Any]:
         _ = tenant_id
@@ -70,10 +56,16 @@ def create_default_provider_bundle() -> dict[str, Any]:
         "governance": DefaultGovernanceProvider(),
         "triggers": _EmptyTriggersProvider(),
         "agents": _EmptyAgentsProvider(),
-        "capabilities": _EmptyCapabilitiesProvider(),
+        "capabilities": DefaultCapabilitiesProvider(),
         "ledger": DefaultLedgerProvider(),
         "settings": _EmptySettingsProvider(),
     }
 
 
-__all__ = ["DefaultOverviewProvider", "DefaultGovernanceProvider", "DefaultLedgerProvider", "create_default_provider_bundle"]
+__all__ = [
+    "DefaultOverviewProvider",
+    "DefaultGovernanceProvider",
+    "DefaultCapabilitiesProvider",
+    "DefaultLedgerProvider",
+    "create_default_provider_bundle",
+]

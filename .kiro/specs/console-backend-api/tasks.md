@@ -131,10 +131,10 @@
 - `owlclaw/web/api/capabilities.py` — Capabilities 路由
 
 **实现**：
-- [ ] 5.1 实现 `DefaultCapabilitiesProvider`：从 CapabilityRegistry 获取 Handlers/Skills/Bindings 分类列表
-- [ ] 5.2 实现 JSON Schema 查看
-- [ ] 5.3 实现调用统计（从 Ledger 聚合）
-- [ ] 5.4 实现 `GET /api/v1/capabilities`（列表 + 分类筛选）和 `GET /api/v1/capabilities/{name}/schema`（Schema 查看）路由
+- [x] 5.1 实现 `DefaultCapabilitiesProvider`：从 CapabilityRegistry 获取 Handlers/Skills/Bindings 分类列表
+- [x] 5.2 实现 JSON Schema 查看
+- [x] 5.3 实现调用统计（从 Ledger 聚合）
+- [x] 5.4 实现 `GET /api/v1/capabilities`（列表 + 分类筛选）和 `GET /api/v1/capabilities/{name}/schema`（Schema 查看）路由
 
 **验收**：
 - 列表按 handler/skill/binding 分类
