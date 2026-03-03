@@ -171,3 +171,23 @@ async def test_router_reload_config_updates_rules_and_default() -> None:
     )
     sel = await r.select_model("trading_decision", ctx)
     assert sel.model == "gpt-4o"
+
+
+@pytest.mark.asyncio
+async def test_router_uses_constructor_default_model_when_rule_model_invalid() -> None:
+    r = Router(
+        {
+            "rules": [
+                {
+                    "task_type": "analysis",
+                    "model": "   ",
+                    "fallback": [],
+                }
+            ]
+        },
+        default_model="deepseek/deepseek-chat",
+    )
+    ctx = RunContext(tenant_id="t1")
+    sel = await r.select_model("analysis", ctx)
+    assert sel is not None
+    assert sel.model == "deepseek/deepseek-chat"

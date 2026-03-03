@@ -151,7 +151,7 @@ class ConfigManager:
         config_path: str | None = None,
         overrides: dict[str, Any] | None = None,
     ) -> ConfigManager:
-        """Load configuration from defaults + YAML + runtime overrides."""
+        """Load configuration with precedence: overrides > env > YAML > defaults."""
         manager = cls.instance()
         yaml_data = YAMLConfigLoader.load_dict(config_path)
         env_overrides = _collect_env_overrides()

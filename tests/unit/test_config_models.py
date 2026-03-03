@@ -30,3 +30,19 @@ def test_owlclaw_config_validates_cron_nested_fields() -> None:
     with pytest.raises(ValidationError):
         OwlClawConfig.model_validate({"triggers": {"retry": {"max_retries": -1}}})
 
+
+def test_llm_mock_fields_are_preserved() -> None:
+    cfg = OwlClawConfig.model_validate(
+        {
+            "integrations": {
+                "llm": {
+                    "model": "mock",
+                    "mock_mode": True,
+                    "mock_responses": {"default": {"content": "ok"}},
+                }
+            }
+        }
+    )
+    assert cfg.integrations.llm.mock_mode is True
+    assert "default" in cfg.integrations.llm.mock_responses
+

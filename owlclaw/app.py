@@ -683,6 +683,8 @@ class OwlClaw:
 
         Accepts: soul, identity, heartbeat_interval_minutes, governance (dict), and other Agent config.
         """
+        if self._runtime is not None:
+            raise RuntimeError("configure() cannot be called after app.start(); stop runtime first")
         nested_overrides = self._to_nested_overrides(kwargs)
         manager = ConfigManager.load(overrides=nested_overrides)
         self._config = manager.get().model_dump(mode="python")
@@ -803,7 +805,7 @@ class OwlClaw:
             )
 
         router_cfg = cfg.get("router") or {}
-        self._router = Router(router_cfg)
+        self._router = Router(router_cfg, default_model=self._resolve_runtime_model())
 
     async def get_visible_capabilities(
         self,
@@ -984,6 +986,11 @@ class OwlClaw:
         runtime_config: dict[str, Any] = {}
         if self._lite_mode:
             runtime_config["heartbeat"] = {"enabled": False}
+        integrations_cfg = self._config.get("integrations")
+        if isinstance(integrations_cfg, dict):
+            llm_cfg = integrations_cfg.get("llm")
+            if isinstance(llm_cfg, dict):
+                runtime_config["llm"] = dict(llm_cfg)
         runtime_model = self._resolve_runtime_model()
         return AgentRuntime(
             agent_id=self.name,

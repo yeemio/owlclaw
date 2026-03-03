@@ -97,6 +97,8 @@ class LLMIntegrationConfig(BaseModel):
     model: str = Field(default="gpt-4o-mini")
     fallback_models: list[str] = Field(default_factory=list)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    mock_mode: bool = Field(default=False)
+    mock_responses: dict[str, Any] = Field(default_factory=dict)
 
 
 class HatchetIntegrationConfig(BaseModel):

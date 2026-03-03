@@ -85,5 +85,5 @@ def test_property_config_validation_accepts_positive_numbers(
 
 
 def test_default_runtime_config_shape() -> None:
-    assert DEFAULT_RUNTIME_CONFIG["model"]
+    assert "model" not in DEFAULT_RUNTIME_CONFIG
     assert DEFAULT_RUNTIME_CONFIG["max_function_calls"] >= 1
