@@ -45,8 +45,6 @@ class RequestValidator:
         headers = _normalize_headers(request.headers)
         authorization = headers.get("authorization", "")
         if auth_method.type == "bearer":
-            if auth_method.token and auth_method.token.strip():
-                return _validate_bearer(authorization, auth_method.token)
             return _validate_bearer_hash(authorization, endpoint.auth_token_hash)
         if auth_method.type == "basic":
             return _validate_basic(authorization, auth_method.username, auth_method.password)
@@ -152,30 +150,6 @@ class RequestValidator:
 
 def _normalize_headers(headers: dict[str, str]) -> dict[str, str]:
     return {key.lower(): value for key, value in headers.items()}
-
-
-def _validate_bearer(authorization: str, expected_token: str) -> ValidationResult:
-    prefix = "Bearer "
-    if not authorization.startswith(prefix):
-        return ValidationResult(
-            valid=False,
-            error=ValidationError(
-                code="INVALID_TOKEN",
-                message="missing bearer token",
-                status_code=401,
-            ),
-        )
-    provided_token = authorization[len(prefix) :].strip()
-    if not provided_token or not hmac.compare_digest(provided_token, expected_token):
-        return ValidationResult(
-            valid=False,
-            error=ValidationError(
-                code="INVALID_TOKEN",
-                message="invalid bearer token",
-                status_code=401,
-            ),
-        )
-    return ValidationResult(valid=True)
 
 
 def _validate_bearer_hash(authorization: str, expected_token_hash: str) -> ValidationResult:

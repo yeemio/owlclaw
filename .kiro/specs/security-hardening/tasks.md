@@ -54,7 +54,7 @@
 
 ## Task 12：auth_token 哈希存储（REQ-S12）
 - [x] 12.1 模型改用 hash 字段
-- [x] 12.2 验证逻辑改用 hash 比较
+- [x] 12.2 验证逻辑改用 hash 比较（仅 hash 校验，不再走明文 token 分支）
 - [x] 12.3 迁移脚本
 
 ## Task 13：CORS 修复（REQ-S13）

@@ -59,21 +59,18 @@ class WebhookEndpointManager:
         endpoint_id = uuid4()
         now = datetime.now(timezone.utc)
         raw_auth_token = token_urlsafe(self._token_bytes)
+        auth_token_hash = _hash_auth_token(raw_auth_token)
+        if config.auth_method.type == "bearer" and config.auth_method.token:
+            raw_auth_token = config.auth_method.token.strip()
+            auth_token_hash = _hash_auth_token(raw_auth_token)
         model = WebhookEndpointModel(
             id=endpoint_id,
             tenant_id=tenant_id,
             name=config.name,
             url=f"{self._base_url}/{endpoint_id}",
-            auth_token_hash=_hash_auth_token(raw_auth_token),
+            auth_token_hash=auth_token_hash,
             target_agent_id=config.target_agent_id,
-            auth_method={
-                "type": config.auth_method.type,
-                "token": config.auth_method.token,
-                "secret": config.auth_method.secret,
-                "algorithm": config.auth_method.algorithm,
-                "username": config.auth_method.username,
-                "password": config.auth_method.password,
-            },
+            auth_method=_sanitize_auth_method(config.auth_method),
             transformation_rule_id=(UUID(config.transformation_rule_id) if config.transformation_rule_id else None),
             execution_mode=config.execution_mode,
             timeout=(None if config.timeout_seconds is None else int(config.timeout_seconds)),
@@ -112,14 +109,9 @@ class WebhookEndpointManager:
         model.execution_mode = config.execution_mode
         model.timeout = None if config.timeout_seconds is None else int(config.timeout_seconds)
         model.enabled = config.enabled
-        model.auth_method = {
-            "type": config.auth_method.type,
-            "token": config.auth_method.token,
-            "secret": config.auth_method.secret,
-            "algorithm": config.auth_method.algorithm,
-            "username": config.auth_method.username,
-            "password": config.auth_method.password,
-        }
+        model.auth_method = _sanitize_auth_method(config.auth_method)
+        if config.auth_method.type == "bearer" and config.auth_method.token:
+            model.auth_token_hash = _hash_auth_token(config.auth_method.token.strip())
         model.transformation_rule_id = UUID(config.transformation_rule_id) if config.transformation_rule_id else None
         model.retry_policy = (
             None
@@ -233,6 +225,22 @@ class WebhookEndpointManager:
 
 def _hash_auth_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+
+def _sanitize_auth_method(auth_method: AuthMethod) -> dict[str, Any]:
+    if auth_method.type == "bearer":
+        return {"type": auth_method.type}
+    if auth_method.type == "hmac":
+        return {
+            "type": auth_method.type,
+            "secret": auth_method.secret,
+            "algorithm": auth_method.algorithm,
+        }
+    return {
+        "type": auth_method.type,
+        "username": auth_method.username,
+        "password": auth_method.password,
+    }
 
 
 def _normalize_auth_method_type(value: object) -> AuthMethodType:
