@@ -16,8 +16,8 @@
 - [x] 2.2 单元测试
 
 ## Task 3：Handler 超时（REQ-R3）
-- [ ] 3.1 registry.invoke_handler 添加 asyncio.wait_for
-- [ ] 3.2 单元测试
+- [x] 3.1 registry.invoke_handler 添加 asyncio.wait_for
+- [x] 3.2 单元测试
 
 ## Task 4：start() 幂等（REQ-R4）
 - [ ] 4.1 添加 _runtime 检查
