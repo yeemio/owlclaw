@@ -18,14 +18,14 @@
 
 > **文件**: `owlclaw/integrations/llm.py`、`owlclaw/app.py`
 
-- [ ] 1.1 在 `llm.py` 中新增模块级 `_mock_config` 全局状态和 `configure_mock()` 函数
-- [ ] 1.2 修改 `acompletion()` 门面函数：检查 `_mock_config`，非 None 时返回 mock 响应
-- [ ] 1.3 mock 响应构造：返回与 litellm 兼容的 response 对象（含 `choices[0].message.tool_calls`）
-- [ ] 1.4 `OwlClaw.lite()` 中调用 `configure_mock(mock_responses)` 设置全局 mock
-- [ ] 1.5 `OwlClaw.stop()` 中调用 `configure_mock(None)` 清除 mock（测试隔离）
-- [ ] 1.6 单元测试：验证 `acompletion()` 在 mock_mode 下返回正确格式的 function_calls
-- [ ] 1.7 单元测试：验证 `configure_mock(None)` 后 `acompletion()` 恢复真实调用路径
-- [ ] 1.8 集成测试：Lite Mode 下 `runtime.trigger_event()` 不报 API Key 错误
+- [x] 1.1 在 `llm.py` 中新增模块级 `_mock_config` 全局状态和 `configure_mock()` 函数
+- [x] 1.2 修改 `acompletion()` 门面函数：检查 `_mock_config`，非 None 时返回 mock 响应
+- [x] 1.3 mock 响应构造：返回与 litellm 兼容的 response 对象（含 `choices[0].message.tool_calls`）
+- [x] 1.4 `OwlClaw.lite()` 中调用 `configure_mock(mock_responses)` 设置全局 mock
+- [x] 1.5 `OwlClaw.stop()` 中调用 `configure_mock(None)` 清除 mock（测试隔离）
+- [x] 1.6 单元测试：验证 `acompletion()` 在 mock_mode 下返回正确格式的 function_calls
+- [x] 1.7 单元测试：验证 `configure_mock(None)` 后 `acompletion()` 恢复真实调用路径
+- [x] 1.8 集成测试：Lite Mode 下 `runtime.trigger_event()` 不报 API Key 错误
 
 **验收**：
 - `acompletion()` 在 mock_mode 下返回包含 tool_calls 的 litellm 兼容响应
@@ -38,10 +38,10 @@
 
 > **文件**: `owlclaw/agent/runtime/runtime.py`、`owlclaw/app.py`
 
-- [ ] 2.1 修改 `runtime.run()` 方法：当 `_heartbeat_checker` 为 None 或 disabled 时，跳过 `check_events()` 直接进入 `_decision_loop`
-- [ ] 2.2 `OwlClaw.lite()` 配置中设置 heartbeat_checker 为 disabled
-- [ ] 2.3 单元测试：Lite Mode 下 heartbeat 触发直接进入决策循环
-- [ ] 2.4 单元测试：生产模式下 heartbeat 仍走 check_events() 逻辑
+- [x] 2.1 修改 `runtime.run()` 方法：当 `_heartbeat_checker` 为 None 或 disabled 时，跳过 `check_events()` 直接进入 `_decision_loop`
+- [x] 2.2 `OwlClaw.lite()` 配置中设置 heartbeat_checker 为 disabled
+- [x] 2.3 单元测试：Lite Mode 下 heartbeat 触发直接进入决策循环
+- [x] 2.4 单元测试：生产模式下 heartbeat 仍走 check_events() 逻辑
 
 **验收**：
 - Lite Mode 下 `app.run()` 第一个 heartbeat 周期内 Agent 执行决策循环
@@ -53,11 +53,11 @@
 
 > **文件**: `owlclaw/app.py`
 
-- [ ] 3.1 新增 `_ensure_logging()` 方法：root logger 无 handler 时配置 basicConfig
-- [ ] 3.2 在 `run()` 和 `lite()` 入口调用 `_ensure_logging()`
-- [ ] 3.3 heartbeat 每次触发输出日志（是否有事件、是否进入决策）
-- [ ] 3.4 单元测试：验证日志配置不覆盖用户自定义 handler
-- [ ] 3.5 单元测试：验证 Lite Mode 下 `app.run()` 产生可见日志
+- [x] 3.1 新增 `_ensure_logging()` 方法：root logger 无 handler 时配置 basicConfig
+- [x] 3.2 在 `run()` 和 `lite()` 入口调用 `_ensure_logging()`
+- [x] 3.3 heartbeat 每次触发输出日志（是否有事件、是否进入决策）
+- [x] 3.4 单元测试：验证日志配置不覆盖用户自定义 handler
+- [x] 3.5 单元测试：验证 Lite Mode 下 `app.run()` 产生可见日志
 
 **验收**：
 - `python app.py` 启动后立即看到启动日志
@@ -70,10 +70,10 @@
 
 > **文件**: `owlclaw/app.py`
 
-- [ ] 4.1 重写 `run_once()` 方法：调用 `runtime.trigger_event()` 而非直接调 handler
-- [ ] 4.2 添加结构化输出：展示 Agent 决策过程（LLM 选择 → tool call → handler 结果）
-- [ ] 4.3 单元测试：`run_once()` 触发完整决策循环
-- [ ] 4.4 单元测试：`run_once()` 输出包含 Agent 决策信息
+- [x] 4.1 重写 `run_once()` 方法：调用 `runtime.trigger_event()` 而非直接调 handler
+- [x] 4.2 添加结构化输出：展示 Agent 决策过程（LLM 选择 → tool call → handler 结果）
+- [x] 4.3 单元测试：`run_once()` 触发完整决策循环
+- [x] 4.4 单元测试：`run_once()` 输出包含 Agent 决策信息
 
 **验收**：
 - `run_once()` 走 `runtime.trigger_event()` → `_decision_loop()` 完整路径
@@ -143,8 +143,8 @@
 
 > **文件**: `owlclaw/app.py`
 
-- [ ] 9.1 `create_agent_runtime()` 从 `self._config` 读取 `integrations.llm.model` 并传递给 Runtime
-- [ ] 9.2 单元测试：`app.configure(model="deepseek/deepseek-chat")` 后 runtime.model 正确
+- [x] 9.1 `create_agent_runtime()` 从 `self._config` 读取 `integrations.llm.model` 并传递给 Runtime
+- [x] 9.2 单元测试：`app.configure(model="deepseek/deepseek-chat")` 后 runtime.model 正确
 
 **验收**：
 - 用户配置的 model 正确传递到 Runtime
@@ -155,8 +155,8 @@
 
 > **文件**: `owlclaw/governance/visibility.py`
 
-- [ ] 10.1 Router `select_model()` 对未配置的 task_type 返回 None
-- [ ] 10.2 单元测试：无显式路由规则时 Runtime 使用 self.model
+- [x] 10.1 Router `select_model()` 对未配置的 task_type 返回 None
+- [x] 10.2 单元测试：无显式路由规则时 Runtime 使用 self.model
 
 **验收**：
 - 无路由规则时不覆盖用户配置的 model

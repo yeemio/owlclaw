@@ -1117,6 +1117,22 @@ Check entries.
         assert mock_llm.call_args_list[1].kwargs["model"] == "fallback-model"
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_runtime_keeps_self_model_when_router_has_no_matching_rule(self, mock_llm, tmp_path) -> None:
+        from owlclaw.governance.router import Router
+
+        mock_llm.return_value = _make_llm_response("ok")
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            model="deepseek/deepseek-chat",
+            router=Router({"default_model": "gpt-4o-mini", "rules": []}),
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron", payload={"task_type": "unmapped"}))
+        assert result["status"] == "completed"
+        assert mock_llm.call_args.kwargs["model"] == "deepseek/deepseek-chat"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_records_llm_token_usage_to_ledger(self, mock_llm, tmp_path) -> None:
         mock_llm.return_value = _make_llm_response("ok", prompt_tokens=11, completion_tokens=7)
         ledger = AsyncMock()

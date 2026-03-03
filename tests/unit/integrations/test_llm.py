@@ -23,6 +23,7 @@ from owlclaw.integrations.llm import (
     ToolsConverter,
     aembedding,
     acompletion,
+    configure_mock,
     extract_cost_info,
 )
 
@@ -672,3 +673,35 @@ async def test_aembedding_delegates_to_litellm() -> None:
         mock.return_value = {"data": [{"embedding": [0.1, 0.2]}]}
         result = await aembedding(model="text-embedding-3-small", input=["hello"])
     assert result["data"][0]["embedding"] == [0.1, 0.2]
+
+
+@pytest.mark.asyncio
+async def test_acompletion_uses_module_mock_response_with_tool_calls() -> None:
+    configure_mock(
+        {
+            "default": {
+                "content": "use tool",
+                "function_calls": [{"name": "inventory_check", "arguments": {"sku": "A1"}}],
+            }
+        }
+    )
+    try:
+        resp = await acompletion(model="gpt-4o-mini", messages=[{"role": "user", "content": "check"}])
+        assert resp.model == "mock"
+        assert resp.choices[0].message.content == "use tool"
+        tool_calls = resp.choices[0].message.tool_calls
+        assert len(tool_calls) == 1
+        assert tool_calls[0].function.name == "inventory_check"
+        assert tool_calls[0].function.arguments == '{"sku": "A1"}'
+    finally:
+        configure_mock(None)
+
+
+@pytest.mark.asyncio
+async def test_acompletion_restores_real_path_after_configure_mock_none() -> None:
+    configure_mock({"default": {"content": "mocked"}})
+    configure_mock(None)
+    with patch("litellm.acompletion", new_callable=AsyncMock) as mock:
+        mock.return_value = _fake_litellm_response("ok", [], 4, 2)
+        result = await acompletion(model="gpt-4o-mini", messages=[{"role": "user", "content": "hi"}])
+    assert result.choices[0].message.content == "ok"

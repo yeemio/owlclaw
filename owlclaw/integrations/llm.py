@@ -28,6 +28,130 @@ from owlclaw.integrations.langfuse import TokenCalculator, TraceContext
 
 logger = logging.getLogger(__name__)
 
+_mock_config: dict[str, Any] | None = None
+
+
+class _MockFunction:
+    def __init__(self, name: str, arguments: str) -> None:
+        self.name = name
+        self.arguments = arguments
+
+
+class _MockToolCall:
+    def __init__(self, call_id: str, name: str, arguments: dict[str, Any]) -> None:
+        self.id = call_id
+        self.type = "function"
+        self.function = _MockFunction(name=name, arguments=json.dumps(arguments, default=str))
+
+
+class _MockMessage:
+    def __init__(self, content: str | None, tool_calls: list[_MockToolCall]) -> None:
+        self.content = content
+        self.tool_calls = tool_calls
+
+
+class _MockChoice:
+    def __init__(self, message: _MockMessage) -> None:
+        self.message = message
+
+
+class _MockUsage:
+    def __init__(self, prompt_tokens: int, completion_tokens: int) -> None:
+        self.prompt_tokens = prompt_tokens
+        self.completion_tokens = completion_tokens
+
+
+class _MockCompletionResponse:
+    def __init__(
+        self,
+        *,
+        content: str | None,
+        function_calls: list[dict[str, Any]],
+        prompt_tokens: int,
+        completion_tokens: int,
+    ) -> None:
+        tool_calls = [
+            _MockToolCall(
+                call_id=str(fc.get("id", "")),
+                name=str(fc.get("name", "")),
+                arguments=fc.get("arguments", {}) if isinstance(fc.get("arguments"), dict) else {},
+            )
+            for fc in function_calls
+            if isinstance(fc, dict)
+        ]
+        self.model = "mock"
+        self.choices = [_MockChoice(_MockMessage(content=content, tool_calls=tool_calls))]
+        self.usage = _MockUsage(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
+
+
+def _parse_mock_response(raw: Any) -> tuple[str | None, list[dict[str, Any]]]:
+    """Parse configured mock response into text content and function calls."""
+    if isinstance(raw, str):
+        return raw, []
+    if not isinstance(raw, dict):
+        return str(raw), []
+
+    content = raw.get("content")
+    if content is not None and not isinstance(content, str):
+        content = str(content)
+
+    function_calls_raw = raw.get("function_calls", [])
+    function_calls: list[dict[str, Any]] = []
+    if isinstance(function_calls_raw, list):
+        for idx, fc in enumerate(function_calls_raw):
+            if not isinstance(fc, dict):
+                continue
+            name = fc.get("name")
+            if not isinstance(name, str) or not name:
+                continue
+            arguments = fc.get("arguments", {})
+            if isinstance(arguments, str):
+                try:
+                    arguments = json.loads(arguments)
+                except json.JSONDecodeError:
+                    arguments = {}
+            if not isinstance(arguments, dict):
+                arguments = {}
+            call_id = fc.get("id")
+            if not isinstance(call_id, str) or not call_id:
+                call_id = f"mock_call_{idx + 1}"
+            function_calls.append(
+                {
+                    "id": call_id,
+                    "name": name,
+                    "arguments": arguments,
+                }
+            )
+    return content, function_calls
+
+
+def _build_mock_completion_response(
+    *,
+    messages: Any,
+    content: str | None,
+    function_calls: list[dict[str, Any]],
+) -> _MockCompletionResponse:
+    prompt_chars = len(json.dumps(messages, default=str))
+    completion_payload = content if content is not None else function_calls
+    completion_chars = len(json.dumps(completion_payload, default=str))
+    prompt_tokens = max(1, prompt_chars // 4)
+    completion_tokens = max(0, completion_chars // 4)
+    return _MockCompletionResponse(
+        content=content,
+        function_calls=function_calls,
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
+    )
+
+
+def configure_mock(mock_responses: dict[str, Any] | None) -> None:
+    """Configure module-level mock responses for ``acompletion``."""
+    global _mock_config
+    if mock_responses is None:
+        _mock_config = None
+        return
+    _mock_config = dict(mock_responses)
+
 # ---------------------------------------------------------------------------
 # Minimal facade (architecture rule)
 # ---------------------------------------------------------------------------
@@ -43,6 +167,17 @@ async def acompletion(**kwargs: Any) -> Any:
     Returns:
         litellm response object (e.g. choices[0].message with tool_calls).
     """
+    if _mock_config is not None:
+        task_type = kwargs.get("task_type")
+        key = task_type if isinstance(task_type, str) and task_type.strip() else "default"
+        raw_mock = _mock_config.get(key, _mock_config.get("default", ""))
+        content, function_calls = _parse_mock_response(raw_mock)
+        return _build_mock_completion_response(
+            messages=kwargs.get("messages", []),
+            content=content,
+            function_calls=function_calls,
+        )
+
     import litellm
 
     trace_ctx = TraceContext.get_current()
@@ -477,54 +612,6 @@ class LLMClient:
             cost=round(cost, 6),
         )
 
-    @staticmethod
-    def _parse_mock_response(raw: Any) -> tuple[str | None, list[dict[str, Any]]]:
-        """Parse configured mock response into text content and function calls.
-
-        Supported shapes:
-          - "plain text"
-          - {"content": "plain text"}
-          - {"function_calls": [{"name": "...", "arguments": {...}}]}
-          - {"content": "...", "function_calls": [...]}
-        """
-        if isinstance(raw, str):
-            return raw, []
-        if not isinstance(raw, dict):
-            return str(raw), []
-
-        content = raw.get("content")
-        if content is not None and not isinstance(content, str):
-            content = str(content)
-
-        function_calls_raw = raw.get("function_calls", [])
-        function_calls: list[dict[str, Any]] = []
-        if isinstance(function_calls_raw, list):
-            for idx, fc in enumerate(function_calls_raw):
-                if not isinstance(fc, dict):
-                    continue
-                name = fc.get("name")
-                if not isinstance(name, str) or not name:
-                    continue
-                arguments = fc.get("arguments", {})
-                if isinstance(arguments, str):
-                    try:
-                        arguments = json.loads(arguments)
-                    except json.JSONDecodeError:
-                        arguments = {}
-                if not isinstance(arguments, dict):
-                    arguments = {}
-                call_id = fc.get("id")
-                if not isinstance(call_id, str) or not call_id:
-                    call_id = f"mock_call_{idx + 1}"
-                function_calls.append(
-                    {
-                        "id": call_id,
-                        "name": name,
-                        "arguments": arguments,
-                    }
-                )
-        return content, function_calls
-
     async def complete(
         self,
         messages: list[dict[str, Any]],
@@ -543,7 +630,7 @@ class LLMClient:
         if self.config.mock_mode and self.config.mock_responses:
             key = task_type or "default"
             raw_mock = self.config.mock_responses.get(key, self.config.mock_responses.get("default", ""))
-            content, function_calls = self._parse_mock_response(raw_mock)
+            content, function_calls = _parse_mock_response(raw_mock)
             # Simulate token usage (~4 chars per token)
             prompt_chars = len(json.dumps(messages, default=str))
             completion_payload = content if content is not None else function_calls

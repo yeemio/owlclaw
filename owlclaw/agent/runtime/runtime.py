@@ -580,25 +580,32 @@ class AgentRuntime:
         self._capture_run_skill_snapshot()
         self._inject_skill_env_for_run()
 
-        if context.trigger == "heartbeat" and self._heartbeat_checker is not None:
-            has_events = self._heartbeat_payload_has_events(context.payload)
-            if not has_events:
-                has_events = await self._heartbeat_checker.check_events(context.tenant_id)
-            if not has_events:
+        if context.trigger == "heartbeat":
+            if self._heartbeat_checker is None:
                 logger.info(
-                    "Heartbeat no events, skipping LLM agent_id=%s run_id=%s",
+                    "Heartbeat checker unavailable, running decision loop directly agent_id=%s run_id=%s",
                     context.agent_id,
                     context.run_id,
                 )
-                self._reset_builtin_tool_budget(context.run_id)
-                self._release_skill_content_cache()
-                self._clear_run_skill_snapshot()
-                self._restore_skill_env_after_run()
-                return {
-                    "status": "skipped",
-                    "run_id": context.run_id,
-                    "reason": "heartbeat_no_events",
-                }
+            else:
+                has_events = self._heartbeat_payload_has_events(context.payload)
+                if not has_events:
+                    has_events = await self._heartbeat_checker.check_events(context.tenant_id)
+                if not has_events:
+                    logger.info(
+                        "Heartbeat no events, skipping LLM agent_id=%s run_id=%s",
+                        context.agent_id,
+                        context.run_id,
+                    )
+                    self._reset_builtin_tool_budget(context.run_id)
+                    self._release_skill_content_cache()
+                    self._clear_run_skill_snapshot()
+                    self._restore_skill_env_after_run()
+                    return {
+                        "status": "skipped",
+                        "run_id": context.run_id,
+                        "reason": "heartbeat_no_events",
+                    }
 
         trace = self._create_trace(context)
         previous_trace_ctx = TraceContext.get_current()

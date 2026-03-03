@@ -21,7 +21,7 @@ class Router:
 
     def __init__(self, config: dict) -> None:
         self._rules: list[dict] = []
-        self._default_model = "gpt-4o-mini"
+        self._default_model: str | None = None
         self.reload_config(config)
 
     def reload_config(self, config: dict) -> None:
@@ -43,8 +43,12 @@ class Router:
         self,
         task_type: str,
         context: RunContext,
-    ) -> ModelSelection:
-        """Return model and fallback chain for the given task_type."""
+    ) -> ModelSelection | None:
+        """Return model and fallback chain for the given task_type.
+
+        Returns ``None`` when no routing rule matches, so callers keep their
+        current runtime model unchanged.
+        """
         normalized_task_type = task_type.strip() if isinstance(task_type, str) else ""
         for rule in self._rules:
             if not isinstance(rule, dict):
@@ -69,7 +73,7 @@ class Router:
                     model=model,
                     fallback=fallback,
                 )
-        return ModelSelection(model=self._default_model, fallback=[])
+        return None
 
     async def handle_model_failure(
         self,
