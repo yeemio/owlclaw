@@ -1,6 +1,6 @@
 # lite-mode-e2e — 设计文档
 
-> **来源**: `requirements.md` REQ-F1 ~ REQ-F8
+> **来源**: `requirements.md` REQ-F1 ~ REQ-F10
 > **架构约束**: 修复不改变生产模式行为；不新增外部依赖
 
 ---

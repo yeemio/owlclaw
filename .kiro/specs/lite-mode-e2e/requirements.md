@@ -81,13 +81,14 @@
   - `OwlClaw.lite()` 正常工作
   - pgvector 安装后 `store_pgvector` 正常工作
 
-### REQ-F7：`owlclaw ledger query` 支持 in-memory ledger
+### REQ-F7：`owlclaw ledger query` 在无 DB 场景必须优雅降级
 
-- **现状**：CLI 直接 `get_engine()` 连 DB，不支持 in-memory 后端
-- **修复**：Lite Mode 下 ledger query 从 in-memory ledger 读取；或提供 `--in-memory` 标志
+- **现状**：CLI 直接 `get_engine()` 连 DB，无数据库配置时抛异常
+- **约束说明**：Lite Mode 的 `InMemoryLedger` 为进程内数据结构，CLI 独立进程无法直接读取
+- **修复**：无 DB 时输出明确、可操作的友好提示（不崩溃）；有 DB 时维持原有查询行为
 - **验收**：
-  - Lite Mode 运行 Agent 后，`owlclaw ledger query` 能显示执行记录
-  - 无 DB 时不崩溃，给出友好提示
+  - 无 DB 时 `owlclaw ledger query` 不崩溃并输出友好提示
+  - 有 DB 时查询行为不变
 
 ### REQ-F8：无 DB 时 API 端点优雅降级
 

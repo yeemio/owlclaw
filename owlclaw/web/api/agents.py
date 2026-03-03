@@ -6,6 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.web.api.deps import get_agents_provider, get_tenant_id
 from owlclaw.web.contracts import AgentsProvider
 
@@ -18,9 +19,12 @@ agents_provider_dep = Depends(get_agents_provider)
 async def list_agents(
     tenant_id: str = tenant_id_dep,
     provider: AgentsProvider = agents_provider_dep,
-) -> dict[str, list[dict[str, Any]]]:
+) -> dict[str, Any]:
     """Return agent list payload."""
-    items = await provider.list_agents(tenant_id=tenant_id)
+    try:
+        items = await provider.list_agents(tenant_id=tenant_id)
+    except ConfigurationError:
+        return {"items": [], "message": "Database not configured"}
     return {"items": items}
 
 

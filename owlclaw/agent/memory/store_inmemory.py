@@ -8,9 +8,9 @@ from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+from owlclaw.agent.memory.decay import time_decay
 from owlclaw.agent.memory.models import MemoryEntry
 from owlclaw.agent.memory.store import MemoryStore
-from owlclaw.agent.memory.store_pgvector import time_decay
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:

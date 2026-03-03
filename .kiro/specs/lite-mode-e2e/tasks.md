@@ -85,11 +85,11 @@
 
 > **文件**: `owlclaw/agent/memory/decay.py`（新增）、`store_inmemory.py`、`store_pgvector.py`
 
-- [ ] 5.1 新增 `owlclaw/agent/memory/decay.py`：提取 `time_decay()` 函数
-- [ ] 5.2 修改 `store_inmemory.py`：从 `decay` 模块导入 `time_decay`
-- [ ] 5.3 修改 `store_pgvector.py`：从 `decay` 模块导入 `time_decay`（保持向后兼容）
-- [ ] 5.4 单元测试：无 pgvector 环境下 `import owlclaw` 成功
-- [ ] 5.5 单元测试：`InMemoryStore` 正常工作
+- [x] 5.1 新增 `owlclaw/agent/memory/decay.py`：提取 `time_decay()` 函数
+- [x] 5.2 修改 `store_inmemory.py`：从 `decay` 模块导入 `time_decay`
+- [x] 5.3 修改 `store_pgvector.py`：从 `decay` 模块导入 `time_decay`（保持向后兼容）
+- [x] 5.4 单元测试：无 pgvector 环境下 `import owlclaw` 成功
+- [x] 5.5 单元测试：`InMemoryStore` 正常工作
 
 **验收**：
 - 无 pgvector 环境下 `import owlclaw` 不报 ModuleNotFoundError
@@ -102,10 +102,10 @@
 
 > **文件**: `examples/quick_start/app.py`、`docs/QUICK_START.md`
 
-- [ ] 6.1 重写 `examples/quick_start/app.py`：mock_responses 配置 function_calls
-- [ ] 6.2 更新 `docs/QUICK_START.md`：说明 mock LLM 行为、Agent 决策过程
-- [ ] 6.3 添加 Quick Start 输出示例到文档
-- [ ] 6.4 手动验收：按文档从零跑通，确认用户可见 Agent 决策过程
+- [x] 6.1 重写 `examples/quick_start/app.py`：mock_responses 配置 function_calls
+- [x] 6.2 更新 `docs/QUICK_START.md`：说明 mock LLM 行为、Agent 决策过程
+- [x] 6.3 添加 Quick Start 输出示例到文档
+- [x] 6.4 手动验收：按文档从零跑通，确认用户可见 Agent 决策过程
 
 **验收**：
 - Quick Start 输出中可见 Agent 的决策过程
@@ -117,8 +117,8 @@
 
 > **文件**: `owlclaw/cli/ledger.py`
 
-- [ ] 7.1 `ledger query` 检测 DB 配置，无 DB 时输出友好提示（不崩溃）
-- [ ] 7.2 单元测试：无 DB 时 `ledger query` 返回提示而非异常
+- [x] 7.1 `ledger query` 检测 DB 配置，无 DB 时输出友好提示（不崩溃）
+- [x] 7.2 单元测试：无 DB 时 `ledger query` 返回提示而非异常
 
 **验收**：
 - 无 DB 时 `owlclaw ledger query` 输出提示信息，退出码 0
@@ -130,8 +130,8 @@
 
 > **文件**: `owlclaw/web/api/` 相关端点
 
-- [ ] 8.1 API 依赖注入层检测 DB 状态，无 DB 时返回空结果 + 提示
-- [ ] 8.2 单元测试：无 DB 时 API 返回空结果而非 500
+- [x] 8.1 API 依赖注入层检测 DB 状态，无 DB 时返回空结果 + 提示
+- [x] 8.2 单元测试：无 DB 时 API 返回空结果而非 500
 
 **验收**：
 - `/api/v1/agents` 无 DB 时返回 `{"items": [], "message": "Database not configured"}`
