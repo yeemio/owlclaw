@@ -65,8 +65,8 @@
 - [x] 14.2 单元测试
 
 ## Task 15：Redis idempotency 序列化（REQ-R15）
-- [ ] 15.1 json.dumps 序列化
-- [ ] 15.2 单元测试
+- [x] 15.1 json.dumps 序列化
+- [x] 15.2 单元测试
 
 ## Task 16：Queue executor 连接复用（REQ-R16）
 - [ ] 16.1 adapter 缓存/池化
