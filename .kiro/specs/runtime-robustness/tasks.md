@@ -36,12 +36,12 @@
 - [ ] 7.2 单元测试
 
 ## Task 8：InMemoryStore 线程安全（REQ-R8）
-- [ ] 8.1 添加 asyncio.Lock
-- [ ] 8.2 单元测试
+- [x] 8.1 添加 asyncio.Lock
+- [x] 8.2 单元测试
 
 ## Task 9：InMemoryStore 大小限制（REQ-R9）
-- [ ] 9.1 添加 max_entries + LRU
-- [ ] 9.2 单元测试
+- [x] 9.1 添加 max_entries + LRU
+- [x] 9.2 单元测试
 
 ## Task 10：Hatchet 连接超时（REQ-R10）
 - [ ] 10.1 connect() 添加超时
