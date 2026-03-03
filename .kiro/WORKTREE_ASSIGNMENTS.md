@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-02（Phase 10 架构审计修复分配）
+> **最后更新**: 2026-03-03（Phase 11 lite-mode-e2e 分配）
 
 ---
 
@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：Phase 10 已完成。Phase 8 外部阻塞项跟踪（等待外部条件就绪）。
+**当前编码任务**：Phase 11 lite-mode-e2e 统筹分配。Phase 8 外部阻塞项跟踪（等待外部条件就绪）。
 
 ---
 
@@ -167,22 +167,25 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex\` |
 | 分支 | `codex-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `DONE` |
+| 工作状态 | `IDLE` |
 
 **当前分配的 spec**：
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **audit-fix-critical** | 11/11 ✅ | `owlclaw/governance/constraints/circuit_breaker.py`, `owlclaw/web/mount.py`, `tests/unit/governance/`, `tests/unit/web/test_mount.py`, `tests/integration/test_console_*.py` |
-| **audit-fix-high**（H2+H3+H5） | 11/11 ✅ | `owlclaw/integrations/llm.py`, `owlclaw/agent/memory/embedder_litellm.py`, `owlclaw/governance/visibility.py`, `owlclaw/agent/runtime/runtime.py` |
+| **lite-mode-e2e**（Task 1-4） | 0/20 | `owlclaw/integrations/llm.py`（mock 统一）, `owlclaw/agent/runtime/runtime.py`（heartbeat 直通）, `owlclaw/app.py`（日志 + --once + lite 入口）, `tests/unit/integrations/`, `tests/unit/agent/runtime/`, `tests/integration/` |
 
-**当前任务**：Phase 10 已完成（audit-fix-critical 11/11 + audit-fix-high H2/H3/H5）。等待下一轮分配。
+**当前任务**：Phase 11 lite-mode-e2e Task 1（mock LLM 统一）→ Task 2（heartbeat 直通）→ Task 3（日志）→ Task 4（--once 决策循环）。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
-- `owlclaw/agent/runtime/heartbeat.py`（H1 归编码 2）
-- `owlclaw/web/frontend/**`（H4 归编码 2）
-- `owlclaw/web/static/**`（构建产物归编码 2）
+- `owlclaw/agent/memory/decay.py`（Task 5 归编码 2）
+- `owlclaw/agent/memory/store_inmemory.py`（Task 5 归编码 2）
+- `owlclaw/agent/memory/store_pgvector.py`（Task 5 归编码 2）
+- `examples/quick_start/`（Task 6 归编码 2）
+- `docs/QUICK_START.md`（Task 6 归编码 2）
+- `owlclaw/cli/ledger.py`（Task 7 归编码 2）
+- `owlclaw/web/api/`（Task 8 归编码 2）
 
 ---
 
@@ -193,24 +196,21 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `DONE` |
+| 工作状态 | `IDLE` |
 
 **当前分配的 spec**：
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **audit-fix-high**（H1+H4+Task 5） | 12/12 ✅ | `owlclaw/agent/runtime/heartbeat.py`, `owlclaw/web/frontend/src/hooks/useApi.ts`, `owlclaw/web/frontend/`, `docs/ARCHITECTURE_ANALYSIS.md` |
+| **lite-mode-e2e**（Task 5-8） | 0/13 | `owlclaw/agent/memory/decay.py`（新增）, `owlclaw/agent/memory/store_inmemory.py`, `owlclaw/agent/memory/store_pgvector.py`, `examples/quick_start/app.py`, `docs/QUICK_START.md`, `owlclaw/cli/ledger.py`, `owlclaw/web/api/` |
 
-**当前任务**：Phase 10 已完成（audit-fix-high H1/H4/Task 5）。等待下一轮分配。
+**当前任务**：Phase 11 lite-mode-e2e Task 5（pgvector 延迟导入）→ Task 6（Quick Start 重写）→ Task 7（Ledger CLI 降级）→ Task 8（API 降级）。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
-- `owlclaw/governance/constraints/circuit_breaker.py`（C1 归编码 1）
-- `owlclaw/web/mount.py`（C2 归编码 1）
-- `owlclaw/governance/visibility.py`（H5 归编码 1）
-- `owlclaw/integrations/llm.py`（H2/H3 归编码 1）
-- `owlclaw/agent/memory/embedder_litellm.py`（H3 归编码 1）
-- `owlclaw/agent/runtime/runtime.py`（H2 归编码 1）
+- `owlclaw/integrations/llm.py`（Task 1 归编码 1）
+- `owlclaw/agent/runtime/runtime.py`（Task 2 归编码 1）
+- `owlclaw/app.py`（Task 3/4 归编码 1）
 
 ---
 
@@ -306,6 +306,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-02 | Phase 9 完成：merge review-work（APPROVE，9 轮审校）→ main。console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)。160 文件 +17,584 行。两个编码 worktree 状态改为 DONE | 审校通过，Phase 9 Web Console 全部合并到 main |
 | 2026-03-02 | Phase 10 分配：总架构师审计发现 2 Critical + 5 High。codex-work → audit-fix-critical（C1+C2）+ audit-fix-high（H2+H3+H5）；codex-gpt-work → audit-fix-high（H1+H4+Task 5）。按文件边界隔离避免冲突 | 架构审计报告驱动，P0 阻断性问题必须修复 |
 | 2026-03-02 | Phase 10 完成：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)。经 Round 13 APPROVE 审校，合并到 main。两个编码 worktree 状态改为 DONE | 架构审计修复全部完成，工程达到可交付状态 |
+| 2026-03-03 | Phase 11 分配：新建 lite-mode-e2e spec（三层齐全）。codex-work → Task 1-4（核心链路：mock LLM 统一 + heartbeat 直通 + 日志 + --once 决策循环）；codex-gpt-work → Task 5-8（体验完善：pgvector 延迟导入 + Quick Start 重写 + Ledger CLI + API 降级）。按文件边界隔离 | 真实用户体验测试发现 Lite Mode 端到端体验链路断裂（P0），产品核心承诺不成立 |
 
 ---
 
@@ -313,17 +314,16 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 以下 spec 尚未分配到任何编码 worktree，等当前批次完成后按优先级分配：
 
-**Phase 1-9 全部已分配完毕 ✅**
+**Phase 1-10 全部已分配完毕 ✅**
 
-**Phase 10 全部已完成** ✅（2026-03-02）
+**Phase 11 进行中**（2026-03-03）
 
 | Spec | Tasks | Worktree | 状态 |
 |------|-------|----------|------|
-| audit-fix-critical | C1 CircuitBreaker + C2 Console mount + 回归 | codex-work | ✅ 11/11 完成 |
-| audit-fix-high H2+H3+H5 | 成本追踪 + Embedding 隔离 + fail-policy | codex-work | ✅ 11/11 完成 |
-| audit-fix-high H1+H4+Task 5 | Heartbeat 补全 + Governance 映射 + 文档 | codex-gpt-work | ✅ 12/12 完成 |
+| lite-mode-e2e Task 1-4 | mock LLM 统一 + heartbeat 直通 + 日志 + --once 决策循环 | codex-work | 🟡 0/20 进行中 |
+| lite-mode-e2e Task 5-8 | pgvector 延迟导入 + Quick Start 重写 + Ledger CLI + API 降级 | codex-gpt-work | 🟡 0/13 进行中 |
 
-**下一轮待分配**：暂无。Phase 8 外部阻塞项等外部条件就绪后由 main 收口。
+**下一轮待分配**：Task 9（全量回归与端到端验收）在 Task 1-8 全部完成后由 review-work 审校执行。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 

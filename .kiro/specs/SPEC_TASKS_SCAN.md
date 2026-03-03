@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-02（Phase 10 codex-work 已完成 C1/C2/H2/H3/H5 修复与全量单测回归）
+> **最后更新**: 2026-03-03（Phase 11 lite-mode-e2e spec 创建与分配）
 
 ---
 
@@ -214,6 +214,29 @@
 - [x] H4 Console Governance 前端映射 — CircuitBreaker name + VisibilityMatrix 分组 → spec: audit-fix-high
 - [x] H5 治理 fail-policy 配置 — fail-open / fail-close 可配置 → spec: audit-fix-high
 
+### Phase 11：Lite Mode 端到端体验修复（2026-03-03 真实用户体验测试）
+
+> **来源**: 真实用户视角深度体验测试，发现 Lite Mode 体验链路从设计上断裂
+> **优先级**: P0（产品核心承诺不成立，阻断新用户上手）
+
+**Phase 11.1：核心链路修复（P0 阻断性）**
+
+- [ ] F1 统一 LLM 调用路径 — `acompletion()` 门面函数检查 mock_mode，Lite Mode 下不调真实 LLM → spec: lite-mode-e2e
+- [ ] F2 Lite Mode Heartbeat 直通 — disabled HeartbeatChecker 时跳过 check_events 直接进入决策循环 → spec: lite-mode-e2e
+- [ ] F3 自动配置日志 — `app.run()` 入口配置 logging.basicConfig，用户可见启动和运行日志 → spec: lite-mode-e2e
+- [ ] F4 `--once` 走决策循环 — `run_once()` 改为调用 `runtime.trigger_event()` 展示完整决策过程 → spec: lite-mode-e2e
+
+**Phase 11.2：体验完善（P1 重要缺陷）**
+
+- [ ] F5 延迟导入 pgvector — 提取 `time_decay` 到公共模块，`import owlclaw` 不因可选依赖缺失崩溃 → spec: lite-mode-e2e
+- [ ] F6 Quick Start 示例重写 — mock_responses 配置 function_calls，展示 Agent 决策过程 → spec: lite-mode-e2e
+- [ ] F7 Ledger CLI 优雅降级 — 无 DB 时输出友好提示而非崩溃 → spec: lite-mode-e2e
+- [ ] F8 API 端点优雅降级 — 无 DB 时返回空结果 + 提示，不返回 500 → spec: lite-mode-e2e
+
+**Phase 11.3：全量回归**
+
+- [ ] F9 全量回归与端到端验收 — 现有测试通过 + Lite Mode 端到端体验验证 → spec: lite-mode-e2e
+
 ---
 
 ## Spec 索引
@@ -277,6 +300,7 @@
 | **console-integration** | `.kiro/specs/console-integration/` | ✅ 三层齐全，已完成（5/5） | Console 集成（`owlclaw start` 挂载 + CLI + 构建流程 + 打包 + 集成测试）。经 9 轮审校 APPROVE |
 | **audit-fix-critical** | `.kiro/specs/audit-fix-critical/` | ✅ 三层齐全，已完成（11/11） | 架构审计 Critical 修复：C1 熔断器状态匹配 + C2 Console API 挂载路径 |
 | **audit-fix-high** | `.kiro/specs/audit-fix-high/` | ✅ 三层齐全，已完成（23/23） | 架构审计 High 修复：H1-H5 全部完成（Heartbeat + 成本追踪 + Embedding 隔离 + Governance 映射 + fail-policy） |
+| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（4/37） | Lite Mode 端到端体验修复：mock LLM 统一 + Heartbeat 直通 + 日志 + --once 决策 + pgvector 延迟导入 + Quick Start 重写 + CLI/API 降级 |
 
 ---
 
@@ -302,11 +326,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-02 |
-| 当前批次 | **Phase 10 已全部完成**：audit-fix-critical ✅(11/11，C1+C2) + audit-fix-high ✅(23/23，H1-H5)。codex-work 完成 C1/C2/H2/H3/H5，codex-gpt-work 完成 H1/H4/Task5，经 Round 13 APPROVE 审校。 |
-| 批次状态 | **Phase 10 完成，Phase 8 外部阻塞跟踪中**。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 18/22（新增收口：Task 2.1/2.3/5.2/5.3）；`content-launch` 已完成 Task 0、Task 1 脚手架、Task 2.2/2.3/2.4/2.5、Task 3.1/3.3、Task 4、Task 5.2/5.4（14/16）；Phase 8.5 `D14-1/2/3` 已全部落地（3/3）。 |
+| 最后更新 | 2026-03-03 |
+| 当前批次 | **Phase 11 lite-mode-e2e**：Lite Mode 端到端体验修复（0/37 → 4/37 spec 文档已完成）。codex-work 负责 Task 1-4（核心链路：mock LLM + heartbeat + 日志 + --once），codex-gpt-work 负责 Task 5-8（体验完善：pgvector + Quick Start + CLI + API）。 |
+| 批次状态 | **Phase 11 进行中**。Phase 10 已完成。Phase 8 外部阻塞跟踪中。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 18/22（新增收口：Task 2.1/2.3/5.2/5.3）；`content-launch` 已完成 Task 0、Task 1 脚手架、Task 2.2/2.3/2.4/2.5、Task 3.1/3.3、Task 4、Task 5.2/5.4（14/16）；Phase 8.5 `D14-1/2/3` 已全部落地（3/3）。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）；15) **Phase 10 全部完成**：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)，经 Round 13 APPROVE。 |
-| 下一待执行 | **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：content-launch / openclaw-skill-pack / release-supply-chain / release / owlhub。**所有未完成项均为外部不可控依赖**。 |
+| 下一待执行 | **Phase 11 lite-mode-e2e Task 1-8**（已分配到两个编码 worktree）。Phase 8 外部阻塞项等外部条件就绪后由 main 收口。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，Phase 9：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，**Phase 10**：audit-fix-critical ✅(11/11)，audit-fix-high ✅(23/23)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；最新 preflight（2026-03-02）仍 `BLOCKED`，并提示 `main` 分支保护 API `HTTP 404`（`docs/release/reports/release-oidc-preflight-latest.md`，最近 release runs: 2026-02-27 的 `22471143360`/`22473801915`/`22475093887`/`22477795502` 均失败）。2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 3.3/3.4/5.1/5.4 依赖外部仓库 PR 审核合并、线上索引刷新与真实下载量周期（PR: https://github.com/openclaw/clawhub/pull/556`，state=`OPEN`，`updatedAt=2026-02-28T01:45:00Z`）；4) `content-launch` Task 1/2/3.2/5 需 Mionyee 真实导出数据与外部发布渠道（最新 readiness：`docs/content/content-launch-readiness.json`，`all_external_gates_passed=false`）。 |
 | 健康状态 | 正常 |
