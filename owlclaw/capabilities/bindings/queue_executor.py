@@ -39,6 +39,16 @@ class QueueBindingExecutor(BindingExecutor):
     ) -> None:
         self._credential_resolver = credential_resolver or CredentialResolver()
         self._adapter_factory = adapter_factory or _default_adapter_factory
+        self._adapter_cache: dict[tuple[str, str, str], QueuePublisher] = {}
+
+    def _get_adapter(self, provider: str, connection: str, topic: str) -> QueuePublisher:
+        key = (provider, connection, topic)
+        adapter = self._adapter_cache.get(key)
+        if adapter is not None:
+            return adapter
+        created = self._adapter_factory(provider, connection, topic)
+        self._adapter_cache[key] = created
+        return created
 
     async def execute(self, config: BindingConfig, parameters: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(config, QueueBindingConfig):
@@ -58,7 +68,7 @@ class QueueBindingExecutor(BindingExecutor):
                 "sent": False,
             }
 
-        adapter = self._adapter_factory(config.provider, connection, config.topic)
+        adapter = self._get_adapter(config.provider, connection, config.topic)
         await adapter.publish(config.topic, payload, headers=headers)
         return {
             "status": "ok",

@@ -69,8 +69,8 @@
 - [x] 15.2 单元测试
 
 ## Task 16：Queue executor 连接复用（REQ-R16）
-- [ ] 16.1 adapter 缓存/池化
-- [ ] 16.2 单元测试
+- [x] 16.1 adapter 缓存/池化
+- [x] 16.2 单元测试
 
 ## Task 17：API trigger 400（REQ-R17）
 - [x] 17.1 返回 400 Bad Request

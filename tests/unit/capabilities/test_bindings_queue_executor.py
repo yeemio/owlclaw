@@ -73,3 +73,24 @@ def test_queue_executor_validate_config() -> None:
     assert "Queue binding requires 'connection' field" in errors
     assert "Queue binding requires 'topic' field" in errors
     assert "Unsupported queue provider: smtp" in errors
+
+
+@pytest.mark.asyncio
+async def test_queue_executor_reuses_adapter_for_same_connection() -> None:
+    publisher = _FakePublisher()
+    calls = {"count": 0}
+
+    def factory(provider: str, connection: str, topic: str) -> _FakePublisher:
+        _ = (provider, connection, topic)
+        calls["count"] += 1
+        return publisher
+
+    executor = QueueBindingExecutor(adapter_factory=factory)
+    config = QueueBindingConfig(
+        provider="kafka",
+        connection="kafka://localhost:9092",
+        topic="orders",
+    )
+    await executor.execute(config, {"order_id": "o-1"})
+    await executor.execute(config, {"order_id": "o-2"})
+    assert calls["count"] == 1
