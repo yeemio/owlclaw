@@ -168,6 +168,28 @@ async def run_once(self, task_type: str = "default", payload: dict | None = None
 
 **修改文件**：`owlclaw/web/api/` 相关端点
 
+### D9：Model 配置传递（REQ-F9）
+
+**方案**：`create_agent_runtime()` 从 `self._config["integrations"]["llm"]["model"]` 读取 model 并传递。
+
+**修改文件**：`owlclaw/app.py`
+
+```python
+def create_agent_runtime(self, ...):
+    llm_cfg = self._config.get("integrations", {}).get("llm", {})
+    model = llm_cfg.get("model", "gpt-4o-mini")
+    return AgentRuntime(
+        ...,
+        model=model,
+    )
+```
+
+### D10：Router 默认行为修复（REQ-F10）
+
+**方案**：Router `select_model()` 对未配置的 task_type 返回 None，Runtime 保持 `self.model`。
+
+**修改文件**：`owlclaw/governance/visibility.py`（Router 实现）
+
 ---
 
 ## 三、影响范围

@@ -173,9 +173,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **lite-mode-e2e**（Task 1-4） | 0/20 | `owlclaw/integrations/llm.py`（mock 统一）, `owlclaw/agent/runtime/runtime.py`（heartbeat 直通）, `owlclaw/app.py`（日志 + --once + lite 入口）, `tests/unit/integrations/`, `tests/unit/agent/runtime/`, `tests/integration/` |
+| **lite-mode-e2e**（Task 1-4, 9-10） | 0/24 | `owlclaw/integrations/llm.py`（mock 统一）, `owlclaw/agent/runtime/runtime.py`（heartbeat 直通）, `owlclaw/app.py`（日志 + --once + lite 入口 + model 传递）, `owlclaw/governance/visibility.py`（Router 默认行为）, `tests/unit/integrations/`, `tests/unit/agent/runtime/`, `tests/integration/` |
 
-**当前任务**：Phase 11 lite-mode-e2e Task 1（mock LLM 统一）→ Task 2（heartbeat 直通）→ Task 3（日志）→ Task 4（--once 决策循环）。
+**当前任务**：Phase 11 lite-mode-e2e Task 1（mock LLM 统一）→ Task 2（heartbeat 直通）→ Task 3（日志）→ Task 4（--once 决策循环）→ Task 9（model 配置传递）→ Task 10（Router 默认行为）。
 
 **禁止触碰**（分配给编码 2 的路径）：
 

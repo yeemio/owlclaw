@@ -232,10 +232,12 @@
 - [ ] F6 Quick Start 示例重写 — mock_responses 配置 function_calls，展示 Agent 决策过程 → spec: lite-mode-e2e
 - [ ] F7 Ledger CLI 优雅降级 — 无 DB 时输出友好提示而非崩溃 → spec: lite-mode-e2e
 - [ ] F8 API 端点优雅降级 — 无 DB 时返回空结果 + 提示，不返回 500 → spec: lite-mode-e2e
+- [ ] F9 Model 配置传递 — `create_agent_runtime()` 将 `integrations.llm.model` 传递给 Runtime → spec: lite-mode-e2e
+- [ ] F10 Router 默认行为 — 无显式路由规则时 Router 返回 None，不覆盖用户配置的 model → spec: lite-mode-e2e
 
 **Phase 11.3：全量回归**
 
-- [ ] F9 全量回归与端到端验收 — 现有测试通过 + Lite Mode 端到端体验验证 → spec: lite-mode-e2e
+- [ ] F11 全量回归与端到端验收 — 现有测试通过 + Lite Mode 端到端 + 真实 LLM 验证 → spec: lite-mode-e2e
 
 ---
 
@@ -300,7 +302,7 @@
 | **console-integration** | `.kiro/specs/console-integration/` | ✅ 三层齐全，已完成（5/5） | Console 集成（`owlclaw start` 挂载 + CLI + 构建流程 + 打包 + 集成测试）。经 9 轮审校 APPROVE |
 | **audit-fix-critical** | `.kiro/specs/audit-fix-critical/` | ✅ 三层齐全，已完成（11/11） | 架构审计 Critical 修复：C1 熔断器状态匹配 + C2 Console API 挂载路径 |
 | **audit-fix-high** | `.kiro/specs/audit-fix-high/` | ✅ 三层齐全，已完成（23/23） | 架构审计 High 修复：H1-H5 全部完成（Heartbeat + 成本追踪 + Embedding 隔离 + Governance 映射 + fail-policy） |
-| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（4/37） | Lite Mode 端到端体验修复：mock LLM 统一 + Heartbeat 直通 + 日志 + --once 决策 + pgvector 延迟导入 + Quick Start 重写 + CLI/API 降级 |
+| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（4/42） | Lite Mode 端到端体验修复：mock LLM 统一 + Heartbeat 直通 + 日志 + --once 决策 + pgvector 延迟导入 + Quick Start 重写 + CLI/API 降级 + Model 配置传递 + Router 默认行为 |
 
 ---
 

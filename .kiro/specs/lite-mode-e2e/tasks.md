@@ -139,13 +139,39 @@
 
 ---
 
-## Task 9：全量回归与端到端验收
+## Task 9：Model 配置传递修复（D9，REQ-F9）
 
-- [ ] 9.1 全量 `poetry run pytest` 通过（现有 1817+ 测试）
-- [ ] 9.2 端到端验收：`OwlClaw.lite()` → `run_once()` → handler 执行 → 可见决策过程
-- [ ] 9.3 端到端验收：`app.run()` Lite Mode 下 Agent 周期性决策并输出日志
-- [ ] 9.4 端到端验收：Console UI 在无 DB 时优雅显示
+> **文件**: `owlclaw/app.py`
+
+- [ ] 9.1 `create_agent_runtime()` 从 `self._config` 读取 `integrations.llm.model` 并传递给 Runtime
+- [ ] 9.2 单元测试：`app.configure(model="deepseek/deepseek-chat")` 后 runtime.model 正确
+
+**验收**：
+- 用户配置的 model 正确传递到 Runtime
+
+---
+
+## Task 10：Router 默认行为修复（D10，REQ-F10）
+
+> **文件**: `owlclaw/governance/visibility.py`
+
+- [ ] 10.1 Router `select_model()` 对未配置的 task_type 返回 None
+- [ ] 10.2 单元测试：无显式路由规则时 Runtime 使用 self.model
+
+**验收**：
+- 无路由规则时不覆盖用户配置的 model
+
+---
+
+## Task 11：全量回归与端到端验收
+
+- [ ] 11.1 全量 `poetry run pytest` 通过（现有 1817+ 测试）
+- [ ] 11.2 端到端验收：`OwlClaw.lite()` → `run_once()` → handler 执行 → 可见决策过程
+- [ ] 11.3 端到端验收：`app.run()` Lite Mode 下 Agent 周期性决策并输出日志
+- [ ] 11.4 端到端验收：Console UI 在无 DB 时优雅显示
+- [ ] 11.5 端到端验收：真实 LLM（DeepSeek）下完整决策循环（function calling → handler → 结果汇总）
 
 **验收**：
 - 全部测试通过
 - 用户从零跑通 Quick Start 体验到 Agent 决策
+- 真实 LLM 下 Agent 正确选择并调用 handler

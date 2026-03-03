@@ -99,6 +99,26 @@
 
 ---
 
+### REQ-F9：`app.configure()` 的 model 配置必须传递到 Runtime
+
+- **现状**：`create_agent_runtime()` 不传 `model` 参数给 `AgentRuntime` 构造函数，Runtime 默认 `gpt-4o-mini`
+- **问题**：用户配置 `app.configure(integrations={"llm": {"model": "deepseek/deepseek-chat"}})` 无效
+- **修复**：`create_agent_runtime()` 从 `self._config` 读取 `integrations.llm.model` 并传递给 Runtime
+- **验收**：
+  - `app.configure(model="deepseek/deepseek-chat")` 后 `runtime.model == "deepseek/deepseek-chat"`
+  - litellm 日志显示正确的 provider
+
+### REQ-F10：Router 不应静默覆盖用户配置的 model
+
+- **现状**：Router `select_model()` 对未配置的 task_type 返回默认 model（`gpt-4o-mini`），覆盖用户在 configure 中指定的 model
+- **问题**：用户以为配了 DeepSeek，实际调的是 OpenAI
+- **修复**：Router 对未配置的 task_type 返回 None（不覆盖），让 Runtime 使用自己的 model
+- **验收**：
+  - 无显式路由规则时，Runtime 使用 `self.model`
+  - 有显式路由规则时，Router 选择的 model 优先
+
+---
+
 ## 非功能需求
 
 - 修复不得引入新的外部依赖
