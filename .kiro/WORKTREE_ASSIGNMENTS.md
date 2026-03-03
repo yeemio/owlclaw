@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：Phase 10 架构审计修复统筹 + Phase 8 外部阻塞项跟踪。
+**当前编码任务**：Phase 10 已完成。Phase 8 外部阻塞项跟踪（等待外部条件就绪）。
 
 ---
 
@@ -167,25 +167,16 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex\` |
 | 分支 | `codex-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE` |
+| 工作状态 | `DONE` |
 
 **当前分配的 spec**：
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **audit-fix-critical** | 0/11 ⬜ | `owlclaw/governance/constraints/circuit_breaker.py`, `owlclaw/web/mount.py`, `tests/unit/governance/`, `tests/unit/web/test_mount.py`, `tests/integration/test_console_*.py` |
-| **audit-fix-high**（H2+H3+H5） | 0/11 ⬜ | `owlclaw/integrations/llm.py`, `owlclaw/agent/memory/embedder_litellm.py`, `owlclaw/governance/visibility.py`, `owlclaw/agent/runtime/runtime.py` |
+| **audit-fix-critical** | 11/11 ✅ | `owlclaw/governance/constraints/circuit_breaker.py`, `owlclaw/web/mount.py`, `tests/unit/governance/`, `tests/unit/web/test_mount.py`, `tests/integration/test_console_*.py` |
+| **audit-fix-high**（H2+H3+H5） | 11/11 ✅ | `owlclaw/integrations/llm.py`, `owlclaw/agent/memory/embedder_litellm.py`, `owlclaw/governance/visibility.py`, `owlclaw/agent/runtime/runtime.py` |
 
-**当前任务**（Phase 10 架构审计修复）：
-
-**第一批（P0 Critical，立即启动）**：
-1. **C1 修复 CircuitBreaker**：`circuit_breaker.py` 将 `"failure"` → `"error"/"timeout"`，修复测试
-2. **C2 修复 Console mount**：`mount.py` 将 `owlclaw.web.api.app` → `owlclaw.web.app`，补强测试
-
-**第二批（P1 High，Critical 完成后继续）**：
-3. **H2 成本追踪**：`integrations/llm.py` 提取 token usage → `estimated_cost` → BudgetConstraint 生效
-4. **H3 Embedding 隔离**：`integrations/llm.py` 添加 `aembedding()` 门面 → 重构 `embedder_litellm.py`
-5. **H5 fail-policy**：`governance/visibility.py` 添加 `fail_policy` 配置（open/close）
+**当前任务**：Phase 10 已完成（audit-fix-critical 11/11 + audit-fix-high H2/H3/H5）。等待下一轮分配。
 
 **禁止触碰**（分配给编码 2 的路径）：
 
@@ -202,22 +193,15 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE` |
+| 工作状态 | `DONE` |
 
 **当前分配的 spec**：
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **audit-fix-high**（H1+H4+Task 5） | 0/12 ⬜ | `owlclaw/agent/runtime/heartbeat.py`, `owlclaw/web/frontend/src/hooks/useApi.ts`, `owlclaw/web/frontend/`, `docs/ARCHITECTURE_ANALYSIS.md` |
+| **audit-fix-high**（H1+H4+Task 5） | 12/12 ✅ | `owlclaw/agent/runtime/heartbeat.py`, `owlclaw/web/frontend/src/hooks/useApi.ts`, `owlclaw/web/frontend/`, `docs/ARCHITECTURE_ANALYSIS.md` |
 
-**当前任务**（Phase 10 架构审计修复）：
-
-**第一批（立即启动）**：
-1. **H1 Heartbeat 事件源补全**：`heartbeat.py` 实现 schedule 事件源 + 修正 database 事件源 + 扩展点文档
-2. **H4 Console Governance 映射**：`useApi.ts` 修复 CircuitBreaker name + VisibilityMatrix 分组 + 重新 build
-
-**第二批（第一批完成后继续）**：
-3. **Task 5 文档更新**：更新 `ARCHITECTURE_ANALYSIS.md` + 回归验证
+**当前任务**：Phase 10 已完成（audit-fix-high H1/H4/Task 5）。等待下一轮分配。
 
 **禁止触碰**（分配给编码 1 的路径）：
 
@@ -321,6 +305,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-02 | 审校修复分配：merge review-work 审校报告 → main；codex-work console-backend-api 11/11 🔧 需修复 P0（ErrorResponse 统一 + 契约文档输出）；codex-gpt-work console-frontend 10/10 🔧 需修复 P0（useApi.ts 契约映射 + WS 消息类型）。编码分支代码未合并（FIX_NEEDED） | 审校发现前后端 API 契约漂移 + WS 协议不一致 + 错误响应未统一 |
 | 2026-03-02 | Phase 9 完成：merge review-work（APPROVE，9 轮审校）→ main。console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)。160 文件 +17,584 行。两个编码 worktree 状态改为 DONE | 审校通过，Phase 9 Web Console 全部合并到 main |
 | 2026-03-02 | Phase 10 分配：总架构师审计发现 2 Critical + 5 High。codex-work → audit-fix-critical（C1+C2）+ audit-fix-high（H2+H3+H5）；codex-gpt-work → audit-fix-high（H1+H4+Task 5）。按文件边界隔离避免冲突 | 架构审计报告驱动，P0 阻断性问题必须修复 |
+| 2026-03-02 | Phase 10 完成：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)。经 Round 13 APPROVE 审校，合并到 main。两个编码 worktree 状态改为 DONE | 架构审计修复全部完成，工程达到可交付状态 |
 
 ---
 
@@ -330,13 +315,15 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 1-9 全部已分配完毕 ✅**
 
-**Phase 10 全部已分配** ✅（2026-03-02）
+**Phase 10 全部已完成** ✅（2026-03-02）
 
-| Spec | Tasks | Worktree | 执行顺序 |
-|------|-------|----------|---------|
-| audit-fix-critical（0/11） | C1 CircuitBreaker + C2 Console mount + 回归 | codex-work | **立即启动（P0）** |
-| audit-fix-high H2+H3+H5（0/11） | 成本追踪 + Embedding 隔离 + fail-policy | codex-work | Critical 完成后 |
-| audit-fix-high H1+H4+Task 5（0/12） | Heartbeat 补全 + Governance 映射 + 文档 | codex-gpt-work | **立即启动** |
+| Spec | Tasks | Worktree | 状态 |
+|------|-------|----------|------|
+| audit-fix-critical | C1 CircuitBreaker + C2 Console mount + 回归 | codex-work | ✅ 11/11 完成 |
+| audit-fix-high H2+H3+H5 | 成本追踪 + Embedding 隔离 + fail-policy | codex-work | ✅ 11/11 完成 |
+| audit-fix-high H1+H4+Task 5 | Heartbeat 补全 + Governance 映射 + 文档 | codex-gpt-work | ✅ 12/12 完成 |
+
+**下一轮待分配**：暂无。Phase 8 外部阻塞项等外部条件就绪后由 main 收口。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 
