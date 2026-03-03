@@ -265,6 +265,8 @@ class OwlClaw:
         Args:
             path: Path to capabilities directory containing SKILL.md files
         """
+        if self.skills_loader is not None or self.registry is not None or self.knowledge_injector is not None:
+            raise RuntimeError("mount_skills() already called")
         if not isinstance(path, str) or not path.strip():
             raise ValueError("path must be a non-empty string")
         normalized_path = path.strip()
@@ -1027,22 +1029,29 @@ class OwlClaw:
         Use `run()` when you need OwlClaw to manage its own blocking lifecycle
         with a built-in heartbeat loop.
         """
+        if self._runtime is not None and self._runtime.is_initialized:
+            logger.info("OwlClaw '%s' already started; reusing existing runtime", self.name)
+            return self._runtime
         runtime = self.create_agent_runtime(app_dir=app_dir, hatchet_client=hatchet_client)
-        await runtime.setup()
-        await self.start_governance()
-        if hatchet_client is not None:
-            self.cron_registry.start(
-                hatchet_client,
-                agent_runtime=runtime,
-                ledger=self._ledger,
-                tenant_id=tenant_id,
-            )
-        if self.db_change_manager is not None:
-            await self.db_change_manager.start()
-        if self.api_trigger_server is not None:
-            await self.api_trigger_server.start()
-        self._runtime = runtime
-        return runtime
+        try:
+            await runtime.setup()
+            self._runtime = runtime
+            await self.start_governance()
+            if hatchet_client is not None:
+                self.cron_registry.start(
+                    hatchet_client,
+                    agent_runtime=runtime,
+                    ledger=self._ledger,
+                    tenant_id=tenant_id,
+                )
+            if self.db_change_manager is not None:
+                await self.db_change_manager.start()
+            if self.api_trigger_server is not None:
+                await self.api_trigger_server.start()
+            return runtime
+        except Exception:
+            await self.stop()
+            raise
 
     async def stop(self) -> None:
         """Stop governance and wait for cron in-flight tasks."""

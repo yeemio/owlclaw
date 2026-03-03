@@ -20,16 +20,16 @@
 - [x] 3.2 单元测试
 
 ## Task 4：start() 幂等（REQ-R4）
-- [ ] 4.1 添加 _runtime 检查
-- [ ] 4.2 单元测试
+- [x] 4.1 添加 _runtime 检查
+- [x] 4.2 单元测试
 
 ## Task 5：部分启动清理（REQ-R5）
-- [ ] 5.1 start() try/except + stop()
-- [ ] 5.2 单元测试
+- [x] 5.1 start() try/except + stop()
+- [x] 5.2 单元测试
 
 ## Task 6：mount_skills() 幂等（REQ-R6）
-- [ ] 6.1 添加重复调用检查
-- [ ] 6.2 单元测试
+- [x] 6.1 添加重复调用检查
+- [x] 6.2 单元测试
 
 ## Task 7：db_change 重试限制（REQ-R7）
 - [ ] 7.1 添加 max_retries + DLQ
