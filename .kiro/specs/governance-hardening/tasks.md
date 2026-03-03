@@ -8,13 +8,13 @@
 - [x] 0.3 tasks.md ✅
 
 ## Task 1：Ledger 索引修复（REQ-G1）
-- [ ] 1.1 新增 Alembic 迁移
-- [ ] 1.2 验证索引
+- [x] 1.1 新增 Alembic 迁移
+- [x] 1.2 验证索引
 
 ## Task 2：WebhookIdempotencyKeyModel UUID PK（REQ-G2）
-- [ ] 2.1 修改模型
-- [ ] 2.2 新增迁移
-- [ ] 2.3 单元测试
+- [x] 2.1 修改模型
+- [x] 2.2 新增迁移
+- [x] 2.3 单元测试
 
 ## Task 3：Ledger fallback 路径（REQ-G3）
 - [ ] 3.1 LedgerConfig 添加字段

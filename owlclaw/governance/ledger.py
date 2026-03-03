@@ -55,6 +55,10 @@ class LedgerRecord(Base):
         Index("idx_ledger_tenant_agent", "tenant_id", "agent_id"),
         Index("idx_ledger_tenant_capability", "tenant_id", "capability_name"),
         Index("idx_ledger_tenant_created", "tenant_id", "created_at"),
+        Index("idx_ledger_tenant_run", "tenant_id", "run_id"),
+        Index("idx_ledger_tenant_status", "tenant_id", "status"),
+        Index("idx_ledger_tenant_task_type", "tenant_id", "task_type"),
+        Index("idx_ledger_tenant_execution_mode", "tenant_id", "execution_mode"),
         {"comment": "Agent capability execution records for audit and cost analysis"},
     )
 
@@ -63,10 +67,10 @@ class LedgerRecord(Base):
         default=uuid.uuid4,
         primary_key=True,
     )
-    agent_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    run_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    capability_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    task_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    agent_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    run_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    capability_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    task_type: Mapped[str] = mapped_column(String(100), nullable=False)
 
     input_params: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     output_result: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
@@ -81,10 +85,10 @@ class LedgerRecord(Base):
         nullable=False,
     )
 
-    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     migration_weight: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    execution_mode: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    execution_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)
     risk_level: Mapped[Decimal | None] = mapped_column(DECIMAL(5, 4), nullable=True)
     approval_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     approval_time: Mapped[Any | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -93,7 +97,6 @@ class LedgerRecord(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        index=True,
     )
 
 

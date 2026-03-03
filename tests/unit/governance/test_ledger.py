@@ -29,6 +29,15 @@ def test_ledger_record_table_name():
     assert LedgerRecord.__tablename__ == "ledger_records"
 
 
+def test_ledger_indexes_are_tenant_prefixed() -> None:
+    index_columns = {
+        index.name: tuple(column.name for column in index.columns)
+        for index in LedgerRecord.__table__.indexes
+    }
+    for index_name, columns in index_columns.items():
+        assert columns[0] == "tenant_id", f"{index_name} must be tenant-prefixed"
+
+
 @pytest.mark.asyncio
 async def test_ledger_record_execution_enqueues():
     """record_execution enqueues a record without raising."""

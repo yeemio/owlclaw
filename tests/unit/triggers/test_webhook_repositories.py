@@ -21,6 +21,12 @@ from owlclaw.triggers.webhook.persistence.repositories import (
 )
 
 
+def test_webhook_idempotency_model_uses_uuid_primary_key() -> None:
+    pk_columns = [column.name for column in WebhookIdempotencyKeyModel.__table__.primary_key.columns]
+    assert pk_columns == ["id"]
+    assert WebhookIdempotencyKeyModel.__table__.c.key.unique is True
+
+
 def _endpoint(name: str, *, tenant_id: str = "default", enabled: bool = True) -> WebhookEndpointModel:
     now = datetime.now(timezone.utc)
     return WebhookEndpointModel(
