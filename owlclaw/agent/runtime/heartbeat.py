@@ -1,13 +1,16 @@
 """HeartbeatChecker — check pending events to decide if LLM call is needed.
 
 Heartbeat mechanism: when trigger is "heartbeat", no events => skip LLM, save cost.
-Event sources (webhook, queue, database, schedule, external_api) are pluggable; MVP uses
-placeholder checks returning False until integrations are implemented.
+Event sources implementation status:
+- database: implemented (reads recent ledger statuses)
+- schedule: implemented (checks due scheduled runs via injected scheduler client)
+- webhook/queue/external_api: extension hooks only (config-gated; warn when enabled)
 """
 
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 from datetime import datetime, timedelta, timezone
 from time import monotonic
@@ -63,8 +66,17 @@ class HeartbeatChecker:
             cfg.get("database_latency_warn_ms", 500),
             default=500.0,
         )
+        self._webhook_enabled = self._normalize_enabled(cfg.get("webhook_enabled", False))
+        self._queue_enabled = self._normalize_enabled(cfg.get("queue_enabled", False))
+        self._schedule_enabled = self._normalize_enabled(cfg.get("schedule_enabled", True))
+        self._external_api_enabled = self._normalize_enabled(cfg.get("external_api_enabled", False))
+        self._schedule_client = cfg.get("schedule_client", cfg.get("hatchet_client"))
+        self._schedule_due_window_seconds = self._normalize_positive_number(
+            cfg.get("schedule_due_window_seconds", 0),
+            default=0.0,
+        )
         self._database_pending_statuses = self._normalize_pending_statuses(
-            cfg.get("database_pending_statuses", ["pending", "queued"]),
+            cfg.get("database_pending_statuses", ["error", "timeout", "pending"]),
         )
 
     @staticmethod
@@ -107,7 +119,7 @@ class HeartbeatChecker:
             return default
         if isinstance(raw, int | float):
             value = float(raw)
-            return value if value > 0 else default
+            return value if value >= 0 else default
         if isinstance(raw, str):
             value = raw.strip()
             if not value:
@@ -116,7 +128,7 @@ class HeartbeatChecker:
                 parsed = float(value)
             except ValueError:
                 return default
-            return parsed if parsed > 0 else default
+            return parsed if parsed >= 0 else default
         return default
 
     @staticmethod
@@ -126,7 +138,7 @@ class HeartbeatChecker:
         elif isinstance(raw, list | tuple | set):
             items = list(raw)
         else:
-            items = ["pending", "queued"]
+            items = ["error", "timeout", "pending"]
         normalized: list[str] = []
         for item in items:
             if not isinstance(item, str):
@@ -134,7 +146,7 @@ class HeartbeatChecker:
             status = item.strip().lower()
             if status and status not in normalized:
                 normalized.append(status)
-        return tuple(normalized or ["pending", "queued"])
+        return tuple(normalized or ["error", "timeout", "pending"])
 
     async def check_events(self, tenant_id: str = "default") -> bool:
         """Check if there are pending events in any configured source.
@@ -187,12 +199,100 @@ class HeartbeatChecker:
         return False
 
     async def _check_webhook_events(self) -> bool:
-        """Check for new webhook events. MVP: not implemented, returns False."""
+        """Check for new webhook events (extension hook; not implemented)."""
+        if self._webhook_enabled:
+            logger.warning(
+                "HeartbeatChecker webhook source enabled but no implementation agent_id=%s",
+                self.agent_id,
+            )
         return False
 
     async def _check_queue_events(self) -> bool:
-        """Check for new queue messages. MVP: not implemented, returns False."""
+        """Check for new queue messages (extension hook; not implemented)."""
+        if self._queue_enabled:
+            logger.warning(
+                "HeartbeatChecker queue source enabled but no implementation agent_id=%s",
+                self.agent_id,
+            )
         return False
+
+    @staticmethod
+    def _coerce_datetime(value: Any) -> datetime | None:
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+            return value
+        if isinstance(value, str):
+            candidate = value.strip()
+            if not candidate:
+                return None
+            if candidate.endswith("Z"):
+                candidate = f"{candidate[:-1]}+00:00"
+            try:
+                parsed = datetime.fromisoformat(candidate)
+            except ValueError:
+                return None
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+            return parsed
+        return None
+
+    def _resolve_schedule_client(self) -> Any | None:
+        configured = self._schedule_client
+        if configured is None:
+            return None
+        if callable(configured):
+            try:
+                candidate = configured()
+                return candidate if candidate is not None else configured
+            except TypeError:
+                return configured
+            except Exception:
+                logger.warning("HeartbeatChecker schedule client factory failed", exc_info=True)
+                return None
+        return configured
+
+    async def _list_scheduled_tasks(self, client: Any) -> list[Any]:
+        list_fn = getattr(client, "list_scheduled_tasks", None)
+        if callable(list_fn):
+            try:
+                result = list_fn(agent_id=self.agent_id)
+            except TypeError:
+                result = list_fn()
+        elif callable(client):
+            try:
+                result = client(agent_id=self.agent_id)
+            except TypeError:
+                result = client()
+        else:
+            return []
+        if inspect.isawaitable(result):
+            result = await result
+        return list(result) if isinstance(result, list | tuple) else []
+
+    def _schedule_task_is_due(self, task: Any, *, now: datetime) -> bool:
+        due_raw: Any
+        if isinstance(task, dict):
+            due_raw = (
+                task.get("due_at")
+                or task.get("run_at")
+                or task.get("scheduled_at")
+                or task.get("next_run_at")
+                or task.get("eta")
+            )
+        else:
+            due_raw = (
+                getattr(task, "due_at", None)
+                or getattr(task, "run_at", None)
+                or getattr(task, "scheduled_at", None)
+                or getattr(task, "next_run_at", None)
+                or getattr(task, "eta", None)
+            )
+        due_at = self._coerce_datetime(due_raw)
+        if due_at is None:
+            # Queued/scheduled entry without timestamp is treated as actionable.
+            return True
+        return due_at <= (now + timedelta(seconds=self._schedule_due_window_seconds))
 
     def _resolve_database_session_factory(self) -> Any | None:
         configured = self._database_session_factory
@@ -263,9 +363,31 @@ class HeartbeatChecker:
         return has_events
 
     async def _check_schedule_events(self) -> bool:
-        """Check for due scheduled tasks. MVP: not implemented, returns False."""
-        return False
+        """Check due scheduled tasks from scheduler integration client."""
+        if not self._schedule_enabled:
+            return False
+        client = self._resolve_schedule_client()
+        if client is None:
+            return False
+        try:
+            tasks = await self._list_scheduled_tasks(client)
+        except Exception:
+            logger.warning(
+                "HeartbeatChecker schedule check failed agent_id=%s",
+                self.agent_id,
+                exc_info=True,
+            )
+            return False
+        if not tasks:
+            return False
+        now = datetime.now(timezone.utc)
+        return any(self._schedule_task_is_due(task, now=now) for task in tasks)
 
     async def _check_external_api_events(self) -> bool:
-        """Check for external API notifications. MVP: not implemented, returns False."""
+        """Check external API notifications (extension hook; not implemented)."""
+        if self._external_api_enabled:
+            logger.warning(
+                "HeartbeatChecker external_api source enabled but no implementation agent_id=%s",
+                self.agent_id,
+            )
         return False

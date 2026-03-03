@@ -30,10 +30,16 @@ describe("useApi contract mapping", () => {
         };
       }
       if (path === "/governance/circuit-breakers") {
-        return { items: [{ name: "llm-budget", state: "closed" }] };
+        return { items: [{ capability_name: "llm-budget", state: "closed" }] };
       }
       if (path === "/governance/visibility-matrix") {
-        return { items: [{ agent: "agent-a", capabilities: { entry: true } }] };
+        return {
+          items: [
+            { agent_id: "agent-a", capability_name: "entry", visible: true },
+            { agent_id: "agent-a", capability_name: "exit", visible: false },
+            { agent_id: "agent-b", capability_name: "entry", visible: true },
+          ],
+        };
       }
       return {};
     });
@@ -47,7 +53,14 @@ describe("useApi contract mapping", () => {
     expect(mockedFetch).toHaveBeenCalledWith("/governance/visibility-matrix");
     expect(result.current.data?.budget_trend[0]).toEqual({ date: "2026-03-01", cost: 1.5 });
     expect(result.current.data?.circuit_breakers[0]).toEqual({ name: "llm-budget", state: "closed" });
-    expect(result.current.data?.visibility[0]).toEqual({ agent: "agent-a", capabilities: { entry: true } });
+    expect(result.current.data?.visibility).toContainEqual({
+      agent: "agent-a",
+      capabilities: { entry: true, exit: false },
+    });
+    expect(result.current.data?.visibility).toContainEqual({
+      agent: "agent-b",
+      capabilities: { entry: true },
+    });
   });
 
   it("maps ledger query parameters and parses paginated items", async () => {

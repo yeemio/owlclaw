@@ -4,11 +4,11 @@
 
 ## Task 0：H1 Heartbeat 事件源补全
 
-- [ ] 0.1 实现 `_check_schedule_events()`：接入 Hatchet 调度状态查询
-- [ ] 0.2 修正 `_check_database_events()`：使用 Runtime 实际写入的状态值（`"error"` 需重试场景）
-- [ ] 0.3 为 webhook / queue / external_api 添加配置开关和文档说明
-- [ ] 0.4 新增 schedule 事件源单元测试（mock Hatchet client）
-- [ ] 0.5 更新 heartbeat 文档注释，标注各事件源实现状态
+- [x] 0.1 实现 `_check_schedule_events()`：接入 Hatchet 调度状态查询
+- [x] 0.2 修正 `_check_database_events()`：使用 Runtime 实际写入的状态值（`"error"` 需重试场景）
+- [x] 0.3 为 webhook / queue / external_api 添加配置开关和文档说明
+- [x] 0.4 新增 schedule 事件源单元测试（mock Hatchet client）
+- [x] 0.5 更新 heartbeat 文档注释，标注各事件源实现状态
 
 ## Task 1：H2 成本追踪实现
 
@@ -28,10 +28,10 @@
 
 ## Task 3：H4 Console Governance 前端映射修复
 
-- [ ] 3.1 修复 `useApi.ts` 中 CircuitBreaker 数据映射（`capability_name` → `name`）
-- [ ] 3.2 修复 `useApi.ts` 中 VisibilityMatrix 数据映射（按 agent_id 分组）
-- [ ] 3.3 新增/修复契约测试覆盖这两个映射
-- [ ] 3.4 重新构建前端静态资源（`npm run build`）
+- [x] 3.1 修复 `useApi.ts` 中 CircuitBreaker 数据映射（`capability_name` → `name`）
+- [x] 3.2 修复 `useApi.ts` 中 VisibilityMatrix 数据映射（按 agent_id 分组）
+- [x] 3.3 新增/修复契约测试覆盖这两个映射
+- [x] 3.4 重新构建前端静态资源（`npm run build`）
 
 ## Task 4：H5 治理 fail-policy 配置
 
@@ -44,5 +44,5 @@
 ## Task 5：回归验证 + 文档更新
 
 - [x] 5.1 运行完整测试套件确认无回归
-- [ ] 5.2 更新 `docs/ARCHITECTURE_ANALYSIS.md`：Heartbeat 接口对齐、governance 扩展模块补充
-- [ ] 5.3 更新架构审计对齐表（SPEC_TASKS_SCAN 的架构对齐审计节）
+- [x] 5.2 更新 `docs/ARCHITECTURE_ANALYSIS.md`：Heartbeat 接口对齐、governance 扩展模块补充
+- [x] 5.3 更新架构审计对齐表（SPEC_TASKS_SCAN 的架构对齐审计节）
