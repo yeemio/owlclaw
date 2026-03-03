@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-03（Phase 11 lite-mode-e2e 分配）
+> **最后更新**: 2026-03-03（Phase 12 深度审计修复分配）
 
 ---
 
@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：Phase 11 lite-mode-e2e 统筹分配。Phase 8 外部阻塞项跟踪（等待外部条件就绪）。
+**当前编码任务**：Phase 12 深度审计修复统筹分配。Phase 11 F11 全量回归由 review-work 执行。Phase 8 外部阻塞项跟踪。
 
 ---
 
@@ -173,19 +173,32 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **lite-mode-e2e**（Task 1-4, 9-10） | 0/24 | `owlclaw/integrations/llm.py`（mock 统一）, `owlclaw/agent/runtime/runtime.py`（heartbeat 直通）, `owlclaw/app.py`（日志 + --once + lite 入口 + model 传递）, `owlclaw/governance/visibility.py`（Router 默认行为）, `tests/unit/integrations/`, `tests/unit/agent/runtime/`, `tests/integration/` |
+| **config-propagation-fix**（Task 1-8） | 0/24 | `owlclaw/config/models.py`, `owlclaw/app.py`（create_agent_runtime + configure 防护）, `owlclaw/governance/router.py`（default_model + 返回 None）, `owlclaw/agent/runtime/config.py`, `owlclaw/config/manager.py` |
+| **security-hardening**（Task 1-14） | 0/43 | `owlclaw/capabilities/knowledge.py`, `owlclaw/agent/runtime/runtime.py`（工具消毒）, `owlclaw/triggers/webhook/`（鉴权 + eval + XXE + 体积）, `owlclaw/mcp/server.py`, `owlclaw/security/`（sanitizer + audit）, `owlclaw/web/`（Console 鉴权 + CORS） |
 
-**当前任务**：Phase 11 lite-mode-e2e Task 1（mock LLM 统一）→ Task 2（heartbeat 直通）→ Task 3（日志）→ Task 4（--once 决策循环）→ Task 9（model 配置传递）→ Task 10（Router 默认行为）。
+**当前任务**：Phase 12 config-propagation-fix Task 1-8 → security-hardening Task 1-14。config-propagation-fix 优先（P0，配置链路是所有功能基础）。
 
-**禁止触碰**（分配给编码 2 的路径）：
+**共享文件修改范围约定**（避免冲突）：
 
-- `owlclaw/agent/memory/decay.py`（Task 5 归编码 2）
-- `owlclaw/agent/memory/store_inmemory.py`（Task 5 归编码 2）
-- `owlclaw/agent/memory/store_pgvector.py`（Task 5 归编码 2）
-- `examples/quick_start/`（Task 6 归编码 2）
-- `docs/QUICK_START.md`（Task 6 归编码 2）
-- `owlclaw/cli/ledger.py`（Task 7 归编码 2）
-- `owlclaw/web/api/`（Task 8 归编码 2）
+| 共享文件 | 编码 1 修改范围 | 编码 2 修改范围 |
+|---------|---------------|---------------|
+| `owlclaw/app.py` | `create_agent_runtime()`、`configure()` 方法 | `start()`、`stop()`、`mount_skills()` 方法 |
+| `owlclaw/agent/runtime/runtime.py` | `_execute_tool()` 内参数/结果消毒 | `_decision_loop()` 并发安全、max_iterations、cache key |
+| `owlclaw/governance/router.py` | `__init__` default_model 参数化 | 不修改（已由 config-propagation-fix 覆盖） |
+
+**禁止触碰**（分配给编码 2 的独占路径）：
+
+- `owlclaw/triggers/db_change/manager.py`（R7）
+- `owlclaw/agent/memory/store_inmemory.py`（R8/R9）
+- `owlclaw/integrations/hatchet.py`（R10）
+- `owlclaw/integrations/langfuse.py`（R14 + G4）
+- `owlclaw/triggers/queue/`（R15/R16）
+- `owlclaw/triggers/api/handler.py`（R17）
+- `owlclaw/db/`（G7/G8/G9）
+- `owlclaw/triggers/cron.py`（G10）
+- `migrations/`（G1/G2/G5/G6）
+- `owlclaw/capabilities/registry.py`（R3）
+- `owlclaw/web/api/ws.py`（R13）
 
 ---
 
@@ -202,15 +215,26 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **lite-mode-e2e**（Task 5-8） | 0/13 | `owlclaw/agent/memory/decay.py`（新增）, `owlclaw/agent/memory/store_inmemory.py`, `owlclaw/agent/memory/store_pgvector.py`, `examples/quick_start/app.py`, `docs/QUICK_START.md`, `owlclaw/cli/ledger.py`, `owlclaw/web/api/` |
+| **runtime-robustness**（Task 1-19） | 0/55 | `owlclaw/agent/runtime/runtime.py`（R1 并发 + R2 max_iter + R11 cache + R18 context）, `owlclaw/capabilities/registry.py`（R3 超时）, `owlclaw/app.py`（R4/R5/R6 幂等）, `owlclaw/triggers/db_change/manager.py`（R7 重试）, `owlclaw/agent/memory/store_inmemory.py`（R8/R9）, `owlclaw/integrations/hatchet.py`（R10）, `owlclaw/web/api/ws.py`（R13）, `owlclaw/integrations/langfuse.py`（R14）, `owlclaw/triggers/queue/`（R15/R16）, `owlclaw/triggers/api/handler.py`（R17） |
+| **governance-hardening**（Task 1-11） | 0/30 | `migrations/`（G1/G2/G5 新迁移）, `owlclaw/triggers/webhook/persistence/models.py`（G2）, `owlclaw/governance/ledger.py`（G3）, `owlclaw/integrations/langfuse.py`（G4）, `owlclaw/governance/quality_store.py`（G5）, `migrations/env.py`（G6）, `owlclaw/db/session.py`（G7）, `owlclaw/db/engine.py`（G8/G9）, `owlclaw/triggers/cron.py`（G10） |
 
-**当前任务**：Phase 11 lite-mode-e2e Task 5（pgvector 延迟导入）→ Task 6（Quick Start 重写）→ Task 7（Ledger CLI 降级）→ Task 8（API 降级）。
+**当前任务**：Phase 12 runtime-robustness Task 1-19 → governance-hardening Task 1-11。runtime-robustness 优先（影响稳定性）。
 
-**禁止触碰**（分配给编码 1 的路径）：
+**共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
-- `owlclaw/integrations/llm.py`（Task 1 归编码 1）
-- `owlclaw/agent/runtime/runtime.py`（Task 2 归编码 1）
-- `owlclaw/app.py`（Task 3/4 归编码 1）
+**禁止触碰**（分配给编码 1 的独占路径）：
+
+- `owlclaw/config/models.py`（CP1）
+- `owlclaw/config/manager.py`（CP5）
+- `owlclaw/agent/runtime/config.py`（CP7）
+- `owlclaw/capabilities/knowledge.py`（S1）
+- `owlclaw/triggers/webhook/http/app.py`（S4/S8）
+- `owlclaw/triggers/webhook/transformer.py`（S6/S7）
+- `owlclaw/triggers/webhook/persistence/models.py`（S12）
+- `owlclaw/mcp/server.py`（S5）
+- `owlclaw/security/`（S9/S10）
+- `owlclaw/web/mount.py`（S11）
+- `owlclaw/web/api/middleware.py`（S13）
 
 ---
 
@@ -307,6 +331,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-02 | Phase 10 分配：总架构师审计发现 2 Critical + 5 High。codex-work → audit-fix-critical（C1+C2）+ audit-fix-high（H2+H3+H5）；codex-gpt-work → audit-fix-high（H1+H4+Task 5）。按文件边界隔离避免冲突 | 架构审计报告驱动，P0 阻断性问题必须修复 |
 | 2026-03-02 | Phase 10 完成：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)。经 Round 13 APPROVE 审校，合并到 main。两个编码 worktree 状态改为 DONE | 架构审计修复全部完成，工程达到可交付状态 |
 | 2026-03-03 | Phase 11 分配：新建 lite-mode-e2e spec（三层齐全）。codex-work → Task 1-4（核心链路：mock LLM 统一 + heartbeat 直通 + 日志 + --once 决策循环）；codex-gpt-work → Task 5-8（体验完善：pgvector 延迟导入 + Quick Start 重写 + Ledger CLI + API 降级）。按文件边界隔离 | 真实用户体验测试发现 Lite Mode 端到端体验链路断裂（P0），产品核心承诺不成立 |
+| 2026-03-03 | Phase 11 完成 + Phase 12 分配：lite-mode-e2e F1-F10 全部完成（Task 1-10 ✅），仅 F11 全量回归待执行。新建 4 个 Phase 12 spec（80+ 问题）。codex-work → config-propagation-fix + security-hardening；codex-gpt-work → runtime-robustness + governance-hardening。共享文件按函数范围隔离 | 全方位深度审计（4 维度逐行审计）发现 80+ 问题，按领域拆分 4 个 spec |
 
 ---
 
@@ -314,16 +339,18 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 以下 spec 尚未分配到任何编码 worktree，等当前批次完成后按优先级分配：
 
-**Phase 1-10 全部已分配完毕 ✅**
+**Phase 1-11 全部已分配完毕 ✅**
 
-**Phase 11 进行中**（2026-03-03）
+**Phase 12 进行中**（2026-03-03）
 
 | Spec | Tasks | Worktree | 状态 |
 |------|-------|----------|------|
-| lite-mode-e2e Task 1-4 | mock LLM 统一 + heartbeat 直通 + 日志 + --once 决策循环 | codex-work | 🟡 0/20 进行中 |
-| lite-mode-e2e Task 5-8 | pgvector 延迟导入 + Quick Start 重写 + Ledger CLI + API 降级 | codex-gpt-work | 🟡 0/13 进行中 |
+| config-propagation-fix Task 1-8 | LLM 配置补字段 + Runtime 传配置 + Router 派生 + 返回 None + 优先级 + 防护 + 清理 + 回归 | codex-work | 🟡 0/24 待开始 |
+| security-hardening Task 1-14 | SKILL 消毒 + 工具消毒 + Webhook 鉴权 + MCP 认证 + eval + XXE + 体积 + Unicode + 审计 + Console + CORS | codex-work | 🟡 0/43 待开始 |
+| runtime-robustness Task 1-19 | 并发安全 + max_iter + 超时 + 幂等 + 重试 + InMemory + Hatchet + cache + WS + Langfuse + Redis + Queue + API + context | codex-gpt-work | 🟡 0/55 待开始 |
+| governance-hardening Task 1-11 | 索引 + UUID PK + fallback + 定价 + QualityStore + env.py + session + 异常 + SSL + Cron | codex-gpt-work | 🟡 0/30 待开始 |
 
-**下一轮待分配**：Task 9（全量回归与端到端验收）在 Task 1-8 全部完成后由 review-work 审校执行。
+**下一轮待分配**：Phase 11 F11 全量回归由 review-work 审校执行。Phase 12 全部完成后评估是否需要 Phase 13。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 
