@@ -44,8 +44,8 @@
 - [x] 9.2 单元测试
 
 ## Task 10：Hatchet 连接超时（REQ-R10）
-- [ ] 10.1 connect() 添加超时
-- [ ] 10.2 单元测试
+- [x] 10.1 connect() 添加超时
+- [x] 10.2 单元测试
 
 ## Task 11：skills_context_cache 隔离（REQ-R11）
 - [x] 11.1 cache key 添加 tenant_id
