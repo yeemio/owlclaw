@@ -79,7 +79,7 @@ class CircuitBreakerConstraint:
         )
         failures = 0
         for rec in records:
-            if rec.status == "failure":
+            if rec.status in ("error", "timeout"):
                 failures += 1
             else:
                 break

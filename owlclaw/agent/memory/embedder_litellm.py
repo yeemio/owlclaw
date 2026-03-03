@@ -11,6 +11,7 @@ from contextlib import AbstractContextManager
 from typing import Any
 
 from owlclaw.agent.memory.embedder import EmbeddingProvider
+from owlclaw.integrations import llm as llm_integration
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +58,6 @@ class LiteLLMEmbedder(EmbeddingProvider):
 
     async def _call_aembedding(self, input_texts: list[str]) -> list[list[float]]:
         """Call litellm.aembedding with retries and optional Langfuse span."""
-        import litellm
-
         async def _do() -> list[list[float]]:
             for attempt in range(1, _MAX_RETRIES + 1):
                 try:
@@ -68,7 +67,7 @@ class LiteLLMEmbedder(EmbeddingProvider):
                     }
                     if self._dimensions and "embedding-3" in self._model:
                         kwargs["dimensions"] = self._dimensions
-                    response = await litellm.aembedding(**kwargs)
+                    response = await llm_integration.aembedding(**kwargs)
                     # response.data = [{"embedding": [...]}, ...]
                     if isinstance(response, dict):
                         data = response.get("data", [])

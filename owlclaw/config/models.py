@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import ModuleType
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -46,6 +46,7 @@ class GovernanceConfig(BaseModel):
 
     monthly_budget: float = Field(default=500.0, ge=0.0)
     budget_alert_thresholds: list[float] = Field(default_factory=lambda: [0.5, 0.8, 1.0])
+    fail_policy: Literal["open", "close"] = Field(default="open")
     circuit_breaker: CircuitBreakerConfig = Field(default_factory=CircuitBreakerConfig)
     rate_limit: RateLimitConfig = Field(default_factory=RateLimitConfig)
 

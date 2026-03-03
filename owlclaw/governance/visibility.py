@@ -2,7 +2,7 @@
 
 Filters capabilities before they are presented to the LLM, based on
 constraints (budget, time, rate limit, circuit breaker). Evaluators
-run in parallel; failures are fail-open (capability remains visible).
+run in parallel; failures follow configurable fail-policy (open/close).
 """
 
 import asyncio
@@ -151,12 +151,16 @@ class VisibilityFilter:
     """Filters capabilities using registered constraint evaluators.
 
     All evaluators must return visible=True for a capability to be shown.
-    Evaluators are run in parallel per capability; any evaluator exception
-    is fail-open (capability remains visible) and logged.
+    Evaluators are run in parallel per capability; evaluator failures follow
+    configured fail-policy (`open` keeps visible, `close` hides capability).
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, fail_policy: str = "open") -> None:
+        normalized_policy = fail_policy.strip().lower()
+        if normalized_policy not in {"open", "close"}:
+            raise ValueError("fail_policy must be either 'open' or 'close'")
         self._evaluators: list[ConstraintEvaluator] = []
+        self._fail_policy = normalized_policy
         self._risk_gate = RiskGate()
         self._inject_quality_score = False
         self._quality_cache: dict[str, float] = {}
@@ -185,8 +189,8 @@ class VisibilityFilter:
     ) -> list[CapabilityView]:
         """Return only capabilities that pass all evaluators.
 
-        For each capability, evaluators run in parallel. If any evaluator
-        raises, that capability is treated as visible (fail-open).
+        For each capability, evaluators run in parallel. Evaluator failures
+        are handled by configured fail-policy.
         """
         valid_capabilities: list[CapabilityView] = []
         for cap in capabilities:
@@ -262,7 +266,7 @@ class VisibilityFilter:
         agent_id: str,
         context: RunContext,
     ) -> FilterResult:
-        """Run one evaluator; on exception return visible (fail-open)."""
+        """Run one evaluator and apply fail-policy on errors."""
         try:
             raw_result: Any = evaluator.evaluate(capability, agent_id, context)
             if inspect.isawaitable(raw_result):
@@ -270,17 +274,24 @@ class VisibilityFilter:
             if isinstance(raw_result, FilterResult):
                 return raw_result
             logger.warning(
-                "Evaluator %s returned invalid result type %s (fail-open)",
+                "Evaluator %s returned invalid result type %s (fail-%s)",
                 type(evaluator).__name__,
                 type(raw_result).__name__,
+                self._fail_policy,
             )
-            return FilterResult(visible=True)
+            return self._handle_evaluator_failure()
         except asyncio.CancelledError:
             raise
         except Exception as e:
             logger.warning(
-                "Evaluator %s raised (fail-open): %s",
+                "Evaluator %s raised (fail-%s): %s",
                 type(evaluator).__name__,
+                self._fail_policy,
                 e,
             )
-            return FilterResult(visible=True)
+            return self._handle_evaluator_failure()
+
+    def _handle_evaluator_failure(self) -> FilterResult:
+        if self._fail_policy == "close":
+            return FilterResult(visible=False, reason="constraint_evaluator_error")
+        return FilterResult(visible=True)

@@ -1136,6 +1136,52 @@ Check entries.
         assert llm_records
         assert llm_records[0]["llm_tokens_input"] == 11
         assert llm_records[0]["llm_tokens_output"] == 7
+        assert llm_records[0]["estimated_cost"] > 0
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_llm_usage_cost_is_zero_for_mock_model(self, mock_llm, tmp_path) -> None:
+        mock_llm.return_value = _make_llm_response("ok", prompt_tokens=11, completion_tokens=7)
+        ledger = AsyncMock()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            ledger=ledger,
+            model="mock",
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        llm_records = [
+            call.kwargs
+            for call in ledger.record_execution.await_args_list
+            if call.kwargs.get("capability_name") == "llm_completion"
+        ]
+        assert llm_records
+        assert llm_records[0]["estimated_cost"] == 0
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_budget_constraint_uses_recorded_llm_cost(self, mock_llm, tmp_path) -> None:
+        from owlclaw.governance import BudgetConstraint, InMemoryLedger
+        from owlclaw.governance.visibility import CapabilityView, RunContext
+
+        mock_llm.return_value = _make_llm_response("ok", prompt_tokens=12000, completion_tokens=8000)
+        ledger = InMemoryLedger()
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            ledger=ledger,
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+
+        constraint = BudgetConstraint(
+            ledger,
+            {"budget_limits": {"bot": "0.000001"}, "high_cost_threshold": "0.1"},
+        )
+        cap = CapabilityView("expensive", constraints={"estimated_cost": "1.0"})
+        decision = await constraint.evaluate(cap, "bot", RunContext(tenant_id="default"))
+        assert decision.visible is False
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_non_finite_llm_timeout_config_falls_back_to_default(
