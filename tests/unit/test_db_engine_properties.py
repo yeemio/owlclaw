@@ -154,8 +154,8 @@ def test_property_ssl_mode_translates_to_connect_args(ssl_mode: str) -> None:
 
 @given(
     st.text(min_size=1, max_size=12).filter(
-        lambda mode: mode
-        not in {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
+        lambda mode: mode.strip()
+        not in {"", "disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
     )
 )
 def test_property_invalid_ssl_mode_raises_configuration_error(mode: str) -> None:
@@ -189,3 +189,25 @@ def test_create_engine_wraps_authentication_errors() -> None:
             db_engine.create_engine("postgresql://user:pass@localhost/propdb")
     finally:
         db_engine.create_async_engine = original  # type: ignore[assignment]
+
+
+def test_get_engine_whitespace_ssl_mode_does_not_fallback_to_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, str | None] = {}
+
+    def fake_create_engine(database_url: str | None = None, **kwargs: Any) -> object:
+        captured["database_url"] = database_url
+        captured["ssl_mode"] = kwargs.get("ssl_mode")
+        return object()
+
+    db_engine._engines.clear()  # noqa: SLF001
+    monkeypatch.setenv("OWLCLAW_DB_SSL_MODE", "require")
+    original = db_engine.create_engine
+    db_engine.create_engine = fake_create_engine  # type: ignore[assignment]
+    try:
+        db_engine.get_engine("postgresql://user:pass@localhost/propdb", ssl_mode="   ")
+    finally:
+        db_engine.create_engine = original  # type: ignore[assignment]
+        db_engine._engines.clear()  # noqa: SLF001
+
+    assert captured["database_url"] is not None
+    assert captured["ssl_mode"] == ""

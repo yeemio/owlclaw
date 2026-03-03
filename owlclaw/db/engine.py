@@ -146,7 +146,7 @@ def get_engine(database_url: str | None = None, ssl_mode: str | None = None) -> 
     mode = _normalize_ssl_mode(ssl_mode)
     cache_key = (url, mode)
     if cache_key not in _engines:
-        _engines[cache_key] = create_engine(url, ssl_mode=mode or None)
+        _engines[cache_key] = create_engine(url, ssl_mode=mode)
     return _engines[cache_key]
 
 
