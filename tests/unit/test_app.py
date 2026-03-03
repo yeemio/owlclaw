@@ -1,8 +1,13 @@
 """Basic tests for OwlClaw application."""
 
+import asyncio
+import logging
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from owlclaw import OwlClaw, __version__
+from owlclaw.integrations import llm as llm_integration
 
 
 def test_version():
@@ -206,6 +211,48 @@ def test_lite_custom_mock_responses():
     assert app._lite_mode is True
 
 
+@pytest.mark.asyncio
+async def test_lite_runtime_disables_heartbeat_checker(tmp_path) -> None:
+    (tmp_path / "inventory-check").mkdir()
+    (tmp_path / "inventory-check" / "SKILL.md").write_text(
+        "---\nname: inventory-check\ndescription: Check inventory\n---\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "SOUL.md").write_text("# Soul\nLite mode test.", encoding="utf-8")
+    (tmp_path / "IDENTITY.md").write_text("# Identity\nLite mode test.", encoding="utf-8")
+    app = OwlClaw.lite("lite-heartbeat", skills_path=str(tmp_path))
+    runtime = app.create_agent_runtime(app_dir=str(tmp_path))
+    await runtime.setup()
+    try:
+        assert runtime._heartbeat_checker is None  # noqa: SLF001
+    finally:
+        await app.stop()
+
+
+@pytest.mark.asyncio
+async def test_lite_configures_global_llm_mock_and_stop_clears_it() -> None:
+    app = OwlClaw.lite(
+        "demo-mock",
+        mock_responses={
+            "default": {
+                "content": "mock ok",
+                "function_calls": [{"name": "inventory_check", "arguments": {"sku": "A1"}}],
+            }
+        },
+    )
+    mock_result = await llm_integration.acompletion(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "check"}],
+    )
+    assert mock_result.model == "mock"
+    assert mock_result.choices[0].message.tool_calls[0].function.name == "inventory_check"
+    await app.stop()
+    with patch("litellm.acompletion", new_callable=AsyncMock) as mock_real:
+        mock_real.return_value = mock_result
+        await llm_integration.acompletion(model="gpt-4o-mini", messages=[])
+    mock_real.assert_awaited_once()
+
+
 def test_normal_mode_no_inmemory_ledger_by_default():
     app = OwlClaw("normal")
     app.configure(governance={"router": {}})
@@ -218,6 +265,83 @@ def test_normal_mode_inmemory_ledger_opt_in():
     app.configure(governance={"use_inmemory_ledger": True, "router": {}})
     app._ensure_governance()
     assert type(app._ledger).__name__ == "InMemoryLedger"
+
+
+def test_ensure_logging_does_not_override_existing_handler() -> None:
+    root_logger = logging.getLogger()
+    original_handlers = list(root_logger.handlers)
+    try:
+        for handler in list(root_logger.handlers):
+            root_logger.removeHandler(handler)
+        custom_handler = logging.StreamHandler()
+        root_logger.addHandler(custom_handler)
+        OwlClaw._ensure_logging()
+        assert root_logger.handlers == [custom_handler]
+    finally:
+        for handler in list(root_logger.handlers):
+            root_logger.removeHandler(handler)
+        for handler in original_handlers:
+            root_logger.addHandler(handler)
+
+
+@pytest.mark.asyncio
+async def test_run_once_uses_runtime_trigger_event_and_returns_decision_info() -> None:
+    app = OwlClaw("run-once")
+    runtime = AsyncMock()
+    runtime.trigger_event = AsyncMock(
+        return_value={
+            "status": "completed",
+            "run_id": "run-1",
+            "iterations": 1,
+            "tool_calls_total": 2,
+            "final_response": "done",
+        }
+    )
+    app.start = AsyncMock(return_value=runtime)  # type: ignore[method-assign]
+    app.stop = AsyncMock()  # type: ignore[method-assign]
+
+    result = await app._run_once_async(
+        event_name="manual",
+        payload={"source": "test"},
+        focus="ops",
+        app_dir=None,
+        hatchet_client=None,
+        tenant_id="default",
+    )
+
+    runtime.trigger_event.assert_awaited_once_with(
+        event_name="manual",
+        payload={"source": "test"},
+        focus="ops",
+        tenant_id="default",
+    )
+    assert result["status"] == "completed"
+    assert result["decision"]["tool_calls_total"] == 2
+    assert result["decision"]["final_response"] == "done"
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_loop_logs_trigger_and_result(caplog) -> None:
+    app = OwlClaw("hb-logs")
+    shutdown_event = asyncio.Event()
+
+    async def _trigger_event(**_: object) -> dict[str, object]:
+        shutdown_event.set()
+        return {"status": "completed", "tool_calls_total": 1}
+
+    runtime = AsyncMock()
+    runtime.trigger_event = AsyncMock(side_effect=_trigger_event)
+
+    with caplog.at_level(logging.INFO):
+        await app._heartbeat_loop(
+            runtime=runtime,
+            interval_minutes=0.00001,
+            tenant_id="default",
+            shutdown_event=shutdown_event,
+        )
+
+    assert "Heartbeat tick" in caplog.text
+    assert "Heartbeat result" in caplog.text
 
 
 @pytest.mark.asyncio
