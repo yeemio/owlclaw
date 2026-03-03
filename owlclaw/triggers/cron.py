@@ -876,6 +876,8 @@ class CronTriggerRegistry:
         self._governance = CronGovernance(self)
         self._health_check = CronHealthCheck(self)
         self._active_tasks = 0
+        self._active_runs: set[tuple[str, str]] = set()
+        self._active_runs_lock = asyncio.Lock()
         self._concurrency_controller = ConcurrencyController()
         self._default_trigger_kwargs: dict[str, Any] = {}
         self._runtime_cron_enabled = True
@@ -928,6 +930,19 @@ class CronTriggerRegistry:
         deadline = asyncio.get_running_loop().time() + max(0.1, float(timeout_seconds))
         while self._active_tasks > 0 and asyncio.get_running_loop().time() < deadline:
             await asyncio.sleep(0.05)
+
+    async def _acquire_run_slot(self, tenant_id: str, event_name: str) -> bool:
+        key = (tenant_id, event_name)
+        async with self._active_runs_lock:
+            if key in self._active_runs:
+                return False
+            self._active_runs.add(key)
+            return True
+
+    async def _release_run_slot(self, tenant_id: str, event_name: str) -> None:
+        key = (tenant_id, event_name)
+        async with self._active_runs_lock:
+            self._active_runs.discard(key)
 
     # ------------------------------------------------------------------
     # Task 2.2 — cron expression validation
@@ -1458,6 +1473,7 @@ class CronTriggerRegistry:
         tenant_id: str,
     ) -> dict[str, Any]:
         """Execute a single cron trigger run (called by the Hatchet step)."""
+        tenant_id = self._normalize_tenant_id(tenant_id)
         execution = CronExecution(
             execution_id=str(uuid.uuid4()),
             event_name=config.event_name,
@@ -1469,6 +1485,12 @@ class CronTriggerRegistry:
                 "focus": config.focus,
             },
         )
+        slot_acquired = await self._acquire_run_slot(tenant_id, config.event_name)
+        if not slot_acquired:
+            return {
+                "status": ExecutionStatus.SKIPPED.value,
+                "reason": "cron run already in progress",
+            }
         self._cron_logger.log_trigger(config.event_name, execution.context)
         self._active_tasks += 1
         self._metrics.set_active_tasks(self._active_tasks)
@@ -1554,6 +1576,7 @@ class CronTriggerRegistry:
                     )
                     await self._governance.update_circuit_breaker(config, ledger, tenant_id)
             finally:
+                await self._release_run_slot(tenant_id, config.event_name)
                 self._active_tasks = max(0, self._active_tasks - 1)
                 self._metrics.set_active_tasks(self._active_tasks)
 

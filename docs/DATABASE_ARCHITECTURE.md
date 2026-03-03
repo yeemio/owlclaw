@@ -484,6 +484,8 @@ OwlClaw 支持两种方式配置数据库连接：
 
 ```bash
 export OWLCLAW_DATABASE_URL=postgresql://owlclaw:password@localhost:5432/owlclaw
+# 可选：数据库 SSL/TLS 模式（disable|allow|prefer|require|verify-ca|verify-full）
+export OWLCLAW_DB_SSL_MODE=require
 ```
 
 **方式二：配置文件（推荐用于开发）**

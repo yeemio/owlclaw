@@ -8,6 +8,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from owlclaw.db import AuthenticationError, DatabaseConnectionError
 from owlclaw.db import session as db_session
 
 
@@ -21,6 +22,11 @@ class _FakeSession:
 
     async def rollback(self) -> None:
         self.rollback_count += 1
+
+
+class _EngineWithUrl:
+    def __init__(self, url: str = "postgresql+asyncpg://user:pass@localhost/db") -> None:
+        self.url = url
 
 
 class _FakeSessionContext:
@@ -66,3 +72,63 @@ async def test_property_session_transaction_management(raise_error: bool) -> Non
     finally:
         db_session.create_session_factory = original_factory  # type: ignore[assignment]
         db_session.get_engine = original_get_engine  # type: ignore[assignment]
+
+
+def test_create_session_factory_reuses_cached_factory_for_same_engine() -> None:
+    engine = _EngineWithUrl()
+    db_session._session_factory_cache.clear()  # noqa: SLF001
+    first = db_session.create_session_factory(engine)  # type: ignore[arg-type]
+    second = db_session.create_session_factory(engine)  # type: ignore[arg-type]
+    assert first is second
+
+
+@pytest.mark.asyncio
+async def test_get_session_wraps_commit_connection_error() -> None:
+    fake = _FakeSession()
+
+    async def _failing_commit() -> None:
+        raise RuntimeError("connection refused")
+
+    fake.commit = _failing_commit  # type: ignore[method-assign]
+
+    def fake_factory(_: Any) -> Any:
+        class _Factory:
+            def __call__(self) -> _FakeSessionContext:
+                return _FakeSessionContext(fake)
+
+        return _Factory()
+
+    original_factory = db_session.create_session_factory
+    db_session.create_session_factory = fake_factory  # type: ignore[assignment]
+    try:
+        with pytest.raises(DatabaseConnectionError):
+            async with db_session.get_session(engine=_EngineWithUrl()):  # type: ignore[arg-type]
+                pass
+    finally:
+        db_session.create_session_factory = original_factory  # type: ignore[assignment]
+
+
+@pytest.mark.asyncio
+async def test_get_session_wraps_commit_auth_error() -> None:
+    fake = _FakeSession()
+
+    async def _failing_commit() -> None:
+        raise RuntimeError("password authentication failed")
+
+    fake.commit = _failing_commit  # type: ignore[method-assign]
+
+    def fake_factory(_: Any) -> Any:
+        class _Factory:
+            def __call__(self) -> _FakeSessionContext:
+                return _FakeSessionContext(fake)
+
+        return _Factory()
+
+    original_factory = db_session.create_session_factory
+    db_session.create_session_factory = fake_factory  # type: ignore[assignment]
+    try:
+        with pytest.raises(AuthenticationError):
+            async with db_session.get_session(engine=_EngineWithUrl()):  # type: ignore[arg-type]
+                pass
+    finally:
+        db_session.create_session_factory = original_factory  # type: ignore[assignment]
