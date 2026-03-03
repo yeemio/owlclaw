@@ -6,6 +6,7 @@ is started/stopped via start()/stop().
 
 import asyncio
 import contextlib
+import json
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -108,6 +109,7 @@ class Ledger:
         session_factory: async_sessionmaker[AsyncSession],
         batch_size: int = 10,
         flush_interval: float = 5.0,
+        fallback_log_path: str = "ledger_fallback.log",
     ) -> None:
         if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
             raise ValueError("batch_size must be a positive integer")
@@ -116,9 +118,12 @@ class Ledger:
         flush_interval_value = float(flush_interval)
         if flush_interval_value <= 0:
             raise ValueError("flush_interval must be a positive number")
+        if not isinstance(fallback_log_path, str) or not fallback_log_path.strip():
+            raise ValueError("fallback_log_path must be a non-empty string")
         self._session_factory = session_factory
         self._batch_size = batch_size
         self._flush_interval = flush_interval_value
+        self._fallback_log_path = fallback_log_path.strip()
         self._flush_max_retries = 3
         self._flush_backoff_base_seconds = 0.1
         self._write_queue: asyncio.Queue[LedgerRecord] = asyncio.Queue()
@@ -345,8 +350,6 @@ class Ledger:
 
     async def _write_to_fallback_log(self, batch: list[LedgerRecord]) -> None:
         """On DB failure, append records to a local fallback log."""
-        import json
-
         for record in batch:
             line = json.dumps(
                 {
@@ -361,7 +364,7 @@ class Ledger:
                 }
             ) + "\n"
             try:
-                with open("ledger_fallback.log", "a", encoding="utf-8") as f:
+                with open(self._fallback_log_path, "a", encoding="utf-8") as f:
                     f.write(line)
             except OSError as e:
                 logger.error("Failed to write fallback log: %s", e)

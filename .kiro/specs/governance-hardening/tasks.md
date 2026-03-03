@@ -17,13 +17,13 @@
 - [x] 2.3 单元测试
 
 ## Task 3：Ledger fallback 路径（REQ-G3）
-- [ ] 3.1 LedgerConfig 添加字段
-- [ ] 3.2 ledger.py 使用配置路径
-- [ ] 3.3 单元测试
+- [x] 3.1 LedgerConfig 添加字段
+- [x] 3.2 ledger.py 使用配置路径
+- [x] 3.3 单元测试
 
 ## Task 4：MODEL_PRICING 扩展（REQ-G4）
-- [ ] 4.1 添加新模型定价
-- [ ] 4.2 单元测试
+- [x] 4.1 添加新模型定价
+- [x] 4.2 单元测试
 
 ## Task 5：SkillQualityStore 索引（REQ-G5）
 - [ ] 5.1 新增迁移

@@ -139,7 +139,11 @@ class TokenCalculator:
         "gpt-3.5-turbo": {"prompt": 0.0015 / 1000, "completion": 0.002 / 1000},
         "claude-3-opus": {"prompt": 0.015 / 1000, "completion": 0.075 / 1000},
         "claude-3-sonnet": {"prompt": 0.003 / 1000, "completion": 0.015 / 1000},
+        "claude-3.5-sonnet": {"prompt": 0.003 / 1000, "completion": 0.015 / 1000},
+        "claude-3.7-sonnet": {"prompt": 0.003 / 1000, "completion": 0.015 / 1000},
         "claude-3-haiku": {"prompt": 0.00025 / 1000, "completion": 0.00125 / 1000},
+        "deepseek-chat": {"prompt": 0.00027 / 1000, "completion": 0.0011 / 1000},
+        "deepseek-reasoner": {"prompt": 0.00055 / 1000, "completion": 0.00219 / 1000},
     }
 
     @classmethod
@@ -157,8 +161,16 @@ class TokenCalculator:
             return "claude-3-opus"
         if "claude-3-sonnet" in normalized:
             return "claude-3-sonnet"
+        if "claude-3.5-sonnet" in normalized or "claude-3-5-sonnet" in normalized:
+            return "claude-3.5-sonnet"
+        if "claude-3.7-sonnet" in normalized or "claude-3-7-sonnet" in normalized:
+            return "claude-3.7-sonnet"
         if "claude-3-haiku" in normalized:
             return "claude-3-haiku"
+        if normalized.startswith("deepseek/deepseek-chat") or normalized.startswith("deepseek-chat"):
+            return "deepseek-chat"
+        if normalized.startswith("deepseek/deepseek-reasoner") or normalized.startswith("deepseek-reasoner"):
+            return "deepseek-reasoner"
         return normalized
 
     @classmethod

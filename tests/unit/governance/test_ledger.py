@@ -162,6 +162,12 @@ def test_ledger_rejects_invalid_flush_interval():
         Ledger(session_factory, batch_size=1, flush_interval=0)
 
 
+def test_ledger_rejects_blank_fallback_log_path() -> None:
+    session_factory = MagicMock()
+    with pytest.raises(ValueError, match="fallback_log_path must be a non-empty string"):
+        Ledger(session_factory, batch_size=1, flush_interval=1, fallback_log_path=" ")
+
+
 def _make_record() -> LedgerRecord:
     return LedgerRecord(
         tenant_id="default",
@@ -487,3 +493,19 @@ async def test_record_execution_supports_migration_audit_fields():
     assert record.execution_mode == "pending_approval"
     assert record.risk_level == Decimal("0.4000")
     assert record.approval_by == "ops-a"
+
+
+@pytest.mark.asyncio
+async def test_write_to_fallback_log_uses_configured_path(tmp_path) -> None:
+    session_factory = MagicMock()
+    fallback_file = tmp_path / "ledger-fallback.jsonl"
+    ledger = Ledger(
+        session_factory,
+        batch_size=1,
+        flush_interval=1.0,
+        fallback_log_path=str(fallback_file),
+    )
+    await ledger._write_to_fallback_log([_make_record()])
+    assert fallback_file.exists()
+    payload = fallback_file.read_text(encoding="utf-8")
+    assert "agent1" in payload

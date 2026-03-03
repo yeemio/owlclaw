@@ -787,6 +787,9 @@ class OwlClaw:
                 flush_interval=cfg.get("ledger", {}).get("flush_interval", 5.0)
                 if isinstance(cfg.get("ledger"), dict)
                 else 5.0,
+                fallback_log_path=cfg.get("ledger", {}).get("fallback_log_path", "ledger_fallback.log")
+                if isinstance(cfg.get("ledger"), dict)
+                else "ledger_fallback.log",
             )
         elif use_inmemory:
             ledger = InMemoryLedger()

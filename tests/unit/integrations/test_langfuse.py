@@ -401,12 +401,27 @@ class TestConfigAndHelpers:
     @given(
         prompt=st.integers(min_value=0, max_value=100000),
         completion=st.integers(min_value=0, max_value=100000),
-        model=st.sampled_from(["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo", "claude-3-opus"]),
+        model=st.sampled_from(
+            [
+                "gpt-4",
+                "gpt-4-turbo",
+                "gpt-3.5-turbo",
+                "claude-3-opus",
+                "claude-3.5-sonnet",
+                "deepseek-chat",
+                "deepseek-reasoner",
+            ]
+        ),
     )
     def test_property_cost_calculation(self, prompt: int, completion: int, model: str) -> None:
         cost = TokenCalculator.calculate_cost(model, prompt, completion)
         assert cost >= 0.0
         assert isinstance(cost, float)
+
+    def test_model_name_normalization_for_deepseek_and_claude_35(self) -> None:
+        assert TokenCalculator._normalize_model_name("deepseek/deepseek-chat") == "deepseek-chat"  # noqa: SLF001
+        assert TokenCalculator._normalize_model_name("deepseek-reasoner") == "deepseek-reasoner"  # noqa: SLF001
+        assert TokenCalculator._normalize_model_name("claude-3-5-sonnet-20241022") == "claude-3.5-sonnet"  # noqa: SLF001
 
     @settings(max_examples=10, deadline=None)
     @given(
