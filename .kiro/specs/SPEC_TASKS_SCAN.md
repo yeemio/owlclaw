@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-03（Phase 11 lite-mode-e2e spec 创建与分配）
+> **最后更新**: 2026-03-03（Phase 12 深度审计 spec 创建）
 
 ---
 
@@ -221,23 +221,89 @@
 
 **Phase 11.1：核心链路修复（P0 阻断性）**
 
-- [ ] F1 统一 LLM 调用路径 — `acompletion()` 门面函数检查 mock_mode，Lite Mode 下不调真实 LLM → spec: lite-mode-e2e
-- [ ] F2 Lite Mode Heartbeat 直通 — disabled HeartbeatChecker 时跳过 check_events 直接进入决策循环 → spec: lite-mode-e2e
-- [ ] F3 自动配置日志 — `app.run()` 入口配置 logging.basicConfig，用户可见启动和运行日志 → spec: lite-mode-e2e
-- [ ] F4 `--once` 走决策循环 — `run_once()` 改为调用 `runtime.trigger_event()` 展示完整决策过程 → spec: lite-mode-e2e
+- [x] F1 统一 LLM 调用路径 — `acompletion()` 门面函数检查 mock_mode，Lite Mode 下不调真实 LLM → spec: lite-mode-e2e
+- [x] F2 Lite Mode Heartbeat 直通 — disabled HeartbeatChecker 时跳过 check_events 直接进入决策循环 → spec: lite-mode-e2e
+- [x] F3 自动配置日志 — `app.run()` 入口配置 logging.basicConfig，用户可见启动和运行日志 → spec: lite-mode-e2e
+- [x] F4 `--once` 走决策循环 — `run_once()` 改为调用 `runtime.trigger_event()` 展示完整决策过程 → spec: lite-mode-e2e
 
 **Phase 11.2：体验完善（P1 重要缺陷）**
 
-- [ ] F5 延迟导入 pgvector — 提取 `time_decay` 到公共模块，`import owlclaw` 不因可选依赖缺失崩溃 → spec: lite-mode-e2e
-- [ ] F6 Quick Start 示例重写 — mock_responses 配置 function_calls，展示 Agent 决策过程 → spec: lite-mode-e2e
-- [ ] F7 Ledger CLI 优雅降级 — 无 DB 时输出友好提示而非崩溃 → spec: lite-mode-e2e
-- [ ] F8 API 端点优雅降级 — 无 DB 时返回空结果 + 提示，不返回 500 → spec: lite-mode-e2e
-- [ ] F9 Model 配置传递 — `create_agent_runtime()` 将 `integrations.llm.model` 传递给 Runtime → spec: lite-mode-e2e
-- [ ] F10 Router 默认行为 — 无显式路由规则时 Router 返回 None，不覆盖用户配置的 model → spec: lite-mode-e2e
+- [x] F5 延迟导入 pgvector — 提取 `time_decay` 到公共模块，`import owlclaw` 不因可选依赖缺失崩溃 → spec: lite-mode-e2e
+- [x] F6 Quick Start 示例重写 — mock_responses 配置 function_calls，展示 Agent 决策过程 → spec: lite-mode-e2e
+- [x] F7 Ledger CLI 优雅降级 — 无 DB 时输出友好提示而非崩溃 → spec: lite-mode-e2e
+- [x] F8 API 端点优雅降级 — 无 DB 时返回空结果 + 提示，不返回 500 → spec: lite-mode-e2e
+- [x] F9 Model 配置传递 — `create_agent_runtime()` 将 `integrations.llm.model` 传递给 Runtime → spec: lite-mode-e2e
+- [x] F10 Router 默认行为 — 无显式路由规则时 Router 返回 None，不覆盖用户配置的 model → spec: lite-mode-e2e
 
 **Phase 11.3：全量回归**
 
 - [ ] F11 全量回归与端到端验收 — 现有测试通过 + Lite Mode 端到端 + 真实 LLM 验证 → spec: lite-mode-e2e
+
+### Phase 12：深度审计修复（2026-03-03 全方位多维度审计）
+
+> **来源**: 全方位多维度审计（4 维度：Runtime 决策循环 + App 生命周期/集成 + 触发器/能力 + 数据库/安全）
+> **优先级**: P0~P1（安全缺陷 + 健壮性 + 治理合规）
+> **发现总数**: 80+ 个问题，按领域拆分为 4 个 spec
+
+**Phase 12.1：配置传播链路修复（P0，配置不生效导致核心功能失效）**
+
+- [ ] CP1 LLMIntegrationConfig 补 mock_mode/mock_responses 字段 → spec: config-propagation-fix
+- [ ] CP2 create_agent_runtime() 传递 LLM 配置到 Runtime → spec: config-propagation-fix
+- [ ] CP3 Router default_model 从 integrations.llm.model 派生 → spec: config-propagation-fix
+- [ ] CP4 Router 未配置 task_type 返回 None → spec: config-propagation-fix
+- [ ] CP5 ConfigManager 优先级明确（configure() > ENV > YAML > 默认值）→ spec: config-propagation-fix
+- [ ] CP6 configure() 不得在 start() 之后调用 → spec: config-propagation-fix
+- [ ] CP7 DEFAULT_RUNTIME_CONFIG 的 model 从 app config 派生 → spec: config-propagation-fix
+
+**Phase 12.2：安全加固（P0/P1，安全缺陷可导致系统被控制）**
+
+- [ ] S1 SKILL.md 内容注入系统提示前消毒 → spec: security-hardening
+- [ ] S2 工具调用结果回传 LLM 前消毒 → spec: security-hardening
+- [ ] S3 工具调用参数传给 handler 前消毒 → spec: security-hardening
+- [ ] S4 Webhook 管理接口鉴权 → spec: security-hardening
+- [ ] S5 MCP Server 认证层 → spec: security-hardening
+- [ ] S6 Webhook transformer 禁用 eval → spec: security-hardening
+- [ ] S7 XML 解析防 XXE → spec: security-hardening
+- [ ] S8 Webhook 请求体大小限制 → spec: security-hardening
+- [ ] S9 InputSanitizer Unicode 归一化 → spec: security-hardening
+- [ ] S10 SecurityAuditLog 持久化 → spec: security-hardening
+- [ ] S11 Console API 鉴权 → spec: security-hardening
+- [ ] S12 Webhook auth_token 哈希存储 → spec: security-hardening
+- [ ] S13 CORS 配置修复 → spec: security-hardening
+
+**Phase 12.3：运行时健壮性（P1，影响稳定性和可靠性）**
+
+- [ ] R1 _tool_call_timestamps 并发安全 → spec: runtime-robustness
+- [ ] R2 max_iterations 退出时保留最终响应 → spec: runtime-robustness
+- [ ] R3 Handler 超时机制 → spec: runtime-robustness
+- [ ] R4 app.start() 幂等性 → spec: runtime-robustness
+- [ ] R5 app.start() 部分启动清理 → spec: runtime-robustness
+- [ ] R6 mount_skills() 幂等性 → spec: runtime-robustness
+- [ ] R7 db_change 重试限制 → spec: runtime-robustness
+- [ ] R8 InMemoryStore 线程安全 → spec: runtime-robustness
+- [ ] R9 InMemoryStore 大小限制 → spec: runtime-robustness
+- [ ] R10 Hatchet 连接超时 → spec: runtime-robustness
+- [ ] R11 skills_context_cache 跨租户隔离 → spec: runtime-robustness
+- [ ] R12 store_inmemory.py 解除 pgvector 硬依赖 → spec: runtime-robustness
+- [ ] R13 WebSocket 断连清理 → spec: runtime-robustness
+- [ ] R14 Langfuse atexit 去重 → spec: runtime-robustness
+- [ ] R15 Redis idempotency 值序列化 → spec: runtime-robustness
+- [ ] R16 Queue executor 连接复用 → spec: runtime-robustness
+- [ ] R17 API trigger 无效 JSON 返回 400 → spec: runtime-robustness
+- [ ] R18 Prompt context window 检查 → spec: runtime-robustness
+
+**Phase 12.4：治理层加固（P1，治理层缺陷影响 Agent 可控性）**
+
+- [ ] G1 Ledger 索引添加 tenant_id 前缀 → spec: governance-hardening
+- [ ] G2 WebhookIdempotencyKeyModel UUID 主键 → spec: governance-hardening
+- [ ] G3 Ledger fallback 路径可配置 → spec: governance-hardening
+- [ ] G4 MODEL_PRICING 扩展 → spec: governance-hardening
+- [ ] G5 SkillQualityStore 索引合规 → spec: governance-hardening
+- [ ] G6 Alembic env.py 导入 OwlHub 模型 → spec: governance-hardening
+- [ ] G7 Session factory 缓存 → spec: governance-hardening
+- [ ] G8 DB 连接失败包装为自定义异常 → spec: governance-hardening
+- [ ] G9 DB SSL/TLS 配置 → spec: governance-hardening
+- [ ] G10 Cron 任务去重 → spec: governance-hardening
 
 ---
 
@@ -302,7 +368,11 @@
 | **console-integration** | `.kiro/specs/console-integration/` | ✅ 三层齐全，已完成（5/5） | Console 集成（`owlclaw start` 挂载 + CLI + 构建流程 + 打包 + 集成测试）。经 9 轮审校 APPROVE |
 | **audit-fix-critical** | `.kiro/specs/audit-fix-critical/` | ✅ 三层齐全，已完成（11/11） | 架构审计 Critical 修复：C1 熔断器状态匹配 + C2 Console API 挂载路径 |
 | **audit-fix-high** | `.kiro/specs/audit-fix-high/` | ✅ 三层齐全，已完成（23/23） | 架构审计 High 修复：H1-H5 全部完成（Heartbeat + 成本追踪 + Embedding 隔离 + Governance 映射 + fail-policy） |
-| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（4/42） | Lite Mode 端到端体验修复：mock LLM 统一 + Heartbeat 直通 + 日志 + --once 决策 + pgvector 延迟导入 + Quick Start 重写 + CLI/API 降级 + Model 配置传递 + Router 默认行为 |
+| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（42/47） | Lite Mode 端到端体验修复：Task 1-10 已完成（F1-F10 ✅），仅 Task 11 全量回归待执行 |
+| **config-propagation-fix** | `.kiro/specs/config-propagation-fix/` | 🟡 三层齐全，待实现（3/27） | 配置传播链路修复：LLMIntegrationConfig 补字段 + create_agent_runtime 传配置 + Router 默认行为 + ConfigManager 优先级 + configure 防护 |
+| **security-hardening** | `.kiro/specs/security-hardening/` | 🟡 三层齐全，待实现（3/46） | 安全加固：SKILL.md 注入防护 + 工具结果/参数消毒 + Webhook 鉴权 + MCP 认证 + eval 替换 + XXE + 请求体限制 + Unicode 归一化 + 审计日志持久化 + Console 鉴权 + CORS |
+| **runtime-robustness** | `.kiro/specs/runtime-robustness/` | 🟡 三层齐全，待实现（3/58） | 运行时健壮性：并发安全 + max_iterations + handler 超时 + start/mount 幂等 + db_change 重试 + InMemoryStore + Hatchet 超时 + cache 隔离 + WebSocket + Langfuse + Redis + Queue + API 400 + context window |
+| **governance-hardening** | `.kiro/specs/governance-hardening/` | 🟡 三层齐全，待实现（3/33） | 治理层加固：Ledger 索引 + UUID PK + fallback 路径 + MODEL_PRICING + QualityStore 索引 + env.py 导入 + session 缓存 + DB 异常包装 + SSL + Cron 去重 |
 
 ---
 
@@ -328,11 +398,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-03 |
-| 当前批次 | **Phase 11 lite-mode-e2e**：Lite Mode 端到端体验修复（0/37 → 4/37 spec 文档已完成）。codex-work 负责 Task 1-4（核心链路：mock LLM + heartbeat + 日志 + --once），codex-gpt-work 负责 Task 5-8（体验完善：pgvector + Quick Start + CLI + API）。 |
-| 批次状态 | **Phase 11 进行中**。Phase 10 已完成。Phase 8 外部阻塞跟踪中。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 18/22（新增收口：Task 2.1/2.3/5.2/5.3）；`content-launch` 已完成 Task 0、Task 1 脚手架、Task 2.2/2.3/2.4/2.5、Task 3.1/3.3、Task 4、Task 5.2/5.4（14/16）；Phase 8.5 `D14-1/2/3` 已全部落地（3/3）。 |
+| 最后更新 | 2026-03-03（Phase 12 深度审计 spec 创建） |
+| 当前批次 | **Phase 11 lite-mode-e2e** Task 1-10 全部完成（F1-F10 ✅），仅 Task 11 全量回归待执行。**Phase 12 深度审计修复** 4 个新 spec 已创建并分配。 |
+| 批次状态 | **Phase 11 接近完成**（F1-F10 ✅，F11 全量回归待执行）。**Phase 12 已分配**（config-propagation-fix + security-hardening → codex-work；runtime-robustness + governance-hardening → codex-gpt-work）。Phase 10 已完成。Phase 8 外部阻塞跟踪中。`mionyee-hatchet-migration` 已完成（15/15）；`openclaw-skill-pack` 已完成 18/22（新增收口：Task 2.1/2.3/5.2/5.3）；`content-launch` 已完成 Task 0、Task 1 脚手架、Task 2.2/2.3/2.4/2.5、Task 3.1/3.3、Task 4、Task 5.2/5.4（14/16）；Phase 8.5 `D14-1/2/3` 已全部落地（3/3）。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）；15) **Phase 10 全部完成**：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)，经 Round 13 APPROVE。 |
-| 下一待执行 | **Phase 11 lite-mode-e2e Task 1-8**（已分配到两个编码 worktree）。Phase 8 外部阻塞项等外部条件就绪后由 main 收口。 |
+| 下一待执行 | **Phase 12 深度审计修复**：codex-work → config-propagation-fix（P0）+ security-hardening（P0/P1）；codex-gpt-work → runtime-robustness（P1）+ governance-hardening（P1）。Phase 11 F11 全量回归由 review-work 执行。Phase 8 外部阻塞项等外部条件就绪后由 main 收口。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，Phase 9：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，**Phase 10**：audit-fix-critical ✅(11/11)，audit-fix-high ✅(23/23)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；最新 preflight（2026-03-02）仍 `BLOCKED`，并提示 `main` 分支保护 API `HTTP 404`（`docs/release/reports/release-oidc-preflight-latest.md`，最近 release runs: 2026-02-27 的 `22471143360`/`22473801915`/`22475093887`/`22477795502` 均失败）。2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 3.3/3.4/5.1/5.4 依赖外部仓库 PR 审核合并、线上索引刷新与真实下载量周期（PR: https://github.com/openclaw/clawhub/pull/556`，state=`OPEN`，`updatedAt=2026-02-28T01:45:00Z`）；4) `content-launch` Task 1/2/3.2/5 需 Mionyee 真实导出数据与外部发布渠道（最新 readiness：`docs/content/content-launch-readiness.json`，`all_external_gates_passed=false`）。 |
 | 健康状态 | 正常 |

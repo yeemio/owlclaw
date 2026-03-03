@@ -8,12 +8,11 @@ from owlclaw.governance.visibility import RunContext
 
 @pytest.mark.asyncio
 async def test_router_default_model():
-    """Router returns default_model when no rule matches."""
+    """Router returns None when no rule matches."""
     r = Router({"default_model": "gpt-4o-mini"})
     ctx = RunContext(tenant_id="t1")
     sel = await r.select_model("unknown_type", ctx)
-    assert sel.model == "gpt-4o-mini"
-    assert sel.fallback == []
+    assert sel is None
 
 
 @pytest.mark.asyncio
@@ -97,8 +96,7 @@ async def test_router_handles_non_dict_config() -> None:
     r = Router(None)  # type: ignore[arg-type]
     ctx = RunContext(tenant_id="t1")
     sel = await r.select_model("any", ctx)
-    assert sel.model == "gpt-4o-mini"
-    assert sel.fallback == []
+    assert sel is None
 
 
 @pytest.mark.asyncio
@@ -127,7 +125,7 @@ async def test_router_update_config_hot_reload() -> None:
     r = Router({"default_model": "gpt-4o-mini"})
     ctx = RunContext(tenant_id="t1")
     before = await r.select_model("analysis", ctx)
-    assert before.model == "gpt-4o-mini"
+    assert before is None
 
     r.update_config(
         {
@@ -152,8 +150,7 @@ async def test_router_update_config_invalid_payload_falls_back_to_default() -> N
     ctx = RunContext(tenant_id="t1")
     r.update_config(None)  # type: ignore[arg-type]
     sel = await r.select_model("any", ctx)
-    assert sel.model == "gpt-4o-mini"
-    assert sel.fallback == []
+    assert sel is None
 
 
 @pytest.mark.asyncio

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
@@ -12,18 +11,10 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column
 
+from owlclaw.agent.memory.decay import time_decay
 from owlclaw.agent.memory.models import MemoryEntry, SecurityLevel
 from owlclaw.agent.memory.store import MemoryStore
 from owlclaw.db import Base
-
-
-def time_decay(age_hours: float, half_life_hours: float = 168.0) -> float:
-    """Exponential decay; half_life_hours=168 (7 days) -> weight 0.5 at 7 days."""
-    if half_life_hours <= 0:
-        raise ValueError("half_life_hours must be > 0")
-    if age_hours <= 0:
-        return 1.0
-    return math.exp(-0.693 * age_hours / half_life_hours)
 
 
 def _now_utc() -> datetime:

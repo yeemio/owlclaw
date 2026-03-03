@@ -21,6 +21,7 @@ from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.capabilities.skills import SkillsLoader, auto_register_binding_tools
 from owlclaw.config import ConfigManager
 from owlclaw.governance.visibility import CapabilityView
+from owlclaw.integrations import llm as llm_integration
 from owlclaw.security.sanitizer import InputSanitizer
 from owlclaw.triggers.api import (
     APIKeyAuthProvider,
@@ -198,6 +199,7 @@ class OwlClaw:
         """
         app = cls(name)
         app._lite_mode = True
+        app._ensure_logging()
 
         default_mock = mock_responses or {
             "default": {
@@ -231,6 +233,7 @@ class OwlClaw:
             },
             governance=lite_governance,
         )
+        llm_integration.configure_mock(default_mock)
 
         if skills_path is not None:
             app.mount_skills(skills_path)
@@ -241,6 +244,17 @@ class OwlClaw:
             name,
         )
         return app
+
+    @staticmethod
+    def _ensure_logging() -> None:
+        """Install default logging only when the root logger has no handlers."""
+        root_logger = logging.getLogger()
+        if root_logger.handlers:
+            return
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        )
 
     def mount_skills(self, path: str) -> None:
         """Mount Skills from a business application directory.
@@ -967,6 +981,10 @@ class OwlClaw:
         except (TypeError, ValueError):
             max_pending_instructions = 10
         signal_state_manager = AgentStateManager(max_pending_instructions=max_pending_instructions)
+        runtime_config: dict[str, Any] = {}
+        if self._lite_mode:
+            runtime_config["heartbeat"] = {"enabled": False}
+        runtime_model = self._resolve_runtime_model()
         return AgentRuntime(
             agent_id=self.name,
             app_dir=resolved_app_dir,
@@ -977,7 +995,19 @@ class OwlClaw:
             router=self._router,
             ledger=self._ledger,
             signal_state_manager=signal_state_manager,
+            model=runtime_model,
+            config=runtime_config or None,
         )
+
+    def _resolve_runtime_model(self) -> str:
+        integrations_cfg = self._config.get("integrations")
+        if isinstance(integrations_cfg, dict):
+            llm_cfg = integrations_cfg.get("llm")
+            if isinstance(llm_cfg, dict):
+                configured_model = llm_cfg.get("model")
+                if isinstance(configured_model, str) and configured_model.strip():
+                    return configured_model.strip()
+        return "gpt-4o-mini"
 
     async def start(
         self,
@@ -1023,6 +1053,7 @@ class OwlClaw:
         await self.stop_governance()
         await self.cron_registry.wait_for_all_tasks()
         self._runtime = None
+        llm_integration.configure_mock(None)
 
     def health_status(self) -> dict[str, Any]:
         """Return app-level health summary."""
@@ -1075,6 +1106,7 @@ class OwlClaw:
                             execution and cron scheduling.
             tenant_id: Tenant identifier for multi-tenant deployments.
         """
+        self._ensure_logging()
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -1091,6 +1123,93 @@ class OwlClaw:
             hatchet_client=hatchet_client,
             tenant_id=tenant_id,
         ))
+
+    def run_once(
+        self,
+        *,
+        event_name: str = "manual",
+        payload: dict[str, Any] | None = None,
+        focus: str | None = None,
+        app_dir: str | None = None,
+        hatchet_client: Any = None,
+        tenant_id: str = "default",
+    ) -> dict[str, Any]:
+        """Run one trigger event through runtime decision loop and return structured result."""
+        self._ensure_logging()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            raise RuntimeError(
+                "OwlClaw.run_once() cannot be called from an already-running event loop. "
+                "Use 'await app._run_once_async(...)' directly instead."
+            )
+
+        return asyncio.run(
+            self._run_once_async(
+                event_name=event_name,
+                payload=payload,
+                focus=focus,
+                app_dir=app_dir,
+                hatchet_client=hatchet_client,
+                tenant_id=tenant_id,
+            )
+        )
+
+    async def _run_once_async(
+        self,
+        *,
+        event_name: str,
+        payload: dict[str, Any] | None,
+        focus: str | None,
+        app_dir: str | None,
+        hatchet_client: Any,
+        tenant_id: str,
+    ) -> dict[str, Any]:
+        runtime = await self.start(
+            app_dir=app_dir,
+            hatchet_client=hatchet_client,
+            tenant_id=tenant_id,
+        )
+        logger.info(
+            "Run-once trigger started app=%s trigger=%s focus=%s tenant_id=%s",
+            self.name,
+            event_name,
+            focus,
+            tenant_id,
+        )
+        try:
+            result = await runtime.trigger_event(
+                event_name=event_name,
+                payload=dict(payload or {}),
+                focus=focus,
+                tenant_id=tenant_id,
+            )
+        finally:
+            await self.stop()
+
+        structured_result = {
+            "status": result.get("status", "unknown"),
+            "run_id": result.get("run_id"),
+            "trigger": event_name,
+            "decision": {
+                "iterations": result.get("iterations", 0),
+                "tool_calls_total": result.get("tool_calls_total", 0),
+                "final_response": result.get("final_response"),
+                "reason": result.get("reason"),
+            },
+            "raw": result,
+        }
+        logger.info(
+            "Run-once trigger finished app=%s trigger=%s status=%s tool_calls_total=%s",
+            self.name,
+            event_name,
+            structured_result["status"],
+            structured_result["decision"]["tool_calls_total"],
+        )
+        return structured_result
 
     async def _run_blocking(
         self,
@@ -1171,11 +1290,23 @@ class OwlClaw:
                 pass
 
             try:
-                await runtime.trigger_event(
+                logger.info(
+                    "Heartbeat tick app=%s tenant_id=%s trigger=heartbeat entering_decision_loop=true",
+                    self.name,
+                    tenant_id,
+                )
+                result = await runtime.trigger_event(
                     event_name="heartbeat",
                     payload={"source": "heartbeat"},
                     focus=None,
                     tenant_id=tenant_id,
+                )
+                logger.info(
+                    "Heartbeat result app=%s status=%s reason=%s tool_calls_total=%s",
+                    self.name,
+                    result.get("status"),
+                    result.get("reason"),
+                    result.get("tool_calls_total", 0),
                 )
             except Exception:
                 logger.exception("Heartbeat trigger failed for '%s'", self.name)
