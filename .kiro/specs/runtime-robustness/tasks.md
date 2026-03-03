@@ -8,12 +8,12 @@
 - [x] 0.3 tasks.md ✅
 
 ## Task 1：_tool_call_timestamps 并发安全（REQ-R1）
-- [ ] 1.1 改为 per-run 计数器或加锁
-- [ ] 1.2 单元测试
+- [x] 1.1 改为 per-run 计数器或加锁
+- [x] 1.2 单元测试
 
 ## Task 2：max_iterations 最终响应（REQ-R2）
-- [ ] 2.1 循环耗尽后追加一轮 LLM 调用
-- [ ] 2.2 单元测试
+- [x] 2.1 循环耗尽后追加一轮 LLM 调用
+- [x] 2.2 单元测试
 
 ## Task 3：Handler 超时（REQ-R3）
 - [ ] 3.1 registry.invoke_handler 添加 asyncio.wait_for
@@ -48,8 +48,8 @@
 - [ ] 10.2 单元测试
 
 ## Task 11：skills_context_cache 隔离（REQ-R11）
-- [ ] 11.1 cache key 添加 tenant_id
-- [ ] 11.2 单元测试
+- [x] 11.1 cache key 添加 tenant_id
+- [x] 11.2 单元测试
 
 ## Task 12：time_decay 提取（REQ-R12）
 - [ ] 12.1 创建 decay.py 移入函数

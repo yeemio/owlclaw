@@ -1037,6 +1037,7 @@ Check entries.
         ctx = AgentRunContext(agent_id="bot", trigger="cron")
         result = await rt.run(ctx)
         assert result["iterations"] == 3
+        assert result["final_response"] != ""
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_invalid_max_function_calls_falls_back_to_default(

@@ -62,6 +62,28 @@ def test_skills_context_cache_hits(tmp_path) -> None:
     assert metrics["skills_cache_hits"] >= 1
 
 
+def test_skills_context_cache_isolated_by_tenant(tmp_path) -> None:
+    rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+    rt.registry = MagicMock()
+    rt.registry.handlers = {"skill-a": MagicMock()}
+    rt.knowledge_injector = MagicMock()
+    mock_report = MagicMock()
+    mock_report.content = "skills"
+    mock_report.total_tokens = 10
+    mock_report.selected_skill_names = ["skill-a"]
+    mock_report.dropped_skill_names = []
+    mock_report.per_skill_tokens = {"skill-a": 10}
+    rt.knowledge_injector.get_skills_knowledge_report.return_value = mock_report
+
+    ctx_a = AgentRunContext(agent_id="bot", trigger="cron", tenant_id="tenant-a")
+    ctx_b = AgentRunContext(agent_id="bot", trigger="cron", tenant_id="tenant-b")
+
+    rt._build_skills_context(ctx_a)
+    rt._build_skills_context(ctx_b)
+
+    assert rt.knowledge_injector.get_skills_knowledge_report.call_count == 2
+
+
 @pytest.mark.asyncio
 async def test_visible_tools_resource_limit(tmp_path) -> None:
     rt = AgentRuntime(

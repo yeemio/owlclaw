@@ -152,7 +152,8 @@ class AgentRuntime:
         self._langfuse_init_error: str | None = None
         self._langfuse = self._init_langfuse_client()
         self._tool_call_timestamps: deque[float] = deque()
-        self._skills_context_cache: dict[tuple[str | None, tuple[str, ...]], str] = {}
+        self._tool_call_timestamps_lock = asyncio.Lock()
+        self._skills_context_cache: dict[tuple[str, str | None, tuple[str, ...]], str] = {}
         self._visible_tools_cache: dict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = {}
         self._run_handler_names_snapshot: tuple[str, ...] | None = None
         self._run_capabilities_snapshot: list[dict[str, Any]] | None = None
@@ -740,6 +741,7 @@ class AgentRuntime:
             llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
         model_used = self.model
         iteration = 0
+        exhausted_without_completion = False
         for _ in range(max_iterations):
             iteration += 1
             if self._router is not None:
@@ -857,6 +859,53 @@ class AgentRuntime:
                     "tool_call_id": tool_call_id,
                     "content": json.dumps(tool_result, default=str),
                 })
+        else:
+            exhausted_without_completion = True
+
+        if exhausted_without_completion and messages and messages[-1].get("role") == "tool":
+            try:
+                llm_started_ns = time.perf_counter_ns()
+                final_response, model_used, llm_tokens_input, llm_tokens_output, llm_cost = await self._call_llm_completion(
+                    {"model": model_used, "messages": messages},
+                    timeout=llm_timeout,
+                )
+                llm_elapsed_ms = (time.perf_counter_ns() - llm_started_ns) // 1_000_000
+                self._perf_metrics["llm_calls"] += 1
+                self._perf_metrics["llm_time_ms_total"] += float(llm_elapsed_ms)
+                await self._record_llm_usage(
+                    context=context,
+                    model=model_used,
+                    llm_tokens_input=llm_tokens_input,
+                    llm_tokens_output=llm_tokens_output,
+                    estimated_cost=llm_cost,
+                    execution_time_ms=llm_elapsed_ms,
+                    status="success",
+                    error_message=None,
+                )
+                final_message = self._extract_assistant_message(final_response)
+                if final_message is not None:
+                    messages.append(self._assistant_message_to_dict(final_message))
+                else:
+                    messages.append(
+                        {
+                            "role": "assistant",
+                            "content": "Reached max iterations; final summarization response was invalid.",
+                        }
+                    )
+            except asyncio.TimeoutError:
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"Reached max iterations ({max_iterations}) and final summarization timed out.",
+                    }
+                )
+            except Exception as exc:
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"Reached max iterations ({max_iterations}) and final summarization failed: {exc}",
+                    }
+                )
 
         final_content = ""
         if messages and messages[-1].get("role") == "assistant":
@@ -1095,7 +1144,7 @@ class AgentRuntime:
             )
             return {"error": permission_error}
 
-        rate_limit_error = self._enforce_rate_limit(tool_name)
+        rate_limit_error = await self._enforce_rate_limit(tool_name)
         if rate_limit_error is not None:
             self._security_audit.record(
                 event_type="tool_rate_limited",
@@ -1273,7 +1322,7 @@ class AgentRuntime:
                 return f"Tool '{normalized}' is denied by policy"
         return None
 
-    def _enforce_rate_limit(self, tool_name: str) -> str | None:
+    async def _enforce_rate_limit(self, tool_name: str) -> str | None:
         security = self.config.get("security")
         if not isinstance(security, dict):
             return None
@@ -1288,14 +1337,15 @@ class AgentRuntime:
             return None
         if limit < 1:
             return None
-        now = time.monotonic()
-        cutoff = now - 60.0
-        while self._tool_call_timestamps and self._tool_call_timestamps[0] < cutoff:
-            self._tool_call_timestamps.popleft()
-        if len(self._tool_call_timestamps) >= limit:
-            return f"Rate limit exceeded for tool '{tool_name}'"
-        self._tool_call_timestamps.append(now)
-        return None
+        async with self._tool_call_timestamps_lock:
+            now = time.monotonic()
+            cutoff = now - 60.0
+            while self._tool_call_timestamps and self._tool_call_timestamps[0] < cutoff:
+                self._tool_call_timestamps.popleft()
+            if len(self._tool_call_timestamps) >= limit:
+                return f"Rate limit exceeded for tool '{tool_name}'"
+            self._tool_call_timestamps.append(now)
+            return None
 
     def _get_skill_owlclaw_config(self, tool_name: str) -> dict[str, Any]:
         if self.registry is None:
@@ -1556,7 +1606,7 @@ class AgentRuntime:
             all_skill_names = list(self.registry.handlers.keys())
         if not all_skill_names:
             return ""
-        cache_key = (context.focus, tuple(sorted(all_skill_names)))
+        cache_key = (context.tenant_id, context.focus, tuple(sorted(all_skill_names)))
         if cache_key in self._skills_context_cache:
             self._perf_metrics["skills_cache_hits"] += 1
             return self._skills_context_cache[cache_key]
