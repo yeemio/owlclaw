@@ -24,7 +24,7 @@ class WebhookEndpointModel(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
-    auth_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    auth_token_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     target_agent_id: Mapped[str] = mapped_column(String(255), nullable=False)
     auth_method: Mapped[dict] = mapped_column(JSONB, nullable=False)
     transformation_rule_id: Mapped[UUID | None] = mapped_column(nullable=True)

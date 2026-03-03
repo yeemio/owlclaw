@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from owlclaw.capabilities.skills import Skill, SkillsLoader
+from owlclaw.security.sanitizer import InputSanitizer
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,7 @@ class KnowledgeInjector:
             raise ValueError("token_limit must be a positive integer")
         self.skills_loader = skills_loader
         self.token_limit = token_limit
+        self._sanitizer = InputSanitizer()
 
     @staticmethod
     def _estimate_tokens(text: str) -> int:
@@ -172,11 +174,15 @@ class KnowledgeInjector:
             if skill is None:
                 continue
             full_content = skill.load_full_content()
-            per_skill_tokens[skill.name] = self._estimate_tokens(full_content)
+            sanitized_content = self._sanitizer.sanitize(
+                full_content,
+                source=f"skill:{skill.name}",
+            ).sanitized
+            per_skill_tokens[skill.name] = self._estimate_tokens(sanitized_content)
             knowledge_parts.append(
                 f"## Skill: {skill.name}\n\n"
                 f"**Description:** {skill.description}\n\n"
-                f"{full_content}\n"
+                f"{sanitized_content}\n"
             )
 
         if not knowledge_parts:

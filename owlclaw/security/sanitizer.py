@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 
 from owlclaw.security.rules import default_sanitize_rules
@@ -52,8 +53,11 @@ class InputSanitizer:
 
     def sanitize(self, input_text: str, source: str = "unknown") -> SanitizeResult:
         """Sanitize input text and return result with modification descriptions."""
-        text = input_text
+        normalized = unicodedata.normalize("NFKC", input_text)
+        text = normalized
         mods: list[str] = []
+        if normalized != input_text:
+            mods.append(f"{source}:unicode-nfkc-normalized")
         for rule in self._rules:
             try:
                 pattern = re.compile(rule.pattern, rule.flags)

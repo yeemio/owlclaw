@@ -19,9 +19,9 @@ class ModelSelection:
 class Router:
     """Selects LLM model by task_type; supports fallback on failure."""
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, *, default_model: str = "gpt-4o-mini") -> None:
         self._rules: list[dict] = []
-        self._default_model: str | None = None
+        self._default_model: str = default_model.strip() if isinstance(default_model, str) and default_model.strip() else "gpt-4o-mini"
         self.reload_config(config)
 
     def reload_config(self, config: dict) -> None:
@@ -29,7 +29,7 @@ class Router:
         cfg = config if isinstance(config, dict) else {}
         raw_rules = cfg.get("rules", [])
         self._rules = raw_rules if isinstance(raw_rules, list) else []
-        raw_default_model = cfg.get("default_model", "gpt-4o-mini")
+        raw_default_model = cfg.get("default_model", self._default_model)
         if isinstance(raw_default_model, str) and raw_default_model.strip():
             self._default_model = raw_default_model.strip()
         else:

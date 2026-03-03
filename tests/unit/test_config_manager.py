@@ -104,6 +104,18 @@ def test_config_manager_runtime_overrides_env(monkeypatch, tmp_path: Path) -> No
     assert manager.get().agent.heartbeat_interval_minutes == 70
 
 
+def test_config_manager_precedence_overrides_env_yaml_default(monkeypatch, tmp_path: Path) -> None:
+    ConfigManager._reset_for_tests()
+    cfg_path = tmp_path / "owlclaw.yaml"
+    _write_yaml(cfg_path, "integrations:\n  llm:\n    model: yaml-model\n")
+    monkeypatch.setenv("OWLCLAW_INTEGRATIONS__LLM__MODEL", "env-model")
+    manager = ConfigManager.load(
+        config_path=str(cfg_path),
+        overrides={"integrations": {"llm": {"model": "override-model"}}},
+    )
+    assert manager.get().integrations.llm.model == "override-model"
+
+
 def test_reload_applies_only_hot_reloadable_fields(tmp_path: Path) -> None:
     ConfigManager._reset_for_tests()
     cfg_path = tmp_path / "owlclaw.yaml"

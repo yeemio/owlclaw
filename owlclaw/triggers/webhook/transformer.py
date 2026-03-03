@@ -5,9 +5,10 @@ from __future__ import annotations
 import ast
 import json
 from datetime import datetime
-from typing import Any
 from urllib.parse import parse_qs
-from xml.etree import ElementTree
+
+from defusedxml import ElementTree as DefusedElementTree
+from defusedxml.common import DefusedXmlException
 
 from owlclaw.triggers.webhook.types import (
     AgentInput,
@@ -35,9 +36,9 @@ class PayloadTransformer:
             return ParsedPayload(content_type=content_type, data=data, headers=request.headers, raw_body=body)
         if content_type in {"application/xml", "text/xml"}:
             try:
-                root = ElementTree.fromstring(body)
+                root = DefusedElementTree.fromstring(body)
                 data = {_strip_ns(root.tag): _xml_to_dict(root)}
-            except ElementTree.ParseError as exc:
+            except (DefusedXmlException, DefusedElementTree.ParseError) as exc:
                 raise ValueError("invalid xml payload") from exc
             return ParsedPayload(content_type=content_type, data=data, headers=request.headers, raw_body=body)
         if content_type == "application/x-www-form-urlencoded":
@@ -125,7 +126,7 @@ def _extract_content_type(headers: dict[str, str]) -> str:
     return ""
 
 
-def _xml_to_dict(node: ElementTree.Element) -> object:
+def _xml_to_dict(node: DefusedElementTree.Element) -> object:
     if len(node) == 0:
         return node.text or ""
     result: dict[str, object] = {}
@@ -211,12 +212,83 @@ def _convert_value(value: object, transform: str | None) -> object:
 def _evaluate_custom_logic(expression: str, payload: dict[str, object], parameters: dict[str, object]) -> dict[str, object]:
     tree = ast.parse(expression, mode="eval")
     _validate_ast(tree)
-    safe_globals: dict[str, Any] = {"__builtins__": {}}
-    safe_locals: dict[str, object] = {"payload": payload, "parameters": parameters}
-    result = eval(compile(tree, "<transform-logic>", "eval"), safe_globals, safe_locals)
+    result = _safe_eval_ast(tree.body, payload=payload, parameters=parameters)
     if not isinstance(result, dict):
         raise ValueError("custom logic result must be dict")
     return result
+
+
+def _safe_eval_ast(node: ast.AST, *, payload: dict[str, object], parameters: dict[str, object]) -> object:
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.Dict):
+        keys = [_safe_eval_ast(k, payload=payload, parameters=parameters) for k in node.keys]
+        values = [_safe_eval_ast(v, payload=payload, parameters=parameters) for v in node.values]
+        return dict(zip(keys, values, strict=False))
+    if isinstance(node, ast.List):
+        return [_safe_eval_ast(item, payload=payload, parameters=parameters) for item in node.elts]
+    if isinstance(node, ast.Tuple):
+        return tuple(_safe_eval_ast(item, payload=payload, parameters=parameters) for item in node.elts)
+    if isinstance(node, ast.Name):
+        if node.id == "payload":
+            return payload
+        if node.id == "parameters":
+            return parameters
+        raise ValueError("unsafe custom logic variable")
+    if isinstance(node, ast.Subscript):
+        base = _safe_eval_ast(node.value, payload=payload, parameters=parameters)
+        if isinstance(node.slice, ast.Slice):
+            raise ValueError("slice is not allowed in custom logic")
+        key = _safe_eval_ast(node.slice, payload=payload, parameters=parameters)
+        return base[key]  # type: ignore[index]
+    if isinstance(node, ast.BinOp):
+        left = _safe_eval_ast(node.left, payload=payload, parameters=parameters)
+        right = _safe_eval_ast(node.right, payload=payload, parameters=parameters)
+        if isinstance(node.op, ast.Add):
+            return left + right
+        if isinstance(node.op, ast.Mult):
+            return left * right
+        if isinstance(node.op, ast.Div):
+            return left / right
+        if isinstance(node.op, ast.Mod):
+            return left % right
+        raise ValueError("unsupported binary operator")
+    if isinstance(node, ast.UnaryOp):
+        operand = _safe_eval_ast(node.operand, payload=payload, parameters=parameters)
+        if isinstance(node.op, ast.USub):
+            return -operand
+        raise ValueError("unsupported unary operator")
+    if isinstance(node, ast.Compare):
+        left = _safe_eval_ast(node.left, payload=payload, parameters=parameters)
+        if len(node.ops) != 1 or len(node.comparators) != 1:
+            raise ValueError("chained comparisons are not supported")
+        right = _safe_eval_ast(node.comparators[0], payload=payload, parameters=parameters)
+        op = node.ops[0]
+        if isinstance(op, ast.Eq):
+            return left == right
+        if isinstance(op, ast.NotEq):
+            return left != right
+        if isinstance(op, ast.Gt):
+            return left > right
+        if isinstance(op, ast.GtE):
+            return left >= right
+        if isinstance(op, ast.Lt):
+            return left < right
+        if isinstance(op, ast.LtE):
+            return left <= right
+        raise ValueError("unsupported comparison operator")
+    if isinstance(node, ast.BoolOp):
+        values = [_safe_eval_ast(item, payload=payload, parameters=parameters) for item in node.values]
+        if isinstance(node.op, ast.And):
+            return all(values)
+        if isinstance(node.op, ast.Or):
+            return any(values)
+        raise ValueError("unsupported boolean operator")
+    if isinstance(node, ast.IfExp):
+        condition = _safe_eval_ast(node.test, payload=payload, parameters=parameters)
+        branch = node.body if condition else node.orelse
+        return _safe_eval_ast(branch, payload=payload, parameters=parameters)
+    raise ValueError("unsafe custom logic expression")
 
 
 def _validate_ast(node: ast.AST) -> None:

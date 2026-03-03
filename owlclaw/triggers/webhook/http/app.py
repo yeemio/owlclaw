@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 from uuid import uuid4
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.responses import Response
@@ -45,6 +45,8 @@ class HttpGatewayConfig:
     tls_enabled: bool = False
     per_ip_limit_per_minute: int = 120
     per_endpoint_limit_per_minute: int = 300
+    admin_token: str | None = None
+    max_content_length_bytes: int = 1_048_576
 
 
 class _RateLimiter:
@@ -106,6 +108,24 @@ def create_webhook_app(
 
     @app.middleware("http")
     async def _request_trace_middleware(request: Request, call_next: Any) -> Response:
+        if request.url.path.startswith("/webhooks/"):
+            content_length = request.headers.get("content-length")
+            if content_length is not None:
+                try:
+                    if int(content_length) > cfg.max_content_length_bytes:
+                        return cast(
+                            Response,
+                            _error_response(
+                                ValidationError(
+                                    code="REQUEST_TOO_LARGE",
+                                    message="request body too large",
+                                    status_code=413,
+                                ),
+                                request_id=request.headers.get("x-request-id", str(uuid4())),
+                            ),
+                        )
+                except ValueError:
+                    pass
         request_id = request.headers.get("x-request-id", str(uuid4()))
         request.state.request_id = request_id
         started = datetime.now(timezone.utc)
@@ -115,12 +135,36 @@ def create_webhook_app(
         await monitoring.record_metric(MetricRecord(name="response_time_ms", value=elapsed))
         return response
 
+    async def require_admin_token(request: Request) -> None:
+        expected = cfg.admin_token
+        if not expected:
+            return
+        provided = request.headers.get("x-admin-token")
+        if not provided:
+            authorization = request.headers.get("authorization", "")
+            prefix = "Bearer "
+            if authorization.startswith(prefix):
+                provided = authorization[len(prefix) :].strip()
+        if provided != expected:
+            raise HTTPException(status_code=401, detail="admin token required")
+
     @app.post("/webhooks/{endpoint_id}")
     async def receive_webhook(endpoint_id: str, request: Request) -> JSONResponse:
         request_id = str(getattr(request.state, "request_id", uuid4()))
         ip = request.client.host if request.client else "unknown"
         user_agent = request.headers.get("user-agent")
-        raw_body = (await request.body()).decode("utf-8")
+        raw_body_bytes = await request.body()
+        if len(raw_body_bytes) > cfg.max_content_length_bytes:
+            await monitoring.record_metric(MetricRecord(name="request_status", value=1, tags={"status": "failure"}))
+            return _error_response(
+                ValidationError(
+                    code="REQUEST_TOO_LARGE",
+                    message="request body too large",
+                    status_code=413,
+                ),
+                request_id=request_id,
+            )
+        raw_body = raw_body_bytes.decode("utf-8")
         await monitoring.record_metric(MetricRecord(name="request_count", value=1))
         await event_logger.log_request(
             build_event(
@@ -223,7 +267,7 @@ def create_webhook_app(
             },
         )
 
-    @app.post("/endpoints")
+    @app.post("/endpoints", dependencies=[Depends(require_admin_token)])
     async def create_endpoint(payload: dict[str, Any]) -> JSONResponse:
         config_payload = payload.get("config", payload)
         config = EndpointConfig(
@@ -253,7 +297,7 @@ def create_webhook_app(
         endpoint = await manager.create_endpoint(config)
         return JSONResponse(status_code=201, content={"id": endpoint.id, "url": endpoint.url, "config": asdict(endpoint.config)})
 
-    @app.get("/endpoints")
+    @app.get("/endpoints", dependencies=[Depends(require_admin_token)])
     async def list_endpoints() -> JSONResponse:
         endpoints = await manager.list_endpoints()
         return JSONResponse(
@@ -261,14 +305,14 @@ def create_webhook_app(
             content={"items": [{"id": item.id, "url": item.url, "config": asdict(item.config)} for item in endpoints]},
         )
 
-    @app.get("/endpoints/{endpoint_id}")
+    @app.get("/endpoints/{endpoint_id}", dependencies=[Depends(require_admin_token)])
     async def get_endpoint(endpoint_id: str) -> JSONResponse:
         endpoint = await manager.get_endpoint(endpoint_id)
         if endpoint is None:
             return _error_response(ValidationError(code="ENDPOINT_NOT_FOUND", message="endpoint not found", status_code=404), request_id=str(uuid4()))
         return JSONResponse(status_code=200, content={"id": endpoint.id, "url": endpoint.url, "config": asdict(endpoint.config)})
 
-    @app.put("/endpoints/{endpoint_id}")
+    @app.put("/endpoints/{endpoint_id}", dependencies=[Depends(require_admin_token)])
     async def update_endpoint(endpoint_id: str, payload: dict[str, Any]) -> JSONResponse:
         config_payload = payload.get("config", payload)
         config = EndpointConfig(
@@ -299,7 +343,7 @@ def create_webhook_app(
         updated = await manager.update_endpoint(endpoint_id, config)
         return JSONResponse(status_code=200, content={"id": updated.id, "url": updated.url, "config": asdict(updated.config)})
 
-    @app.delete("/endpoints/{endpoint_id}")
+    @app.delete("/endpoints/{endpoint_id}", dependencies=[Depends(require_admin_token)])
     async def delete_endpoint(endpoint_id: str) -> JSONResponse:
         await manager.delete_endpoint(endpoint_id)
         return JSONResponse(status_code=204, content=None)

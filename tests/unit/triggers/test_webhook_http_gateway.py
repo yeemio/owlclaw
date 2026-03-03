@@ -33,7 +33,12 @@ class _AllowPolicy:
         return {"allowed": True}
 
 
-def _create_client(*, per_ip_limit: int = 100) -> TestClient:
+def _create_client(
+    *,
+    per_ip_limit: int = 100,
+    admin_token: str | None = None,
+    max_content_length_bytes: int = 1_048_576,
+) -> TestClient:
     manager = WebhookEndpointManager(InMemoryEndpointRepository())
     app = create_webhook_app(
         manager=manager,
@@ -43,19 +48,25 @@ def _create_client(*, per_ip_limit: int = 100) -> TestClient:
         execution=ExecutionTrigger(_Runtime()),
         event_logger=EventLogger(InMemoryEventRepository()),
         monitoring=MonitoringService(),
-        config=HttpGatewayConfig(per_ip_limit_per_minute=per_ip_limit, per_endpoint_limit_per_minute=per_ip_limit),
+        config=HttpGatewayConfig(
+            per_ip_limit_per_minute=per_ip_limit,
+            per_endpoint_limit_per_minute=per_ip_limit,
+            admin_token=admin_token,
+            max_content_length_bytes=max_content_length_bytes,
+        ),
     )
     return TestClient(app)
 
 
-def _create_endpoint(client: TestClient) -> tuple[str, str]:
+def _create_endpoint(client: TestClient, *, admin_token: str | None = None) -> tuple[str, str]:
     payload = {
         "name": "orders",
         "target_agent_id": "agent-1",
         "auth_method": {"type": "bearer", "token": "token-abc"},
         "execution_mode": "async",
     }
-    resp = client.post("/endpoints", json=payload)
+    headers = {"Authorization": f"Bearer {admin_token}"} if admin_token else None
+    resp = client.post("/endpoints", json=payload, headers=headers)
     assert resp.status_code == 201
     endpoint_id = resp.json()["id"]
     return endpoint_id, "token-abc"
@@ -118,3 +129,32 @@ def test_http_gateway_rate_limit() -> None:
 
     assert first.status_code == 202
     assert second.status_code == 429
+
+
+def test_management_endpoints_require_admin_token() -> None:
+    client = _create_client(admin_token="admin-secret")
+    payload = {
+        "name": "orders",
+        "target_agent_id": "agent-1",
+        "auth_method": {"type": "bearer", "token": "token-abc"},
+        "execution_mode": "async",
+    }
+    unauthorized = client.post("/endpoints", json=payload)
+    assert unauthorized.status_code == 401
+
+    forbidden = client.post("/endpoints", json=payload, headers={"Authorization": "Bearer wrong"})
+    assert forbidden.status_code == 401
+
+    authorized = client.post("/endpoints", json=payload, headers={"Authorization": "Bearer admin-secret"})
+    assert authorized.status_code == 201
+
+
+def test_webhook_request_body_too_large_returns_413() -> None:
+    client = _create_client(max_content_length_bytes=16)
+    endpoint_id, token = _create_endpoint(client)
+    oversized = client.post(
+        f"/webhooks/{endpoint_id}",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        data='{"value":"this payload is too large"}',
+    )
+    assert oversized.status_code == 413

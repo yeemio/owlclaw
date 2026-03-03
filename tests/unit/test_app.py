@@ -126,6 +126,25 @@ def test_create_agent_runtime_passes_configured_model(tmp_path):
     assert rt.model == "deepseek/deepseek-chat"
 
 
+@pytest.mark.asyncio
+async def test_configure_after_start_raises_runtime_error(tmp_path) -> None:
+    (tmp_path / "entry-monitor").mkdir()
+    (tmp_path / "entry-monitor" / "SKILL.md").write_text(
+        "---\nname: entry-monitor\ndescription: Check entry\n---\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "SOUL.md").write_text("# Soul\nYou are a test agent.", encoding="utf-8")
+    (tmp_path / "IDENTITY.md").write_text("# Identity\nTest identity.", encoding="utf-8")
+    app = OwlClaw("cfg-guard")
+    app.mount_skills(str(tmp_path))
+    await app.start(app_dir=str(tmp_path))
+    try:
+        with pytest.raises(RuntimeError, match="cannot be called after app.start"):
+            app.configure(model="gpt-4o")
+    finally:
+        await app.stop()
+
+
 def test_create_agent_runtime_before_mount_skills_raises():
     app = OwlClaw("test-app")
     with pytest.raises(RuntimeError, match="mount_skills"):
@@ -223,6 +242,7 @@ def test_lite_custom_mock_responses():
         mock_responses={"monitor": {"content": "all clear"}},
     )
     assert app._lite_mode is True
+    assert app._config["integrations"]["llm"]["mock_mode"] is True
 
 
 @pytest.mark.asyncio

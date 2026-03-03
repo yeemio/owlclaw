@@ -29,6 +29,7 @@ def test_webhook_type_models_roundtrip() -> None:
         id="ep-1",
         url="/webhooks/ep-1",
         auth_token="secret",
+        auth_token_hash="hash-secret",
         config=endpoint_config,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),

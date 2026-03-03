@@ -8,7 +8,6 @@ from typing import Any
 import yaml  # type: ignore[import-untyped]
 
 DEFAULT_RUNTIME_CONFIG: dict[str, Any] = {
-    "model": "gpt-4o-mini",
     "max_function_calls": 50,
     "llm_timeout_seconds": 60.0,
     "run_timeout_seconds": 300.0,

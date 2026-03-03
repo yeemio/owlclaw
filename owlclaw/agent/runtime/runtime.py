@@ -1107,6 +1107,20 @@ class AgentRuntime:
         if self.builtin_tools is not None and self.builtin_tools.is_builtin(tool_name):
             from owlclaw.agent.tools import BuiltInToolsContext
 
+            builtin_arguments, arg_modifications = self._sanitize_tool_payload(
+                arguments,
+                source=f"tool_args:{tool_name}",
+            )
+            if arg_modifications:
+                self._security_audit.record(
+                    event_type="tool_arguments_sanitized",
+                    source="runtime",
+                    details={
+                        "tool_name": tool_name,
+                        "run_id": context.run_id,
+                        "modifications": arg_modifications,
+                    },
+                )
             ctx = BuiltInToolsContext(
                 agent_id=context.agent_id,
                 run_id=context.run_id,
@@ -1116,10 +1130,24 @@ class AgentRuntime:
             observation = self._observe_tool(
                 trace,
                 "tool_execution",
-                {"tool": tool_name, "run_id": context.run_id, "arguments": arguments},
+                {"tool": tool_name, "run_id": context.run_id, "arguments": builtin_arguments},
             )
             try:
-                result = await self.builtin_tools.execute(tool_name, arguments, ctx)
+                result = await self.builtin_tools.execute(tool_name, builtin_arguments, ctx)
+                result, result_modifications = self._sanitize_tool_payload(
+                    result,
+                    source=f"tool_result:{tool_name}",
+                )
+                if result_modifications:
+                    self._security_audit.record(
+                        event_type="tool_result_sanitized",
+                        source="runtime",
+                        details={
+                            "tool_name": tool_name,
+                            "run_id": context.run_id,
+                            "modifications": result_modifications,
+                        },
+                    )
                 self._finish_observation(
                     observation,
                     output=result if isinstance(result, dict) else {"result": result},
@@ -1135,6 +1163,20 @@ class AgentRuntime:
             return {"error": f"No capability registry configured for tool '{tool_name}'"}
 
         invoke_arguments = self._normalize_capability_arguments(arguments, context)
+        invoke_arguments, arg_modifications = self._sanitize_tool_payload(
+            invoke_arguments,
+            source=f"tool_args:{tool_name}",
+        )
+        if arg_modifications:
+            self._security_audit.record(
+                event_type="tool_arguments_sanitized",
+                source="runtime",
+                details={
+                    "tool_name": tool_name,
+                    "run_id": context.run_id,
+                    "modifications": arg_modifications,
+                },
+            )
         capability_meta = self.registry.get_capability_metadata(tool_name)
         skill_owlclaw = self._get_skill_owlclaw_config(tool_name)
         migration_outcome = self._evaluate_migration(tool_name, invoke_arguments, skill_owlclaw)
@@ -1185,6 +1227,20 @@ class AgentRuntime:
         start_ns = time.perf_counter_ns()
         try:
             result = await self.registry.invoke_handler(tool_name, **invoke_arguments)
+            result, result_modifications = self._sanitize_tool_payload(
+                result,
+                source=f"tool_result:{tool_name}",
+            )
+            if result_modifications:
+                self._security_audit.record(
+                    event_type="tool_result_sanitized",
+                    source="runtime",
+                    details={
+                        "tool_name": tool_name,
+                        "run_id": context.run_id,
+                        "modifications": result_modifications,
+                    },
+                )
             execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
             if self._ledger is not None:
                 task_type = (capability_meta.get("task_type") or "unknown") if capability_meta else "unknown"
@@ -1467,6 +1523,50 @@ class AgentRuntime:
                 "tenant_id": context.tenant_id,
             }
         }
+
+    def _sanitize_tool_payload(
+        self,
+        payload: Any,
+        *,
+        source: str,
+    ) -> tuple[Any, list[str]]:
+        """Recursively sanitize untrusted text in tool payloads."""
+        if isinstance(payload, str):
+            sanitized = self._input_sanitizer.sanitize(payload, source=source)
+            return sanitized.sanitized, list(sanitized.modifications)
+        if isinstance(payload, dict):
+            out: dict[Any, Any] = {}
+            modifications: list[str] = []
+            for key, value in payload.items():
+                sanitized_value, mods = self._sanitize_tool_payload(value, source=source)
+                out[key] = sanitized_value
+                modifications.extend(mods)
+            return out, modifications
+        if isinstance(payload, list):
+            out_list: list[Any] = []
+            modifications: list[str] = []
+            for item in payload:
+                sanitized_item, mods = self._sanitize_tool_payload(item, source=source)
+                out_list.append(sanitized_item)
+                modifications.extend(mods)
+            return out_list, modifications
+        if isinstance(payload, tuple):
+            out_tuple: list[Any] = []
+            modifications: list[str] = []
+            for item in payload:
+                sanitized_item, mods = self._sanitize_tool_payload(item, source=source)
+                out_tuple.append(sanitized_item)
+                modifications.extend(mods)
+            return tuple(out_tuple), modifications
+        if isinstance(payload, set):
+            out_set: set[Any] = set()
+            modifications: list[str] = []
+            for item in payload:
+                sanitized_item, mods = self._sanitize_tool_payload(item, source=source)
+                out_set.add(sanitized_item)
+                modifications.extend(mods)
+            return out_set, modifications
+        return payload, []
 
     # ------------------------------------------------------------------
     # System prompt construction

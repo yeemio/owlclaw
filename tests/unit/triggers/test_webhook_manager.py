@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+from uuid import UUID
 
 import pytest
 
@@ -54,3 +56,40 @@ async def test_manager_list_with_filters() -> None:
     fetched = await manager.get_endpoint(ep1.id)
     assert fetched is not None
     assert fetched.config.target_agent_id == "agent-a"
+
+
+@pytest.mark.asyncio
+async def test_manager_returns_plain_auth_token_only_on_create() -> None:
+    repository = InMemoryEndpointRepository()
+    manager = WebhookEndpointManager(repository)
+    created = await manager.create_endpoint(_valid_config(name="secure"))
+    fetched = await manager.get_endpoint(created.id)
+    persisted = await repository.get(UUID(created.id))
+
+    assert created.auth_token
+    assert len(created.auth_token_hash) == 64
+    assert fetched is not None
+    assert fetched.auth_token == ""
+    assert len(fetched.auth_token_hash) == 64
+    assert persisted is not None
+    assert persisted.auth_method.get("token") in {None, ""}
+
+
+@pytest.mark.asyncio
+async def test_manager_does_not_persist_plain_auth_token_on_update() -> None:
+    repository = InMemoryEndpointRepository()
+    manager = WebhookEndpointManager(repository)
+    created = await manager.create_endpoint(_valid_config(name="secure"))
+    updated_config = EndpointConfig(
+        name="secure-updated",
+        target_agent_id="agent-2",
+        auth_method=AuthMethod(type="bearer", token="updated-token"),
+        retry_policy=RetryPolicy(max_attempts=2),
+        enabled=True,
+    )
+
+    await manager.update_endpoint(created.id, updated_config)
+    persisted = await repository.get(UUID(created.id))
+    assert persisted is not None
+    assert persisted.auth_method.get("token") in {None, ""}
+    assert persisted.auth_token_hash == hashlib.sha256(b"updated-token").hexdigest()

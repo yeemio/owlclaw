@@ -41,3 +41,10 @@ def test_sanitizer_applies_custom_replace_rule() -> None:
     result = sanitizer.sanitize("token=secret-123", source="api")
     assert result.sanitized == "token=[MASKED]"
     assert result.modifications == ["api:secret token"]
+
+
+def test_sanitizer_normalizes_unicode_nfkc() -> None:
+    sanitizer = InputSanitizer(rules=[])
+    result = sanitizer.sanitize("ＡＢＣ１２３", source="api")
+    assert result.sanitized == "ABC123"
+    assert "api:unicode-nfkc-normalized" in result.modifications

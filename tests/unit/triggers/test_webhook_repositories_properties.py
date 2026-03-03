@@ -32,7 +32,7 @@ def test_property_endpoint_query_returns_all_registered_endpoints(endpoint_names
                 tenant_id="default",
                 name=name,
                 url=f"https://example.com/{name}",
-                auth_token=f"token-{name}",
+                auth_token_hash=f"hash-{name}",
                 target_agent_id="agent-1",
                 auth_method={"type": "bearer"},
                 enabled=True,

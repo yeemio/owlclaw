@@ -286,3 +286,26 @@ async def test_register_signal_mcp_tools_via_registry(tmp_path: Path) -> None:
     payload = json.loads(trigger_response["result"]["content"][0]["text"])
     assert payload["status"] == "triggered"
     assert payload["run_id"] == "run-mcp-registry"
+
+
+@pytest.mark.asyncio
+async def test_mcp_requires_token_when_env_is_set(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OWLCLAW_MCP_TOKEN", "mcp-secret")
+    app = _create_test_app(tmp_path)
+    server = McpProtocolServer.from_app(app)
+
+    no_init = await server.handle_message({"jsonrpc": "2.0", "id": 30, "method": "tools/list"})
+    assert no_init["error"]["code"] == -32003
+
+    bad_init = await server.handle_message(
+        {"jsonrpc": "2.0", "id": 31, "method": "initialize", "params": {"token": "wrong"}}
+    )
+    assert bad_init["error"]["code"] == -32003
+
+    ok_init = await server.handle_message(
+        {"jsonrpc": "2.0", "id": 32, "method": "initialize", "params": {"token": "mcp-secret"}}
+    )
+    assert ok_init["result"]["protocolVersion"] == "1.0"
+
+    tools = await server.handle_message({"jsonrpc": "2.0", "id": 33, "method": "tools/list"})
+    assert "result" in tools
