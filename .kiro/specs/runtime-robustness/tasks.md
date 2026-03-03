@@ -32,8 +32,8 @@
 - [x] 6.2 单元测试
 
 ## Task 7：db_change 重试限制（REQ-R7）
-- [ ] 7.1 添加 max_retries + DLQ
-- [ ] 7.2 单元测试
+- [x] 7.1 添加 max_retries + DLQ
+- [x] 7.2 单元测试
 
 ## Task 8：InMemoryStore 线程安全（REQ-R8）
 - [x] 8.1 添加 asyncio.Lock

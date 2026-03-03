@@ -199,6 +199,28 @@ async def test_manager_local_retry_queue_when_runtime_unavailable() -> None:
     await manager.stop()
 
 
+@pytest.mark.asyncio
+async def test_manager_moves_to_dlq_after_retry_exhausted() -> None:
+    adapter = _Adapter()
+    runtime = _Runtime(fail_until=99)
+    manager = DBChangeTriggerManager(
+        adapter=adapter,
+        governance=_Governance(allowed=True),
+        agent_runtime=runtime,
+        retry_interval_seconds=0.01,
+        max_retry_attempts=2,
+        local_queue_max_size=4,
+    )
+    manager.register(DBChangeTriggerConfig(channel="orders", event_name="order_changed", agent_id="agent-1", batch_size=1))
+    await manager.start()
+    assert adapter.callback is not None
+    await adapter.callback(DBChangeEvent(channel="orders", payload={"id": 1}, timestamp=datetime.now(timezone.utc)))
+    await asyncio.sleep(0.08)
+    assert len(manager._dlq_events) == 1  # noqa: SLF001
+    assert manager._dlq_events[0]["event_name"] == "order_changed"  # noqa: SLF001
+    await manager.stop()
+
+
 def test_db_change_function_api_registration_payload() -> None:
     registration = db_change(channel="orders", event_name="order_changed", agent_id="agent-1")
     assert isinstance(registration, DBChangeTriggerRegistration)
