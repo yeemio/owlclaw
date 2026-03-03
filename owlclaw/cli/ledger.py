@@ -11,6 +11,7 @@ from typing import Any
 import typer
 
 from owlclaw.db import create_engine, create_session_factory, get_engine
+from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.governance.ledger import Ledger, LedgerQueryFilters
 
 
@@ -80,16 +81,20 @@ def query_command(
     if limit < 1:
         raise typer.BadParameter("limit must be >= 1.")
 
-    rows = asyncio.run(
-        _query_impl(
-            tenant=normalized_tenant,
-            agent_id=_normalize_text(agent_id),
-            caller=_normalize_text(caller),
-            caller_prefix=_normalize_text(caller_prefix),
-            status=_normalize_text(status),
-            limit=limit,
-            order_desc=order_desc,
-            database_url=_normalize_text(database_url),
+    try:
+        rows = asyncio.run(
+            _query_impl(
+                tenant=normalized_tenant,
+                agent_id=_normalize_text(agent_id),
+                caller=_normalize_text(caller),
+                caller_prefix=_normalize_text(caller_prefix),
+                status=_normalize_text(status),
+                limit=limit,
+                order_desc=order_desc,
+                database_url=_normalize_text(database_url),
+            )
         )
-    )
+    except ConfigurationError:
+        typer.echo("Database not configured. Set OWLCLAW_DATABASE_URL to query persisted ledger records.")
+        return
     typer.echo(json.dumps(rows, ensure_ascii=False, indent=2))

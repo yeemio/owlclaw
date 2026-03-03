@@ -6,6 +6,8 @@ import importlib
 
 import pytest
 
+from owlclaw.db.exceptions import ConfigurationError
+
 
 def test_main_dispatches_ledger_query(monkeypatch) -> None:
     cli_main = importlib.import_module("owlclaw.cli.__init__")
@@ -67,3 +69,16 @@ def test_main_ledger_unknown_subcommand_exits_2(monkeypatch, capsys) -> None:
         cli_main.main()
     assert exc_info.value.code == 2
     assert "unknown ledger subcommand" in capsys.readouterr().err.lower()
+
+
+def test_query_command_returns_message_when_database_not_configured(monkeypatch, capsys) -> None:
+    from owlclaw.cli import ledger as ledger_module
+
+    monkeypatch.setattr(
+        ledger_module,
+        "get_engine",
+        lambda: (_ for _ in ()).throw(ConfigurationError("Database URL not set")),
+    )
+    ledger_module.query_command()
+    captured = capsys.readouterr()
+    assert "Database not configured" in captured.out

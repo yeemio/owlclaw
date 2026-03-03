@@ -13,9 +13,23 @@ from owlclaw import OwlClaw
 APP_DIR = Path(__file__).resolve().parent
 SKILLS_DIR = APP_DIR / "skills"
 
+_DEMO_PAYLOAD = {"sku": "WIDGET-42", "available": 6, "threshold": 10}
+_MOCK_RESPONSES = {
+    "default": {
+        "content": "Inventory risk detected. I will call inventory-check to decide the action.",
+        "function_calls": [
+            {
+                "name": "inventory-check",
+                "arguments": {"session": _DEMO_PAYLOAD},
+            }
+        ],
+    }
+}
+
 app = OwlClaw.lite(
     "inventory-agent",
     skills_path=str(SKILLS_DIR),
+    mock_responses=_MOCK_RESPONSES,
     heartbeat_interval_minutes=1,
 )
 
@@ -37,18 +51,19 @@ async def inventory_check(session: dict[str, Any]) -> dict[str, Any]:
 async def run_once() -> None:
     runtime = await app.start(app_dir=str(APP_DIR))
     try:
+        payload = dict(_DEMO_PAYLOAD)
         if app.registry is None:
             raise RuntimeError("registry is not initialized")
-        result = await app.registry.invoke_handler(
-            "inventory-check",
-            session={"sku": "WIDGET-42", "available": 6, "threshold": 10},
-        )
-        print(
-            json.dumps(
-                {"status": "ok", "runtime_initialized": runtime.is_initialized, "result": result},
-                ensure_ascii=False,
-            )
-        )
+        result = await app.registry.invoke_handler("inventory-check", session=payload)
+        output = {
+            "status": "ok",
+            "mode": "decision_preview",
+            "runtime_initialized": runtime.is_initialized,
+            "mock_content": _MOCK_RESPONSES["default"]["content"],
+            "expected_function_call": _MOCK_RESPONSES["default"]["function_calls"][0],
+            "result": result,
+        }
+        print(json.dumps(output, ensure_ascii=False))
     finally:
         await app.stop()
 

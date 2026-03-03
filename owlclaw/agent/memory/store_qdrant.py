@@ -6,9 +6,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 from uuid import UUID
 
+from owlclaw.agent.memory.decay import time_decay
 from owlclaw.agent.memory.models import MemoryEntry, SecurityLevel
 from owlclaw.agent.memory.store import MemoryStore
-from owlclaw.agent.memory.store_pgvector import time_decay
 
 try:  # pragma: no cover - import availability depends on environment
     from qdrant_client import AsyncQdrantClient

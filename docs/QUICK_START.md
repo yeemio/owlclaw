@@ -77,10 +77,22 @@ from typing import Any
 from owlclaw import OwlClaw
 
 APP_DIR = Path(__file__).resolve().parent
+MOCK_RESPONSES = {
+    "default": {
+        "content": "Inventory risk detected. I will call inventory-check.",
+        "function_calls": [
+            {
+                "name": "inventory-check",
+                "arguments": {"session": {"sku": "WIDGET-42", "available": 6, "threshold": 10}},
+            }
+        ],
+    }
+}
 
 app = OwlClaw.lite(
     "inventory-agent",
     skills_path=str(APP_DIR / "skills"),
+    mock_responses=MOCK_RESPONSES,
     heartbeat_interval_minutes=1,
 )
 
@@ -98,6 +110,7 @@ if __name__ == "__main__":
 
 代码说明（关键点）：
 - `OwlClaw.lite(...)`：启用 Lite Mode（mock LLM + in-memory memory + in-memory ledger）
+- `mock_responses`：定义 mock LLM 的回复与 `function_calls`，用于展示 Agent 如何选择 capability
 - `skills_path`：挂载业务技能目录，自动扫描 `SKILL.md`
 - `@app.handler("inventory-check")`：注册业务处理函数
 - `app.run(...)`：阻塞启动，按 `Ctrl+C` 安全退出
@@ -129,10 +142,39 @@ OwlClaw 'inventory-agent' is running ...
 python examples/quick_start/app.py
 ```
 
-如果你想快速验证（非阻塞）：
+如果你想快速验证（非阻塞）并直接查看一次决策输出：
 
 ```bash
 python examples/quick_start/app.py --once
+```
+
+`--once` 模式会输出一段 JSON（decision preview），包含：
+- `mock_content`：mock LLM 的思考文本
+- `expected_function_call`：mock LLM 计划调用的 capability 与参数
+- `decision` 或 `result`：本次运行结果（运行时决策或 fallback 执行）
+
+输出示例：
+
+```json
+{
+  "status": "ok",
+  "mode": "decision_preview",
+  "runtime_initialized": true,
+  "mock_content": "Inventory risk detected. I will call inventory-check to decide the action.",
+  "expected_function_call": {
+    "name": "inventory-check",
+    "arguments": {
+      "session": {
+        "sku": "WIDGET-42",
+        "available": 6,
+        "threshold": 10
+      }
+    }
+  },
+  "result": {
+    "action": "reorder"
+  }
+}
 ```
 
 ---

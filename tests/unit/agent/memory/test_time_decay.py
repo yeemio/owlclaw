@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from owlclaw.agent.memory.store_pgvector import time_decay
+from owlclaw.agent.memory.decay import time_decay
 
 
 def test_time_decay_zero_age() -> None:
