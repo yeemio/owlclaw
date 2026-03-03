@@ -232,8 +232,8 @@
 - [ ] F6 Quick Start 示例重写 — mock_responses 配置 function_calls，展示 Agent 决策过程 → spec: lite-mode-e2e
 - [ ] F7 Ledger CLI 优雅降级 — 无 DB 时输出友好提示而非崩溃 → spec: lite-mode-e2e
 - [ ] F8 API 端点优雅降级 — 无 DB 时返回空结果 + 提示，不返回 500 → spec: lite-mode-e2e
-- [ ] F9 Model 配置传递 — `create_agent_runtime()` 将 `integrations.llm.model` 传递给 Runtime → spec: lite-mode-e2e
-- [ ] F10 Router 默认行为 — 无显式路由规则时 Router 返回 None，不覆盖用户配置的 model → spec: lite-mode-e2e
+- [x] F9 Model 配置传递 — `create_agent_runtime()` 将 `integrations.llm.model` 传递给 Runtime → spec: lite-mode-e2e
+- [x] F10 Router 默认行为 — 无显式路由规则时 Router 返回 None，不覆盖用户配置的 model → spec: lite-mode-e2e
 
 **Phase 11.3：全量回归**
 
@@ -302,7 +302,7 @@
 | **console-integration** | `.kiro/specs/console-integration/` | ✅ 三层齐全，已完成（5/5） | Console 集成（`owlclaw start` 挂载 + CLI + 构建流程 + 打包 + 集成测试）。经 9 轮审校 APPROVE |
 | **audit-fix-critical** | `.kiro/specs/audit-fix-critical/` | ✅ 三层齐全，已完成（11/11） | 架构审计 Critical 修复：C1 熔断器状态匹配 + C2 Console API 挂载路径 |
 | **audit-fix-high** | `.kiro/specs/audit-fix-high/` | ✅ 三层齐全，已完成（23/23） | 架构审计 High 修复：H1-H5 全部完成（Heartbeat + 成本追踪 + Embedding 隔离 + Governance 映射 + fail-policy） |
-| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（25/47） | Lite Mode 端到端体验修复：Task 1-4 已完成（mock LLM 统一 + Heartbeat 直通 + 日志 + --once 决策），Task 5-11 待续 |
+| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（29/47） | Lite Mode 端到端体验修复：Task 1-4、9-10 已完成，Task 5-8 与 Task 11 待续 |
 
 ---
 
@@ -329,10 +329,10 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-03-03 |
-| 当前批次 | **Phase 11 lite-mode-e2e**：Lite Mode 端到端体验修复（4/47 → 25/47）。codex-work 的 Task 1-4（核心链路：mock LLM + heartbeat + 日志 + --once）已完成，codex-gpt-work 继续 Task 5-8。 |
-| 批次状态 | **Phase 11 进行中**。Task 1-4 已通过定向回归（157 passed），Task 5-11 待完成。Phase 10 已完成。 |
-| 已完成项 | 本轮新增：1) F1 模块级 mock LLM 统一到 `owlclaw.integrations.llm.acompletion()`（含 `configure_mock()` 和 litellm 兼容 `tool_calls` 响应）；2) F2 Lite 模式 HeartbeatChecker 禁用并直通决策循环；3) F3 `app.lite()`/`app.run()` 自动 logging 初始化与 heartbeat 触发结果日志；4) F4 新增 `app.run_once()` 通过 `runtime.trigger_event()` 走完整决策链并返回结构化结果；5) 新增并通过对应单元/集成测试（`tests/unit/integrations/test_llm.py`、`tests/unit/test_app.py`、`tests/integration/test_lite_mode_e2e.py`）。 |
-| 下一待执行 | **Phase 11 lite-mode-e2e Task 5-11**：pgvector 延迟导入、Quick Start 重写、CLI/API 降级、Model/Router 修复、全量回归。 |
+| 当前批次 | **Phase 11 lite-mode-e2e**：Lite Mode 端到端体验修复（25/47 → 29/47）。codex-work 本轮完成 Task 9-10（model 传递 + Router 默认行为修复）。 |
+| 批次状态 | **Phase 11 进行中**。Task 1-4、9-10 已完成并通过定向回归；Task 5-8（另一 worktree）与 Task 11 待完成。 |
+| 已完成项 | 本轮新增：1) F9 `create_agent_runtime()` 读取并传递 `integrations.llm.model` 到 Runtime；2) F10 Router `select_model()` 在无匹配规则时返回 `None`，Runtime 保持 `self.model`；3) 新增/更新测试：`tests/unit/test_app.py`（model 透传）、`tests/unit/governance/test_router.py`（无规则返回 None）、`tests/unit/agent/test_runtime.py`（无路由规则时保持 runtime.model）。 |
+| 下一待执行 | **Phase 11 lite-mode-e2e Task 11（本分支）** 与 Task 5-8（另一分支）完成后，进入全量回归与端到端验收。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，Phase 9：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，**Phase 10**：audit-fix-critical ✅(11/11)，audit-fix-high ✅(23/23)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；最新 preflight（2026-03-02）仍 `BLOCKED`，并提示 `main` 分支保护 API `HTTP 404`（`docs/release/reports/release-oidc-preflight-latest.md`，最近 release runs: 2026-02-27 的 `22471143360`/`22473801915`/`22475093887`/`22477795502` 均失败）。2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 3.3/3.4/5.1/5.4 依赖外部仓库 PR 审核合并、线上索引刷新与真实下载量周期（PR: https://github.com/openclaw/clawhub/pull/556`，state=`OPEN`，`updatedAt=2026-02-28T01:45:00Z`）；4) `content-launch` Task 1/2/3.2/5 需 Mionyee 真实导出数据与外部发布渠道（最新 readiness：`docs/content/content-launch-readiness.json`，`all_external_gates_passed=false`）。 |
 | 健康状态 | 正常 |

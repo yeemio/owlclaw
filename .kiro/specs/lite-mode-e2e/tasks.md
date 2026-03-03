@@ -143,8 +143,8 @@
 
 > **文件**: `owlclaw/app.py`
 
-- [ ] 9.1 `create_agent_runtime()` 从 `self._config` 读取 `integrations.llm.model` 并传递给 Runtime
-- [ ] 9.2 单元测试：`app.configure(model="deepseek/deepseek-chat")` 后 runtime.model 正确
+- [x] 9.1 `create_agent_runtime()` 从 `self._config` 读取 `integrations.llm.model` 并传递给 Runtime
+- [x] 9.2 单元测试：`app.configure(model="deepseek/deepseek-chat")` 后 runtime.model 正确
 
 **验收**：
 - 用户配置的 model 正确传递到 Runtime
@@ -155,8 +155,8 @@
 
 > **文件**: `owlclaw/governance/visibility.py`
 
-- [ ] 10.1 Router `select_model()` 对未配置的 task_type 返回 None
-- [ ] 10.2 单元测试：无显式路由规则时 Runtime 使用 self.model
+- [x] 10.1 Router `select_model()` 对未配置的 task_type 返回 None
+- [x] 10.2 单元测试：无显式路由规则时 Runtime 使用 self.model
 
 **验收**：
 - 无路由规则时不覆盖用户配置的 model

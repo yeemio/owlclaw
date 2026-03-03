@@ -984,6 +984,7 @@ class OwlClaw:
         runtime_config: dict[str, Any] = {}
         if self._lite_mode:
             runtime_config["heartbeat"] = {"enabled": False}
+        runtime_model = self._resolve_runtime_model()
         return AgentRuntime(
             agent_id=self.name,
             app_dir=resolved_app_dir,
@@ -994,8 +995,19 @@ class OwlClaw:
             router=self._router,
             ledger=self._ledger,
             signal_state_manager=signal_state_manager,
+            model=runtime_model,
             config=runtime_config or None,
         )
+
+    def _resolve_runtime_model(self) -> str:
+        integrations_cfg = self._config.get("integrations")
+        if isinstance(integrations_cfg, dict):
+            llm_cfg = integrations_cfg.get("llm")
+            if isinstance(llm_cfg, dict):
+                configured_model = llm_cfg.get("model")
+                if isinstance(configured_model, str) and configured_model.strip():
+                    return configured_model.strip()
+        return "gpt-4o-mini"
 
     async def start(
         self,

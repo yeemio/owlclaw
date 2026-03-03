@@ -112,6 +112,20 @@ def test_create_agent_runtime_returns_runtime_with_builtin_tools(tmp_path):
     assert "schedule_once" in names
 
 
+def test_create_agent_runtime_passes_configured_model(tmp_path):
+    (tmp_path / "entry-monitor").mkdir()
+    (tmp_path / "entry-monitor" / "SKILL.md").write_text(
+        "---\nname: entry-monitor\ndescription: Check entry\n---\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "SOUL.md").write_text("# Soul\nYou are a trading agent.", encoding="utf-8")
+    app = OwlClaw("test-app-model")
+    app.mount_skills(str(tmp_path))
+    app.configure(model="deepseek/deepseek-chat")
+    rt = app.create_agent_runtime(app_dir=str(tmp_path))
+    assert rt.model == "deepseek/deepseek-chat"
+
+
 def test_create_agent_runtime_before_mount_skills_raises():
     app = OwlClaw("test-app")
     with pytest.raises(RuntimeError, match="mount_skills"):
