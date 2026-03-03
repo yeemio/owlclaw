@@ -171,6 +171,21 @@ def test_api_trigger_server_governance_block_429() -> None:
     assert response.status_code == 429
 
 
+def test_api_trigger_server_invalid_json_returns_400() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)
+    server.register(APITriggerConfig(path="/api/v1/invalid-json", method="POST", event_name="invalid_json", response_mode="sync"))
+
+    with TestClient(server.app) as client:
+        response = client.post(
+            "/api/v1/invalid-json",
+            headers={"X-API-Key": "k1", "Content-Type": "application/json"},
+            content='{"foo": ',
+        )
+    assert response.status_code == 400
+    assert response.json()["error"] == "Invalid JSON"
+
+
 def test_api_trigger_server_sanitization_applied() -> None:
     runtime = _Runtime()
     server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)

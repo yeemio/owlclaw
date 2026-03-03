@@ -73,8 +73,8 @@
 - [ ] 16.2 单元测试
 
 ## Task 17：API trigger 400（REQ-R17）
-- [ ] 17.1 返回 400 Bad Request
-- [ ] 17.2 单元测试
+- [x] 17.1 返回 400 Bad Request
+- [x] 17.2 单元测试
 
 ## Task 18：Prompt context window 检查（REQ-R18）
 - [ ] 18.1 总 token 估算 + 截断

@@ -21,7 +21,7 @@ from starlette.routing import Route
 from owlclaw.security.sanitizer import InputSanitizer
 from owlclaw.triggers.api.auth import AuthProvider
 from owlclaw.triggers.api.config import APITriggerConfig
-from owlclaw.triggers.api.handler import parse_request_payload
+from owlclaw.triggers.api.handler import InvalidJSONPayloadError, parse_request_payload
 from owlclaw.triggers.signal.api import register_signal_admin_route
 from owlclaw.triggers.signal.router import SignalRouter
 
@@ -141,7 +141,10 @@ class APITriggerServer:
                     if int(request.headers["content-length"]) > self._max_body_bytes:
                         return JSONResponse({"error": "payload_too_large"}, status_code=413)
 
-            parsed = await parse_request_payload(request)
+            try:
+                parsed = await parse_request_payload(request)
+            except InvalidJSONPayloadError:
+                return JSONResponse({"error": "Invalid JSON"}, status_code=400)
             body = parsed.body
             if self._sanitizer is not None:
                 raw = json.dumps(body, ensure_ascii=False)

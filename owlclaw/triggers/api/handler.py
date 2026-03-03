@@ -8,6 +8,10 @@ from typing import Any
 from starlette.requests import Request
 
 
+class InvalidJSONPayloadError(ValueError):
+    """Raised when request body is not valid JSON."""
+
+
 @dataclass(slots=True)
 class APITriggerRequest:
     """Normalized request payload consumed by trigger runtime."""
@@ -24,8 +28,8 @@ async def parse_request_payload(request: Request) -> APITriggerRequest:
         try:
             parsed = await request.json()
             body = parsed if isinstance(parsed, dict) else {"value": parsed}
-        except Exception:
-            body = {}
+        except Exception as exc:
+            raise InvalidJSONPayloadError("Invalid JSON payload") from exc
     query = {key: value for key, value in request.query_params.items()}
     path_params = {str(k): str(v) for k, v in request.path_params.items()}
     return APITriggerRequest(body=body, query=query, path_params=path_params)
