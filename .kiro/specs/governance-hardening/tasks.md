@@ -26,12 +26,12 @@
 - [x] 4.2 单元测试
 
 ## Task 5：SkillQualityStore 索引（REQ-G5）
-- [ ] 5.1 新增迁移
-- [ ] 5.2 验证
+- [x] 5.1 新增迁移
+- [x] 5.2 验证
 
 ## Task 6：env.py 导入 OwlHub 模型（REQ-G6）
-- [ ] 6.1 添加 import
-- [ ] 6.2 验证 autogenerate
+- [x] 6.1 添加 import
+- [x] 6.2 验证 autogenerate
 
 ## Task 7：Session factory 缓存（REQ-G7）
 - [ ] 7.1 实现缓存
