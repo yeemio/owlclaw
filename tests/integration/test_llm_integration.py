@@ -54,6 +54,17 @@ def _has_siliconflow_key() -> bool:
     return bool(os.environ.get("SILICONFLOW_API_KEY", "").strip())
 
 
+def _resolve_openai_compatible_real_model() -> tuple[str, str]:
+    """Pick an available real OpenAI-compatible model and API key env var."""
+    if _has_openai_key():
+        return "gpt-4o-mini", "OPENAI_API_KEY"
+    if bool(os.environ.get("DEEPSEEK_API_KEY", "").strip()):
+        return "deepseek/deepseek-chat", "DEEPSEEK_API_KEY"
+    if _has_siliconflow_key():
+        return "deepseek/deepseek-chat", "SILICONFLOW_API_KEY"
+    return "", ""
+
+
 # ---------------------------------------------------------------------------
 # Task 9.1: 真实 API 调用测试
 # ---------------------------------------------------------------------------
@@ -61,17 +72,18 @@ def _has_siliconflow_key() -> bool:
 
 @pytest.mark.asyncio
 async def test_real_openai_completion():
-    """9.1.1: Real OpenAI call (skip if OPENAI_API_KEY not set)."""
-    if not _has_openai_key():
-        pytest.skip("OPENAI_API_KEY not set; set it in .env for real API tests")
+    """9.1.1: Real OpenAI-compatible call (OpenAI or DeepSeek/SiliconFlow)."""
+    model_name, key_env = _resolve_openai_compatible_real_model()
+    if not model_name:
+        pytest.skip("No OPENAI_API_KEY/DEEPSEEK_API_KEY/SILICONFLOW_API_KEY set for real API tests")
 
     config = LLMConfig(
-        default_model="gpt-4o-mini",
+        default_model=model_name,
         models={
-            "gpt-4o-mini": ModelConfig(
-                name="gpt-4o-mini",
+            model_name: ModelConfig(
+                name=model_name,
                 provider="openai",
-                api_key_env="OPENAI_API_KEY",
+                api_key_env=key_env,
                 cost_per_1k_prompt_tokens=0.00015,
                 cost_per_1k_completion_tokens=0.0006,
             ),
@@ -83,7 +95,7 @@ async def test_real_openai_completion():
         PromptBuilder.build_user_message("Say hello."),
     ]
     resp = await client.complete(messages)
-    assert resp.model == "gpt-4o-mini"
+    assert resp.model is not None
     assert resp.content is not None
     assert len(resp.content) > 0
     assert resp.prompt_tokens >= 0
@@ -92,17 +104,18 @@ async def test_real_openai_completion():
 
 @pytest.mark.asyncio
 async def test_real_openai_function_calling():
-    """9.1.3: Real OpenAI call with tools (skip if OPENAI_API_KEY not set)."""
-    if not _has_openai_key():
-        pytest.skip("OPENAI_API_KEY not set; set it in .env for real API tests")
+    """9.1.3: Real OpenAI-compatible call with tools."""
+    model_name, key_env = _resolve_openai_compatible_real_model()
+    if not model_name:
+        pytest.skip("No OPENAI_API_KEY/DEEPSEEK_API_KEY/SILICONFLOW_API_KEY set for real API tests")
 
     config = LLMConfig(
-        default_model="gpt-4o-mini",
+        default_model=model_name,
         models={
-            "gpt-4o-mini": ModelConfig(
-                name="gpt-4o-mini",
+            model_name: ModelConfig(
+                name=model_name,
                 provider="openai",
-                api_key_env="OPENAI_API_KEY",
+                api_key_env=key_env,
                 supports_function_calling=True,
             ),
         },
@@ -116,7 +129,7 @@ async def test_real_openai_function_calling():
         PromptBuilder.build_user_message("What is the weather in Paris? Use the tool."),
     ]
     resp = await client.complete(messages, tools=tools)
-    assert resp.model == "gpt-4o-mini"
+    assert resp.model is not None
     # May return content or function_calls depending on model
     assert resp.content is not None or resp.function_calls is not None
 
