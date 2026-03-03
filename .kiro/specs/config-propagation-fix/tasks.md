@@ -39,4 +39,4 @@
 
 ## Task 8：回归测试
 - [x] 8.1 全量 pytest 通过
-- [ ] 8.2 真实 LLM 端到端验证
+- [ ] 8.2 真实 LLM 端到端验证（BLOCKED：2026-03-03 本地无 OPENAI_API_KEY/ANTHROPIC_API_KEY，相关用例 `3 skipped`）
