@@ -275,7 +275,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | 时间 | 发送方 | 接收方 | 消息 | 状态 |
 |------|--------|--------|------|------|
-| _(暂无)_ | | | | |
+| 2026-03-03 | 统筹(main) | codex-work | **FIX_NEEDED**：Round 15/16 审校发现 S12 plaintext token persistence 问题，请修复后推送，review-work 将再审。 | 🔴 待处理 |
+| 2026-03-03 | 统筹(main) | codex-gpt-work | **FIX_NEEDED**：Round 17 审校发现 ssl_mode whitespace regression 问题，请修复后推送，review-work 将再审。 | 🔴 待处理 |
 
 ### 已归档消息
 
