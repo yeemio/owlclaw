@@ -108,3 +108,13 @@ def test_transformer_rejects_invalid_custom_logic_expression() -> None:
 
     with pytest.raises(ValueError, match="unsafe custom logic expression"):
         transformer.transform(parsed, rule)
+
+
+def test_transformer_rejects_xml_with_doctype_entity() -> None:
+    transformer = PayloadTransformer()
+    request = HttpRequest(
+        headers={"Content-Type": "application/xml"},
+        body='<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root>&xxe;</root>',
+    )
+    with pytest.raises(ValueError, match="invalid xml payload"):
+        transformer.parse(request)

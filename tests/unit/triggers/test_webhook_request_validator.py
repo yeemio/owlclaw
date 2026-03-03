@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+from datetime import datetime, timezone
 from uuid import uuid4
 
 import pytest
@@ -12,6 +13,7 @@ from owlclaw.triggers.webhook import (
     EndpointConfig,
     HttpRequest,
     RequestValidator,
+    WebhookEndpoint,
     WebhookEndpointManager,
 )
 from owlclaw.triggers.webhook.persistence.repositories import InMemoryEndpointRepository
@@ -122,3 +124,30 @@ async def test_validator_returns_404_for_unknown_endpoint() -> None:
     assert result.error is not None
     assert result.error.code == "ENDPOINT_NOT_FOUND"
     assert result.error.status_code == 404
+
+
+def test_validate_auth_supports_hashed_endpoint_token_fallback() -> None:
+    validator = RequestValidator(endpoint_reader=WebhookEndpointManager(InMemoryEndpointRepository()))
+    endpoint = WebhookEndpoint(
+        id="ep-1",
+        url="/webhooks/ep-1",
+        auth_token="",
+        auth_token_hash=hashlib.sha256(b"top-secret").hexdigest(),
+        config=EndpointConfig(
+            name="orders",
+            target_agent_id="agent-1",
+            auth_method=AuthMethod(type="bearer", token=None),
+        ),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    ok = validator.validate_auth(
+        HttpRequest(headers={"Authorization": "Bearer top-secret", "Content-Type": "application/json"}, body="{}"),
+        endpoint,
+    )
+    bad = validator.validate_auth(
+        HttpRequest(headers={"Authorization": "Bearer wrong", "Content-Type": "application/json"}, body="{}"),
+        endpoint,
+    )
+    assert ok.valid is True
+    assert bad.valid is False

@@ -45,7 +45,9 @@ class RequestValidator:
         headers = _normalize_headers(request.headers)
         authorization = headers.get("authorization", "")
         if auth_method.type == "bearer":
-            return _validate_bearer(authorization, auth_method.token or endpoint.auth_token)
+            if auth_method.token and auth_method.token.strip():
+                return _validate_bearer(authorization, auth_method.token)
+            return _validate_bearer_hash(authorization, endpoint.auth_token_hash)
         if auth_method.type == "basic":
             return _validate_basic(authorization, auth_method.username, auth_method.password)
         if auth_method.type == "hmac":
@@ -165,6 +167,40 @@ def _validate_bearer(authorization: str, expected_token: str) -> ValidationResul
         )
     provided_token = authorization[len(prefix) :].strip()
     if not provided_token or not hmac.compare_digest(provided_token, expected_token):
+        return ValidationResult(
+            valid=False,
+            error=ValidationError(
+                code="INVALID_TOKEN",
+                message="invalid bearer token",
+                status_code=401,
+            ),
+        )
+    return ValidationResult(valid=True)
+
+
+def _validate_bearer_hash(authorization: str, expected_token_hash: str) -> ValidationResult:
+    prefix = "Bearer "
+    if not authorization.startswith(prefix):
+        return ValidationResult(
+            valid=False,
+            error=ValidationError(
+                code="INVALID_TOKEN",
+                message="missing bearer token",
+                status_code=401,
+            ),
+        )
+    provided_token = authorization[len(prefix) :].strip()
+    if not provided_token:
+        return ValidationResult(
+            valid=False,
+            error=ValidationError(
+                code="INVALID_TOKEN",
+                message="invalid bearer token",
+                status_code=401,
+            ),
+        )
+    provided_hash = hashlib.sha256(provided_token.encode("utf-8")).hexdigest()
+    if not hmac.compare_digest(provided_hash, expected_token_hash):
         return ValidationResult(
             valid=False,
             error=ValidationError(

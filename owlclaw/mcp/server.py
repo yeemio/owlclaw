@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import json
 import logging
+import os
 import types
 from dataclasses import dataclass
 from typing import Any, Union, get_args, get_origin
@@ -46,10 +47,16 @@ class McpProtocolServer:
         registry: CapabilityRegistry,
         skills_loader: SkillsLoader,
         signal_router: SignalRouter | None = None,
+        auth_token: str | None = None,
     ):
         self.registry = registry
         self.skills_loader = skills_loader
         self.signal_router = signal_router
+        token = auth_token
+        if token is None:
+            token = os.getenv("OWLCLAW_MCP_TOKEN")
+        self._auth_token = token.strip() if isinstance(token, str) and token.strip() else None
+        self._is_authenticated = self._auth_token is None
         self._resource_cache: dict[str, ResourceRef] = {}
         self._refresh_resource_cache()
 
@@ -70,6 +77,10 @@ class McpProtocolServer:
                 params = {}
             if not isinstance(params, dict):
                 return self._error(request_id, -32602, "params must be an object")
+
+            auth_error = self._enforce_auth(method, params)
+            if auth_error is not None:
+                return self._error(request_id, -32003, auth_error)
 
             if method == "initialize":
                 result = self._handle_initialize()
@@ -112,6 +123,19 @@ class McpProtocolServer:
         if not isinstance(method, str) or not method.strip():
             raise ValueError("method must be a non-empty string")
         return method
+
+    def _enforce_auth(self, method: str, params: dict[str, Any]) -> str | None:
+        if self._auth_token is None:
+            return None
+        if method == "initialize":
+            token = params.get("token")
+            if not isinstance(token, str) or token.strip() != self._auth_token:
+                return "unauthorized: invalid or missing MCP token"
+            self._is_authenticated = True
+            return None
+        if not self._is_authenticated:
+            return "unauthorized: initialize with valid MCP token first"
+        return None
 
     def _handle_initialize(self) -> dict[str, Any]:
         return {

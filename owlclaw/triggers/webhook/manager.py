@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timezone
 from secrets import token_urlsafe
 from typing import Any, Protocol, cast
@@ -57,12 +58,13 @@ class WebhookEndpointManager:
 
         endpoint_id = uuid4()
         now = datetime.now(timezone.utc)
+        raw_auth_token = token_urlsafe(self._token_bytes)
         model = WebhookEndpointModel(
             id=endpoint_id,
             tenant_id=tenant_id,
             name=config.name,
             url=f"{self._base_url}/{endpoint_id}",
-            auth_token=token_urlsafe(self._token_bytes),
+            auth_token_hash=_hash_auth_token(raw_auth_token),
             target_agent_id=config.target_agent_id,
             auth_method={
                 "type": config.auth_method.type,
@@ -90,7 +92,7 @@ class WebhookEndpointManager:
             updated_at=now,
         )
         created = await self._repository.create(model)
-        return self._to_endpoint(created)
+        return self._to_endpoint(created, auth_token=raw_auth_token)
 
     async def get_endpoint(self, endpoint_id: str) -> WebhookEndpoint | None:
         model = await self._repository.get(UUID(endpoint_id))
@@ -187,7 +189,7 @@ class WebhookEndpointManager:
         return ValidationResult(valid=True)
 
     @staticmethod
-    def _to_endpoint(model: WebhookEndpointModel) -> WebhookEndpoint:
+    def _to_endpoint(model: WebhookEndpointModel, *, auth_token: str = "") -> WebhookEndpoint:
         auth_method = model.auth_method or {}
         retry_policy = model.retry_policy or None
         auth = AuthMethod(
@@ -220,12 +222,17 @@ class WebhookEndpointManager:
         return WebhookEndpoint(
             id=str(model.id),
             url=model.url,
-            auth_token=model.auth_token,
+            auth_token=auth_token,
+            auth_token_hash=model.auth_token_hash,
             config=config,
             created_at=model.created_at,
             updated_at=model.updated_at,
             tenant_id=model.tenant_id,
         )
+
+
+def _hash_auth_token(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
 
 def _normalize_auth_method_type(value: object) -> AuthMethodType:

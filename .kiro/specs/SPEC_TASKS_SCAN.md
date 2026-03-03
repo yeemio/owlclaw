@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-03（Phase 12 codex-work：CP1-CP7 + S1/S2/S3/S9）
+> **最后更新**: 2026-03-03（Phase 12 codex-work：security-hardening 33/33，config-propagation-fix 20/21）
 
 ---
 
@@ -260,16 +260,16 @@
 - [x] S1 SKILL.md 内容注入系统提示前消毒 → spec: security-hardening
 - [x] S2 工具调用结果回传 LLM 前消毒 → spec: security-hardening
 - [x] S3 工具调用参数传给 handler 前消毒 → spec: security-hardening
-- [ ] S4 Webhook 管理接口鉴权 → spec: security-hardening
-- [ ] S5 MCP Server 认证层 → spec: security-hardening
-- [ ] S6 Webhook transformer 禁用 eval → spec: security-hardening
-- [ ] S7 XML 解析防 XXE → spec: security-hardening
-- [ ] S8 Webhook 请求体大小限制 → spec: security-hardening
+- [x] S4 Webhook 管理接口鉴权 → spec: security-hardening
+- [x] S5 MCP Server 认证层 → spec: security-hardening
+- [x] S6 Webhook transformer 禁用 eval → spec: security-hardening
+- [x] S7 XML 解析防 XXE → spec: security-hardening
+- [x] S8 Webhook 请求体大小限制 → spec: security-hardening
 - [x] S9 InputSanitizer Unicode 归一化 → spec: security-hardening
-- [ ] S10 SecurityAuditLog 持久化 → spec: security-hardening
-- [ ] S11 Console API 鉴权 → spec: security-hardening
-- [ ] S12 Webhook auth_token 哈希存储 → spec: security-hardening
-- [ ] S13 CORS 配置修复 → spec: security-hardening
+- [x] S10 SecurityAuditLog 持久化 → spec: security-hardening
+- [x] S11 Console API 鉴权 → spec: security-hardening
+- [x] S12 Webhook auth_token 哈希存储 → spec: security-hardening
+- [x] S13 CORS 配置修复 → spec: security-hardening
 
 **Phase 12.3：运行时健壮性（P1，影响稳定性和可靠性）**
 
@@ -369,8 +369,8 @@
 | **audit-fix-critical** | `.kiro/specs/audit-fix-critical/` | ✅ 三层齐全，已完成（11/11） | 架构审计 Critical 修复：C1 熔断器状态匹配 + C2 Console API 挂载路径 |
 | **audit-fix-high** | `.kiro/specs/audit-fix-high/` | ✅ 三层齐全，已完成（23/23） | 架构审计 High 修复：H1-H5 全部完成（Heartbeat + 成本追踪 + Embedding 隔离 + Governance 映射 + fail-policy） |
 | **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（42/47） | Lite Mode 端到端体验修复：Task 1-10 已完成（F1-F10 ✅），仅 Task 11 全量回归待执行 |
-| **config-propagation-fix** | `.kiro/specs/config-propagation-fix/` | 🟡 三层齐全，进行中（19/21） | 配置传播链路修复：Task 1-7 已完成，Task 8 回归验收待执行 |
-| **security-hardening** | `.kiro/specs/security-hardening/` | 🟡 三层齐全，进行中（11/33） | 安全加固：S1/S2/S3/S9 已完成，Webhook/MCP/transformer/Console 等任务待继续 |
+| **config-propagation-fix** | `.kiro/specs/config-propagation-fix/` | 🟡 三层齐全，进行中（20/21） | 配置传播链路修复：Task 1-7 + 8.1 已完成，仅 8.2 真实 LLM 验证待执行 |
+| **security-hardening** | `.kiro/specs/security-hardening/` | ✅ 三层齐全，已完成（33/33） | 安全加固：S1-S13 与回归测试（14.1）全部完成 |
 | **runtime-robustness** | `.kiro/specs/runtime-robustness/` | 🟡 三层齐全，待实现（3/58） | 运行时健壮性：并发安全 + max_iterations + handler 超时 + start/mount 幂等 + db_change 重试 + InMemoryStore + Hatchet 超时 + cache 隔离 + WebSocket + Langfuse + Redis + Queue + API 400 + context window |
 | **governance-hardening** | `.kiro/specs/governance-hardening/` | 🟡 三层齐全，待实现（3/33） | 治理层加固：Ledger 索引 + UUID PK + fallback 路径 + MODEL_PRICING + QualityStore 索引 + env.py 导入 + session 缓存 + DB 异常包装 + SSL + Cron 去重 |
 
@@ -398,11 +398,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-03（Phase 12 codex-work 执行中：CP1-CP7 + S1/S2/S3/S9 完成） |
-| 当前批次 | **Phase 12 / codex-work**：`config-propagation-fix` Task 1-7 已完成；`security-hardening` 已完成 S1/S2/S3/S9（含单测）。 |
-| 批次状态 | `config-propagation-fix` 进入回归阶段（Task 8 待执行）；`security-hardening` 继续推进中（S4/S5/S6/S7/S8/S10/S11/S12/S13 待实现）。Phase 11 F11 全量回归仍由 review-work 执行。 |
+| 最后更新 | 2026-03-03（Phase 12 codex-work：security-hardening 完整收口；config-propagation-fix 回归到 8.1） |
+| 当前批次 | **Phase 12 / codex-work**：`security-hardening` 全部完成（33/33）；`config-propagation-fix` 已完成 Task 1-7 + 8.1（20/21）。 |
+| 批次状态 | `security-hardening` ✅ 已收口。`config-propagation-fix` 仅剩 8.2（真实 LLM 端到端验证）待外部环境执行。Phase 11 F11 全量回归仍由 review-work 执行。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）；15) **Phase 10 全部完成**：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)，经 Round 13 APPROVE。 |
-| 下一待执行 | codex-work：1) `security-hardening` S4/S8（Webhook 管理鉴权 + 请求体限制）2) S6/S7（eval 替换 + XXE）3) S11/S13（Console 鉴权 + CORS）；随后执行 `config-propagation-fix` Task 8 回归。codex-gpt-work 继续 runtime-robustness/governance-hardening。 |
+| 下一待执行 | codex-work：`config-propagation-fix` 8.2（真实 LLM 端到端验证，需可用外部模型凭据）；随后按分配进入下一 spec。codex-gpt-work 继续 runtime-robustness/governance-hardening。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，Phase 9：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，**Phase 10**：audit-fix-critical ✅(11/11)，audit-fix-high ✅(23/23)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；最新 preflight（2026-03-02）仍 `BLOCKED`，并提示 `main` 分支保护 API `HTTP 404`（`docs/release/reports/release-oidc-preflight-latest.md`，最近 release runs: 2026-02-27 的 `22471143360`/`22473801915`/`22475093887`/`22477795502` 均失败）。2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 3.3/3.4/5.1/5.4 依赖外部仓库 PR 审核合并、线上索引刷新与真实下载量周期（PR: https://github.com/openclaw/clawhub/pull/556`，state=`OPEN`，`updatedAt=2026-02-28T01:45:00Z`）；4) `content-launch` Task 1/2/3.2/5 需 Mionyee 真实导出数据与外部发布渠道（最新 readiness：`docs/content/content-launch-readiness.json`，`all_external_gates_passed=false`）。 |
 | 健康状态 | 正常 |

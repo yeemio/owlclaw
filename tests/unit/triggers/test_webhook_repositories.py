@@ -28,7 +28,7 @@ def _endpoint(name: str, *, tenant_id: str = "default", enabled: bool = True) ->
         tenant_id=tenant_id,
         name=name,
         url=f"https://example.com/{name}",
-        auth_token=f"token-{name}",
+        auth_token_hash=f"hash-{name}",
         target_agent_id="agent-1",
         auth_method={"type": "bearer"},
         enabled=enabled,

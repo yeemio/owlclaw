@@ -20,11 +20,13 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
         self,
         app: FastAPI,
         *,
-        token_env: str = "OWLCLAW_CONSOLE_TOKEN",
+        token_env: str = "OWLCLAW_CONSOLE_API_TOKEN",
+        legacy_token_env: str = "OWLCLAW_CONSOLE_TOKEN",
         exempt_paths: set[str] | None = None,
     ) -> None:
         super().__init__(app)
         self._token_env = token_env
+        self._legacy_token_env = legacy_token_env
         self._exempt_paths = exempt_paths or set()
 
     async def dispatch(
@@ -41,6 +43,12 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
 
         expected_token = os.getenv(self._token_env, "").strip()
         if not expected_token:
+            expected_token = os.getenv(self._legacy_token_env, "").strip()
+        if not expected_token:
+            return await call_next(request)
+
+        api_token_header = request.headers.get("x-api-token", "").strip()
+        if api_token_header == expected_token:
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization", "")
@@ -72,19 +80,20 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
 def parse_cors_origins(raw_origins: str | None) -> list[str]:
     """Parse comma-separated CORS origins env value."""
     if raw_origins is None:
-        return ["*"]
+        return ["http://localhost:3000"]
     parts = [item.strip() for item in raw_origins.split(",")]
     origins = [item for item in parts if item]
-    return origins or ["*"]
+    return origins or ["http://localhost:3000"]
 
 
 def add_cors_middleware(app: FastAPI) -> None:
     """Attach CORS middleware using env-driven configuration."""
     origins = parse_cors_origins(os.getenv("OWLCLAW_CONSOLE_CORS_ORIGINS"))
+    allow_credentials = "*" not in origins
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_credentials=True,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )

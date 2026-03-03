@@ -64,6 +64,7 @@ class WebhookEndpoint:
     id: str
     url: str
     auth_token: str
+    auth_token_hash: str
     config: EndpointConfig
     created_at: datetime
     updated_at: datetime

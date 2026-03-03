@@ -54,3 +54,16 @@ async def test_manager_list_with_filters() -> None:
     fetched = await manager.get_endpoint(ep1.id)
     assert fetched is not None
     assert fetched.config.target_agent_id == "agent-a"
+
+
+@pytest.mark.asyncio
+async def test_manager_returns_plain_auth_token_only_on_create() -> None:
+    manager = WebhookEndpointManager(InMemoryEndpointRepository())
+    created = await manager.create_endpoint(_valid_config(name="secure"))
+    fetched = await manager.get_endpoint(created.id)
+
+    assert created.auth_token
+    assert len(created.auth_token_hash) == 64
+    assert fetched is not None
+    assert fetched.auth_token == ""
+    assert len(fetched.auth_token_hash) == 64
