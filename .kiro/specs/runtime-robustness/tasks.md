@@ -57,12 +57,12 @@
 - [ ] 12.3 单元测试
 
 ## Task 13：WebSocket 断连清理（REQ-R13）
-- [ ] 13.1 显式关闭 generator
-- [ ] 13.2 单元测试
+- [x] 13.1 显式关闭 generator
+- [x] 13.2 单元测试
 
 ## Task 14：Langfuse atexit 去重（REQ-R14）
-- [ ] 14.1 添加模块级标志
-- [ ] 14.2 单元测试
+- [x] 14.1 添加模块级标志
+- [x] 14.2 单元测试
 
 ## Task 15：Redis idempotency 序列化（REQ-R15）
 - [ ] 15.1 json.dumps 序列化

@@ -23,6 +23,7 @@ from owlclaw.integrations.langfuse import (
     load_langfuse_config,
     validate_config,
 )
+import owlclaw.integrations.langfuse as langfuse_module
 
 
 @dataclass
@@ -346,6 +347,20 @@ class TestLangfuseClient:
         joined = "\n".join(record.getMessage() for record in caplog.records)
         assert "pk-secret" not in joined
         assert "sk-secret" not in joined
+
+    def test_atexit_register_called_once_for_multiple_clients(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        calls = {"count": 0}
+        monkeypatch.setattr(langfuse_module.atexit, "register", lambda fn: calls.__setitem__("count", calls["count"] + 1))
+        langfuse_module._atexit_registered = False
+        langfuse_module._registered_langfuse_clients.clear()
+
+        sdk_a = _FakeLangfuseSDK()
+        sdk_b = _FakeLangfuseSDK()
+        client_a = LangfuseClient(LangfuseConfig(enabled=True, client=sdk_a))
+        client_b = LangfuseClient(LangfuseConfig(enabled=True, client=sdk_b))
+
+        assert client_a.enabled is True and client_b.enabled is True
+        assert calls["count"] == 1
 
 
 class TestConfigAndHelpers:

@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import re
+import weakref
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from enum import Enum
@@ -16,6 +17,22 @@ from typing import Any
 import yaml  # type: ignore[import-untyped]
 
 logger = logging.getLogger(__name__)
+_atexit_registered = False
+_registered_langfuse_clients: weakref.WeakSet[LangfuseClient] = weakref.WeakSet()
+
+
+def _flush_registered_clients() -> None:
+    for client in list(_registered_langfuse_clients):
+        client.flush()
+
+
+def _register_client_flush(client: LangfuseClient) -> None:
+    global _atexit_registered
+    _registered_langfuse_clients.add(client)
+    if _atexit_registered:
+        return
+    atexit.register(_flush_registered_clients)
+    _atexit_registered = True
 
 
 class SpanType(str, Enum):
@@ -218,7 +235,7 @@ class LangfuseClient:
         self._init_error: str | None = None
         self._initialize_client()
         if self.enabled:
-            atexit.register(self.flush)
+            _register_client_flush(self)
 
     @property
     def enabled(self) -> bool:
