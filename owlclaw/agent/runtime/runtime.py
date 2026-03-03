@@ -55,6 +55,11 @@ _DEFAULT_MAX_ITERATIONS = 50
 _DEFAULT_LLM_TIMEOUT_SECONDS = 60.0
 _DEFAULT_RUN_TIMEOUT_SECONDS = 300.0
 _DEFAULT_LLM_RETRY_ATTEMPTS = 1
+_CHARS_PER_TOKEN = 4
+_MODEL_CONTEXT_WINDOWS: dict[str, int] = {
+    "gpt-4o": 128_000,
+    "gpt-4o-mini": 128_000,
+}
 
 
 def _coerce_confirmation_flag(value: Any) -> bool:
@@ -1588,12 +1593,49 @@ class AgentRuntime:
         visible_tools: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         """Build initial messages with strict system/user role separation."""
-        system_prompt = self._build_system_prompt(skills_context, visible_tools)
         user_message = self._build_user_message(context)
-        return [
+        context_window = self._resolve_context_window_limit(self.model)
+        if context_window is None:
+            system_prompt = self._build_system_prompt(skills_context, visible_tools)
+            return [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ]
+
+        fixed_system_prompt = self._build_system_prompt("", visible_tools)
+        fixed_tokens = (
+            self._estimate_text_tokens(fixed_system_prompt)
+            + self._estimate_text_tokens(user_message)
+        )
+        if fixed_tokens >= context_window:
+            system_budget = max(1, context_window - 1)
+            system_prompt = self._truncate_text_to_tokens(
+                fixed_system_prompt,
+                system_budget,
+            )
+            user_budget = max(
+                0,
+                context_window - self._estimate_text_tokens(system_prompt),
+            )
+            user_message = self._truncate_text_to_tokens(user_message, user_budget)
+            return [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ]
+
+        skills_budget = context_window - fixed_tokens
+        trimmed_skills_context = self._truncate_text_to_tokens(skills_context, skills_budget)
+        system_prompt = self._build_system_prompt(trimmed_skills_context, visible_tools)
+        messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ]
+        if self._estimate_messages_tokens(messages) > context_window:
+            overflow = self._estimate_messages_tokens(messages) - context_window
+            reduced_budget = max(0, skills_budget - overflow)
+            trimmed_skills_context = self._truncate_text_to_tokens(skills_context, reduced_budget)
+            messages[0]["content"] = self._build_system_prompt(trimmed_skills_context, visible_tools)
+        return messages
 
     def _build_skills_context(self, context: AgentRunContext) -> str:
         """Return Skills knowledge string, optionally filtered by focus."""
@@ -1661,6 +1703,43 @@ class AgentRuntime:
                 if stripped.isdigit() and int(stripped) > 0:
                     return int(stripped)
         return None
+
+    def _resolve_context_window_limit(self, model_name: str) -> int | None:
+        raw_values = [
+            self.config.get("context_window_tokens"),
+            self.config.get("max_prompt_tokens"),
+            self.config.get("prompt_context_window"),
+        ]
+        for raw in raw_values:
+            if isinstance(raw, bool):
+                continue
+            if isinstance(raw, int) and raw > 0:
+                return raw
+            if isinstance(raw, str):
+                stripped = raw.strip()
+                if stripped.isdigit() and int(stripped) > 0:
+                    return int(stripped)
+        return _MODEL_CONTEXT_WINDOWS.get(model_name)
+
+    @staticmethod
+    def _estimate_text_tokens(text: str) -> int:
+        if not text:
+            return 0
+        return max(1, (len(text) + _CHARS_PER_TOKEN - 1) // _CHARS_PER_TOKEN)
+
+    def _estimate_messages_tokens(self, messages: list[dict[str, Any]]) -> int:
+        total = 0
+        for message in messages:
+            total += self._estimate_text_tokens(str(message.get("content", "")))
+        return total
+
+    def _truncate_text_to_tokens(self, text: str, max_tokens: int) -> str:
+        if max_tokens <= 0 or not text:
+            return ""
+        if self._estimate_text_tokens(text) <= max_tokens:
+            return text
+        max_chars = max_tokens * _CHARS_PER_TOKEN
+        return text[:max_chars]
 
     def _release_skill_content_cache(self) -> None:
         """Release cached full Skill contents and prompt cache after each run."""

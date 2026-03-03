@@ -631,6 +631,35 @@ Check entries.
         names = [item["function"]["name"] for item in schemas]
         assert names == ["a-skill", "z-skill"]
 
+    async def test_build_messages_truncates_skills_to_context_window(self, tmp_path) -> None:
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"context_window_tokens": 80},
+        )
+        await rt.setup()
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+        long_skills = "A" * 4000
+        messages = rt._build_messages(ctx, long_skills, [])
+        assert rt._estimate_messages_tokens(messages) <= 80
+        system_prompt = messages[0]["content"]
+        assert "# Your Identity" in system_prompt
+
+    async def test_build_messages_truncates_user_when_fixed_prompt_exceeds_window(self, tmp_path) -> None:
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"context_window_tokens": 20},
+        )
+        await rt.setup()
+        ctx = AgentRunContext(
+            agent_id="bot",
+            trigger="cron",
+            payload={"raw": "X" * 2000},
+        )
+        messages = rt._build_messages(ctx, "", [])
+        assert rt._estimate_messages_tokens(messages) <= 20
+
     def test_run_skill_snapshot_stabilizes_context_and_capability_view(self, tmp_path) -> None:
         """Snapshot should keep run-time skill/capability view stable."""
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))

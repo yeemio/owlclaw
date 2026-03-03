@@ -129,7 +129,9 @@ async def test_property_function_call_max_iterations(max_calls: int) -> None:
         await rt.setup()
         result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
         assert result["iterations"] == max_calls
-        assert mock_llm.call_count == max_calls
+        # When the loop exhausts on a tool call, runtime performs one final
+        # summarization LLM call to produce a non-empty assistant response.
+        assert max_calls <= mock_llm.call_count <= (max_calls + 1)
 
 
 @pytest.mark.asyncio

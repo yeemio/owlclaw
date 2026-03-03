@@ -52,9 +52,9 @@
 - [x] 11.2 单元测试
 
 ## Task 12：time_decay 提取（REQ-R12）
-- [ ] 12.1 创建 decay.py 移入函数
-- [ ] 12.2 更新 import
-- [ ] 12.3 单元测试
+- [x] 12.1 创建 decay.py 移入函数
+- [x] 12.2 更新 import
+- [x] 12.3 单元测试
 
 ## Task 13：WebSocket 断连清理（REQ-R13）
 - [x] 13.1 显式关闭 generator
@@ -77,8 +77,8 @@
 - [x] 17.2 单元测试
 
 ## Task 18：Prompt context window 检查（REQ-R18）
-- [ ] 18.1 总 token 估算 + 截断
-- [ ] 18.2 单元测试
+- [x] 18.1 总 token 估算 + 截断
+- [x] 18.2 单元测试
 
 ## Task 19：回归测试
-- [ ] 19.1 全量 pytest 通过
+- [x] 19.1 全量 pytest 通过
