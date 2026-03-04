@@ -72,21 +72,21 @@
 - [x] 8.2 单元/集成测试通过（`tests/unit/test_mcp_server.py` + `tests/integration/test_mcp_server_integration.py`）
 
 ### Task 9：eval 替换（REQ-S6）
-- [ ] 9.1 替换 transformer.py 中的 eval
-- [ ] 9.2 单元测试
+- [x] 9.1 transformer 使用 AST 安全解释器（`_safe_eval_ast`）替代 `eval`
+- [x] 9.2 单元测试通过（`tests/unit/triggers/test_webhook_transformer.py`）
 
 ### Task 10：XXE 防护（REQ-S7）
-- [ ] 10.1 替换为 defusedxml
-- [ ] 10.2 添加 defusedxml 依赖
+- [x] 10.1 XML 解析使用 `defusedxml.ElementTree.fromstring`
+- [x] 10.2 `defusedxml` 依赖已存在（`pyproject.toml`）并有 XXE 用例覆盖
 
 ### Task 11：请求体限制（REQ-S8）
-- [ ] 11.1 添加 max_content_length 中间件
-- [ ] 11.2 单元测试：超大请求返回 413
+- [x] 11.1 添加 max_content_length 中间件（header + body 双路径限制）
+- [x] 11.2 单元测试：超大请求返回 413（webhook gateway 覆盖）
 
 ### Task 12：SecurityAuditLog 持久化（REQ-S10）
-- [ ] 12.1 实现 FileSecurityAuditBackend
-- [ ] 12.2 配置选择后端
-- [ ] 12.3 单元测试
+- [x] 12.1 实现 FileSecurityAuditBackend（JSONL append）
+- [x] 12.2 配置选择后端（`OWLCLAW_SECURITY_AUDIT_BACKEND=file` + `OWLCLAW_SECURITY_AUDIT_FILE`）
+- [x] 12.3 单元测试通过（`tests/unit/security/test_audit.py`）
 
 ### Task 13：Console API 鉴权（REQ-S11）
 - [ ] 13.1 添加 api_token 中间件
