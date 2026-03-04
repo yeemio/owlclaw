@@ -72,8 +72,8 @@
 - [x] 8.2 单元/集成测试通过（`tests/unit/test_mcp_server.py` + `tests/integration/test_mcp_server_integration.py`）
 
 ### Task 9：eval 替换（REQ-S6）
-- [ ] 9.1 替换 transformer.py 中的 eval
-- [ ] 9.2 单元测试
+- [x] 9.1 transformer 使用 AST 安全解释器（`_safe_eval_ast`）替代 `eval`
+- [x] 9.2 单元测试通过（`tests/unit/triggers/test_webhook_transformer.py`）
 
 ### Task 10：XXE 防护（REQ-S7）
 - [ ] 10.1 替换为 defusedxml
