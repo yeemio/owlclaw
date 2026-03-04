@@ -58,14 +58,14 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|------|------|------------|------|------|
 | API-8 | `/api/v1/ledger` | GET | `agent_id`, `capability_name`, `status`, `start_date`, `end_date`, `min_cost`, `max_cost`, `limit`, `offset`, `order_by` | `PaginatedResponse`: `{items, total, offset, limit}`，`order_by` 支持 `created_at_desc|created_at_asc|cost_desc|cost_asc` | ☑ |
 | API-9 | 无效 `order_by` | GET | `order_by=invalid` | 422，`ErrorResponse` 格式：`{error: {code, message, details}}` | ☑ |
-| API-10 | `/api/v1/ledger/{record_id}` | GET | - | 无记录：404 | ☐ |
+| API-10 | `/api/v1/ledger/{record_id}` | GET | - | 无记录：404 | ☑ |
 
 ## 1.5 Capabilities / Triggers / Settings
 
 | 步骤 | 端点 | 预期 | 通过 |
 |------|------|------|------|
 | API-11 | `/api/v1/capabilities` | `?category` 可选，返回 capabilities 列表 | ☑ |
-| API-12 | `/api/v1/capabilities/{name}/schema` | 404 当不存在 | ☐ |
+| API-12 | `/api/v1/capabilities/{name}/schema` | 404 当不存在 | ☑ |
 | API-13 | `/api/v1/triggers` | 返回 triggers 列表 | ☑ |
 | API-14 | `/api/v1/triggers/{id}/history` | `limit`, `offset`，返回历史 + 分页 | ☑ |
 | API-15 | `/api/v1/settings` | 返回配置树/系统信息 | ☑ |
@@ -74,8 +74,8 @@ cd owlclaw/web/frontend && npm run test:e2e
 
 | 步骤 | 场景 | 预期 | 通过 |
 |------|------|------|------|
-| API-16 | `OWLCLAW_CONSOLE_TOKEN` 设置时，无 Authorization | 401，`{error: {code: "UNAUTHORIZED", message}}` | ☐ |
-| API-17 | 任意 4xx/5xx | 统一 `ErrorResponse` 结构，非裸文本 | ☐ |
+| API-16 | `OWLCLAW_CONSOLE_TOKEN` 设置时，无 Authorization | 401，`{error: {code: "UNAUTHORIZED", message}}` | ☑ |
+| API-17 | 任意 4xx/5xx | 统一 `ErrorResponse` 结构，非裸文本 | ☑ |
 
 ---
 
