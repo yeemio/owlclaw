@@ -48,6 +48,7 @@ async def test_redis_idempotency_store_uses_prefix() -> None:
     assert await store.exists("abc") is True
     assert await store.get("abc") == {"done": 1}
     assert "idempotency:abc" in client._data
+    assert isinstance(client._data["idempotency:abc"], str)
 
 
 @given(

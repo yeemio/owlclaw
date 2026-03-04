@@ -1,5 +1,7 @@
 """Unit tests for Capability Registry (handlers and state providers)."""
 
+import asyncio
+
 import pytest
 
 from owlclaw.capabilities.registry import CapabilityRegistry
@@ -149,6 +151,19 @@ async def test_invoke_handler_failure_wraps(registry):
     registry.register_handler("entry-monitor", failing_handler)
     with pytest.raises(RuntimeError, match="failed"):
         await registry.invoke_handler("entry-monitor")
+
+
+@pytest.mark.asyncio
+async def test_invoke_handler_timeout_returns_runtime_error(skills_loader_with_skill):
+    registry = CapabilityRegistry(skills_loader_with_skill, handler_timeout_seconds=0.01)
+
+    async def slow_handler(session):  # noqa: ARG001
+        await asyncio.sleep(0.05)
+        return {"ok": True}
+
+    registry.register_handler("entry-monitor", slow_handler)
+    with pytest.raises(RuntimeError, match="timed out"):
+        await registry.invoke_handler("entry-monitor", session={})
 
 
 @pytest.mark.asyncio

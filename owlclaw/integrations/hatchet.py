@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import signal
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -58,6 +59,7 @@ class HatchetConfig(BaseModel):
     api_token: str | None = None
     grpc_host_port: str | None = None
     grpc_tls_strategy: str = "tls"
+    connect_timeout_seconds: float = 30.0
 
     @model_validator(mode="before")
     @classmethod
@@ -131,6 +133,13 @@ class HatchetConfig(BaseModel):
             raise ValueError("grpc_host_port cannot be empty")
         return value
 
+    @field_validator("connect_timeout_seconds")
+    @classmethod
+    def connect_timeout_positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("connect_timeout_seconds must be positive")
+        return v
+
     @classmethod
     def from_yaml(cls, config_path: Path | str) -> "HatchetConfig":
         """Load configuration from owlclaw.yaml (hatchet section)."""
@@ -198,7 +207,15 @@ class HatchetClient:
                 namespace=self.config.namespace,
                 tls_config=client_tls_config_cls(strategy=self.config.grpc_tls_strategy),
             )
-            self._hatchet = hatchet_cls(config=client_config)
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(hatchet_cls, config=client_config)
+                try:
+                    self._hatchet = future.result(timeout=self.config.connect_timeout_seconds)
+                except FutureTimeoutError as exc:
+                    future.cancel()
+                    raise TimeoutError(
+                        f"Timed out connecting to Hatchet after {self.config.connect_timeout_seconds:.1f}s"
+                    ) from exc
             logger.info("Connected to Hatchet at %s", self.config.server_url)
         except Exception as e:
             logger.exception("Failed to connect to Hatchet")

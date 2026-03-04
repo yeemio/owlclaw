@@ -55,7 +55,7 @@ async def test_budget_exhausted_high_cost_hidden():
     ctx = RunContext(tenant_id="t1")
     r = await c.evaluate(cap, "agent1", ctx)
     assert r.visible is False
-    assert "budget_insufficient_after_reservation" in r.reason
+    assert "Budget exhausted" in r.reason
 
 
 @pytest.mark.asyncio
@@ -108,44 +108,40 @@ async def test_budget_invalid_estimated_cost_uses_default():
 
 
 @pytest.mark.asyncio
-async def test_budget_constraint_atomic_reservation_blocks_second_parallel_high_cost():
+async def test_budget_constraint_atomic_reservation_blocks_second_concurrent_high_cost_request() -> None:
     ledger = AsyncMock(spec=Ledger)
-    ledger.get_cost_summary = AsyncMock(return_value=CostSummary(total_cost=Decimal("9.5")))
-    c = BudgetConstraint(
+    ledger.get_cost_summary = AsyncMock(return_value=CostSummary(total_cost=Decimal("0.00")))
+    constraint = BudgetConstraint(
         ledger,
-        {
-            "budget_limits": {"agent1": "10"},
-            "high_cost_threshold": "0.1",
-            "reservation_ttl_seconds": 60,
-        },
+        {"budget_limits": {"agent1": "0.15"}, "high_cost_threshold": "0.01"},
     )
-    cap = CapabilityView("x", constraints={"estimated_cost": "0.4"})
+    cap = CapabilityView("x", constraints={"estimated_cost": "0.10"})
     ctx = RunContext(tenant_id="t1")
 
     first, second = await asyncio.gather(
-        c.evaluate(cap, "agent1", ctx),
-        c.evaluate(cap, "agent1", ctx),
+        constraint.evaluate(cap, "agent1", ctx),
+        constraint.evaluate(cap, "agent1", ctx),
     )
     visible_count = int(first.visible) + int(second.visible)
     assert visible_count == 1
 
 
 @pytest.mark.asyncio
-async def test_budget_constraint_reservation_auto_refunds_after_ttl():
+async def test_budget_constraint_refund_reservation_restores_capacity() -> None:
     ledger = AsyncMock(spec=Ledger)
-    ledger.get_cost_summary = AsyncMock(return_value=CostSummary(total_cost=Decimal("9.5")))
-    c = BudgetConstraint(
+    ledger.get_cost_summary = AsyncMock(return_value=CostSummary(total_cost=Decimal("0.00")))
+    constraint = BudgetConstraint(
         ledger,
-        {
-            "budget_limits": {"agent1": "10"},
-            "high_cost_threshold": "0.1",
-            "reservation_ttl_seconds": 0,
-        },
+        {"budget_limits": {"agent1": "0.10"}, "high_cost_threshold": "0.01"},
     )
-    cap = CapabilityView("x", constraints={"estimated_cost": "0.4"})
+    cap = CapabilityView("x", constraints={"estimated_cost": "0.10"})
     ctx = RunContext(tenant_id="t1")
 
-    first = await c.evaluate(cap, "agent1", ctx)
-    second = await c.evaluate(cap, "agent1", ctx)
+    first = await constraint.evaluate(cap, "agent1", ctx)
+    second = await constraint.evaluate(cap, "agent1", ctx)
     assert first.visible is True
-    assert second.visible is True
+    assert second.visible is False
+
+    await constraint.refund_reservation("t1", "agent1", Decimal("0.10"))
+    third = await constraint.evaluate(cap, "agent1", ctx)
+    assert third.visible is True

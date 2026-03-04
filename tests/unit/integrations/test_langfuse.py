@@ -23,6 +23,7 @@ from owlclaw.integrations.langfuse import (
     load_langfuse_config,
     validate_config,
 )
+import owlclaw.integrations.langfuse as langfuse_module
 
 
 @dataclass
@@ -347,6 +348,20 @@ class TestLangfuseClient:
         assert "pk-secret" not in joined
         assert "sk-secret" not in joined
 
+    def test_atexit_register_called_once_for_multiple_clients(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        calls = {"count": 0}
+        monkeypatch.setattr(langfuse_module.atexit, "register", lambda fn: calls.__setitem__("count", calls["count"] + 1))
+        langfuse_module._atexit_registered = False
+        langfuse_module._registered_langfuse_clients.clear()
+
+        sdk_a = _FakeLangfuseSDK()
+        sdk_b = _FakeLangfuseSDK()
+        client_a = LangfuseClient(LangfuseConfig(enabled=True, client=sdk_a))
+        client_b = LangfuseClient(LangfuseConfig(enabled=True, client=sdk_b))
+
+        assert client_a.enabled is True and client_b.enabled is True
+        assert calls["count"] == 1
+
 
 class TestConfigAndHelpers:
     @settings(max_examples=10, deadline=None)
@@ -386,12 +401,27 @@ class TestConfigAndHelpers:
     @given(
         prompt=st.integers(min_value=0, max_value=100000),
         completion=st.integers(min_value=0, max_value=100000),
-        model=st.sampled_from(["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo", "claude-3-opus"]),
+        model=st.sampled_from(
+            [
+                "gpt-4",
+                "gpt-4-turbo",
+                "gpt-3.5-turbo",
+                "claude-3-opus",
+                "claude-3.5-sonnet",
+                "deepseek-chat",
+                "deepseek-reasoner",
+            ]
+        ),
     )
     def test_property_cost_calculation(self, prompt: int, completion: int, model: str) -> None:
         cost = TokenCalculator.calculate_cost(model, prompt, completion)
         assert cost >= 0.0
         assert isinstance(cost, float)
+
+    def test_model_name_normalization_for_deepseek_and_claude_35(self) -> None:
+        assert TokenCalculator._normalize_model_name("deepseek/deepseek-chat") == "deepseek-chat"  # noqa: SLF001
+        assert TokenCalculator._normalize_model_name("deepseek-reasoner") == "deepseek-reasoner"  # noqa: SLF001
+        assert TokenCalculator._normalize_model_name("claude-3-5-sonnet-20241022") == "claude-3.5-sonnet"  # noqa: SLF001
 
     @settings(max_examples=10, deadline=None)
     @given(

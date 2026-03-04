@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from decimal import Decimal
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -138,6 +139,53 @@ class TestRunCron:
         call_kwargs = ledger.record_execution.call_args.kwargs
         assert call_kwargs["status"] == ExecutionStatus.FAILED.value
         assert "boom" in call_kwargs["error_message"]
+
+    async def test_same_tenant_duplicate_run_is_skipped(self) -> None:
+        reg = _registry()
+        cfg = _config()
+        release = asyncio.Event()
+
+        async def blocked_trigger(*_: Any, **__: Any) -> dict[str, Any]:
+            await release.wait()
+            return {"status": "completed", "run_id": "run-1", "tool_calls_total": 1}
+
+        agent_rt = MagicMock()
+        agent_rt.trigger_event = AsyncMock(side_effect=blocked_trigger)
+        first = asyncio.create_task(reg._run_cron(cfg, agent_rt, None, "default"))
+        await asyncio.sleep(0.01)
+        second = await reg._run_cron(cfg, agent_rt, None, "default")
+        release.set()
+        first_result = await first
+
+        assert first_result["status"] == ExecutionStatus.SUCCESS.value
+        assert second["status"] == ExecutionStatus.SKIPPED.value
+        assert second["reason"] == "cron run already in progress"
+
+    async def test_different_tenants_do_not_share_dedup_slot(self) -> None:
+        reg = _registry()
+        cfg = _config()
+        release = asyncio.Event()
+        call_count = 0
+
+        async def tenant_trigger(*_: Any, **__: Any) -> dict[str, Any]:
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                await release.wait()
+            return {"status": "completed", "run_id": f"run-{call_count}", "tool_calls_total": 1}
+
+        agent_rt = MagicMock()
+        agent_rt.trigger_event = AsyncMock(side_effect=tenant_trigger)
+        first_task = asyncio.create_task(reg._run_cron(cfg, agent_rt, None, "tenant-1"))
+        await asyncio.sleep(0.01)
+        second_task = asyncio.create_task(reg._run_cron(cfg, agent_rt, None, "tenant-2"))
+        await asyncio.sleep(0.01)
+        release.set()
+        first_result, second_result = await asyncio.gather(first_task, second_task)
+
+        assert first_result["status"] == ExecutionStatus.SUCCESS.value
+        assert second_result["status"] == ExecutionStatus.SUCCESS.value
+        assert call_count == 2
 
 
 # ---------------------------------------------------------------------------

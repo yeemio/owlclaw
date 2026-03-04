@@ -69,9 +69,11 @@ class WebhookIdempotencyKeyModel(Base):
     __table_args__ = (
         Index("idx_webhook_idempotency_tenant_endpoint", "tenant_id", "endpoint_id"),
         Index("idx_webhook_idempotency_tenant_expires", "tenant_id", "expires_at"),
+        Index("idx_webhook_idempotency_tenant_key", "tenant_id", "key", unique=True),
     )
 
-    key: Mapped[str] = mapped_column(String(255), primary_key=True)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     endpoint_id: Mapped[UUID] = mapped_column(ForeignKey("webhook_endpoints.id"), nullable=False)
     execution_id: Mapped[UUID] = mapped_column(nullable=False)
     result: Mapped[dict] = mapped_column(JSONB, nullable=False)

@@ -12,6 +12,7 @@ from owlclaw.agent.memory.store_pgvector import MemoryEntryORM  # noqa: F401
 from owlclaw.db import Base
 from owlclaw.governance.ledger import LedgerRecord  # noqa: F401
 from owlclaw.governance.quality_store import SkillQualitySnapshotORM  # noqa: F401
+from owlclaw.owlhub.models import ReviewRecord, Skill, SkillStatistics, SkillVersion  # noqa: F401
 from owlclaw.triggers.signal.persistence import AgentControlStateORM, PendingInstructionORM  # noqa: F401
 from owlclaw.triggers.webhook.persistence.models import (  # noqa: F401
     WebhookEndpointModel,

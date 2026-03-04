@@ -44,7 +44,7 @@ def test_run_context_normalizes_and_validates_tenant_id():
 
 
 def test_register_evaluator_invalid_raises_type_error():
-    vf = VisibilityFilter()
+    vf = VisibilityFilter(fail_policy="open")
     with pytest.raises(TypeError, match="evaluator must provide"):
         vf.register_evaluator(object())  # type: ignore[arg-type]
 
@@ -165,7 +165,7 @@ async def test_filter_fail_close_on_evaluator_exception() -> None:
 
 
 @pytest.mark.asyncio
-async def test_filter_default_fail_close_on_evaluator_exception() -> None:
+async def test_visibility_filter_defaults_to_fail_close() -> None:
     class Raising:
         async def evaluate(self, capability, agent_id, context):
             raise ValueError("broken")
@@ -284,3 +284,4 @@ async def test_visibility_filter_eval_p95_under_10ms():
         assert len(out) == 2
     p95 = statistics.quantiles(latencies_ms, n=100)[94]
     assert p95 < 10.0
+

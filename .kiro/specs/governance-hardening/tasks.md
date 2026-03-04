@@ -39,13 +39,13 @@
 ## Phase 2：原有治理加固任务
 
 ### Task 4：Ledger 索引修复（REQ-G1）
-- [ ] 4.1 新增 Alembic 迁移
-- [ ] 4.2 验证索引
+- [x] 4.1 新增 Alembic 迁移
+- [x] 4.2 验证索引
 
 ### Task 5：WebhookIdempotencyKeyModel UUID PK（REQ-G2）
-- [ ] 5.1 修改模型
-- [ ] 5.2 新增迁移
-- [ ] 5.3 单元测试
+- [x] 5.1 修改模型
+- [x] 5.2 新增迁移
+- [x] 5.3 单元测试
 
 ### Task 6：Ledger fallback 路径（REQ-G3）
 - [x] 6.1 LedgerConfig 添加字段
@@ -53,34 +53,34 @@
 - [x] 6.3 单元测试
 
 ### Task 7：MODEL_PRICING 扩展（REQ-G4）
-- [ ] 7.1 添加新模型定价
-- [ ] 7.2 单元测试
+- [x] 7.1 添加新模型定价
+- [x] 7.2 单元测试
 
 ### Task 8：SkillQualityStore 索引（REQ-G5）
-- [ ] 8.1 新增迁移
-- [ ] 8.2 验证
+- [x] 8.1 新增迁移
+- [x] 8.2 验证
 
 ### Task 9：env.py 导入 OwlHub 模型（REQ-G6）
-- [ ] 9.1 添加 import
-- [ ] 9.2 验证 autogenerate
+- [x] 9.1 添加 import
+- [x] 9.2 验证 autogenerate
 
 ### Task 10：Session factory 缓存（REQ-G7）
-- [ ] 10.1 实现缓存
-- [ ] 10.2 单元测试
+- [x] 10.1 实现缓存
+- [x] 10.2 单元测试
 
 ### Task 11：DB 异常包装（REQ-G8）
-- [ ] 11.1 捕获 + 包装异常
-- [ ] 11.2 单元测试
+- [x] 11.1 捕获 + 包装异常
+- [x] 11.2 单元测试
 
 ### Task 12：DB SSL 配置（REQ-G9）
-- [ ] 12.1 添加 ssl_mode 参数
-- [ ] 12.2 文档
+- [x] 12.1 添加 ssl_mode 参数
+- [x] 12.2 文档
 
 ### Task 13：Cron 去重（REQ-G10）
-- [ ] 13.1 添加并发保护
-- [ ] 13.2 单元测试
+- [x] 13.1 添加并发保护
+- [x] 13.2 单元测试
 
 ---
 
 ## Task 14：回归测试
-- [ ] 14.1 全量 pytest 通过
+- [x] 14.1 全量 pytest 通过

@@ -56,6 +56,11 @@ _DEFAULT_MAX_ITERATIONS = 50
 _DEFAULT_LLM_TIMEOUT_SECONDS = 60.0
 _DEFAULT_RUN_TIMEOUT_SECONDS = 300.0
 _DEFAULT_LLM_RETRY_ATTEMPTS = 1
+_CHARS_PER_TOKEN = 4
+_MODEL_CONTEXT_WINDOWS: dict[str, int] = {
+    "gpt-4o": 128_000,
+    "gpt-4o-mini": 128_000,
+}
 
 
 def _coerce_confirmation_flag(value: Any) -> bool:
@@ -153,7 +158,8 @@ class AgentRuntime:
         self._langfuse_init_error: str | None = None
         self._langfuse = self._init_langfuse_client()
         self._tool_call_timestamps: deque[float] = deque()
-        self._skills_context_cache: dict[tuple[str | None, tuple[str, ...]], str] = {}
+        self._tool_call_timestamps_lock = asyncio.Lock()
+        self._skills_context_cache: dict[tuple[str, str | None, tuple[str, ...]], str] = {}
         self._visible_tools_cache: dict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = {}
         self._run_handler_names_snapshot: tuple[str, ...] | None = None
         self._run_capabilities_snapshot: list[dict[str, Any]] | None = None
@@ -741,6 +747,7 @@ class AgentRuntime:
             llm_timeout = _DEFAULT_LLM_TIMEOUT_SECONDS
         model_used = self.model
         iteration = 0
+        exhausted_without_completion = False
         for _ in range(max_iterations):
             iteration += 1
             if self._router is not None:
@@ -863,6 +870,53 @@ class AgentRuntime:
                         run_id=context.run_id,
                     ),
                 })
+        else:
+            exhausted_without_completion = True
+
+        if exhausted_without_completion and messages and messages[-1].get("role") == "tool":
+            try:
+                llm_started_ns = time.perf_counter_ns()
+                final_response, model_used, llm_tokens_input, llm_tokens_output, llm_cost = await self._call_llm_completion(
+                    {"model": model_used, "messages": messages},
+                    timeout=llm_timeout,
+                )
+                llm_elapsed_ms = (time.perf_counter_ns() - llm_started_ns) // 1_000_000
+                self._perf_metrics["llm_calls"] += 1
+                self._perf_metrics["llm_time_ms_total"] += float(llm_elapsed_ms)
+                await self._record_llm_usage(
+                    context=context,
+                    model=model_used,
+                    llm_tokens_input=llm_tokens_input,
+                    llm_tokens_output=llm_tokens_output,
+                    estimated_cost=llm_cost,
+                    execution_time_ms=llm_elapsed_ms,
+                    status="success",
+                    error_message=None,
+                )
+                final_message = self._extract_assistant_message(final_response)
+                if final_message is not None:
+                    messages.append(self._assistant_message_to_dict(final_message))
+                else:
+                    messages.append(
+                        {
+                            "role": "assistant",
+                            "content": "Reached max iterations; final summarization response was invalid.",
+                        }
+                    )
+            except asyncio.TimeoutError:
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"Reached max iterations ({max_iterations}) and final summarization timed out.",
+                    }
+                )
+            except Exception as exc:
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"Reached max iterations ({max_iterations}) and final summarization failed: {exc}",
+                    }
+                )
 
         final_content = ""
         if messages and messages[-1].get("role") == "assistant":
@@ -1121,7 +1175,7 @@ class AgentRuntime:
             )
             return {"error": permission_error}
 
-        rate_limit_error = self._enforce_rate_limit(tool_name)
+        rate_limit_error = await self._enforce_rate_limit(tool_name)
         if rate_limit_error is not None:
             self._security_audit.record(
                 event_type="tool_rate_limited",
@@ -1367,7 +1421,7 @@ class AgentRuntime:
                 return f"Tool '{normalized}' is denied by policy"
         return None
 
-    def _enforce_rate_limit(self, tool_name: str) -> str | None:
+    async def _enforce_rate_limit(self, tool_name: str) -> str | None:
         security = self.config.get("security")
         if not isinstance(security, dict):
             return None
@@ -1382,14 +1436,15 @@ class AgentRuntime:
             return None
         if limit < 1:
             return None
-        now = time.monotonic()
-        cutoff = now - 60.0
-        while self._tool_call_timestamps and self._tool_call_timestamps[0] < cutoff:
-            self._tool_call_timestamps.popleft()
-        if len(self._tool_call_timestamps) >= limit:
-            return f"Rate limit exceeded for tool '{tool_name}'"
-        self._tool_call_timestamps.append(now)
-        return None
+        async with self._tool_call_timestamps_lock:
+            now = time.monotonic()
+            cutoff = now - 60.0
+            while self._tool_call_timestamps and self._tool_call_timestamps[0] < cutoff:
+                self._tool_call_timestamps.popleft()
+            if len(self._tool_call_timestamps) >= limit:
+                return f"Rate limit exceeded for tool '{tool_name}'"
+            self._tool_call_timestamps.append(now)
+            return None
 
     def _get_skill_owlclaw_config(self, tool_name: str) -> dict[str, Any]:
         if self.registry is None:
@@ -1676,12 +1731,49 @@ class AgentRuntime:
         visible_tools: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
         """Build initial messages with strict system/user role separation."""
-        system_prompt = self._build_system_prompt(skills_context, visible_tools)
         user_message = self._build_user_message(context)
-        return [
+        context_window = self._resolve_context_window_limit(self.model)
+        if context_window is None:
+            system_prompt = self._build_system_prompt(skills_context, visible_tools)
+            return [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ]
+
+        fixed_system_prompt = self._build_system_prompt("", visible_tools)
+        fixed_tokens = (
+            self._estimate_text_tokens(fixed_system_prompt)
+            + self._estimate_text_tokens(user_message)
+        )
+        if fixed_tokens >= context_window:
+            system_budget = max(1, context_window - 1)
+            system_prompt = self._truncate_text_to_tokens(
+                fixed_system_prompt,
+                system_budget,
+            )
+            user_budget = max(
+                0,
+                context_window - self._estimate_text_tokens(system_prompt),
+            )
+            user_message = self._truncate_text_to_tokens(user_message, user_budget)
+            return [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ]
+
+        skills_budget = context_window - fixed_tokens
+        trimmed_skills_context = self._truncate_text_to_tokens(skills_context, skills_budget)
+        system_prompt = self._build_system_prompt(trimmed_skills_context, visible_tools)
+        messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ]
+        if self._estimate_messages_tokens(messages) > context_window:
+            overflow = self._estimate_messages_tokens(messages) - context_window
+            reduced_budget = max(0, skills_budget - overflow)
+            trimmed_skills_context = self._truncate_text_to_tokens(skills_context, reduced_budget)
+            messages[0]["content"] = self._build_system_prompt(trimmed_skills_context, visible_tools)
+        return messages
 
     def _build_skills_context(self, context: AgentRunContext) -> str:
         """Return Skills knowledge string, optionally filtered by focus."""
@@ -1694,7 +1786,7 @@ class AgentRuntime:
             all_skill_names = list(self.registry.handlers.keys())
         if not all_skill_names:
             return ""
-        cache_key = (context.focus, tuple(sorted(all_skill_names)))
+        cache_key = (context.tenant_id, context.focus, tuple(sorted(all_skill_names)))
         if cache_key in self._skills_context_cache:
             self._perf_metrics["skills_cache_hits"] += 1
             return self._skills_context_cache[cache_key]
@@ -1749,6 +1841,43 @@ class AgentRuntime:
                 if stripped.isdigit() and int(stripped) > 0:
                     return int(stripped)
         return None
+
+    def _resolve_context_window_limit(self, model_name: str) -> int | None:
+        raw_values = [
+            self.config.get("context_window_tokens"),
+            self.config.get("max_prompt_tokens"),
+            self.config.get("prompt_context_window"),
+        ]
+        for raw in raw_values:
+            if isinstance(raw, bool):
+                continue
+            if isinstance(raw, int) and raw > 0:
+                return raw
+            if isinstance(raw, str):
+                stripped = raw.strip()
+                if stripped.isdigit() and int(stripped) > 0:
+                    return int(stripped)
+        return _MODEL_CONTEXT_WINDOWS.get(model_name)
+
+    @staticmethod
+    def _estimate_text_tokens(text: str) -> int:
+        if not text:
+            return 0
+        return max(1, (len(text) + _CHARS_PER_TOKEN - 1) // _CHARS_PER_TOKEN)
+
+    def _estimate_messages_tokens(self, messages: list[dict[str, Any]]) -> int:
+        total = 0
+        for message in messages:
+            total += self._estimate_text_tokens(str(message.get("content", "")))
+        return total
+
+    def _truncate_text_to_tokens(self, text: str, max_tokens: int) -> str:
+        if max_tokens <= 0 or not text:
+            return ""
+        if self._estimate_text_tokens(text) <= max_tokens:
+            return text
+        max_chars = max_tokens * _CHARS_PER_TOKEN
+        return text[:max_chars]
 
     def _release_skill_content_cache(self) -> None:
         """Release cached full Skill contents and prompt cache after each run."""

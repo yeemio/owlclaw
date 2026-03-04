@@ -5,27 +5,28 @@ from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
-from owlclaw.db.engine import get_engine
+from owlclaw.db.engine import _map_connection_exception, get_engine
+
+_session_factory_cache: dict[int, async_sessionmaker[AsyncSession]] = {}
 
 
 def create_session_factory(
     engine: AsyncEngine,
 ) -> async_sessionmaker[AsyncSession]:
-    """Create an async session factory bound to the engine.
-
-    Args:
-        engine: Async database engine.
-
-    Returns:
-        async_sessionmaker instance.
-    """
-    return async_sessionmaker(
+    """Create or reuse an async session factory bound to the engine."""
+    key = id(engine)
+    cached = _session_factory_cache.get(key)
+    if cached is not None:
+        return cached
+    factory = async_sessionmaker(
         engine,
         class_=AsyncSession,
         expire_on_commit=False,
         autocommit=False,
         autoflush=False,
     )
+    _session_factory_cache[key] = factory
+    return factory
 
 
 @asynccontextmanager
@@ -35,20 +36,24 @@ async def get_session(
     """Async context manager for a database session.
 
     Commits on success, rolls back on exception, closes on exit.
-
-    Args:
-        engine: Optional engine; if None, uses default from get_engine().
-
-    Yields:
-        AsyncSession instance.
     """
-    if engine is None:
-        engine = get_engine()
-    factory = create_session_factory(engine)
+    resolved_engine = engine if engine is not None else get_engine()
+    factory = create_session_factory(resolved_engine)
     async with factory() as session:
         try:
             yield session
-            await session.commit()
         except Exception:
-            await session.rollback()
+            try:
+                await session.rollback()
+            except Exception as rollback_exc:
+                raise _map_connection_exception(
+                    rollback_exc, str(resolved_engine.url)
+                ) from rollback_exc
             raise
+        else:
+            try:
+                await session.commit()
+            except Exception as commit_exc:
+                raise _map_connection_exception(
+                    commit_exc, str(resolved_engine.url)
+                ) from commit_exc

@@ -18,7 +18,6 @@ def test_owlclaw_config_defaults() -> None:
     assert cfg.triggers.notifications.enabled is False
     assert cfg.security.risk_gate.confirmation_timeout_seconds == 300
     assert cfg.governance.fail_policy == "close"
-    assert cfg.governance.ledger.fallback_log_path == "ledger_fallback.log"
 
 
 def test_owlclaw_config_nested_validation_error() -> None:

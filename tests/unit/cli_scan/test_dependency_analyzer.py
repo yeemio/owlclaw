@@ -10,7 +10,11 @@ from owlclaw.cli.scan import CyclicDependencyDetector, Dependency, DependencyAna
 
 
 @settings(deadline=None, max_examples=25)
-@given(name=st.from_regex(r"[a-z][a-z0-9_]{0,6}", fullmatch=True).filter(lambda v: not keyword.iskeyword(v)))
+@given(
+    name=st.from_regex(r"[a-z][a-z0-9_]{0,6}", fullmatch=True).filter(
+        lambda candidate: not keyword.iskeyword(candidate)
+    )
+)
 def test_property_function_call_detection(name: str) -> None:
     # Property 10: Function Call Detection
     source = f"def {name}():\n    return helper()\n\ndef helper():\n    return 1\n"

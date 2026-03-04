@@ -71,6 +71,7 @@ class DBChangeTriggerManager:
         agent_runtime: AgentRuntimeProtocol,
         ledger: LedgerProtocol | None = None,
         retry_interval_seconds: float = 5.0,
+        max_retry_attempts: int = 5,
         local_queue_max_size: int = 1000,
     ) -> None:
         self._adapter = adapter
@@ -82,10 +83,12 @@ class DBChangeTriggerManager:
         self._started = False
         self._handlers: dict[str, Callable[[list[DBChangeEvent]], Awaitable[None]] | None] = {}
         self._retry_interval_seconds = retry_interval_seconds
+        self._max_retry_attempts = max(0, int(max_retry_attempts))
         self._local_queue_max_size = local_queue_max_size
-        self._local_retry_queue: asyncio.Queue[tuple[DBChangeTriggerConfig, dict[str, Any]]] = asyncio.Queue(
+        self._local_retry_queue: asyncio.Queue[tuple[DBChangeTriggerConfig, dict[str, Any], int]] = asyncio.Queue(
             maxsize=local_queue_max_size
         )
+        self._dlq_events: list[dict[str, Any]] = []
         self._retry_task: asyncio.Task[None] | None = None
         self._adapter.on_event(self._on_event)
 
@@ -175,19 +178,42 @@ class DBChangeTriggerManager:
             return True
         except Exception as exc:
             logger.warning("db_change trigger dispatch failed, queued locally: %s", exc)
-            await self._enqueue_local_retry(config, payload)
+            await self._enqueue_local_retry(config, payload, attempt=0)
             return False
 
-    async def _enqueue_local_retry(self, config: DBChangeTriggerConfig, payload: dict[str, Any]) -> None:
+    async def _enqueue_local_retry(self, config: DBChangeTriggerConfig, payload: dict[str, Any], attempt: int) -> None:
         if self._local_retry_queue.full():
             dropped = await self._local_retry_queue.get()
             self._local_retry_queue.task_done()
             logger.warning("db_change retry queue full, dropping oldest event for %s", dropped[0].event_name)
-        await self._local_retry_queue.put((config, payload))
+        await self._local_retry_queue.put((config, payload, attempt))
+
+    async def _move_to_dlq(
+        self,
+        config: DBChangeTriggerConfig,
+        payload: dict[str, Any],
+        attempt: int,
+        exc: Exception,
+    ) -> None:
+        self._dlq_events.append(
+            {
+                "event_name": config.event_name,
+                "tenant_id": config.tenant_id,
+                "payload": payload,
+                "attempt": attempt,
+                "error": str(exc),
+            }
+        )
+        logger.warning(
+            "db_change retries exhausted for %s after %d attempts, moved to DLQ: %s",
+            config.event_name,
+            attempt,
+            exc,
+        )
 
     async def _retry_loop(self) -> None:
         while True:
-            config, payload = await self._local_retry_queue.get()
+            config, payload, attempt = await self._local_retry_queue.get()
             try:
                 await self._agent_runtime.trigger_event(
                     event_name=config.event_name,
@@ -196,9 +222,13 @@ class DBChangeTriggerManager:
                     tenant_id=config.tenant_id,
                 )
             except Exception as exc:
-                logger.warning("db_change retry failed for %s, requeueing: %s", config.event_name, exc)
-                await asyncio.sleep(self._retry_interval_seconds)
-                await self._enqueue_local_retry(config, payload)
+                next_attempt = attempt + 1
+                if next_attempt >= self._max_retry_attempts:
+                    await self._move_to_dlq(config, payload, next_attempt, exc)
+                else:
+                    logger.warning("db_change retry failed for %s, requeueing: %s", config.event_name, exc)
+                    await asyncio.sleep(self._retry_interval_seconds)
+                    await self._enqueue_local_retry(config, payload, next_attempt)
             finally:
                 self._local_retry_queue.task_done()
 

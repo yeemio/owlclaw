@@ -171,43 +171,55 @@ def test_api_trigger_server_governance_block_429() -> None:
     assert response.status_code == 429
 
 
-def test_api_trigger_server_rate_limit_per_tenant_returns_429() -> None:
+def test_api_trigger_server_invalid_json_returns_400() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)
+    server.register(APITriggerConfig(path="/api/v1/invalid-json", method="POST", event_name="invalid_json", response_mode="sync"))
+
+    with TestClient(server.app) as client:
+        response = client.post(
+            "/api/v1/invalid-json",
+            headers={"X-API-Key": "k1", "Content-Type": "application/json"},
+            content='{"foo": ',
+        )
+    assert response.status_code == 400
+    assert response.json()["error"] == "Invalid JSON"
+
+
+def test_api_trigger_server_tenant_rate_limit_returns_429() -> None:
     runtime = _Runtime()
     server = APITriggerServer(
         auth_provider=APIKeyAuthProvider({"k1"}),
         agent_runtime=runtime,
         tenant_rate_limit_per_minute=1,
+        endpoint_rate_limit_per_minute=100,
     )
-    server.register(APITriggerConfig(path="/api/v1/rate", method="POST", event_name="rate", response_mode="sync"))
+    server.register(APITriggerConfig(path="/api/v1/rate-tenant", method="POST", event_name="rate_tenant", response_mode="sync"))
 
     with TestClient(server.app) as client:
-        first = client.post("/api/v1/rate", headers={"X-API-Key": "k1"}, json={"foo": "bar"})
-        second = client.post("/api/v1/rate", headers={"X-API-Key": "k1"}, json={"foo": "bar"})
+        ok = client.post("/api/v1/rate-tenant", headers={"X-API-Key": "k1"}, json={"x": 1})
+        limited = client.post("/api/v1/rate-tenant", headers={"X-API-Key": "k1"}, json={"x": 2})
+    assert ok.status_code == 200
+    assert limited.status_code == 429
+    assert limited.json()["error"] == "rate_limited"
 
-    assert first.status_code == 200
-    assert second.status_code == 429
-    assert second.json()["error"] == "rate_limited_tenant"
 
-
-def test_api_trigger_server_rate_limit_per_endpoint_returns_429() -> None:
+def test_api_trigger_server_endpoint_rate_limit_returns_429() -> None:
     runtime = _Runtime()
     server = APITriggerServer(
         auth_provider=APIKeyAuthProvider({"k1"}),
         agent_runtime=runtime,
+        tenant_rate_limit_per_minute=100,
         endpoint_rate_limit_per_minute=1,
     )
-    server.register(APITriggerConfig(path="/api/v1/ep-a", method="POST", event_name="ep_a", response_mode="sync"))
-    server.register(APITriggerConfig(path="/api/v1/ep-b", method="POST", event_name="ep_b", response_mode="sync"))
+    server.register(APITriggerConfig(path="/api/v1/rate-endpoint", method="POST", event_name="rate_endpoint", response_mode="sync"))
 
     with TestClient(server.app) as client:
-        a1 = client.post("/api/v1/ep-a", headers={"X-API-Key": "k1"}, json={"foo": "bar"})
-        b1 = client.post("/api/v1/ep-b", headers={"X-API-Key": "k1"}, json={"foo": "bar"})
-        a2 = client.post("/api/v1/ep-a", headers={"X-API-Key": "k1"}, json={"foo": "bar"})
-
-    assert a1.status_code == 200
-    assert b1.status_code == 200
-    assert a2.status_code == 429
-    assert a2.json()["error"] == "rate_limited_endpoint"
+        ok = client.post("/api/v1/rate-endpoint", headers={"X-API-Key": "k1"}, json={"x": 1})
+        limited = client.post("/api/v1/rate-endpoint", headers={"X-API-Key": "k1"}, json={"x": 2})
+    assert ok.status_code == 200
+    assert limited.status_code == 429
+    assert limited.json()["error"] == "rate_limited"
 
 
 def test_api_trigger_server_sanitization_applied() -> None:

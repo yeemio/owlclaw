@@ -35,10 +35,12 @@ class SkillQualitySnapshotORM(Base):
     __table_args__ = (
         Index("idx_quality_tenant_skill_computed", "tenant_id", "skill_name", "computed_at"),
         Index("idx_quality_tenant_score", "tenant_id", "quality_score"),
+        Index("idx_quality_tenant_skill_name", "tenant_id", "skill_name"),
+        Index("idx_quality_tenant_computed", "tenant_id", "computed_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    skill_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    skill_name: Mapped[str] = mapped_column(String(255), nullable=False)
     window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     metrics_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
@@ -47,7 +49,6 @@ class SkillQualitySnapshotORM(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        index=True,
     )
 
 

@@ -8,7 +8,11 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from owlclaw.db import ConfigurationError
+from owlclaw.db import (
+    AuthenticationError,
+    ConfigurationError,
+    DatabaseConnectionError,
+)
 from owlclaw.db import engine as db_engine
 
 
@@ -125,3 +129,78 @@ def test_property_pool_parameters_forwarded_to_sqlalchemy(
     assert captured["kwargs"]["pool_recycle"] == pool_recycle
     assert captured["kwargs"]["pool_pre_ping"] == pool_pre_ping
     assert captured["kwargs"]["echo"] == echo
+
+
+@given(st.sampled_from(["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]))
+def test_property_ssl_mode_translates_to_connect_args(ssl_mode: str) -> None:
+    captured: dict[str, Any] = {}
+
+    def fake_create_async_engine(url: str, **kwargs: Any) -> object:
+        captured["url"] = url
+        captured["kwargs"] = kwargs
+        return object()
+
+    original = db_engine.create_async_engine
+    db_engine.create_async_engine = fake_create_async_engine  # type: ignore[assignment]
+    try:
+        db_engine.create_engine("postgresql://user:pass@localhost/propdb", ssl_mode=ssl_mode)
+    finally:
+        db_engine.create_async_engine = original  # type: ignore[assignment]
+
+    connect_args = captured["kwargs"]["connect_args"]
+    assert isinstance(connect_args, dict)
+    assert "ssl" in connect_args
+
+
+@given(
+    st.text(min_size=1, max_size=12).filter(
+        lambda mode: mode.strip()
+        not in {"", "disable", "allow", "prefer", "require", "verify-ca", "verify-full"}
+    )
+)
+def test_property_invalid_ssl_mode_raises_configuration_error(mode: str) -> None:
+    with pytest.raises(ConfigurationError):
+        db_engine._resolve_ssl_connect_args(mode)  # noqa: SLF001
+
+
+def test_create_engine_wraps_connection_errors() -> None:
+    original = db_engine.create_async_engine
+
+    def fake_create_async_engine(url: str, **kwargs: Any) -> object:  # noqa: ARG001
+        raise RuntimeError("connection refused")
+
+    db_engine.create_async_engine = fake_create_async_engine  # type: ignore[assignment]
+    try:
+        with pytest.raises(DatabaseConnectionError):
+            db_engine.create_engine("postgresql://user:pass@localhost/propdb")
+    finally:
+        db_engine.create_async_engine = original  # type: ignore[assignment]
+
+
+def test_create_engine_wraps_authentication_errors() -> None:
+    original = db_engine.create_async_engine
+
+    def fake_create_async_engine(url: str, **kwargs: Any) -> object:  # noqa: ARG001
+        raise RuntimeError("password authentication failed for user")
+
+    db_engine.create_async_engine = fake_create_async_engine  # type: ignore[assignment]
+    try:
+        with pytest.raises(AuthenticationError):
+            db_engine.create_engine("postgresql://user:pass@localhost/propdb")
+    finally:
+        db_engine.create_async_engine = original  # type: ignore[assignment]
+
+
+def test_get_engine_whitespace_ssl_mode_raises_configuration_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("OWLCLAW_DB_SSL_MODE", "require")
+    db_engine._engines.clear()  # noqa: SLF001
+    with pytest.raises(ConfigurationError, match="must not be blank"):
+        db_engine.get_engine("postgresql://user:pass@localhost/propdb", ssl_mode="   ")
+    db_engine._engines.clear()  # noqa: SLF001
+
+
+def test_resolve_ssl_connect_args_rejects_whitespace_ssl_mode() -> None:
+    with pytest.raises(ConfigurationError, match="must not be blank"):
+        db_engine._resolve_ssl_connect_args("   ")  # noqa: SLF001

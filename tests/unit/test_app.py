@@ -70,6 +70,18 @@ def test_mount_skills_validates_path():
         app.mount_skills(None)  # type: ignore[arg-type]
 
 
+def test_mount_skills_is_not_idempotent(tmp_path):
+    (tmp_path / "entry-monitor").mkdir()
+    (tmp_path / "entry-monitor" / "SKILL.md").write_text(
+        "---\nname: entry-monitor\ndescription: Check entry\n---\n",
+        encoding="utf-8",
+    )
+    app = OwlClaw("test-app")
+    app.mount_skills(str(tmp_path))
+    with pytest.raises(RuntimeError, match="already called"):
+        app.mount_skills(str(tmp_path))
+
+
 def test_handler_before_mount_skills_raises():
     """Using @handler before mount_skills() raises RuntimeError."""
     app = OwlClaw("test-app")
@@ -218,6 +230,45 @@ async def test_start_registers_cron_and_exposes_health(tmp_path):
     assert health["cron"]["total_triggers"] >= 1
 
     await app.stop()
+
+
+@pytest.mark.asyncio
+async def test_start_is_idempotent_returns_existing_runtime(tmp_path):
+    (tmp_path / "entry-monitor").mkdir()
+    (tmp_path / "entry-monitor" / "SKILL.md").write_text(
+        "---\nname: entry-monitor\ndescription: Check entry\n---\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "SOUL.md").write_text("# Soul\nYou are a test agent.", encoding="utf-8")
+    (tmp_path / "IDENTITY.md").write_text("# Identity\nTest identity.", encoding="utf-8")
+    app = OwlClaw("idempotent-start")
+    app.mount_skills(str(tmp_path / "entry-monitor"))
+
+    first = await app.start(app_dir=str(tmp_path))
+    second = await app.start(app_dir=str(tmp_path))
+    assert first is second
+
+    await app.stop()
+
+
+@pytest.mark.asyncio
+async def test_start_failure_triggers_stop_cleanup(tmp_path):
+    (tmp_path / "entry-monitor").mkdir()
+    (tmp_path / "entry-monitor" / "SKILL.md").write_text(
+        "---\nname: entry-monitor\ndescription: Check entry\n---\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "SOUL.md").write_text("# Soul\nYou are a test agent.", encoding="utf-8")
+    (tmp_path / "IDENTITY.md").write_text("# Identity\nTest identity.", encoding="utf-8")
+    app = OwlClaw("start-cleanup")
+    app.mount_skills(str(tmp_path / "entry-monitor"))
+
+    app.start_governance = AsyncMock(side_effect=RuntimeError("boom"))  # type: ignore[method-assign]
+    app.stop = AsyncMock()  # type: ignore[method-assign]
+
+    with pytest.raises(RuntimeError, match="boom"):
+        await app.start(app_dir=str(tmp_path))
+    app.stop.assert_awaited_once()
 
 
 # --- Lite Mode tests ---
