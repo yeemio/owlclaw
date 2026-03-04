@@ -34,7 +34,12 @@ def _map_connection_exception(exc: Exception, url: str) -> DatabaseConnectionErr
 
 
 def _normalize_ssl_mode(ssl_mode: str | None) -> str:
-    raw_mode = ssl_mode if ssl_mode is not None else os.environ.get("OWLCLAW_DB_SSL_MODE")
+    if ssl_mode is not None:
+        mode = ssl_mode.strip().lower()
+        if not mode:
+            raise ConfigurationError("ssl_mode must not be blank when explicitly provided")
+        return mode
+    raw_mode = os.environ.get("OWLCLAW_DB_SSL_MODE")
     return (raw_mode or "").strip().lower()
 
 
@@ -146,7 +151,7 @@ def get_engine(database_url: str | None = None, ssl_mode: str | None = None) -> 
     mode = _normalize_ssl_mode(ssl_mode)
     cache_key = (url, mode)
     if cache_key not in _engines:
-        _engines[cache_key] = create_engine(url, ssl_mode=mode)
+        _engines[cache_key] = create_engine(url, ssl_mode=mode or None)
     return _engines[cache_key]
 
 
