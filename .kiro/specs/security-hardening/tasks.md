@@ -80,8 +80,8 @@
 - [x] 10.2 `defusedxml` 依赖已存在（`pyproject.toml`）并有 XXE 用例覆盖
 
 ### Task 11：请求体限制（REQ-S8）
-- [ ] 11.1 添加 max_content_length 中间件
-- [ ] 11.2 单元测试：超大请求返回 413
+- [x] 11.1 添加 max_content_length 中间件（header + body 双路径限制）
+- [x] 11.2 单元测试：超大请求返回 413（webhook gateway 覆盖）
 
 ### Task 12：SecurityAuditLog 持久化（REQ-S10）
 - [ ] 12.1 实现 FileSecurityAuditBackend
