@@ -154,11 +154,11 @@ async def run_once(self, task_type: str = "default", payload: dict | None = None
 - `owlclaw/agent/memory/store_inmemory.py`：从 `decay` 导入
 - `owlclaw/agent/memory/store_pgvector.py`：从 `decay` 导入
 
-### D7：Ledger CLI 支持 in-memory（REQ-F7）
+### D7：Ledger CLI 无 DB 优雅降级（REQ-F7）
 
-**方案**：`owlclaw ledger query` 检测当前是否有运行中的 OwlClaw 实例（通过 PID 文件或 API），若无则提示用户。
+**方案**：`owlclaw ledger query` 在数据库未配置时捕获配置异常并返回友好提示，不崩溃；数据库已配置时保持原查询逻辑不变。
 
-**简化方案**：Lite Mode 下 `ledger query` 提示"Lite Mode 使用 in-memory ledger，请通过 API 或 Console 查看"，不崩溃。
+**架构说明**：Lite Mode 的 `InMemoryLedger` 为进程内对象，CLI 独立进程不具备直接读取能力，本阶段不引入跨进程共享机制。
 
 **修改文件**：`owlclaw/cli/ledger.py`
 

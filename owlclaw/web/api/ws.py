@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 from collections.abc import AsyncIterator
 from typing import Any
@@ -136,21 +137,25 @@ async def ws_stream(websocket: WebSocket) -> None:
         await websocket.close(code=4409)
         return
 
+    stream: AsyncIterator[dict[str, Any]] | None = None
     try:
         tenant_id = await get_tenant_id(websocket.headers.get("x-owlclaw-tenant"))
         overview_provider = await get_overview_provider()
         triggers_provider = await get_triggers_provider()
         ledger_provider = await get_ledger_provider()
-
-        async for message in _stream_messages(
+        stream = _stream_messages(
             websocket=websocket,
             tenant_id=tenant_id,
             overview_provider=overview_provider,
             triggers_provider=triggers_provider,
             ledger_provider=ledger_provider,
-        ):
+        )
+        async for message in stream:
             await websocket.send_json(message)
     except WebSocketDisconnect:
         return
     finally:
+        if stream is not None:
+            with contextlib.suppress(Exception):
+                await stream.aclose()  # type: ignore[has-type]
         await limiter.unregister(websocket)

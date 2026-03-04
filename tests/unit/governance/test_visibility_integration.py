@@ -119,7 +119,7 @@ async def test_visibility_filter_fail_open_with_real_constraint():
         ledger,
         {"budget_limits": {"agent1": "100"}, "high_cost_threshold": "0.1"},
     )
-    vf = VisibilityFilter()
+    vf = VisibilityFilter(fail_policy="open")
     vf.register_evaluator(budget_c)
 
     cap = CapabilityView("expensive", constraints={"estimated_cost": "0.5"})

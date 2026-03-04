@@ -1,5 +1,7 @@
 """Unit tests for Hatchet integration (config and client, no server)."""
 
+import time
+
 import pytest
 
 from owlclaw.integrations.hatchet import HatchetClient, HatchetConfig, _substitute_env_dict
@@ -94,6 +96,32 @@ def test_hatchet_client_connect_without_token_raises(monkeypatch):
     config = HatchetConfig()
     client = HatchetClient(config)
     with pytest.raises(ValueError, match="API token required"):
+        client.connect()
+
+
+def test_hatchet_client_connect_timeout_raises(monkeypatch):
+    class _FakeTLSConfig:
+        def __init__(self, strategy: str) -> None:  # noqa: ARG002
+            return None
+
+    class _FakeClientConfig:
+        def __init__(self, **kwargs):  # type: ignore[no-untyped-def]
+            self.kwargs = kwargs
+
+    class _SlowHatchet:
+        def __init__(self, config):  # noqa: ARG002
+            time.sleep(0.05)
+
+    monkeypatch.setattr(
+        "owlclaw.integrations.hatchet._get_hatchet",
+        lambda: (_SlowHatchet, _FakeClientConfig, _FakeTLSConfig),
+    )
+    config = HatchetConfig(
+        api_token="token",
+        connect_timeout_seconds=0.01,
+    )
+    client = HatchetClient(config)
+    with pytest.raises(ConnectionError, match="Timed out connecting to Hatchet"):
         client.connect()
 
 

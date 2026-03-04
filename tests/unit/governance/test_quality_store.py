@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from owlclaw.governance.quality_store import InMemoryQualityStore, SkillQualitySnapshot
+from owlclaw.governance.quality_store import InMemoryQualityStore, SkillQualitySnapshot, SkillQualitySnapshotORM
 
 
 def _snapshot(*, skill: str, score: float, at: datetime, tenant: str = "default") -> SkillQualitySnapshot:
@@ -41,3 +41,12 @@ def test_inmemory_quality_store_all_latest_grouped_by_skill() -> None:
     assert [r.skill_name for r in rows] == ["inventory-monitor", "report-generator"]
     assert rows[0].quality_score == 0.9
     assert rows[1].quality_score == 0.5
+
+
+def test_quality_snapshot_indexes_are_tenant_prefixed() -> None:
+    index_columns = {
+        index.name: tuple(column.name for column in index.columns)
+        for index in SkillQualitySnapshotORM.__table__.indexes
+    }
+    for index_name, columns in index_columns.items():
+        assert columns[0] == "tenant_id", f"{index_name} must be tenant-prefixed"

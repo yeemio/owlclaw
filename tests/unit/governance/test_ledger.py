@@ -29,6 +29,15 @@ def test_ledger_record_table_name():
     assert LedgerRecord.__tablename__ == "ledger_records"
 
 
+def test_ledger_indexes_are_tenant_prefixed() -> None:
+    index_columns = {
+        index.name: tuple(column.name for column in index.columns)
+        for index in LedgerRecord.__table__.indexes
+    }
+    for index_name, columns in index_columns.items():
+        assert columns[0] == "tenant_id", f"{index_name} must be tenant-prefixed"
+
+
 @pytest.mark.asyncio
 async def test_ledger_record_execution_enqueues():
     """record_execution enqueues a record without raising."""
@@ -151,6 +160,12 @@ def test_ledger_rejects_invalid_flush_interval():
     session_factory = MagicMock()
     with pytest.raises(ValueError, match="flush_interval must be a positive number"):
         Ledger(session_factory, batch_size=1, flush_interval=0)
+
+
+def test_ledger_rejects_blank_fallback_log_path() -> None:
+    session_factory = MagicMock()
+    with pytest.raises(ValueError, match="fallback_log_path must be a non-empty string"):
+        Ledger(session_factory, batch_size=1, flush_interval=1, fallback_log_path=" ")
 
 
 def _make_record() -> LedgerRecord:
@@ -478,3 +493,19 @@ async def test_record_execution_supports_migration_audit_fields():
     assert record.execution_mode == "pending_approval"
     assert record.risk_level == Decimal("0.4000")
     assert record.approval_by == "ops-a"
+
+
+@pytest.mark.asyncio
+async def test_write_to_fallback_log_uses_configured_path(tmp_path) -> None:
+    session_factory = MagicMock()
+    fallback_file = tmp_path / "ledger-fallback.jsonl"
+    ledger = Ledger(
+        session_factory,
+        batch_size=1,
+        flush_interval=1.0,
+        fallback_log_path=str(fallback_file),
+    )
+    await ledger._write_to_fallback_log([_make_record()])
+    assert fallback_file.exists()
+    payload = fallback_file.read_text(encoding="utf-8")
+    assert "agent1" in payload

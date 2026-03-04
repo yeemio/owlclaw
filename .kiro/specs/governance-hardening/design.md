@@ -44,6 +44,26 @@
 
 使用 Hatchet 的 `concurrency` 配置或本地 `asyncio.Lock`。
 
+## D-G11：API Trigger 速率限制
+
+在 `APITriggerServer` 增加可配置的 token bucket 限流器：
+- `tenant_rate_limit_per_minute`
+- `endpoint_rate_limit_per_minute`
+超限返回 HTTP 429，并记录 ledger blocked 事件。
+
+## D-G12：VisibilityFilter 默认 fail-close
+
+`VisibilityFilter.__init__` 默认 `fail_policy="close"`。
+`app._ensure_governance()` 与 `config.models.GovernanceConfig` 默认值同步为 `close`，
+并在字段说明中标注 `open` 仅用于 dev/test 调试。
+
+## D-G13：Budget 原子预约与退款
+
+`BudgetConstraint` 内维护带锁的预算预约表（按 tenant_id + agent_id 分桶）：
+- evaluate 时原子计算 `remaining = limit - used - reserved`
+- 对高成本 capability 进行预约，避免并发穿透
+- 提供退款接口并支持 TTL 过期回收
+
 ---
 
 ## 影响文件
@@ -59,3 +79,7 @@
 | `owlclaw/db/session.py` | G7 |
 | `owlclaw/db/engine.py` | G8, G9 |
 | `owlclaw/triggers/cron.py` | G10 |
+| `owlclaw/triggers/api/server.py` | G11 |
+| `owlclaw/governance/visibility.py` | G12 |
+| `owlclaw/config/models.py` + `owlclaw/app.py` | G12 |
+| `owlclaw/governance/constraints/budget.py` | G13 |

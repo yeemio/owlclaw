@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from abc import ABC, abstractmethod
 from typing import Any
@@ -37,10 +38,20 @@ class RedisIdempotencyStore(IdempotencyStore):
         return bool(await self._client.exists(self._key(key)))
 
     async def set(self, key: str, value: Any, ttl: int) -> None:
-        await self._client.set(self._key(key), value, ex=max(1, int(ttl)))
+        await self._client.set(self._key(key), json.dumps(value, ensure_ascii=False), ex=max(1, int(ttl)))
 
     async def get(self, key: str) -> Any | None:
-        return await self._client.get(self._key(key))
+        raw = await self._client.get(self._key(key))
+        if raw is None:
+            return None
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        if isinstance(raw, str):
+            try:
+                return json.loads(raw)
+            except json.JSONDecodeError:
+                return raw
+        return raw
 
 
 class MockIdempotencyStore(IdempotencyStore):

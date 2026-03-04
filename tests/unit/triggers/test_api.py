@@ -171,6 +171,57 @@ def test_api_trigger_server_governance_block_429() -> None:
     assert response.status_code == 429
 
 
+def test_api_trigger_server_invalid_json_returns_400() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)
+    server.register(APITriggerConfig(path="/api/v1/invalid-json", method="POST", event_name="invalid_json", response_mode="sync"))
+
+    with TestClient(server.app) as client:
+        response = client.post(
+            "/api/v1/invalid-json",
+            headers={"X-API-Key": "k1", "Content-Type": "application/json"},
+            content='{"foo": ',
+        )
+    assert response.status_code == 400
+    assert response.json()["error"] == "Invalid JSON"
+
+
+def test_api_trigger_server_tenant_rate_limit_returns_429() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(
+        auth_provider=APIKeyAuthProvider({"k1"}),
+        agent_runtime=runtime,
+        tenant_rate_limit_per_minute=1,
+        endpoint_rate_limit_per_minute=100,
+    )
+    server.register(APITriggerConfig(path="/api/v1/rate-tenant", method="POST", event_name="rate_tenant", response_mode="sync"))
+
+    with TestClient(server.app) as client:
+        ok = client.post("/api/v1/rate-tenant", headers={"X-API-Key": "k1"}, json={"x": 1})
+        limited = client.post("/api/v1/rate-tenant", headers={"X-API-Key": "k1"}, json={"x": 2})
+    assert ok.status_code == 200
+    assert limited.status_code == 429
+    assert limited.json()["error"] == "rate_limited"
+
+
+def test_api_trigger_server_endpoint_rate_limit_returns_429() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(
+        auth_provider=APIKeyAuthProvider({"k1"}),
+        agent_runtime=runtime,
+        tenant_rate_limit_per_minute=100,
+        endpoint_rate_limit_per_minute=1,
+    )
+    server.register(APITriggerConfig(path="/api/v1/rate-endpoint", method="POST", event_name="rate_endpoint", response_mode="sync"))
+
+    with TestClient(server.app) as client:
+        ok = client.post("/api/v1/rate-endpoint", headers={"X-API-Key": "k1"}, json={"x": 1})
+        limited = client.post("/api/v1/rate-endpoint", headers={"X-API-Key": "k1"}, json={"x": 2})
+    assert ok.status_code == 200
+    assert limited.status_code == 429
+    assert limited.json()["error"] == "rate_limited"
+
+
 def test_api_trigger_server_sanitization_applied() -> None:
     runtime = _Runtime()
     server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)

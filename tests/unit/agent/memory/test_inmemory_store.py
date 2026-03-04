@@ -141,3 +141,29 @@ async def test_inmemory_get_recent_with_non_positive_hours_returns_latest_withou
     contents = [entry.content for entry in recent]
     assert "Old" in contents
     assert "New" in contents
+
+
+@pytest.mark.asyncio
+async def test_inmemory_respects_max_entries_with_lru_eviction() -> None:
+    store = InMemoryStore(max_entries=2)
+    embedder = RandomEmbedder(dimensions=8, seed=42)
+    agent_id, tenant_id = "a", "default"
+
+    emb1 = await embedder.embed("one")
+    one = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="one", embedding=emb1)
+    one_id = await store.save(one)
+
+    emb2 = await embedder.embed("two")
+    two = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="two", embedding=emb2)
+    two_id = await store.save(two)
+
+    await store.update_access(agent_id, tenant_id, [two_id])
+
+    emb3 = await embedder.embed("three")
+    three = MemoryEntry(agent_id=agent_id, tenant_id=tenant_id, content="three", embedding=emb3)
+    await store.save(three)
+
+    assert await store.count(agent_id, tenant_id) == 2
+    entries = await store.list_entries(agent_id, tenant_id, order_created_asc=True, limit=10, include_archived=True)
+    entry_ids = {entry.id for entry in entries}
+    assert one_id not in entry_ids

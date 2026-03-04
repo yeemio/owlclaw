@@ -25,7 +25,12 @@ class MemoryEntryORM(Base):
     """ORM model for memory_entries table (used by PgVectorStore)."""
 
     __tablename__ = "memory_entries"
-    __table_args__ = {"comment": "Agent long-term memory entries (vector + metadata)."}
+    # Tests may temporarily unload/reload this module to simulate optional dependency
+    # scenarios; keep table declaration idempotent across repeated imports.
+    __table_args__ = {
+        "comment": "Agent long-term memory entries (vector + metadata).",
+        "extend_existing": True,
+    }
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     agent_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)

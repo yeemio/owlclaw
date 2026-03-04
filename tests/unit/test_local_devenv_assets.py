@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import re
 
@@ -155,9 +156,17 @@ def test_env_example_covers_literal_env_reads_in_owlclaw_code() -> None:
         re.compile(r'os\.environ\.get\(\s*"([A-Z][A-Z0-9_]*)"'),
         re.compile(r'os\.environ\[\s*"([A-Z][A-Z0-9_]*)"\s*\]'),
     )
-    for py_file in Path("owlclaw").rglob("*.py"):
-        source = py_file.read_text(encoding="utf-8")
-        for pattern in patterns:
-            used_keys.update(pattern.findall(source))
+    for root, _dirs, files in os.walk("owlclaw"):
+        for file_name in files:
+            if not file_name.endswith(".py"):
+                continue
+            py_file = Path(root) / file_name
+            try:
+                source = py_file.read_text(encoding="utf-8")
+            except OSError:
+                # Frontend dependency trees can change concurrently in dev env.
+                continue
+            for pattern in patterns:
+                used_keys.update(pattern.findall(source))
     missing = sorted(key for key in used_keys if key not in env_keys and key not in ignored)
     assert missing == []

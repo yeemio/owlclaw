@@ -5,8 +5,10 @@ the registration, lookup, and invocation of capability handlers and state
 providers.
 """
 
+import asyncio
 import inspect
 import logging
+import math
 from collections.abc import Callable
 from typing import Any
 
@@ -28,15 +30,29 @@ class CapabilityRegistry:
         states: Dictionary mapping state names to provider functions
     """
 
-    def __init__(self, skills_loader: SkillsLoader):
+    def __init__(self, skills_loader: SkillsLoader, *, handler_timeout_seconds: float = 30.0):
         """Initialize the CapabilityRegistry.
 
         Args:
             skills_loader: SkillsLoader instance for accessing Skill metadata
+            handler_timeout_seconds: Async handler invocation timeout in seconds.
         """
         self.skills_loader = skills_loader
         self.handlers: dict[str, Callable] = {}
         self.states: dict[str, Callable] = {}
+        self._handler_timeout_seconds = self._normalize_timeout(handler_timeout_seconds)
+
+    @staticmethod
+    def _normalize_timeout(value: Any) -> float:
+        if isinstance(value, bool):
+            return 30.0
+        try:
+            timeout = float(value)
+        except (TypeError, ValueError):
+            return 30.0
+        if timeout <= 0 or not math.isfinite(timeout):
+            return 30.0
+        return timeout
 
     @staticmethod
     def _normalize_name(value: str, field: str) -> str:
@@ -147,8 +163,12 @@ class CapabilityRegistry:
             invoke_kwargs = self._prepare_handler_kwargs(handler, kwargs)
             result = handler(**invoke_kwargs)
             if inspect.isawaitable(result):
-                return await result
+                return await asyncio.wait_for(result, timeout=self._handler_timeout_seconds)
             return result
+        except asyncio.TimeoutError as e:
+            raise RuntimeError(
+                f"Handler '{skill_name}' timed out after {self._handler_timeout_seconds:.2f}s"
+            ) from e
         except Exception as e:
             raise RuntimeError(
                 f"Handler '{skill_name}' failed: {e}"

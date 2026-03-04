@@ -6,6 +6,7 @@ is started/stopped via start()/stop().
 
 import asyncio
 import contextlib
+import json
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -55,6 +56,10 @@ class LedgerRecord(Base):
         Index("idx_ledger_tenant_agent", "tenant_id", "agent_id"),
         Index("idx_ledger_tenant_capability", "tenant_id", "capability_name"),
         Index("idx_ledger_tenant_created", "tenant_id", "created_at"),
+        Index("idx_ledger_tenant_run", "tenant_id", "run_id"),
+        Index("idx_ledger_tenant_status", "tenant_id", "status"),
+        Index("idx_ledger_tenant_task_type", "tenant_id", "task_type"),
+        Index("idx_ledger_tenant_execution_mode", "tenant_id", "execution_mode"),
         {"comment": "Agent capability execution records for audit and cost analysis"},
     )
 
@@ -63,10 +68,10 @@ class LedgerRecord(Base):
         default=uuid.uuid4,
         primary_key=True,
     )
-    agent_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    run_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    capability_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    task_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    agent_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    run_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    capability_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    task_type: Mapped[str] = mapped_column(String(100), nullable=False)
 
     input_params: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     output_result: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
@@ -81,10 +86,10 @@ class LedgerRecord(Base):
         nullable=False,
     )
 
-    status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     migration_weight: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    execution_mode: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    execution_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)
     risk_level: Mapped[Decimal | None] = mapped_column(DECIMAL(5, 4), nullable=True)
     approval_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     approval_time: Mapped[Any | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -93,7 +98,6 @@ class LedgerRecord(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
-        index=True,
     )
 
 
@@ -105,6 +109,7 @@ class Ledger:
         session_factory: async_sessionmaker[AsyncSession],
         batch_size: int = 10,
         flush_interval: float = 5.0,
+        fallback_log_path: str = "ledger_fallback.log",
     ) -> None:
         if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
             raise ValueError("batch_size must be a positive integer")
@@ -113,9 +118,12 @@ class Ledger:
         flush_interval_value = float(flush_interval)
         if flush_interval_value <= 0:
             raise ValueError("flush_interval must be a positive number")
+        if not isinstance(fallback_log_path, str) or not fallback_log_path.strip():
+            raise ValueError("fallback_log_path must be a non-empty string")
         self._session_factory = session_factory
         self._batch_size = batch_size
         self._flush_interval = flush_interval_value
+        self._fallback_log_path = fallback_log_path.strip()
         self._flush_max_retries = 3
         self._flush_backoff_base_seconds = 0.1
         self._write_queue: asyncio.Queue[LedgerRecord] = asyncio.Queue()
@@ -342,8 +350,6 @@ class Ledger:
 
     async def _write_to_fallback_log(self, batch: list[LedgerRecord]) -> None:
         """On DB failure, append records to a local fallback log."""
-        import json
-
         for record in batch:
             line = json.dumps(
                 {
@@ -358,7 +364,7 @@ class Ledger:
                 }
             ) + "\n"
             try:
-                with open("ledger_fallback.log", "a", encoding="utf-8") as f:
+                with open(self._fallback_log_path, "a", encoding="utf-8") as f:
                     f.write(line)
             except OSError as e:
                 logger.error("Failed to write fallback log: %s", e)
