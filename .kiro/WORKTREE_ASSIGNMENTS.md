@@ -275,8 +275,10 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | 时间 | 发送方 | 接收方 | 消息 | 状态 |
 |------|--------|--------|------|------|
-| 2026-03-03 | 统筹(main) | codex-work | **FIX_NEEDED**：Round 15/16 审校发现 S12 plaintext token persistence 问题，请修复后推送，review-work 将再审。 | 🔴 待处理 |
-| 2026-03-03 | 统筹(main) | codex-gpt-work | **FIX_NEEDED**：Round 17 审校发现 ssl_mode whitespace regression 问题，请修复后推送，review-work 将再审。 | 🔴 待处理 |
+| 2026-03-04 | 统筹(main) | codex-work | **新任务分配**：GLM-5 独立重审计完成，生成 v4 报告。你的 P0 任务已更新：security-hardening Phase 1 Task 1-3（Finding #1/#2/#3/#4/#15）。请优先执行 P0 任务，完成后再处理 P1 任务。 | 🔴 待处理 |
+| 2026-03-04 | 统筹(main) | codex-gpt-work | **新任务分配**：GLM-5 独立重审计完成，生成 v4 报告。你的 P0 任务已更新：runtime-robustness Phase 1 Task 1 依赖 codex-work 的 security-hardening Task 2 完成后才能开始。请先执行 Task 2-3（Finding #16/#17），等依赖满足后再执行 Task 1。 | 🔴 待处理 |
+| 2026-03-03 | 统筹(main) | codex-work | **FIX_NEEDED**：Round 15/16 审校发现 S12 plaintext token persistence 问题，请修复后推送，review-work 将再审。 | 🟡 已知 |
+| 2026-03-03 | 统筹(main) | codex-gpt-work | **FIX_NEEDED**：Round 17 审校发现 ssl_mode whitespace regression 问题，请修复后推送，review-work 将再审。 | 🟡 已知 |
 
 ### 已归档消息
 
@@ -335,6 +337,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-02 | Phase 10 完成：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)。经 Round 13 APPROVE 审校，合并到 main。两个编码 worktree 状态改为 DONE | 架构审计修复全部完成，工程达到可交付状态 |
 | 2026-03-03 | Phase 11 分配：新建 lite-mode-e2e spec（三层齐全）。codex-work → Task 1-4（核心链路：mock LLM 统一 + heartbeat 直通 + 日志 + --once 决策循环）；codex-gpt-work → Task 5-8（体验完善：pgvector 延迟导入 + Quick Start 重写 + Ledger CLI + API 降级）。按文件边界隔离 | 真实用户体验测试发现 Lite Mode 端到端体验链路断裂（P0），产品核心承诺不成立 |
 | 2026-03-03 | Phase 11 完成 + Phase 12 分配：lite-mode-e2e F1-F10 全部完成（Task 1-10 ✅），仅 F11 全量回归待执行。新建 4 个 Phase 12 spec（80+ 问题）。codex-work → config-propagation-fix + security-hardening；codex-gpt-work → runtime-robustness + governance-hardening。共享文件按函数范围隔离 | 全方位深度审计（4 维度逐行审计）发现 80+ 问题，按领域拆分 4 个 spec |
+| 2026-03-04 | **GLM-5 独立重审计**：生成 v4 报告（17 个发现，3 P0 + 7 P1 + 7 Low）。与之前审计 94% 重合，新发现 #15（Webhook CORS）。更新 4 个 spec tasks.md：security-hardening 新增 Phase 1 (P0) + Phase 2 (P1)；runtime-robustness 新增 Phase 1 (P0)；governance-hardening 新增 Phase 1 (P1)；config-propagation-fix 新增 Task 1 (P1)。调整任务优先级顺序，P0 阻塞发布 | 独立审计验证 + 任务优先级重构 |
 
 ---
 
@@ -344,14 +347,69 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 1-11 全部已分配完毕 ✅**
 
-**Phase 12 进行中**（2026-03-03）
+**Phase 12 进行中**（2026-03-04 更新 — GLM-5 重审计后）
 
-| Spec | Tasks | Worktree | 状态 |
-|------|-------|----------|------|
-| config-propagation-fix Task 1-8 | LLM 配置补字段 + Runtime 传配置 + Router 派生 + 返回 None + 优先级 + 防护 + 清理 + 回归 | codex-work | 🟡 0/24 待开始 |
-| security-hardening Task 1-14 | SKILL 消毒 + 工具消毒 + Webhook 鉴权 + MCP 认证 + eval + XXE + 体积 + Unicode + 审计 + Console + CORS | codex-work | 🟡 0/43 待开始 |
-| runtime-robustness Task 1-19 | 并发安全 + max_iter + 超时 + 幂等 + 重试 + InMemory + Hatchet + cache + WS + Langfuse + Redis + Queue + API + context | codex-gpt-work | 🟡 0/55 待开始 |
-| governance-hardening Task 1-11 | 索引 + UUID PK + fallback + 定价 + QualityStore + env.py + session + 异常 + SSL + Cron | codex-gpt-work | 🟡 0/30 待开始 |
+### 任务优先级说明
+
+| 优先级 | 含义 | 执行要求 |
+|--------|------|----------|
+| **P0** | 阻塞发布 | 必须在发布前完成，安全漏洞/核心功能断裂 |
+| **P1** | 发布后尽快修复 | 重要问题，但不阻塞发布 |
+| **Low** | 后续迭代处理 | 改进项，可排期处理 |
+
+### codex-work 分配
+
+| Spec | Phase | Task | Finding | 优先级 | 状态 |
+|------|-------|------|---------|--------|------|
+| **security-hardening** | Phase 1 | Task 1: 工具结果消毒 | #2 | **P0** | 🟡 待开始 |
+| | Phase 1 | Task 2: 工具参数 Schema 校验 | #3 | **P0** | 🟡 待开始 |
+| | Phase 1 | Task 3: CORS 安全修复 | #1, #4, #15 | **P0** | 🟡 待开始 |
+| | Phase 2 | Task 4: HTTP Executor SSRF | #5 | P1 | 🟡 待开始 |
+| | Phase 2 | Task 5: Unicode 归一化 | #6 | P1 | 🟡 待开始 |
+| | Phase 2 | Task 6: SKILL.md 注入防护 | - | P1 | 🟡 待开始 |
+| | Phase 3 | Task 7-14: 其他安全任务 | - | P1 | 🟡 待开始 |
+| **config-propagation-fix** | Phase 1 | Task 1: Auth 空 Token 绕过 | #7 | P1 | 🟡 待开始 |
+| | Phase 2 | Task 2-8: 配置传播修复 | - | P1 | 🟡 待开始 |
+
+**codex-work 执行顺序**：
+1. security-hardening Phase 1 (P0) → 阻塞发布
+2. config-propagation-fix Phase 1 (P1)
+3. security-hardening Phase 2-3 (P1)
+
+### codex-gpt-work 分配
+
+| Spec | Phase | Task | Finding | 优先级 | 状态 |
+|------|-------|------|---------|--------|------|
+| **runtime-robustness** | Phase 1 | Task 1: Schema 校验依赖 | #3 | **P0** | 🟡 等待 security-hardening Task 2 |
+| | Phase 1 | Task 2: _tool_call_timestamps 并发安全 | #16 | P1 | 🟡 待开始 |
+| | Phase 1 | Task 3: skills_context_cache 隔离 | #17 | P1 | 🟡 待开始 |
+| | Phase 2 | Task 4-19: 其他健壮性任务 | - | P1 | 🟡 待开始 |
+| **governance-hardening** | Phase 1 | Task 1: API Trigger 速率限制 | #8 | P1 | 🟡 待开始 |
+| | Phase 1 | Task 2: fail_policy 默认值 | #9 | P1 | 🟡 待开始 |
+| | Phase 1 | Task 3: Budget 竞态条件 | #10 | P1 | 🟡 待开始 |
+| | Phase 2 | Task 4-13: 其他治理任务 | - | P1 | 🟡 待开始 |
+
+**codex-gpt-work 执行顺序**：
+1. runtime-robustness Phase 1 Task 2-3（Task 1 需等待 codex-work security-hardening Task 2）
+2. governance-hardening Phase 1 (P1)
+3. runtime-robustness Phase 2 (P1)
+
+### 共享文件修改边界
+
+| 共享文件 | codex-work 范围 | codex-gpt-work 范围 |
+|---------|----------------|-------------------|
+| `owlclaw/agent/runtime/runtime.py` | `_execute_tool()` 消毒、schema 校验 | `_tool_call_timestamps`、`_skills_context_cache` |
+| `owlclaw/web/api/middleware.py` | CORS + Auth 修复 | 不修改 |
+| `owlclaw/governance/visibility.py` | 不修改 | fail_policy 默认值 |
+
+### Low 级别发现（后续迭代）
+
+| Finding | 问题 | 建议归属 |
+|---------|------|----------|
+| #11 | Langfuse secret in config | security-hardening 后续 |
+| #12 | `_is_select_query` 启发式 | declarative-binding 后续 |
+| #13 | Shadow mode 查询泄露 | declarative-binding 后续 |
+| #14 | Heartbeat DB I/O | agent-runtime 后续 |
 
 **下一轮待分配**：Phase 11 F11 全量回归由 review-work 审校执行。Phase 12 全部完成后评估是否需要 Phase 13。
 
