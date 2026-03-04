@@ -195,6 +195,13 @@ def test_api_trigger_server_duplicate_registration_raises() -> None:
         server.register(cfg)
 
 
+def test_api_trigger_server_default_cors_origins_is_closed() -> None:
+    server = APITriggerServer()
+    cors = next((item for item in server.app.user_middleware if item.cls.__name__ == "CORSMiddleware"), None)
+    assert cors is not None
+    assert cors.kwargs.get("allow_origins") == []
+
+
 def test_api_call_function_registration_payload() -> None:
     registration = api_call(path="/api/v1/a", event_name="evt")
     assert isinstance(registration, APITriggerRegistration)

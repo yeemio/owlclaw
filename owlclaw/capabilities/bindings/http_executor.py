@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
+from urllib.parse import urlparse
 from typing import Any
 
 import httpx
@@ -26,6 +28,7 @@ class HTTPBindingExecutor(BindingExecutor):
             raise TypeError("HTTPBindingExecutor requires HTTPBindingConfig")
         method = config.method.upper()
         url = self._render_url(config.url, parameters)
+        self._validate_outbound_url(url, config)
         headers = self._render_headers(config.headers)
         body = self._render_body(config.body_template, parameters)
 
@@ -146,4 +149,52 @@ class HTTPBindingExecutor(BindingExecutor):
             return response.json()
         except ValueError:
             return {"text": response.text}
+
+    @staticmethod
+    def _is_private_or_local_host(host: str) -> bool:
+        normalized = host.strip().lower()
+        if normalized in {"localhost"}:
+            return True
+        try:
+            ip = ipaddress.ip_address(normalized)
+        except ValueError:
+            return False
+        return (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_reserved
+            or ip.is_multicast
+            or ip.is_unspecified
+        )
+
+    @staticmethod
+    def _host_allowed(host: str, allowed_hosts: list[str]) -> bool:
+        normalized_host = host.strip().lower()
+        for raw in allowed_hosts:
+            candidate = raw.strip().lower()
+            if not candidate:
+                continue
+            if normalized_host == candidate:
+                return True
+            if normalized_host.endswith(f".{candidate}"):
+                return True
+        return False
+
+    def _validate_outbound_url(self, rendered_url: str, config: HTTPBindingConfig) -> None:
+        parsed = urlparse(rendered_url)
+        scheme = (parsed.scheme or "").lower()
+        host = (parsed.hostname or "").strip()
+        if scheme not in {"http", "https"}:
+            raise PermissionError("http binding URL must use http/https scheme")
+        if not host:
+            raise PermissionError("http binding URL must include hostname")
+
+        allowed_hosts = [item for item in config.allowed_hosts if isinstance(item, str) and item.strip()]
+        if allowed_hosts and not self._host_allowed(host, allowed_hosts):
+            raise PermissionError(f"http binding host '{host}' is not in allowlist")
+
+        if not config.allow_private_network and self._is_private_or_local_host(host):
+            if not allowed_hosts or not self._host_allowed(host, allowed_hosts):
+                raise PermissionError(f"http binding blocked private/local host '{host}'")
 

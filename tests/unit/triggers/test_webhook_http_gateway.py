@@ -158,3 +158,8 @@ def test_webhook_request_body_too_large_returns_413() -> None:
         data='{"value":"this payload is too large"}',
     )
     assert oversized.status_code == 413
+
+
+def test_http_gateway_config_default_cors_origins_is_closed() -> None:
+    cfg = HttpGatewayConfig()
+    assert cfg.cors_origins == []

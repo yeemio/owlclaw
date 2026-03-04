@@ -74,9 +74,9 @@ def test_overview_uses_console_api_token_env_and_x_api_token(monkeypatch) -> Non
     assert authorized.status_code == 200
 
 
-def test_parse_cors_origins_uses_localhost_default() -> None:
-    assert parse_cors_origins(None) == ["http://localhost:3000"]
-    assert parse_cors_origins("") == ["http://localhost:3000"]
+def test_parse_cors_origins_uses_empty_default() -> None:
+    assert parse_cors_origins(None) == []
+    assert parse_cors_origins("") == []
 
 
 def test_overview_returns_500_when_require_auth_enabled_without_token(monkeypatch) -> None:
@@ -102,3 +102,13 @@ def test_auth_middleware_logs_warning_when_token_empty(monkeypatch, caplog) -> N
         client = TestClient(app)
         client.get("/api/v1/overview")
     assert any("Console API token is empty" in rec.message for rec in caplog.records)
+
+
+def test_add_cors_middleware_warns_on_wildcard_with_credentials(monkeypatch, caplog) -> None:
+    monkeypatch.setenv("OWLCLAW_CONSOLE_CORS_ORIGINS", "*")
+    monkeypatch.setenv("OWLCLAW_CONSOLE_CORS_ALLOW_CREDENTIALS", "true")
+    with caplog.at_level(logging.WARNING):
+        app = create_console_app()
+        client = TestClient(app)
+        client.get("/api/v1/overview")
+    assert any("allow_credentials=true is not compatible" in rec.message for rec in caplog.records)

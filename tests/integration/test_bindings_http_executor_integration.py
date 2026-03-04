@@ -33,3 +33,12 @@ async def test_http_binding_executor_integration_chain() -> None:
     assert len(requests) == 1
     assert requests[0].url.path == "/orders/1"
 
+
+@pytest.mark.asyncio
+async def test_http_binding_executor_blocks_private_host_integration() -> None:
+    executor = HTTPBindingExecutor(
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, json={"ok": True}))
+    )
+    config = HTTPBindingConfig(method="GET", url="http://127.0.0.1/internal")
+    with pytest.raises(PermissionError, match="blocked private/local host"):
+        await executor.execute(config, {})

@@ -108,7 +108,7 @@ class APITriggerServer:
         self._server_task: asyncio.Task[None] | None = None
         self._runs: dict[str, dict[str, Any]] = {}
         self._signal_admin_registered: bool = False
-        origins = cors_origins if cors_origins is not None else ["*"]
+        origins = cors_origins if cors_origins is not None else []
         self._app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
         self._app.router.routes.append(Route("/runs/{run_id}/result", endpoint=self._get_run_result, methods=["GET"]))
 

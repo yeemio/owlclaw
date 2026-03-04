@@ -146,3 +146,52 @@ owlclaw:
     result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
     assert result["status"] == "completed"
     handler.assert_not_called()
+
+
+@pytest.mark.asyncio
+@patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+async def test_e2e_tool_schema_blocks_ssrf_url_argument(mock_llm, tmp_path: Path) -> None:
+    app_dir = tmp_path / "app"
+    app_dir.mkdir(parents=True, exist_ok=True)
+    _make_app_dir(app_dir)
+    skill_dir = app_dir / "capabilities" / "safe-fetch"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        """---
+name: safe-fetch
+description: fetch data from allowlisted API
+metadata:
+  tools_schema:
+    safe-fetch:
+      description: fetch from API
+      parameters:
+        type: object
+        properties:
+          url:
+            type: string
+            pattern: '^https://api\\.example\\.com/.*$'
+        required: [url]
+---
+# Guide
+""",
+        encoding="utf-8",
+    )
+
+    tc = _make_tool_call("safe-fetch", {"url": "http://169.254.169.254/latest/meta-data"})
+    mock_llm.side_effect = [_make_llm_response(tool_calls=[tc]), _make_llm_response("done")]
+
+    loader = SkillsLoader(app_dir / "capabilities")
+    loader.scan()
+    registry = CapabilityRegistry(loader)
+    handler = AsyncMock(return_value={"ok": True})
+    registry.register_handler("safe-fetch", handler)
+    rt = AgentRuntime(agent_id="bot", app_dir=str(app_dir), registry=registry)
+    await rt.setup()
+
+    result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+
+    assert result["status"] == "completed"
+    handler.assert_not_called()
+    second_call_messages = mock_llm.call_args_list[1].kwargs["messages"]
+    tool_msg = next(m for m in second_call_messages if m["role"] == "tool")
+    assert "Invalid arguments for tool 'safe-fetch'" in tool_msg["content"]
