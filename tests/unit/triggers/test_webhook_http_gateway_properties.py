@@ -11,6 +11,7 @@ from owlclaw.triggers.webhook import (
     EventLogger,
     ExecutionTrigger,
     GovernanceClient,
+    HttpGatewayConfig,
     MonitoringService,
     PayloadTransformer,
     RequestValidator,
@@ -44,6 +45,7 @@ def _client() -> TestClient:
         execution=ExecutionTrigger(_Runtime()),
         event_logger=EventLogger(InMemoryEventRepository()),
         monitoring=MonitoringService(),
+        config=HttpGatewayConfig(admin_token="admin-secret"),
     )
     return TestClient(app)
 
@@ -57,6 +59,7 @@ def _create_endpoint(client: TestClient, token: str) -> str:
             "auth_method": {"type": "bearer", "token": token},
             "execution_mode": "async",
         },
+        headers={"Authorization": "Bearer admin-secret"},
     )
     assert resp.status_code == 201
     return resp.json()["id"]

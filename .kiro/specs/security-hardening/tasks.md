@@ -64,8 +64,8 @@
 ## Phase 3：其他安全任务
 
 ### Task 7：Webhook 管理鉴权（REQ-S4）
-- [ ] 7.1 添加 admin token 中间件
-- [ ] 7.2 单元测试：无 token 返回 401
+- [x] 7.1 添加 admin token 中间件（未配置 token 时管理接口返回 500，已配置后强制校验）
+- [x] 7.2 单元/集成测试：无 token 返回 401，未配置返回 500
 
 ### Task 8：MCP 认证（REQ-S5）
 - [ ] 8.1 `mcp/server.py` 添加 token 验证

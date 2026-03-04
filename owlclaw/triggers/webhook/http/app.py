@@ -138,7 +138,7 @@ def create_webhook_app(
     async def require_admin_token(request: Request) -> None:
         expected = cfg.admin_token
         if not expected:
-            return
+            raise HTTPException(status_code=500, detail="admin token not configured")
         provided = request.headers.get("x-admin-token")
         if not provided:
             authorization = request.headers.get("authorization", "")

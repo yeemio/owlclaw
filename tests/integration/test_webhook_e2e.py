@@ -37,7 +37,13 @@ class _DenyPolicy:
         return {"allowed": True}
 
 
-def _create_endpoint(client: TestClient, token: str = "token-e2e", retry_policy: dict[str, Any] | None = None) -> str:
+def _create_endpoint(
+    client: TestClient,
+    token: str = "token-e2e",
+    retry_policy: dict[str, Any] | None = None,
+    *,
+    admin_token: str = "admin-secret",
+) -> str:
     payload: dict[str, Any] = {
         "name": "orders",
         "target_agent_id": "agent-1",
@@ -46,14 +52,18 @@ def _create_endpoint(client: TestClient, token: str = "token-e2e", retry_policy:
     }
     if retry_policy is not None:
         payload["retry_policy"] = retry_policy
-    resp = client.post("/endpoints", json=payload)
+    resp = client.post("/endpoints", json=payload, headers={"Authorization": f"Bearer {admin_token}"})
     assert resp.status_code == 201
     return resp.json()["id"]
 
 
 def test_e2e_complete_webhook_request_pipeline() -> None:
     runtime = _Runtime()
-    app = build_webhook_application(runtime=runtime, governance_policy=_AllowPolicy(), config=HttpGatewayConfig())
+    app = build_webhook_application(
+        runtime=runtime,
+        governance_policy=_AllowPolicy(),
+        config=HttpGatewayConfig(admin_token="admin-secret"),
+    )
     client = TestClient(app.build_http_app())
     endpoint_id = _create_endpoint(client)
 
@@ -68,7 +78,11 @@ def test_e2e_complete_webhook_request_pipeline() -> None:
 
 def test_e2e_multi_endpoint_processing() -> None:
     runtime = _Runtime()
-    app = build_webhook_application(runtime=runtime, governance_policy=_AllowPolicy())
+    app = build_webhook_application(
+        runtime=runtime,
+        governance_policy=_AllowPolicy(),
+        config=HttpGatewayConfig(admin_token="admin-secret"),
+    )
     client = TestClient(app.build_http_app())
     endpoint_a = _create_endpoint(client, token="token-a")
     endpoint_b = _create_endpoint(client, token="token-b")
@@ -90,7 +104,11 @@ def test_e2e_multi_endpoint_processing() -> None:
 
 def test_e2e_idempotency_under_concurrency() -> None:
     runtime = _Runtime()
-    app = build_webhook_application(runtime=runtime, governance_policy=_AllowPolicy())
+    app = build_webhook_application(
+        runtime=runtime,
+        governance_policy=_AllowPolicy(),
+        config=HttpGatewayConfig(admin_token="admin-secret"),
+    )
     client = TestClient(app.build_http_app())
     endpoint_id = _create_endpoint(client)
 
@@ -114,7 +132,11 @@ def test_e2e_idempotency_under_concurrency() -> None:
 
 def test_e2e_retry_behavior() -> None:
     runtime = _Runtime(fail_before_success=2)
-    app = build_webhook_application(runtime=runtime, governance_policy=_AllowPolicy())
+    app = build_webhook_application(
+        runtime=runtime,
+        governance_policy=_AllowPolicy(),
+        config=HttpGatewayConfig(admin_token="admin-secret"),
+    )
     client = TestClient(app.build_http_app())
     endpoint_id = _create_endpoint(
         client,
@@ -132,7 +154,11 @@ def test_e2e_retry_behavior() -> None:
 
 def test_e2e_governance_rejection_path() -> None:
     runtime = _Runtime()
-    app = build_webhook_application(runtime=runtime, governance_policy=_DenyPolicy())
+    app = build_webhook_application(
+        runtime=runtime,
+        governance_policy=_DenyPolicy(),
+        config=HttpGatewayConfig(admin_token="admin-secret"),
+    )
     client = TestClient(app.build_http_app())
     endpoint_id = _create_endpoint(client)
 
