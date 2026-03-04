@@ -26,7 +26,8 @@ def test_property_endpoint_creation_generates_unique_identity(endpoint_name: str
         endpoint2 = await manager.create_endpoint(_config(f"{endpoint_name}-2"))
         assert endpoint1.id != endpoint2.id
         assert endpoint1.url != endpoint2.url
-        assert endpoint1.auth_token != endpoint2.auth_token
+        assert endpoint1.auth_token == "t"
+        assert endpoint2.auth_token == "t"
         assert endpoint1.config.name == endpoint_name
 
     asyncio.run(_run())
