@@ -42,7 +42,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | 步骤 | 端点 | 方法 | 预期 | 通过 |
 |------|------|------|------|------|
 | API-3 | `/api/v1/agents` | GET | 无 DB：`{"items":[],"message":"Database not configured"}`，HTTP 200 | ☑ |
-| API-4 | `/api/v1/agents/{id}` | GET | 无记录：404，`detail` 或 `error.code` | ☐ (P1 BUG-1) |
+| API-4 | `/api/v1/agents/{id}` | GET | 无记录：404，`detail` 或 `error.code` | ☑ |
 
 ## 1.3 Governance
 
@@ -66,8 +66,8 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|------|------|------|
 | API-11 | `/api/v1/capabilities` | `?category` 可选，返回 capabilities 列表 | ☑ |
 | API-12 | `/api/v1/capabilities/{name}/schema` | 404 当不存在 | ☐ |
-| API-13 | `/api/v1/triggers` | 返回 triggers 列表 | ☐ (P1 BUG-2) |
-| API-14 | `/api/v1/triggers/{id}/history` | `limit`, `offset`，返回历史 + 分页 | ☐ |
+| API-13 | `/api/v1/triggers` | 返回 triggers 列表 | ☑ |
+| API-14 | `/api/v1/triggers/{id}/history` | `limit`, `offset`，返回历史 + 分页 | ☑ |
 | API-15 | `/api/v1/settings` | 返回配置树/系统信息 | ☑ |
 
 ## 1.6 认证与错误
@@ -152,7 +152,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
-| N-9 | 无 DB 时各页 | 无 500，API 返回降级数据或 `message` | ☐ (BUG-1/BUG-2 未修复) |
+| N-9 | 无 DB 时各页 | 无 500，API 返回降级数据或 `message` | ☑ |
 | N-10 | Console 面板 | 无未捕获 JS 错误 | ☑ |
 
 ---
