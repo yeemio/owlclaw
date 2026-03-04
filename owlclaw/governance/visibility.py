@@ -153,9 +153,10 @@ class VisibilityFilter:
     All evaluators must return visible=True for a capability to be shown.
     Evaluators are run in parallel per capability; evaluator failures follow
     configured fail-policy (`open` keeps visible, `close` hides capability).
+    Default policy is `close` for secure-by-default behavior.
     """
 
-    def __init__(self, *, fail_policy: str = "open") -> None:
+    def __init__(self, *, fail_policy: str = "close") -> None:
         normalized_policy = fail_policy.strip().lower()
         if normalized_policy not in {"open", "close"}:
             raise ValueError("fail_policy must be either 'open' or 'close'")

@@ -125,7 +125,7 @@ async def test_filter_fail_open_when_evaluator_returns_invalid_type():
         async def evaluate(self, capability, agent_id, context):
             return {"visible": False}
 
-    vf = VisibilityFilter()
+    vf = VisibilityFilter(fail_policy="open")
     vf.register_evaluator(InvalidResultEvaluator())
     caps = [CapabilityView("only")]
     ctx = RunContext(tenant_id="t1")
@@ -141,7 +141,7 @@ async def test_filter_fail_open_on_evaluator_exception():
         async def evaluate(self, capability, agent_id, context):
             raise ValueError("broken")
 
-    vf = VisibilityFilter()
+    vf = VisibilityFilter(fail_policy="open")
     vf.register_evaluator(Raising())
     caps = [CapabilityView("only")]
     ctx = RunContext(tenant_id="t1")
@@ -157,6 +157,20 @@ async def test_filter_fail_close_on_evaluator_exception() -> None:
             raise ValueError("broken")
 
     vf = VisibilityFilter(fail_policy="close")
+    vf.register_evaluator(Raising())
+    caps = [CapabilityView("only")]
+    ctx = RunContext(tenant_id="t1")
+    out = await vf.filter_capabilities(caps, "agent1", ctx)
+    assert out == []
+
+
+@pytest.mark.asyncio
+async def test_filter_default_fail_close_on_evaluator_exception() -> None:
+    class Raising:
+        async def evaluate(self, capability, agent_id, context):
+            raise ValueError("broken")
+
+    vf = VisibilityFilter()
     vf.register_evaluator(Raising())
     caps = [CapabilityView("only")]
     ctx = RunContext(tenant_id="t1")

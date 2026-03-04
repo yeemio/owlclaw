@@ -60,3 +60,10 @@
 
 - **现状**：无重叠运行保护
 - **验收**：同一 cron 任务不并行执行
+
+---
+
+## Finding #9 补充说明（Visibility fail_policy）
+
+- 默认值改为 `fail_policy="close"`，保证 evaluator 异常时 capability 默认隐藏（fail-close）。
+- `fail_policy="open"` 仅用于 dev/test 调试场景，不作为生产默认配置。

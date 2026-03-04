@@ -24,9 +24,9 @@
 
 ### Task 2：VisibilityFilter fail_policy 默认值【P1 - Finding #9】
 > 默认 fail_policy="open"，evaluator 失败时 capability 仍可见
-- [ ] 2.1 `visibility.py:158` 默认改为 `"close"`
-- [ ] 2.2 文档说明 `"open"` 仅用于 dev/test
-- [ ] 2.3 单元测试：evaluator 异常时 capability 被隐藏
+- [x] 2.1 `visibility.py:158` 默认改为 `"close"`
+- [x] 2.2 文档说明 `"open"` 仅用于 dev/test
+- [x] 2.3 单元测试：evaluator 异常时 capability 被隐藏
 
 ### Task 3：Budget 约束竞态条件【P1 - Finding #10】
 > check-then-act 模式无原子预约，并发请求可能突破预算
