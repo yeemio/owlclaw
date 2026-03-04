@@ -108,7 +108,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | F-11 | 使用筛选 | Agent/Capability/时间/状态 筛选，触发新请求且参数正确 | ☑ |
 | F-12 | 点击某条记录 | 详情展开：输入/输出/成本/模型/延迟/决策推理 | ☑ |
 | F-13 | 分页 | 有分页控件，切换触发 `limit`/`offset` 请求 | ☑ |
-| F-14 | 排序切换 | `order_by` 参数随切换变化 | ☐（已补自动化用例，待执行） |
+| F-14 | 排序切换 | `order_by` 参数随切换变化 | ☑ |
 
 ## 2.4 Agents
 
