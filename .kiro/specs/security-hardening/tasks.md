@@ -76,8 +76,8 @@
 - [x] 9.2 单元测试通过（`tests/unit/triggers/test_webhook_transformer.py`）
 
 ### Task 10：XXE 防护（REQ-S7）
-- [ ] 10.1 替换为 defusedxml
-- [ ] 10.2 添加 defusedxml 依赖
+- [x] 10.1 XML 解析使用 `defusedxml.ElementTree.fromstring`
+- [x] 10.2 `defusedxml` 依赖已存在（`pyproject.toml`）并有 XXE 用例覆盖
 
 ### Task 11：请求体限制（REQ-S8）
 - [ ] 11.1 添加 max_content_length 中间件
