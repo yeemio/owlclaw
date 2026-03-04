@@ -116,4 +116,173 @@ test.describe("Console flow", () => {
     const focused = await page.evaluate(() => document.activeElement?.tagName);
     expect(["A", "BUTTON", "DIV"]).toContain(focused);
   });
+
+  // --- Deep tests: Overview ---
+  test("Overview has System Health and component checks (F-1)", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "System Health" })).toBeVisible({ timeout: 5000 });
+    // At least one component (runtime, db, hatchet, llm, etc.)
+    const healthItems = page.locator('li:has-text("OK"), li:has-text("Down")');
+    await expect(healthItems.first()).toBeVisible({ timeout: 3000 });
+  });
+
+  test("Overview has First Run Guide with Quick Start link (F-5)", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("heading", { name: "First Run Guide" })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("link", { name: "Quick Start" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "SKILL.md Guide" })).toBeVisible();
+  });
+
+  test("Overview attempts WebSocket connection (N-7)", async ({ page }) => {
+    const wsUrls: string[] = [];
+    page.on("websocket", (ws) => {
+      wsUrls.push(ws.url());
+    });
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await page.waitForTimeout(1500);
+    const apiWs = wsUrls.filter((u) => u.includes("/api/v1/ws"));
+    expect(apiWs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  // --- Deep tests: Governance ---
+  test("Governance has Circuit Breakers section (F-8)", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    await page.getByRole("link", { name: "Governance" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Circuit Breakers" })).toBeVisible({ timeout: 5000 });
+  });
+
+  test("Governance has Capability Visibility Matrix (F-9)", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    await page.getByRole("link", { name: "Governance" }).click();
+    await expect(page.getByRole("heading", { name: "Capability Visibility Matrix" })).toBeVisible({ timeout: 5000 });
+  });
+
+  // --- Deep tests: Ledger with mocked data ---
+  test("Ledger with mock data: Table/Timeline toggle and record detail (F-10, F-12)", async ({ page }) => {
+    const mockLedger = {
+      items: [
+        {
+          id: "rec-1",
+          timestamp: "2026-03-04T12:00:00Z",
+          agent: "agent-a",
+          capability: "cap-x",
+          status: "success",
+          cost_usd: 0.01,
+          model: "gpt-4",
+          latency_ms: 100,
+          input: "in",
+          output: "out",
+          reasoning: "reason",
+        },
+      ],
+      total: 1,
+      limit: 20,
+      offset: 0,
+    };
+
+    await page.route("**/api/v1/ledger*", async (route) => {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockLedger) });
+    });
+
+    await page.goto(`${baseUrl}/console/`);
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Execution Records" })).toBeVisible({ timeout: 5000 });
+    // Table/Timeline toggle
+    await expect(page.getByRole("button", { name: "Table" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Timeline" })).toBeVisible();
+    // Click record -> detail panel
+    await page.getByRole("cell", { name: "agent-a" }).or(page.getByText("agent-a")).first().click();
+    await expect(page.getByRole("heading", { name: "Execution Detail" })).toBeVisible();
+    await expect(page.getByText("Record: rec-1")).toBeVisible();
+    await expect(page.getByText("Agent: agent-a")).toBeVisible();
+  });
+
+  test("Ledger with mock data: pagination triggers offset request (F-13)", async ({ page }) => {
+    const mockLedgerPage1 = {
+      items: Array.from({ length: 20 }, (_, i) => ({
+        id: `rec-${i}`,
+        timestamp: "2026-03-04T12:00:00Z",
+        agent: "agent-a",
+        capability: "cap-x",
+        status: "success",
+        cost_usd: 0.01,
+        model: "gpt-4",
+        latency_ms: 100,
+        input: "",
+        output: "",
+        reasoning: "",
+      })),
+      total: 25,
+      limit: 20,
+      offset: 0,
+    };
+
+    const ledgerUrls: string[] = [];
+    await page.route("**/api/v1/ledger*", async (route) => {
+      ledgerUrls.push(route.request().url());
+      const offset = new URL(route.request().url()).searchParams.get("offset") || "0";
+      const body =
+        offset === "0"
+          ? mockLedgerPage1
+          : {
+              items: mockLedgerPage1.items.slice(0, 5),
+              total: 25,
+              limit: 20,
+              offset: 20,
+            };
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+    });
+
+    await page.goto(`${baseUrl}/console/`);
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("heading", { name: "Execution Records" })).toBeVisible({ timeout: 5000 });
+    const beforeNext = ledgerUrls.length;
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.waitForTimeout(400);
+    const offset20 = ledgerUrls.filter((u) => u.includes("offset=20") || u.includes("offset%3D20"));
+    expect(offset20.length).toBeGreaterThan(0);
+  });
+
+  // --- Deep tests: Network / no unexpected errors ---
+  test("Overview and main nav: no unexpected 4xx/5xx on API calls", async ({ page }) => {
+    const failed: { url: string; status: number }[] = [];
+    page.on("response", (res) => {
+      const u = res.url();
+      if (u.includes("/api/v1/") && res.status() >= 400) {
+        failed.push({ url: u, status: res.status() });
+      }
+    });
+
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await page.getByRole("link", { name: "Governance" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Agents" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Agents", exact: true })).toBeVisible();
+    await page.waitForTimeout(500);
+
+    // Known acceptable failures: agents/{id}, triggers (500 when no DB); ws (404 when uvicorn has no websockets)
+    const unexpected = failed.filter(
+      (f) =>
+        !f.url.match(/\/agents\/[^/]+\/?$/) &&
+        !f.url.includes("/triggers") &&
+        !f.url.includes("/api/v1/ws")
+    );
+    expect(unexpected).toEqual([]);
+  });
+
+  // --- Deep tests: Settings structure ---
+  test("Settings shows runtime, database, version sections", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    await page.getByRole("link", { name: "Settings" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Settings" })).toBeVisible();
+    // Settings page has key sections
+    await expect(page.getByText(/runtime|database|version/i).first()).toBeVisible({ timeout: 5000 });
+  });
 });

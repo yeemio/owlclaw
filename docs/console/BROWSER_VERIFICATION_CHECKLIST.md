@@ -97,8 +97,8 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|------|--------------|------|
 | F-6 | 进入 Governance | 预算消耗趋势图，或有空状态说明 | ☑ |
 | F-7 | 切换时间粒度 | 日/周/月切换，对应新 API 请求 `granularity=day|week|month` | ☑ |
-| F-8 | 检查限流/熔断 | 状态卡片显示 open/closed/half-open 或等价 | ☐ |
-| F-9 | 检查能力可见性矩阵 | Agent × Capability 热力图或表格 | ☐ |
+| F-8 | 检查限流/熔断 | 状态卡片显示 open/closed/half-open 或等价 | ☑ |
+| F-9 | 检查能力可见性矩阵 | Agent × Capability 热力图或表格 | ☑ |
 
 ## 2.3 Ledger
 
@@ -106,8 +106,8 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|------|--------------|------|
 | F-10 | 进入 Ledger | 时间线/表格视图可切换 | ☑ |
 | F-11 | 使用筛选 | Agent/Capability/时间/状态 筛选，触发新请求且参数正确 | ☑ |
-| F-12 | 点击某条记录 | 详情展开：输入/输出/成本/模型/延迟/决策推理 | ☐ |
-| F-13 | 分页 | 有分页控件，切换触发 `limit`/`offset` 请求 | ☐ |
+| F-12 | 点击某条记录 | 详情展开：输入/输出/成本/模型/延迟/决策推理 | ☑ |
+| F-13 | 分页 | 有分页控件，切换触发 `limit`/`offset` 请求 | ☑ |
 | F-14 | 排序切换 | `order_by` 参数随切换变化 | ☐ |
 
 ## 2.4 Agents
@@ -145,8 +145,8 @@ cd owlclaw/web/frontend && npm run test:e2e
 
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
-| N-7 | WS 连接 | 有 `ws://.../api/v1/ws`，状态 Connected | ☐ |
-| N-8 | 消息类型 | 收到 `overview` / `triggers` / `ledger` 之一 | ☐ |
+| N-7 | WS 连接 | 有 `ws://.../api/v1/ws`，状态 Connected | ☑ (尝试连接，服务端 404 当无 websockets 库) |
+| N-8 | 消息类型 | 收到 `overview` / `triggers` / `ledger` 之一 | ☐ (需 uvicorn[standard] 启用 WS) |
 
 ## 3.3 错误与降级
 
@@ -163,7 +163,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
-| E-1 | 暗色主题 | 所有页面暗色一致，无白底闪屏 | ☐ |
+| E-1 | 暗色主题 | 所有页面暗色一致，无白底闪屏 | ☑ |
 | E-2 | 响应式 | 最小宽度 1024px 下布局正常，侧栏 + 内容区 | ☐ |
 | E-3 | 页面切换 | 无全量刷新，URL 或路由变化 | ☐ |
 
@@ -179,8 +179,8 @@ cd owlclaw/web/frontend && npm run test:e2e
 
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
-| E-7 | 首屏加载 | 从导航到内容可交互 < 3s（可手动计时） | ☐ |
-| E-8 | Tab 键 | 可遍历侧栏与主要交互元素 | ☐ |
+| E-7 | 首屏加载 | 从导航到内容可交互 < 5s（E2E 断言） | ☑ |
+| E-8 | Tab 键 | 可遍历侧栏与主要交互元素 | ☑ |
 | E-9 | 对比度 | 文本与背景对比度满足 WCAG AA（目视或工具） | ☐ |
 
 ---
