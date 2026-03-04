@@ -110,6 +110,14 @@
 | BUG-1 | P1 | `GET /api/v1/agents/{id}` 在无 DB 时返回 500，应 404 或 200+空 | `curl http://localhost:8000/api/v1/agents/nonexistent` |
 | BUG-2 | P1 | `GET /api/v1/triggers` 在无 DB 时返回 500，应降级返回空 | `curl http://localhost:8000/api/v1/triggers` |
 
+### 缺陷修复回填（2026-03-04，codex-work）
+
+- BUG-1 已修复：`owlclaw/web/api/agents.py` 在 `get_agent_detail()` 捕获 `ConfigurationError` 并返回 404（`Agent not found`）。
+- BUG-2 已修复：`owlclaw/web/api/triggers.py` 在 `list_triggers()` 捕获 `ConfigurationError` 并返回空列表。
+- 回归测试已补充并通过：
+  - `tests/unit/web/test_agents.py::test_agents_detail_route_returns_404_when_database_not_configured`
+  - `tests/unit/web/test_triggers.py::test_triggers_list_route_returns_empty_when_database_not_configured`
+
 ---
 
 ## 七、交付物

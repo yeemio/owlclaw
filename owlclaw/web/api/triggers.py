@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
+from owlclaw.db.exceptions import ConfigurationError
 
 from owlclaw.web.api.deps import get_tenant_id, get_triggers_provider
 from owlclaw.web.api.schemas import PaginatedResponse
@@ -24,7 +25,10 @@ async def list_triggers(
     provider: TriggersProvider = triggers_provider_dep,
 ) -> dict[str, list[dict[str, Any]]]:
     """Return unified trigger list across trigger types."""
-    items = await provider.list_triggers(tenant_id=tenant_id)
+    try:
+        items = await provider.list_triggers(tenant_id=tenant_id)
+    except ConfigurationError:
+        return {"items": []}
     return {"items": items}
 
 
@@ -37,10 +41,13 @@ async def get_trigger_history(
     provider: TriggersProvider = triggers_provider_dep,
 ) -> PaginatedResponse[dict[str, Any]]:
     """Return paginated execution history for one trigger id."""
-    items, total = await provider.get_trigger_history(
-        trigger_id=trigger_id,
-        tenant_id=tenant_id,
-        limit=limit,
-        offset=offset,
-    )
+    try:
+        items, total = await provider.get_trigger_history(
+            trigger_id=trigger_id,
+            tenant_id=tenant_id,
+            limit=limit,
+            offset=offset,
+        )
+    except ConfigurationError:
+        return PaginatedResponse[dict[str, Any]](items=[], total=0, offset=offset, limit=limit)
     return PaginatedResponse[dict[str, Any]](items=items, total=total, offset=offset, limit=limit)
