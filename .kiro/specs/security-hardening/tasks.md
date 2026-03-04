@@ -84,9 +84,9 @@
 - [x] 11.2 单元测试：超大请求返回 413（webhook gateway 覆盖）
 
 ### Task 12：SecurityAuditLog 持久化（REQ-S10）
-- [ ] 12.1 实现 FileSecurityAuditBackend
-- [ ] 12.2 配置选择后端
-- [ ] 12.3 单元测试
+- [x] 12.1 实现 FileSecurityAuditBackend（JSONL append）
+- [x] 12.2 配置选择后端（`OWLCLAW_SECURITY_AUDIT_BACKEND=file` + `OWLCLAW_SECURITY_AUDIT_FILE`）
+- [x] 12.3 单元测试通过（`tests/unit/security/test_audit.py`）
 
 ### Task 13：Console API 鉴权（REQ-S11）
 - [ ] 13.1 添加 api_token 中间件
