@@ -141,6 +141,26 @@ def test_triggers_history_route_returns_paginated_payload() -> None:
     assert payload["items"][0]["trigger_id"] == "cron-job-1"
 
 
+def test_triggers_history_route_returns_empty_when_database_not_configured() -> None:
+    class _NoDbHistoryProvider(_TriggersProviderStub):
+        async def get_trigger_history(
+            self,
+            trigger_id: str,
+            tenant_id: str,
+            limit: int,
+            offset: int,
+        ) -> tuple[list[dict[str, Any]], int]:
+            _ = (trigger_id, tenant_id, limit, offset)
+            raise ConfigurationError("Database URL not set")
+
+    app = _build_app(_NoDbHistoryProvider())
+    client = TestClient(app)
+
+    response = client.get("/api/v1/triggers/cron-job-1/history?limit=10&offset=0")
+    assert response.status_code == 200
+    assert response.json() == {"items": [], "total": 0, "offset": 0, "limit": 10}
+
+
 @dataclass
 class _Record:
     id: uuid.UUID
