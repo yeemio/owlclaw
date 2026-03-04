@@ -83,6 +83,7 @@ export type LedgerFilters = {
   end_time?: string;
   min_cost?: number;
   max_cost?: number;
+  order_by?: "created_at_desc" | "created_at_asc" | "cost_desc" | "cost_asc" | "";
 };
 
 export type PaginatedLedger = {
@@ -470,6 +471,9 @@ function buildLedgerQuery(filters: LedgerFilters, limit: number, offset: number)
   }
   if (typeof filters.max_cost === "number") {
     params.set("max_cost", String(filters.max_cost));
+  }
+  if (filters.order_by) {
+    params.set("order_by", filters.order_by);
   }
   params.set("limit", String(limit));
   params.set("offset", String(offset));
