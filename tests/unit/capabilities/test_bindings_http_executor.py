@@ -102,3 +102,45 @@ async def test_http_executor_status_code_mapping_to_semantic_error() -> None:
     result = await executor.execute(config, {})
     assert result["data"]["error_type"] == "not_found"
 
+
+@pytest.mark.asyncio
+async def test_http_executor_blocks_private_metadata_ip_by_default() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"ok": True})
+
+    executor = HTTPBindingExecutor(transport=_transport(handler))
+    config = HTTPBindingConfig(method="GET", url="http://169.254.169.254/latest/meta-data")
+    with pytest.raises(PermissionError, match="blocked private/local host"):
+        await executor.execute(config, {})
+
+
+@pytest.mark.asyncio
+async def test_http_executor_allows_host_when_allowlisted() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.host == "api.example.com"
+        return httpx.Response(200, json={"ok": True})
+
+    executor = HTTPBindingExecutor(transport=_transport(handler))
+    config = HTTPBindingConfig(
+        method="GET",
+        url="https://api.example.com/orders/{order_id}",
+        allowed_hosts=["api.example.com"],
+    )
+    result = await executor.execute(config, {"order_id": 1})
+    assert result["status_code"] == 200
+
+
+@pytest.mark.asyncio
+async def test_http_executor_rejects_host_outside_allowlist() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"ok": True})
+
+    executor = HTTPBindingExecutor(transport=_transport(handler))
+    config = HTTPBindingConfig(
+        method="GET",
+        url="https://evil.example.com/orders/1",
+        allowed_hosts=["api.example.com"],
+    )
+    with pytest.raises(PermissionError, match="not in allowlist"):
+        await executor.execute(config, {})
+

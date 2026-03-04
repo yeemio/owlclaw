@@ -45,10 +45,10 @@
 
 ### Task 4：HTTP Executor SSRF 防护（REQ-S14）【P1 - Finding #5】
 > URL 模板替换无 allowlist，可访问内网/云元数据
-- [ ] 4.1 `http_executor.py:94-98` 添加 URL allowlist 校验
-- [ ] 4.2 默认阻止私有 IP 段：`10.x`, `172.16-31.x`, `169.254.x`, `127.x`
-- [ ] 4.3 配置化允许域名/IP 列表
-- [ ] 4.4 单元测试：SSRF 尝试被阻止
+- [x] 4.1 `http_executor.py` 添加 URL allowlist 校验
+- [x] 4.2 默认阻止私有 IP 段：`10.x`, `172.16-31.x`, `169.254.x`, `127.x`（含 loopback/link-local/private/reserved）
+- [x] 4.3 配置化允许域名/IP 列表（`HTTPBindingConfig.allowed_hosts` + `allow_private_network`）
+- [x] 4.4 单元/集成测试：SSRF 尝试被阻止（`test_bindings_http_executor*`）
 
 ### Task 5：Unicode 归一化（REQ-S9）【P1 - Finding #6】
 > Sanitizer 可被 Unicode 同形字符绕过

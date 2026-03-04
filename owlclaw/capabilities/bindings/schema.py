@@ -39,6 +39,8 @@ class HTTPBindingConfig(BindingConfig):
     headers: dict[str, str] = field(default_factory=dict)
     body_template: dict[str, Any] | None = None
     response_mapping: dict[str, Any] = field(default_factory=dict)
+    allowed_hosts: list[str] = field(default_factory=list)
+    allow_private_network: bool = False
 
 
 @dataclass(slots=True)
@@ -86,6 +88,8 @@ def parse_binding_config(data: dict[str, Any]) -> BindingConfig:
             headers=_to_str_dict(data.get("headers", {})),
             body_template=_to_dict_or_none(data.get("body_template")),
             response_mapping=_to_dict(data.get("response_mapping", {})),
+            allowed_hosts=_to_str_list(data.get("allowed_hosts", [])),
+            allow_private_network=bool(data.get("allow_private_network", False)),
             **common,
         )
     if binding_type == "queue":
@@ -138,6 +142,11 @@ def validate_binding_config(data: dict[str, Any]) -> None:
         if method and method not in HTTP_METHODS:
             errors.append(f"http.method must be one of {sorted(HTTP_METHODS)}")
         _validate_plaintext_secrets(_to_str_dict(data.get("headers", {})), errors, "http.headers")
+        allowed_hosts = data.get("allowed_hosts", [])
+        if not isinstance(allowed_hosts, list):
+            errors.append("http.allowed_hosts must be a list of hostnames or IPs")
+        if "allow_private_network" in data and not isinstance(data.get("allow_private_network"), bool):
+            errors.append("http.allow_private_network must be boolean")
     elif binding_type == "queue":
         _require_fields(data, ("provider", "connection", "topic"), errors, "queue")
         provider = str(data.get("provider", ""))
@@ -184,6 +193,19 @@ def _to_str_dict(value: Any) -> dict[str, str]:
     if not isinstance(value, dict):
         return {}
     return {str(k): str(v) for k, v in value.items()}
+
+
+def _to_str_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    out: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        normalized = item.strip()
+        if normalized:
+            out.append(normalized)
+    return out
 
 
 def _is_env_ref(value: str) -> bool:
