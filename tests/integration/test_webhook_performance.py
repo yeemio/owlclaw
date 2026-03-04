@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from owlclaw.triggers.webhook import build_webhook_application
+from owlclaw.triggers.webhook import HttpGatewayConfig, build_webhook_application
 
 
 @dataclass
@@ -32,13 +32,18 @@ def _endpoint(client: TestClient) -> str:
             "auth_method": {"type": "bearer", "token": "token-perf"},
             "execution_mode": "async",
         },
+        headers={"Authorization": "Bearer admin-secret"},
     )
     assert resp.status_code == 201
     return resp.json()["id"]
 
 
 def test_performance_high_request_volume() -> None:
-    app = build_webhook_application(runtime=_Runtime(), governance_policy=_AllowPolicy())
+    app = build_webhook_application(
+        runtime=_Runtime(),
+        governance_policy=_AllowPolicy(),
+        config=HttpGatewayConfig(admin_token="admin-secret"),
+    )
     client = TestClient(app.build_http_app())
     endpoint = _endpoint(client)
 

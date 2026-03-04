@@ -89,16 +89,16 @@
 - [x] 12.3 单元测试通过（`tests/unit/security/test_audit.py`）
 
 ### Task 13：Console API 鉴权（REQ-S11）
-- [ ] 13.1 添加 api_token 中间件
-- [ ] 13.2 单元测试
+- [x] 13.1 添加 api_token 中间件（支持 `X-API-Token` 与 `Authorization: Bearer`，`OWLCLAW_REQUIRE_AUTH=true` 且未配置 token 时返回 500）
+- [x] 13.2 单元测试（`tests/unit/web/test_middleware.py`）
 
 ### Task 14：auth_token 哈希存储（REQ-S12）
-- [ ] 14.1 模型改用 hash 字段
-- [ ] 14.2 验证逻辑改用 hash 比较
-- [ ] 14.3 迁移脚本
+- [x] 14.1 模型改用 hash 字段（`auth_token_hash`）
+- [x] 14.2 验证逻辑改用 hash 比较（`triggers/webhook/validator.py`）
+- [x] 14.3 迁移脚本（`migrations/versions/009_webhook_auth_token_hash.py`）
 
 ---
 
 ## Task 15：回归测试
-- [ ] 15.1 全量 pytest 通过
-- [ ] 15.2 安全相关测试覆盖所有 P0/P1 finding
+- [x] 15.1 全量 pytest 通过（`2062 passed, 35 skipped`）
+- [x] 15.2 安全相关测试覆盖所有 P0/P1 finding（S1~S14 对应单元/集成用例均已在本轮回归）
