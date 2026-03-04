@@ -165,10 +165,10 @@
 
 ## Task 11：全量回归与端到端验收
 
-- [ ] 11.1 全量 `poetry run pytest` 通过（现有 1817+ 测试）
-- [ ] 11.2 端到端验收：`OwlClaw.lite()` → `run_once()` → handler 执行 → 可见决策过程
-- [ ] 11.3 端到端验收：`app.run()` Lite Mode 下 Agent 周期性决策并输出日志
-- [ ] 11.4 端到端验收：Console UI 在无 DB 时优雅显示
+- [x] 11.1 全量 `poetry run pytest` 通过（`2062 passed, 35 skipped`）
+- [x] 11.2 端到端验收：`OwlClaw.lite()` → `run_once()` → handler 执行 → 可见决策过程（`test_run_once_uses_runtime_trigger_event_and_returns_decision_info`）
+- [x] 11.3 端到端验收：`app.run()` Lite Mode 下 Agent 周期性决策并输出日志（`test_lite_mode_heartbeat_trigger_runs_without_api_key` + heartbeat 日志回归）
+- [x] 11.4 端到端验收：Console UI 在无 DB 时优雅显示（`test_agents_list_route_returns_empty_when_database_not_configured`）
 - [ ] 11.5 端到端验收：真实 LLM（DeepSeek）下完整决策循环（function calling → handler → 结果汇总）
 
 **验收**：
