@@ -237,7 +237,7 @@
 
 **Phase 11.3：全量回归**
 
-- [ ] F11 全量回归与端到端验收 — 现有测试通过 + Lite Mode 端到端 + 真实 LLM 验证 → spec: lite-mode-e2e
+- [x] F11 全量回归与端到端验收 — 现有测试通过 + Lite Mode 端到端 + 真实 LLM 验证 → spec: lite-mode-e2e
 
 ### Phase 12：深度审计修复（2026-03-03 全方位多维度审计）
 
@@ -372,7 +372,7 @@
 | **console-integration** | `.kiro/specs/console-integration/` | ✅ 三层齐全，已完成（5/5） | Console 集成（`owlclaw start` 挂载 + CLI + 构建流程 + 打包 + 集成测试）。经 9 轮审校 APPROVE |
 | **audit-fix-critical** | `.kiro/specs/audit-fix-critical/` | ✅ 三层齐全，已完成（11/11） | 架构审计 Critical 修复：C1 熔断器状态匹配 + C2 Console API 挂载路径 |
 | **audit-fix-high** | `.kiro/specs/audit-fix-high/` | ✅ 三层齐全，已完成（23/23） | 架构审计 High 修复：H1-H5 全部完成（Heartbeat + 成本追踪 + Embedding 隔离 + Governance 映射 + fail-policy） |
-| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | 🟡 三层齐全，进行中（42/47） | Lite Mode 端到端体验修复：Task 1-10 已完成（F1-F10 ✅），仅 Task 11 全量回归待执行 |
+| **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | ✅ 三层齐全，已完成（47/47） | Lite Mode 端到端体验修复：F1-F11 全部完成，包括 DeepSeek 真实 LLM 验证 |
 | **config-propagation-fix** | `.kiro/specs/config-propagation-fix/` | 🟡 三层齐全，待实现（3/27） | 配置传播链路修复：LLMIntegrationConfig 补字段 + create_agent_runtime 传配置 + Router 默认行为 + ConfigManager 优先级 + configure 防护 |
 | **security-hardening** | `.kiro/specs/security-hardening/` | 🟡 三层齐全，进行中（8/46） | 安全加固：Task2（工具参数 Schema 校验）已落地到 runtime；其余任务待继续推进 |
 | **runtime-robustness** | `.kiro/specs/runtime-robustness/` | ✅ 三层齐全，已完成（42/42） | 运行时健壮性：R1-R18 + 回归全部完成（含工具参数 schema 校验依赖收口） |
@@ -402,9 +402,9 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-04（Phase 12 codex-gpt：合入工具参数 schema 校验并完成回归） |
-| 当前批次 | **Phase 12（codex-gpt）**：已完成 runtime-robustness Task 1 依赖收口（基于 codex-work 方案同步），并保留 governance-hardening 38/38；全量回归通过。 |
-| 批次状态 | **Phase 12 进行中**：本分支分配项已全部完成，等待 review-work 审校与主干合并。 |
+| 最后更新 | 2026-03-04（Phase 12 codex-gpt：ssl_mode runtime 校验阻断修复完成） |
+| 当前批次 | **Phase 12 深度审计修复**（4 spec 已分配，编码进行中）。本分支已完成 runtime-robustness 42/42、governance-hardening 38/38，并新增 `ssl_mode` 空白值运行时校验修复。 |
+| 批次状态 | **Phase 12 进行中**：codex-gpt-work 阻断项已修复并提交，等待 review-work 复审；Phase 8 外部阻塞项持续跟踪。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）；15) **Phase 10 全部完成**：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)，经 Round 13 APPROVE。 |
 | 下一待执行 | **Phase 12（codex-gpt）**：等待 review-work 审校；如获通过则本分支 Phase 12 收口。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，Phase 9：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，**Phase 10**：audit-fix-critical ✅(11/11)，audit-fix-high ✅(23/23)，其余 spec 全部 ✅。 |

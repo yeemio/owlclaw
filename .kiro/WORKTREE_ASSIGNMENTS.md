@@ -169,7 +169,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex\` |
 | 分支 | `codex-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE` |
+| 工作状态 | `IDLE`（最新提交 ee546d5 已被 review-work APPROVE） |
 
 **当前分配的 spec**：
 
@@ -211,7 +211,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE` |
+| 工作状态 | `IDLE`（最新提交 592d6b1 已被 review-work APPROVE） |
 
 **当前分配的 spec**：
 
@@ -275,10 +275,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | 时间 | 发送方 | 接收方 | 消息 | 状态 |
 |------|--------|--------|------|------|
-| 2026-03-04 | 统筹(main) | codex-work | **新任务分配**：GLM-5 独立重审计完成，生成 v4 报告。你的 P0 任务已更新：security-hardening Phase 1 Task 1-3（Finding #1/#2/#3/#4/#15）。请优先执行 P0 任务，完成后再处理 P1 任务。 | 🔴 待处理 |
-| 2026-03-04 | 统筹(main) | codex-gpt-work | **新任务分配**：GLM-5 独立重审计完成，生成 v4 报告。你的 P0 任务已更新：runtime-robustness Phase 1 Task 1 依赖 codex-work 的 security-hardening Task 2 完成后才能开始。请先执行 Task 2-3（Finding #16/#17），等依赖满足后再执行 Task 1。 | 🔴 待处理 |
-| 2026-03-03 | 统筹(main) | codex-work | **FIX_NEEDED**：Round 15/16 审校发现 S12 plaintext token persistence 问题，请修复后推送，review-work 将再审。 | 🟡 已知 |
-| 2026-03-03 | 统筹(main) | codex-gpt-work | **FIX_NEEDED**：Round 17 审校发现 ssl_mode whitespace regression 问题，请修复后推送，review-work 将再审。 | 🟡 已知 |
+| 2026-03-04 | 统筹(main) | 全部 | **v4 审计完成**：GLM-5 独立审计生成 v4 报告（18 发现：3 P0 + 10 P1 + 5 Low）。P0 问题仍未修复。E2E 测试 18/18 通过。review-work 已 APPROVE codex-work/codex-gpt-work 最新提交。 | 🟢 已同步 |
+| 2026-03-04 | 统筹(main) | codex-work | **状态更新**：你已完成 lite-mode-e2e F11 + security-hardening Task 12-15。P0 任务（Task 1-3）仍待执行。 | 🟡 已知 |
+| 2026-03-04 | 统筹(main) | codex-gpt-work | **状态更新**：你已完成 ssl_mode fix + runtime-robustness/governance-hardening 部分任务。P0 Task 1 依赖 codex-work Task 2。 | 🟡 已知 |
 
 ### 已归档消息
 
@@ -337,7 +336,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-02 | Phase 10 完成：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)。经 Round 13 APPROVE 审校，合并到 main。两个编码 worktree 状态改为 DONE | 架构审计修复全部完成，工程达到可交付状态 |
 | 2026-03-03 | Phase 11 分配：新建 lite-mode-e2e spec（三层齐全）。codex-work → Task 1-4（核心链路：mock LLM 统一 + heartbeat 直通 + 日志 + --once 决策循环）；codex-gpt-work → Task 5-8（体验完善：pgvector 延迟导入 + Quick Start 重写 + Ledger CLI + API 降级）。按文件边界隔离 | 真实用户体验测试发现 Lite Mode 端到端体验链路断裂（P0），产品核心承诺不成立 |
 | 2026-03-03 | Phase 11 完成 + Phase 12 分配：lite-mode-e2e F1-F10 全部完成（Task 1-10 ✅），仅 F11 全量回归待执行。新建 4 个 Phase 12 spec（80+ 问题）。codex-work → config-propagation-fix + security-hardening；codex-gpt-work → runtime-robustness + governance-hardening。共享文件按函数范围隔离 | 全方位深度审计（4 维度逐行审计）发现 80+ 问题，按领域拆分 4 个 spec |
-| 2026-03-04 | **GLM-5 独立重审计**：生成 v4 报告（17 个发现，3 P0 + 7 P1 + 7 Low）。与之前审计 94% 重合，新发现 #15（Webhook CORS）。更新 4 个 spec tasks.md：security-hardening 新增 Phase 1 (P0) + Phase 2 (P1)；runtime-robustness 新增 Phase 1 (P0)；governance-hardening 新增 Phase 1 (P1)；config-propagation-fix 新增 Task 1 (P1)。调整任务优先级顺序，P0 阻塞发布 | 独立审计验证 + 任务优先级重构 |
+| 2026-03-04 | **v4 审计统筹**：GLM-5 独立重审计完成，生成 v4 报告（18 发现）。review-work 已 APPROVE 两个编码分支最新提交。E2E 测试 18/18 通过。P0 问题（CORS/工具消毒/Schema 校验）仍未修复。更新消息状态，同步审计报告。 | 独立审计验证 + 状态同步 |
 
 ---
 
