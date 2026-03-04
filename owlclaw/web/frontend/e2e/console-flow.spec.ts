@@ -89,6 +89,14 @@ test.describe("Console flow", () => {
       if (req.url().includes("/api/v1/ledger")) apiCalls.push(req.url());
     });
 
+    await page.route("**/api/v1/ledger*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ items: [], total: 0, limit: 20, offset: 0 }),
+      });
+    });
+
     await page.goto(`${baseUrl}/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();

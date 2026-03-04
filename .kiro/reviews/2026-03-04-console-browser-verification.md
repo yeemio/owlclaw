@@ -70,6 +70,9 @@
 | 17 | Overview and main nav: no unexpected 4xx/5xx on API calls | 网络 |
 | 18 | Settings shows runtime, database, version sections | 功能 |
 
+**增量回归（2026-03-04）**：
+- `Ledger sort change triggers order_by request param (F-14)`：`1 passed`（前端 dev server + Playwright 单测执行）。
+
 **运行**：`cd owlclaw/web/frontend && npm run test:e2e` — 18/18 通过（含 start-server-and-test 启停服务）
 
 ---
