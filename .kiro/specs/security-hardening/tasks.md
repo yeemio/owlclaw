@@ -52,8 +52,8 @@
 
 ### Task 5：Unicode 归一化（REQ-S9）【P1 - Finding #6】
 > Sanitizer 可被 Unicode 同形字符绕过
-- [ ] 5.1 `sanitizer.py:57-73` 添加 `unicodedata.normalize('NFKC', text)`
-- [ ] 5.2 单元测试：Unicode 混淆攻击被归一化后匹配
+- [x] 5.1 `sanitizer.py` 使用 `unicodedata.normalize('NFKC', text)`（已存在实现）
+- [x] 5.2 单元测试：Unicode 混淆攻击被归一化后匹配（新增全角注入回归）
 
 ### Task 6：SKILL.md 注入防护（REQ-S1）
 - [ ] 6.1 `knowledge.py` 对 skill 内容调用 sanitizer
