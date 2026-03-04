@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import Awaitable, Callable
 
@@ -11,6 +12,8 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import Response
+
+logger = logging.getLogger(__name__)
 
 
 class TokenAuthMiddleware(BaseHTTPMiddleware):
@@ -22,12 +25,30 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
         *,
         token_env: str = "OWLCLAW_CONSOLE_API_TOKEN",
         legacy_token_env: str = "OWLCLAW_CONSOLE_TOKEN",
+        require_auth_env: str = "OWLCLAW_REQUIRE_AUTH",
         exempt_paths: set[str] | None = None,
     ) -> None:
         super().__init__(app)
         self._token_env = token_env
         self._legacy_token_env = legacy_token_env
+        self._require_auth_env = require_auth_env
         self._exempt_paths = exempt_paths or set()
+        expected_token = self._read_expected_token()
+        require_auth = _is_truthy_env(os.getenv(self._require_auth_env))
+        if require_auth and not expected_token:
+            logger.warning(
+                "Console API auth required but no token configured: %s/%s",
+                self._token_env,
+                self._legacy_token_env,
+            )
+        elif not expected_token:
+            logger.warning(
+                "Console API token is empty; auth middleware allows requests. "
+                "Set %s or %s, or enable %s=true to enforce configuration.",
+                self._token_env,
+                self._legacy_token_env,
+                self._require_auth_env,
+            )
 
     async def dispatch(
         self,
@@ -41,10 +62,19 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
         if path in self._exempt_paths:
             return await call_next(request)
 
-        expected_token = os.getenv(self._token_env, "").strip()
+        expected_token = self._read_expected_token()
+        require_auth = _is_truthy_env(os.getenv(self._require_auth_env))
         if not expected_token:
-            expected_token = os.getenv(self._legacy_token_env, "").strip()
-        if not expected_token:
+            if require_auth:
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "error": {
+                            "code": "AUTH_NOT_CONFIGURED",
+                            "message": "auth not configured",
+                        },
+                    },
+                )
             return await call_next(request)
 
         api_token_header = request.headers.get("x-api-token", "").strip()
@@ -75,6 +105,18 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
                 },
             )
         return await call_next(request)
+
+    def _read_expected_token(self) -> str:
+        expected_token = os.getenv(self._token_env, "").strip()
+        if not expected_token:
+            expected_token = os.getenv(self._legacy_token_env, "").strip()
+        return expected_token
+
+
+def _is_truthy_env(raw: str | None) -> bool:
+    if raw is None:
+        return False
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def parse_cors_origins(raw_origins: str | None) -> list[str]:
