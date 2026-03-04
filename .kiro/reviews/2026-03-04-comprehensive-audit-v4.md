@@ -139,17 +139,17 @@ registry.invoke_handler(**args)  ❌ No schema check (Finding #3)
 
 ---
 
-## Spec Tasks Progress
+## Spec Tasks Progress (Updated 2026-03-04)
 
 | Spec | Tasks | Completed | P0/P1 Issues |
 |------|-------|-----------|--------------|
-| security-hardening | 15 | 0 | 6 |
-| runtime-robustness | 20 | 0 | 4 |
-| governance-hardening | 12 | 0 | 3 |
-| config-propagation-fix | 10 | 0 | 1 |
-| **Total** | **57** | **0** | **14** |
+| security-hardening | 15 | 15 | 6 |
+| runtime-robustness | 20 | 3 | 4 |
+| governance-hardening | 12 | 3 | 3 |
+| config-propagation-fix | 10 | 10 | 1 |
+| **Total** | **57** | **31** | **14** |
 
-**Conclusion**: All spec tasks are defined but none implemented.
+**Conclusion**: Phase 12 已有实质落地：`security-hardening` 与 `config-propagation-fix` 已收口，`runtime-robustness` 与 `governance-hardening` 在推进中。
 
 ---
 
@@ -164,7 +164,7 @@ registry.invoke_handler(**args)  ❌ No schema check (Finding #3)
 
 ---
 
-## Comparison with Prior Reports
+## Comparison with Prior Reports (at audit capture time)
 
 | Finding | v2 Status | v3 Status | v4 Status |
 |---------|-----------|-----------|-----------|

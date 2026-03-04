@@ -14,6 +14,7 @@ const DEFAULT_FILTERS: LedgerFiltersValue = {
   end_time: "",
   min_cost: undefined,
   max_cost: undefined,
+  order_by: "created_at_desc",
 };
 
 export function LedgerPage() {

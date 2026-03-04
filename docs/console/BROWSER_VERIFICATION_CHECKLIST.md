@@ -42,7 +42,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | 步骤 | 端点 | 方法 | 预期 | 通过 |
 |------|------|------|------|------|
 | API-3 | `/api/v1/agents` | GET | 无 DB：`{"items":[],"message":"Database not configured"}`，HTTP 200 | ☑ |
-| API-4 | `/api/v1/agents/{id}` | GET | 无记录：404，`detail` 或 `error.code` | ☐ (P1 BUG-1) |
+| API-4 | `/api/v1/agents/{id}` | GET | 无记录：404，`detail` 或 `error.code` | ☑ |
 
 ## 1.3 Governance
 
@@ -58,24 +58,24 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|------|------|------------|------|------|
 | API-8 | `/api/v1/ledger` | GET | `agent_id`, `capability_name`, `status`, `start_date`, `end_date`, `min_cost`, `max_cost`, `limit`, `offset`, `order_by` | `PaginatedResponse`: `{items, total, offset, limit}`，`order_by` 支持 `created_at_desc|created_at_asc|cost_desc|cost_asc` | ☑ |
 | API-9 | 无效 `order_by` | GET | `order_by=invalid` | 422，`ErrorResponse` 格式：`{error: {code, message, details}}` | ☑ |
-| API-10 | `/api/v1/ledger/{record_id}` | GET | - | 无记录：404 | ☐ |
+| API-10 | `/api/v1/ledger/{record_id}` | GET | - | 无记录：404 | ☑ |
 
 ## 1.5 Capabilities / Triggers / Settings
 
 | 步骤 | 端点 | 预期 | 通过 |
 |------|------|------|------|
 | API-11 | `/api/v1/capabilities` | `?category` 可选，返回 capabilities 列表 | ☑ |
-| API-12 | `/api/v1/capabilities/{name}/schema` | 404 当不存在 | ☐ |
-| API-13 | `/api/v1/triggers` | 返回 triggers 列表 | ☐ (P1 BUG-2) |
-| API-14 | `/api/v1/triggers/{id}/history` | `limit`, `offset`，返回历史 + 分页 | ☐ |
+| API-12 | `/api/v1/capabilities/{name}/schema` | 404 当不存在 | ☑ |
+| API-13 | `/api/v1/triggers` | 返回 triggers 列表 | ☑ |
+| API-14 | `/api/v1/triggers/{id}/history` | `limit`, `offset`，返回历史 + 分页 | ☑ |
 | API-15 | `/api/v1/settings` | 返回配置树/系统信息 | ☑ |
 
 ## 1.6 认证与错误
 
 | 步骤 | 场景 | 预期 | 通过 |
 |------|------|------|------|
-| API-16 | `OWLCLAW_CONSOLE_TOKEN` 设置时，无 Authorization | 401，`{error: {code: "UNAUTHORIZED", message}}` | ☐ |
-| API-17 | 任意 4xx/5xx | 统一 `ErrorResponse` 结构，非裸文本 | ☐ |
+| API-16 | `OWLCLAW_CONSOLE_TOKEN` 设置时，无 Authorization | 401，`{error: {code: "UNAUTHORIZED", message}}` | ☑ |
+| API-17 | 任意 4xx/5xx | 统一 `ErrorResponse` 结构，非裸文本 | ☑ |
 
 ---
 
@@ -89,7 +89,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | F-2 | 检查指标卡片 | 今日成本、执行次数、成功率、活跃 Agent 有数值或 0，非空白 | ☑ |
 | F-3 | 检查告警 | 成本超阈值或成功率低时出现告警横幅；否则无或隐藏 | ☐ |
 | F-4 | 等待 30s+ | 数据自动刷新（Network 有新请求或 WS 推送） | ☐ |
-| F-5 | 检查引导 | "Getting Started" 或类似引导卡片，含 Quick Start / 示例 / SKILL 指南 链接 | ☐ |
+| F-5 | 检查引导 | "Getting Started" 或类似引导卡片，含 Quick Start / 示例 / SKILL 指南 链接 | ☑ |
 
 ## 2.2 Governance
 
@@ -108,7 +108,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | F-11 | 使用筛选 | Agent/Capability/时间/状态 筛选，触发新请求且参数正确 | ☑ |
 | F-12 | 点击某条记录 | 详情展开：输入/输出/成本/模型/延迟/决策推理 | ☑ |
 | F-13 | 分页 | 有分页控件，切换触发 `limit`/`offset` 请求 | ☑ |
-| F-14 | 排序切换 | `order_by` 参数随切换变化 | ☐ |
+| F-14 | 排序切换 | `order_by` 参数随切换变化 | ☐（已补自动化用例，待执行） |
 
 ## 2.4 Agents
 
@@ -152,7 +152,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
-| N-9 | 无 DB 时各页 | 无 500，API 返回降级数据或 `message` | ☐ (BUG-1/BUG-2 未修复) |
+| N-9 | 无 DB 时各页 | 无 500，API 返回降级数据或 `message` | ☑ |
 | N-10 | Console 面板 | 无未捕获 JS 错误 | ☑ |
 
 ---

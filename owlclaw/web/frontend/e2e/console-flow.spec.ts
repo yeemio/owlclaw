@@ -83,6 +83,23 @@ test.describe("Console flow", () => {
     expect(ledgerCalls.length).toBeGreaterThanOrEqual(1);
   });
 
+  test("Ledger sort change triggers order_by request param (F-14)", async ({ page }) => {
+    const apiCalls: string[] = [];
+    page.on("request", (req) => {
+      if (req.url().includes("/api/v1/ledger")) apiCalls.push(req.url());
+    });
+
+    await page.goto(`${baseUrl}/console/`);
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+    await page.getByLabel("Order By").selectOption("cost_desc");
+    await page.getByRole("button", { name: "Apply" }).click();
+    await page.waitForTimeout(500);
+
+    const sortedCalls = apiCalls.filter((u) => u.includes("order_by=cost_desc") || u.includes("order_by%3Dcost_desc"));
+    expect(sortedCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
   test("Ledger filter panel and empty state", async ({ page }) => {
     await page.goto(`${baseUrl}/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
