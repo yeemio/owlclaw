@@ -56,20 +56,20 @@
 - [x] 5.2 单元测试：Unicode 混淆攻击被归一化后匹配（新增全角注入回归）
 
 ### Task 6：SKILL.md 注入防护（REQ-S1）
-- [ ] 6.1 `knowledge.py` 对 skill 内容调用 sanitizer
-- [ ] 6.2 单元测试：含 injection 的 SKILL.md 被消毒
+- [x] 6.1 `knowledge.py` 对 skill 内容调用 sanitizer（`get_skills_knowledge_report()`）
+- [x] 6.2 单元测试：含 injection 的 SKILL.md 被消毒（`tests/unit/test_knowledge.py`）
 
 ---
 
 ## Phase 3：其他安全任务
 
 ### Task 7：Webhook 管理鉴权（REQ-S4）
-- [ ] 7.1 添加 admin token 中间件
-- [ ] 7.2 单元测试：无 token 返回 401
+- [x] 7.1 添加 admin token 中间件（未配置 token 时管理接口返回 500，已配置后强制校验）
+- [x] 7.2 单元/集成测试：无 token 返回 401，未配置返回 500
 
 ### Task 8：MCP 认证（REQ-S5）
-- [ ] 8.1 `mcp/server.py` 添加 token 验证
-- [ ] 8.2 单元测试
+- [x] 8.1 `mcp/server.py` 添加 token 验证（初始化时 `OWLCLAW_MCP_TOKEN` + initialize token 握手）
+- [x] 8.2 单元/集成测试通过（`tests/unit/test_mcp_server.py` + `tests/integration/test_mcp_server_integration.py`）
 
 ### Task 9：eval 替换（REQ-S6）
 - [ ] 9.1 替换 transformer.py 中的 eval

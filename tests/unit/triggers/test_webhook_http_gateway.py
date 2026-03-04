@@ -36,7 +36,7 @@ class _AllowPolicy:
 def _create_client(
     *,
     per_ip_limit: int = 100,
-    admin_token: str | None = None,
+    admin_token: str | None = "admin-secret",
     max_content_length_bytes: int = 1_048_576,
 ) -> TestClient:
     manager = WebhookEndpointManager(InMemoryEndpointRepository())
@@ -58,14 +58,14 @@ def _create_client(
     return TestClient(app)
 
 
-def _create_endpoint(client: TestClient, *, admin_token: str | None = None) -> tuple[str, str]:
+def _create_endpoint(client: TestClient, *, admin_token: str | None = "admin-secret") -> tuple[str, str]:
     payload = {
         "name": "orders",
         "target_agent_id": "agent-1",
         "auth_method": {"type": "bearer", "token": "token-abc"},
         "execution_mode": "async",
     }
-    headers = {"Authorization": f"Bearer {admin_token}"} if admin_token else None
+    headers = {"Authorization": f"Bearer {admin_token}"} if admin_token else {}
     resp = client.post("/endpoints", json=payload, headers=headers)
     assert resp.status_code == 201
     endpoint_id = resp.json()["id"]
@@ -147,6 +147,18 @@ def test_management_endpoints_require_admin_token() -> None:
 
     authorized = client.post("/endpoints", json=payload, headers={"Authorization": "Bearer admin-secret"})
     assert authorized.status_code == 201
+
+
+def test_management_endpoints_return_500_when_admin_token_not_configured() -> None:
+    client = _create_client(admin_token=None)
+    payload = {
+        "name": "orders",
+        "target_agent_id": "agent-1",
+        "auth_method": {"type": "bearer", "token": "token-abc"},
+        "execution_mode": "async",
+    }
+    response = client.post("/endpoints", json=payload)
+    assert response.status_code == 500
 
 
 def test_webhook_request_body_too_large_returns_413() -> None:
