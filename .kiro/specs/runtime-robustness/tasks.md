@@ -17,7 +17,7 @@
 
 ### Task 1：工具参数 Schema 校验【P0 - Finding #3】
 > 见 security-hardening Task 2，此处为依赖声明
-- [ ] 1.0 依赖 security-hardening Task 2 完成
+- [x] 1.0 依赖 security-hardening Task 2 完成
 
 ### Task 2：_tool_call_timestamps 并发安全（REQ-R1）【P1 - Finding #16】
 > deque 无锁更新，并发 run 可破坏或绕过速率限制

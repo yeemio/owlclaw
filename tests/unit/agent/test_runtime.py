@@ -660,6 +660,46 @@ Check entries.
         messages = rt._build_messages(ctx, "", [])
         assert rt._estimate_messages_tokens(messages) <= 20
 
+    def test_capability_schemas_read_tools_schema_with_closed_parameters(self, tmp_path) -> None:
+        app_dir = tmp_path / "app"
+        app_dir.mkdir(parents=True)
+        _make_app_dir(app_dir)
+        cap_dir = app_dir / "capabilities" / "url-check"
+        cap_dir.mkdir(parents=True)
+        (cap_dir / "SKILL.md").write_text(
+            """---
+name: url-check
+description: validate url input
+metadata:
+  tools_schema:
+    url-check:
+      description: check url
+      parameters:
+        type: object
+        properties:
+          url:
+            type: string
+          timeout_seconds:
+            type: integer
+        required: [url]
+---
+# Guide
+""",
+            encoding="utf-8",
+        )
+
+        loader = SkillsLoader(app_dir / "capabilities")
+        loader.scan()
+        registry = CapabilityRegistry(loader)
+        registry.register_handler("url-check", lambda **kwargs: kwargs)
+        rt = AgentRuntime(agent_id="bot", app_dir=str(app_dir), registry=registry)
+
+        schemas = rt._capability_schemas()
+        params = schemas[0]["function"]["parameters"]
+        assert params["additionalProperties"] is False
+        assert params["required"] == ["url"]
+        assert "url" in params["properties"]
+
     def test_run_skill_snapshot_stabilizes_context_and_capability_view(self, tmp_path) -> None:
         """Snapshot should keep run-time skill/capability view stable."""
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
@@ -1006,6 +1046,47 @@ Check entries.
         assert reasoning["requires_confirmation"] is True
         assert reasoning["confirmed"] is True
 
+    async def test_execute_tool_rejects_arguments_not_in_schema(self, tmp_path) -> None:
+        app_dir = tmp_path / "app"
+        app_dir.mkdir(parents=True)
+        _make_app_dir(app_dir)
+        cap_dir = app_dir / "capabilities" / "fetch-order"
+        cap_dir.mkdir(parents=True)
+        (cap_dir / "SKILL.md").write_text(
+            """---
+name: fetch-order
+description: fetch order by id
+metadata:
+  tools_schema:
+    fetch-order:
+      description: fetch order
+      parameters:
+        type: object
+        properties:
+          order_id:
+            type: integer
+        required: [order_id]
+---
+# Guide
+""",
+            encoding="utf-8",
+        )
+
+        loader = SkillsLoader(app_dir / "capabilities")
+        loader.scan()
+        registry = CapabilityRegistry(loader)
+        handler = AsyncMock(return_value={"ok": True})
+        registry.register_handler("fetch-order", handler)
+        rt = AgentRuntime(agent_id="bot", app_dir=str(app_dir), registry=registry)
+        tc = _make_tool_call("fetch-order", {"order_id": 1, "unexpected": "x"})
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+
+        result = await rt._execute_tool(tc, ctx)
+
+        assert "error" in result
+        assert "unexpected" in result["error"]
+        assert "not allowed" in result["error"]
+        handler.assert_not_called()
     def test_build_tool_decision_reasoning_parses_string_confirmation_flag(self, tmp_path) -> None:
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
         ctx = AgentRunContext(agent_id="bot", trigger="cron")

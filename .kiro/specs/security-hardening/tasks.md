@@ -24,11 +24,11 @@
 
 ### Task 2：工具参数 Schema 校验（REQ-S3）【P0 - Finding #3】
 > LLM 生成的工具参数未校验，可传递任意值给 handler
-- [ ] 2.1 `runtime.py:1065-1087` 在 invoke 前调用 schema 验证
-- [ ] 2.2 `_capability_schemas()` 改为读取 SKILL.md 定义的 schema
-- [ ] 2.3 设置 `additionalProperties: false`, 正确填充 `required`
-- [ ] 2.4 单元测试：非法参数被拒绝，返回错误 dict
-- [ ] 2.5 集成测试：SSRF via URL 参数被 schema 校验拦截
+- [x] 2.1 `runtime.py` 在 invoke 前调用 schema 验证（`_validate_tool_arguments()`）
+- [x] 2.2 `_capability_schemas()` 读取 SKILL.md 的 `metadata.tools_schema`
+- [x] 2.3 默认设置 `additionalProperties: false`，并按 `properties` 过滤 `required`
+- [x] 2.4 单元测试：非法参数被拒绝，返回错误 dict（`tests/unit/agent/test_runtime.py`）
+- [x] 2.5 集成测试：SSRF via URL 参数被 schema 校验拦截（`tests/integration/test_agent_runtime_e2e.py`）
 
 ### Task 3：CORS 安全修复（REQ-S13）【P0 - Finding #1, #4, #15】
 > 多处 CORS 默认 `["*"]` + credentials，违反 CORS 规范
