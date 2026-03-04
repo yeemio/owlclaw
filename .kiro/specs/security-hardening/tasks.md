@@ -56,8 +56,8 @@
 - [x] 5.2 单元测试：Unicode 混淆攻击被归一化后匹配（新增全角注入回归）
 
 ### Task 6：SKILL.md 注入防护（REQ-S1）
-- [ ] 6.1 `knowledge.py` 对 skill 内容调用 sanitizer
-- [ ] 6.2 单元测试：含 injection 的 SKILL.md 被消毒
+- [x] 6.1 `knowledge.py` 对 skill 内容调用 sanitizer（`get_skills_knowledge_report()`）
+- [x] 6.2 单元测试：含 injection 的 SKILL.md 被消毒（`tests/unit/test_knowledge.py`）
 
 ---
 
