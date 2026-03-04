@@ -89,7 +89,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | F-2 | 检查指标卡片 | 今日成本、执行次数、成功率、活跃 Agent 有数值或 0，非空白 | ☑ |
 | F-3 | 检查告警 | 成本超阈值或成功率低时出现告警横幅；否则无或隐藏 | ☐ |
 | F-4 | 等待 30s+ | 数据自动刷新（Network 有新请求或 WS 推送） | ☐ |
-| F-5 | 检查引导 | "Getting Started" 或类似引导卡片，含 Quick Start / 示例 / SKILL 指南 链接 | ☐ |
+| F-5 | 检查引导 | "Getting Started" 或类似引导卡片，含 Quick Start / 示例 / SKILL 指南 链接 | ☑ |
 
 ## 2.2 Governance
 
