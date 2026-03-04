@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -350,6 +350,29 @@ def test_normal_mode_inmemory_ledger_opt_in():
     app.configure(governance={"use_inmemory_ledger": True, "router": {}})
     app._ensure_governance()
     assert type(app._ledger).__name__ == "InMemoryLedger"
+
+
+def test_ensure_governance_defaults_to_fail_close():
+    app = OwlClaw("secure-default")
+    app.configure(governance={"router": {}})
+    app._ensure_governance()
+    assert app._visibility_filter is not None
+    assert app._visibility_filter._fail_policy == "close"  # noqa: SLF001
+
+
+def test_ensure_governance_passes_ledger_fallback_log_path():
+    session_factory = MagicMock()
+    app = OwlClaw("ledger-fallback-path")
+    app.configure(
+        governance={
+            "session_factory": session_factory,
+            "router": {},
+            "ledger": {"fallback_log_path": "custom-ledger.log"},
+        }
+    )
+    app._ensure_governance()
+    assert app._ledger is not None
+    assert app._ledger._fallback_log_path == "custom-ledger.log"  # noqa: SLF001
 
 
 def test_ensure_logging_does_not_override_existing_handler() -> None:

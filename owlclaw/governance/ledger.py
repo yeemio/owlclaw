@@ -48,6 +48,13 @@ class CostSummary:
     by_capability: dict[str, Decimal] = field(default_factory=dict)
 
 
+@dataclass
+class LedgerConfig:
+    """Runtime configuration for Ledger writer behavior."""
+
+    fallback_log_path: str = "ledger_fallback.log"
+
+
 class LedgerRecord(Base):
     """Single capability execution record (audit and cost analysis)."""
 
