@@ -60,3 +60,18 @@
 
 - **现状**：无重叠运行保护
 - **验收**：同一 cron 任务不并行执行
+
+## REQ-G11：API Trigger 速率限制
+
+- **现状**：`triggers/api/server.py` 无内置速率限制
+- **验收**：支持可配置的 per-tenant 与 per-endpoint token bucket，超限返回 429
+
+## REQ-G12：VisibilityFilter 默认 fail_policy=close
+
+- **现状**：默认 `fail_policy="open"`，评估器异常时 capability 继续可见
+- **验收**：默认改为 `close`；文档明确 `open` 仅用于 dev/test
+
+## REQ-G13：Budget 原子预约与退款
+
+- **现状**：budget 检查为 check-then-act，并发请求可能共同通过
+- **验收**：预算检查与预约原子化；未执行请求可退款或自动过期释放

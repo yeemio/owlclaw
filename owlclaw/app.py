@@ -629,6 +629,8 @@ class OwlClaw:
             agent_id=self.name,
             max_body_bytes=int(config.get("max_body_bytes", 1024 * 1024)),
             cors_origins=list(config.get("cors_origins", ["*"])),
+            tenant_rate_limit_per_minute=int(config.get("tenant_rate_limit_per_minute", 120)),
+            endpoint_rate_limit_per_minute=int(config.get("endpoint_rate_limit_per_minute", 60)),
         )
         return self.api_trigger_server
 
@@ -764,7 +766,7 @@ class OwlClaw:
         )
 
         cfg = self._governance_config
-        fail_policy = cfg.get("fail_policy", "open")
+        fail_policy = cfg.get("fail_policy", "close")
         self._visibility_filter = VisibilityFilter(fail_policy=str(fail_policy))
 
         time_cfg = (cfg.get("visibility") or {}).get("time") or {}

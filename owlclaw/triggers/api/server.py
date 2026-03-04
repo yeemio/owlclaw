@@ -75,6 +75,44 @@ class GovernanceGateProtocol(Protocol):
     ) -> GovernanceDecision: ...
 
 
+@dataclass(slots=True)
+class _BucketState:
+    tokens: float
+    last_refill: float
+
+
+class _TokenBucketLimiter:
+    """In-memory token bucket limiter keyed by arbitrary strings."""
+
+    def __init__(self, *, rate_per_minute: int | None) -> None:
+        self._rate = int(rate_per_minute or 0)
+        self._capacity = float(max(1, self._rate)) if self._rate > 0 else 0.0
+        self._states: dict[str, _BucketState] = {}
+        self._lock = asyncio.Lock()
+
+    @property
+    def enabled(self) -> bool:
+        return self._rate > 0
+
+    async def allow(self, key: str) -> bool:
+        if not self.enabled:
+            return True
+        now = monotonic()
+        refill_rate = float(self._rate) / 60.0
+        async with self._lock:
+            state = self._states.get(key)
+            if state is None:
+                self._states[key] = _BucketState(tokens=self._capacity - 1.0, last_refill=now)
+                return True
+            elapsed = max(0.0, now - state.last_refill)
+            state.tokens = min(self._capacity, state.tokens + elapsed * refill_rate)
+            state.last_refill = now
+            if state.tokens < 1.0:
+                return False
+            state.tokens -= 1.0
+            return True
+
+
 class APITriggerServer:
     """Starlette-based dynamic API trigger server."""
 
@@ -91,6 +129,8 @@ class APITriggerServer:
         agent_id: str = "api-trigger",
         max_body_bytes: int = 1024 * 1024,
         cors_origins: list[str] | None = None,
+        tenant_rate_limit_per_minute: int = 120,
+        endpoint_rate_limit_per_minute: int = 60,
     ) -> None:
         self._host = host
         self._port = port
@@ -108,6 +148,8 @@ class APITriggerServer:
         self._server_task: asyncio.Task[None] | None = None
         self._runs: dict[str, dict[str, Any]] = {}
         self._signal_admin_registered: bool = False
+        self._tenant_limiter = _TokenBucketLimiter(rate_per_minute=tenant_rate_limit_per_minute)
+        self._endpoint_limiter = _TokenBucketLimiter(rate_per_minute=endpoint_rate_limit_per_minute)
         origins = cors_origins if cors_origins is not None else ["*"]
         self._app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
         self._app.router.routes.append(Route("/runs/{run_id}/result", endpoint=self._get_run_result, methods=["GET"]))
@@ -162,6 +204,17 @@ class APITriggerServer:
                 "url": str(request.url),
                 "auth_identity": auth_identity,
             }
+            if not await self._allow_request(config):
+                await self._record_execution(
+                    config=config,
+                    run_id="rate-limited",
+                    status="blocked",
+                    started=started,
+                    payload=payload,
+                    output=None,
+                    reason="rate_limited",
+                )
+                return JSONResponse({"error": "rate_limited"}, status_code=429)
 
             if self._governance_gate is not None:
                 decision = await self._governance_gate.evaluate_request(config.event_name, config.tenant_id, payload)
@@ -186,6 +239,15 @@ class APITriggerServer:
 
         self._app.router.routes.append(Route(config.path, endpoint=endpoint, methods=[config.method]))
         self._configs[route_key] = config
+
+    async def _allow_request(self, config: APITriggerConfig) -> bool:
+        tenant_key = f"tenant:{config.tenant_id}"
+        endpoint_key = f"endpoint:{config.tenant_id}:{config.method}:{config.path}"
+        tenant_ok = await self._tenant_limiter.allow(tenant_key)
+        if not tenant_ok:
+            return False
+        endpoint_ok = await self._endpoint_limiter.allow(endpoint_key)
+        return endpoint_ok
 
     def register_signal_admin(
         self,

@@ -186,6 +186,42 @@ def test_api_trigger_server_invalid_json_returns_400() -> None:
     assert response.json()["error"] == "Invalid JSON"
 
 
+def test_api_trigger_server_tenant_rate_limit_returns_429() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(
+        auth_provider=APIKeyAuthProvider({"k1"}),
+        agent_runtime=runtime,
+        tenant_rate_limit_per_minute=1,
+        endpoint_rate_limit_per_minute=100,
+    )
+    server.register(APITriggerConfig(path="/api/v1/rate-tenant", method="POST", event_name="rate_tenant", response_mode="sync"))
+
+    with TestClient(server.app) as client:
+        ok = client.post("/api/v1/rate-tenant", headers={"X-API-Key": "k1"}, json={"x": 1})
+        limited = client.post("/api/v1/rate-tenant", headers={"X-API-Key": "k1"}, json={"x": 2})
+    assert ok.status_code == 200
+    assert limited.status_code == 429
+    assert limited.json()["error"] == "rate_limited"
+
+
+def test_api_trigger_server_endpoint_rate_limit_returns_429() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(
+        auth_provider=APIKeyAuthProvider({"k1"}),
+        agent_runtime=runtime,
+        tenant_rate_limit_per_minute=100,
+        endpoint_rate_limit_per_minute=1,
+    )
+    server.register(APITriggerConfig(path="/api/v1/rate-endpoint", method="POST", event_name="rate_endpoint", response_mode="sync"))
+
+    with TestClient(server.app) as client:
+        ok = client.post("/api/v1/rate-endpoint", headers={"X-API-Key": "k1"}, json={"x": 1})
+        limited = client.post("/api/v1/rate-endpoint", headers={"X-API-Key": "k1"}, json={"x": 2})
+    assert ok.status_code == 200
+    assert limited.status_code == 429
+    assert limited.json()["error"] == "rate_limited"
+
+
 def test_api_trigger_server_sanitization_applied() -> None:
     runtime = _Runtime()
     server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)

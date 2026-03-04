@@ -17,6 +17,7 @@ def test_owlclaw_config_defaults() -> None:
     assert cfg.triggers.retry.max_retries == 3
     assert cfg.triggers.notifications.enabled is False
     assert cfg.security.risk_gate.confirmation_timeout_seconds == 300
+    assert cfg.governance.fail_policy == "close"
 
 
 def test_owlclaw_config_nested_validation_error() -> None:

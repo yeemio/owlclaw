@@ -155,7 +155,7 @@ class VisibilityFilter:
     configured fail-policy (`open` keeps visible, `close` hides capability).
     """
 
-    def __init__(self, *, fail_policy: str = "open") -> None:
+    def __init__(self, *, fail_policy: str = "close") -> None:
         normalized_policy = fail_policy.strip().lower()
         if normalized_policy not in {"open", "close"}:
             raise ValueError("fail_policy must be either 'open' or 'close'")

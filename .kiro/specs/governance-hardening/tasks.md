@@ -17,22 +17,22 @@
 
 ### Task 1：API Trigger 速率限制【P1 - Finding #8】
 > API trigger 端点无速率限制，可被滥用导致成本失控
-- [ ] 1.1 `triggers/api/server.py` 添加可配置的速率限制器
-- [ ] 1.2 实现 per-tenant token bucket 限流
-- [ ] 1.3 实现 per-endpoint 限流
-- [ ] 1.4 单元测试：超限返回 429
+- [x] 1.1 `triggers/api/server.py` 添加可配置的速率限制器
+- [x] 1.2 实现 per-tenant token bucket 限流
+- [x] 1.3 实现 per-endpoint 限流
+- [x] 1.4 单元测试：超限返回 429
 
 ### Task 2：VisibilityFilter fail_policy 默认值【P1 - Finding #9】
 > 默认 fail_policy="open"，evaluator 失败时 capability 仍可见
-- [ ] 2.1 `visibility.py:158` 默认改为 `"close"`
-- [ ] 2.2 文档说明 `"open"` 仅用于 dev/test
-- [ ] 2.3 单元测试：evaluator 异常时 capability 被隐藏
+- [x] 2.1 `visibility.py:158` 默认改为 `"close"`
+- [x] 2.2 文档说明 `"open"` 仅用于 dev/test
+- [x] 2.3 单元测试：evaluator 异常时 capability 被隐藏
 
 ### Task 3：Budget 约束竞态条件【P1 - Finding #10】
 > check-then-act 模式无原子预约，并发请求可能突破预算
-- [ ] 3.1 `budget.py` 实现原子预算预约机制
-- [ ] 3.2 visibility check 时原子扣减，未执行时退款
-- [ ] 3.3 单元测试：并发请求正确共享预算
+- [x] 3.1 `budget.py` 实现原子预算预约机制
+- [x] 3.2 visibility check 时原子扣减，未执行时退款
+- [x] 3.3 单元测试：并发请求正确共享预算
 
 ---
 
