@@ -35,7 +35,10 @@ async def get_agent_detail(
     provider: AgentsProvider = agents_provider_dep,
 ) -> dict[str, Any]:
     """Return one agent detail payload."""
-    detail = await provider.get_agent_detail(agent_id=agent_id, tenant_id=tenant_id)
+    try:
+        detail = await provider.get_agent_detail(agent_id=agent_id, tenant_id=tenant_id)
+    except ConfigurationError:
+        raise HTTPException(status_code=404, detail="Agent not found") from None
     if detail is None:
         raise HTTPException(status_code=404, detail="Agent not found")
     return detail

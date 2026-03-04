@@ -151,6 +151,21 @@ def test_agents_detail_route_returns_404_when_missing() -> None:
     assert payload["error"]["message"] == "Agent not found"
 
 
+def test_agents_detail_route_returns_404_when_database_not_configured() -> None:
+    class _NoDbDetailProvider(_AgentsProviderStub):
+        async def get_agent_detail(self, agent_id: str, tenant_id: str) -> dict[str, Any] | None:
+            _ = (agent_id, tenant_id)
+            raise ConfigurationError("Database URL not set")
+
+    app = _build_app(_NoDbDetailProvider())
+    client = TestClient(app)
+    response = client.get("/api/v1/agents/agent-1")
+    assert response.status_code == 404
+    payload = response.json()
+    assert payload["error"]["code"] == "NOT_FOUND"
+    assert payload["error"]["message"] == "Agent not found"
+
+
 @dataclass
 class _AggRow:
     agent_id: str

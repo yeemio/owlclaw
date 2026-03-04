@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.web import create_console_app
 from owlclaw.web.providers.triggers import DefaultTriggersProvider
 
@@ -113,6 +114,20 @@ def test_triggers_list_route_returns_items() -> None:
     response = client.get("/api/v1/triggers")
     assert response.status_code == 200
     assert response.json()["items"][0]["type"] == "cron"
+
+
+def test_triggers_list_route_returns_empty_when_database_not_configured() -> None:
+    class _NoDbProvider(_TriggersProviderStub):
+        async def list_triggers(self, tenant_id: str) -> list[dict[str, Any]]:
+            _ = tenant_id
+            raise ConfigurationError("Database URL not set")
+
+    app = _build_app(_NoDbProvider())
+    client = TestClient(app)
+
+    response = client.get("/api/v1/triggers")
+    assert response.status_code == 200
+    assert response.json() == {"items": []}
 
 
 def test_triggers_history_route_returns_paginated_payload() -> None:

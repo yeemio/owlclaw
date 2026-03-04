@@ -219,3 +219,23 @@ registry.invoke_handler(**args)  ❌ No schema check (Finding #3)
 **Auditor**: Claude (GLM-5)
 **Date**: 2026-03-04
 **Next Audit**: After P0 fixes implemented
+
+---
+
+## Post-Audit Implementation Update (2026-03-04, codex-work)
+
+After this report was generated, Phase 12 implementation advanced and multiple findings were closed:
+
+- P0 #1 fixed: CORS wildcard + credentials conflict guarded (`owlclaw/web/api/middleware.py`)
+- P0 #2 fixed: tool result sanitization before LLM prompt (`owlclaw/agent/runtime/runtime.py`)
+- P0 #3 fixed: tool argument schema validation (`owlclaw/agent/runtime/runtime.py`)
+- P1 #4 fixed: API trigger default CORS closed (`owlclaw/triggers/api/server.py`)
+- P1 #5 fixed: HTTP executor SSRF host/private-network guard (`owlclaw/capabilities/bindings/http_executor.py`)
+- P1 #6 fixed: Unicode NFKC normalization coverage (`owlclaw/security/sanitizer.py` + tests)
+- P1 #7 fixed: empty-token auth bypass blocked (`owlclaw/web/api/middleware.py`)
+
+Console no-DB regression items from browser verification were also fixed:
+- BUG-1 fixed: `/api/v1/agents/{id}` no longer returns 500 without DB
+- BUG-2 fixed: `/api/v1/triggers` no longer returns 500 without DB
+
+Open items remain in runtime/governance hardening tracks (e.g., R1/R11, rate limiting, budget race).
