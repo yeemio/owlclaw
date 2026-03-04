@@ -21,6 +21,7 @@ import json
 import logging
 import math
 import os
+import re
 import time
 from collections import deque
 from pathlib import Path
@@ -1202,6 +1203,18 @@ class AgentRuntime:
                     "modifications": arg_modifications,
                 },
             )
+        validation_error = self._validate_tool_arguments(tool_name, invoke_arguments)
+        if validation_error is not None:
+            self._security_audit.record(
+                event_type="tool_arguments_validation_failed",
+                source="runtime",
+                details={
+                    "tool_name": tool_name,
+                    "run_id": context.run_id,
+                    "reason": validation_error,
+                },
+            )
+            return {"error": validation_error}
         capability_meta = self.registry.get_capability_metadata(tool_name)
         skill_owlclaw = self._get_skill_owlclaw_config(tool_name)
         migration_outcome = self._evaluate_migration(tool_name, invoke_arguments, skill_owlclaw)
@@ -1994,17 +2007,213 @@ class AgentRuntime:
         )
         capabilities = sorted(source, key=lambda c: str(c.get("name", "")))
         for capability in capabilities:
+            capability_name = str(capability.get("name", "")).strip()
+            if not capability_name:
+                continue
             schemas.append({
                 "type": "function",
                 "function": {
-                    "name": capability["name"],
+                    "name": capability_name,
                     "description": capability.get("description") or "",
-                    "parameters": {
-                        "type": "object",
-                        "description": "Arguments for this capability.",
-                        "additionalProperties": True,
-                        "required": [],
-                    },
+                    "parameters": self._get_capability_parameters_schema(capability_name),
                 },
             })
         return schemas
+
+    def _get_capability_parameters_schema(self, capability_name: str) -> dict[str, Any]:
+        """Build tool parameter schema using SKILL.md tools_schema when available."""
+        default_schema: dict[str, Any] = {
+            "type": "object",
+            "description": "Arguments for this capability.",
+            "additionalProperties": True,
+            "required": [],
+        }
+        if self.registry is None:
+            return default_schema
+        try:
+            skill = self.registry.skills_loader.get_skill(capability_name)
+        except Exception:
+            return default_schema
+        if skill is None:
+            return default_schema
+        metadata = getattr(skill, "metadata", {})
+        if not isinstance(metadata, dict):
+            return default_schema
+        tools_schema = metadata.get("tools_schema", {})
+        if not isinstance(tools_schema, dict):
+            return default_schema
+        tool_def = tools_schema.get(capability_name)
+        if not isinstance(tool_def, dict):
+            return default_schema
+        raw_parameters = tool_def.get("parameters")
+        if not isinstance(raw_parameters, dict):
+            return default_schema
+        return self._normalize_parameter_schema(raw_parameters, default_schema)
+
+    def _validate_tool_arguments(self, tool_name: str, arguments: dict[str, Any]) -> str | None:
+        """Validate tool arguments against builtin or capability schema."""
+        schema = self._find_tool_parameters_schema(tool_name)
+        if schema is None:
+            return None
+        validation_error = self._validate_json_schema_value(arguments, schema, path="$")
+        if validation_error is None:
+            return None
+        return f"Invalid arguments for tool '{tool_name}': {validation_error}"
+
+    def _find_tool_parameters_schema(self, tool_name: str) -> dict[str, Any] | None:
+        if self.builtin_tools is not None:
+            for schema in self.builtin_tools.get_tool_schemas():
+                if not isinstance(schema, dict):
+                    continue
+                function = schema.get("function")
+                if not isinstance(function, dict):
+                    continue
+                if function.get("name") != tool_name:
+                    continue
+                parameters = function.get("parameters")
+                if isinstance(parameters, dict):
+                    return parameters
+        for schema in self._capability_schemas():
+            if not isinstance(schema, dict):
+                continue
+            function = schema.get("function")
+            if not isinstance(function, dict):
+                continue
+            if function.get("name") != tool_name:
+                continue
+            parameters = function.get("parameters")
+            if isinstance(parameters, dict):
+                return parameters
+        return None
+
+    @staticmethod
+    def _normalize_parameter_schema(raw_schema: dict[str, Any], default_schema: dict[str, Any]) -> dict[str, Any]:
+        schema = dict(raw_schema)
+        if schema.get("type") != "object":
+            return dict(default_schema)
+
+        properties_raw = schema.get("properties")
+        properties: dict[str, Any] = {}
+        if isinstance(properties_raw, dict):
+            for key, value in properties_raw.items():
+                if not isinstance(key, str):
+                    continue
+                if isinstance(value, dict):
+                    properties[key] = dict(value)
+                else:
+                    properties[key] = {"type": "string"}
+        schema["properties"] = properties
+
+        required_raw = schema.get("required", [])
+        required: list[str] = []
+        if isinstance(required_raw, list):
+            for item in required_raw:
+                if isinstance(item, str) and item in properties:
+                    required.append(item)
+        schema["required"] = required
+
+        additional = schema.get("additionalProperties")
+        if not isinstance(additional, bool | dict):
+            additional = False
+        schema["additionalProperties"] = additional
+        schema.setdefault("description", default_schema.get("description", "Arguments for this capability."))
+        return schema
+
+    @classmethod
+    def _validate_json_schema_value(cls, value: Any, schema: dict[str, Any], *, path: str) -> str | None:
+        schema_type = schema.get("type")
+        if isinstance(schema_type, str):
+            if not cls._matches_json_type(value, schema_type):
+                return f"{path} expected type '{schema_type}'"
+        enum_values = schema.get("enum")
+        if isinstance(enum_values, list) and enum_values:
+            if value not in enum_values:
+                return f"{path} must be one of {enum_values}"
+
+        if schema_type == "object":
+            if not isinstance(value, dict):
+                return f"{path} expected type 'object'"
+            properties = schema.get("properties", {})
+            properties_map = properties if isinstance(properties, dict) else {}
+            required = schema.get("required", [])
+            if isinstance(required, list):
+                for key in required:
+                    if isinstance(key, str) and key not in value:
+                        return f"{path}.{key} is required"
+            for key, item in value.items():
+                key_path = f"{path}.{key}"
+                prop_schema = properties_map.get(key)
+                if isinstance(prop_schema, dict):
+                    nested_error = cls._validate_json_schema_value(item, prop_schema, path=key_path)
+                    if nested_error is not None:
+                        return nested_error
+                    continue
+                additional = schema.get("additionalProperties", True)
+                if additional is False:
+                    return f"{key_path} is not allowed"
+                if isinstance(additional, dict):
+                    nested_error = cls._validate_json_schema_value(item, additional, path=key_path)
+                    if nested_error is not None:
+                        return nested_error
+            return None
+
+        if schema_type == "array":
+            if not isinstance(value, list):
+                return f"{path} expected type 'array'"
+            item_schema = schema.get("items")
+            if isinstance(item_schema, dict):
+                for index, item in enumerate(value):
+                    nested_error = cls._validate_json_schema_value(item, item_schema, path=f"{path}[{index}]")
+                    if nested_error is not None:
+                        return nested_error
+            return None
+
+        if schema_type == "string":
+            if not isinstance(value, str):
+                return f"{path} expected type 'string'"
+            pattern = schema.get("pattern")
+            if isinstance(pattern, str):
+                try:
+                    compiled = re.compile(pattern)
+                except re.error:
+                    compiled = None
+                if compiled is not None and not compiled.search(value):
+                    return f"{path} does not match required pattern"
+            min_length = schema.get("minLength")
+            if isinstance(min_length, int) and len(value) < min_length:
+                return f"{path} length must be >= {min_length}"
+            max_length = schema.get("maxLength")
+            if isinstance(max_length, int) and len(value) > max_length:
+                return f"{path} length must be <= {max_length}"
+            return None
+
+        if schema_type in {"integer", "number"}:
+            if not cls._matches_json_type(value, schema_type):
+                return f"{path} expected type '{schema_type}'"
+            minimum = schema.get("minimum")
+            if isinstance(minimum, int | float) and value < minimum:
+                return f"{path} must be >= {minimum}"
+            maximum = schema.get("maximum")
+            if isinstance(maximum, int | float) and value > maximum:
+                return f"{path} must be <= {maximum}"
+            return None
+
+        return None
+
+    @staticmethod
+    def _matches_json_type(value: Any, schema_type: str) -> bool:
+        if schema_type == "object":
+            return isinstance(value, dict)
+        if schema_type == "array":
+            return isinstance(value, list)
+        if schema_type == "string":
+            return isinstance(value, str)
+        if schema_type == "boolean":
+            return isinstance(value, bool)
+        if schema_type == "integer":
+            return isinstance(value, int) and not isinstance(value, bool)
+        if schema_type == "number":
+            return isinstance(value, int | float) and not isinstance(value, bool)
+        if schema_type == "null":
+            return value is None
+        return True
