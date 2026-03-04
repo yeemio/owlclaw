@@ -852,10 +852,15 @@ class AgentRuntime:
             for idx, tc in enumerate(tool_calls):
                 tool_result = await self._execute_tool(tc, context, trace=trace)
                 tool_call_id = getattr(tc, "id", None) or f"tool_call_{iteration}_{idx}"
+                tool_name = getattr(getattr(tc, "function", None), "name", None) or "unknown_tool"
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tool_call_id,
-                    "content": json.dumps(tool_result, default=str),
+                    "content": self._sanitize_tool_result(
+                        tool_result,
+                        tool_name=str(tool_name),
+                        run_id=context.run_id,
+                    ),
                 })
 
         final_content = ""
@@ -871,6 +876,26 @@ class AgentRuntime:
                 if m.get("role") == "tool"
             ),
         }
+
+    def _sanitize_tool_result(self, tool_result: Any, *, tool_name: str, run_id: str) -> str:
+        """Sanitize serialized tool result before appending to tool role message."""
+        serialized = json.dumps(tool_result, default=str)
+        sanitized = self._input_sanitizer.sanitize(
+            serialized,
+            source=f"tool_result_message:{tool_name}",
+        )
+        if sanitized.changed:
+            self._security_audit.record(
+                event_type="tool_result_sanitized",
+                source="runtime",
+                details={
+                    "tool_name": tool_name,
+                    "run_id": run_id,
+                    "modifications": sanitized.modifications,
+                    "stage": "decision_loop_message",
+                },
+            )
+        return sanitized.sanitized
 
     @staticmethod
     def _extract_usage_tokens(response: Any) -> tuple[int, int]:

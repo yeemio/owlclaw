@@ -2,7 +2,7 @@
 
 > **审计来源**: 2026-03-03-deep-audit-report-v4.md
 > **优先级**: P0 (阻塞发布)
-> **最后更新**: 2026-03-03
+> **最后更新**: 2026-03-04
 
 ---
 
@@ -17,10 +17,10 @@
 
 ### Task 1：工具结果消毒（REQ-S2）【P0 - Finding #2】
 > 工具输出未消毒直接注入 LLM 提示词，可导致 prompt injection
-- [ ] 1.1 `runtime.py:855-859` tool_result 回传前调用 `InputSanitizer.sanitize()`
-- [ ] 1.2 新增 `_sanitize_tool_result()` 方法
-- [ ] 1.3 单元测试：恶意 tool result 被消毒，无法注入 system prompt
-- [ ] 1.4 集成测试：HTTP/SQL binding 返回恶意数据时被拦截
+- [x] 1.1 `runtime.py` tool_result 回传前调用 `InputSanitizer.sanitize()`（通过 `_sanitize_tool_result()` 在 decision loop 消毒序列化结果）
+- [x] 1.2 新增 `_sanitize_tool_result()` 方法
+- [x] 1.3 单元测试：恶意 tool result 被消毒，无法注入 system prompt（`tests/unit/agent/test_runtime.py`）
+- [x] 1.4 集成测试：HTTP binding 返回恶意数据时被拦截（`tests/integration/test_bindings_skills_loader_integration.py`）
 
 ### Task 2：工具参数 Schema 校验（REQ-S3）【P0 - Finding #3】
 > LLM 生成的工具参数未校验，可传递任意值给 handler
