@@ -68,8 +68,8 @@
 - [x] 7.2 单元/集成测试：无 token 返回 401，未配置返回 500
 
 ### Task 8：MCP 认证（REQ-S5）
-- [ ] 8.1 `mcp/server.py` 添加 token 验证
-- [ ] 8.2 单元测试
+- [x] 8.1 `mcp/server.py` 添加 token 验证（初始化时 `OWLCLAW_MCP_TOKEN` + initialize token 握手）
+- [x] 8.2 单元/集成测试通过（`tests/unit/test_mcp_server.py` + `tests/integration/test_mcp_server_integration.py`）
 
 ### Task 9：eval 替换（REQ-S6）
 - [ ] 9.1 替换 transformer.py 中的 eval
