@@ -4,6 +4,7 @@ from pathlib import Path
 
 MIGRATION_PATH = Path("migrations/versions/009_governance_hardening_indexes_and_webhook_idempotency_pk.py")
 QUALITY_INDEX_MIGRATION_PATH = Path("migrations/versions/010_quality_store_tenant_prefixed_indexes.py")
+MERGE_MIGRATION_PATH = Path("migrations/versions/011_merge_phase12_migration_heads.py")
 ALEMBIC_ENV_PATH = Path("migrations/env.py")
 
 
@@ -58,3 +59,9 @@ def test_quality_store_migration_drops_non_tenant_indexes() -> None:
 def test_alembic_env_imports_owlhub_models() -> None:
     content = ALEMBIC_ENV_PATH.read_text(encoding="utf-8")
     assert "from owlclaw.owlhub.models import ReviewRecord, Skill, SkillStatistics, SkillVersion" in content
+
+
+def test_phase12_migration_heads_are_merged() -> None:
+    content = MERGE_MIGRATION_PATH.read_text(encoding="utf-8")
+    assert 'revision: str = "011_merge_phase12_heads"' in content
+    assert 'down_revision: tuple[str, str] = ("009_webhook_auth_token_hash", "010_quality_tenant_indexes")' in content
