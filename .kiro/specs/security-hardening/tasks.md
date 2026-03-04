@@ -32,12 +32,12 @@
 
 ### Task 3：CORS 安全修复（REQ-S13）【P0 - Finding #1, #4, #15】
 > 多处 CORS 默认 `["*"]` + credentials，违反 CORS 规范
-- [ ] 3.1 `middleware.py:72-90` 验证 `*` 与 `allow_credentials=True` 不兼容
-- [ ] 3.2 `parse_cors_origins()` 默认改为 `[]` 而非 `["*"]`
-- [ ] 3.3 `triggers/api/server.py:111` CORS 默认改为 `[]`
-- [ ] 3.4 **新增** `triggers/webhook/http/app.py:44` CORS 默认改为 `[]`
-- [ ] 3.5 添加启动时 CORS 配置校验警告
-- [ ] 3.6 单元测试：`*` + credentials 抛出配置错误或警告
+- [x] 3.1 `middleware.py` 验证 `*` 与 `allow_credentials=true` 不兼容（冲突时强制降级为 `false`）
+- [x] 3.2 `parse_cors_origins()` 默认改为 `[]`
+- [x] 3.3 `triggers/api/server.py` CORS 默认改为 `[]`
+- [x] 3.4 **新增** `triggers/webhook/http/app.py` CORS 默认改为 `[]`
+- [x] 3.5 添加启动时 CORS 配置校验警告（console middleware）
+- [x] 3.6 单元测试：`*` + credentials 输出警告，默认闭合 CORS 已覆盖测试
 
 ---
 

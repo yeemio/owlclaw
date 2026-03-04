@@ -122,16 +122,23 @@ def _is_truthy_env(raw: str | None) -> bool:
 def parse_cors_origins(raw_origins: str | None) -> list[str]:
     """Parse comma-separated CORS origins env value."""
     if raw_origins is None:
-        return ["http://localhost:3000"]
+        return []
     parts = [item.strip() for item in raw_origins.split(",")]
     origins = [item for item in parts if item]
-    return origins or ["http://localhost:3000"]
+    return origins
 
 
 def add_cors_middleware(app: FastAPI) -> None:
     """Attach CORS middleware using env-driven configuration."""
     origins = parse_cors_origins(os.getenv("OWLCLAW_CONSOLE_CORS_ORIGINS"))
-    allow_credentials = "*" not in origins
+    allow_credentials_raw = os.getenv("OWLCLAW_CONSOLE_CORS_ALLOW_CREDENTIALS")
+    allow_credentials = True if allow_credentials_raw is None else _is_truthy_env(allow_credentials_raw)
+    if allow_credentials and "*" in origins:
+        logger.warning(
+            "Invalid CORS config: allow_credentials=true is not compatible with wildcard origin '*'. "
+            "Forcing allow_credentials=false."
+        )
+        allow_credentials = False
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

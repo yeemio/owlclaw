@@ -41,7 +41,7 @@ from owlclaw.triggers.webhook.validator import RequestValidator
 class HttpGatewayConfig:
     """Configuration for webhook HTTP gateway."""
 
-    cors_origins: list[str] = field(default_factory=lambda: ["*"])
+    cors_origins: list[str] = field(default_factory=list)
     tls_enabled: bool = False
     per_ip_limit_per_minute: int = 120
     per_endpoint_limit_per_minute: int = 300
