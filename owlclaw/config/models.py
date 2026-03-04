@@ -41,14 +41,23 @@ class RateLimitConfig(BaseModel):
     max_calls_per_minute: int = Field(default=60, ge=1)
 
 
+class LedgerConfig(BaseModel):
+    """Ledger writer configuration."""
+
+    batch_size: int = Field(default=10, ge=1)
+    flush_interval: float = Field(default=5.0, gt=0.0)
+    fallback_log_path: str = Field(default="ledger_fallback.log")
+
+
 class GovernanceConfig(BaseModel):
     """Governance configuration."""
 
     monthly_budget: float = Field(default=500.0, ge=0.0)
     budget_alert_thresholds: list[float] = Field(default_factory=lambda: [0.5, 0.8, 1.0])
-    fail_policy: Literal["open", "close"] = Field(default="open")
+    fail_policy: Literal["open", "close"] = Field(default="close")
     circuit_breaker: CircuitBreakerConfig = Field(default_factory=CircuitBreakerConfig)
     rate_limit: RateLimitConfig = Field(default_factory=RateLimitConfig)
+    ledger: LedgerConfig = Field(default_factory=LedgerConfig)
 
 
 class CronTriggersConfig(BaseModel):

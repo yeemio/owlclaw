@@ -66,6 +66,12 @@ class GovernanceDecision:
     reason: str | None = None
 
 
+@dataclass(slots=True)
+class _TokenBucket:
+    tokens: float
+    updated_at: float
+
+
 class GovernanceGateProtocol(Protocol):
     async def evaluate_request(
         self,
@@ -91,6 +97,8 @@ class APITriggerServer:
         agent_id: str = "api-trigger",
         max_body_bytes: int = 1024 * 1024,
         cors_origins: list[str] | None = None,
+        tenant_rate_limit_per_minute: int | None = None,
+        endpoint_rate_limit_per_minute: int | None = None,
     ) -> None:
         self._host = host
         self._port = port
@@ -108,6 +116,11 @@ class APITriggerServer:
         self._server_task: asyncio.Task[None] | None = None
         self._runs: dict[str, dict[str, Any]] = {}
         self._signal_admin_registered: bool = False
+        self._tenant_rate_limit_per_minute = self._normalize_rate_limit(tenant_rate_limit_per_minute)
+        self._endpoint_rate_limit_per_minute = self._normalize_rate_limit(endpoint_rate_limit_per_minute)
+        self._rate_limit_lock = asyncio.Lock()
+        self._tenant_buckets: dict[str, _TokenBucket] = {}
+        self._endpoint_buckets: dict[tuple[str, str], _TokenBucket] = {}
         origins = cors_origins if cors_origins is not None else []
         self._app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
         self._app.router.routes.append(Route("/runs/{run_id}/result", endpoint=self._get_run_result, methods=["GET"]))
@@ -159,6 +172,18 @@ class APITriggerServer:
                 "url": str(request.url),
                 "auth_identity": auth_identity,
             }
+            limited, limit_reason = await self._check_rate_limit(config)
+            if limited:
+                await self._record_execution(
+                    config=config,
+                    run_id="rate-limited",
+                    status="blocked",
+                    started=started,
+                    payload=payload,
+                    output=None,
+                    reason=limit_reason,
+                )
+                return JSONResponse({"error": limit_reason}, status_code=429)
 
             if self._governance_gate is not None:
                 decision = await self._governance_gate.evaluate_request(config.event_name, config.tenant_id, payload)
@@ -183,6 +208,58 @@ class APITriggerServer:
 
         self._app.router.routes.append(Route(config.path, endpoint=endpoint, methods=[config.method]))
         self._configs[route_key] = config
+
+    @staticmethod
+    def _normalize_rate_limit(limit: int | None) -> int | None:
+        if limit is None:
+            return None
+        if isinstance(limit, bool) or not isinstance(limit, int):
+            raise ValueError("rate limit must be a positive integer when configured")
+        if limit <= 0:
+            raise ValueError("rate limit must be a positive integer when configured")
+        return limit
+
+    async def _check_rate_limit(self, config: APITriggerConfig) -> tuple[bool, str]:
+        async with self._rate_limit_lock:
+            if self._tenant_rate_limit_per_minute is not None:
+                tenant_blocked = self._consume_bucket(
+                    self._tenant_buckets,
+                    config.tenant_id,
+                    self._tenant_rate_limit_per_minute,
+                )
+                if tenant_blocked:
+                    return True, "rate_limited_tenant"
+            if self._endpoint_rate_limit_per_minute is not None:
+                endpoint_key = (config.tenant_id, f"{config.method}:{config.path}")
+                endpoint_blocked = self._consume_bucket(
+                    self._endpoint_buckets,
+                    endpoint_key,
+                    self._endpoint_rate_limit_per_minute,
+                )
+                if endpoint_blocked:
+                    return True, "rate_limited_endpoint"
+        return False, ""
+
+    def _consume_bucket(
+        self,
+        buckets: dict[str, _TokenBucket] | dict[tuple[str, str], _TokenBucket],
+        key: str | tuple[str, str],
+        limit_per_minute: int,
+    ) -> bool:
+        now = monotonic()
+        bucket = buckets.get(key)
+        if bucket is None:
+            buckets[key] = _TokenBucket(tokens=float(limit_per_minute - 1), updated_at=now)
+            return False
+
+        refill_rate = float(limit_per_minute) / 60.0
+        elapsed = max(0.0, now - bucket.updated_at)
+        bucket.tokens = min(float(limit_per_minute), bucket.tokens + elapsed * refill_rate)
+        bucket.updated_at = now
+        if bucket.tokens < 1.0:
+            return True
+        bucket.tokens -= 1.0
+        return False
 
     def register_signal_admin(
         self,

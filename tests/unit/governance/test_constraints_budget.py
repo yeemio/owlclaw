@@ -1,5 +1,6 @@
 """Unit tests for BudgetConstraint."""
 
+import asyncio
 from decimal import Decimal
 from unittest.mock import AsyncMock
 
@@ -54,7 +55,7 @@ async def test_budget_exhausted_high_cost_hidden():
     ctx = RunContext(tenant_id="t1")
     r = await c.evaluate(cap, "agent1", ctx)
     assert r.visible is False
-    assert "Budget exhausted" in r.reason
+    assert "budget_insufficient_after_reservation" in r.reason
 
 
 @pytest.mark.asyncio
@@ -104,3 +105,47 @@ async def test_budget_invalid_estimated_cost_uses_default():
     ctx = RunContext(tenant_id="t1")
     r = await c.evaluate(cap, "agent1", ctx)
     assert r.visible is True
+
+
+@pytest.mark.asyncio
+async def test_budget_constraint_atomic_reservation_blocks_second_parallel_high_cost():
+    ledger = AsyncMock(spec=Ledger)
+    ledger.get_cost_summary = AsyncMock(return_value=CostSummary(total_cost=Decimal("9.5")))
+    c = BudgetConstraint(
+        ledger,
+        {
+            "budget_limits": {"agent1": "10"},
+            "high_cost_threshold": "0.1",
+            "reservation_ttl_seconds": 60,
+        },
+    )
+    cap = CapabilityView("x", constraints={"estimated_cost": "0.4"})
+    ctx = RunContext(tenant_id="t1")
+
+    first, second = await asyncio.gather(
+        c.evaluate(cap, "agent1", ctx),
+        c.evaluate(cap, "agent1", ctx),
+    )
+    visible_count = int(first.visible) + int(second.visible)
+    assert visible_count == 1
+
+
+@pytest.mark.asyncio
+async def test_budget_constraint_reservation_auto_refunds_after_ttl():
+    ledger = AsyncMock(spec=Ledger)
+    ledger.get_cost_summary = AsyncMock(return_value=CostSummary(total_cost=Decimal("9.5")))
+    c = BudgetConstraint(
+        ledger,
+        {
+            "budget_limits": {"agent1": "10"},
+            "high_cost_threshold": "0.1",
+            "reservation_ttl_seconds": 0,
+        },
+    )
+    cap = CapabilityView("x", constraints={"estimated_cost": "0.4"})
+    ctx = RunContext(tenant_id="t1")
+
+    first = await c.evaluate(cap, "agent1", ctx)
+    second = await c.evaluate(cap, "agent1", ctx)
+    assert first.visible is True
+    assert second.visible is True

@@ -627,6 +627,12 @@ class OwlClaw:
             agent_id=self.name,
             max_body_bytes=int(config.get("max_body_bytes", 1024 * 1024)),
             cors_origins=list(config.get("cors_origins", ["*"])),
+            tenant_rate_limit_per_minute=int(config["tenant_rate_limit_per_minute"])
+            if isinstance(config.get("tenant_rate_limit_per_minute"), int)
+            else None,
+            endpoint_rate_limit_per_minute=int(config["endpoint_rate_limit_per_minute"])
+            if isinstance(config.get("endpoint_rate_limit_per_minute"), int)
+            else None,
         )
         return self.api_trigger_server
 
@@ -764,7 +770,7 @@ class OwlClaw:
         )
 
         cfg = self._governance_config
-        fail_policy = cfg.get("fail_policy", "open")
+        fail_policy = cfg.get("fail_policy", "close")
         self._visibility_filter = VisibilityFilter(fail_policy=str(fail_policy))
 
         time_cfg = (cfg.get("visibility") or {}).get("time") or {}
@@ -779,14 +785,12 @@ class OwlClaw:
         ledger: Ledger | InMemoryLedger | None = None
 
         if session_factory is not None:
+            ledger_cfg = cfg.get("ledger") if isinstance(cfg.get("ledger"), dict) else {}
             ledger = Ledger(
                 session_factory,
-                batch_size=cfg.get("ledger", {}).get("batch_size", 10)
-                if isinstance(cfg.get("ledger"), dict)
-                else 10,
-                flush_interval=cfg.get("ledger", {}).get("flush_interval", 5.0)
-                if isinstance(cfg.get("ledger"), dict)
-                else 5.0,
+                batch_size=ledger_cfg.get("batch_size", 10),
+                flush_interval=ledger_cfg.get("flush_interval", 5.0),
+                fallback_log_path=ledger_cfg.get("fallback_log_path", "ledger_fallback.log"),
             )
         elif use_inmemory:
             ledger = InMemoryLedger()
