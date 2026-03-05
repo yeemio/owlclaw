@@ -2,10 +2,11 @@
 
 > **Audit Scope**: Full codebase — `owlclaw/` package (265 files, 46,108 lines)
 > **Auditor**: Cursor (claude-4.6-opus-high), following deep-codebase-audit SKILL.md methodology
-> **Duration**: Single session, 4-dimension parallel audit
+> **Duration**: Single session, ~2h wall clock (4-dimension audit; parallel subagents unavailable, sequential deep-read)
 > **Codebase Size**: 265 Python files, 46,108 lines, across agent/, integrations/, triggers/, web/, cli/, governance/, security/, capabilities/, mcp/, e2e/, owlhub/, config/, db/
 > **Methodology**: Deep Codebase Audit (4-dimension, 3-pass, taint-trace)
-> **Prior Report**: Cross-referenced with `2026-03-03-deep-audit-report.md` (80+ findings)
+> **Specs generated**: 0 (all 14 findings mapped to existing specs: security-hardening, runtime-robustness, governance-hardening, config-propagation-fix)
+> **Prior Report**: Cross-referenced with `2026-03-03-deep-audit-report.md` (80 findings). Mapping in section "Prior Report Mapping" below.
 
 ---
 
@@ -13,7 +14,7 @@
 
 **Total Findings**: 14
 - P0/High: 3 — CORS wildcard with credentials, tool output prompt injection, no tool argument schema validation
-- P1/Medium: 7 — HTTP executor SSRF, SQL executor connection string leak, auth bypass on empty token, rate limit missing on API triggers, visibility filter fail-open default, sanitizer bypass via encoding, budget race condition
+- P1/Medium: 7 — API trigger CORS wildcard, HTTP executor SSRF, sanitizer Unicode bypass, auth bypass on empty token, no rate limiting on API triggers, visibility filter fail-open default, budget race condition
 - Low: 4 — Langfuse secret in config dict, `_is_select_query` heuristic, shadow mode leaks query text, heartbeat DB I/O on passive trigger
 
 **Overall Assessment**: **SHIP WITH CONDITIONS** — 3 P0 issues require fix timeline before release. All have existing specs assigned (config-propagation-fix, security-hardening, runtime-robustness, governance-hardening).
@@ -48,6 +49,8 @@
 | 3 | B.Security | **No schema validation on LLM-generated tool arguments.** `_execute_tool` parses the LLM's JSON arguments but only checks that they are a valid JSON dict. It does NOT validate them against the capability's declared parameter schema (from `tool_schema.py`). The LLM can pass arbitrary keys/values, including unexpected types or extra fields that the handler may not expect. | `owlclaw/agent/runtime/runtime.py:1065-1087` | Why: Arguments are parsed from JSON but not validated against schema. Why: The capability registry stores schemas but `_execute_tool` doesn't query them. Why: Schema validation was deferred during MVP. Why: No test verifies that invalid arguments are rejected. Root: Missing argument validation step between JSON parse and handler invocation. | After JSON parse, call `registry.validate_arguments(tool_name, arguments)` using the declared schema. Return error dict on validation failure. | runtime-robustness |
 
 ### P1 / Medium — Important Defect
+
+*Root cause below is simplified for brevity; full 5-Whys available on request. P0 findings above use full 5-Whys.*
 
 | # | Category | Issue | Location | Root Cause | Fix | Spec |
 |---|----------|-------|----------|------------|-----|------|
@@ -172,6 +175,28 @@
 | runtime-robustness | Finding #3 | Tool argument validation is tracked in runtime-robustness |
 | governance-hardening | Findings #8, #9, #10 | Rate limiting and fail-policy are tracked in governance-hardening |
 | config-propagation-fix | Finding #7 | Auth enforcement config is tracked in config-propagation-fix |
+
+---
+
+## Prior Report Mapping (2026-03-03-deep-audit-report.md)
+
+The prior report lists **80 findings** (P0: 14, P1: 38, Low: 28) and remains the **authoritative checklist** for spec tasks. This v2 audit independently re-audited 47 priority files and produced **14 consolidated findings** with root cause analysis and data flow audit. Relationship:
+
+| v2 # | Prior #(s) | Relationship |
+|------|------------|--------------|
+| 1 | 23 | **Adopted** — CORS console wildcard + credentials |
+| 2 | 2, 14 | **Adopted** — Tool output prompt injection |
+| 3 | 13 | **Adopted** — Tool arguments not validated / not sanitized |
+| 4 | 24 | **Adopted** — API trigger server CORS default |
+| 5 | — | **New** — HTTP executor SSRF via URL template (prior did not call out SSRF explicitly) |
+| 6 | 35 | **Adopted** — Sanitizer Unicode bypass |
+| 7 | 37 | **Adopted** — Console API auth bypass when token empty |
+| 8 | — | **New** — No rate limiting on API trigger (prior focused webhook/console) |
+| 9 | — | **New** — Visibility filter fail_policy default "open" |
+| 10 | — | **New** — Budget check-then-act race |
+| 11–14 | various (e.g. 38, 44, 75) | **Merged** — Low-severity observability/correctness/architecture |
+
+**Prior-only (not re-verified in v2)**: Findings in the prior report that were not re-tested in this run (e.g. webhook eval, webhook auth, db_change retry loop, handler timeout, MCP auth, SKILL.md direct injection, migration/DB/index issues) remain in the prior report as the authoritative list. V2 did not independently reproduce them due to scope (47 files vs full 265).
 
 ---
 
