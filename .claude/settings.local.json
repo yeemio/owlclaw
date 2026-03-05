@@ -14,7 +14,10 @@
       "Bash(git merge:*)",
       "Bash(perl:*)",
       "Bash(git checkout:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(npm run:*)",
+      "Bash(npm:*)",
+      "Bash(npx playwright:*)"
     ]
   }
 }

@@ -145,7 +145,7 @@ test.describe("Console flow", () => {
     await expect(page.getByRole("main").getByRole("heading", { name: "Capabilities" })).toBeVisible();
 
     await page.getByRole("link", { name: "Triggers" }).click();
-    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers" })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers", exact: true })).toBeVisible();
     await page.waitForTimeout(2000);
     // No-DB: loading, error, empty state, or list — not white screen
     const content = page.getByRole("main");
