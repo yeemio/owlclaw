@@ -154,6 +154,77 @@ test.describe("Console flow", () => {
     await expect(page.getByRole("main").getByRole("heading", { name: "Settings" })).toBeVisible();
   });
 
+  test("Agents detail panel renders identity/memory/knowledge/history with mock data (F-16)", async ({ page }) => {
+    await page.route("**/api/v1/agents", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [
+            {
+              id: "agent-1",
+              name: "Agent One",
+              role: "trading",
+              status: "active",
+              identity_summary: "Primary trading agent",
+            },
+          ],
+        }),
+      });
+    });
+    await page.route("**/api/v1/agents/agent-1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "agent-1",
+          name: "Agent One",
+          role: "trading",
+          status: "active",
+          identity: { soul: "disciplined", timezone: "Asia/Shanghai" },
+          memory: { short_term_count: 3, long_term_count: 7 },
+          knowledge: { skills: ["entry-monitor"], references_count: 2 },
+          recent_runs: [{ timestamp: "2026-03-05T10:00:00Z", capability: "entry-monitor", status: "success", cost_usd: 0.02 }],
+        }),
+      });
+    });
+
+    await page.goto(`/console/agents`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Agents", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /Agent One/i }).click();
+    await expect(page.getByText("Identity Config")).toBeVisible();
+    await expect(page.getByText("STM Records")).toBeVisible();
+    await expect(page.getByText("LTM Records")).toBeVisible();
+    await expect(page.getByText("Knowledge")).toBeVisible();
+    await expect(page.getByText("Recent Runs")).toBeVisible();
+  });
+
+  test("Triggers list renders with mock trigger records (F-18)", async ({ page }) => {
+    await page.route("**/api/v1/triggers*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [
+            {
+              id: "t-1",
+              type: "cron",
+              name: "daily-budget-check",
+              next_run: "2026-03-06T00:00:00Z",
+              last_status: "success",
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto(`/console/triggers`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Trigger List" })).toBeVisible();
+    await expect(page.getByText("daily-budget-check")).toBeVisible();
+    await expect(page.getByText("Next run: 2026-03-06T00:00:00Z")).toBeVisible();
+  });
+
   test("Tab key traverses sidebar", async ({ page }) => {
     await page.goto(`/console/`);
     await page.keyboard.press("Tab");
@@ -484,6 +555,34 @@ test.describe("Console flow", () => {
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     // Only initial load should fetch HTML; SPA nav does not reload
     expect(htmlRequests.length).toBeLessThanOrEqual(1);
+  });
+
+  test("E-2: 1024px layout keeps sidebar and main content usable", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto(`/console/`);
+    await expect(page.getByRole("complementary")).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+  });
+
+  test("F-20: Traces and Workflows pages expose external dashboard links", async ({ page }) => {
+    await page.goto(`/console/traces`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Traces", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Langfuse Dashboard" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Traces in New Tab" })).toBeVisible();
+
+    await page.goto(`/console/workflows`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Workflows", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Hatchet Dashboard" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Workflows" })).toBeVisible();
+  });
+
+  test("E-9: Overview color contrast has no violations (axe color-contrast rule)", async ({ page }) => {
+    await page.goto(`/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    const results = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(results.violations).toEqual([]);
   });
 
   test("E-6: Governance with empty data shows chart/sections, no white screen", async ({ page }) => {

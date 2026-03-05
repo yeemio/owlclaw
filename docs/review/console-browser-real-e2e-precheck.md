@@ -23,7 +23,7 @@ npm run test:e2e:run
 ```
 
 通过门槛：
-- `test:e2e:run` 为 `33 passed`
+- `test:e2e:run` 为 `38 passed`
 - 手工报告存在且包含失败复现列表
 - checklist 已回写最新状态
 

@@ -115,16 +115,16 @@ cd owlclaw/web/frontend && npm run test:e2e
 | 步骤 | 操作 | 预期（功能） | 通过 |
 |------|------|--------------|------|
 | F-15 | 进入 Agents | Agent 卡片列表或空状态（无 DB 时为友好提示，非 500 白屏） | ☑ |
-| F-16 | 点击某 Agent | 详情面板：身份配置、记忆浏览、知识库、运行历史 | ☐ |
+| F-16 | 点击某 Agent | 详情面板：身份配置、记忆浏览、知识库、运行历史 | ☑（2026-03-05：Mock 数据 E2E 已覆盖） |
 
 ## 2.5 Capabilities / Triggers / Settings / Traces
 
 | 步骤 | 操作 | 预期（功能） | 通过 |
 |------|------|--------------|------|
 | F-17 | Capabilities 标签页 | Handlers / Skills / Bindings 分类，Schema 查看器（JSON 高亮） | ☑ |
-| F-18 | Triggers | 6 类触发器统一列表，执行历史表，下次触发倒计时 | ☐ |
+| F-18 | Triggers | 6 类触发器统一列表，执行历史表，下次触发倒计时 | ☑（2026-03-05：Mock 触发器列表 E2E 已覆盖） |
 | F-19 | Settings | 配置树、MCP 连接、DB 状态、版本信息、OwlHub 状态、文档链接 | ☑ |
-| F-20 | Traces/Workflows | Langfuse / Hatchet 深链接或 iframe，连接状态指示 | ☐ |
+| F-20 | Traces/Workflows | Langfuse / Hatchet 深链接或 iframe，连接状态指示 | ☑（2026-03-05：外链入口 E2E 已覆盖） |
 
 ---
 
@@ -164,7 +164,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
 | E-1 | 暗色主题 | 所有页面暗色一致，无白底闪屏 | ☑ |
-| E-2 | 响应式 | 最小宽度 1024px 下布局正常，侧栏 + 内容区 | ☐ |
+| E-2 | 响应式 | 最小宽度 1024px 下布局正常，侧栏 + 内容区 | ☑（2026-03-05：1024px E2E 已覆盖） |
 | E-3 | 页面切换 | 无全量刷新，URL 或路由变化 | ☑ |
 
 ## 4.2 空状态与错误展示
@@ -181,7 +181,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|--------|------|------|
 | E-7 | 首屏加载 | 从导航到内容可交互 < 5s（E2E 断言） | ☑ |
 | E-8 | Tab 键 | 可遍历侧栏与主要交互元素 | ☑ |
-| E-9 | 对比度 | 文本与背景对比度满足 WCAG AA（目视或工具） | ☐ |
+| E-9 | 对比度 | 文本与背景对比度满足 WCAG AA（目视或工具） | ☑（2026-03-05：axe `color-contrast` 规则通过） |
 
 ---
 

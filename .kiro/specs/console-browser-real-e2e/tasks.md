@@ -30,7 +30,7 @@
 - [x] 1.3 增加关键 API 请求参数断言（筛选/分页/order_by）
 - [x] 1.4 产出自动化执行结果摘要
   - 代码：`owlclaw/web/frontend/e2e/console-flow.spec.ts`、`owlclaw/web/frontend/e2e/console.spec.ts`
-  - 执行：`npm run test:e2e:run`（33 passed）
+  - 执行：`npm run test:e2e:run`（38 passed）
   - 摘要：`.kiro/reviews/2026-03-05-console-browser-automation-codex-work.md`
 
 ---
@@ -42,7 +42,7 @@
 - [x] 2.3 记录失败项与复现步骤
   - 补位执行（codex-work）：`scripts/console-local-setup.ps1`、`docs/console/REAL_E2E_LOCAL_SETUP.md`
   - 手工报告：`.kiro/reviews/2026-03-05-console-browser-manual-codex-work.md`
-  - 结论：`CONDITIONAL_PASS`（N-8/F-16/F-18/F-20/E-2/E-9 待补）
+  - 结论：`CONDITIONAL_PASS`（仅 N-8 待补）
 
 ---
 
