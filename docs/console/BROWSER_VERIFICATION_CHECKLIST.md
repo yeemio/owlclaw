@@ -212,3 +212,31 @@ curl -s http://localhost:8000/api/v1/governance/budget
 - 功能：每步 通过/失败 + 截图或现象描述
 - 网络：请求列表 + 异常
 - 效果：计时、空状态、可访问性结论
+
+---
+
+## 六、2026-03-05 执行补充（Phase 14 手工维度）
+
+> 执行人：codex-gpt-work  
+> 证据目录：`.kiro/reviews/artifacts/2026-03-05-console-browser/`
+
+### 已执行项
+
+| 项目 | 结果 | 证据 |
+|------|------|------|
+| 健康检查 `/healthz` | ✅ 200 | `api-checks.json` |
+| 无 DB 降级 API（overview/agents/triggers/settings） | ✅ 通过 | `api-checks.json` |
+| `ledger?order_by=invalid` 契约错误码 | ✅ 422 | `api-checks.json` |
+| WS 入口 `/api/v1/ws` | ⚠️ 404（降级） | `api-checks.json` |
+
+### 失败/阻塞项（含复现）
+
+| 编号 | 问题 | 复现步骤 | 现象 |
+|------|------|----------|------|
+| M-1 | WS 手工验证阻塞 | 1) 启动 `owlclaw start --port 8000` 2) 访问 `/api/v1/ws` | 返回 404（当前环境未建立 WS 通道） |
+| M-2 | 本地一键 e2e 命令阻塞 | 1) `cd owlclaw/web/frontend` 2) `npm run test:e2e` | `start-server-and-test` 命令缺失 |
+
+### 处置建议
+
+1. 手工验收与审校阶段继续使用 `npm run test:e2e:run`（服务由脚本提前启动）。  
+2. 若需恢复 `npm run test:e2e` 一键链路，先在前端目录执行 `npm install`，确保依赖完整。

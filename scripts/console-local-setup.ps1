@@ -1,23 +1,122 @@
-# OwlClaw Console local setup
-# Prereqs: PostgreSQL running; set $env:PG_PASSWORD to your postgres admin password before running.
+# OwlClaw Console local setup (real-browser validation helper)
+# Usage examples:
+#   pwsh ./scripts/console-local-setup.ps1 -SkipDbInit -Port 8000
+#   pwsh ./scripts/console-local-setup.ps1 -SkipDbInit -Port 8000 -RunE2E
+#   pwsh ./scripts/console-local-setup.ps1 -Port 8000 -RunE2E -KeepServer
 
-$adminUrl = "postgresql://postgres:$env:PG_PASSWORD@127.0.0.1:5432/postgres"
-if (-not $env:PG_PASSWORD) {
-    Write-Host "Set postgres password first: `$env:PG_PASSWORD = 'your_postgres_password'"
-    exit 1
+[CmdletBinding()]
+param(
+    [int]$Port = 8000,
+    [switch]$SkipDbInit,
+    [switch]$SkipMigrate,
+    [switch]$RunE2E,
+    [switch]$KeepServer,
+    [int]$HealthTimeoutSeconds = 180
+)
+
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+function Invoke-Step {
+    param(
+        [string]$Title,
+        [scriptblock]$Action
+    )
+    Write-Host "==> $Title"
+    & $Action
+    if ($LASTEXITCODE -ne 0) {
+        throw "Step failed: $Title (exit=$LASTEXITCODE)"
+    }
 }
 
-Set-Location $PSScriptRoot\..
+function Wait-Health {
+    param(
+        [string]$Url,
+        [int]$TimeoutSeconds = 90
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $resp = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 2
+            if ($resp.StatusCode -eq 200) {
+                return $true
+            }
+        } catch {
+            Start-Sleep -Milliseconds 500
+        }
+    }
+    return $false
+}
 
-Write-Host "Creating owlclaw database and role..."
-poetry run owlclaw db init --admin-url $adminUrl --skip-hatchet
+function Resolve-RepoRoot {
+    return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+}
 
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+function Run-E2E {
+    param([string]$RepoRoot)
+    $frontendDir = Join-Path $RepoRoot "owlclaw/web/frontend"
+    Push-Location $frontendDir
+    try {
+        if (-not (Test-Path "node_modules")) {
+            Write-Host "node_modules not found. Running npm install..."
+            npm install
+            if ($LASTEXITCODE -ne 0) {
+                throw "npm install failed"
+            }
+        }
+        Write-Host "Running browser E2E (manual-server mode)..."
+        npm run test:e2e:run
+        if ($LASTEXITCODE -ne 0) {
+            throw "npm run test:e2e:run failed"
+        }
+    } finally {
+        Pop-Location
+    }
+}
 
-Write-Host "Running migrations..."
-poetry run owlclaw db migrate
+$repoRoot = Resolve-RepoRoot
+Set-Location $repoRoot
 
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+if (-not $SkipDbInit) {
+    if (-not $env:PG_PASSWORD) {
+        throw "PG_PASSWORD is required when DB init is enabled. Example: `$env:PG_PASSWORD='your_password'."
+    }
+    $adminUrl = "postgresql://postgres:$env:PG_PASSWORD@127.0.0.1:5432/postgres"
+    Invoke-Step "Create owlclaw database and role" { poetry run owlclaw db init --admin-url $adminUrl --skip-hatchet }
+}
 
-Write-Host "Starting Console..."
-poetry run owlclaw start
+if (-not $SkipMigrate) {
+    Invoke-Step "Run migrations" { poetry run owlclaw db migrate }
+}
+
+$serverOutDir = Join-Path $repoRoot ".kiro/reviews/artifacts/console-local-setup"
+New-Item -ItemType Directory -Force -Path $serverOutDir | Out-Null
+$serverStdout = Join-Path $serverOutDir "server.stdout.log"
+$serverStderr = Join-Path $serverOutDir "server.stderr.log"
+
+Write-Host "==> Start OwlClaw Console on port $Port"
+$server = Start-Process -FilePath "poetry" -ArgumentList @("run", "owlclaw", "start", "--port", "$Port") -PassThru -RedirectStandardOutput $serverStdout -RedirectStandardError $serverStderr
+
+try {
+    $healthy = Wait-Health -Url "http://127.0.0.1:$Port/healthz" -TimeoutSeconds $HealthTimeoutSeconds
+    if (-not $healthy) {
+        throw "Console health check failed: http://127.0.0.1:$Port/healthz (logs: $serverStdout / $serverStderr)"
+    }
+    Write-Host "Health check passed: http://127.0.0.1:$Port/healthz"
+    Write-Host "Console URL: http://127.0.0.1:$Port/console/"
+
+    if ($RunE2E) {
+        Run-E2E -RepoRoot $repoRoot
+    }
+
+    if ($KeepServer) {
+        Write-Host "KeepServer enabled. Process id: $($server.Id)"
+        Write-Host "Logs: $serverStdout / $serverStderr"
+    }
+} finally {
+    if (-not $KeepServer) {
+        if ($server -and -not $server.HasExited) {
+            Stop-Process -Id $server.Id -Force
+        }
+    }
+}

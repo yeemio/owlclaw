@@ -9,9 +9,9 @@
 ## 进度概览
 
 - **总任务数**: 13
-- **已完成**: 3
+- **已完成**: 6
 - **进行中**: 0
-- **未开始**: 10
+- **未开始**: 7
 
 ---
 
@@ -34,9 +34,15 @@
 
 ## 2. codex-gpt-work（真实环境脚本 + 手工维度）
 
-- [ ] 2.1 强化本地真实环境启动脚本与步骤文档
-- [ ] 2.2 执行 Checklist 中手工项（WS/效果/可访问性）
-- [ ] 2.3 记录失败项与复现步骤
+- [x] 2.1 强化本地真实环境启动脚本与步骤文档
+  - 脚本：`scripts/console-local-setup.ps1`
+  - 文档：`docs/console/BROWSER_VERIFICATION_CHECKLIST.md`（新增 2026-03-05 执行补充）
+- [x] 2.2 执行 Checklist 中手工项（WS/效果/可访问性）
+  - 证据：`.kiro/reviews/artifacts/2026-03-05-console-browser/api-checks.json`
+  - 报告：`.kiro/reviews/2026-03-05-console-browser-verification.md`
+- [x] 2.3 记录失败项与复现步骤
+  - M-1：`/api/v1/ws` 返回 404（WS 通道未建立）
+  - M-2：`npm run test:e2e` 缺少 `start-server-and-test`
 
 ---
 

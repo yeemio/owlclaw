@@ -20,6 +20,7 @@
 | `gateway_ops_gate.py` | 网关发布门禁决策与回滚执行辅助 | `poetry run python scripts/gateway_ops_gate.py` | CI 使用 |
 | `gateway_ops_drill.py` | 执行 canary 回滚/全量成功演练并产出报告 | `poetry run python scripts/gateway_ops_drill.py` | CI 使用 |
 | `test_queue_trigger.py` | 队列触发链路本地回归脚本 | `poetry run python scripts/test_queue_trigger.py` | 本地开发使用 |
+| `console-local-setup.ps1` | Console 真实浏览器验收环境启动脚本（可选 DB 初始化/迁移/E2E） | `pwsh ./scripts/console-local-setup.ps1 -SkipDbInit -Port 8000` | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
 | `test_template.py` | 测试模板脚手架检查 | `poetry run python scripts/test_template.py --help` | 本地开发使用 |
 | `completions/` | CLI 自动补全生成物 | 按 shell 类型加载 | 本地开发使用 |
