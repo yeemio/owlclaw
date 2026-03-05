@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-03（Phase 12 深度审计修复分配）
+> **最后更新**: 2026-03-05（统筹校准：Phase 12 收口 + 下一轮分配切换）
 
 ---
 
@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：Phase 12 深度审计修复统筹分配。Phase 11 F11 全量回归由 review-work 执行。Phase 8 外部阻塞项跟踪。
+**当前编码任务**：Phase 12 已收口，进入下一轮分配准备。主 worktree 继续跟踪 Phase 8/3 外部阻塞项与 Phase 13 立项。
 
 ---
 
@@ -169,16 +169,16 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex\` |
 | 分支 | `codex-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE`（最新提交 ee546d5 已被 review-work APPROVE） |
+| 工作状态 | `IDLE`（Phase 12 分配任务已完成并合并） |
 
 **当前分配的 spec**：
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **config-propagation-fix**（Task 1-8） | 0/24 | `owlclaw/config/models.py`, `owlclaw/app.py`（create_agent_runtime + configure 防护）, `owlclaw/governance/router.py`（default_model + 返回 None）, `owlclaw/agent/runtime/config.py`, `owlclaw/config/manager.py` |
-| **security-hardening**（Task 1-14） | 0/43 | `owlclaw/capabilities/knowledge.py`, `owlclaw/agent/runtime/runtime.py`（工具消毒）, `owlclaw/triggers/webhook/`（鉴权 + eval + XXE + 体积）, `owlclaw/mcp/server.py`, `owlclaw/security/`（sanitizer + audit）, `owlclaw/web/`（Console 鉴权 + CORS） |
+| **config-propagation-fix** | ✅ 25/25 | 已完成并合并到 main |
+| **security-hardening** | ✅ 46/46 | 已完成并合并到 main |
 
-**当前任务**：Phase 12 config-propagation-fix Task 1-8 → security-hardening Task 1-14。config-propagation-fix 优先（P0，配置链路是所有功能基础）。
+**当前任务**：等待新分配（建议优先接手 Phase 13 的低风险高收益项，详见下方“下一轮待分配”）。
 
 **共享文件修改范围约定**（避免冲突）：
 
@@ -211,16 +211,16 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE`（最新提交 592d6b1 已被 review-work APPROVE） |
+| 工作状态 | `IDLE`（Phase 12 分配任务已完成并合并） |
 
 **当前分配的 spec**：
 
 | Spec | 进度 | 涉及路径 |
 |------|------|---------|
-| **runtime-robustness**（Task 1-19） | 0/55 | `owlclaw/agent/runtime/runtime.py`（R1 并发 + R2 max_iter + R11 cache + R18 context）, `owlclaw/capabilities/registry.py`（R3 超时）, `owlclaw/app.py`（R4/R5/R6 幂等）, `owlclaw/triggers/db_change/manager.py`（R7 重试）, `owlclaw/agent/memory/store_inmemory.py`（R8/R9）, `owlclaw/integrations/hatchet.py`（R10）, `owlclaw/web/api/ws.py`（R13）, `owlclaw/integrations/langfuse.py`（R14）, `owlclaw/triggers/queue/`（R15/R16）, `owlclaw/triggers/api/handler.py`（R17） |
-| **governance-hardening**（Task 1-11） | 0/30 | `migrations/`（G1/G2/G5 新迁移）, `owlclaw/triggers/webhook/persistence/models.py`（G2）, `owlclaw/governance/ledger.py`（G3）, `owlclaw/integrations/langfuse.py`（G4）, `owlclaw/governance/quality_store.py`（G5）, `migrations/env.py`（G6）, `owlclaw/db/session.py`（G7）, `owlclaw/db/engine.py`（G8/G9）, `owlclaw/triggers/cron.py`（G10） |
+| **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
+| **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
 
-**当前任务**：Phase 12 runtime-robustness Task 1-19 → governance-hardening Task 1-11。runtime-robustness 优先（影响稳定性）。
+**当前任务**：等待新分配（建议承担 DB/治理侧的 Phase 13 收尾项）。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
@@ -275,9 +275,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | 时间 | 发送方 | 接收方 | 消息 | 状态 |
 |------|--------|--------|------|------|
-| 2026-03-04 | 统筹(main) | 全部 | **v4 审计完成**：GLM-5 独立审计生成 v4 报告（18 发现：3 P0 + 10 P1 + 5 Low）。P0 问题仍未修复。E2E 测试 18/18 通过。review-work 已 APPROVE codex-work/codex-gpt-work 最新提交。 | 🟢 已同步 |
-| 2026-03-04 | 统筹(main) | codex-work | **状态更新**：你已完成 lite-mode-e2e F11 + security-hardening Task 12-15。P0 任务（Task 1-3）仍待执行。 | 🟡 已知 |
-| 2026-03-04 | 统筹(main) | codex-gpt-work | **状态更新**：你已完成 ssl_mode fix + runtime-robustness/governance-hardening 部分任务。P0 Task 1 依赖 codex-work Task 2。 | 🟡 已知 |
+| 2026-03-05 | 统筹(main) | 全部 | **Phase 12 收口确认**：`config-propagation-fix`/`security-hardening`/`runtime-robustness`/`governance-hardening` 已在 main 收口，进入下一轮分配准备。 | 🟢 已同步 |
 
 ### 已归档消息
 
@@ -337,6 +335,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-03 | Phase 11 分配：新建 lite-mode-e2e spec（三层齐全）。codex-work → Task 1-4（核心链路：mock LLM 统一 + heartbeat 直通 + 日志 + --once 决策循环）；codex-gpt-work → Task 5-8（体验完善：pgvector 延迟导入 + Quick Start 重写 + Ledger CLI + API 降级）。按文件边界隔离 | 真实用户体验测试发现 Lite Mode 端到端体验链路断裂（P0），产品核心承诺不成立 |
 | 2026-03-03 | Phase 11 完成 + Phase 12 分配：lite-mode-e2e F1-F10 全部完成（Task 1-10 ✅），仅 F11 全量回归待执行。新建 4 个 Phase 12 spec（80+ 问题）。codex-work → config-propagation-fix + security-hardening；codex-gpt-work → runtime-robustness + governance-hardening。共享文件按函数范围隔离 | 全方位深度审计（4 维度逐行审计）发现 80+ 问题，按领域拆分 4 个 spec |
 | 2026-03-04 | **v4 审计统筹**：GLM-5 独立重审计完成，生成 v4 报告（18 发现）。review-work 已 APPROVE 两个编码分支最新提交。E2E 测试 18/18 通过。P0 问题（CORS/工具消毒/Schema 校验）仍未修复。更新消息状态，同步审计报告。 | 独立审计验证 + 状态同步 |
+| 2026-03-05 | **统筹校准**：确认 Phase 12 四个 spec 已在 main 收口（config-propagation-fix/security-hardening/runtime-robustness/governance-hardening），分配表切换为 Phase 13 low findings 预分配方案。 | 消除分配表与 SPEC_TASKS_SCAN 漂移，降低误派单风险 |
 
 ---
 
@@ -346,7 +345,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 1-11 全部已分配完毕 ✅**
 
-**Phase 12 进行中**（2026-03-04 更新 — GLM-5 重审计后）
+**Phase 12 已完成**（2026-03-05 统筹校准）
 
 ### 任务优先级说明
 
@@ -356,50 +355,36 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **P1** | 发布后尽快修复 | 重要问题，但不阻塞发布 |
 | **Low** | 后续迭代处理 | 改进项，可排期处理 |
 
-### codex-work 分配
+### codex-work 分配（下一轮建议）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **security-hardening** | Phase 1 | Task 1: 工具结果消毒 | #2 | **P0** | 🟡 待开始 |
-| | Phase 1 | Task 2: 工具参数 Schema 校验 | #3 | **P0** | 🟡 待开始 |
-| | Phase 1 | Task 3: CORS 安全修复 | #1, #4, #15 | **P0** | 🟡 待开始 |
-| | Phase 2 | Task 4: HTTP Executor SSRF | #5 | P1 | 🟡 待开始 |
-| | Phase 2 | Task 5: Unicode 归一化 | #6 | P1 | 🟡 待开始 |
-| | Phase 2 | Task 6: SKILL.md 注入防护 | - | P1 | 🟡 待开始 |
-| | Phase 3 | Task 7-14: 其他安全任务 | - | P1 | 🟡 待开始 |
-| **config-propagation-fix** | Phase 1 | Task 1: Auth 空 Token 绕过 | #7 | P1 | 🟡 待开始 |
-| | Phase 2 | Task 2-8: 配置传播修复 | - | P1 | 🟡 待开始 |
+| **phase13-low-findings（待建）** | Phase 1 | Langfuse secret in config | #11 | Low | 🟡 待立项 |
+| **phase13-low-findings（待建）** | Phase 1 | `_is_select_query` 启发式误判治理 | #12 | Low | 🟡 待立项 |
 
 **codex-work 执行顺序**：
-1. security-hardening Phase 1 (P0) → 阻塞发布
-2. config-propagation-fix Phase 1 (P1)
-3. security-hardening Phase 2-3 (P1)
+1. 等待 `phase13-low-findings` spec 建立并完成 Task 0
+2. 先做 #11 / #12（改动面小、回归成本低）
 
-### codex-gpt-work 分配
+### codex-gpt-work 分配（下一轮建议）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **runtime-robustness** | Phase 1 | Task 1: Schema 校验依赖 | #3 | **P0** | 🟡 等待 security-hardening Task 2 |
-| | Phase 1 | Task 2: _tool_call_timestamps 并发安全 | #16 | P1 | 🟡 待开始 |
-| | Phase 1 | Task 3: skills_context_cache 隔离 | #17 | P1 | 🟡 待开始 |
-| | Phase 2 | Task 4-19: 其他健壮性任务 | - | P1 | 🟡 待开始 |
-| **governance-hardening** | Phase 1 | Task 1: API Trigger 速率限制 | #8 | P1 | 🟡 待开始 |
-| | Phase 1 | Task 2: fail_policy 默认值 | #9 | P1 | 🟡 待开始 |
-| | Phase 1 | Task 3: Budget 竞态条件 | #10 | P1 | 🟡 待开始 |
-| | Phase 2 | Task 4-13: 其他治理任务 | - | P1 | 🟡 待开始 |
+| **phase13-low-findings（待建）** | Phase 1 | Shadow mode 查询泄露 | #13 | Low | 🟡 待立项 |
+| **phase13-low-findings（待建）** | Phase 1 | Heartbeat DB I/O 开销优化 | #14 | Low | 🟡 待立项 |
 
 **codex-gpt-work 执行顺序**：
-1. runtime-robustness Phase 1 Task 2-3（Task 1 需等待 codex-work security-hardening Task 2）
-2. governance-hardening Phase 1 (P1)
-3. runtime-robustness Phase 2 (P1)
+1. 等待 `phase13-low-findings` spec 建立并完成 Task 0
+2. 先做 #13 / #14（偏运行时与治理边界）
 
-### 共享文件修改边界
+### 共享文件修改边界（Phase 13 建议）
 
 | 共享文件 | codex-work 范围 | codex-gpt-work 范围 |
 |---------|----------------|-------------------|
-| `owlclaw/agent/runtime/runtime.py` | `_execute_tool()` 消毒、schema 校验 | `_tool_call_timestamps`、`_skills_context_cache` |
-| `owlclaw/web/api/middleware.py` | CORS + Auth 修复 | 不修改 |
-| `owlclaw/governance/visibility.py` | 不修改 | fail_policy 默认值 |
+| `owlclaw/integrations/langfuse.py` | 配置项脱敏/secret 处理（#11） | 不修改 |
+| `owlclaw/capabilities/bindings/` | SQL 查询分类守卫（#12） | 不修改 |
+| `owlclaw/capabilities/bindings/executor_sql.py` | 不修改 | shadow mode 数据隔离（#13） |
+| `owlclaw/agent/runtime/heartbeat.py` | 不修改 | DB I/O 优化（#14） |
 
 ### Low 级别发现（后续迭代）
 
@@ -410,7 +395,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | #13 | Shadow mode 查询泄露 | declarative-binding 后续 |
 | #14 | Heartbeat DB I/O | agent-runtime 后续 |
 
-**下一轮待分配**：Phase 11 F11 全量回归由 review-work 审校执行。Phase 12 全部完成后评估是否需要 Phase 13。
+**下一轮待分配**：由 main 新建 `phase13-low-findings` 三层 spec 后，按上表并行分配；外部阻塞项继续由 main 跟踪。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 
