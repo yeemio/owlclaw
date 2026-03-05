@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-05（统筹校准：Phase 12 收口 + 下一轮分配切换）
+> **最后更新**: 2026-03-05（统筹分配：console-browser-real-e2e 真实浏览器验收批次）
 
 ---
 
@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：Phase 12 已收口，Phase 13 已立项并放行。主 worktree 继续跟踪 Phase 8/3 外部阻塞项与分配推进。
+**当前编码任务**：启动 `console-browser-real-e2e` 批次（真实浏览器验收）。主 worktree 负责统筹、合并与放行决策。
 
 ---
 
@@ -178,7 +178,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **config-propagation-fix** | ✅ 25/25 | 已完成并合并到 main |
 | **security-hardening** | ✅ 46/46 | 已完成并合并到 main |
 
-**当前任务**：Phase 13（#11/#12）待开始，详见下方“下一轮待分配”。
+**当前任务**：执行 `console-browser-real-e2e` Task 1.1~1.4（自动化主路径 + 网络断言）。
 
 **共享文件修改范围约定**（避免冲突）：
 
@@ -220,7 +220,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
 | **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
 
-**当前任务**：Phase 13（#13/#14）待开始，详见下方“下一轮待分配”。
+**当前任务**：执行 `console-browser-real-e2e` Task 2.1~2.3（真实环境脚本 + 手工维度验收）。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
@@ -276,6 +276,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 时间 | 发送方 | 接收方 | 消息 | 状态 |
 |------|--------|--------|------|------|
 | 2026-03-05 | 统筹(main) | 全部 | **Phase 12 收口确认**：`config-propagation-fix`/`security-hardening`/`runtime-robustness`/`governance-hardening` 已在 main 收口，进入下一轮分配准备。 | 🟢 已同步 |
+| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work + review-work | **新批次启动**：`console-browser-real-e2e` 已立项并分配。codex-work 负责 Playwright 自动化主路径与网络断言；codex-gpt-work 负责真实环境脚本与手工维度；review-work 负责证据审校与放行结论。 | 🟡 待执行 |
 
 ### 已归档消息
 
@@ -337,6 +338,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-04 | **v4 审计统筹**：GLM-5 独立重审计完成，生成 v4 报告（18 发现）。review-work 已 APPROVE 两个编码分支最新提交。E2E 测试 18/18 通过。P0 问题（CORS/工具消毒/Schema 校验）仍未修复。更新消息状态，同步审计报告。 | 独立审计验证 + 状态同步 |
 | 2026-03-05 | **统筹校准**：确认 Phase 12 四个 spec 已在 main 收口（config-propagation-fix/security-hardening/runtime-robustness/governance-hardening），分配表切换为 Phase 13 low findings 预分配方案。 | 消除分配表与 SPEC_TASKS_SCAN 漂移，降低误派单风险 |
 | 2026-03-05 | **Phase 13 放行**：已创建 `phase13-low-findings` 三层 spec，并将 codex-work/codex-gpt-work 从“待立项”切换为“待开始”。 | 使低优先级审计项进入可执行闭环 |
+| 2026-03-05 | **浏览器验收批次分配**：新建 `console-browser-real-e2e` 三层 spec；codex-work 负责自动化主路径与网络断言，codex-gpt-work 负责真实环境脚本与手工项，review-work 负责放行审校报告。 | 将 Console 发布门禁从 pytest/mock 提升为真实浏览器证据化验收 |
 
 ---
 
@@ -346,7 +348,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 1-11 全部已分配完毕 ✅**
 
-**Phase 12 已完成**（2026-03-05 统筹校准）
+**Phase 12/13 已完成**（2026-03-05）
 
 ### 任务优先级说明
 
@@ -356,47 +358,46 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **P1** | 发布后尽快修复 | 重要问题，但不阻塞发布 |
 | **Low** | 后续迭代处理 | 改进项，可排期处理 |
 
-### codex-work 分配（下一轮建议）
+### codex-work 分配（当前批次）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **phase13-low-findings** | Phase 1 | Langfuse secret in config | #11 | Low | 🟡 待开始 |
-| **phase13-low-findings** | Phase 1 | `_is_select_query` 启发式误判治理 | #12 | Low | 🟡 待开始 |
+| **console-browser-real-e2e** | Phase 1 | Playwright 主路径自动化（Overview/Governance/Ledger/Agents） | FR-B1 | P1 | 🟡 待开始 |
+| **console-browser-real-e2e** | Phase 1 | Network/API 参数断言（筛选/分页/order_by） | FR-B1 | P1 | 🟡 待开始 |
 
 **codex-work 执行顺序**：
-1. 先做 #11 / #12（改动面小、回归成本低）
-2. 提交后进入 review-work 审校
+1. 先完成 Task 1.1~1.3，再提交自动化证据
+2. Task 1.4 汇总执行结果并移交 review-work
 
-### codex-gpt-work 分配（下一轮建议）
+### codex-gpt-work 分配（当前批次）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **phase13-low-findings** | Phase 1 | Shadow mode 查询泄露 | #13 | Low | 🟡 待开始 |
-| **phase13-low-findings** | Phase 1 | Heartbeat DB I/O 开销优化 | #14 | Low | 🟡 待开始 |
+| **console-browser-real-e2e** | Phase 1 | 真实环境启动脚本/步骤强化 | FR-B3 | P1 | 🟡 待开始 |
+| **console-browser-real-e2e** | Phase 1 | 手工 Checklist 补齐（WS/效果/可访问性） | FR-B2 | P1 | 🟡 待开始 |
 
 **codex-gpt-work 执行顺序**：
-1. 先做 #13 / #14（偏运行时与治理边界）
-2. 提交后进入 review-work 审校
+1. 先完成 Task 2.1，保证环境可复现
+2. 执行 Task 2.2/2.3 并输出失败复现与证据
 
-### 共享文件修改边界（Phase 13 建议）
+### 共享文件修改边界（浏览器验收批次）
 
 | 共享文件 | codex-work 范围 | codex-gpt-work 范围 |
 |---------|----------------|-------------------|
-| `owlclaw/integrations/langfuse.py` | 配置项脱敏/secret 处理（#11） | 不修改 |
-| `owlclaw/capabilities/bindings/` | SQL 查询分类守卫（#12） | 不修改 |
-| `owlclaw/capabilities/bindings/executor_sql.py` | 不修改 | shadow mode 数据隔离（#13） |
-| `owlclaw/agent/runtime/heartbeat.py` | 不修改 | DB I/O 优化（#14） |
+| `owlclaw/web/frontend/e2e/` | Playwright 场景与断言 | 不修改 |
+| `owlclaw/web/frontend/playwright.config.ts` | 可改（仅自动化稳定性相关） | 不修改 |
+| `docs/console/BROWSER_VERIFICATION_CHECKLIST.md` | 不修改 | 手工验收记录补充 |
+| `.kiro/reviews/` | 不修改 | 生成当次浏览器验收报告草稿 |
+| `scripts/console-local-setup.ps1` | 不修改 | 环境脚本增强 |
 
-### Low 级别发现（后续迭代）
+### 审校与放行
 
-| Finding | 问题 | 建议归属 |
-|---------|------|----------|
-| #11 | Langfuse secret in config | security-hardening 后续 |
-| #12 | `_is_select_query` 启发式 | declarative-binding 后续 |
-| #13 | Shadow mode 查询泄露 | declarative-binding 后续 |
-| #14 | Heartbeat DB I/O | agent-runtime 后续 |
+- review-work 负责 `console-browser-real-e2e` Task 3.1~3.3：
+- 证据完整性审查
+- 高风险项复核（无 DB 降级、无敏感泄露、无白屏）
+- 输出放行结论 `PASS / CONDITIONAL_PASS / FAIL`
 
-**下一轮待分配**：按上表执行 `phase13-low-findings` 并行开发；外部阻塞项继续由 main 跟踪。
+**下一轮待分配**：执行 `console-browser-real-e2e` 批次；完成后回到外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 
