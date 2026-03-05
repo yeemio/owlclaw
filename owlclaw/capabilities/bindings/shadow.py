@@ -31,6 +31,25 @@ class LedgerQueryProtocol(Protocol):
         """Query records from governance ledger."""
 
 
+def _redact_shadow_parameters(raw: dict[str, Any]) -> dict[str, str]:
+    """Keep parameter shape only, never raw values."""
+    redacted: dict[str, str] = {}
+    for key, value in raw.items():
+        redacted[str(key)] = type(value).__name__
+    return redacted
+
+
+def _build_shadow_result_summary(output_result: dict[str, Any], *, row_status: str) -> str:
+    """Build a shadow summary from non-sensitive execution metadata only."""
+    parts: list[str] = []
+    for key in ("status", "mode", "executed", "row_count", "affected_rows", "truncated", "column_count", "sent"):
+        if key in output_result:
+            parts.append(f"{key}={output_result[key]}")
+    if not parts:
+        return f"status={row_status or 'unknown'}"
+    return ", ".join(parts)
+
+
 async def query_shadow_results(
     ledger: LedgerQueryProtocol,
     *,
@@ -56,15 +75,18 @@ async def query_shadow_results(
         mode = str(output_result.get("mode", input_params.get("mode", ""))).strip().lower()
         if mode != "shadow":
             continue
+        raw_parameters = input_params.get("parameters", {})
+        parameters = _redact_shadow_parameters(raw_parameters) if isinstance(raw_parameters, dict) else {}
+        row_status = str(getattr(row, "status", ""))
         records.append(
             ShadowExecutionRecord(
                 tool_name=str(getattr(row, "capability_name", tool_name)),
                 run_id=str(getattr(row, "run_id", "")),
                 binding_type=str(input_params.get("binding_type", "")),
                 mode=mode,
-                status=str(getattr(row, "status", "")),
-                parameters=input_params.get("parameters", {}) if isinstance(input_params.get("parameters"), dict) else {},
-                result_summary=str(output_result.get("result_summary", "")),
+                status=row_status,
+                parameters=parameters,
+                result_summary=_build_shadow_result_summary(output_result, row_status=row_status),
                 elapsed_ms=int(output_result.get("elapsed_ms", getattr(row, "execution_time_ms", 0)) or 0),
                 created_at=getattr(row, "created_at", None),
             )

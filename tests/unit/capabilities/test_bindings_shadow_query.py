@@ -56,6 +56,8 @@ async def test_query_shadow_results_filters_by_mode_and_tool_name() -> None:
     assert len(records) == 1
     assert records[0].run_id == "run-1"
     assert records[0].mode == "shadow"
+    assert records[0].parameters == {"id": "int"}
+    assert "id=1" not in records[0].result_summary
     assert ledger.last_tenant_id == "default"
     assert ledger.last_filters is not None
     assert ledger.last_filters.capability_name == "fetch-order"
