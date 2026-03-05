@@ -19,7 +19,8 @@
       "Bash(npm:*)",
       "Bash(npx playwright:*)",
       "Bash(/tmp/sed_update.txt:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(D:/ai/owlclaw-review/.kiro/specs/console-browser-real-e2e/tasks.md:*)"
     ]
   }
 }
