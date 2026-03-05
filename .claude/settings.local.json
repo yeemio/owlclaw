@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:tongyi.aliyun.com)",
+      "WebFetch(domain:lingma.aliyun.com)",
+      "WebFetch(domain:aliyun.com)",
+      "WebFetch(domain:www.aliyun.com)",
+      "WebFetch(domain:bailian.console.aliyun.com)",
+      "WebFetch(domain:www.minimaxi.com)",
+      "WebFetch(domain:kimi.moonshot.cn)",
+      "WebFetch(domain:www.kimi.com)",
+      "Bash(poetry run:*)",
+      "Bash(git merge:*)",
+      "Bash(perl:*)",
+      "Bash(git checkout:*)",
+      "Bash(git:*)"
+    ]
+  }
+}
