@@ -17,7 +17,9 @@
       "Bash(git:*)",
       "Bash(npm run:*)",
       "Bash(npm:*)",
-      "Bash(npx playwright:*)"
+      "Bash(npx playwright:*)",
+      "Bash(/tmp/sed_update.txt:*)",
+      "Read(//tmp/**)"
     ]
   }
 }
