@@ -1,6 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const baseUrl = process.env.CONSOLE_E2E_BASE_URL || "http://localhost:8000";
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
 export default defineConfig({
   testDir: "./e2e",
@@ -18,7 +21,7 @@ export default defineConfig({
     ? undefined
     : {
         command: "poetry run owlclaw start --port 8000",
-        cwd: require("path").resolve(__dirname, "../../.."),
+        cwd: repoRoot,
         url: "http://127.0.0.1:8000/healthz",
         reuseExistingServer: !process.env.CI,
         timeout: 30000,
