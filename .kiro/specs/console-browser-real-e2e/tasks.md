@@ -9,9 +9,9 @@
 ## 进度概览
 
 - **总任务数**: 13
-- **已完成**: 3
+- **已完成**: 7
 - **进行中**: 0
-- **未开始**: 10
+- **未开始**: 6
 
 ---
 
@@ -25,10 +25,13 @@
 
 ## 1. codex-work（自动化主路径 + 网络断言）
 
-- [ ] 1.1 修复/增强 Playwright 场景基址与导航断言
-- [ ] 1.2 增加 Overview/Governance/Ledger/Agents 核心断言
-- [ ] 1.3 增加关键 API 请求参数断言（筛选/分页/order_by）
-- [ ] 1.4 产出自动化执行结果摘要
+- [x] 1.1 修复/增强 Playwright 场景基址与导航断言
+- [x] 1.2 增加 Overview/Governance/Ledger/Agents 核心断言
+- [x] 1.3 增加关键 API 请求参数断言（筛选/分页/order_by）
+- [x] 1.4 产出自动化执行结果摘要
+  - 代码：`owlclaw/web/frontend/e2e/console-flow.spec.ts`、`owlclaw/web/frontend/e2e/console.spec.ts`
+  - 执行：`npm run test:e2e:run`（33 passed）
+  - 摘要：`.kiro/reviews/2026-03-05-console-browser-automation-codex-work.md`
 
 ---
 

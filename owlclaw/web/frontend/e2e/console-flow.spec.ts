@@ -2,7 +2,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const baseUrl = process.env.CONSOLE_E2E_BASE_URL || "http://127.0.0.1:8000";
 
 /** Assert overview API response matches contract: health_checks[].component, healthy */
 function assertOverviewContract(json: unknown): void {
@@ -18,7 +17,7 @@ function assertOverviewContract(json: unknown): void {
 
 test.describe("Console flow", () => {
   test("Overview -> Governance -> Ledger navigation", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
 
     await page.getByRole("link", { name: "Governance" }).click();
@@ -29,7 +28,7 @@ test.describe("Console flow", () => {
   });
 
   test("Overview -> Agents navigation and empty state", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
 
     await page.getByRole("link", { name: "Agents" }).click();
@@ -44,7 +43,7 @@ test.describe("Console flow", () => {
       if (req.url().includes("/api/v1/")) apiCalls.push(req.url());
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     // Wait for loading to complete (day/week/month buttons or error) so API calls have fired
@@ -64,7 +63,7 @@ test.describe("Console flow", () => {
       if (req.url().includes("/api/v1/")) apiCalls.push(req.url());
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await page.getByRole("button", { name: /day/i }).waitFor({ state: "visible", timeout: 8000 });
@@ -83,7 +82,7 @@ test.describe("Console flow", () => {
       if (req.url().includes("/api/v1/ledger")) apiCalls.push(req.url());
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { name: "Filters" })).toBeVisible({ timeout: 5000 });
@@ -111,7 +110,7 @@ test.describe("Console flow", () => {
       });
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await page.getByLabel("Order By").selectOption("cost_desc");
@@ -123,7 +122,7 @@ test.describe("Console flow", () => {
   });
 
   test("Ledger filter panel and empty state", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { name: "Filters" })).toBeVisible({ timeout: 5000 });
@@ -133,19 +132,19 @@ test.describe("Console flow", () => {
 
   test("First load under 5s", async ({ page }) => {
     const start = Date.now();
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     const elapsed = Date.now() - start;
     expect(elapsed).toBeLessThan(5000);
   });
 
   test("Capabilities, Triggers, and Settings pages load", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Capabilities" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Capabilities" })).toBeVisible();
 
     await page.getByRole("link", { name: "Triggers" }).click();
-    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers" })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers", exact: true })).toBeVisible();
     await page.waitForTimeout(2000);
     // No-DB: loading, error, empty state, or list — not white screen
     const content = page.getByRole("main");
@@ -156,7 +155,7 @@ test.describe("Console flow", () => {
   });
 
   test("Tab key traverses sidebar", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => document.activeElement?.tagName);
@@ -165,7 +164,7 @@ test.describe("Console flow", () => {
 
   // --- Deep tests: Overview ---
   test("Overview has System Health and component checks (F-1)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "System Health" })).toBeVisible({ timeout: 5000 });
     // At least one component (runtime, db, hatchet, llm, etc.)
@@ -174,7 +173,7 @@ test.describe("Console flow", () => {
   });
 
   test("Overview has First Run Guide with Quick Start link (F-5)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("heading", { name: "First Run Guide" })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("link", { name: "Quick Start" })).toBeVisible();
     await expect(page.getByRole("link", { name: "SKILL.md Guide" })).toBeVisible();
@@ -185,7 +184,7 @@ test.describe("Console flow", () => {
     page.on("websocket", (ws) => {
       wsUrls.push(ws.url());
     });
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.waitForTimeout(1500);
     const apiWs = wsUrls.filter((u) => u.includes("/api/v1/ws"));
@@ -194,14 +193,14 @@ test.describe("Console flow", () => {
 
   // --- Deep tests: Governance ---
   test("Governance has Circuit Breakers section (F-8)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Circuit Breakers" })).toBeVisible({ timeout: 5000 });
   });
 
   test("Governance has Capability Visibility Matrix (F-9)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("heading", { name: "Capability Visibility Matrix" })).toBeVisible({ timeout: 5000 });
   });
@@ -233,7 +232,7 @@ test.describe("Console flow", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockLedger) });
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Execution Records" })).toBeVisible({ timeout: 5000 });
@@ -283,7 +282,7 @@ test.describe("Console flow", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("heading", { name: "Execution Records" })).toBeVisible({ timeout: 5000 });
     const beforeNext = ledgerUrls.length;
@@ -303,7 +302,7 @@ test.describe("Console flow", () => {
       }
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
@@ -325,7 +324,7 @@ test.describe("Console flow", () => {
 
   // --- Deep tests: Settings structure ---
   test("Settings shows runtime, database, version sections", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Settings" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Settings" })).toBeVisible();
     // Settings page has key sections
@@ -338,7 +337,7 @@ test.describe("Console flow", () => {
       (r) => r.url().includes("/api/v1/overview") && r.status() === 200,
       { timeout: 10000 }
     );
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     const resp = await respPromise;
     const json = await resp.json();
     assertOverviewContract(json);
@@ -352,7 +351,7 @@ test.describe("Console flow", () => {
         body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Server error" } }),
       })
     );
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.waitForTimeout(2500);
     const main = page.getByRole("main");
     await expect(main).toBeVisible();
@@ -363,7 +362,7 @@ test.describe("Console flow", () => {
   test("Negative: governance 500 returns friendly error", async ({ page }) => {
     const errBody = { status: 500, contentType: "application/json" as const, body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Governance unavailable" } }) };
     await page.context().route("**/api/v1/governance/**", (r) => r.fulfill(errBody));
-    await page.goto(`${baseUrl}/console/governance`);
+    await page.goto(`/console/governance`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await expect(page.getByText(/Failed to load governance data/i)).toBeVisible({ timeout: 8000 });
   });
@@ -377,7 +376,7 @@ test.describe("Console flow", () => {
         body: JSON.stringify(errBody),
       })
     );
-    await page.goto(`${baseUrl}/console/ledger`);
+    await page.goto(`/console/ledger`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByText(/Failed to load ledger|Invalid filter parameters/i)).toBeVisible({ timeout: 8000 });
   });
@@ -385,7 +384,7 @@ test.describe("Console flow", () => {
   test("No uncaught JavaScript errors on Overview load", async ({ page }) => {
     const errors: Error[] = [];
     page.on("pageerror", (e) => errors.push(e));
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.waitForTimeout(500);
     expect(errors).toHaveLength(0);
@@ -394,7 +393,7 @@ test.describe("Console flow", () => {
   test("No uncaught JavaScript errors across main nav (N-10)", async ({ page }) => {
     const errors: Error[] = [];
     page.on("pageerror", (e) => errors.push(e));
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
@@ -409,7 +408,7 @@ test.describe("Console flow", () => {
   test("No sensitive info leak in console (no raw credentials in logs)", async ({ page }) => {
     const consoleLogs: string[] = [];
     page.on("console", (msg) => consoleLogs.push(msg.text()));
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.waitForTimeout(1000);
     // No log should contain JWT-like (eyJ...) or API key-like (sk-...) patterns
@@ -418,7 +417,7 @@ test.describe("Console flow", () => {
   });
 
   test("Accessibility: Overview has no WCAG A/AA violations (axe)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
@@ -427,7 +426,7 @@ test.describe("Console flow", () => {
   });
 
   test("Accessibility: Governance has no WCAG A/AA violations (axe)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await page.getByRole("button", { name: /day/i }).waitFor({ state: "visible", timeout: 8000 }).catch(() => null);
@@ -438,7 +437,7 @@ test.describe("Console flow", () => {
   });
 
   test("Accessibility: Ledger has no WCAG A/AA violations (axe)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { name: "Filters" })).toBeVisible({ timeout: 8000 });
@@ -449,7 +448,7 @@ test.describe("Console flow", () => {
   });
 
   test("Governance API response matches contract: budget and circuit_breakers", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     const budgetPromise = page.waitForResponse(
       (r) => r.url().includes("/api/v1/governance/budget") && r.status() === 200,
       { timeout: 10000 }
@@ -475,7 +474,7 @@ test.describe("Console flow", () => {
       const u = req.url();
       if (u.endsWith("/console/") || u.endsWith("/console") || u.match(/\/console\/?$/)) htmlRequests.push(u);
     });
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
@@ -495,7 +494,7 @@ test.describe("Console flow", () => {
           : { items: [] };
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
     });
-    await page.goto(`${baseUrl}/console/governance`);
+    await page.goto(`/console/governance`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await expect(page.getByRole("button", { name: /day/i })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("heading", { name: "Budget Consumption Trend" })).toBeVisible({ timeout: 3000 });
@@ -509,7 +508,7 @@ test.describe("Console flow", () => {
         body: "not valid json",
       })
     );
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.waitForTimeout(3000);
     await expect(page.getByRole("main")).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
@@ -518,3 +517,4 @@ test.describe("Console flow", () => {
     expect(failed || loading).toBe(true);
   });
 });
+
