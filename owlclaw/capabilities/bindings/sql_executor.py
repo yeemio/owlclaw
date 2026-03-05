@@ -55,8 +55,6 @@ class SQLBindingExecutor(BindingExecutor):
             return {
                 "status": "shadow",
                 "mode": "shadow",
-                "query": query,
-                "parameters": bound_parameters,
                 "executed": False,
             }
 
@@ -70,6 +68,15 @@ class SQLBindingExecutor(BindingExecutor):
                 truncated = len(rows) > int(config.max_rows)
                 rows = rows[: int(config.max_rows)]
                 data = [dict(zip(columns, row, strict=False)) for row in rows]
+                if config.mode == "shadow":
+                    return {
+                        "status": "shadow",
+                        "mode": "shadow",
+                        "executed": True,
+                        "row_count": len(data),
+                        "truncated": truncated,
+                        "column_count": len(columns),
+                    }
                 return {
                     "status": "ok",
                     "mode": config.mode,

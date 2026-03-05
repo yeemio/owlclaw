@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from time import monotonic
 from typing import Any
@@ -62,6 +63,10 @@ class HeartbeatChecker:
             cfg.get("database_query_timeout_seconds", 0.5),
             default=0.5,
         )
+        self._database_min_interval_ms = self._normalize_positive_number(
+            cfg.get("database_min_interval_ms", os.getenv("OWLCLAW_HEARTBEAT_MIN_DB_INTERVAL_MS", "500")),
+            default=500.0,
+        )
         self._database_latency_warn_ms = self._normalize_positive_number(
             cfg.get("database_latency_warn_ms", 500),
             default=500.0,
@@ -78,6 +83,8 @@ class HeartbeatChecker:
         self._database_pending_statuses = self._normalize_pending_statuses(
             cfg.get("database_pending_statuses", ["error", "timeout", "pending"]),
         )
+        self._last_database_check_monotonic: float | None = None
+        self._last_database_check_result: bool = False
 
     @staticmethod
     def _normalize_enabled(raw_enabled: Any) -> bool:
@@ -308,12 +315,17 @@ class HeartbeatChecker:
         session_factory = self._resolve_database_session_factory()
         if session_factory is None:
             return False
+        now = monotonic()
+        if self._database_min_interval_ms > 0 and self._last_database_check_monotonic is not None:
+            min_interval_seconds = self._database_min_interval_ms / 1000.0
+            if now - self._last_database_check_monotonic < min_interval_seconds:
+                return self._last_database_check_result
 
         from sqlalchemy import select
 
         from owlclaw.governance.ledger import LedgerRecord
 
-        started = monotonic()
+        started = now
         window_start = datetime.now(timezone.utc) - timedelta(seconds=self._database_lookback_seconds)
 
         async def _query_recent_pending() -> bool:
@@ -336,6 +348,8 @@ class HeartbeatChecker:
                 timeout=self._database_query_timeout_seconds,
             )
         except asyncio.TimeoutError:
+            self._last_database_check_monotonic = monotonic()
+            self._last_database_check_result = False
             logger.warning(
                 "HeartbeatChecker database check timed out agent_id=%s tenant_id=%s timeout=%ss",
                 self.agent_id,
@@ -344,6 +358,8 @@ class HeartbeatChecker:
             )
             return False
         except Exception:
+            self._last_database_check_monotonic = monotonic()
+            self._last_database_check_result = False
             logger.warning(
                 "HeartbeatChecker database check failed agent_id=%s tenant_id=%s",
                 self.agent_id,
@@ -352,6 +368,8 @@ class HeartbeatChecker:
             )
             return False
 
+        self._last_database_check_monotonic = monotonic()
+        self._last_database_check_result = has_events
         elapsed_ms = (monotonic() - started) * 1000
         if elapsed_ms > self._database_latency_warn_ms:
             logger.warning(

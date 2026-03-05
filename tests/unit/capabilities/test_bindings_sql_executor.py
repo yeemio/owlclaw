@@ -111,6 +111,31 @@ async def test_sql_executor_shadow_mode_skips_write_execution() -> None:
 
 
 @pytest.mark.asyncio
+async def test_sql_executor_shadow_select_returns_metadata_only() -> None:
+    result = MagicMock()
+    result.keys.return_value = ["id", "secret"]
+    result.fetchall.return_value = [(1, "token-123")]
+
+    session_factory, session = _session_factory_with_result(result)
+    executor = SQLBindingExecutor(session_factory_builder=lambda _: session_factory)
+    config = SQLBindingConfig(
+        connection="sqlite+aiosqlite:///:memory:",
+        query="SELECT id, secret FROM users WHERE id = :id",
+        mode="shadow",
+    )
+
+    payload = await executor.execute(config, {"id": 1})
+    assert payload["status"] == "shadow"
+    assert payload["executed"] is True
+    assert payload["row_count"] == 1
+    assert payload["column_count"] == 2
+    assert "data" not in payload
+    assert "query" not in payload
+    assert "parameters" not in payload
+    session.commit.assert_not_awaited()
+
+
+@pytest.mark.asyncio
 async def test_sql_executor_rejects_string_interpolation_patterns() -> None:
     executor = SQLBindingExecutor()
     config = SQLBindingConfig(

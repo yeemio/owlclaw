@@ -232,13 +232,31 @@ def _init_sync_fallback(
     def _escape(s: str) -> str:
         return s.replace("'", "''")
 
-    conn = psycopg2.connect(
-        host=params["host"],
-        port=params["port"],
-        user=params["user"],
-        password=params["password"],
-        dbname=params["database"],
-    )
+    try:
+        conn = psycopg2.connect(
+            host=params["host"],
+            port=params["port"],
+            user=params["user"],
+            password=params["password"],
+            dbname=params["database"],
+            options="-c client_encoding=UTF8",
+        )
+    except (UnicodeDecodeError, Exception) as e:  # noqa: BLE001
+        try:
+            msg = str(e)
+        except Exception:  # noqa: BLE001
+            msg = "Connection failed."
+        else:
+            if "decode" in msg.lower() or "continuation byte" in msg:
+                msg = (
+                    "Connection failed. PostgreSQL returned a non-UTF8 error "
+                    "(e.g. password authentication failed). Check OWLCLAW_ADMIN_URL "
+                    "password."
+                )
+            elif not msg.isascii():
+                msg = "Connection failed. Check host, port, user, and password."
+        raise RuntimeError(msg) from e
+
     conn.set_client_encoding("UTF8")
     conn.autocommit = True
     try:

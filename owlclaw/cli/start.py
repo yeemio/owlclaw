@@ -3,8 +3,19 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from starlette.applications import Starlette
+
+# Load .env from project root so OWLCLAW_DATABASE_URL etc. are available
+try:
+    from dotenv import load_dotenv
+
+    _env_path = Path.cwd() / ".env"
+    if _env_path.exists():
+        load_dotenv(_env_path)
+except ImportError:
+    pass
 from starlette.responses import JSONResponse
 
 from owlclaw.web.mount import mount_console

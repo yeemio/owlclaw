@@ -11,6 +11,7 @@ from typing import Any
 from sqlalchemy import func, select
 
 from owlclaw.db import get_engine
+from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.db.session import create_session_factory
 from owlclaw.governance.ledger import LedgerRecord
 
@@ -55,6 +56,8 @@ class DefaultLedgerProvider:
                 list_stmt = self._apply_order(list_stmt, order_by=order_by)
                 list_stmt = list_stmt.offset(offset).limit(limit)
                 rows = (await session.execute(list_stmt)).scalars().all()
+        except ConfigurationError:
+            return [], 0
         except Exception:
             logger.exception("Failed to query ledger records for console API.")
             return [], 0
@@ -78,6 +81,8 @@ class DefaultLedgerProvider:
                     .limit(1)
                 )
                 record = (await session.execute(statement)).scalar_one_or_none()
+        except ConfigurationError:
+            return None
         except Exception:
             logger.exception("Failed to query ledger record detail for console API.")
             return None
