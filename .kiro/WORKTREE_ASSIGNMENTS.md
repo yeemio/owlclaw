@@ -277,6 +277,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|--------|--------|------|------|
 | 2026-03-05 | 统筹(main) | 全部 | **Phase 12 收口确认**：`config-propagation-fix`/`security-hardening`/`runtime-robustness`/`governance-hardening` 已在 main 收口，进入下一轮分配准备。 | 🟢 已同步 |
 | 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work + review-work | **新批次启动**：`console-browser-real-e2e` 已立项并分配。codex-work 负责 Playwright 自动化主路径与网络断言；codex-gpt-work 负责真实环境脚本与手工维度；review-work 负责证据审校与放行结论。 | 🟡 待执行 |
+| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 深度审计修复已分配**：spec `audit-deep-remediation`（.kiro/specs/audit-deep-remediation/）。codex-work：Task 1~4（P1-1 Skill env + Low-3 LRU + Low-5 错误脱敏 + Low-4a Ledger API）；codex-gpt-work：Task 5~7（P1-2 文档 + Low-4b Heartbeat + Low-6 engine）。**注意**：Task 6（Low-4b）需等 codex-work 的 Task 4（Ledger get_readonly_session_factory）合并到 main 后再做。可与 console-browser-real-e2e 并行或在其后执行。 | 🟡 待读 |
+| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 追加 Task 10/11**：深度审计 Phase 2 扩展纳入。codex-gpt-work **追加 Task 10**（Low-7）：`web/providers/capabilities.py` 无 DB 时捕获 ConfigurationError，GET /capabilities 不 500。codex-work **追加 Task 11**（Low-8）：`app.py` health_status() 不读私有 _states/_configs，改为公开 API 或文档。详见 tasks.md。 | 🟡 待读 |
+| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 追加 Task 12/13/14**：深度审计 Phase 3 纳入。codex-work **Task 12**（Low-9）：Ledger._background_writer 异常时将当前 batch 写 fallback；**Task 13**（Low-10）：Ledger._write_queue 有界或背压。codex-gpt-work **Task 14**（Low-11）：Webhook receive_webhook 非 UTF-8 body 返回 400。详见 tasks.md。 | 🟡 待读 |
 
 ### 已归档消息
 
@@ -339,6 +342,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-05 | **统筹校准**：确认 Phase 12 四个 spec 已在 main 收口（config-propagation-fix/security-hardening/runtime-robustness/governance-hardening），分配表切换为 Phase 13 low findings 预分配方案。 | 消除分配表与 SPEC_TASKS_SCAN 漂移，降低误派单风险 |
 | 2026-03-05 | **Phase 13 放行**：已创建 `phase13-low-findings` 三层 spec，并将 codex-work/codex-gpt-work 从“待立项”切换为“待开始”。 | 使低优先级审计项进入可执行闭环 |
 | 2026-03-05 | **浏览器验收批次分配**：新建 `console-browser-real-e2e` 三层 spec；codex-work 负责自动化主路径与网络断言，codex-gpt-work 负责真实环境脚本与手工项，review-work 负责放行审校报告。 | 将 Console 发布门禁从 pytest/mock 提升为真实浏览器证据化验收 |
+| 2026-03-05 | **深度审计修复分配**：新建 `audit-deep-remediation` 三层 spec（来源 `docs/review/DEEP_AUDIT_REPORT.md`，2 P1 + 4 Low）。codex-work → P1-1/Low-3/Low-5/Low-4a（runtime.py + ledger.py）；codex-gpt-work → P1-2/Low-4b/Low-6（docs + heartbeat.py + engine.py）。Low-4b 依赖 Low-4a 合并后执行。 | 统筹将深度审计发现纳入可执行任务并分配至两编码 worktree |
+| 2026-03-05 | **深度审计 Phase 2 纳入**：报告 Phase 2 扩展新增 Low-7（capabilities 无 DB 不 500）、Low-8（health_status 不读私有属性）。纳入同一 spec：codex-gpt-work 追加 Task 10（capabilities.py）；codex-work 追加 Task 11（app.py health_status）。 | 继续深度审计后补齐任务分配 |
+| 2026-03-05 | **深度审计 Phase 3 纳入**：报告 Phase 3 扩展新增 Low-9（Ledger 异常 batch 写 fallback）、Low-10（Ledger 队列有界）、Low-11（Webhook 非 UTF-8 返回 400）。codex-work 追加 Task 12/13（ledger.py）；codex-gpt-work 追加 Task 14（webhook http/app.py）。 | 继续深度审计 + 统筹分配 |
 
 ---
 
@@ -397,7 +403,18 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 - 高风险项复核（无 DB 降级、无敏感泄露、无白屏）
 - 输出放行结论 `PASS / CONDITIONAL_PASS / FAIL`
 
-**下一轮待分配**：执行 `console-browser-real-e2e` 批次；完成后回到外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
+**下一轮待分配**：1) 当前批次 `console-browser-real-e2e` 执行中；2) **下一批次**：`audit-deep-remediation`（Phase 15，来源 `docs/review/DEEP_AUDIT_REPORT.md`），已立项并分配如下，待 console-browser-real-e2e 收口或并行插空执行。
+
+### audit-deep-remediation 专项分配（Phase 15）
+
+| Worktree | 任务 | 内容 | 依赖 |
+|----------|------|------|------|
+| **codex-work** | Task 1, 2, 3, 4, 11, 12, 13 | P1-1/Low-3/Low-5/Low-4a/Low-8；**Low-9** Ledger 异常时 batch 写 fallback；**Low-10** Ledger 队列有界/背压 | 无 |
+| **codex-gpt-work** | Task 5, 6, 7, 10, 14 | P1-2/Low-4b/Low-6/Low-7；**Low-11** Webhook 非 UTF-8 body 返回 400 | Low-4b 需等 Task 4 合并后执行 |
+
+**共享文件边界**：codex-work 修改 `owlclaw/agent/runtime/runtime.py`、`owlclaw/governance/ledger.py`、`owlclaw/app.py`（仅 health_status）；codex-gpt-work 修改 `owlclaw/agent/runtime/heartbeat.py`、`owlclaw/db/engine.py`、`owlclaw/web/providers/capabilities.py`、`owlclaw/triggers/webhook/http/app.py`、`docs/`、可选 `owlclaw/web/api/deps.py`。两方不重叠。
+
+**完成后**：回到外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 
