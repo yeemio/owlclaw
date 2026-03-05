@@ -76,3 +76,35 @@
 
 **移交给 review-work**：  
 请结合 codex-work 的 Playwright 主路径结果，统一给出 `PASS / CONDITIONAL_PASS / FAIL` 放行结论。
+
+---
+
+## 五、审校输入摘要（Review-work 快速执行）
+
+### 5.1 本分支已交付边界
+
+1. 已完成 Task 2.1~2.3（脚本强化 + 手工维度 + 失败复现）。
+2. 已回写 spec 状态：
+   - `.kiro/specs/console-browser-real-e2e/tasks.md`
+   - `.kiro/specs/SPEC_TASKS_SCAN.md`
+3. 证据主文件：
+   - `.kiro/reviews/artifacts/2026-03-05-console-browser/api-checks.json`
+
+### 5.2 仍待完成（非本分支范围）
+
+1. `codex-work`：Task 1.1~1.4（Playwright 主路径 + 网络参数断言 + 自动化摘要）
+2. `review-work`：Task 3.1~3.3（证据完整性审查 + 高风险复核 + 放行结论）
+3. 最终验收：Task 4.1~4.3
+
+### 5.3 Reviewer 快速命令
+
+```powershell
+pwsh -File scripts/console-local-setup.ps1 -SkipDbInit -SkipMigrate
+Get-Content .kiro/reviews/artifacts/2026-03-05-console-browser/api-checks.json
+Get-Content .kiro/reviews/2026-03-05-console-browser-verification.md
+```
+
+### 5.4 放行提示
+
+1. M-1 / M-2 属于环境与工具链阻塞，不是后端契约回退。  
+2. 若 codex-work 自动化证据齐全且高风险项无新增故障，可评估 `CONDITIONAL_PASS`，并保留 WS 复验后续动作。
