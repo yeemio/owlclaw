@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：Phase 12 已收口，进入下一轮分配准备。主 worktree 继续跟踪 Phase 8/3 外部阻塞项与 Phase 13 立项。
+**当前编码任务**：Phase 12 已收口，Phase 13 已立项并放行。主 worktree 继续跟踪 Phase 8/3 外部阻塞项与分配推进。
 
 ---
 
@@ -178,7 +178,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **config-propagation-fix** | ✅ 25/25 | 已完成并合并到 main |
 | **security-hardening** | ✅ 46/46 | 已完成并合并到 main |
 
-**当前任务**：等待新分配（建议优先接手 Phase 13 的低风险高收益项，详见下方“下一轮待分配”）。
+**当前任务**：Phase 13（#11/#12）待开始，详见下方“下一轮待分配”。
 
 **共享文件修改范围约定**（避免冲突）：
 
@@ -220,7 +220,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
 | **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
 
-**当前任务**：等待新分配（建议承担 DB/治理侧的 Phase 13 收尾项）。
+**当前任务**：Phase 13（#13/#14）待开始，详见下方“下一轮待分配”。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
@@ -336,6 +336,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-03 | Phase 11 完成 + Phase 12 分配：lite-mode-e2e F1-F10 全部完成（Task 1-10 ✅），仅 F11 全量回归待执行。新建 4 个 Phase 12 spec（80+ 问题）。codex-work → config-propagation-fix + security-hardening；codex-gpt-work → runtime-robustness + governance-hardening。共享文件按函数范围隔离 | 全方位深度审计（4 维度逐行审计）发现 80+ 问题，按领域拆分 4 个 spec |
 | 2026-03-04 | **v4 审计统筹**：GLM-5 独立重审计完成，生成 v4 报告（18 发现）。review-work 已 APPROVE 两个编码分支最新提交。E2E 测试 18/18 通过。P0 问题（CORS/工具消毒/Schema 校验）仍未修复。更新消息状态，同步审计报告。 | 独立审计验证 + 状态同步 |
 | 2026-03-05 | **统筹校准**：确认 Phase 12 四个 spec 已在 main 收口（config-propagation-fix/security-hardening/runtime-robustness/governance-hardening），分配表切换为 Phase 13 low findings 预分配方案。 | 消除分配表与 SPEC_TASKS_SCAN 漂移，降低误派单风险 |
+| 2026-03-05 | **Phase 13 放行**：已创建 `phase13-low-findings` 三层 spec，并将 codex-work/codex-gpt-work 从“待立项”切换为“待开始”。 | 使低优先级审计项进入可执行闭环 |
 
 ---
 
@@ -359,23 +360,23 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **phase13-low-findings（待建）** | Phase 1 | Langfuse secret in config | #11 | Low | 🟡 待立项 |
-| **phase13-low-findings（待建）** | Phase 1 | `_is_select_query` 启发式误判治理 | #12 | Low | 🟡 待立项 |
+| **phase13-low-findings** | Phase 1 | Langfuse secret in config | #11 | Low | 🟡 待开始 |
+| **phase13-low-findings** | Phase 1 | `_is_select_query` 启发式误判治理 | #12 | Low | 🟡 待开始 |
 
 **codex-work 执行顺序**：
-1. 等待 `phase13-low-findings` spec 建立并完成 Task 0
-2. 先做 #11 / #12（改动面小、回归成本低）
+1. 先做 #11 / #12（改动面小、回归成本低）
+2. 提交后进入 review-work 审校
 
 ### codex-gpt-work 分配（下一轮建议）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **phase13-low-findings（待建）** | Phase 1 | Shadow mode 查询泄露 | #13 | Low | 🟡 待立项 |
-| **phase13-low-findings（待建）** | Phase 1 | Heartbeat DB I/O 开销优化 | #14 | Low | 🟡 待立项 |
+| **phase13-low-findings** | Phase 1 | Shadow mode 查询泄露 | #13 | Low | 🟡 待开始 |
+| **phase13-low-findings** | Phase 1 | Heartbeat DB I/O 开销优化 | #14 | Low | 🟡 待开始 |
 
 **codex-gpt-work 执行顺序**：
-1. 等待 `phase13-low-findings` spec 建立并完成 Task 0
-2. 先做 #13 / #14（偏运行时与治理边界）
+1. 先做 #13 / #14（偏运行时与治理边界）
+2. 提交后进入 review-work 审校
 
 ### 共享文件修改边界（Phase 13 建议）
 
@@ -395,7 +396,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | #13 | Shadow mode 查询泄露 | declarative-binding 后续 |
 | #14 | Heartbeat DB I/O | agent-runtime 后续 |
 
-**下一轮待分配**：由 main 新建 `phase13-low-findings` 三层 spec 后，按上表并行分配；外部阻塞项继续由 main 跟踪。
+**下一轮待分配**：按上表执行 `phase13-low-findings` 并行开发；外部阻塞项继续由 main 跟踪。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 
