@@ -1,6 +1,20 @@
+/// <reference types="node" />
 import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 const baseUrl = process.env.CONSOLE_E2E_BASE_URL || "http://127.0.0.1:8000";
+
+/** Assert overview API response matches contract: health_checks[].component, healthy */
+function assertOverviewContract(json: unknown): void {
+  const data = json as Record<string, unknown>;
+  expect(Array.isArray(data.health_checks)).toBe(true);
+  const checks = data.health_checks as Array<{ component?: string; healthy?: boolean }>;
+  expect(checks.length).toBeGreaterThan(0);
+  for (const c of checks) {
+    expect(typeof c.component).toBe("string");
+    expect(typeof c.healthy).toBe("boolean");
+  }
+}
 
 test.describe("Console flow", () => {
   test("Overview -> Governance -> Ledger navigation", async ({ page }) => {
@@ -125,10 +139,17 @@ test.describe("Console flow", () => {
     expect(elapsed).toBeLessThan(5000);
   });
 
-  test("Capabilities and Settings pages load", async ({ page }) => {
+  test("Capabilities, Triggers, and Settings pages load", async ({ page }) => {
     await page.goto(`${baseUrl}/console/`);
     await page.getByRole("link", { name: "Capabilities" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Capabilities" })).toBeVisible();
+
+    await page.getByRole("link", { name: "Triggers" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers" })).toBeVisible();
+    await page.waitForTimeout(2000);
+    // No-DB: loading, error, empty state, or list — not white screen
+    const content = page.getByRole("main");
+    await expect(content).toContainText(/Failed to load|No triggers|Trigger List|Unified runtime|Loading triggers/);
 
     await page.getByRole("link", { name: "Settings" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Settings" })).toBeVisible();
@@ -309,5 +330,191 @@ test.describe("Console flow", () => {
     await expect(page.getByRole("main").getByRole("heading", { name: "Settings" })).toBeVisible();
     // Settings page has key sections
     await expect(page.getByText(/runtime|database|version/i).first()).toBeVisible({ timeout: 5000 });
+  });
+
+  // --- Contract & negative path (depth) ---
+  test("Overview API response matches contract: health_checks structure", async ({ page }) => {
+    const respPromise = page.waitForResponse(
+      (r) => r.url().includes("/api/v1/overview") && r.status() === 200,
+      { timeout: 10000 }
+    );
+    await page.goto(`${baseUrl}/console/`);
+    const resp = await respPromise;
+    const json = await resp.json();
+    assertOverviewContract(json);
+  });
+
+  test("Negative: overview 500 returns friendly error, no white screen", async ({ page }) => {
+    await page.route("**/api/v1/overview", (route) =>
+      route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Server error" } }),
+      })
+    );
+    await page.goto(`${baseUrl}/console/`);
+    await page.waitForTimeout(2500);
+    const main = page.getByRole("main");
+    await expect(main).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await expect(page.getByText(/Failed to load overview metrics/i)).toBeVisible({ timeout: 5000 });
+  });
+
+  test("Negative: governance 500 returns friendly error", async ({ page }) => {
+    const errBody = { status: 500, contentType: "application/json" as const, body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Governance unavailable" } }) };
+    await page.context().route("**/api/v1/governance/**", (r) => r.fulfill(errBody));
+    await page.goto(`${baseUrl}/console/governance`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
+    await expect(page.getByText(/Failed to load governance data/i)).toBeVisible({ timeout: 8000 });
+  });
+
+  test("Negative: ledger 422 returns friendly error (API-17 ErrorResponse structure)", async ({ page }) => {
+    const errBody = { error: { code: "VALIDATION_ERROR", message: "Invalid filter parameters" } };
+    await page.context().route("**/api/v1/ledger*", (route) =>
+      route.fulfill({
+        status: 422,
+        contentType: "application/json",
+        body: JSON.stringify(errBody),
+      })
+    );
+    await page.goto(`${baseUrl}/console/ledger`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+    await expect(page.getByText(/Failed to load ledger|Invalid filter parameters/i)).toBeVisible({ timeout: 8000 });
+  });
+
+  test("No uncaught JavaScript errors on Overview load", async ({ page }) => {
+    const errors: Error[] = [];
+    page.on("pageerror", (e) => errors.push(e));
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(errors).toHaveLength(0);
+  });
+
+  test("No uncaught JavaScript errors across main nav (N-10)", async ({ page }) => {
+    const errors: Error[] = [];
+    page.on("pageerror", (e) => errors.push(e));
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await page.getByRole("link", { name: "Governance" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "Agents" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Agents", exact: true })).toBeVisible();
+    await page.waitForTimeout(500);
+    expect(errors).toHaveLength(0);
+  });
+
+  test("No sensitive info leak in console (no raw credentials in logs)", async ({ page }) => {
+    const consoleLogs: string[] = [];
+    page.on("console", (msg) => consoleLogs.push(msg.text()));
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await page.waitForTimeout(1000);
+    // No log should contain JWT-like (eyJ...) or API key-like (sk-...) patterns
+    const leaked = consoleLogs.some((t) => /eyJ[A-Za-z0-9_-]{20,}/.test(t) || /sk-[A-Za-z0-9]{20,}/.test(t));
+    expect(leaked).toBe(false);
+  });
+
+  test("Accessibility: Overview has no WCAG A/AA violations (axe)", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test("Accessibility: Governance has no WCAG A/AA violations (axe)", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    await page.getByRole("link", { name: "Governance" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
+    await page.getByRole("button", { name: /day/i }).waitFor({ state: "visible", timeout: 8000 }).catch(() => null);
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test("Accessibility: Ledger has no WCAG A/AA violations (axe)", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Filters" })).toBeVisible({ timeout: 8000 });
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test("Governance API response matches contract: budget and circuit_breakers", async ({ page }) => {
+    await page.goto(`${baseUrl}/console/`);
+    const budgetPromise = page.waitForResponse(
+      (r) => r.url().includes("/api/v1/governance/budget") && r.status() === 200,
+      { timeout: 10000 }
+    );
+    const circuitPromise = page.waitForResponse(
+      (r) => r.url().includes("/api/v1/governance/circuit-breakers") && r.status() === 200,
+      { timeout: 10000 }
+    );
+    await page.getByRole("link", { name: "Governance" }).click();
+    const [budgetResp, circuitResp] = await Promise.all([budgetPromise, circuitPromise]);
+    const budgetJson = (await budgetResp.json()) as Record<string, unknown>;
+    expect(budgetJson).toHaveProperty("start_date");
+    expect(budgetJson).toHaveProperty("end_date");
+    expect(budgetJson).toHaveProperty("granularity");
+    expect(Array.isArray(budgetJson.items)).toBe(true);
+    const circuitJson = (await circuitResp.json()) as Record<string, unknown>;
+    expect(Array.isArray(circuitJson.items)).toBe(true);
+  });
+
+  test("E-3: Navigation is SPA (no full reload between pages)", async ({ page }) => {
+    const htmlRequests: string[] = [];
+    page.on("request", (req) => {
+      const u = req.url();
+      if (u.endsWith("/console/") || u.endsWith("/console") || u.match(/\/console\/?$/)) htmlRequests.push(u);
+    });
+    await page.goto(`${baseUrl}/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await page.getByRole("link", { name: "Governance" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+    // Only initial load should fetch HTML; SPA nav does not reload
+    expect(htmlRequests.length).toBeLessThanOrEqual(1);
+  });
+
+  test("E-6: Governance with empty data shows chart/sections, no white screen", async ({ page }) => {
+    await page.context().route("**/api/v1/governance/**", async (route) => {
+      const url = route.request().url();
+      const body = url.includes("budget")
+        ? { start_date: "2026-03-01", end_date: "2026-03-04", granularity: "day", items: [], migration_weight: 0, skills_quality_rank: [] }
+        : url.includes("circuit-breakers")
+          ? { items: [] }
+          : { items: [] };
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+    });
+    await page.goto(`${baseUrl}/console/governance`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /day/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: "Budget Consumption Trend" })).toBeVisible({ timeout: 3000 });
+  });
+
+  test("Edge: malformed overview JSON does not white screen", async ({ page }) => {
+    await page.route("**/api/v1/overview", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: "not valid json",
+      })
+    );
+    await page.goto(`${baseUrl}/console/`);
+    await page.waitForTimeout(3000);
+    await expect(page.getByRole("main")).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    const failed = await page.getByText(/Failed to load overview metrics/i).isVisible();
+    const loading = await page.getByText(/Loading overview/i).isVisible();
+    expect(failed || loading).toBe(true);
   });
 });

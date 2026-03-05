@@ -27,6 +27,7 @@ export function LedgerFilters({ value, onChange, onApply, onReset }: LedgerFilte
           value={value.agent ?? ""}
           onChange={(event) => onInputChange(event, value, onChange)}
           placeholder="Agent"
+          aria-label="Filter by agent"
           className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm"
         />
         <input
@@ -34,6 +35,7 @@ export function LedgerFilters({ value, onChange, onApply, onReset }: LedgerFilte
           value={value.capability ?? ""}
           onChange={(event) => onInputChange(event, value, onChange)}
           placeholder="Capability"
+          aria-label="Filter by capability"
           className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm"
         />
         <select
@@ -41,6 +43,7 @@ export function LedgerFilters({ value, onChange, onApply, onReset }: LedgerFilte
           value={value.status ?? ""}
           onChange={(event) => onInputChange(event, value, onChange)}
           className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm"
+          aria-label="Filter by status"
         >
           <option value="">Any Status</option>
           <option value="success">Success</option>
@@ -64,6 +67,7 @@ export function LedgerFilters({ value, onChange, onApply, onReset }: LedgerFilte
           type="datetime-local"
           value={value.start_time ?? ""}
           onChange={(event) => onInputChange(event, value, onChange)}
+          aria-label="Start time"
           className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm"
         />
         <input
@@ -71,6 +75,7 @@ export function LedgerFilters({ value, onChange, onApply, onReset }: LedgerFilte
           type="datetime-local"
           value={value.end_time ?? ""}
           onChange={(event) => onInputChange(event, value, onChange)}
+          aria-label="End time"
           className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm"
         />
         <input
@@ -85,6 +90,7 @@ export function LedgerFilters({ value, onChange, onApply, onReset }: LedgerFilte
             })
           }
           placeholder="Min cost"
+          aria-label="Minimum cost"
           className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm"
         />
         <input
@@ -99,6 +105,7 @@ export function LedgerFilters({ value, onChange, onApply, onReset }: LedgerFilte
             })
           }
           placeholder="Max cost"
+          aria-label="Maximum cost"
           className="rounded-md border border-border/70 bg-background/70 px-3 py-2 text-sm"
         />
       </div>
