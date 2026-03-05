@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-04（Phase 12 codex-work：Ledger 排序参数前端接线与 e2e 用例补充）
+> **最后更新**: 2026-03-05（Spec 规范化：同步 runtime-robustness / governance-hardening 完成状态）
 
 ---
 
@@ -275,37 +275,37 @@
 
 **Phase 12.3：运行时健壮性（P1，影响稳定性和可靠性）**
 
-- [ ] R1 _tool_call_timestamps 并发安全 → spec: runtime-robustness
-- [ ] R2 max_iterations 退出时保留最终响应 → spec: runtime-robustness
-- [ ] R3 Handler 超时机制 → spec: runtime-robustness
-- [ ] R4 app.start() 幂等性 → spec: runtime-robustness
-- [ ] R5 app.start() 部分启动清理 → spec: runtime-robustness
-- [ ] R6 mount_skills() 幂等性 → spec: runtime-robustness
-- [ ] R7 db_change 重试限制 → spec: runtime-robustness
-- [ ] R8 InMemoryStore 线程安全 → spec: runtime-robustness
-- [ ] R9 InMemoryStore 大小限制 → spec: runtime-robustness
-- [ ] R10 Hatchet 连接超时 → spec: runtime-robustness
-- [ ] R11 skills_context_cache 跨租户隔离 → spec: runtime-robustness
-- [ ] R12 store_inmemory.py 解除 pgvector 硬依赖 → spec: runtime-robustness
-- [ ] R13 WebSocket 断连清理 → spec: runtime-robustness
-- [ ] R14 Langfuse atexit 去重 → spec: runtime-robustness
-- [ ] R15 Redis idempotency 值序列化 → spec: runtime-robustness
-- [ ] R16 Queue executor 连接复用 → spec: runtime-robustness
-- [ ] R17 API trigger 无效 JSON 返回 400 → spec: runtime-robustness
-- [ ] R18 Prompt context window 检查 → spec: runtime-robustness
+- [x] R1 _tool_call_timestamps 并发安全 → spec: runtime-robustness
+- [x] R2 max_iterations 退出时保留最终响应 → spec: runtime-robustness
+- [x] R3 Handler 超时机制 → spec: runtime-robustness
+- [x] R4 app.start() 幂等性 → spec: runtime-robustness
+- [x] R5 app.start() 部分启动清理 → spec: runtime-robustness
+- [x] R6 mount_skills() 幂等性 → spec: runtime-robustness
+- [x] R7 db_change 重试限制 → spec: runtime-robustness
+- [x] R8 InMemoryStore 线程安全 → spec: runtime-robustness
+- [x] R9 InMemoryStore 大小限制 → spec: runtime-robustness
+- [x] R10 Hatchet 连接超时 → spec: runtime-robustness
+- [x] R11 skills_context_cache 跨租户隔离 → spec: runtime-robustness
+- [x] R12 store_inmemory.py 解除 pgvector 硬依赖 → spec: runtime-robustness
+- [x] R13 WebSocket 断连清理 → spec: runtime-robustness
+- [x] R14 Langfuse atexit 去重 → spec: runtime-robustness
+- [x] R15 Redis idempotency 值序列化 → spec: runtime-robustness
+- [x] R16 Queue executor 连接复用 → spec: runtime-robustness
+- [x] R17 API trigger 无效 JSON 返回 400 → spec: runtime-robustness
+- [x] R18 Prompt context window 检查 → spec: runtime-robustness
 
 **Phase 12.4：治理层加固（P1，治理层缺陷影响 Agent 可控性）**
 
-- [ ] G1 Ledger 索引添加 tenant_id 前缀 → spec: governance-hardening
-- [ ] G2 WebhookIdempotencyKeyModel UUID 主键 → spec: governance-hardening
-- [ ] G3 Ledger fallback 路径可配置 → spec: governance-hardening
-- [ ] G4 MODEL_PRICING 扩展 → spec: governance-hardening
-- [ ] G5 SkillQualityStore 索引合规 → spec: governance-hardening
-- [ ] G6 Alembic env.py 导入 OwlHub 模型 → spec: governance-hardening
-- [ ] G7 Session factory 缓存 → spec: governance-hardening
-- [ ] G8 DB 连接失败包装为自定义异常 → spec: governance-hardening
-- [ ] G9 DB SSL/TLS 配置 → spec: governance-hardening
-- [ ] G10 Cron 任务去重 → spec: governance-hardening
+- [x] G1 Ledger 索引添加 tenant_id 前缀 → spec: governance-hardening
+- [x] G2 WebhookIdempotencyKeyModel UUID 主键 → spec: governance-hardening
+- [x] G3 Ledger fallback 路径可配置 → spec: governance-hardening
+- [x] G4 MODEL_PRICING 扩展 → spec: governance-hardening
+- [x] G5 SkillQualityStore 索引合规 → spec: governance-hardening
+- [x] G6 Alembic env.py 导入 OwlHub 模型 → spec: governance-hardening
+- [x] G7 Session factory 缓存 → spec: governance-hardening
+- [x] G8 DB 连接失败包装为自定义异常 → spec: governance-hardening
+- [x] G9 DB SSL/TLS 配置 → spec: governance-hardening
+- [x] G10 Cron 任务去重 → spec: governance-hardening
 
 ---
 
@@ -373,8 +373,8 @@
 | **lite-mode-e2e** | `.kiro/specs/lite-mode-e2e/` | ✅ 三层齐全，已完成（47/47） | Lite Mode 端到端体验修复：Task 1-11 全部完成（含 DeepSeek 实模验收）。 |
 | **config-propagation-fix** | `.kiro/specs/config-propagation-fix/` | ✅ 三层齐全，已完成（25/25） | v4 任务清单已收口：Task1（Auth 空 token 绕过）+ Task2-8 + Task9（全量 pytest/真实 LLM）全部完成 |
 | **security-hardening** | `.kiro/specs/security-hardening/` | ✅ 三层齐全，已完成（46/46） | v4 Task1~Task15 全部完成（含 Console API 鉴权 + auth_token 哈希存储 + 全量回归）。 |
-| **runtime-robustness** | `.kiro/specs/runtime-robustness/` | 🟡 三层齐全，待实现（3/58） | 运行时健壮性：并发安全 + max_iterations + handler 超时 + start/mount 幂等 + db_change 重试 + InMemoryStore + Hatchet 超时 + cache 隔离 + WebSocket + Langfuse + Redis + Queue + API 400 + context window |
-| **governance-hardening** | `.kiro/specs/governance-hardening/` | 🟡 三层齐全，待实现（3/33） | 治理层加固：Ledger 索引 + UUID PK + fallback 路径 + MODEL_PRICING + QualityStore 索引 + env.py 导入 + session 缓存 + DB 异常包装 + SSL + Cron 去重 |
+| **runtime-robustness** | `.kiro/specs/runtime-robustness/` | ✅ 三层齐全，已完成（58/58） | 运行时健壮性：并发安全 + max_iterations + handler 超时 + start/mount 幂等 + db_change 重试 + InMemoryStore + Hatchet 超时 + cache 隔离 + WebSocket + Langfuse + Redis + Queue + API 400 + context window |
+| **governance-hardening** | `.kiro/specs/governance-hardening/` | ✅ 三层齐全，已完成（33/33） | 治理层加固：Ledger 索引 + UUID PK + fallback 路径 + MODEL_PRICING + QualityStore 索引 + env.py 导入 + session 缓存 + DB 异常包装 + SSL + Cron 去重 |
 
 ---
 
@@ -400,11 +400,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-04（review-work：收敛 Phase 12 Alembic 多 head + 吸收 codex-work 增量提交并通过回归） |
-| 当前批次 | **Phase 12 / codex-work**：`config-propagation-fix`（25/25）+ `security-hardening`（46/46）+ `lite-mode-e2e`（47/47）均已收口。 |
-| 批次状态 | `config-propagation-fix` ✅；`security-hardening` ✅；`lite-mode-e2e` ✅。review-work 已补 `011_merge_phase12_heads` 收敛 Alembic 多 head，并完成 codex-work 末 3 提交吸收与定向回归。 |
+| 最后更新 | 2026-03-05（spec 规范化：Phase 12 四个子 spec 全量状态对齐） |
+| 当前批次 | **Phase 12 / stabilization**：`config-propagation-fix`（25/25）+ `security-hardening`（46/46）+ `runtime-robustness`（58/58）+ `governance-hardening`（33/33）均已收口。 |
+| 批次状态 | `config-propagation-fix` ✅；`security-hardening` ✅；`runtime-robustness` ✅；`governance-hardening` ✅。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）；15) **Phase 10 全部完成**：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)，经 Round 13 APPROVE；16) **Phase 12 增量修复**：根据 review Round 16 的 FIX_NEEDED，完成 S12 回补（bearer token 仅 hash 持久化 + hash-only 验证 + create/update 回归测试）；17) **Phase 12 安全加固收口**：`security-hardening` v4 Task1~Task15 全部完成，含 S13（Console API 鉴权 + auth_token 哈希存储 + 全量回归通过）；18) **Console 无 DB 降级回归修复**：`/agents/{id}`、`/triggers`、`/triggers/{id}/history` 不再因 DB 缺失抛 500，新增单测 `test_agents_detail_route_returns_404_when_database_not_configured`、`test_triggers_list_route_returns_empty_when_database_not_configured`、`test_triggers_history_route_returns_empty_when_database_not_configured`；19) **Console 验证文档归一化**：`BROWSER_VERIFICATION_CHECKLIST.md` 与 `2026-03-04-console-browser-verification.md` 已按最新回归结果更新（API-4/10/12/13/14/16/17、N-9 与放行结论一致）；20) **Ledger 排序参数接线**：前端新增 `order_by` 过滤控件与查询参数透传，并补 `F-14` Playwright 自动化用例（待集成环境执行）。 |
-| 下一待执行 | main 已完成 merge review-work；codex-work/codex-gpt-work 已同步 main。编码分支继续 `runtime-robustness` / `governance-hardening` 剩余任务。 |
+| 下一待执行 | Phase 12 已完成，继续推进 `release-supply-chain`、`openclaw-skill-pack`、`content-launch`、`release`、`owlhub` 的剩余未勾项（优先处理可在仓内闭环的任务，外部依赖保持 blocked 记录）。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，Phase 9：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，**Phase 10**：audit-fix-critical ✅(11/11)，audit-fix-high ✅(23/23)，其余 spec 全部 ✅。 |
 | 阻塞项 | 1) `release-supply-chain` Task 1.1/1.2：需维护者在 PyPI/TestPyPI 创建 Trusted Publisher；最新 preflight（2026-03-02）仍 `BLOCKED`，并提示 `main` 分支保护 API `HTTP 404`（`docs/release/reports/release-oidc-preflight-latest.md`，最近 release runs: 2026-02-27 的 `22471143360`/`22473801915`/`22475093887`/`22477795502` 均失败）。2) `owlhub` Task 40.4：生产凭据/环境所有权外部阻塞；3) `openclaw-skill-pack` Task 3.3/3.4/5.1/5.4 依赖外部仓库 PR 审核合并、线上索引刷新与真实下载量周期（PR: https://github.com/openclaw/clawhub/pull/556`，state=`OPEN`，`updatedAt=2026-02-28T01:45:00Z`）；4) `content-launch` Task 1/2/3.2/5 需 Mionyee 真实导出数据与外部发布渠道（最新 readiness：`docs/content/content-launch-readiness.json`，`all_external_gates_passed=false`）。 |
 | 健康状态 | ✅ 关键阻塞（Alembic 多 head）已解除；审校侧可放行 main 合并。 |
