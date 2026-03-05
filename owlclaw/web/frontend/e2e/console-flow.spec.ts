@@ -361,7 +361,9 @@ test.describe("Console flow", () => {
 
   test("Negative: governance 500 returns friendly error", async ({ page }) => {
     const errBody = { status: 500, contentType: "application/json" as const, body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Governance unavailable" } }) };
-    await page.context().route("**/api/v1/governance/**", (r) => r.fulfill(errBody));
+    await page.context().route("**/api/v1/governance/budget*", (r) => r.fulfill(errBody));
+    await page.context().route("**/api/v1/governance/circuit-breakers*", (r) => r.fulfill(errBody));
+    await page.context().route("**/api/v1/governance/visibility-matrix*", (r) => r.fulfill(errBody));
     await page.goto(`/console/governance`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await expect(page.getByText(/Failed to load governance data/i)).toBeVisible({ timeout: 8000 });

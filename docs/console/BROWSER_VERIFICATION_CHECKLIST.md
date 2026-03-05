@@ -146,7 +146,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
 | N-7 | WS 连接 | 有 `ws://.../api/v1/ws`，状态 Connected | ☑ (尝试连接，服务端 404 当无 websockets 库) |
-| N-8 | 消息类型 | 收到 `overview` / `triggers` / `ledger` 之一 | ☐ (需 uvicorn[standard] 启用 WS) |
+| N-8 | 消息类型 | 收到 `overview` / `triggers` / `ledger` 之一 | ☐ (2026-03-05 复验仍阻塞：`No supported WebSocket library detected`) |
 
 ## 3.3 错误与降级
 
@@ -165,7 +165,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|--------|------|------|
 | E-1 | 暗色主题 | 所有页面暗色一致，无白底闪屏 | ☑ |
 | E-2 | 响应式 | 最小宽度 1024px 下布局正常，侧栏 + 内容区 | ☐ |
-| E-3 | 页面切换 | 无全量刷新，URL 或路由变化 | ☐ |
+| E-3 | 页面切换 | 无全量刷新，URL 或路由变化 | ☑ |
 
 ## 4.2 空状态与错误展示
 
@@ -173,7 +173,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|--------|------|------|
 | E-4 | Agents 无 DB | 友好文案（如 "Database not configured"），非 raw 500 | ☑ |
 | E-5 | Ledger 无数据 | 空表格或 "暂无记录" 说明 | ☑ |
-| E-6 | Governance 无数据 | 图表空或提示 | ☐ |
+| E-6 | Governance 无数据 | 图表空或提示 | ☑ |
 
 ## 4.3 性能与可访问性
 

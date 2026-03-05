@@ -9,9 +9,9 @@
 ## 进度概览
 
 - **总任务数**: 13
-- **已完成**: 7
+- **已完成**: 10
 - **进行中**: 0
-- **未开始**: 6
+- **未开始**: 3
 
 ---
 
@@ -37,9 +37,12 @@
 
 ## 2. codex-gpt-work（真实环境脚本 + 手工维度）
 
-- [ ] 2.1 强化本地真实环境启动脚本与步骤文档
-- [ ] 2.2 执行 Checklist 中手工项（WS/效果/可访问性）
-- [ ] 2.3 记录失败项与复现步骤
+- [x] 2.1 强化本地真实环境启动脚本与步骤文档
+- [x] 2.2 执行 Checklist 中手工项（WS/效果/可访问性）
+- [x] 2.3 记录失败项与复现步骤
+  - 补位执行（codex-work）：`scripts/console-local-setup.ps1`、`docs/console/REAL_E2E_LOCAL_SETUP.md`
+  - 手工报告：`.kiro/reviews/2026-03-05-console-browser-manual-codex-work.md`
+  - 结论：`CONDITIONAL_PASS`（N-8/F-16/F-18/F-20/E-2/E-9 待补）
 
 ---
 
