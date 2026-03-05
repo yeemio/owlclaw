@@ -49,7 +49,7 @@ Masking    Hardening   Redaction    I/O Tune
 ```text
 owlclaw/
 ├── integrations/langfuse.py                 # #11
-├── capabilities/bindings/executor_sql.py    # #12, #13
+├── capabilities/bindings/sql_executor.py    # #12, #13
 ├── agent/runtime/heartbeat.py               # #14
 └── config/ (如需统一敏感字段掩码入口)
 ```
@@ -57,12 +57,14 @@ owlclaw/
 ### 2.2 关键实现点
 
 #### D-L1：Langfuse secret 掩码（#11）
-- 在配置展示/导出链路统一调用 `mask_secret()`。
-- 禁止日志打印原始 key。
+- `LangfuseConfig` 增加安全导出 `to_safe_dict()`，对 `public_key/secret_key` 统一输出 `***`。
+- `LangfuseConfig` 的 `public_key/secret_key` 字段使用 `repr=False`，避免对象打印泄露。
+- 错误日志链路继续复用 `_safe_error_message()`，禁止原始 key 出现在 warning/error 文本。
 
 #### D-L2：SQL 只读判定加固（#12）
-- 规范化 SQL 文本（去前导注释、空白、大小写统一）后再判定。
-- 对多语句与危险关键字场景默认拒绝。
+- 规范化 SQL 文本（去块注释/行注释、空白折叠）后再判定。
+- 对多语句场景（`;`）默认拒绝（fail-close）。
+- 仅允许 `SELECT/WITH` 起始，命中写操作关键字时默认拒绝。
 
 #### D-L3：shadow mode 可见性收敛（#13）
 - shadow 结果仅保留摘要字段（执行状态、耗时、结构信息）。
@@ -116,8 +118,8 @@ tick -> check interval -> (skip or query db) -> update cache/state
 ## 6. 测试策略
 
 ### 6.1 单元测试
-- #11: secret 掩码断言（配置/日志路径）。
-- #12: SQL 判定样例集（合法只读、绕过样例、混淆大小写）。
+- #11: secret 掩码断言（配置/日志路径）`tests/unit/integrations/test_langfuse.py`。
+- #12: SQL 判定样例集（合法只读、绕过样例、混淆大小写）`tests/unit/capabilities/test_bindings_sql_executor.py`。
 - #14: Heartbeat 节流行为测试（连续 tick 不重复查 DB）。
 
 ### 6.2 集成测试

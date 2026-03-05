@@ -256,6 +256,24 @@ async def test_database_source_latency_under_500ms() -> None:
     assert elapsed_ms < 500
 
 
+@pytest.mark.asyncio
+async def test_database_source_throttles_queries_with_min_interval() -> None:
+    session = _Session(value="row")
+    checker = HeartbeatChecker(
+        agent_id="bot",
+        config={
+            "event_sources": ["database"],
+            "database_session_factory": _SessionFactory(session),
+            "database_min_interval_ms": 1000,
+        },
+    )
+    first = await checker.check_events("tenant-a")
+    second = await checker.check_events("tenant-a")
+    assert first is True
+    assert second is True
+    assert len(session.statements) == 1
+
+
 class _ScheduleClient:
     def __init__(self, tasks: list[dict[str, Any]]) -> None:
         self._tasks = tasks

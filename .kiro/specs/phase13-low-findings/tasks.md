@@ -1,6 +1,6 @@
 # phase13-low-findings — 任务清单
 
-> **状态**: 进行中（文档已完成，代码未开始）  
+> **状态**: 已完成（L1-L4 全部收口）  
 > **预估工作量**: 2-3 天  
 > **最后更新**: 2026-03-05  
 > **执行原则**: 本清单任务均为承诺交付项，不区分可选与必选。
@@ -9,10 +9,10 @@
 
 ## 进度概览
 
-- **总任务数**: 12
-- **已完成**: 3
+- **总任务数**: 14
+- **已完成**: 14
 - **进行中**: 0
-- **未开始**: 9
+- **未开始**: 0
 
 ---
 
@@ -28,33 +28,43 @@
 ## 1. Phase 13 修复任务（1.5-2 天）
 
 ### 1.1 Finding #11：Langfuse secret 配置暴露治理
-- [ ] 1.1.1 配置输出链路新增敏感字段掩码
-- [ ] 1.1.2 单元测试覆盖 secret 脱敏
+- [x] 1.1.1 配置输出链路新增敏感字段掩码
+- [x] 1.1.2 单元测试覆盖 secret 脱敏
+  - 实现文件：`owlclaw/integrations/langfuse.py`
+  - 验证文件：`tests/unit/integrations/test_langfuse.py`
+  - 验证命令：`poetry run pytest tests/unit/integrations/test_langfuse.py`
 
 ### 1.2 Finding #12：`_is_select_query` 启发式误判治理
-- [ ] 1.2.1 强化 SQL 只读判定逻辑（包含注释/多语句/大小写混淆）
-- [ ] 1.2.2 单元测试覆盖绕过与合法样例
+- [x] 1.2.1 强化 SQL 只读判定逻辑（包含注释/多语句/大小写混淆）
+- [x] 1.2.2 单元测试覆盖绕过与合法样例
+  - 实现文件：`owlclaw/capabilities/bindings/sql_executor.py`
+  - 验证文件：`tests/unit/capabilities/test_bindings_sql_executor.py`
+  - 验证命令：`poetry run pytest tests/unit/capabilities/test_bindings_sql_executor.py`
 
 ### 1.3 Finding #13：Shadow mode 查询泄露防护
-- [ ] 1.3.1 shadow 输出字段收敛（最小必要信息）
-- [ ] 1.3.2 集成测试验证不泄露敏感查询结果
+- [x] 1.3.1 shadow 输出字段收敛（最小必要信息）
+- [x] 1.3.2 集成测试验证不泄露敏感查询结果
 
 ### 1.4 Finding #14：Heartbeat DB I/O 优化
-- [ ] 1.4.1 引入最小查询间隔/轻量缓存机制
-- [ ] 1.4.2 单元或集成测试覆盖节流行为
+- [x] 1.4.1 引入最小查询间隔/轻量缓存机制
+- [x] 1.4.2 单元或集成测试覆盖节流行为
 
 ---
 
 ## 2. 验收清单（0.5 天）
 
 ### 2.1 功能验收
-- [ ] 2.1.1 #11~#14 四项行为均可复现与验证
+- [x] 2.1.1 #11~#14 四项行为均可复现与验证
+  - 验证记录：所有定向测试通过（见 SPEC_TASKS_SCAN Checkpoint）
 
 ### 2.2 测试验收
-- [ ] 2.2.1 定向测试全部通过
+- [x] 2.2.1 定向测试全部通过
+  - #11/#12 已通过：`poetry run pytest tests/unit/integrations/test_langfuse.py tests/unit/capabilities/test_bindings_sql_executor.py`
+  - #13 已通过：`poetry run pytest tests/unit/capabilities/test_bindings_shadow_query.py`
+  - #14 已通过：`poetry run pytest tests/unit/agent/test_heartbeat.py::test_database_source_throttles_queries_with_min_interval`
 
 ### 2.3 文档验收
-- [ ] 2.3.1 SPEC_TASKS_SCAN 与本 spec 进度一致
+- [x] 2.3.1 SPEC_TASKS_SCAN 与本 spec 进度一致
 
 ---
 

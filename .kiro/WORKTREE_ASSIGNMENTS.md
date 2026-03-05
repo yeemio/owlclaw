@@ -149,7 +149,7 @@ Spec 一致性：
 
 **权限**：全仓库读 + 轻量修正（文档、注释、类型注解、测试补全）。不做功能实现。可以在 review-work 分支上直接修复审校发现的轻量问题。
 
-**审校状态（2026-03-04 统筹）**：review-work 已合并入 main（90+ commits）。codex-work、codex-gpt-work 已同步 main。config-propagation-fix + security-hardening 已收口。
+**审校状态（2026-03-05 Review Loop）**：Phase 13 L1/L2 审校中。codex-work（#11/#12）APPROVE；codex-gpt-work（#13/#14）FIX_NEEDED（mypy 类型注解，轻量修复）。
 
 **审校输出格式**（每次 Review 后 commit message 中记录）：
 

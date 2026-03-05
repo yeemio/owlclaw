@@ -14,6 +14,12 @@ from owlclaw.capabilities.bindings.executor import BindingExecutor
 from owlclaw.capabilities.bindings.schema import BindingConfig, SQLBindingConfig
 
 PARAM_PATTERN = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)")
+LINE_COMMENT_PATTERN = re.compile(r"(--[^\n]*|#[^\n]*)")
+BLOCK_COMMENT_PATTERN = re.compile(r"/\*.*?\*/", re.DOTALL)
+DANGEROUS_SQL_KEYWORDS = re.compile(
+    r"\b(insert|update|delete|alter|drop|create|truncate|grant|revoke|merge|replace|call|do)\b",
+    re.IGNORECASE,
+)
 
 
 class SessionFactoryProtocol(Protocol):
@@ -49,8 +55,6 @@ class SQLBindingExecutor(BindingExecutor):
             return {
                 "status": "shadow",
                 "mode": "shadow",
-                "query": query,
-                "parameters": bound_parameters,
                 "executed": False,
             }
 
@@ -64,6 +68,15 @@ class SQLBindingExecutor(BindingExecutor):
                 truncated = len(rows) > int(config.max_rows)
                 rows = rows[: int(config.max_rows)]
                 data = [dict(zip(columns, row, strict=False)) for row in rows]
+                if config.mode == "shadow":
+                    return {
+                        "status": "shadow",
+                        "mode": "shadow",
+                        "executed": True,
+                        "row_count": len(data),
+                        "truncated": truncated,
+                        "column_count": len(columns),
+                    }
                 return {
                     "status": "ok",
                     "mode": config.mode,
@@ -110,7 +123,27 @@ class SQLBindingExecutor(BindingExecutor):
 
     @staticmethod
     def _is_select_query(query: str) -> bool:
-        return query.lstrip().lower().startswith("select")
+        normalized = SQLBindingExecutor._normalize_query_for_readonly_check(query)
+        if not normalized:
+            return False
+
+        # Fail-close for multi-statement SQL to avoid comment/semicolon bypass.
+        stripped = normalized.rstrip(";").strip()
+        if ";" in stripped:
+            return False
+
+        lowered = stripped.lower()
+        if not (lowered.startswith("select") or lowered.startswith("with")):
+            return False
+        if DANGEROUS_SQL_KEYWORDS.search(lowered):
+            return False
+        return True
+
+    @staticmethod
+    def _normalize_query_for_readonly_check(query: str) -> str:
+        without_block_comments = BLOCK_COMMENT_PATTERN.sub(" ", query)
+        without_line_comments = LINE_COMMENT_PATTERN.sub(" ", without_block_comments)
+        return re.sub(r"\s+", " ", without_line_comments).strip()
 
     @staticmethod
     def _build_bound_parameters(
