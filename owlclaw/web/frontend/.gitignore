@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Playwright artifacts (generated at runtime; never commit)
+playwright-report/
+test-results/
+
+# TypeScript build info (generated)
+*.tsbuildinfo
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
