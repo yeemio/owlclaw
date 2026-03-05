@@ -149,7 +149,7 @@ Spec 一致性：
 
 **权限**：全仓库读 + 轻量修正（文档、注释、类型注解、测试补全）。不做功能实现。可以在 review-work 分支上直接修复审校发现的轻量问题。
 
-**审校状态（2026-03-03 统筹）**：review-work 较 main 领先 4 commits，含增量审校结论：codex-work **FIX_NEEDED**（S12 plaintext token persistence）；codex-gpt-work **FIX_NEEDED**（ssl_mode whitespace regression）。待编码方修复并推送后，由 review-work 再审；APPROVE 后再合并 review-work → main。
+**审校状态（2026-03-04 统筹）**：review-work 已合并入 main（90+ commits）。codex-work、codex-gpt-work 已同步 main。config-propagation-fix + security-hardening 已收口。
 
 **审校输出格式**（每次 Review 后 commit message 中记录）：
 
