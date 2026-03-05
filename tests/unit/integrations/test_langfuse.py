@@ -364,6 +364,18 @@ class TestLangfuseClient:
 
 
 class TestConfigAndHelpers:
+    def test_langfuse_config_repr_does_not_expose_credentials(self) -> None:
+        cfg = LangfuseConfig(enabled=True, public_key="pk-raw-secret", secret_key="sk-raw-secret")
+        rendered = repr(cfg)
+        assert "pk-raw-secret" not in rendered
+        assert "sk-raw-secret" not in rendered
+
+    def test_langfuse_config_safe_dict_masks_credentials(self) -> None:
+        cfg = LangfuseConfig(enabled=True, public_key="pk-raw-secret", secret_key="sk-raw-secret")
+        safe = cfg.to_safe_dict()
+        assert safe["public_key"] == "***"
+        assert safe["secret_key"] == "***"
+
     @settings(max_examples=10, deadline=None)
     @given(
         sampling=st.floats(min_value=-2, max_value=2, allow_nan=False, allow_infinity=False),

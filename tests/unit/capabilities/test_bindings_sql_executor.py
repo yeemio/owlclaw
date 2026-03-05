@@ -119,3 +119,47 @@ async def test_sql_executor_rejects_string_interpolation_patterns() -> None:
     )
     with pytest.raises(ValueError, match="parameterized placeholders"):
         await executor.execute(config, {"id": 1})
+
+
+@pytest.mark.asyncio
+async def test_sql_executor_read_only_allows_select_with_leading_comments() -> None:
+    result = MagicMock()
+    result.keys.return_value = ["id"]
+    result.fetchall.return_value = [(1,)]
+    session_factory, _session = _session_factory_with_result(result)
+    executor = SQLBindingExecutor(session_factory_builder=lambda _: session_factory)
+    config = SQLBindingConfig(
+        connection="sqlite+aiosqlite:///:memory:",
+        query="/* hint */ -- comment\n SeLeCt id FROM users WHERE id = :id",
+        read_only=True,
+    )
+
+    payload = await executor.execute(config, {"id": 1})
+    assert payload["status"] == "ok"
+    assert payload["row_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_sql_executor_read_only_blocks_multi_statement_bypass() -> None:
+    executor = SQLBindingExecutor()
+    config = SQLBindingConfig(
+        connection="sqlite+aiosqlite:///:memory:",
+        query="SELECT id FROM users WHERE id = :id; UPDATE users SET active = 0 WHERE id = :id",
+        read_only=True,
+    )
+
+    with pytest.raises(PermissionError, match="read-only"):
+        await executor.execute(config, {"id": 1})
+
+
+@pytest.mark.asyncio
+async def test_sql_executor_read_only_blocks_with_cte_side_effects() -> None:
+    executor = SQLBindingExecutor()
+    config = SQLBindingConfig(
+        connection="sqlite+aiosqlite:///:memory:",
+        query="WITH changed AS (DELETE FROM users WHERE id = :id RETURNING id) SELECT id FROM changed",
+        read_only=True,
+    )
+
+    with pytest.raises(PermissionError, match="read-only"):
+        await executor.execute(config, {"id": 1})

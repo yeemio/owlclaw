@@ -49,8 +49,8 @@ class LangfuseConfig:
     """Langfuse connection and behavior configuration."""
 
     enabled: bool = False
-    public_key: str = ""
-    secret_key: str = ""
+    public_key: str = field(default="", repr=False)
+    secret_key: str = field(default="", repr=False)
     host: str = "https://cloud.langfuse.com"
     sampling_rate: float = 1.0
     async_upload: bool = True
@@ -60,6 +60,23 @@ class LangfuseConfig:
     mask_outputs: bool = False
     custom_mask_patterns: list[str] = field(default_factory=list)
     client: Any | None = None
+
+    def to_safe_dict(self) -> dict[str, Any]:
+        """Serialize config with sensitive credentials redacted."""
+        return {
+            "enabled": self.enabled,
+            "public_key": "***" if self.public_key else "",
+            "secret_key": "***" if self.secret_key else "",
+            "host": self.host,
+            "sampling_rate": self.sampling_rate,
+            "async_upload": self.async_upload,
+            "batch_size": self.batch_size,
+            "flush_interval_seconds": self.flush_interval_seconds,
+            "mask_inputs": self.mask_inputs,
+            "mask_outputs": self.mask_outputs,
+            "custom_mask_patterns": list(self.custom_mask_patterns),
+            "client": self.client,
+        }
 
 
 @dataclass
