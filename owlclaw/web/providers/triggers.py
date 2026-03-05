@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy import select
 
 from owlclaw.db import get_engine
+from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.db.session import create_session_factory
 from owlclaw.governance.ledger import LedgerRecord
 
@@ -18,7 +19,10 @@ class DefaultTriggersProvider:
     """Aggregate trigger states and execution history from ledger data."""
 
     async def list_triggers(self, tenant_id: str) -> list[dict[str, Any]]:
-        records = await self._load_trigger_records(tenant_id=tenant_id, lookback_hours=24, limit=1000)
+        try:
+            records = await self._load_trigger_records(tenant_id=tenant_id, lookback_hours=24, limit=1000)
+        except ConfigurationError:
+            return []
         grouped: dict[tuple[str, str], list[LedgerRecord]] = {}
         for record in records:
             trigger_type = self._infer_trigger_type(record)
@@ -77,7 +81,10 @@ class DefaultTriggersProvider:
         limit: int,
         offset: int,
     ) -> tuple[list[dict[str, Any]], int]:
-        records = await self._load_trigger_records(tenant_id=tenant_id, lookback_hours=24 * 30, limit=5000)
+        try:
+            records = await self._load_trigger_records(tenant_id=tenant_id, lookback_hours=24 * 30, limit=5000)
+        except ConfigurationError:
+            return [], 0
         matched: list[LedgerRecord] = []
         for record in records:
             trigger_type = self._infer_trigger_type(record)
