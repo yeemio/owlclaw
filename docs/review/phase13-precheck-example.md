@@ -16,6 +16,26 @@
 
 ---
 
+## 0.5 一键执行记录
+
+执行命令：
+
+```powershell
+git merge main
+git log --oneline main..codex-work
+git diff --stat main..codex-work
+poetry run pytest tests/unit/integrations/test_langfuse.py tests/unit/capabilities/test_bindings_sql_executor.py
+rg -n "to_safe_dict|_safe_error_message|_is_select_query|read_only|multi" owlclaw/integrations/langfuse.py owlclaw/capabilities/bindings/sql_executor.py
+```
+
+执行结果：
+- merge：无冲突
+- diff：仅 #11/#12 相关代码与文档变更
+- pytest：`36 passed in 4.13s`
+- rg：命中安全导出与只读判定实现
+
+---
+
 ## 1. Spec 对齐检查
 
 - [x] `tasks.md` 勾选状态与 `SPEC_TASKS_SCAN.md` 的 L1/L2 一致
@@ -64,6 +84,19 @@
 - 结论：通过
 - 风险点：未发现阻断项
 - 建议：继续推进 L3/L4 并补同级证据链
+
+---
+
+## 2.3 阻断判定矩阵结论
+
+| 检查项 | 结果 |
+|---|---|
+| 密钥明文泄露 | 未发现 |
+| SQL 只读绕过 | 未发现 |
+| 定向测试回归 | 未发现 |
+| spec/checkpoint 漂移 | 未发现 |
+
+矩阵输出：`APPROVE`
 
 ---
 
