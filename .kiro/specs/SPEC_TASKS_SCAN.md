@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-05（Phase 13：完成 L1/L2，更新 low-findings 进度）
+> **最后更新**: 2026-03-05（Phase 13：完成 L1/L2，并固化实现证据与测试入口）
 
 ---
 
@@ -411,7 +411,7 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-05（Phase 13 完成 L1/L2 代码与定向测试） |
+| 最后更新 | 2026-03-05（Phase 13 完成 L1/L2 代码与定向测试，并固化任务证据） |
 | 当前批次 | **Phase 13 / low findings**：`phase13-low-findings`（8/14，#11/#12 已收口，#13/#14 待实现）。 |
 | 批次状态 | `phase13-low-findings`：Task 0 ✅；Task 1.1 ✅；Task 1.2 ✅；Task 1.3~1.4 ⏳。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）；15) **Phase 10 全部完成**：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)，经 Round 13 APPROVE；16) **Phase 12 增量修复**：根据 review Round 16 的 FIX_NEEDED，完成 S12 回补（bearer token 仅 hash 持久化 + hash-only 验证 + create/update 回归测试）；17) **Phase 12 安全加固收口**：`security-hardening` v4 Task1~Task15 全部完成，含 S13（Console API 鉴权 + auth_token 哈希存储 + 全量回归通过）；18) **Console 无 DB 降级回归修复**：`/agents/{id}`、`/triggers`、`/triggers/{id}/history` 不再因 DB 缺失抛 500，新增单测 `test_agents_detail_route_returns_404_when_database_not_configured`、`test_triggers_list_route_returns_empty_when_database_not_configured`、`test_triggers_history_route_returns_empty_when_database_not_configured`；19) **Console 验证文档归一化**：`BROWSER_VERIFICATION_CHECKLIST.md` 与 `2026-03-04-console-browser-verification.md` 已按最新回归结果更新（API-4/10/12/13/14/16/17、N-9 与放行结论一致）；20) **Ledger 排序参数接线**：前端新增 `order_by` 过滤控件与查询参数透传，并补 `F-14` Playwright 自动化用例（待集成环境执行）。 |
