@@ -479,8 +479,8 @@
 | 当前批次 | **Phase 16 follow-up**：codex-gpt-work 本批已收口；codex-work 待实施 #47/#48/#49/#52/#55。 |
 | 批次状态 | codex-gpt-work 已提交 2 commits（#45/#46 + #50/#51/#53/#54）；待 review-work 审校。 |
 | 已完成项 | 28) #45 get_state timeout；29) #46 SkillDocExtractor base_dir；30) #50 file_fallback_path 校验；31) #51 compact cap；32) #53 memory_file 校验；33) #54 _index_entry 日志脱敏。 |
-| 下一待执行 | 1) `codex-work` 实施 #47/#48/#49/#52/#55；2) review-work 审校 codex-gpt-work 两提交。 |
-| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 已分配，待实现/验证。 |
+| 下一待执行 | 1) `codex-work` 实施 #47/#48/#49/#52/#55；2) review-work 审校 codex-gpt-work 提交；3) codex-gpt-work 本 worktree Phase 16 已全部收口，等待统筹分配下一 spec。 |
+| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：codex-gpt-work #45/#46/#50/#51/#53/#54 ✅；codex-work #47/#48/#49/#52/#55 待实施。 |
 | 阻塞项 | 无内部阻塞；仅剩外部依赖阻塞项（若有）。 |
 | 健康状态 | ✅ 分支已全部与 `main` 对齐；内部协作阻塞为 0；当前仅剩新一批 backlog 待执行。 |
 | 连续无进展轮数 | 0 |
