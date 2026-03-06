@@ -32,6 +32,7 @@
 | D8 | Low-8 | `owlclaw/app.py` | `health_status()` 不读 `_states` / `_configs` | 无私有属性访问或有公开只读属性 |
 | D9 | Low-9 | `owlclaw/governance/ledger.py` | `_background_writer` 异常时写 fallback | batch 不丢；有异常路径验证 |
 | D10 | Low-10 | `owlclaw/governance/ledger.py` | `_write_queue` 有界或背压 | 队列上限明确；行为可验证 |
+| D12 | Low-12 | `owlclaw/web/api/middleware.py` | token 校验改为常量时间比较 | 使用 `hmac.compare_digest`；有测试或手验 |
 
 **codex-gpt-work**
 
@@ -57,11 +58,12 @@
 ### 给 codex-work
 
 - 批次：`audit-deep-remediation / Batch A`
-- 任务：`D1 D3 D5 D4a D8 D9 D10`
+- 任务：`D1 D3 D5 D4a D8 D9 D10 D12`
 - 文件边界：
   - 可改：`owlclaw/agent/runtime/runtime.py`
   - 可改：`owlclaw/governance/ledger.py`
   - 可改：`owlclaw/app.py`（仅 `health_status()`）
+  - 可改：`owlclaw/web/api/middleware.py`
   - 禁止改：`heartbeat.py` `engine.py` `capabilities.py` `webhook http/app.py` `docs/`
 - 审校移交条件：
   - 至少包含对应测试

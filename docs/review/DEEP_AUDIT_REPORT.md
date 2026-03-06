@@ -10,10 +10,10 @@
 
 ## Executive Summary
 
-**Total Findings**: 11 (Phase 1: 6; Phase 2: +2 Low; Phase 3: +3 Low)
+**Total Findings**: 14 (Phase 1: 6; Phase 2: +2 Low; Phase 3: +3 Low; Phase 4: +1 Low; Phase 5: +2 Low)
 - P0/High: 0
 - P1/Medium: 2
-- Low: 9
+- Low: 12
 
 **Overall Assessment**: **SHIP WITH CONDITIONS**
 
@@ -65,6 +65,7 @@
 | 9 | C.Robustness | Ledger._background_writer on generic Exception does not flush current batch to DB or fallback; records can be lost. | `owlclaw/governance/ledger.py:329-332` | On Exception, flush current batch to fallback before continuing. |
 | 10 | C.Robustness | Ledger._write_queue unbounded; sustained load can grow memory. | `owlclaw/governance/ledger.py:135` | Bounded queue and/or backpressure; document limit. |
 | 11 | C.Robustness | Webhook raw_body_bytes.decode("utf-8") can raise; non-UTF-8 body returns 500. | `owlclaw/triggers/webhook/http/app.py:167` | Catch UnicodeDecodeError; return 400 with clear message. |
+| 12 | B.Security | Console API token comparison uses direct string equality (api_token_header == expected_token, provided_token != expected_token); vulnerable to timing side-channel. | `owlclaw/web/api/middleware.py:79, 95` | Use hmac.compare_digest(provided, expected) for constant-time comparison. |
 
 ---
 
@@ -153,6 +154,7 @@
 | 9 | Ledger _background_writer flush batch to fallback on Exception | Low | Avoid losing in-memory batch on unexpected error. |
 | 10 | Ledger _write_queue bounded or backpressure | Low | Cap memory under sustained load. |
 | 11 | Webhook decode UTF-8 with 400 on invalid encoding | Low | Predictable 400 instead of 500. |
+| 12 | Console API token constant-time comparison (hmac.compare_digest) | Low | Mitigate timing side-channel on auth. |
 
 ---
 
@@ -214,3 +216,24 @@
 - Ledger record_execution validates tenant_id, agent_id, run_id, capability_name, task_type and normalizes strings; input_params/output_result type-checked. _flush_batch retries with backoff and falls back to file on final failure.
 - Hatchet connect() uses timeout and cancels future on timeout; run_task_now/schedule_task log and re-raise.
 - Webhook enforces max_content_length_bytes (header and after body read); rate limiter and validator in place.
+
+---
+
+## Phase 4 Extension (2026-03-05 — Continue 深度审计)
+
+**Scope**: Config loading (env overlay, merge, hot-reload), Console API auth middleware (token check, CORS, exception handlers).
+
+**Files additionally audited**: `config/manager.py` (_collect_env_overrides, _coerce_env_value, load, reload), `web/api/middleware.py` (TokenAuthMiddleware, _read_expected_token, exception handlers).
+
+**Result**: No new P0/P1. One additional Low finding (#12).
+
+### Additional Low — Phase 4
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 12 | B.Security | Console API token comparison uses direct string equality; an attacker could measure response time to infer token characters (timing side-channel). | `owlclaw/web/api/middleware.py:79, 95` | Use `hmac.compare_digest(provided_token, expected_token)` for constant-time comparison. |
+
+### Phase 4 Positive Notes
+
+- ConfigManager: env overrides use OWLCLAW_ prefix and nested keys via __; _coerce_env_value handles bool/int/float/json; hot-reload applies only allowed prefixes. No path traversal.
+- Middleware: require_auth + empty token returns 500 with AUTH_NOT_CONFIGURED; OPTIONS and exempt_paths bypass; validation and unexpected exceptions return unified error shape without leaking stack.
