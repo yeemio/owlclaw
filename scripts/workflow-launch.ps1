@@ -4,6 +4,9 @@ param(
     [int]$ControllerDelaySeconds = 6,
     [int]$ControlInterval = 20,
     [int]$LayoutDelaySeconds = 8,
+    [int]$StartupGraceSeconds = 8,
+    [int]$StartupTimeoutSeconds = 30,
+    [switch]$ContinueOnLaunchFailure,
     [switch]$SkipController,
     [switch]$DryRun,
     [switch]$SkipLayout
@@ -118,6 +121,69 @@ $CommandText
     return Start-Process -PassThru -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-EncodedCommand", $encoded)
 }
 
+function Get-LaunchStatePath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$Agent
+    )
+
+    return (Join-Path $RepoRoot ".kiro\runtime\launch-state\$Agent.json")
+}
+
+function Wait-WorkflowLaunchHealthy {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$Agent,
+        [Parameter(Mandatory = $true)]
+        [int]$Pid,
+        [int]$TimeoutSeconds = 30
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $statePath = Get-LaunchStatePath -RepoRoot $RepoRoot -Agent $Agent
+
+    while ((Get-Date) -lt $deadline) {
+        if (Test-Path $statePath) {
+            $state = Get-Content $statePath -Raw | ConvertFrom-Json
+            if ($state.status -eq "running") {
+                return @{
+                    ok = $true
+                    reason = "running"
+                    state = $state
+                }
+            }
+            if ($state.status -eq "exited") {
+                return @{
+                    ok = $false
+                    reason = "exited"
+                    state = $state
+                }
+            }
+        }
+
+        $process = Get-Process -Id $Pid -ErrorAction SilentlyContinue
+        if ($null -eq $process) {
+            return @{
+                ok = $false
+                reason = "window_process_missing"
+                state = $null
+            }
+        }
+
+        Start-Sleep -Milliseconds 500
+    }
+
+    return @{
+        ok = $false
+        reason = "startup_timeout"
+        state = $null
+    }
+}
+
 function Get-WorkflowWindowHandle {
     param(
         [Parameter(Mandatory = $true)]
@@ -172,12 +238,50 @@ $targets = @()
 foreach ($role in $config.roles) {
     $startupType = [string]$role.startup.type
     $startupCommand = [string]$role.startup.command
-    $command = $startupCommand
+    $command = @"
+poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --json | Out-Null
+`$workflowLaunchMarker = Start-Job -ScriptBlock {
+    param(`$repoRoot, `$agent, `$delaySeconds, `$pidValue)
+    Start-Sleep -Seconds `$delaySeconds
+    Set-Location `$repoRoot
+    poetry run python scripts/workflow_launch_state.py --repo-root `$repoRoot update --agent `$agent --status running --pid `$pidValue --note `"startup grace passed`" --json | Out-Null
+} -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID
+try {
+    $startupCommand
+}
+finally {
+    if (`$workflowLaunchMarker) {
+        Stop-Job -Job `$workflowLaunchMarker -ErrorAction SilentlyContinue | Out-Null
+        Remove-Job -Job `$workflowLaunchMarker -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+    poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$LASTEXITCODE --note `"cli returned to powershell`" --json | Out-Null
+}
+"@
 
     if ($startupType -eq "audit_agent") {
         $summary = [string]$role.startup.audit_summary
         $interval = [int]$role.startup.heartbeat_interval_seconds
-        $command = "`$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent $($role.agent) --status idle --summary `"$summary`" --interval $interval } -ArgumentList '$($role.repo_path)'; poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) --status idle --summary `"$summary`"; $startupCommand"
+        $command = @"
+poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --json | Out-Null
+`$workflowLaunchMarker = Start-Job -ScriptBlock {
+    param(`$repoRoot, `$agent, `$delaySeconds, `$pidValue)
+    Start-Sleep -Seconds `$delaySeconds
+    Set-Location `$repoRoot
+    poetry run python scripts/workflow_launch_state.py --repo-root `$repoRoot update --agent `$agent --status running --pid `$pidValue --note `"startup grace passed`" --json | Out-Null
+} -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID
+try {
+    `$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent $($role.agent) --status idle --summary `"$summary`" --interval $interval } -ArgumentList '$($role.repo_path)'
+    poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) --status idle --summary `"$summary`" | Out-Null
+    $startupCommand
+}
+finally {
+    if (`$workflowLaunchMarker) {
+        Stop-Job -Job `$workflowLaunchMarker -ErrorAction SilentlyContinue | Out-Null
+        Remove-Job -Job `$workflowLaunchMarker -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+    poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$LASTEXITCODE --note `"cli returned to powershell`" --json | Out-Null
+}
+"@
     }
 
     $targets += @{
@@ -199,14 +303,18 @@ foreach ($target in $targets) {
             title = $target.Title
             workdir = $target.Workdir
         }
+        Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
+        $health = Wait-WorkflowLaunchHealthy -RepoRoot $mainRepo -Agent $target.Agent -Pid $process.Id -TimeoutSeconds $StartupTimeoutSeconds
+        if (-not $health.ok) {
+            Write-Error ("Launch failed for {0}: {1}" -f $target.Agent, $health.reason)
+            if (-not $ContinueOnLaunchFailure) {
+                exit 1
+            }
+        }
     }
     if (-not $DryRun) {
         Start-Sleep -Milliseconds $LaunchSpacingMilliseconds
     }
-}
-
-if (-not $DryRun) {
-    Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
 }
 
 if (-not $SkipLayout -and -not $DryRun) {

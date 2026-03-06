@@ -71,6 +71,25 @@ pwsh ./scripts/workflow-launch.ps1 -SkipLayout
 pwsh ./scripts/workflow-launch.ps1 -SkipLayout -LaunchSpacingMilliseconds 2000
 ```
 
+新版启动器是串行启动，不是一次性全开：
+
+- 先启动一个角色窗口
+- 写入 `.kiro/runtime/launch-state/<agent>.json`
+- 只有当该角色进入 `running`，才继续启动下一个
+- 如果某个角色很快退回 PowerShell，启动器会判定为失败并默认中止后续启动
+
+如果你想在某个角色失败后继续把剩余窗口也拉起来，再额外加：
+
+```powershell
+pwsh ./scripts/workflow-launch.ps1 -SkipLayout -ContinueOnLaunchFailure
+```
+
+查看某个角色的启动状态：
+
+```powershell
+poetry run python scripts/workflow_launch_state.py --repo-root D:\AI\owlclaw show --agent codex --json
+```
+
 如果你确认布局稳定，再去尝试默认平铺；如果当前目标是“先用起来”，建议保持 `-SkipLayout`。
 
 ---
