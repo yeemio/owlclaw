@@ -307,7 +307,8 @@ class HeartbeatChecker:
             return configured
         if self._ledger is None:
             return None
-        candidate = getattr(self._ledger, "_session_factory", None)  # noqa: SLF001
+        # Use public API for read-only session factory access
+        candidate = getattr(self._ledger, "get_readonly_session_factory", None)
         return candidate if callable(candidate) else None
 
     async def _check_database_events(self, *, tenant_id: str) -> bool:

@@ -164,7 +164,18 @@ def create_webhook_app(
                 ),
                 request_id=request_id,
             )
-        raw_body = raw_body_bytes.decode("utf-8")
+        try:
+            raw_body = raw_body_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            await monitoring.record_metric(MetricRecord(name="request_status", value=1, tags={"status": "failure"}))
+            return _error_response(
+                ValidationError(
+                    code="INVALID_ENCODING",
+                    message="request body must be valid UTF-8",
+                    status_code=400,
+                ),
+                request_id=request_id,
+            )
         await monitoring.record_metric(MetricRecord(name="request_count", value=1))
         await event_logger.log_request(
             build_event(
