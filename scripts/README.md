@@ -25,6 +25,7 @@
 | `workflow_orchestrator.py` | 持续轮询并写入 `.kiro/runtime/` 的工作流执行器（供统筹/各 agent 消费） | `poetry run python scripts/workflow_orchestrator.py --once` | 本地开发使用 |
 | `workflow_mailbox.py` | 读取 agent mailbox / 写入 ack 状态的轻量 CLI（文件信箱协议） | `poetry run python scripts/workflow_mailbox.py pull --agent review --json` | 本地开发使用 |
 | `workflow_agent.py` | 半自动 agent consumer：轮询 mailbox、自动 `ack seen`、写 heartbeat 与 dispatch prompt | `poetry run python scripts/workflow_agent.py --agent review --once` | 本地开发使用 |
+| `workflow_executor.py` | 真正执行 mailbox 动作：按角色调用 `codex exec` / `agent --print` / `claude -p` 在对应 worktree 中执行任务 | `poetry run python scripts/workflow_executor.py --agent review --once` | 本地开发使用 |
 | `workflow_supervisor.py` | 从主仓统一拉起/停止/巡检 orchestrator + 各 worktree agent 进程，写 PID 与日志 | `poetry run python scripts/workflow_supervisor.py start` | 本地开发使用 |
 | `workflow-supervisor-console.ps1` | 打开一个可视监控终端，前台运行 `workflow_supervisor.py watch --ensure-running` | `pwsh ./scripts/workflow-supervisor-console.ps1` | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
@@ -39,5 +40,6 @@
 3. 脚本内禁止硬编码密钥；凭证统一走环境变量。
 4. `workflow_orchestrator.py` 负责生成 `.kiro/runtime/mailboxes/*.json`；各 agent 通过 `workflow_mailbox.py pull/ack` 与统筹交换状态。
 5. `workflow_agent.py` 用于挂在各 agent 会话里持续消费 mailbox，生成 `.kiro/runtime/dispatch/*.md` 和 `.kiro/runtime/heartbeats/*.json`。
-6. `workflow_supervisor.py` 负责跨 worktree 启停 automation 进程；日志位于 `.kiro/runtime/supervisor/logs/`，PID manifest 位于 `.kiro/runtime/supervisor/pids/`。
-7. 如需一个长期可视监控终端，直接运行 `pwsh ./scripts/workflow-supervisor-console.ps1`；它会前台 watch，并在 worker 掉线时自动拉起。
+6. `workflow_executor.py` 是执行层：它读取 mailbox 后按角色选择非交互 CLI（`main -> codex`，`coding -> agent`，`review -> claude`），结果写入 `.kiro/runtime/executions/` 并回写 ack。
+7. `workflow_supervisor.py` 负责跨 worktree 启停 automation 进程；日志位于 `.kiro/runtime/supervisor/logs/`，PID manifest 位于 `.kiro/runtime/supervisor/pids/`。
+8. 如需一个长期可视监控终端，直接运行 `pwsh ./scripts/workflow-supervisor-console.ps1`；它会前台 watch，并在 worker 掉线时自动拉起。

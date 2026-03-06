@@ -33,7 +33,7 @@ def test_default_worker_specs_cover_orchestrator_and_agents(tmp_path: Path) -> N
     ]
     assert all("poetry" == spec.command[0] for spec in specs)
     assert any("workflow_orchestrator.py" in " ".join(spec.command) for spec in specs)
-    assert any("--agent" in spec.command for spec in specs if spec.role == "agent")
+    assert any("workflow_executor.py" in " ".join(spec.command) for spec in specs if spec.role == "agent")
 
 
 def test_status_all_reads_manifest_and_marks_running(tmp_path: Path) -> None:
@@ -140,3 +140,18 @@ def test_is_pid_running_handles_windows_non_utf8_stdout(tmp_path: Path) -> None:
     finally:
         supervisor_module.os.name = original_name
         supervisor_module.subprocess.run = original_run
+
+
+def test_start_all_returns_status_entries(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    supervisor_module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
+
+    started: list[str] = []
+    supervisor_module.start_worker = lambda repo_root, spec: started.append(spec.name) or {"name": spec.name}
+    supervisor_module.status_all = lambda repo_root, interval: [
+        {"name": "orchestrator", "role": "orchestrator", "running": True, "workdir": str(tmp_path), "log_path": "x"}
+    ]
+
+    statuses = supervisor_module.start_all(tmp_path, 15)
+    assert "orchestrator" in started
+    assert statuses[0]["running"] is True

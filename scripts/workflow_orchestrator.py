@@ -119,6 +119,14 @@ def _mailbox_payload(
     snapshot: workflow_status.WorkflowSnapshot,
     action: dict[str, object],
 ) -> dict[str, object]:
+    pending_commits = state.pending_commits
+    if state.role == "review":
+        pending_commits = [
+            commit
+            for worktree in snapshot.worktrees
+            if worktree.role == "coding" and worktree.ahead_of_main > 0
+            for commit in worktree.pending_commits
+        ]
     return {
         "mailbox_version": 1,
         "generated_at": _utc_now(),
@@ -132,7 +140,7 @@ def _mailbox_payload(
         "summary": _mailbox_summary(state, snapshot),
         "blockers": _mailbox_blockers(state, snapshot),
         "dirty_files": state.dirty_files,
-        "pending_commits": state.pending_commits,
+        "pending_commits": pending_commits,
         "next_expected_transition": _next_transition_for_state(state, snapshot),
     }
 

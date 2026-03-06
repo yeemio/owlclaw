@@ -112,7 +112,7 @@ def default_worker_specs(repo_root: Path, interval: int) -> list[WorkerSpec]:
                 "poetry",
                 "run",
                 "python",
-                str(script_root / "workflow_agent.py"),
+                str(script_root / "workflow_executor.py"),
                 "--repo-root",
                 str(repo_root),
                 "--agent",
@@ -130,7 +130,7 @@ def default_worker_specs(repo_root: Path, interval: int) -> list[WorkerSpec]:
                 "poetry",
                 "run",
                 "python",
-                str(script_root / "workflow_agent.py"),
+                str(script_root / "workflow_executor.py"),
                 "--repo-root",
                 str(repo_root),
                 "--agent",
@@ -148,7 +148,7 @@ def default_worker_specs(repo_root: Path, interval: int) -> list[WorkerSpec]:
                 "poetry",
                 "run",
                 "python",
-                str(script_root / "workflow_agent.py"),
+                str(script_root / "workflow_executor.py"),
                 "--repo-root",
                 str(repo_root),
                 "--agent",
@@ -166,7 +166,7 @@ def default_worker_specs(repo_root: Path, interval: int) -> list[WorkerSpec]:
                 "poetry",
                 "run",
                 "python",
-                str(script_root / "workflow_agent.py"),
+                str(script_root / "workflow_executor.py"),
                 "--repo-root",
                 str(repo_root),
                 "--agent",
@@ -281,15 +281,16 @@ def stop_worker(repo_root: Path, name: str) -> dict[str, object]:
 
 def start_all(repo_root: Path, interval: int) -> list[dict[str, object]]:
     ensure_supervisor_dirs(repo_root)
-    return [start_worker(repo_root, spec) for spec in default_worker_specs(repo_root, interval)]
+    for spec in default_worker_specs(repo_root, interval):
+        start_worker(repo_root, spec)
+    return status_all(repo_root, interval)
 
 
 def stop_all(repo_root: Path) -> list[dict[str, object]]:
     ensure_supervisor_dirs(repo_root)
-    results: list[dict[str, object]] = []
     for spec in default_worker_specs(repo_root, 15):
-        results.append(stop_worker(repo_root, spec.name))
-    return results
+        stop_worker(repo_root, spec.name)
+    return status_all(repo_root, 15)
 
 
 def status_all(repo_root: Path, interval: int) -> list[dict[str, object]]:
