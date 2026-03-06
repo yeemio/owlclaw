@@ -50,25 +50,27 @@
 
 ---
 
-## Backlog（D15-D29，待统筹分配）
+## Backlog 审校结果（D15-D29，2026-03-06 审校完成）
 
-> 来源：`docs/review/DEEP_AUDIT_REPORT.md` 第 4-6 轮扩展项。已从本轮 15/15 收口中拆出，作为下一批 backlog。
+> 来源：`docs/review/DEEP_AUDIT_REPORT.md` 第 4-6 轮扩展项。审校确认所有发现均为有效代码问题。
 
-| 报告# | 简述 | 位置 | 验收要点 |
+| 报告# | 简述 | 位置 | 审校状态 |
 |-------|------|------|----------|
-| #15 | Console API token 常量时间比较 | `web/api/middleware.py` | `hmac.compare_digest` |
-| #18 | HTTP binding 空 `allowed_hosts` 安全边界 | `capabilities/bindings/http_executor.py` | SSRF 边界明确且可审计 |
-| #19 | BindingTool ledger 错误脱敏 | `capabilities/bindings/tool.py` | 不持久化原始 `str(exc)` |
-| #20 | API trigger body 读取上限按实际字节强制 | `triggers/api/server.py` | 绕过 `Content-Length` 也会拒绝 |
-| #21 | API trigger ledger 错误脱敏 | `triggers/api/server.py` | 不写原始异常 |
-| #22 | API trigger 认证常量时间比较 | `triggers/api/auth.py` | `hmac.compare_digest` |
-| #23 | Cron/API/MCP/OwlHub/Signal/Governance 对外错误脱敏 | `triggers/cron.py` 等 | 客户端不见原始异常 |
-| #24 | grpc binding schema fail-fast | `capabilities/bindings/schema.py` | 配置不再“合法但不可运行” |
-| #25 | API trigger `_runs` 与 Kafka connect timeout | `triggers/api/server.py` / `integrations/queue_adapters/kafka.py` | 有界缓存 / 连接不会无限阻塞 |
-| #26 | API rate limiter `_states` 有界化 | `triggers/api/server.py` | TTL/maxsize/LRU |
-| #27 | API key identity 脱敏 | `triggers/api/auth.py` | 不暴露 key 前缀 |
-| #28 | CronMetrics samples 有界化 | `triggers/cron.py` | 样本容器有界 |
-| #29 | Cron 历史 tenant 绑定认证上下文 | `triggers/cron.py` | 不再信任客户端 tenant_id |
+| #15 | HTTP binding 空 `allowed_hosts` SSRF 边界 | `capabilities/bindings/http_executor.py:193-199` | ✅ 有效 - 允许任意公网 URL |
+| #16 | BindingTool ledger 错误脱敏 | `capabilities/bindings/tool.py:113` | ✅ 有效 - `error_message=str(exc)` 未脱敏 |
+| #17 | API trigger body 读取上限按实际字节强制 | `triggers/api/server.py:186-189` | ✅ 有效 - 只检查 Content-Length header |
+| #18 | API trigger ledger 错误脱敏 | `triggers/api/server.py:364` | ✅ 有效 - `str(exc)` 未脱敏 |
+| #19 | API trigger 认证常量时间比较 | `triggers/api/auth.py:37,53` | ✅ 有效 - 使用 `in` 非常量时间 |
+| #20 | Cron get_execution_history 错误脱敏 | `triggers/cron.py:1319` | ⚠️ 依赖 Ledger 写入时脱敏（#16/#18 修复后自动解决） |
+| #21 | CapabilityRegistry 异常包装脱敏 | `capabilities/registry.py:171-174,288-290` | ✅ 有效 - `RuntimeError(f”...{e}”)` 未脱敏 |
+| #22 | API trigger `_runs` 有界化 | `triggers/api/server.py:149,360` | ✅ 有效 - 无界字典无 TTL |
+| #23 | 客户端可见错误响应脱敏 | 多文件 | ✅ 有效 - MCP/OwlHub/Signal/Governance 均有 `str(exc)` 暴露 |
+| #24 | grpc binding schema fail-fast | `capabilities/bindings/schema.py:117` | ✅ 有效 - 无专门验证逻辑 |
+| #25 | Kafka connect timeout | `integrations/queue_adapters/kafka.py:46-67` | ✅ 有效 - 无 timeout 保护 |
+| #26 | API rate limiter `_states` 有界化 | `triggers/api/server.py:90` | ✅ 有效 - 无界字典无 TTL |
+| #27 | API key identity 脱敏 | `triggers/api/auth.py:38` | ✅ 有效 - `api_key:{key[:6]}` 暴露前缀 |
+| #28 | CronMetrics samples 有界化 | `triggers/cron.py:620-622` | ✅ 有效 - 无界列表（但 `_recent_executions` 已用 deque maxlen=50） |
+| #29 | Cron 历史 tenant 绑定认证上下文 | `triggers/cron.py:1258-1320` | ⚠️ 依赖认证中间件（同 #2 信任边界问题） |
 
 ---
 
