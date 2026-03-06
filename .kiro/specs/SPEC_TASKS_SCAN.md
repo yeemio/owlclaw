@@ -344,8 +344,8 @@
 - [x] D10 Low-10 Ledger _write_queue 有界或背压→ spec: audit-deep-remediation
 - [x] D11 Low-11 Webhook 非 UTF-8 body 返回 400→ spec: audit-deep-remediation
 - [ ] D12 Low-12 Console API token 常量时间比较（hmac.compare_digest）→ spec: audit-deep-remediation
-- [ ] D13 Low-13 VisibilityFilter evaluator timeout / 风险文档→ spec: audit-deep-remediation
-- [ ] D14 Low-14 Hatchet Windows SIGQUIT 作用域收敛或文档说明→ spec: audit-deep-remediation
+- [x] D13 Low-13 VisibilityFilter evaluator timeout / 风险文档→ spec: audit-deep-remediation
+- [x] D14 Low-14 Hatchet Windows SIGQUIT 作用域收敛或文档说明→ spec: audit-deep-remediation
 - [ ] D15 Low-15 HTTP binding 空 `allowed_hosts` SSRF 边界→ spec: audit-deep-remediation
 - [ ] D16 Low-16 BindingTool ledger 错误信息脱敏→ spec: audit-deep-remediation
 - [ ] D17 Low-17 API trigger 读取时强制 body 大小限制→ spec: audit-deep-remediation
