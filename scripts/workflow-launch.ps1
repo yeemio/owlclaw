@@ -32,7 +32,7 @@ function Start-WorkflowWindow {
 
     $script = @"
 Set-Location '$Workdir'
-\$Host.UI.RawUI.WindowTitle = '$WindowTitle'
+`$Host.UI.RawUI.WindowTitle = '$WindowTitle'
 $CommandText
 "@
 
