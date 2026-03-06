@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-06（编码分支新提交已形成；审计报告已扩展到 D44，D30-D44 暂列下一批 backlog）
+> **最后更新**: 2026-03-06（主线已与各 worktree 对齐；深度审计报告扩展至 #55，切换到下一批修复分配）
 
 ---
 
@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：`console-browser-real-e2e` 已收口（`CONDITIONAL_PASS`），当前切换为 `audit-deep-remediation` 批次统筹、合并与放行决策。
+**当前编码任务**：`console-browser-real-e2e` 与 `audit-deep-remediation` 主线修复均已收口；当前进入深度审计新增 backlog（#45-#55）分配与放行阶段。
 
 ---
 
@@ -149,7 +149,7 @@ Spec 一致性：
 
 **权限**：全仓库读 + 轻量修正（文档、注释、类型注解、测试补全）。不做功能实现。可以在 review-work 分支上直接修复审校发现的轻量问题。
 
-**审校状态（2026-03-06 Review Loop）**：`audit-deep-remediation` 已完成审校并合并入 `main`；报告见 `docs/review/REVIEW_LOOP_2026-03-06.md`。下一步转入 backlog（D15-D29 / D30-D44）统筹分配。
+**审校状态（2026-03-06 Review Loop）**：`audit-deep-remediation` 已完成审校并合并入 `main`；报告见 `docs/review/REVIEW_LOOP_2026-03-06.md`。当前无待审编码分支，review-work 下一步转入 #45-#55 修复批次审校准备。
 
 **审校输出格式**（每次 Review 后 commit message 中记录）：
 
@@ -169,7 +169,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex\` |
 | 分支 | `codex-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `DONE`（已提交 D12/D15/D16/D21，等待 review-work 审校；其余分配项待下一补丁） |
+| 工作状态 | `IDLE`（分支与 `main` 对齐，工作区干净，等待新批次开始） |
 
 **当前分配的 spec**：
 
@@ -178,7 +178,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **config-propagation-fix** | ✅ 25/25 | 已完成并合并到 main |
 | **security-hardening** | ✅ 46/46 | 已完成并合并到 main |
 
-**当前任务**：已提交 `audit-deep-remediation` Task 15/18/19/24（D12/D15/D16/D21），当前等待 `review-work` 审校；审校后继续剩余 Task 16/17/26/27/28（D13/D14/D23/D24/D25）。
+**当前任务**：上一批 `audit-deep-remediation` 已全部合入 `main`。下一批分配切换为深度审计新增问题 #47/#48/#49/#52/#55（runtime + llm 相关）。
 
 **共享文件修改范围约定**（避免冲突）：
 
@@ -211,7 +211,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `DONE`（分支已形成多笔待审提交，工作区干净） |
+| 工作状态 | `IDLE`（分支与 `main` 对齐，工作区干净，等待新批次开始） |
 
 **当前分配的 spec**：
 
@@ -220,7 +220,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
 | **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
 
-**当前任务**：已提交 Task 5/6/7/10/14/20/21/22/23（D2/D4b/D6/D7/D11/D17/D18/D19/D20），当前等待 `review-work` 审校；审校后继续 Task 25/29/30/31/32（D22/D26/D27/D28/D29）。
+**当前任务**：上一批 `audit-deep-remediation` 已全部合入 `main`。下一批分配切换为深度审计新增问题 #45/#46/#50/#51/#53/#54（registry + memory + path validation 相关）。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
@@ -281,10 +281,11 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 追加 Task 10/11**：深度审计 Phase 2 扩展纳入。codex-gpt-work **追加 Task 10**（Low-7）：`web/providers/capabilities.py` 无 DB 时捕获 ConfigurationError，GET /capabilities 不 500。codex-work **追加 Task 11**（Low-8）：`app.py` health_status() 不读私有 _states/_configs，改为公开 API 或文档。 | ✅ 已收口至主线分配 |
 | 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 追加 Task 12/13/14**：深度审计 Phase 3 纳入。codex-work **Task 12**（Low-9）：Ledger._background_writer 异常时将当前 batch 写 fallback；**Task 13**（Low-10）：Ledger._write_queue 有界或背压。codex-gpt-work **Task 14**（Low-11）：Webhook receive_webhook 非 UTF-8 body 返回 400。 | ✅ 已收口至主线分配 |
 | 2026-03-06 | 统筹(main) | codex-work | **Phase 15 首批收口确认**：Task 1/2/3/4/11/12/13（D1/D3/D4a/D5/D8/D9/D10）已完成并合入 `main`。下一批分配切换为 Task 15/18/19/24（D12/D15/D16/D21）。 | 🟢 已同步 |
-| 2026-03-06 | 统筹(main) | codex-gpt-work + review-work | **Phase 15 待审与续做**：`codex-gpt-work` 分支已提交 D2/D6/D7/D11，review-work 优先审校；D4b 已因 D4a 合入而解锁，后续继续 D13/D14/D17/D18/D19/D20。 | 🟡 待读 |
+| 2026-03-06 | 统筹(main) | codex-gpt-work + review-work | **Phase 15 待审与续做**：`codex-gpt-work` 分支已提交 D2/D6/D7/D11，review-work 优先审校；D4b 已因 D4a 合入而解锁，后续继续 D13/D14/D17/D18/D19/D20。 | ✅ 已收口 |
 | 2026-03-06 | 统筹(main) | codex-work + codex-gpt-work + review-work | **负载再平衡**：按剩余工作量重分配。将 `D13`（visibility）、`D14`（hatchet）、`D25`（Kafka connect timeout）从 `codex-gpt-work` 转给空闲中的 `codex-work`；`codex-gpt-work` 保留已在分支上的 D2/D6/D7/D11 和同文件簇 D4b/D17/D18/D19/D20/D22。 | 🟢 已同步 |
 | 2026-03-06 | 统筹(main) | codex-work + codex-gpt-work + review-work | **新提交状态校准**：`codex-work` 已提交 D12/D15/D16/D21；`codex-gpt-work` 已提交 D2/D4b/D6/D7/D11/D17/D18/D19/D20。`review-work` 下一轮先审这两组提交。新增审计 D26-D29 因与 API/Cron 文件簇重叠，预分配给 `codex-gpt-work` 下一补丁。 | 🟢 已同步 |
-| 2026-03-06 | 统筹(main) | 全部 | **审计 backlog 扩展**：`DEEP_AUDIT_REPORT.md` 已继续扩展到 D44。为避免在当前审校窗口中途改派，D30-D44 暂不并入本轮编码分配，待 review-work 收口当前待审提交后再统一切下一批。 | 🟡 已登记 |
+| 2026-03-06 | 统筹(main) | 全部 | **审计 backlog 扩展**：`DEEP_AUDIT_REPORT.md` 已继续扩展到 D44。为避免在当前审校窗口中途改派，D30-D44 暂不并入本轮编码分配，待 review-work 收口当前待审提交后再统一切下一批。 | ✅ 已收口 |
+| 2026-03-06 | 统筹(main) | codex-work + codex-gpt-work + review-work | **新批次分配**：深度审计报告已扩展至 #55。`codex-work` 负责 #47/#48/#49/#52/#55（runtime + llm timeout/脱敏）；`codex-gpt-work` 负责 #45/#46/#50/#51/#53/#54（registry timeout + memory/path 校验）；`review-work` 负责下一轮审校与收口。 | 🟢 已同步 |
 
 ### 已归档消息
 
@@ -362,6 +363,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 12/13/14 已完成**（截至 2026-03-06）
 
+**Phase 15 主线已完成并合入 `main`；当前切换到深度审计新增 backlog（#45-#55）。**
+
 ### 任务优先级说明
 
 | 优先级 | 含义 | 执行要求 |
@@ -374,68 +377,55 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **audit-deep-remediation** | Phase 15 | Task 16/17/26/27/28 | D13/D14/D23/D24/D25 | P1+Low | 🟡 部分已提交，剩余待做 |
+| **audit-deep-remediation-followup** | Phase 16 | #47/#48/#49/#52/#55 | Runtime / LLM follow-up hardening | Low | 🟢 待开始 |
 
 **codex-work 执行顺序**：
-1. 当前先等待 review-work 审校已提交的 Task 15/18/19/24
-2. 审校通过后继续 Task 16/17
-3. 最后完成 Task 26/27/28
+1. #47 Runtime final summarization 错误脱敏
+2. #48 Observation 工具参数脱敏
+3. #49/#52/#55 LLM facade/client timeout 与错误元数据脱敏
 
 ### codex-gpt-work 分配（当前批次）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **audit-deep-remediation** | Phase 15 | Task 25/29/30/31/32 | D22/D26/D27/D28/D29 | P1+Low | 🟡 当前待审校，下一补丁继续 |
+| **audit-deep-remediation-followup** | Phase 16 | #45/#46/#50/#51/#53/#54 | Registry / Memory / Path validation follow-up | Low | 🟢 待开始 |
 
 **codex-gpt-work 执行顺序**：
-1. 当前先等待 review-work 审校已提交的 Task 5/6/7/10/14/20/21/22/23
-2. 审校后继续 Task 25/29/30/31/32
+1. #45 CapabilityRegistry.get_state timeout
+2. #46/#50/#53 路径校验（SkillDocExtractor + MemoryService + MemorySystem）
+3. #51/#54 Memory 紧凑化与索引超时/日志脱敏
 
-### 共享文件修改边界（当前批次：audit-deep-remediation）
+### 共享文件修改边界（当前批次：audit-deep-remediation-followup）
 
 | 共享文件 | codex-work 范围 | codex-gpt-work 范围 |
 |---------|----------------|-------------------|
-| `owlclaw/agent/runtime/runtime.py` | D1 / D3 / D5 | 不修改 |
-| `owlclaw/governance/ledger.py` | D4a / D9 / D10 | 不修改 |
-| `owlclaw/app.py` | D8（仅 `health_status()`） | 不修改 |
-| `owlclaw/agent/runtime/heartbeat.py` | 不修改 | D4b |
-| `owlclaw/db/engine.py` | 不修改 | D6 |
-| `owlclaw/web/providers/capabilities.py` | 不修改 | D7 |
-| `owlclaw/triggers/webhook/http/app.py` | 不修改 | D11 |
-| `owlclaw/governance/visibility.py` | D13 | 不修改 |
-| `owlclaw/integrations/hatchet.py` | D14 | 不修改 |
-| `owlclaw/web/api/middleware.py` | D12（token 常量时间比较） | 不修改 |
-| `owlclaw/capabilities/bindings/schema.py` | D24 | 不修改 |
-| `owlclaw/mcp/server.py` | D23 | 不修改 |
-| `owlhub/api/routes/skills.py` | D23 | 不修改 |
-| `owlclaw/triggers/signal/api.py` | D23 | 不修改 |
-| `owlclaw/governance/proxy.py` | D23 | 不修改 |
-| `docs/` | 不修改 | D2 |
-| `owlclaw/triggers/api/server.py` | 不修改 | D17 / D18 / D22 |
-| `owlclaw/triggers/api/server.py` | 不修改 | D26 |
-| `owlclaw/triggers/api/auth.py` | 不修改 | D27 |
-| `owlclaw/integrations/queue_adapters/kafka.py` | D25 | 不修改 |
-| `owlclaw/triggers/cron.py` | 不修改 | D28 / D29 |
+| `owlclaw/agent/runtime/runtime.py` | #47 / #48 | 不修改 |
+| `owlclaw/integrations/llm.py` | #49 / #52 / #55 | 不修改 |
+| `owlclaw/agent/memory/embedder_litellm.py` | #52 | 不修改 |
+| `owlclaw/capabilities/registry.py` | 不修改 | #45 |
+| `owlclaw/capabilities/skill_doc_extractor.py` | 不修改 | #46 |
+| `owlclaw/agent/memory/service.py` | 不修改 | #50 / #51 |
+| `owlclaw/agent/runtime/memory.py` | 不修改 | #53 / #54 |
 
 ### 审校与放行
 
-- review-work 负责 `audit-deep-remediation` 的审校与收口：
-- D1~D12 与 spec/task 对齐
+- review-work 负责 `audit-deep-remediation-followup` 的审校与收口：
+- #45-#55 与深度审计报告一致性复核
 - 错误处理、测试覆盖、架构边界复核
 - 输出 `APPROVE / FIX_NEEDED / REJECT`
 
-**下一轮待分配**：当前无新的内部开发 spec 待分配；`audit-deep-remediation` 已是当前批次，完成后回到外部阻塞项跟踪。
+**下一轮待分配**：当前无新的内部开发 spec 待分配；完成 #45-#55 后回到外部阻塞项跟踪。
 
-### audit-deep-remediation 专项分配（Phase 15）
+### audit-deep-remediation-followup 专项分配（Phase 16）
 
 | Worktree | 任务 | 内容 | 依赖 |
 |----------|------|------|------|
-| **codex-work** | Task 16, 17, 26, 27, 28 | **Low-13** Visibility evaluator timeout；**Low-14** Hatchet Windows SIGQUIT 作用域；**Low-23** 客户端可见错误脱敏；**Low-24** grpc binding schema 校验；**Low-25** Kafka connect 超时 | 当前已有 D12/D15/D16/D21 提交待审 |
-| **codex-gpt-work** | Task 25, 29, 30, 31, 32 | **Low-22** `_runs` 有界化；**Low-26** rate limiter `_states` 有界化；**Low-27** API key identity 脱敏；**Low-28** CronMetrics 采样有界化；**Low-29** get_execution_history tenant 绑定认证上下文 | 先完成当前待审提交的审校，再继续下一补丁 |
+| **codex-work** | #47, #48, #49, #52, #55 | Runtime final summarization 脱敏；Observation 参数脱敏；LLM metadata 脱敏；embedding timeout；LLMClient timeout | 与 codex-gpt-work 无共享文件，拿到分配即可开始 |
+| **codex-gpt-work** | #45, #46, #50, #51, #53, #54 | Registry state timeout；SkillDocExtractor 路径约束；MemoryService / MemorySystem 路径校验；compact 有界化；index timeout + 日志脱敏 | 与 codex-work 无共享文件，拿到分配即可开始 |
 
-**共享文件边界**：codex-work 修改 `owlclaw/agent/runtime/runtime.py`、`owlclaw/governance/ledger.py`、`owlclaw/app.py`（仅 health_status）、`owlclaw/web/api/middleware.py`（D12）；codex-gpt-work 修改 `owlclaw/agent/runtime/heartbeat.py`、`owlclaw/db/engine.py`、`owlclaw/web/providers/capabilities.py`、`owlclaw/triggers/webhook/http/app.py`、`owlclaw/governance/visibility.py`、`owlclaw/integrations/hatchet.py`、`docs/`、可选 `owlclaw/web/api/deps.py`。两方不重叠。
+**共享文件边界**：codex-work 修改 `owlclaw/agent/runtime/runtime.py`、`owlclaw/integrations/llm.py`、`owlclaw/agent/memory/embedder_litellm.py`；codex-gpt-work 修改 `owlclaw/capabilities/registry.py`、`owlclaw/capabilities/skill_doc_extractor.py`、`owlclaw/agent/memory/service.py`、`owlclaw/agent/runtime/memory.py`。两方不重叠。
 
-**完成后**：回到外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
+**完成后**：review-work 审校合并；主线收口后回到外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 

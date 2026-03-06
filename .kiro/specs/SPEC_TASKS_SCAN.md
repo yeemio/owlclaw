@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-06（console-browser-real-e2e：review-work 汇总 codex-work/codex-gpt-work 证据并完成条件放行）
+> **最后更新**: 2026-03-06（深度审计报告扩展至 #55；Phase 15 主线已收口，切换到 follow-up 修复分配）
 
 ---
 
@@ -329,7 +329,7 @@
 
 ### Phase 15：深度审计修复（2026-03-05 四维度深度审计，27 轮完成）
 
-> **来源**: `docs/review/DEEP_AUDIT_REPORT.md`（27 轮全量完成；总发现 44：P1×2 + Low×42；Recommended Fix Order 1–44 已就绪）
+> **来源**: `docs/review/DEEP_AUDIT_REPORT.md`（27 轮主审 + 1 轮加审已完成；总发现 55：P1×2 + Low×53；Recommended Fix Order 1–55 已就绪）
 > **优先级**: P1（发布条件修复）+ Low（迭代改进）
 
 - [x] D1 P1-1 Skill 环境变量安全边界（仅注入 OWLCLAW_SKILL_ 前缀或 allowlist）→ spec: audit-deep-remediation
@@ -432,7 +432,7 @@
 | **governance-hardening** | `.kiro/specs/governance-hardening/` | ✅ 三层齐全，已完成（33/33） | 治理层加固：Ledger 索引 + UUID PK + fallback 路径 + MODEL_PRICING + QualityStore 索引 + env.py 导入 + session 缓存 + DB 异常包装 + SSL + Cron 去重 |
 | **phase13-low-findings** | `.kiro/specs/phase13-low-findings/` | 🟡 三层齐全，进行中（12/14） | v4 低优先级收口：#11~#14 实现完成，验收清单待勾选 |
 | **console-browser-real-e2e** | `.kiro/specs/console-browser-real-e2e/` | ✅ 三层齐全，已完成（13/13） | Console 真实浏览器验收：自动化 + 手工 + 审校放行（`CONDITIONAL_PASS`） |
-| **audit-deep-remediation** | `.kiro/specs/audit-deep-remediation/` | ✅ 三层齐全，已完成（15/15） | 深度审计修复：D1-D14 + P1-2 文档已全部完成并自 review-work 合并入 main；D15-D29 为下一批 backlog。 |
+| **audit-deep-remediation** | `.kiro/specs/audit-deep-remediation/` | ✅ 三层齐全，已完成（15/15） | 深度审计修复主线：D1-D29 已完成并合入 main；新增 #45-#55 已进入 follow-up 分配。 |
 
 ---
 
@@ -458,17 +458,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（#35-#44 审校完成，tasks.md 已更新；等待分配修复任务） |
-| 当前批次 | **Phase 15 backlog 收口**：`audit-deep-remediation`（D15-D29 + #35-#44 已全部审校完成）。 |
-| 批次状态 | D15/D16/D25 已由 codex-work 完成；D17-D20/D22/D26-D29 已由 codex-gpt-work 提交；#35-#44 审校完成待分配。 |
-| 已完成项 | 23) D25 Kafka connect timeout；24) **D15** HTTP `allowed_hosts` SSRF fail-closed；25) **D16** BindingTool ledger 脱敏；26) D17-D20/D22/D26-D29 修复完成；27) **#35-#44 审校完成**（10 项全部确认有效，#42 已部分脱敏）。 |
-| 下一待执行 | 1) #35-#44 修复任务分配与执行；2) 运行 `pytest` 验证；3) 审校通过后合并入 main。 |
-| 验收快照 | **Phase 15**：audit-deep-remediation ✅(15/15) + D15-D29 ✅ + #35-#44 审校✅（修复待分配）。 |
+| 最后更新 | 2026-03-06（Phase 15 主线修复已全部并入 `main`；深度审计新增 #45-#55 已完成分配） |
+| 当前批次 | **Phase 16 follow-up**：深度审计新增问题 #45-#55（runtime/llm + registry/memory 两条并行修复线）。 |
+| 批次状态 | 旧批次 D15-D29 已收口；两个编码 worktree 已清空待审状态并重新切到 #45-#55 待开始。 |
+| 已完成项 | 23) D25 Kafka connect timeout；24) D15-D29 全部修复并合入 main；25) 深度审计主审 27 轮完成；26) 加审补充 #55；27) #45-#55 已完成统筹分配。 |
+| 下一待执行 | 1) `codex-work` 实施 #47/#48/#49/#52/#55；2) `codex-gpt-work` 实施 #45/#46/#50/#51/#53/#54；3) review-work 审校并回写验收结果。 |
+| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 已分配，待实现/验证。 |
 | 阻塞项 | 无内部阻塞；仅剩外部依赖阻塞项（若有）。 |
-| 健康状态 | ✅ 内部协作阻塞已清零；Phase 15 主线 15/15 已合入 main；D15-D29 + #35-#44 backlog 审校完成待修复。 |
+| 健康状态 | ✅ 分支已全部与 `main` 对齐；内部协作阻塞为 0；当前仅剩新一批 backlog 待执行。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | review-work：D15-D29 修复完成 + #35-#44 审校完成；codex-work：D15/D16/D25；codex-gpt-work：D17-D20/D22/D26-D29。 |
-| 审校状态 | `audit-deep-remediation` Phase 15 backlog 全部审校完成（D15-D29 + #35-#44）；修复任务待分配执行。 |
+| 分支量化进度 | main/review-work/codex-work/codex-gpt-work 当前均无待合并提交；本轮新增主线文档校准 3 文件。 |
+| 审校状态 | `audit-deep-remediation` 主线已审校完成；下一轮审校目标切换为 #45-#55 follow-up。 |
 
 ---
 

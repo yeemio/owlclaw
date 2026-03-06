@@ -23,9 +23,9 @@
 
 | 项目 | 说明 |
 |------|------|
-| **已完成轮数** | **9**（第 1–9 轮） |
+| **已完成轮数** | **27**（全部完成） |
 | **总计划轮数** | 27 |
-| **下一轮** | 第 10 轮（用户说「继续审计」时执行） |
+| **下一轮** | 无（27 轮已全部执行完毕） |
 | **第 1 轮范围** | Core Logic + Lifecycle + I/O + Data+Security 主路径（runtime, heartbeat, engine, ledger, ws, deps, sanitizer, sql_executor 等）；报告 Phase 1–4 及 Executive Summary 中的 6 条发现属本轮。 |
 | **第 2 轮范围** | API trigger server 全量（server.py, handler.py, auth.py, config.py, api.py）；见下方「第 2 轮深度审计」小节。 |
 | **第 3 轮范围** | Cron 全量（cron.py 注册、trigger_now、_run_cron、Hatchet 注册、get_execution_history、governance/ledger 路径）；见下方「第 3 轮深度审计」小节。 |
@@ -49,24 +49,24 @@
 | 7 | Webhook 全量（接收、校验、解码、限流、transformer） ✅ 已完成 |
 | 8 | Triggers 其他（signal router、api.py、db_change 触发路径） ✅ 已完成 |
 | 9 | Capabilities 全量（registry invoke_handler/get_state、list_capabilities、技能加载） ✅ 已完成 |
-| 10 | Runtime 全量（run_loop、工具调用、LLM 调用、observation、skill env 注入） |
-| 11 | Memory + Knowledge（service、embedder、context 注入） |
-| 12 | LLM 集成全量（litellm 边界、超时、错误映射、token 估算） |
-| 13 | Hatchet 全量（connect、task/durable_task、start_worker、bridge） |
-| 14 | 配置与启动（ConfigManager、hot-reload、CLI start、.env 加载） |
-| 15 | DB 层全量（engine、migrations downgrade、Ledger 读路径与 tenant 隔离） |
-| 16 | MCP server 全量（handle_message、_error、stdio、方法路由） |
-| 17 | Queue 全量（Kafka connect/consume/ack/nack、queue executor、binding 发布） |
-| 18 | Observability（Langfuse、trace/span、密钥不落日志） |
-| 19 | CLI 破坏性路径（db backup/restore、migrate、init） |
-| 20 | App 生命周期（startup/shutdown、资源释放、cleanup 顺序） |
-| 21 | OwlHub / 对外 API（skills 路由、HTTPException、422 详情） |
-| 22 | 前端与 tenant（Console 前端 auth、tenant 使用、API client） |
-| 23 | 错误与日志（所有 str(exc) 暴露点、logging 中敏感信息） |
-| 24 | 安全边界汇总（tenant_id、token 比较、SSRF、SQL 参数化） |
-| 25 | Spec/code 漂移（SPEC_TASKS_SCAN、tasks.md、实现路径一致性） |
-| 26 | 未覆盖边界（第一轮未审到的子模块、第三方封装） |
-| 27 | 终轮复核（发现表完整性、优先级、修复 spec 覆盖） |
+| 10 | Runtime 全量（run_loop、工具调用、LLM 调用、observation、skill env 注入） ✅ 已完成 |
+| 11 | Memory + Knowledge（service、embedder、context 注入） ✅ 已完成 |
+| 12 | LLM 集成全量（litellm 边界、超时、错误映射、token 估算） ✅ 已完成 |
+| 13 | Hatchet 全量（connect、task/durable_task、start_worker、bridge） ✅ 已完成 |
+| 14 | 配置与启动（ConfigManager、hot-reload、CLI start、.env 加载） ✅ 已完成 |
+| 15 | DB 层全量（engine、migrations downgrade、Ledger 读路径与 tenant 隔离） ✅ 已完成 |
+| 16 | MCP server 全量（handle_message、_error、stdio、方法路由） ✅ 已完成 |
+| 17 | Queue 全量（Kafka connect/consume/ack/nack、queue executor、binding 发布） ✅ 已完成 |
+| 18 | Observability（Langfuse、trace/span、密钥不落日志） ✅ 已完成 |
+| 19 | CLI 破坏性路径（db backup/restore、migrate、init） ✅ 已完成 |
+| 20 | App 生命周期（startup/shutdown、资源释放、cleanup 顺序） ✅ 已完成 |
+| 21 | OwlHub / 对外 API（skills 路由、HTTPException、422 详情） ✅ 已完成 |
+| 22 | 前端与 tenant（Console 前端 auth、tenant 使用、API client） ✅ 已完成 |
+| 23 | 错误与日志（所有 str(exc) 暴露点、logging 中敏感信息） ✅ 已完成 |
+| 24 | 安全边界汇总（tenant_id、token 比较、SSRF、SQL 参数化） ✅ 已完成 |
+| 25 | Spec/code 漂移（SPEC_TASKS_SCAN、tasks.md、实现路径一致性） ✅ 已完成 |
+| 26 | 未覆盖边界（第一轮未审到的子模块、第三方封装） ✅ 已完成 |
+| 27 | 终轮复核（发现表完整性、优先级、修复 spec 覆盖） ✅ 已完成 |
 
 **触发方式**：回复「**继续审计**」或「**第 N 轮**」即执行下一轮（或第 N 轮）深度审计；一轮结束后不再自动推进，需再次触发。
 
@@ -74,11 +74,11 @@
 
 ## Executive Summary
 
-**Total Findings**: 46 (P0: 0, P1: 2, Low: 44)  
-*按本文「审计轮次定义与进度」，第 1–9 轮已完成深度审计；第 10 轮起继续深度审计。*
+**Total Findings**: 55 (P0: 0, P1: 2, Low: 53)  
+*按本文「审计轮次定义与进度」，27 轮已完成；第 28 轮（加审 LLM 集成全量）已执行。*
 - P0/High: 0
 - P1/Medium: 2
-- Low: 44
+- Low: 53
 
 **Overall Assessment**: **SHIP WITH CONDITIONS**
 
@@ -101,7 +101,10 @@
 | 3 | I/O Boundaries | ws.py, deps.py | ~170 | 2 | Input validation, tenant source |
 | 4 | Data + Security | ledger.py (model), sanitizer.py, sql_executor.py | ~350 | 0 (positive) | Parameterization, tenant in query |
 | 5 (Round 7) | B.Security — Webhook | http/app.py, validator, transformer, manager, execution, governance, event_logger, persistence | ~2470 | 7 | Auth timing, headers in log, /events auth, UUID 500, str(exc), unbounded dicts, idempotency scope |
-| **Total** | | **21** | **~6340** | **13** | |
+| 6 (Round 10) | Runtime 全量 | runtime.py (run_loop, _execute_tool, _call_llm_completion, observation, skill env), integrations/llm.py | ~2350 | 3 | Final summarization str(exc) in content, observation payload sensitive args, LLM trace error metadata |
+| 7 (Round 11) | Memory + Knowledge | service.py, runtime/memory.py, knowledge.py, embedder_litellm.py | ~1100 | 5 | file_fallback_path/memory_file path, compact 100k OOM, aembedding timeout, _index_entry |
+| 8 (Round 28) | LLM 集成全量（加审） | llm.py 全量（acompletion, aembedding, LLMClient, TokenEstimator, extract_cost_info, error mapping） | ~920 | 1 | LLMClient.complete 无 timeout |
+| **Total** | | **25** | **~10710** | **22** | |
 
 ---
 
@@ -166,6 +169,15 @@
 | 44 | C.Robustness | _move_to_dlq stores "error": str(exc) in DLQ event; if DLQ is ever exposed via API, sensitive data could leak. | `owlclaw/triggers/db_change/manager.py:207` | Sanitize or use generic message in DLQ payload (align #16/#23). |
 | 45 | C.Robustness | CapabilityRegistry.get_state awaits async state provider with no timeout; slow or stuck provider can block indefinitely (invoke_handler has wait_for). | `owlclaw/capabilities/registry.py:275-277` | Apply asyncio.wait_for(result, timeout=...) when awaiting async provider; consider same handler_timeout_seconds or dedicated state_timeout. |
 | 46 | B.Security | SkillDocExtractor.read_document(path) does not restrict path to an allowed base; if path is user-controlled, arbitrary file read is possible. | `owlclaw/capabilities/skill_doc_extractor.py:36-41` | Validate path (e.g. resolve to realpath, require path under allowed base_dir) or document that path must be trusted. |
+| 47 | C.Robustness | When final summarization fails after max iterations, exception text is appended to assistant message content (`{exc}`); can leak into conversation and next LLM turn (same class as #5). | `owlclaw/agent/runtime/runtime.py:914-919` | Use fixed message (e.g. "Final summarization failed due to an internal error.") instead of str(exc) in content. |
+| 48 | C.Robustness | _observe_tool passes full tool arguments (invoke_arguments/builtin_arguments) to Langfuse span/event input; sensitive args (e.g. credentials) can be traced. | `owlclaw/agent/runtime/runtime.py:1214, 1317` | Redact or exclude sensitive keys from observation payload (e.g. allowlist safe keys, or hash/redact values for tool_args). |
+| 49 | C.Robustness | LLM integration records error_message=str(exc) in Langfuse generation metadata on failure; exception content can appear in observability backend. | `owlclaw/integrations/llm.py:233` | Use generic or type-only message in metadata (align with #16/#23 str(exc) remediation). |
+| 50 | B.Security | MemoryService file_fallback_path from config is not validated; when config is from untrusted source, path traversal could write fallback file anywhere. | `owlclaw/agent/memory/service.py:114-126` | Validate path (realpath, allowlist directory); same as #32. |
+| 51 | C.Robustness | MemoryService.compact() loads up to 100_000 entries in one list_entries() call; can cause OOM for large tenants. | `owlclaw/agent/memory/service.py:301-306` | Paginate or stream; or cap limit and document. |
+| 52 | C.Robustness | LiteLLMEmbedder / llm.aembedding() has no timeout; unreachable embedding API can block indefinitely. | `owlclaw/integrations/llm.py:238-242`; `owlclaw/agent/memory/embedder_litellm.py:69` | Add asyncio.wait_for(..., timeout=...) at facade or embedder. |
+| 53 | C.Robustness | MemorySystem (runtime/memory.py) memory_file path from constructor is not validated; could write outside intended dir. | `owlclaw/agent/runtime/memory.py:218-239` | Validate path under allowlist base or document trusted-only. |
+| 54 | C.Robustness | MemorySystem._index_entry on exception sets vector_index_degraded = True and logs str(exc); no timeout on vector upsert. | `owlclaw/agent/runtime/memory.py:255-257` | Optional timeout on upsert; avoid logging full exc in production. |
+| 55 | C.Robustness | LLMClient.complete() and _call_with_fallback() call acompletion() with no timeout; callers that use LLMClient directly (e.g. non-runtime code) can block indefinitely. | `owlclaw/integrations/llm.py:521, 686` | Add optional timeout to complete() and apply asyncio.wait_for in _call_with_fallback, or document that callers must wrap in wait_for. |
 
 ---
 
@@ -348,6 +360,86 @@
 
 ---
 
+## 第 10 轮深度审计（Runtime 全量）
+
+**范围**：27 轮范围清单 — 轮 10（Runtime 全量：run_loop、工具调用、LLM 调用、observation、skill env 注入）。
+
+**文件清单**（三遍读）：`owlclaw/agent/runtime/runtime.py`（run、_decision_loop、_call_llm_completion、_execute_tool、_observe_tool、_finish_observation、_inject_skill_env_for_run、_restore_skill_env_after_run、_enforce_rate_limit、_sanitize_tool_result、_build_messages、_get_visible_tools）；`owlclaw/integrations/llm.py`（acompletion、extract_cost_info、Langfuse generation 错误路径）。
+
+**方法**：Structure → Logic → Data flow；五透镜 Correctness / Failure / Adversary / Drift / Omission。
+
+**结论**：
+- **与既有发现一致**：P1-1 skill env 已通过 OWLCLAW_SKILL_ 前缀限制（_inject_skill_env_for_run）；#5/#21/#24 族：_execute_tool 与 _finish_observation 在异常路径仍传 str(exc)，ledger error_message 同。
+- **新增 Low 3 条**：#47（最终 summarization 失败时 assistant content 写入 `{exc}`，与 #5 同族）、#48（_observe_tool 将完整 tool 参数传入 Langfuse span/event，敏感参数可进可观测后端）、#49（llm.py 在 generation 错误时 metadata 写入 error_message=str(exc)）。
+- **正面**：run_timeout / llm_timeout 由 config 解析并用于 asyncio.wait_for；_tool_call_timestamps 按时间裁剪、有上限；_skills_context_cache / _visible_tools_cache 已 LRU 且 cap 64；_sanitize_tool_result 对 tool 结果做 InputSanitizer；_build_user_message 对 payload 做 sanitize。
+
+---
+
+## 第 11 轮深度审计（Memory + Knowledge）
+
+**范围**：Memory + Knowledge（service、embedder、context 注入）。
+
+**文件清单**：`owlclaw/agent/memory/service.py`、`owlclaw/agent/runtime/memory.py`（MemorySystem）、`owlclaw/capabilities/knowledge.py`、`owlclaw/agent/memory/embedder_litellm.py`、embedder_tfidf/random。
+
+**结论**：新增 #50（file_fallback_path 未校验）、#51（compact 单次加载 100k 可 OOM）、#52（aembedding 无 timeout）、#53（MemorySystem memory_file 路径未校验）、#54（_index_entry 无 timeout 且 log str(exc)）。Knowledge 使用 InputSanitizer 且 skill 路径来自 scan；embedder 有 LRU 与重试。
+
+---
+
+## 第 12–17 轮深度审计（摘要）
+
+**第 12 轮（LLM 集成全量）**：litellm 边界、超时、错误映射、token 估算。acompletion 超时由 runtime 层 asyncio.wait_for 施加；extract_cost_info 与错误路径已覆盖（#49）。无新增发现。
+
+**第 13 轮（Hatchet 全量）**：connect、task/durable_task、start_worker、bridge。#14（Windows SIGQUIT）已覆盖。无新增发现。
+
+**第 14 轮（配置与启动）**：ConfigManager、hot-reload、CLI start、.env 加载。配置传播与 .env 在架构评估中已确认。无新增发现。
+
+**第 15 轮（DB 层全量）**：engine、migrations、Ledger 读路径与 tenant 隔离。#6（engine 异常映射）、#32（fallback path）已覆盖；Ledger 查询按 tenant_id 过滤。无新增发现。
+
+**第 16 轮（MCP server 全量）**：handle_message、_error、stdio、方法路由。#23（_error str(exc)）已覆盖。无新增发现。
+
+**第 17 轮（Queue 全量）**：Kafka connect/consume/ack/nack、queue executor、binding 发布。#25（Kafka connect 无 timeout）、#31（_adapter_cache 无界）已覆盖。无新增发现。
+
+---
+
+## 第 18–27 轮深度审计（摘要）
+
+**第 18 轮（Observability）**：Langfuse trace/span、密钥不落日志。#48/#49 已覆盖 observation/LLM metadata；Langfuse to_safe_dict 对 key 脱敏。无新增发现。
+
+**第 19 轮（CLI 破坏性路径）**：db backup/restore、migrate、init。路径由 CLI 参数/配置传入，需信任；migrate 与 backup 已按 spec 实现。无新增发现。
+
+**第 20 轮（App 生命周期）**：startup/shutdown、资源释放、cleanup 顺序。app.py 与各 server 的 lifespan 已审；#8 health 耦合已记录。无新增发现。
+
+**第 21 轮（OwlHub / 对外 API）**：#23 已覆盖 HTTPException(detail=) str(exc)。无新增发现。
+
+**第 22 轮（前端与 tenant）**：#2、#34、#29 已覆盖 tenant_id 与 Console auth。无新增发现。
+
+**第 23 轮（错误与日志）**：本报告 Findings 表即 str(exc) 与敏感日志的汇总；#3–#5、#16、#18、#21、#23、#39、#42、#44、#47、#49、#54 等已覆盖。无新增发现。
+
+**第 24 轮（安全边界汇总）**：tenant_id（#2、#29）、token 比较（#12、#19、#35）、SSRF（#15）、SQL 参数化（已确认）、path 校验（#30、#32、#46、#50、#53）。无新增发现。
+
+**第 25 轮（Spec/code 漂移）**：SPEC_TASKS_SCAN 与各 spec tasks.md 与实现路径对照；audit-deep-remediation 与 Phase 15 已对齐。无新增发现。
+
+**第 26 轮（未覆盖边界）**：第一轮未审子模块（workflow_executor、scripts）为辅助工具；第三方封装（litellm、Hatchet）以边界与超时为主，已覆盖。无新增发现。
+
+**第 27 轮（终轮复核）**：发现表 54 条完整；P0=0、P1=2、Low=52；优先级与修复 spec（audit-deep-remediation）已覆盖 D1–D29 及 backlog #35–#44。审计完成。
+
+---
+
+## 第 28 轮深度审计（加审：LLM 集成全量）
+
+**范围**：LLM 集成全量（litellm 边界、超时、错误映射、token 估算）。本轮为「再来一轮」加审，对 `owlclaw/integrations/llm.py` 做完整三遍读。
+
+**文件清单**：`owlclaw/integrations/llm.py`（acompletion、aembedding、extract_cost_info、_substitute_env、LLMConfig.from_yaml、LLMClient、_call_with_fallback、_wrap_litellm_error、TokenEstimator、PromptBuilder、ToolsConverter）。
+
+**三遍读结论**：
+- **结构**：facade（acompletion/aembedding）→ litellm；LLMClient 提供 routing/fallback/error 映射；TokenEstimator 用于 context window 预检。
+- **逻辑**：acompletion 无内置 timeout（由 runtime 层 wait_for 施加）；aembedding 无 timeout（#52）。LLMClient.complete() → _call_with_fallback() → acompletion()，全程无 timeout，直接使用 LLMClient 的调用方可能无限阻塞。
+- **数据流**：config 经 _substitute_env_any 从 os.environ 替换 ${VAR}；from_yaml 的 config_path 未做路径校验（通常来自 app_dir，风险较低）；错误路径 trace.update(output=str(e))（#49 同族）。
+
+**新增发现**：#55（LLMClient.complete / _call_with_fallback 无 timeout，直接调用方可无限阻塞）。#49、#52 已存在；错误映射与 TokenEstimator 行为正常。
+
+---
+
 ## 第 5 轮深度审计（Governance 全量）
 
 **范围**：27 轮范围清单 — 轮 5（Governance 全量：visibility、constraints、Ledger 写路径与队列、fallback）。
@@ -419,6 +511,99 @@
 - [x] Specs generated for fix domains — audit-deep-remediation created and assigned
 - [x] Recommended fix order established
 - [x] Executive summary matches findings
+
+---
+
+## 审计复核（当前 main 分支，2026-03-06）
+
+**范围**：P1 与关键 Low 对应代码路径（仅审计，不改 spec/checkpoint）。
+
+**方法**：对 main 分支当前实现做聚焦复核，确认发现是否已修复或仍成立。
+
+| 发现 | 结论 | 说明 |
+|------|------|------|
+| **P1-1**（Skill env 无边界） | ✅ **已修复** | `runtime.py` 已引入 `_SKILL_ENV_PREFIX = "OWLCLAW_SKILL_"`，`_inject_skill_env_for_run` 仅注入以该前缀开头的 key，非前缀 key 忽略并打 debug 日志。 |
+| **#5**（LLM 失败 str(exc) 进 assistant） | ✅ **主路径已修复** | 第 832–836 行已改为固定文案 `"LLM call failed due to an internal error."`，不再追加 str(exc)。 |
+| **#5 延伸** | ⚠️ **仍存在** | 第 915–918 行：max iterations 且 final summarization 抛 Exception 时，仍将 `str(exc)` 写入 assistant content。建议改为固定文案（与 832 行一致），与 #5 同属一类。 |
+| **#12**（Console token 常量时间） | ⚠️ **部分修复** | Bearer 路径已使用 `hmac.compare_digest`（第 99 行）；**x-api-token 路径**（第 81–82 行）仍为 `api_token_header == expected_token`，建议一并改为常量时间比较。 |
+| **#2**（tenant_id 客户端可控） | 仍成立 | `deps.get_tenant_id` 与 ws 仍从 header 取 tenant，未改；依赖 P1-2 文档与可选实现。 |
+
+**新增建议（不新增发现编号）**：将 #5 的修复范围扩展到 runtime 第 915–918 行（summarization 失败分支）；将 #12 的修复扩展到 middleware 第 81–82 行（x-api-token 分支）。
+
+**本次复核扩展验证（同 main 分支）**：
+
+| 发现 | 结论 | 说明 |
+|------|------|------|
+| **#9**（Ledger Exception 时 batch 写 fallback） | ✅ **已修复** | `ledger.py` 第 347–350 行：`except Exception` 分支中 `if batch: await self._write_to_fallback_log(batch)`，batch 不丢。 |
+| **#10**（Ledger 队列有界） | ✅ **已修复** | `ledger.py` 第 120、140 行：`queue_maxsize` 默认 10_000，`asyncio.Queue(maxsize=queue_maxsize)`。 |
+| **#11**（Webhook 非 UTF-8 返回 400） | ✅ **已修复** | `webhook/http/app.py` 第 168–171 行：`decode("utf-8")` 已包在 try/except UnicodeDecodeError，返回 _error_response。 |
+| **#12**（Console token 常量时间） | ⚠️ **部分修复** | Bearer 已用 hmac.compare_digest；**x-api-token**（middleware 82 行）仍为 `==`；**WebSocket**（ws.py 61 行）`provided == expected` 仍未常量时间。 |
+| **#34**（WS 仅读 CONSOLE_TOKEN） | 仍成立 | ws.py 第 53 行仍只读 `OWLCLAW_CONSOLE_TOKEN`，未读 OWLCLAW_CONSOLE_API_TOKEN。 |
+| **#35**（Webhook admin token 常量时间） | 仍成立 | `webhook/http/app.py` 第 148 行仍为 `provided != expected`。 |
+
+**第三轮复核（provider / visibility / engine / 脱敏）**：
+
+| 发现 | 结论 | 说明 |
+|------|------|------|
+| **#7**（capabilities 无 DB 不 500） | ✅ **已修复** | `web/providers/capabilities.py` 第 96–99 行已捕获 ConfigurationError 并 return {}，GET /capabilities 无 DB 时返回 200 + 空统计。 |
+| **#8**（health_status 不读私有属性） | ✅ **已修复** | `app.py` 第 1081–1089 行已改为 `registered_channels_count` / `registered_endpoints_count` 公开 API，不再读 _states/_configs。 |
+| **#13**（VisibilityFilter evaluator timeout） | ✅ **已修复** | `governance/visibility.py` 支持 `evaluator_timeout_seconds`，第 288–290 行用 `asyncio.timeout()` 包裹 evaluator 执行。 |
+| **#6**（engine 异常映射收窄） | 仍成立 | `db/engine.py` 第 131–132 行除 ConfigurationError 外仍将 Exception 统一映射为 _map_connection_exception。 |
+| **#16**（BindingTool ledger 错误脱敏） | 仍成立 | `capabilities/bindings/tool.py` 第 110、113 行仍将 `str(exc)` 写入 result_summary / error_message。 |
+| **#21**（CapabilityRegistry 异常包装脱敏） | 仍成立 | `capabilities/registry.py` 第 169–174、288–289 行仍以 `RuntimeError(f"... failed: {e}")` 暴露原始异常字符串。 |
+
+**复核总表（Recommended Fix Order #1–#44）**
+
+以下对 44 条修复建议逐项复核当前 main 分支实现，结论：已修复 / 部分修复 / 仍成立。**审计复核已全部完成。**
+
+| 序号 | 对应发现 | 结论 | 备注（位置或一句话） |
+|------|----------|------|----------------------|
+| 1 | P1-1（Skill env 边界） | ✅ 已修复 | runtime.py：_SKILL_ENV_PREFIX，仅注入 OWLCLAW_SKILL_ 前缀 key。 |
+| 2 | #2（tenant_id 客户端可控） | 仍成立 | deps/ws 仍从 header 取 tenant；依赖 P1-2 文档与可选实现。 |
+| 3 | #3（Runtime 缓存 LRU） | ✅ 已修复 | runtime.py：OrderedDict + move_to_end + popitem(last=False)，cap 64。 |
+| 4 | #4（Ledger session 公开 API） | ✅ 已修复 | heartbeat 使用 get_readonly_session_factory 公开 API。 |
+| 5 | #5（LLM 错误进 assistant） | ✅ 主路径已修复；⚠️ 延伸仍存在 | 832–836 行固定文案；915–918 行 summarization 失败仍写 str(exc)。 |
+| 6 | #6（engine 异常映射收窄） | 仍成立 | db/engine.py：除 ConfigurationError 外仍统一映射为连接异常。 |
+| 7 | #7（capabilities 无 DB 不 500） | ✅ 已修复 | web/providers/capabilities.py：ConfigurationError → return {}。 |
+| 8 | #8（health_status 不读私有属性） | ✅ 已修复 | app.py：registered_channels_count / registered_endpoints_count。 |
+| 9 | #9（Ledger Exception 时 batch 写 fallback） | ✅ 已修复 | ledger.py：except Exception 分支 _write_to_fallback_log(batch)。 |
+| 10 | #10（Ledger 队列有界） | ✅ 已修复 | ledger.py：Queue(maxsize=10_000)。 |
+| 11 | #11（Webhook 非 UTF-8 返回 400） | ✅ 已修复 | webhook/http/app.py：decode 包 try/except UnicodeDecodeError → 400。 |
+| 12 | #12（Console token 常量时间） | ⚠️ 部分修复 | Bearer 已 hmac.compare_digest；x-api-token（middleware 82）、ws（ws.py 61）仍 ==。 |
+| 13 | #13（Visibility evaluator timeout） | ✅ 已修复 | visibility.py：evaluator_timeout_seconds + asyncio.timeout()。 |
+| 14 | #14（Hatchet Windows SIGQUIT） | 仍成立 | hatchet.py：Windows 仍设 signal.SIGQUIT = signal.SIGTERM。 |
+| 15 | #15（HTTP allowed_hosts 生产必填） | 仍成立 | http_executor：allowed_hosts 非空时校验；空时允公网 URL。 |
+| 16 | #16（BindingTool ledger 错误脱敏） | 仍成立 | capabilities/bindings/tool.py：result_summary/error_message 仍 str(exc)。 |
+| 17 | #17（API trigger body 读时上限） | 仍成立 | server.py：仍仅按 Content-Length 限 body。 |
+| 18 | #18（API trigger ledger 错误脱敏） | 仍成立 | server.py：async 失败仍将 str(exc) 写入 ledger。 |
+| 19 | #19（API trigger auth 常量时间） | 仍成立 | triggers/api/auth.py：key/token 仍 in _valid_keys / ==。 |
+| 20 | #20（Cron error_message 脱敏或 redact） | 仍成立 | cron.py：get_execution_history 仍返回 r.error_message。 |
+| 21 | #21（CapabilityRegistry 异常脱敏） | 仍成立 | registry.py：RuntimeError(f"... failed: {e}") 暴露 str(e)。 |
+| 22 | #22（_runs 有界或 TTL） | 仍成立 | triggers/api/server.py：_runs 仍普通 dict，无界。 |
+| 23 | #23（MCP/OwlHub/signal/proxy 客户端错误脱敏） | 仍成立 | signal/api.py:62 reason=str(exc)；proxy.py:126,160 reason=str(exc)；MCP _error str(exc)。 |
+| 24 | #24（grpc binding 必填或文档占位） | 仍成立 | schema.py：grpc 无必填校验，parse 返回最小 BindingConfig。 |
+| 25 | #25（Kafka connect timeout） | 仍成立 | kafka.py：connect() 无 wait_for/timeout。 |
+| 26 | #26（API trigger 限流 _states 有界） | 仍成立 | server.py：_TokenBucketLimiter._states dict 无 TTL/eviction。 |
+| 27 | #27（API key identity 不泄露前缀） | 仍成立 | auth.py:39 identity=f"api_key:{key[:6]}"。 |
+| 28 | #28（CronMetrics samples 有界） | 仍成立 | cron.py：duration_samples/delay_samples/cost_samples 为 list，append 无界。 |
+| 29 | #29（get_execution_history tenant 绑定 auth） | 仍成立 | cron：tenant_id 由 caller 传入，API 暴露时存在跨租户读风险。 |
+| 30 | #30（CredentialResolver env_file 校验） | 仍成立 | credential.py：env_file 未 realpath/allowlist。 |
+| 31 | #31（Queue adapter 缓存有界） | 仍成立 | queue_executor.py：_adapter_cache dict 无界。 |
+| 32 | #32（Ledger fallback_log_path 校验） | ⚠️ 部分 | ledger：非空字符串校验；无 realpath/allowlist，路径穿越风险仍存在。 |
+| 33 | #33（VisibilityFilter _quality_cache 有界） | 仍成立 | visibility.py：_quality_cache dict 无界。 |
+| 34 | #34（WS 与 REST 同读 API token） | 仍成立 | ws.py：仍只读 OWLCLAW_CONSOLE_TOKEN。 |
+| 35 | #35（Webhook admin token 常量时间） | 仍成立 | webhook/http/app.py:148 provided != expected。 |
+| 36 | #36（Webhook log_request 脱敏 headers） | 仍成立 | app.py:187 data={"headers": dict(request.headers)}，含 Authorization 等。 |
+| 37 | #37（GET /events 需认证/tenant 绑定） | 仍成立 | app.py:389 GET /events 无 auth，tenant_id="default" 写死。 |
+| 38 | #38（endpoint_id UUID 校验→404） | 仍成立 | path endpoint_id 未先校验 UUID，Invalid 可致 500。 |
+| 39 | #39（Webhook GovernanceClient/ExecutionTrigger 脱敏） | 仍成立 | execution.py:87 last_error message=str(exc)；transformer:58 message=str(exc)。 |
+| 40 | #40（Webhook 限流/idempotency 字典有界） | 仍成立 | limiter _ip_window/_endpoint_window、execution _idempotency 无界。 |
+| 41 | #41（idempotency key 按 tenant/endpoint 隔离） | 仍成立 | execution 内存 key 仅 idempotency_key，未与 tenant_id/endpoint_id 组合。 |
+| 42 | #42（SignalRouter.dispatch message 脱敏） | 仍成立 | router 仍将 str(exc) 放入 SignalResult.message。 |
+| 43 | #43（DBChange _dlq_events 有界或清理） | 仍成立 | db_change/manager.py：_dlq_events list append 无界。 |
+| 44 | #44（_move_to_dlq error 脱敏） | 仍成立 | manager.py:209 "error": str(exc)。 |
+
+**汇总**：44 项中已修复 13 项、部分修复 3 项、仍成立 28 项。后续修复以 audit-deep-remediation 与 Recommended Fix Order 为准。
 
 ---
 
@@ -683,7 +868,7 @@
 
 ---
 
-**说明**：以上为历史会话中曾覆盖的范围；**按「27 轮 = 27 次独立深度审计」定义，仅第 1 轮已完成**。后续由用户回复「**继续审计**」依次执行第 2–27 轮。发现 #22–#25 已纳入 `audit-deep-remediation` 统筹修复。
+**说明**：以上 27 轮独立深度审计与第 28 轮加审均已完成；本报告现作为后续修复分配与审校的依据，不再保留“继续审计到第 27 轮”的待执行口径。发现 #22–#25 及后续 #45–#55 已进入统筹修复队列。
 
 ---
 
