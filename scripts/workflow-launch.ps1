@@ -42,6 +42,21 @@ $CommandText
     }
 
     $encoded = New-EncodedCommand -ScriptText $script
+    $wt = Get-Command "wt.exe" -ErrorAction SilentlyContinue
+    if ($null -ne $wt) {
+        Start-Process -FilePath $wt.Source -ArgumentList @(
+            "-w",
+            "new",
+            "--title",
+            $WindowTitle,
+            "powershell.exe",
+            "-NoExit",
+            "-EncodedCommand",
+            $encoded
+        ) | Out-Null
+        return
+    }
+
     Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-EncodedCommand", $encoded) | Out-Null
 }
 
