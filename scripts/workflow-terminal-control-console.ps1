@@ -66,6 +66,7 @@ function Show-Help {
     Write-Host "  quit               Stop controller"
     Write-Host ""
     Write-Host ("Agents: {0}" -f ($agents -join ", "))
+    Write-Host "Audit state helper: poetry run python scripts/workflow_audit_state.py update --agent audit-a --status started"
     Write-Host ""
 }
 

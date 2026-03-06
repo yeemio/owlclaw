@@ -98,6 +98,7 @@ status
 - `.kiro/runtime/mailboxes/*.json`
 - `.kiro/runtime/acks/*.json`
 - `.kiro/runtime/heartbeats/*.json`
+- `.kiro/runtime/audit-state/*.json`
 - `.kiro/runtime/terminal-windows.json`
 
 触发发送的典型条件：
@@ -117,6 +118,28 @@ status
 - 当前 agent 没有进入停滞态
 
 默认停滞阈值由控制台脚本传入，当前默认是 `180` 秒。
+
+### 审计状态协议
+
+`audit-a` / `audit-b` 不再是“无状态角色”。它们应主动写自己的状态文件：
+
+```powershell
+poetry run python scripts/workflow_audit_state.py update --agent audit-a --status started --finding-ref D48 --summary "reviewing finding batch"
+poetry run python scripts/workflow_audit_state.py update --agent audit-b --status blocked --finding-ref D49 --note "need human confirmation"
+```
+
+查看当前状态：
+
+```powershell
+poetry run python scripts/workflow_audit_state.py show --agent audit-a --json
+```
+
+控制器对审计窗口的行为：
+
+- 没有 `audit-state` 文件：静默，不自动催
+- `updated_at` 过旧：催办
+- `status=blocked` 或 `status=idle`：催办
+- 状态新鲜：不催
 
 ---
 
