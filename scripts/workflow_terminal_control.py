@@ -42,6 +42,14 @@ def _state_dir(repo_root: Path) -> Path:
     return _runtime_dir(repo_root) / "terminal-control"
 
 
+def _heartbeat_path(repo_root: Path, agent: str) -> Path:
+    return _runtime_dir(repo_root) / "heartbeats" / f"{agent}.json"
+
+
+def _ack_path(repo_root: Path, agent: str) -> Path:
+    return _runtime_dir(repo_root) / "acks" / f"{agent}.json"
+
+
 def _window_manifest_path(repo_root: Path) -> Path:
     return _runtime_dir(repo_root) / "terminal-windows.json"
 
@@ -104,6 +112,28 @@ def _load_window_manifest(repo_root: Path) -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _read_json(path: Path) -> dict[str, object] | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _parse_iso8601(value: object) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _seconds_since(value: object) -> float | None:
+    dt = _parse_iso8601(value)
+    if dt is None:
+        return None
+    return (datetime.now(timezone.utc) - dt).total_seconds()
+
+
 def _window_process_id(repo_root: Path, agent: str) -> int | None:
     manifest = _load_window_manifest(repo_root)
     windows = manifest.get("windows", {})
@@ -148,6 +178,58 @@ def _message_for_audit(agent: str) -> str | None:
     if agent == "audit-b":
         return "继续审计统筹"
     return None
+
+
+def _agent_runtime_status(repo_root: Path, agent: str) -> dict[str, object]:
+    heartbeat = _read_json(_heartbeat_path(repo_root, agent))
+    ack = _read_json(_ack_path(repo_root, agent))
+    return {
+        "heartbeat": heartbeat,
+        "ack": ack,
+        "heartbeat_age": _seconds_since(heartbeat.get("polled_at")) if heartbeat else None,
+        "ack_age": _seconds_since(ack.get("acked_at")) if ack else None,
+    }
+
+
+def _should_send(
+    repo_root: Path,
+    agent: str,
+    fingerprint: str,
+    *,
+    force: bool,
+    stale_seconds: int,
+) -> tuple[bool, str]:
+    previous = _load_state(repo_root, agent)
+    if force:
+        return True, "forced"
+    if previous is None:
+        return True, "first_send"
+    if previous.get("fingerprint") != fingerprint:
+        return True, "fingerprint_changed"
+
+    if agent not in workflow_mailbox.VALID_AGENT_NAMES:
+        last_sent_age = _seconds_since(previous.get("sent_at"))
+        if last_sent_age is None or last_sent_age >= stale_seconds:
+            return True, "audit_nudge_due"
+        return False, "audit_recently_sent"
+
+    status = _agent_runtime_status(repo_root, agent)
+    heartbeat_age = status["heartbeat_age"]
+    ack_age = status["ack_age"]
+    ack = status["ack"] or {}
+    ack_status = ack.get("status", "")
+
+    if heartbeat_age is None:
+        return True, "missing_heartbeat"
+    if heartbeat_age >= stale_seconds:
+        return True, "stale_heartbeat"
+    if ack_age is None:
+        return True, "missing_ack"
+    if ack_age >= stale_seconds:
+        return True, "stale_ack"
+    if ack_status in {"blocked", "idle"}:
+        return True, f"ack_{ack_status}"
+    return False, "fresh_runtime"
 
 
 def _send_to_window(
@@ -217,7 +299,7 @@ def _send_to_window_candidates(
     return last_title, last_result
 
 
-def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str, object]:
+def drive_once(repo_root: Path, agent: str, *, force: bool = False, stale_seconds: int = 180) -> dict[str, object]:
     ensure_dirs(repo_root)
     if agent in workflow_mailbox.VALID_AGENT_NAMES:
         workflow_mailbox._validate_agent(agent)
@@ -232,9 +314,9 @@ def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str,
             return {"agent": agent, "delivered": False, "reason": "unknown_agent"}
 
     fingerprint = _fingerprint(mailbox, message)
-    previous = _load_state(repo_root, agent)
-    if not force and previous and previous.get("fingerprint") == fingerprint:
-        return {"agent": agent, "delivered": False, "reason": "already_sent", "message": message}
+    should_send, reason = _should_send(repo_root, agent, fingerprint, force=force, stale_seconds=stale_seconds)
+    if not should_send:
+        return {"agent": agent, "delivered": False, "reason": reason, "message": message}
 
     window_titles = TITLE_MAP[agent]
     process_id = _window_process_id(repo_root, agent)
@@ -257,14 +339,15 @@ def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str,
         "returncode": result.returncode,
         "sent_at": _utc_now(),
         "fingerprint": fingerprint,
+        "decision_reason": reason,
     }
     if delivered:
         _save_state(repo_root, agent, payload)
     return payload
 
 
-def drive_all(repo_root: Path, *, force: bool = False) -> list[dict[str, object]]:
-    return [drive_once(repo_root, agent, force=force) for agent in ALL_TERMINAL_TARGETS]
+def drive_all(repo_root: Path, *, force: bool = False, stale_seconds: int = 180) -> list[dict[str, object]]:
+    return [drive_once(repo_root, agent, force=force, stale_seconds=stale_seconds) for agent in ALL_TERMINAL_TARGETS]
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -274,6 +357,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--force", action="store_true", help="Resend even if the same mailbox fingerprint was already sent.")
     parser.add_argument("--once", action="store_true", help="Run one delivery pass and exit.")
     parser.add_argument("--interval", type=int, default=15, help="Polling interval in seconds.")
+    parser.add_argument("--stale-seconds", type=int, default=180, help="Treat heartbeat/ack inactivity beyond this threshold as stalled.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     return parser.parse_args(argv)
 
@@ -289,9 +373,9 @@ def main(argv: list[str] | None = None) -> int:
                 "sent_at": _utc_now(),
             }
         elif args.agent:
-            payload = drive_once(repo_root, args.agent, force=args.force)
+            payload = drive_once(repo_root, args.agent, force=args.force, stale_seconds=args.stale_seconds)
         else:
-            payload = drive_all(repo_root, force=args.force)
+            payload = drive_all(repo_root, force=args.force, stale_seconds=args.stale_seconds)
 
         if args.json:
             print(json.dumps(payload, ensure_ascii=True, indent=2))

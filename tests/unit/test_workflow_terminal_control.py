@@ -55,9 +55,23 @@ def test_drive_once_skips_same_fingerprint(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
+    heartbeat_dir = tmp_path / ".kiro" / "runtime" / "heartbeats"
+    ack_dir = tmp_path / ".kiro" / "runtime" / "acks"
+    heartbeat_dir.mkdir(parents=True, exist_ok=True)
+    ack_dir.mkdir(parents=True, exist_ok=True)
+    heartbeat_dir.joinpath("review.json").write_text(
+        json.dumps({"polled_at": "2026-03-06T00:00:30+00:00"}, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+    ack_dir.joinpath("review.json").write_text(
+        json.dumps({"acked_at": "2026-03-06T00:00:30+00:00", "status": "seen"}, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+
+    control._seconds_since = lambda value: 10.0
     result = control.drive_once(tmp_path, "review")
     assert result["delivered"] is False
-    assert result["reason"] == "already_sent"
+    assert result["reason"] == "fresh_runtime"
 
 
 def test_drive_once_records_delivery(tmp_path: Path) -> None:
@@ -87,6 +101,54 @@ def test_drive_once_records_delivery(tmp_path: Path) -> None:
     result = control.drive_once(tmp_path, "codex")
     assert result["delivered"] is True
     assert result["message"] == "继续spec循环"
+
+
+def test_drive_once_resends_when_heartbeat_stale(tmp_path: Path) -> None:
+    mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    mailbox_module.ensure_runtime_dirs(tmp_path)
+
+    mailbox_payload = {
+        "mailbox_version": 1,
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "agent": "review",
+        "action": "review_pending_commits",
+        "stage": "review",
+        "summary": "Review pending coding submissions in order: codex-work.",
+        "pending_commits": ["abc"],
+        "dirty_files": [],
+    }
+    (tmp_path / ".kiro" / "runtime" / "mailboxes" / "review.json").write_text(
+        json.dumps(mailbox_payload, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+    fingerprint = control._fingerprint(mailbox_payload, "继续审校")
+    (tmp_path / ".kiro" / "runtime" / "terminal-control").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".kiro" / "runtime" / "terminal-control" / "review.json").write_text(
+        json.dumps({"agent": "review", "fingerprint": fingerprint, "sent_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+    (tmp_path / ".kiro" / "runtime" / "heartbeats").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".kiro" / "runtime" / "acks").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".kiro" / "runtime" / "heartbeats" / "review.json").write_text(
+        json.dumps({"polled_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+    (tmp_path / ".kiro" / "runtime" / "acks" / "review.json").write_text(
+        json.dumps({"acked_at": "2026-03-06T00:00:00+00:00", "status": "seen"}, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+
+    class Result:
+        returncode = 0
+        stdout = "sent"
+        stderr = ""
+
+    control._seconds_since = lambda value: 999.0
+    control._send_to_window_candidates = lambda repo_root, window_titles, message, **kwargs: (window_titles[0], Result())
+    result = control.drive_once(tmp_path, "review", stale_seconds=180)
+    assert result["delivered"] is True
+    assert result["decision_reason"] == "stale_heartbeat"
 
 
 def test_drive_all_includes_audit_terminals(tmp_path: Path) -> None:

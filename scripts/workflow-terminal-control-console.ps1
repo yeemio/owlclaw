@@ -1,5 +1,6 @@
 param(
-    [int]$Interval = 20
+    [int]$Interval = 20,
+    [int]$StaleSeconds = 180
 )
 
 $repoRoot = (Resolve-Path ".").Path
@@ -92,10 +93,10 @@ workflow_terminal_control.set_paused(Path(r'$repoRoot'), $($Paused.ToString().To
 }
 
 Show-Help
-Write-Host ("Controller loop running every {0}s. Type a command and press Enter." -f $Interval)
+Write-Host ("Controller loop running every {0}s (stale threshold {1}s). Type a command and press Enter." -f $Interval, $StaleSeconds)
 
 while ($true) {
-    Invoke-Control @("--once", "--force", "--json")
+    Invoke-Control @("--once", "--stale-seconds", "$StaleSeconds", "--json")
 
     $deadline = (Get-Date).AddSeconds($Interval)
     while ((Get-Date) -lt $deadline) {
@@ -122,7 +123,7 @@ while ($true) {
                     Write-Host "resumed"
                 }
                 "status" {
-                    Invoke-Control @("--once", "--json")
+                    Invoke-Control @("--once", "--stale-seconds", "$StaleSeconds", "--json")
                 }
                 "send" {
                     if ($agents -notcontains $target) {
