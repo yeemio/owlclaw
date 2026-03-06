@@ -128,3 +128,22 @@ def test_pause_flag_round_trip(tmp_path: Path) -> None:
     assert control.is_paused(tmp_path) is True
     control.set_paused(tmp_path, False)
     assert control.is_paused(tmp_path) is False
+
+
+def test_window_manifest_process_id_lookup(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    runtime_dir = tmp_path / ".kiro" / "runtime"
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "windows": {
+            "main": {"pid": 1234, "title": "owlclaw-main"},
+            "review": {"pid": 5678, "title": "owlclaw-review"},
+        },
+    }
+    (runtime_dir / "terminal-windows.json").write_text(json.dumps(manifest, ensure_ascii=True), encoding="utf-8")
+
+    assert control._window_process_id(tmp_path, "main") == 1234
+    assert control._window_process_id(tmp_path, "review") == 5678
+    assert control._window_process_id(tmp_path, "codex") is None

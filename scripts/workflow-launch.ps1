@@ -25,6 +25,37 @@ public static class WorkflowWindowLayout
 }
 "@
 
+function Get-WindowManifestPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot
+    )
+
+    return (Join-Path $RepoRoot ".kiro\runtime\terminal-windows.json")
+}
+
+function Save-WindowManifest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Windows
+    )
+
+    $runtimeDir = Join-Path $RepoRoot ".kiro\runtime"
+    if (-not (Test-Path $runtimeDir)) {
+        New-Item -ItemType Directory -Path $runtimeDir -Force | Out-Null
+    }
+
+    $payload = @{
+        generated_at = (Get-Date).ToUniversalTime().ToString("o")
+        windows = $Windows
+    }
+
+    $manifestPath = Get-WindowManifestPath -RepoRoot $RepoRoot
+    $payload | ConvertTo-Json -Depth 6 | Set-Content -Path $manifestPath -Encoding UTF8
+}
+
 function New-EncodedCommand {
     param(
         [Parameter(Mandatory = $true)]
@@ -52,13 +83,13 @@ $CommandText
 
     if ($DryRun) {
         Write-Output ("launch:{0}:{1}:{2}" -f $WindowTitle, $Workdir, $CommandText)
-        return
+        return $null
     }
 
     $encoded = New-EncodedCommand -ScriptText $script
     $wt = Get-Command "wt.exe" -ErrorAction SilentlyContinue
     if ($null -ne $wt) {
-        Start-Process -FilePath $wt.Source -ArgumentList @(
+        return Start-Process -PassThru -FilePath $wt.Source -ArgumentList @(
             "-w",
             "new",
             "--title",
@@ -67,11 +98,10 @@ $CommandText
             "-NoExit",
             "-EncodedCommand",
             $encoded
-        ) | Out-Null
-        return
+        )
     }
 
-    Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-EncodedCommand", $encoded) | Out-Null
+    return Start-Process -PassThru -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-EncodedCommand", $encoded)
 }
 
 function Get-WorkflowWindowHandle {
@@ -129,11 +159,23 @@ $targets = @(
     @{ Title = "owlclaw-audit-b"; Workdir = $AuditBRepo; Command = "agent" }
 )
 
+$windowManifest = @{}
 foreach ($target in $targets) {
-    Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command
+    $process = Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command
+    if (-not $DryRun -and $null -ne $process) {
+        $windowManifest[$target.Title.Replace("owlclaw-", "")] = @{
+            pid = $process.Id
+            title = $target.Title
+            workdir = $target.Workdir
+        }
+    }
     if (-not $DryRun) {
         Start-Sleep -Milliseconds $LaunchSpacingMilliseconds
     }
+}
+
+if (-not $DryRun) {
+    Save-WindowManifest -RepoRoot $MainRepo -Windows $windowManifest
 }
 
 if (-not $SkipLayout -and -not $DryRun) {

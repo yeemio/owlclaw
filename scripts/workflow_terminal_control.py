@@ -42,6 +42,10 @@ def _state_dir(repo_root: Path) -> Path:
     return _runtime_dir(repo_root) / "terminal-control"
 
 
+def _window_manifest_path(repo_root: Path) -> Path:
+    return _runtime_dir(repo_root) / "terminal-windows.json"
+
+
 def _pause_flag_path(repo_root: Path) -> Path:
     return _state_dir(repo_root) / "paused.flag"
 
@@ -93,6 +97,25 @@ def _fingerprint(mailbox: dict[str, object], message: str) -> str:
     return json.dumps(payload, ensure_ascii=True, sort_keys=True)
 
 
+def _load_window_manifest(repo_root: Path) -> dict[str, object]:
+    path = _window_manifest_path(repo_root)
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _window_process_id(repo_root: Path, agent: str) -> int | None:
+    manifest = _load_window_manifest(repo_root)
+    windows = manifest.get("windows", {})
+    if not isinstance(windows, dict):
+        return None
+    payload = windows.get(agent)
+    if not isinstance(payload, dict):
+        return None
+    pid = payload.get("pid")
+    return pid if isinstance(pid, int) and pid > 0 else None
+
+
 def _message_for_mailbox(agent: str, mailbox: dict[str, object]) -> str | None:
     action = str(mailbox.get("action", ""))
 
@@ -115,18 +138,22 @@ def _message_for_audit(agent: str) -> str | None:
     return None
 
 
-def _send_to_window(repo_root: Path, window_title: str, message: str) -> subprocess.CompletedProcess[str]:
+def _send_to_window(
+    repo_root: Path, window_title: str, message: str, *, process_id: int | None = None
+) -> subprocess.CompletedProcess[str]:
     script_path = SCRIPT_DIR / "workflow_sendkeys.ps1"
     command = [
         "pwsh",
         "-NoProfile",
         "-File",
         str(script_path),
-        "-WindowTitle",
-        window_title,
         "-Message",
         message,
     ]
+    if process_id:
+        command.extend(["-ProcessId", str(process_id)])
+    if window_title:
+        command.extend(["-WindowTitle", window_title])
     return subprocess.run(
         command,
         cwd=repo_root,
@@ -139,8 +166,13 @@ def _send_to_window(repo_root: Path, window_title: str, message: str) -> subproc
 
 
 def _send_to_window_candidates(
-    repo_root: Path, window_titles: list[str], message: str
+    repo_root: Path, window_titles: list[str], message: str, *, process_id: int | None = None
 ) -> tuple[str, subprocess.CompletedProcess[str]]:
+    if process_id:
+        result = _send_to_window(repo_root, window_titles[0], message, process_id=process_id)
+        if result.returncode == 0:
+            return window_titles[0], result
+
     last_result: subprocess.CompletedProcess[str] | None = None
     last_title = window_titles[0]
 
@@ -175,7 +207,8 @@ def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str,
         return {"agent": agent, "delivered": False, "reason": "already_sent", "message": message}
 
     window_titles = TITLE_MAP[agent]
-    window_title, result = _send_to_window_candidates(repo_root, window_titles, message)
+    process_id = _window_process_id(repo_root, agent)
+    window_title, result = _send_to_window_candidates(repo_root, window_titles, message, process_id=process_id)
     delivered = result.returncode == 0
     payload = {
         "agent": agent,

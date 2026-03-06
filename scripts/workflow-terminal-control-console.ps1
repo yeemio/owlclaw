@@ -7,6 +7,29 @@ $controlScript = "scripts/workflow_terminal_control.py"
 $focusScript = "scripts/workflow_focus_window.ps1"
 $agents = @("main", "review", "codex", "codex-gpt", "audit-a", "audit-b")
 
+function Get-WorkflowWindowPid {
+    param(
+        [string]$Agent
+    )
+
+    $manifestPath = Join-Path $repoRoot ".kiro\runtime\terminal-windows.json"
+    if (-not (Test-Path $manifestPath)) {
+        return 0
+    }
+
+    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    if ($null -eq $manifest.windows) {
+        return 0
+    }
+
+    $window = $manifest.windows.$Agent
+    if ($null -eq $window) {
+        return 0
+    }
+
+    return [int]$window.pid
+}
+
 function Show-Help {
     Write-Host ""
     Write-Host "Commands:"
@@ -92,7 +115,13 @@ while ($true) {
                     }
                     else {
                         $windowTitle = "owlclaw-$target"
-                        pwsh -NoProfile -File $focusScript -WindowTitle $windowTitle
+                        $pid = Get-WorkflowWindowPid -Agent $target
+                        if ($pid -gt 0) {
+                            pwsh -NoProfile -File $focusScript -ProcessId $pid -WindowTitle $windowTitle
+                        }
+                        else {
+                            pwsh -NoProfile -File $focusScript -WindowTitle $windowTitle
+                        }
                     }
                 }
                 "quit" {
