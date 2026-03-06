@@ -24,6 +24,8 @@ def test_message_mapping_uses_fixed_utterances() -> None:
     assert control._message_for_mailbox("main", {"action": "clean_local_changes"}) == "统筹"
     assert control._message_for_mailbox("review", {"action": "review_pending_commits"}) == "继续审校"
     assert control._message_for_mailbox("codex", {"action": "wait_for_review"}) == "继续spec循环"
+    assert control._message_for_audit("audit-a") == "继续深度审计"
+    assert control._message_for_audit("audit-b") == "继续审计统筹"
 
 
 def test_drive_once_skips_same_fingerprint(tmp_path: Path) -> None:
@@ -84,3 +86,33 @@ def test_drive_once_records_delivery(tmp_path: Path) -> None:
     result = control.drive_once(tmp_path, "codex")
     assert result["delivered"] is True
     assert result["message"] == "继续spec循环"
+
+
+def test_drive_all_includes_audit_terminals(tmp_path: Path) -> None:
+    mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    mailbox_module.ensure_runtime_dirs(tmp_path)
+
+    for agent in mailbox_module.VALID_AGENT_NAMES:
+        mailbox_payload = {
+            "mailbox_version": 1,
+            "generated_at": "2026-03-06T00:00:00+00:00",
+            "agent": agent,
+            "action": "wait_for_assignment",
+            "stage": "stable",
+            "summary": "Waiting for the next action.",
+            "pending_commits": [],
+            "dirty_files": [],
+        }
+        mailbox_path = tmp_path / ".kiro" / "runtime" / "mailboxes" / f"{agent}.json"
+        mailbox_path.write_text(json.dumps(mailbox_payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
+    class Result:
+        returncode = 0
+        stdout = "sent"
+        stderr = ""
+
+    control._send_to_window = lambda repo_root, window_title, message: Result()
+    results = control.drive_all(tmp_path, force=True)
+    agents = {result["agent"] for result in results}
+    assert agents == set(control.ALL_TERMINAL_TARGETS)

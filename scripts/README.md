@@ -28,8 +28,9 @@
 | `workflow_executor.py` | 真正执行 mailbox 动作：按角色调用 `codex exec` / `agent --print` / `claude -p` 在对应 worktree 中执行任务 | `poetry run python scripts/workflow_executor.py --agent review --once` | 本地开发使用 |
 | `workflow_supervisor.py` | 从主仓统一拉起/停止/巡检 orchestrator + 各 worktree agent 进程，写 PID 与日志 | `poetry run python scripts/workflow_supervisor.py start` | 本地开发使用 |
 | `workflow-supervisor-console.ps1` | 打开一个可视监控终端，前台运行 `workflow_supervisor.py watch --ensure-running` | `pwsh ./scripts/workflow-supervisor-console.ps1` | 本地开发使用 |
-| `workflow_terminal_control.py` | 驱动已打开的终端窗口：按 mailbox 给现有 CLI 窗口发送固定话术（统筹/继续spec循环/继续审校） | `poetry run python scripts/workflow_terminal_control.py --once` | 本地开发使用 |
-| `workflow_terminal_title.ps1` | 给当前已打开终端设置可驱动标题（如 `owlclaw-codex`） | `pwsh ./scripts/workflow_terminal_title.ps1 -Name codex` | 本地开发使用 |
+| `workflow_terminal_control.py` | 驱动已打开的终端窗口：按 mailbox 给现有 CLI 窗口发送固定话术（统筹/继续spec循环/继续审校/继续深度审计/继续审计统筹） | `poetry run python scripts/workflow_terminal_control.py --interval 15 --force` | 本地开发使用 |
+| `workflow-terminal-control-console.ps1` | 前台持续驱动现有 6 个 CLI 窗口，循环发送固定话术 | `pwsh ./scripts/workflow-terminal-control-console.ps1` | 本地开发使用 |
+| `workflow_terminal_title.ps1` | 给当前已打开终端设置可驱动标题（如 `owlclaw-codex`、`owlclaw-audit-a`） | `pwsh ./scripts/workflow_terminal_title.ps1 -Name codex` | 本地开发使用 |
 | `workflow_sendkeys.ps1` | 底层窗口驱动：激活指定窗口标题并粘贴/回车 | 内部脚本 | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
 | `test_template.py` | 测试模板脚手架检查 | `poetry run python scripts/test_template.py --help` | 本地开发使用 |
@@ -46,4 +47,5 @@
 6. `workflow_executor.py` 是执行层：它读取 mailbox 后按角色选择非交互 CLI（`main -> codex`，`coding -> agent`，`review -> claude`），结果写入 `.kiro/runtime/executions/` 并回写 ack。
 7. `workflow_supervisor.py` 负责跨 worktree 启停 automation 进程；日志位于 `.kiro/runtime/supervisor/logs/`，PID manifest 位于 `.kiro/runtime/supervisor/pids/`。
 8. 如需一个长期可视监控终端，直接运行 `pwsh ./scripts/workflow-supervisor-console.ps1`；它会前台 watch，并在 worker 掉线时自动拉起。
-9. 如需驱动已经打开的 CLI 窗口，先在每个窗口运行 `workflow_terminal_title.ps1` 设标题，再运行 `workflow_terminal_control.py`；它会把固定话术直接粘贴进对应窗口。
+9. 如需驱动已经打开的 CLI 窗口，先在每个窗口运行 `workflow_terminal_title.ps1` 设标题，再运行 `workflow_terminal_control.py` 或 `workflow-terminal-control-console.ps1`；它会把固定话术直接粘贴进对应窗口。
+10. 现有窗口标题建议统一为：`owlclaw-main`、`owlclaw-review`、`owlclaw-codex`、`owlclaw-codex-gpt`、`owlclaw-audit-a`、`owlclaw-audit-b`。

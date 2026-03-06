@@ -23,7 +23,11 @@ TITLE_MAP = {
     "review": "owlclaw-review",
     "codex": "owlclaw-codex",
     "codex-gpt": "owlclaw-codex-gpt",
+    "audit-a": "owlclaw-audit-a",
+    "audit-b": "owlclaw-audit-b",
 }
+MAILBOX_AGENTS = sorted(workflow_mailbox.VALID_AGENT_NAMES)
+ALL_TERMINAL_TARGETS = MAILBOX_AGENTS + ["audit-a", "audit-b"]
 
 
 def _utc_now() -> str:
@@ -84,6 +88,14 @@ def _message_for_mailbox(agent: str, mailbox: dict[str, object]) -> str | None:
     return None
 
 
+def _message_for_audit(agent: str) -> str | None:
+    if agent == "audit-a":
+        return "继续深度审计"
+    if agent == "audit-b":
+        return "继续审计统筹"
+    return None
+
+
 def _send_to_window(repo_root: Path, window_title: str, message: str) -> subprocess.CompletedProcess[str]:
     script_path = SCRIPT_DIR / "workflow_sendkeys.ps1"
     command = [
@@ -108,12 +120,18 @@ def _send_to_window(repo_root: Path, window_title: str, message: str) -> subproc
 
 
 def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str, object]:
-    workflow_mailbox._validate_agent(agent)
     ensure_dirs(repo_root)
-    mailbox = workflow_mailbox.read_mailbox(repo_root, agent)
-    message = _message_for_mailbox(agent, mailbox)
-    if not message:
-        return {"agent": agent, "delivered": False, "reason": "no_message"}
+    if agent in workflow_mailbox.VALID_AGENT_NAMES:
+        workflow_mailbox._validate_agent(agent)
+        mailbox = workflow_mailbox.read_mailbox(repo_root, agent)
+        message = _message_for_mailbox(agent, mailbox)
+        if not message:
+            return {"agent": agent, "delivered": False, "reason": "no_message"}
+    else:
+        mailbox = {"action": "fixed", "stage": "fixed", "summary": "fixed audit prompt", "pending_commits": [], "dirty_files": []}
+        message = _message_for_audit(agent)
+        if not message:
+            return {"agent": agent, "delivered": False, "reason": "unknown_agent"}
 
     fingerprint = _fingerprint(mailbox, message)
     previous = _load_state(repo_root, agent)
@@ -140,13 +158,13 @@ def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str,
 
 
 def drive_all(repo_root: Path, *, force: bool = False) -> list[dict[str, object]]:
-    return [drive_once(repo_root, agent, force=force) for agent in sorted(workflow_mailbox.VALID_AGENT_NAMES)]
+    return [drive_once(repo_root, agent, force=force) for agent in ALL_TERMINAL_TARGETS]
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Send fixed workflow prompts into already-open terminal windows.")
     parser.add_argument("--repo-root", default=".", help="Path to the main repository root.")
-    parser.add_argument("--agent", choices=sorted(workflow_mailbox.VALID_AGENT_NAMES), help="Drive a single agent window.")
+    parser.add_argument("--agent", choices=ALL_TERMINAL_TARGETS, help="Drive a single agent window.")
     parser.add_argument("--force", action="store_true", help="Resend even if the same mailbox fingerprint was already sent.")
     parser.add_argument("--once", action="store_true", help="Run one delivery pass and exit.")
     parser.add_argument("--interval", type=int, default=15, help="Polling interval in seconds.")
