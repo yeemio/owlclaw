@@ -16,7 +16,9 @@
       "default_prompt": "统筹",
       "startup": {
         "type": "cli",
-        "command": "codex"
+        "command": "codex",
+        "max_attempts": 2,
+        "retry_delay_seconds": 3
       }
     },
     {
@@ -35,7 +37,9 @@
         "type": "audit_agent",
         "command": "agent",
         "audit_summary": "audit window launched",
-        "heartbeat_interval_seconds": 60
+        "heartbeat_interval_seconds": 60,
+        "max_attempts": 3,
+        "retry_delay_seconds": 5
       }
     },
     {
@@ -54,7 +58,9 @@
         "type": "audit_agent",
         "command": "agent",
         "audit_summary": "audit review window launched",
-        "heartbeat_interval_seconds": 60
+        "heartbeat_interval_seconds": 60,
+        "max_attempts": 3,
+        "retry_delay_seconds": 5
       }
     },
     {
@@ -72,7 +78,9 @@
       "default_prompt": "继续审校",
       "startup": {
         "type": "cli",
-        "command": "claude"
+        "command": "claude",
+        "max_attempts": 3,
+        "retry_delay_seconds": 5
       }
     },
     {
@@ -89,7 +97,9 @@
       "default_prompt": "继续spec循环",
       "startup": {
         "type": "cli",
-        "command": "agent"
+        "command": "agent",
+        "max_attempts": 3,
+        "retry_delay_seconds": 5
       }
     },
     {
@@ -106,7 +116,9 @@
       "default_prompt": "继续spec循环",
       "startup": {
         "type": "cli",
-        "command": "agent"
+        "command": "agent",
+        "max_attempts": 3,
+        "retry_delay_seconds": 5
       }
     }
   ]

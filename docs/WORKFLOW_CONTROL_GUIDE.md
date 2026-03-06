@@ -77,6 +77,7 @@ pwsh ./scripts/workflow-launch.ps1 -SkipLayout -LaunchSpacingMilliseconds 2000
 - 写入 `.kiro/runtime/launch-state/<agent>.json`
 - 只有当该角色进入 `running`，才继续启动下一个
 - 如果某个角色很快退回 PowerShell，启动器会判定为失败并默认中止后续启动
+- 对 `agent` / `claude` / `codex` 的瞬时启动失败会自动短重试，并把输出落到 `.kiro/runtime/launch-logs/<agent>.log`
 
 如果你想在某个角色失败后继续把剩余窗口也拉起来，再额外加：
 
@@ -88,6 +89,12 @@ pwsh ./scripts/workflow-launch.ps1 -SkipLayout -ContinueOnLaunchFailure
 
 ```powershell
 poetry run python scripts/workflow_launch_state.py --repo-root D:\AI\owlclaw show --agent codex --json
+```
+
+查看某个角色的启动日志：
+
+```powershell
+Get-Content .kiro\runtime\launch-logs\codex.log
 ```
 
 如果你确认布局稳定，再去尝试默认平铺；如果当前目标是“先用起来”，建议保持 `-SkipLayout`。

@@ -132,6 +132,21 @@ function Get-LaunchStatePath {
     return (Join-Path $RepoRoot ".kiro\runtime\launch-state\$Agent.json")
 }
 
+function Get-LaunchLogPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$Agent
+    )
+
+    $logDir = Join-Path $RepoRoot ".kiro\runtime\launch-logs"
+    if (-not (Test-Path $logDir)) {
+        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+    }
+    return (Join-Path $logDir "$Agent.log")
+}
+
 function Wait-WorkflowLaunchHealthy {
     param(
         [Parameter(Mandatory = $true)]
@@ -238,23 +253,48 @@ $targets = @()
 foreach ($role in $config.roles) {
     $startupType = [string]$role.startup.type
     $startupCommand = [string]$role.startup.command
+    $maxAttempts = if ($role.startup.max_attempts) { [int]$role.startup.max_attempts } else { 1 }
+    $retryDelaySeconds = if ($role.startup.retry_delay_seconds) { [int]$role.startup.retry_delay_seconds } else { 3 }
+    $logPath = Get-LaunchLogPath -RepoRoot $mainRepo -Agent ([string]$role.agent)
     $command = @"
-poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --json | Out-Null
-`$workflowLaunchMarker = Start-Job -ScriptBlock {
-    param(`$repoRoot, `$agent, `$delaySeconds, `$pidValue)
-    Start-Sleep -Seconds `$delaySeconds
-    Set-Location `$repoRoot
-    poetry run python scripts/workflow_launch_state.py --repo-root `$repoRoot update --agent `$agent --status running --pid `$pidValue --note `"startup grace passed`" --json | Out-Null
-} -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID
-try {
-    $startupCommand
-}
-finally {
-    if (`$workflowLaunchMarker) {
-        Stop-Job -Job `$workflowLaunchMarker -ErrorAction SilentlyContinue | Out-Null
-        Remove-Job -Job `$workflowLaunchMarker -Force -ErrorAction SilentlyContinue | Out-Null
+`$workflowLaunchAttempts = $maxAttempts
+`$workflowRetryDelaySeconds = $retryDelaySeconds
+`$workflowLaunchSucceeded = `$false
+1..`$workflowLaunchAttempts | ForEach-Object {
+    `$workflowAttempt = `$_
+    poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --pid `$PID --note `"attempt `$workflowAttempt/$maxAttempts`" --json | Out-Null
+    Add-Content -Path '$logPath' -Value ("[{0}] attempt {1}/{2} starting" -f [DateTime]::UtcNow.ToString("o"), `$workflowAttempt, $maxAttempts)
+    `$workflowLaunchMarker = Start-Job -ScriptBlock {
+        param(`$repoRoot, `$agent, `$delaySeconds, `$pidValue, `$attempt)
+        Start-Sleep -Seconds `$delaySeconds
+        Set-Location `$repoRoot
+        poetry run python scripts/workflow_launch_state.py --repo-root `$repoRoot update --agent `$agent --status running --pid `$pidValue --note `"startup grace passed on attempt `$attempt`" --json | Out-Null
+    } -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID, `$workflowAttempt
+    `$workflowStartTime = Get-Date
+    try {
+        & $startupCommand 2>&1 | Tee-Object -FilePath '$logPath' -Append
     }
-    poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$LASTEXITCODE --note `"cli returned to powershell`" --json | Out-Null
+    finally {
+        if (`$workflowLaunchMarker) {
+            Stop-Job -Job `$workflowLaunchMarker -ErrorAction SilentlyContinue | Out-Null
+            Remove-Job -Job `$workflowLaunchMarker -Force -ErrorAction SilentlyContinue | Out-Null
+        }
+    }
+    `$workflowExitCode = `$LASTEXITCODE
+    `$workflowRuntimeSeconds = ((Get-Date) - `$workflowStartTime).TotalSeconds
+    Add-Content -Path '$logPath' -Value ("[{0}] attempt {1}/{2} exited code={3} runtime_seconds={4}" -f [DateTime]::UtcNow.ToString("o"), `$workflowAttempt, $maxAttempts, `$workflowExitCode, [Math]::Round(`$workflowRuntimeSeconds, 2))
+    if (`$workflowRuntimeSeconds -ge $StartupGraceSeconds) {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$workflowExitCode --note `"cli exited after running`" --json | Out-Null
+        `$workflowLaunchSucceeded = `$true
+        return
+    }
+    if (`$workflowAttempt -lt `$workflowLaunchAttempts) {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --pid `$PID --exit-code `$workflowExitCode --note `"retrying after quick exit on attempt `$workflowAttempt`" --json | Out-Null
+        Start-Sleep -Seconds `$workflowRetryDelaySeconds
+    }
+    else {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$workflowExitCode --note `"cli returned to powershell after retries`" --json | Out-Null
+    }
 }
 "@
 
@@ -262,24 +302,44 @@ finally {
         $summary = [string]$role.startup.audit_summary
         $interval = [int]$role.startup.heartbeat_interval_seconds
         $command = @"
-poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --json | Out-Null
-`$workflowLaunchMarker = Start-Job -ScriptBlock {
-    param(`$repoRoot, `$agent, `$delaySeconds, `$pidValue)
-    Start-Sleep -Seconds `$delaySeconds
-    Set-Location `$repoRoot
-    poetry run python scripts/workflow_launch_state.py --repo-root `$repoRoot update --agent `$agent --status running --pid `$pidValue --note `"startup grace passed`" --json | Out-Null
-} -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID
-try {
-    `$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent $($role.agent) --status idle --summary `"$summary`" --interval $interval } -ArgumentList '$($role.repo_path)'
-    poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) --status idle --summary `"$summary`" | Out-Null
-    $startupCommand
-}
-finally {
-    if (`$workflowLaunchMarker) {
-        Stop-Job -Job `$workflowLaunchMarker -ErrorAction SilentlyContinue | Out-Null
-        Remove-Job -Job `$workflowLaunchMarker -Force -ErrorAction SilentlyContinue | Out-Null
+`$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent $($role.agent) --status idle --summary `"$summary`" --interval $interval } -ArgumentList '$($role.repo_path)'
+poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) --status idle --summary `"$summary`" | Out-Null
+`$workflowLaunchAttempts = $maxAttempts
+`$workflowRetryDelaySeconds = $retryDelaySeconds
+1..`$workflowLaunchAttempts | ForEach-Object {
+    `$workflowAttempt = `$_
+    poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --pid `$PID --note `"attempt `$workflowAttempt/$maxAttempts`" --json | Out-Null
+    Add-Content -Path '$logPath' -Value ("[{0}] attempt {1}/{2} starting" -f [DateTime]::UtcNow.ToString("o"), `$workflowAttempt, $maxAttempts)
+    `$workflowLaunchMarker = Start-Job -ScriptBlock {
+        param(`$repoRoot, `$agent, `$delaySeconds, `$pidValue, `$attempt)
+        Start-Sleep -Seconds `$delaySeconds
+        Set-Location `$repoRoot
+        poetry run python scripts/workflow_launch_state.py --repo-root `$repoRoot update --agent `$agent --status running --pid `$pidValue --note `"startup grace passed on attempt `$attempt`" --json | Out-Null
+    } -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID, `$workflowAttempt
+    `$workflowStartTime = Get-Date
+    try {
+        & $startupCommand 2>&1 | Tee-Object -FilePath '$logPath' -Append
     }
-    poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$LASTEXITCODE --note `"cli returned to powershell`" --json | Out-Null
+    finally {
+        if (`$workflowLaunchMarker) {
+            Stop-Job -Job `$workflowLaunchMarker -ErrorAction SilentlyContinue | Out-Null
+            Remove-Job -Job `$workflowLaunchMarker -Force -ErrorAction SilentlyContinue | Out-Null
+        }
+    }
+    `$workflowExitCode = `$LASTEXITCODE
+    `$workflowRuntimeSeconds = ((Get-Date) - `$workflowStartTime).TotalSeconds
+    Add-Content -Path '$logPath' -Value ("[{0}] attempt {1}/{2} exited code={3} runtime_seconds={4}" -f [DateTime]::UtcNow.ToString("o"), `$workflowAttempt, $maxAttempts, `$workflowExitCode, [Math]::Round(`$workflowRuntimeSeconds, 2))
+    if (`$workflowRuntimeSeconds -ge $StartupGraceSeconds) {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$workflowExitCode --note `"cli exited after running`" --json | Out-Null
+        return
+    }
+    if (`$workflowAttempt -lt `$workflowLaunchAttempts) {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --pid `$PID --exit-code `$workflowExitCode --note `"retrying after quick exit on attempt `$workflowAttempt`" --json | Out-Null
+        Start-Sleep -Seconds `$workflowRetryDelaySeconds
+    }
+    else {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$workflowExitCode --note `"cli returned to powershell after retries`" --json | Out-Null
+    }
 }
 "@
     }
