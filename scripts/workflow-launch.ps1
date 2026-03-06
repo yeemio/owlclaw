@@ -177,12 +177,12 @@ $targets = @(
     @{
         Title = "owlclaw-audit-a"
         Workdir = $AuditARepo
-        Command = "poetry run python scripts/workflow_audit_state.py update --agent audit-a --status idle --summary `"audit window launched`"; agent"
+        Command = "`$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent audit-a --status idle --summary `"audit window launched`" --interval 60 } -ArgumentList '$AuditARepo'; poetry run python scripts/workflow_audit_state.py update --agent audit-a --status idle --summary `"audit window launched`"; agent"
     },
     @{
         Title = "owlclaw-audit-b"
         Workdir = $AuditBRepo
-        Command = "poetry run python scripts/workflow_audit_state.py update --agent audit-b --status idle --summary `"audit review window launched`"; agent"
+        Command = "`$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent audit-b --status idle --summary `"audit review window launched`" --interval 60 } -ArgumentList '$AuditBRepo'; poetry run python scripts/workflow_audit_state.py update --agent audit-b --status idle --summary `"audit review window launched`"; agent"
     }
 )
 

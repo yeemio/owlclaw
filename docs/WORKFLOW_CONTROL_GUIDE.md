@@ -57,6 +57,7 @@ pwsh ./scripts/workflow-launch.ps1 -SkipLayout
 - `audit-b`
 
 写入初始 `audit-state=idle`，所以审计窗口不再需要先手工建状态文件。
+同时会在后台启动审计状态心跳，持续刷新 `audit-a` / `audit-b` 的 `updated_at`。
 
 如果你希望降低批量起窗时的丢窗概率，可以加大间隔：
 
@@ -145,7 +146,8 @@ poetry run python scripts/workflow_audit_state.py show --agent audit-a --json
 
 - 没有 `audit-state` 文件：静默，不自动催
 - `updated_at` 过旧：催办
-- `status=blocked` 或 `status=idle`：催办
+- `status=blocked`：催办
+- `status=idle` 且状态新鲜：不催
 - 状态新鲜：不催
 
 ---

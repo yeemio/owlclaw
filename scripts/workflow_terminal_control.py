@@ -265,6 +265,16 @@ def _should_send(
         audit_status = _audit_runtime_status(repo_root, agent)
         if not force and audit_status is None:
             return False, "missing_audit_state"
+        if force:
+            return True, "forced"
+        assert audit_status is not None
+        updated_age = audit_status["updated_age"]
+        status = audit_status["status"]
+        if updated_age is None or updated_age >= stale_seconds:
+            return True, "stale_audit_state"
+        if status == "blocked":
+            return True, f"audit_{status}"
+        return False, "fresh_audit_state"
 
     previous = _load_state(repo_root, agent)
     if force:
@@ -278,17 +288,6 @@ def _should_send(
     last_attempt_age = _seconds_since(last_attempt_value) if last_attempt_value else None
     if last_attempt_age is not None and last_attempt_age < retry_seconds:
         return False, "recent_attempt"
-
-    if agent not in workflow_mailbox.VALID_AGENT_NAMES:
-        audit_status = _audit_runtime_status(repo_root, agent)
-        assert audit_status is not None
-        updated_age = audit_status["updated_age"]
-        status = audit_status["status"]
-        if updated_age is None or updated_age >= stale_seconds:
-            return True, "stale_audit_state"
-        if status in {"blocked", "idle"}:
-            return True, f"audit_{status}"
-        return False, "fresh_audit_state"
 
     status = _agent_runtime_status(repo_root, agent)
     heartbeat_age = status["heartbeat_age"]

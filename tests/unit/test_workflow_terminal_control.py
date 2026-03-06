@@ -192,6 +192,21 @@ def test_audit_agent_without_state_is_not_auto_nudged(tmp_path: Path) -> None:
     assert result["reason"] == "missing_audit_state"
 
 
+def test_audit_agent_with_fresh_idle_state_stays_silent(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    audit_dir = tmp_path / ".kiro" / "runtime" / "audit-state"
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    audit_dir.joinpath("audit-a.json").write_text(
+        json.dumps({"agent": "audit-a", "status": "idle", "updated_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True),
+        encoding="utf-8",
+    )
+    control._seconds_since = lambda value: 10.0
+    result = control.drive_once(tmp_path, "audit-a")
+    assert result["delivered"] is False
+    assert result["reason"] == "fresh_audit_state"
+
+
 def test_drive_all_includes_audit_terminals(tmp_path: Path) -> None:
     mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
     control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
