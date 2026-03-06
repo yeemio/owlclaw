@@ -42,6 +42,8 @@
 | D6 | Low-6 | `owlclaw/db/engine.py` | 收窄异常映射 | 非连接类异常不再误报 |
 | D7 | Low-7 | `owlclaw/web/providers/capabilities.py` | 无 DB 时 `/capabilities` 不 500 | 返回 200 + 零统计 |
 | D11 | Low-11 | `owlclaw/triggers/webhook/http/app.py` | 非 UTF-8 body 返回 400 | 有测试或手验 |
+| D13 | Low-13 | `owlclaw/governance/visibility.py` | evaluator 增加 timeout 或文档边界 | 单个 evaluator 不再无限卡住过滤 |
+| D14 | Low-14 | `owlclaw/integrations/hatchet.py` | 收敛 Windows SIGQUIT 兼容逻辑作用域 | 兼容逻辑边界清晰 |
 
 ### Batch B：依赖 D4a 合并到 main 后启动
 
@@ -73,12 +75,14 @@
 ### 给 codex-gpt-work
 
 - 批次：`audit-deep-remediation / Batch A`
-- 任务：`D2 D6 D7 D11`
+- 任务：`D2 D6 D7 D11 D13 D14`
 - 文件边界：
   - 可改：`docs/`
   - 可改：`owlclaw/db/engine.py`
   - 可改：`owlclaw/web/providers/capabilities.py`
   - 可改：`owlclaw/triggers/webhook/http/app.py`
+  - 可改：`owlclaw/governance/visibility.py`
+  - 可改：`owlclaw/integrations/hatchet.py`
   - 禁止改：`runtime.py` `ledger.py` `app.py`
 - 额外说明：
   - `D4b` 不在本轮启动
@@ -89,7 +93,7 @@
 - 审校顺序：
   1. 先审 `codex-work` 的 `D1/D4a`
   2. 一旦 `D4a` 合入 `main`，通知 `codex-gpt-work` 可启动 `D4b`
-  3. 再审 `codex-gpt-work` 的 `D2/D6/D7/D11`
+  3. 再审 `codex-gpt-work` 的 `D2/D6/D7/D11/D13/D14`
   4. 最后审 `D4b`
 - 审校重点：
   - `P1` 是否真的封住信任边界
