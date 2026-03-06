@@ -220,7 +220,7 @@ function Write-LaunchState {
         [string]$Agent,
         [Parameter(Mandatory = $true)]
         [string]$Status,
-        [int]$Pid = 0,
+        [int]$ProcessId = 0,
         [string]$Note = "",
         [int]$ExitCode = -2147483648
     )
@@ -237,8 +237,8 @@ function Write-LaunchState {
         "--status",
         $Status
     )
-    if ($Pid -gt 0) {
-        $args += @("--pid", "$Pid")
+    if ($ProcessId -gt 0) {
+        $args += @("--pid", "$ProcessId")
     }
     if ($Note) {
         $args += @("--note", $Note)
@@ -392,11 +392,11 @@ foreach ($target in $targets) {
                 Start-Sleep -Seconds $StartupGraceSeconds
                 $alive = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
                 if ($null -ne $alive) {
-                    Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "running" -Pid $process.Id -Note ("startup grace passed on attempt {0}" -f $attempt)
+                    Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "running" -ProcessId $process.Id -Note ("startup grace passed on attempt {0}" -f $attempt)
                     $started = $true
                 }
                 else {
-                    Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "exited" -Pid $process.Id -ExitCode 1 -Note ("direct cli exited before grace on attempt {0}" -f $attempt)
+                    Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "exited" -ProcessId $process.Id -ExitCode 1 -Note ("direct cli exited before grace on attempt {0}" -f $attempt)
                 }
             }
             else {
