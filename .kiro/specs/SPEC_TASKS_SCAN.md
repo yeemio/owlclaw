@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-06（深度审计报告扩展至 #55；Phase 15 主线已收口，切换到 follow-up 修复分配）
+> **最后更新**: 2026-03-06（Phase 16 codex-work 批次 #47/#48/#49/#52/#55 已实现并提交）
 
 ---
 
@@ -362,6 +362,18 @@
 - [x] D28 Low-28 CronMetrics 样本有界化→ spec: audit-deep-remediation
 - [x] D29 Low-29 get_execution_history tenant 绑定认证上下文→ spec: audit-deep-remediation
 
+### Phase 16：深度审计 follow-up（#45-#55，2026-03-06 分配）
+
+> **来源**: `docs/review/DEEP_AUDIT_REPORT.md` 加审与扩展发现 #45-#55
+> **分配**: codex-work → #47/#48/#49/#52/#55；codex-gpt-work → #45/#46/#50/#51/#53/#54
+
+- [x] #47 Runtime final summarization 错误脱敏（固定文案替代 str(exc)）→ spec: audit-deep-remediation-followup
+- [x] #48 Observation 工具参数脱敏（Langfuse span/event 敏感 key redact）→ spec: audit-deep-remediation-followup
+- [x] #49 LLM 集成 Langfuse metadata error_message 脱敏→ spec: audit-deep-remediation-followup
+- [x] #52 aembedding 超时（facade timeout_seconds + wait_for）→ spec: audit-deep-remediation-followup
+- [x] #55 LLMClient.complete / _call_with_fallback 可选 timeout→ spec: audit-deep-remediation-followup
+- [ ] #45/#46/#50/#51/#53/#54（codex-gpt-work 批次，待实施）
+
 ---
 
 ## Spec 索引
@@ -458,17 +470,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（Phase 15 主线修复已全部并入 `main`；深度审计新增 #45-#55 已完成分配） |
-| 当前批次 | **Phase 16 follow-up**：深度审计新增问题 #45-#55（runtime/llm + registry/memory 两条并行修复线）。 |
-| 批次状态 | 旧批次 D15-D29 已收口；两个编码 worktree 已清空待审状态并重新切到 #45-#55 待开始。 |
-| 已完成项 | 23) D25 Kafka connect timeout；24) D15-D29 全部修复并合入 main；25) 深度审计主审 27 轮完成；26) 加审补充 #55；27) #45-#55 已完成统筹分配。 |
-| 下一待执行 | 1) `codex-work` 实施 #47/#48/#49/#52/#55；2) `codex-gpt-work` 实施 #45/#46/#50/#51/#53/#54；3) review-work 审校并回写验收结果。 |
-| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 已分配，待实现/验证。 |
-| 阻塞项 | 无内部阻塞；仅剩外部依赖阻塞项（若有）。 |
-| 健康状态 | ✅ 分支已全部与 `main` 对齐；内部协作阻塞为 0；当前仅剩新一批 backlog 待执行。 |
+| 最后更新 | 2026-03-06（Phase 16 codex-work 批次 #47/#48/#49/#52/#55 已实现并提交 codex-work 分支） |
+| 当前批次 | **Phase 16 follow-up**：codex-work 批次已完成；codex-gpt-work 实施 #45/#46/#50/#51/#53/#54；review-work 审校 codex-work 提交。 |
+| 批次状态 | codex-work 已提交 5 项（#47/#48/#49/#52/#55）；codex-gpt-work 待实施 6 项。 |
+| 已完成项 | 28) codex-work #47 final summarization 脱敏；29) #48 observation 参数脱敏；30) #49 LLM Langfuse metadata 脱敏；31) #52 aembedding timeout；32) #55 LLMClient timeout。 |
+| 下一待执行 | 1) `codex-gpt-work` 实施 #45/#46/#50/#51/#53/#54；2) review-work 审校 codex-work 分支并合并。 |
+| 验收快照 | **Phase 16**：codex-work 5/5 ✅（单元测试通过）；codex-gpt-work 0/6 待实施。 |
+| 阻塞项 | 无。 |
+| 健康状态 | ✅ codex-work 工作目录有变更已纳入本轮提交；测试通过。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | main/review-work/codex-work/codex-gpt-work 当前均无待合并提交；本轮新增主线文档校准 3 文件。 |
-| 审校状态 | `audit-deep-remediation` 主线已审校完成；下一轮审校目标切换为 #45-#55 follow-up。 |
+| 分支量化进度 | codex-work 本轮新增 1 commit（Phase 16 #47-#55）；待 push。 |
+| 审校状态 | codex-work 待 review-work 审校 #47-#55 变更。 |
 
 ---
 

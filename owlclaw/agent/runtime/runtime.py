@@ -313,20 +313,41 @@ class AgentRuntime:
             except Exception:
                 logger.debug("Langfuse trace update failed", exc_info=True)
 
+    _SENSITIVE_ARG_SUBSTRINGS = ("password", "api_key", "token", "secret", "credential", "auth")
+
     @staticmethod
-    def _observe_tool(trace: Any | None, name: str, payload: dict[str, Any]) -> Any | None:
+    def _redact_sensitive_args(args: dict[str, Any]) -> dict[str, Any]:
+        """Redact values for keys that look sensitive before sending to observability."""
+        if not args:
+            return args
+        out: dict[str, Any] = {}
+        for k, v in args.items():
+            k_lower = k.lower()
+            if any(s in k_lower for s in AgentRuntime._SENSITIVE_ARG_SUBSTRINGS):
+                out[k] = "[redacted]"
+            elif isinstance(v, dict):
+                out[k] = AgentRuntime._redact_sensitive_args(v)
+            else:
+                out[k] = v
+        return out
+
+    @classmethod
+    def _observe_tool(cls, trace: Any | None, name: str, payload: dict[str, Any]) -> Any | None:
         if trace is None:
             return None
+        safe_payload = dict(payload)
+        if "arguments" in safe_payload and isinstance(safe_payload["arguments"], dict):
+            safe_payload["arguments"] = cls._redact_sensitive_args(safe_payload["arguments"])
         span_fn = getattr(trace, "span", None)
         if callable(span_fn):
             try:
-                return span_fn(name=name, input=payload)
+                return span_fn(name=name, input=safe_payload)
             except Exception:
                 logger.debug("Langfuse span create failed", exc_info=True)
         event_fn = getattr(trace, "event", None)
         if callable(event_fn):
             try:
-                return event_fn(name=name, input=payload)
+                return event_fn(name=name, input=safe_payload)
             except Exception:
                 logger.debug("Langfuse event create failed", exc_info=True)
         return None
@@ -911,11 +932,11 @@ class AgentRuntime:
                         "content": f"Reached max iterations ({max_iterations}) and final summarization timed out.",
                     }
                 )
-            except Exception as exc:
+            except Exception:
                 messages.append(
                     {
                         "role": "assistant",
-                        "content": f"Reached max iterations ({max_iterations}) and final summarization failed: {exc}",
+                        "content": "Reached max iterations and final summarization failed due to an internal error.",
                     }
                 )
 
