@@ -1,42 +1,122 @@
+# OwlClaw Console local setup (real-browser validation helper)
+# Usage examples:
+#   pwsh ./scripts/console-local-setup.ps1 -SkipDbInit -Port 8000
+#   pwsh ./scripts/console-local-setup.ps1 -SkipDbInit -Port 8000 -RunE2E
+#   pwsh ./scripts/console-local-setup.ps1 -Port 8000 -RunE2E -KeepServer
+
+[CmdletBinding()]
 param(
+    [int]$Port = 8000,
     [switch]$SkipDbInit,
-    [int]$Port = 8000
+    [switch]$SkipMigrate,
+    [switch]$RunE2E,
+    [switch]$KeepServer,
+    [int]$HealthTimeoutSeconds = 180
 )
 
-# OwlClaw Console local setup
-# Example:
-#   $env:PG_PASSWORD='your_password'; ./scripts/console-local-setup.ps1
-#   ./scripts/console-local-setup.ps1 -SkipDbInit -Port 18000
-
 $ErrorActionPreference = "Stop"
-Set-Location $PSScriptRoot\..
+Set-StrictMode -Version Latest
 
-if (-not (Get-Command poetry -ErrorAction SilentlyContinue)) {
-    Write-Host "Poetry is not installed or not in PATH."
-    exit 1
+function Invoke-Step {
+    param(
+        [string]$Title,
+        [scriptblock]$Action
+    )
+    Write-Host "==> $Title"
+    & $Action
+    if ($LASTEXITCODE -ne 0) {
+        throw "Step failed: $Title (exit=$LASTEXITCODE)"
+    }
 }
+
+function Wait-Health {
+    param(
+        [string]$Url,
+        [int]$TimeoutSeconds = 90
+    )
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $resp = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 2
+            if ($resp.StatusCode -eq 200) {
+                return $true
+            }
+        } catch {
+            Start-Sleep -Milliseconds 500
+        }
+    }
+    return $false
+}
+
+function Resolve-RepoRoot {
+    return (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+}
+
+function Run-E2E {
+    param([string]$RepoRoot)
+    $frontendDir = Join-Path $RepoRoot "owlclaw/web/frontend"
+    Push-Location $frontendDir
+    try {
+        if (-not (Test-Path "node_modules")) {
+            Write-Host "node_modules not found. Running npm install..."
+            npm install
+            if ($LASTEXITCODE -ne 0) {
+                throw "npm install failed"
+            }
+        }
+        Write-Host "Running browser E2E (manual-server mode)..."
+        npm run test:e2e:run
+        if ($LASTEXITCODE -ne 0) {
+            throw "npm run test:e2e:run failed"
+        }
+    } finally {
+        Pop-Location
+    }
+}
+
+$repoRoot = Resolve-RepoRoot
+Set-Location $repoRoot
 
 if (-not $SkipDbInit) {
     if (-not $env:PG_PASSWORD) {
-        Write-Host "Set postgres password first: `$env:PG_PASSWORD = 'your_postgres_password'"
-        exit 1
+        throw "PG_PASSWORD is required when DB init is enabled. Example: `$env:PG_PASSWORD='your_password'."
+    }
+    $adminUrl = "postgresql://postgres:$env:PG_PASSWORD@127.0.0.1:5432/postgres"
+    Invoke-Step "Create owlclaw database and role" { poetry run owlclaw db init --admin-url $adminUrl --skip-hatchet }
+}
+
+if (-not $SkipMigrate) {
+    Invoke-Step "Run migrations" { poetry run owlclaw db migrate }
+}
+
+$serverOutDir = Join-Path $repoRoot ".kiro/reviews/artifacts/console-local-setup"
+New-Item -ItemType Directory -Force -Path $serverOutDir | Out-Null
+$serverStdout = Join-Path $serverOutDir "server.stdout.log"
+$serverStderr = Join-Path $serverOutDir "server.stderr.log"
+
+Write-Host "==> Start OwlClaw Console on port $Port"
+$server = Start-Process -FilePath "poetry" -ArgumentList @("run", "owlclaw", "start", "--port", "$Port") -PassThru -RedirectStandardOutput $serverStdout -RedirectStandardError $serverStderr
+
+try {
+    $healthy = Wait-Health -Url "http://127.0.0.1:$Port/healthz" -TimeoutSeconds $HealthTimeoutSeconds
+    if (-not $healthy) {
+        throw "Console health check failed: http://127.0.0.1:$Port/healthz (logs: $serverStdout / $serverStderr)"
+    }
+    Write-Host "Health check passed: http://127.0.0.1:$Port/healthz"
+    Write-Host "Console URL: http://127.0.0.1:$Port/console/"
+
+    if ($RunE2E) {
+        Run-E2E -RepoRoot $repoRoot
     }
 
-    $adminUrl = "postgresql://postgres:$env:PG_PASSWORD@127.0.0.1:5432/postgres"
-
-    Write-Host "Creating owlclaw database and role..."
-    poetry run owlclaw db init --admin-url $adminUrl --skip-hatchet
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-    Write-Host "Running migrations..."
-    poetry run owlclaw db migrate
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    if ($KeepServer) {
+        Write-Host "KeepServer enabled. Process id: $($server.Id)"
+        Write-Host "Logs: $serverStdout / $serverStderr"
+    }
+} finally {
+    if (-not $KeepServer) {
+        if ($server -and -not $server.HasExited) {
+            Stop-Process -Id $server.Id -Force
+        }
+    }
 }
-else {
-    Write-Host "Skip DB init/migrate by request."
-}
-
-Write-Host "Starting Console on port $Port..."
-Write-Host "Tip: for websocket message validation, install websocket extras:"
-Write-Host "  poetry run python -m pip install \"uvicorn[standard]\""
-poetry run owlclaw start --port $Port
