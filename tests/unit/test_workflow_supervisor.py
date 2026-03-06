@@ -63,3 +63,62 @@ def test_status_all_reads_manifest_and_marks_running(tmp_path: Path) -> None:
     review_entry = next(item for item in statuses if item["name"] == "review-agent")
     assert review_entry["running"] is True
     assert review_entry["pid"] == 1234
+
+
+def test_reconcile_workers_restarts_missing_worker(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    supervisor_module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
+
+    restarted: list[str] = []
+    supervisor_module.start_worker = lambda repo_root, spec: restarted.append(spec.name) or {"name": spec.name}
+    supervisor_module.status_all = lambda repo_root, interval: [
+        {
+            "name": "orchestrator",
+            "role": "orchestrator",
+            "workdir": str(tmp_path),
+            "command": [],
+            "log_path": "orchestrator.log",
+            "running": False,
+            "checked_at": "2026-03-06T00:00:00+00:00",
+        },
+        {
+            "name": "main-agent",
+            "role": "agent",
+            "workdir": str(tmp_path),
+            "command": [],
+            "log_path": "main-agent.log",
+            "running": True,
+            "checked_at": "2026-03-06T00:00:00+00:00",
+        },
+        {
+            "name": "review-agent",
+            "role": "agent",
+            "workdir": str(tmp_path),
+            "command": [],
+            "log_path": "review-agent.log",
+            "running": True,
+            "checked_at": "2026-03-06T00:00:00+00:00",
+        },
+        {
+            "name": "codex-agent",
+            "role": "agent",
+            "workdir": str(tmp_path),
+            "command": [],
+            "log_path": "codex-agent.log",
+            "running": True,
+            "checked_at": "2026-03-06T00:00:00+00:00",
+        },
+        {
+            "name": "codex-gpt-agent",
+            "role": "agent",
+            "workdir": str(tmp_path),
+            "command": [],
+            "log_path": "codex-gpt-agent.log",
+            "running": True,
+            "checked_at": "2026-03-06T00:00:00+00:00",
+        },
+    ]
+
+    statuses = supervisor_module.reconcile_workers(tmp_path, 15, True)
+    assert restarted == ["orchestrator"]
+    assert statuses[0]["name"] == "orchestrator"

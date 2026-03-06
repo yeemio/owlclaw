@@ -8,6 +8,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -300,6 +301,22 @@ def status_all(repo_root: Path, interval: int) -> list[dict[str, object]]:
     return statuses
 
 
+def reconcile_workers(repo_root: Path, interval: int, ensure_running: bool) -> list[dict[str, object]]:
+    statuses = status_all(repo_root, interval)
+    if not ensure_running:
+        return statuses
+
+    status_by_name = {entry["name"]: entry for entry in statuses}
+    restarted = False
+    for spec in default_worker_specs(repo_root, interval):
+        entry = status_by_name[spec.name]
+        if not entry["running"]:
+            start_worker(repo_root, spec)
+            restarted = True
+
+    return status_all(repo_root, interval) if restarted else statuses
+
+
 def _render_status(entries: list[dict[str, object]]) -> str:
     lines = ["# Workflow Supervisor", ""]
     for entry in entries:
@@ -324,6 +341,15 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     stop.add_argument("--json", action="store_true", help="Emit JSON output.")
     status = subparsers.add_parser("status", help="Show supervisor status for all automation processes.")
     status.add_argument("--json", action="store_true", help="Emit JSON output.")
+    watch = subparsers.add_parser("watch", help="Continuously monitor workers and optionally restart missing ones.")
+    watch.add_argument("--json", action="store_true", help="Emit JSON output.")
+    watch.add_argument(
+        "--ensure-running",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Restart stopped workers while watching.",
+    )
+    watch.add_argument("--cycles", type=int, default=0, help="Stop after N watch cycles; 0 means run forever.")
     return parser.parse_args(argv)
 
 
@@ -337,6 +363,18 @@ def main(argv: list[str] | None = None) -> int:
         payload = stop_all(repo_root)
     elif args.command == "status":
         payload = status_all(repo_root, args.interval)
+    elif args.command == "watch":
+        cycle = 0
+        while True:
+            payload = reconcile_workers(repo_root, args.interval, args.ensure_running)
+            if args.json:
+                print(json.dumps(payload, ensure_ascii=True, indent=2))
+            else:
+                print(_render_status(payload))
+            cycle += 1
+            if args.cycles and cycle >= args.cycles:
+                return 0
+            time.sleep(max(5, args.interval))
     else:
         raise AssertionError(f"unsupported command: {args.command}")
 

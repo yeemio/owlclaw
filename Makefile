@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate workflow-mailbox workflow-agent workflow-supervisor
+.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate workflow-mailbox workflow-agent workflow-supervisor workflow-supervisor-console
 
 ## Show available commands
 help:
@@ -19,6 +19,7 @@ help:
 	@echo "  workflow-mailbox Pull mailbox or write ack status"
 	@echo "  workflow-agent Run semi-automatic mailbox consumer"
 	@echo "  workflow-supervisor Start/stop/status for workflow automation processes"
+	@echo "  workflow-supervisor-console Open a visible watch terminal for the supervisor"
 	@echo ""
 	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
@@ -85,3 +86,7 @@ workflow-agent:
 ## Start/stop/status the workflow automation supervisor
 workflow-supervisor:
 	poetry run python scripts/workflow_supervisor.py --help
+
+## Open a visible supervisor watch console (Windows PowerShell)
+workflow-supervisor-console:
+	pwsh ./scripts/workflow-supervisor-console.ps1
