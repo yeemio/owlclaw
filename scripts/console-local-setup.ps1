@@ -10,6 +10,7 @@ param(
     [switch]$SkipDbInit,
     [switch]$SkipMigrate,
     [switch]$RunE2E,
+    [switch]$FrontendCiInstall,
     [switch]$KeepServer,
     [int]$HealthTimeoutSeconds = 180
 )
@@ -57,11 +58,16 @@ function Run-E2E {
     $frontendDir = Join-Path $RepoRoot "owlclaw/web/frontend"
     Push-Location $frontendDir
     try {
-        if (-not (Test-Path "node_modules")) {
-            Write-Host "node_modules not found. Running npm install..."
-            npm install
+        $brokenPnpmPath = "node_modules/.pnpm/@babel+core@7.29.0/node_modules/@babel/code-frame"
+        $needsReinstall = $FrontendCiInstall -or (-not (Test-Path "node_modules")) -or (-not (Test-Path $brokenPnpmPath))
+        if ($needsReinstall) {
+            if (-not (Test-Path "package-lock.json")) {
+                throw "package-lock.json not found, cannot run npm ci"
+            }
+            Write-Host "Installing frontend dependencies via npm ci..."
+            npm ci
             if ($LASTEXITCODE -ne 0) {
-                throw "npm install failed"
+                throw "npm ci failed"
             }
         }
         Write-Host "Running browser E2E (manual-server mode)..."
@@ -89,13 +95,28 @@ if (-not $SkipMigrate) {
     Invoke-Step "Run migrations" { poetry run owlclaw db migrate }
 }
 
+Invoke-Step "Check uvicorn dependency" { poetry run python -c "import uvicorn" }
+
 $serverOutDir = Join-Path $repoRoot ".kiro/reviews/artifacts/console-local-setup"
 New-Item -ItemType Directory -Force -Path $serverOutDir | Out-Null
 $serverStdout = Join-Path $serverOutDir "server.stdout.log"
 $serverStderr = Join-Path $serverOutDir "server.stderr.log"
 
 Write-Host "==> Start OwlClaw Console on port $Port"
-$server = Start-Process -FilePath "poetry" -ArgumentList @("run", "owlclaw", "start", "--port", "$Port") -PassThru -RedirectStandardOutput $serverStdout -RedirectStandardError $serverStderr
+$server = Start-Process -FilePath "poetry" -ArgumentList @(
+    "run",
+    "python",
+    "-m",
+    "uvicorn",
+    "owlclaw.cli.start:create_start_app",
+    "--factory",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "$Port",
+    "--log-level",
+    "info"
+) -PassThru -RedirectStandardOutput $serverStdout -RedirectStandardError $serverStderr
 
 try {
     $healthy = Wait-Health -Url "http://127.0.0.1:$Port/healthz" -TimeoutSeconds $HealthTimeoutSeconds
