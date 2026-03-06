@@ -348,10 +348,10 @@
 - [x] D14 Low-14 Hatchet Windows SIGQUIT 作用域收敛或文档说明→ spec: audit-deep-remediation
 - [ ] D15 Low-15 HTTP binding 空 `allowed_hosts` SSRF 边界→ spec: audit-deep-remediation
 - [ ] D16 Low-16 BindingTool ledger 错误信息脱敏→ spec: audit-deep-remediation
-- [ ] D17 Low-17 API trigger 读取时强制 body 大小限制→ spec: audit-deep-remediation
-- [ ] D18 Low-18 API trigger ledger 错误信息脱敏→ spec: audit-deep-remediation
-- [ ] D19 Low-19 API trigger auth 常量时间比较→ spec: audit-deep-remediation
-- [ ] D20 Low-20 Cron 历史接口错误信息脱敏/隐藏→ spec: audit-deep-remediation
+- [x] D17 Low-17 API trigger 读取时强制 body 大小限制→ spec: audit-deep-remediation
+- [x] D18 Low-18 API trigger ledger 错误信息脱敏→ spec: audit-deep-remediation
+- [x] D19 Low-19 API trigger auth 常量时间比较→ spec: audit-deep-remediation
+- [x] D20 Low-20 Cron 历史接口错误信息脱敏/隐藏→ spec: audit-deep-remediation
 - [ ] D21 Low-21 CapabilityRegistry 异常包装脱敏→ spec: audit-deep-remediation
 
 ---
@@ -450,9 +450,9 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（codex-gpt-work 本轮完成 D4b/D13/D14；待审 D2/D6/D7/D11，待做 D17–D20） |
-| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（13/21）；codex-gpt-work 本轮完成 Task 6/16/17。 |
-| 批次状态 | codex-work 下一批 D12/D15/D16/D21；codex-gpt-work 已提交 D2/D6/D7/D11 待审，本轮完成 D4b/D13/D14，待做 D17/D18/D19/D20。 |
+| 最后更新 | 2026-03-06（codex-gpt-work 完成 D17–D20；Phase 15 本 worktree 分配项已全部完成） |
+| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（17/21）；codex-gpt-work 负责项已全部完成。 |
+| 批次状态 | codex-work 待做 D12/D15/D16/D21；codex-gpt-work 已提交 D2/D6/D7/D11 待审，D4b/D13/D14/D17–D20 已实现并提交。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；…22) **Phase 14 浏览器验收收口**：`console-browser-real-e2e` 已完成 13/13，审校结论 `CONDITIONAL_PASS`。 |
 | 下一待执行 | 1) review-work 审校 codex-gpt-work 的 D2/D6/D7/D11；2) codex-work 执行 D12/D15/D16/D21；3) codex-gpt-work 执行 D4b/D13/D14/D17/D18/D19/D20。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，…Phase 10 audit-fix-critical ✅，audit-fix-high ✅，其余 spec 全部 ✅。 |

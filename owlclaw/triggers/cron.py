@@ -1308,13 +1308,15 @@ class CronTriggerRegistry:
         records = await self._ledger.query_records(tenant_id=tid, filters=filters)
         out: list[dict[str, Any]] = []
         for r in records:
+            # Redact ledger error_message so callers do not receive raw exception text.
+            error_display = "Execution failed." if (r.error_message and r.error_message.strip()) else None
             out.append({
                 "run_id": r.run_id,
                 "status": r.status,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
                 "execution_time_ms": r.execution_time_ms,
                 "agent_run_id": (r.output_result or {}).get("agent_run_id"),
-                "error_message": r.error_message,
+                "error_message": error_display,
             })
         return out
 

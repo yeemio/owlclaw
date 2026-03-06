@@ -21,7 +21,11 @@ from starlette.routing import Route
 from owlclaw.security.sanitizer import InputSanitizer
 from owlclaw.triggers.api.auth import AuthProvider
 from owlclaw.triggers.api.config import APITriggerConfig
-from owlclaw.triggers.api.handler import InvalidJSONPayloadError, parse_request_payload
+from owlclaw.triggers.api.handler import (
+    BodyTooLargeError,
+    InvalidJSONPayloadError,
+    parse_request_payload_with_limit,
+)
 from owlclaw.triggers.signal.api import register_signal_admin_route
 from owlclaw.triggers.signal.router import SignalRouter
 
@@ -183,13 +187,10 @@ class APITriggerServer:
                 )
                 return auth_response
 
-            if request.headers.get("content-length"):
-                with contextlib.suppress(ValueError):
-                    if int(request.headers["content-length"]) > self._max_body_bytes:
-                        return JSONResponse({"error": "payload_too_large"}, status_code=413)
-
             try:
-                parsed = await parse_request_payload(request)
+                parsed = await parse_request_payload_with_limit(request, self._max_body_bytes)
+            except BodyTooLargeError:
+                return JSONResponse({"error": "payload_too_large"}, status_code=413)
             except InvalidJSONPayloadError:
                 return JSONResponse({"error": "Invalid JSON"}, status_code=400)
             body = parsed.body
@@ -360,8 +361,10 @@ class APITriggerServer:
                 self._runs[run_id] = {"status": "completed", "result": result}
                 await self._record_execution(config, run_id, "success", started, payload, {"result": result}, "async_completed")
             except Exception as exc:
-                self._runs[run_id] = {"status": "failed", "error": str(exc)}
-                await self._record_execution(config, run_id, "failed", started, payload, None, "async_failed", str(exc))
+                self._runs[run_id] = {"status": "failed", "error": "Execution failed."}
+                await self._record_execution(
+                    config, run_id, "failed", started, payload, None, "async_failed", "Execution failed."
+                )
 
         asyncio.create_task(_background())
         return JSONResponse(
