@@ -56,6 +56,25 @@ function Save-WindowManifest {
     $payload | ConvertTo-Json -Depth 6 | Set-Content -Path $manifestPath -Encoding UTF8
 }
 
+function Get-WindowHandleByExactTitle {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WindowTitle,
+        [int]$TimeoutSeconds = 20
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $process = Get-Process | Where-Object { $_.MainWindowTitle -eq $WindowTitle } | Select-Object -First 1
+        if ($null -ne $process -and $process.MainWindowHandle -ne 0) {
+            return [Int64]$process.MainWindowHandle
+        }
+        Start-Sleep -Milliseconds 400
+    }
+
+    return [Int64]0
+}
+
 function New-EncodedCommand {
     param(
         [Parameter(Mandatory = $true)]
@@ -163,8 +182,10 @@ $windowManifest = @{}
 foreach ($target in $targets) {
     $process = Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command
     if (-not $DryRun -and $null -ne $process) {
+        $hwnd = Get-WindowHandleByExactTitle -WindowTitle $target.Title
         $windowManifest[$target.Title.Replace("owlclaw-", "")] = @{
             pid = $process.Id
+            hwnd = $hwnd
             title = $target.Title
             workdir = $target.Workdir
         }

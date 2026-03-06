@@ -138,8 +138,8 @@ def test_window_manifest_process_id_lookup(tmp_path: Path) -> None:
     manifest = {
         "generated_at": "2026-03-06T00:00:00+00:00",
         "windows": {
-            "main": {"pid": 1234, "title": "owlclaw-main"},
-            "review": {"pid": 5678, "title": "owlclaw-review"},
+            "main": {"pid": 1234, "hwnd": 4321, "title": "owlclaw-main"},
+            "review": {"pid": 5678, "hwnd": 8765, "title": "owlclaw-review"},
         },
     }
     (runtime_dir / "terminal-windows.json").write_text(json.dumps(manifest, ensure_ascii=True), encoding="utf-8")
@@ -147,3 +147,6 @@ def test_window_manifest_process_id_lookup(tmp_path: Path) -> None:
     assert control._window_process_id(tmp_path, "main") == 1234
     assert control._window_process_id(tmp_path, "review") == 5678
     assert control._window_process_id(tmp_path, "codex") is None
+    assert control._window_handle(tmp_path, "main") == 4321
+    assert control._window_handle(tmp_path, "review") == 8765
+    assert control._window_handle(tmp_path, "codex") is None

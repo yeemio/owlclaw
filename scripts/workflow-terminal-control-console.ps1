@@ -30,6 +30,29 @@ function Get-WorkflowWindowPid {
     return [int]$window.pid
 }
 
+function Get-WorkflowWindowHandle {
+    param(
+        [string]$Agent
+    )
+
+    $manifestPath = Join-Path $repoRoot ".kiro\runtime\terminal-windows.json"
+    if (-not (Test-Path $manifestPath)) {
+        return 0
+    }
+
+    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    if ($null -eq $manifest.windows) {
+        return 0
+    }
+
+    $window = $manifest.windows.$Agent
+    if ($null -eq $window) {
+        return 0
+    }
+
+    return [UInt64]$window.hwnd
+}
+
 function Show-Help {
     Write-Host ""
     Write-Host "Commands:"
@@ -115,8 +138,12 @@ while ($true) {
                     }
                     else {
                         $windowTitle = "owlclaw-$target"
+                        $handle = Get-WorkflowWindowHandle -Agent $target
                         $pid = Get-WorkflowWindowPid -Agent $target
-                        if ($pid -gt 0) {
+                        if ($handle -gt 0) {
+                            pwsh -NoProfile -File $focusScript -WindowHandle $handle -ProcessId $pid -WindowTitle $windowTitle
+                        }
+                        elseif ($pid -gt 0) {
                             pwsh -NoProfile -File $focusScript -ProcessId $pid -WindowTitle $windowTitle
                         }
                         else {

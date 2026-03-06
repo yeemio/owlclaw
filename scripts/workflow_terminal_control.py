@@ -116,6 +116,18 @@ def _window_process_id(repo_root: Path, agent: str) -> int | None:
     return pid if isinstance(pid, int) and pid > 0 else None
 
 
+def _window_handle(repo_root: Path, agent: str) -> int | None:
+    manifest = _load_window_manifest(repo_root)
+    windows = manifest.get("windows", {})
+    if not isinstance(windows, dict):
+        return None
+    payload = windows.get(agent)
+    if not isinstance(payload, dict):
+        return None
+    handle = payload.get("hwnd")
+    return handle if isinstance(handle, int) and handle > 0 else None
+
+
 def _message_for_mailbox(agent: str, mailbox: dict[str, object]) -> str | None:
     action = str(mailbox.get("action", ""))
 
@@ -139,7 +151,12 @@ def _message_for_audit(agent: str) -> str | None:
 
 
 def _send_to_window(
-    repo_root: Path, window_title: str, message: str, *, process_id: int | None = None
+    repo_root: Path,
+    window_title: str,
+    message: str,
+    *,
+    process_id: int | None = None,
+    window_handle: int | None = None,
 ) -> subprocess.CompletedProcess[str]:
     script_path = SCRIPT_DIR / "workflow_sendkeys.ps1"
     command = [
@@ -150,6 +167,8 @@ def _send_to_window(
         "-Message",
         message,
     ]
+    if window_handle:
+        command.extend(["-WindowHandle", str(window_handle)])
     if process_id:
         command.extend(["-ProcessId", str(process_id)])
     if window_title:
@@ -166,10 +185,21 @@ def _send_to_window(
 
 
 def _send_to_window_candidates(
-    repo_root: Path, window_titles: list[str], message: str, *, process_id: int | None = None
+    repo_root: Path,
+    window_titles: list[str],
+    message: str,
+    *,
+    process_id: int | None = None,
+    window_handle: int | None = None,
 ) -> tuple[str, subprocess.CompletedProcess[str]]:
-    if process_id:
-        result = _send_to_window(repo_root, window_titles[0], message, process_id=process_id)
+    if window_handle or process_id:
+        result = _send_to_window(
+            repo_root,
+            window_titles[0],
+            message,
+            process_id=process_id,
+            window_handle=window_handle,
+        )
         if result.returncode == 0:
             return window_titles[0], result
 
@@ -208,7 +238,14 @@ def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str,
 
     window_titles = TITLE_MAP[agent]
     process_id = _window_process_id(repo_root, agent)
-    window_title, result = _send_to_window_candidates(repo_root, window_titles, message, process_id=process_id)
+    window_handle = _window_handle(repo_root, agent)
+    window_title, result = _send_to_window_candidates(
+        repo_root,
+        window_titles,
+        message,
+        process_id=process_id,
+        window_handle=window_handle,
+    )
     delivered = result.returncode == 0
     payload = {
         "agent": agent,
