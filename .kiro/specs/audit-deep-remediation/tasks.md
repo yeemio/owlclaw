@@ -70,6 +70,8 @@
 | #28 | CronMetrics samples 有界化 | `triggers/cron.py` | 样本容器有界 |
 | #29 | Cron 历史 tenant 绑定认证上下文 | `triggers/cron.py` | 不再信任客户端 tenant_id |
 
+**D25 已完成**（codex-work）：`KafkaQueueAdapter` 增加 `connect_timeout` 参数，`connect()` 内对 `consumer.start()` / `producer.start()` 使用 `asyncio.wait_for`，超时抛出 `TimeoutError` 并记录日志；单测见 `test_queue_kafka_adapter_connect_timeout_*`。
+
 ---
 
 ## Backlog（报告 #35-#44，待统筹分配）

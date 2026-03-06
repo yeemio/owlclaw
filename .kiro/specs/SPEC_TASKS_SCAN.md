@@ -356,7 +356,7 @@
 - [ ] D22 Low-22 API trigger `_runs` 有界化（maxsize/LRU/TTL）→ spec: audit-deep-remediation
 - [x] D23 Low-23 客户端可见错误响应脱敏（MCP/OwlHub/signal/proxy）→ spec: audit-deep-remediation
 - [x] D24 Low-24 grpc binding schema 校验补齐 / fail-fast→ spec: audit-deep-remediation
-- [ ] D25 Low-25 Kafka connect 超时→ spec: audit-deep-remediation
+- [x] D25 Low-25 Kafka connect 超时→ spec: audit-deep-remediation
 - [ ] D26 Low-26 API rate limiter `_states` 有界化→ spec: audit-deep-remediation
 - [ ] D27 Low-27 API key identity 脱敏（不暴露 key 前缀）→ spec: audit-deep-remediation
 - [ ] D28 Low-28 CronMetrics 样本有界化→ spec: audit-deep-remediation
@@ -458,11 +458,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（main 已合并 review-work；audit-deep-remediation D1-D14 + P1-2 共 15/15 完成；D15-D29 为下一批 backlog） |
-| 当前批次 | **Phase 15 收口**：`audit-deep-remediation`（15/15 已完成并合入 main）。 |
-| 批次状态 | D1-D14 + P1-2 全部完成；D15-D29 与 D30-D44 为后续 backlog，待统筹分配。 |
-| 已完成项 | （同前 21 项）22) **Phase 15 audit-deep-remediation 全部完成**（15/15），已自 review-work 合并入 main。 |
-| 下一待执行 | 1) 统筹可分配 D15-D29 至编码 worktree；2) 或处理外部阻塞项（release-supply-chain、owlhub、openclaw-skill-pack、content-launch）。 |
+| 最后更新 | 2026-03-06（codex-work spec 循环：D25 Kafka connect 超时已实现并验收） |
+| 当前批次 | **Phase 15 收口**：`audit-deep-remediation`（15/15 已合入 main；D25 已由 codex-work 完成）。 |
+| 批次状态 | D1-D14 + P1-2 + D21/D23/D24 已完成；D25 已实现（Kafka connect_timeout）；D15-D20/D22/D26-D29 待分配或进行中。 |
+| 已完成项 | （同前）22) Phase 15 首轮 15/15；23) **D25** Kafka connect 超时（codex-work：kafka.py connect_timeout + 单测）。 |
+| 下一待执行 | 1) 统筹分配 D15-D20/D22/D26-D29 至编码 worktree；2) 或处理外部阻塞项。 |
 | 验收快照 | （同前）**Phase 15**：audit-deep-remediation ✅(15/15)。 |
 | 阻塞项 | （同前） |
 | 健康状态 | ✅ 内部协作阻塞已清零；Phase 15 已合入 main；仅剩外部依赖阻塞项。 |
