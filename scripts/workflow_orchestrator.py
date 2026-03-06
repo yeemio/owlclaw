@@ -38,6 +38,8 @@ def _priority_for_state(
         return "high"
     if action["stage"] == "merge" and state.name == "main":
         return "high"
+    if action["stage"] == "assign" and state.name == "main":
+        return "high"
     if state.role == "coding" and state.ahead_of_main > 0:
         return "high"
     return "normal"
@@ -48,6 +50,12 @@ def _next_transition_for_state(
     snapshot: workflow_status.WorkflowSnapshot,
 ) -> str:
     if state.name == "main":
+        coding = [worktree for worktree in snapshot.worktrees if worktree.role == "coding"]
+        if (
+            snapshot.worktrees[1].ahead_of_main == 0
+            and all(worktree.clean and worktree.ahead_of_main == 0 for worktree in coding)
+        ):
+            return "assign_next_batch"
         return "merge_review" if snapshot.worktrees[1].ahead_of_main > 0 else "monitor"
     if state.role == "review":
         pending = [w for w in snapshot.worktrees if w.role == "coding" and w.ahead_of_main > 0]
@@ -64,10 +72,13 @@ def _mailbox_action_text(
     snapshot: workflow_status.WorkflowSnapshot,
 ) -> str:
     if state.name == "main":
+        coding = [worktree for worktree in snapshot.worktrees if worktree.role == "coding"]
         if not state.clean:
             return "clean_local_changes"
         if snapshot.worktrees[1].ahead_of_main > 0:
             return "merge_review_work"
+        if all(worktree.clean and worktree.ahead_of_main == 0 for worktree in coding):
+            return "assign_next_batch"
         return "monitor"
     if state.role == "review":
         pending = [w for w in snapshot.worktrees if w.role == "coding" and w.ahead_of_main > 0]
@@ -84,10 +95,13 @@ def _mailbox_summary(
     snapshot: workflow_status.WorkflowSnapshot,
 ) -> str:
     if state.name == "main":
+        coding = [worktree for worktree in snapshot.worktrees if worktree.role == "coding"]
         if not state.clean:
             return "Clean local changes before orchestrating merges or sync."
         if snapshot.worktrees[1].ahead_of_main > 0:
             return "review-work is ahead of main; merge it into main and push."
+        if all(worktree.clean and worktree.ahead_of_main == 0 for worktree in coding):
+            return "Coding and review queues are clear; assign the next batch before nudging agents."
         return "No immediate main-branch action."
     if state.role == "review":
         pending = [w for w in snapshot.worktrees if w.role == "coding" and w.ahead_of_main > 0]
@@ -175,6 +189,9 @@ def _classify_action(snapshot: workflow_status.WorkflowSnapshot) -> dict[str, ob
     elif pending_coding:
         stage = "review"
         owner = "review"
+    elif review.clean and all(state.clean for state in coding):
+        stage = "assign"
+        owner = "main"
 
     return {
         "stage": stage,
@@ -203,6 +220,8 @@ def _render_actions(snapshot: workflow_status.WorkflowSnapshot, action: dict[str
         lines.append("- Clean uncommitted changes before any merge or review promotion.")
     elif worktrees["review"].ahead_of_main > 0:
         lines.append("- Merge `review-work` into `main` and push.")
+    elif all(state.clean and state.ahead_of_main == 0 for state in coding):
+        lines.append("- Coding queues are clear; assign the next batch before sending new prompts.")
     else:
         lines.append("- No immediate main-branch action.")
 
@@ -262,6 +281,12 @@ def _render_worktree_instruction(
             lines.append("Action: clean local changes before orchestrating merges.")
         elif snapshot.worktrees[1].ahead_of_main > 0:
             lines.append("Action: merge review-work into main.")
+        elif all(
+            worktree.clean and worktree.ahead_of_main == 0
+            for worktree in snapshot.worktrees
+            if worktree.role == "coding"
+        ):
+            lines.append("Action: assign the next batch only after coding and review are both clear.")
         else:
             lines.append("Action: monitor only.")
     elif state.role == "review":

@@ -112,3 +112,70 @@ def test_write_runtime_files_creates_snapshot_and_instructions(tmp_path: Path) -
 
     review_mailbox = json.loads((runtime_dir / "mailboxes" / "review.json").read_text(encoding="utf-8"))
     assert review_mailbox["pending_commits"] == ["abc fix"]
+
+
+def test_write_runtime_files_promotes_assignment_only_after_queues_clear(tmp_path: Path) -> None:
+    status_module = _load_module("workflow_status", "scripts/workflow_status.py")
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    orchestrator_module = _load_module("workflow_orchestrator", "scripts/workflow_orchestrator.py")
+
+    snapshot = status_module.WorkflowSnapshot(
+        repo_root=str(tmp_path),
+        audit=status_module.AuditSummary(
+            total_findings=44,
+            p1=2,
+            low=42,
+            spec_progress="7/29",
+            spec_status="进行中（7/29）",
+            spec_summary="待审代码提交已形成",
+        ),
+        worktrees=[
+            status_module.WorktreeState("main", "main", str(tmp_path), "orchestrator", True, [], 0, 0, []),
+            status_module.WorktreeState(
+                "review",
+                "review-work",
+                str(tmp_path / "review"),
+                "review",
+                True,
+                [],
+                0,
+                0,
+                [],
+            ),
+            status_module.WorktreeState(
+                "codex",
+                "codex-work",
+                str(tmp_path / "codex"),
+                "coding",
+                True,
+                [],
+                0,
+                0,
+                [],
+            ),
+            status_module.WorktreeState(
+                "codex-gpt",
+                "codex-gpt-work",
+                str(tmp_path / "codex-gpt"),
+                "coding",
+                True,
+                [],
+                0,
+                0,
+                [],
+            ),
+        ],
+        next_action="workflow stable: no pending review or merge action",
+        blockers=[],
+    )
+
+    orchestrator_module.write_runtime_files(tmp_path, snapshot)
+
+    payload = json.loads((tmp_path / ".kiro" / "runtime" / "workflow_snapshot.json").read_text(encoding="utf-8"))
+    assert payload["action"]["stage"] == "assign"
+    assert payload["action"]["owner"] == "main"
+
+    main_mailbox = json.loads((tmp_path / ".kiro" / "runtime" / "mailboxes" / "main.json").read_text(encoding="utf-8"))
+    assert main_mailbox["action"] == "assign_next_batch"
+    assert main_mailbox["next_expected_transition"] == "assign_next_batch"
+    assert main_mailbox["summary"] == "Coding and review queues are clear; assign the next batch before nudging agents."
