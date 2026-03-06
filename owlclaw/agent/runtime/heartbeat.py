@@ -307,11 +307,14 @@ class HeartbeatChecker:
             return configured
         if self._ledger is None:
             return None
-        get_readonly_session_factory = getattr(self._ledger, "get_readonly_session_factory", None)
-        if not callable(get_readonly_session_factory):
+        # Use Ledger's public API only (no access to private _session_factory).
+        if not hasattr(self._ledger, "get_readonly_session_factory"):
+            return None
+        get_factory = self._ledger.get_readonly_session_factory
+        if not callable(get_factory):
             return None
         try:
-            candidate = get_readonly_session_factory()
+            candidate = get_factory()
         except Exception:
             logger.warning(
                 "HeartbeatChecker ledger readonly session factory resolution failed agent_id=%s",

@@ -10,10 +10,10 @@
 
 ## Executive Summary
 
-**Total Findings**: 14 (Phase 1: 6; Phase 2: +2 Low; Phase 3: +3 Low; Phase 4: +1 Low; Phase 5: +2 Low)
+**Total Findings**: 22 (Phases 1–9: 21; Phase 24: +1 Low)
 - P0/High: 0
 - P1/Medium: 2
-- Low: 12
+- Low: 20
 
 **Overall Assessment**: **SHIP WITH CONDITIONS**
 
@@ -66,6 +66,17 @@
 | 10 | C.Robustness | Ledger._write_queue unbounded; sustained load can grow memory. | `owlclaw/governance/ledger.py:135` | Bounded queue and/or backpressure; document limit. |
 | 11 | C.Robustness | Webhook raw_body_bytes.decode("utf-8") can raise; non-UTF-8 body returns 500. | `owlclaw/triggers/webhook/http/app.py:167` | Catch UnicodeDecodeError; return 400 with clear message. |
 | 12 | B.Security | Console API token comparison uses direct string equality (api_token_header == expected_token, provided_token != expected_token); vulnerable to timing side-channel. | `owlclaw/web/api/middleware.py:79, 95` | Use hmac.compare_digest(provided, expected) for constant-time comparison. |
+| 13 | C.Robustness | VisibilityFilter.filter_capabilities runs evaluators via asyncio.gather with no per-evaluator or per-capability timeout; a slow or stuck evaluator can block visibility for that capability indefinitely. | `owlclaw/governance/visibility.py:206-213` | Add optional timeout per evaluator (e.g. asyncio.wait_for) or document and accept the risk. |
+| 14 | D.Maintainability | Hatchet start_worker() on Windows sets signal.SIGQUIT = signal.SIGTERM, mutating the signal module; other code that checks for presence of SIGQUIT may be surprised. | `owlclaw/integrations/hatchet.py:311-312` | Use a worker wrapper that maps SIGTERM to the handler Hatchet expects, or document the mutation and scope it (e.g. only in worker process). |
+| 15 | B.Security | HTTP binding with empty allowed_hosts allows any public URL; only private/local hosts are blocked when allow_private_network is False. SSRF to arbitrary internet endpoints is possible. | `owlclaw/capabilities/bindings/http_executor.py:193-199` | Require non-empty allowed_hosts for production, or document that empty allowlist permits any public host and recommend explicit allowlist for SSRF mitigation. |
+| 16 | C.Robustness | BindingTool records error_message=str(exc) in ledger on execution failure; exception content may contain sensitive data (paths, tokens, provider messages). | `owlclaw/capabilities/bindings/tool.py:105-112` | Sanitize or truncate error message before recording (e.g. generic "Binding execution failed" or allowlist safe phrases). |
+| 17 | C.Robustness | API trigger body size enforced only via Content-Length header; client can omit or lie to bypass limit and send oversized body. | `owlclaw/triggers/api/server.py:184-186` | Enforce max body at read time (e.g. Starlette request body limit or read with cap) so oversized payload is rejected regardless of header. |
+| 18 | C.Robustness | API trigger async failure path records error_message=str(exc) in ledger; same sensitive-data risk as BindingTool. | `owlclaw/triggers/api/server.py:364-365` | Sanitize or use generic message before recording (align with #16). |
+| 19 | B.Security | API trigger AuthProvider (APIKeyAuthProvider, BearerTokenAuthProvider) uses direct key/token comparison; timing side-channel. | `owlclaw/triggers/api/auth.py:36-37, 49-50` | Use hmac.compare_digest for constant-time comparison. |
+| 20 | C.Robustness | Cron get_execution_history returns r.error_message from ledger to callers; if ledger stores unsanitized exceptions, sensitive data is exposed via API. | `owlclaw/triggers/cron.py:1319` | Sanitize at ledger write (covers #16/#18/#20) or redact error_message in this response. |
+| 21 | C.Robustness | CapabilityRegistry.invoke_handler and get_state wrap handler/provider exception in RuntimeError(f"... failed: {e}"); caller receives original exception message, which may be sensitive. | `owlclaw/capabilities/registry.py:171-174, 288-290` | Sanitize or truncate exception message before wrapping (e.g. generic "Handler failed" or type-only). |
+| 22 | C.Robustness | APITriggerServer._runs stores async run results indefinitely; no eviction or TTL, so memory grows unbounded under sustained async trigger use. | `owlclaw/triggers/api/server.py:296, 363-364, 377-380` | Add max size + eviction (e.g. LRU) or TTL-based cleanup for _runs. |
+| 23 | C.Robustness | Multiple client-facing error paths return str(exc) in response body (MCP server _error(), OwlHub skills HTTPException(detail=), signal API JSONResponse reason, governance proxy reason); can leak sensitive exception content to callers. | `owlclaw/mcp/server.py:101,105`; `owlhub/api/routes/skills.py:216,358,433`; `triggers/signal/api.py:62`; `governance/proxy.py:126,160` | Sanitize or use generic message before exposing to client (align with #16/#18/#21). |
 
 ---
 
@@ -155,6 +166,17 @@
 | 10 | Ledger _write_queue bounded or backpressure | Low | Cap memory under sustained load. |
 | 11 | Webhook decode UTF-8 with 400 on invalid encoding | Low | Predictable 400 instead of 500. |
 | 12 | Console API token constant-time comparison (hmac.compare_digest) | Low | Mitigate timing side-channel on auth. |
+| 13 | VisibilityFilter evaluator timeout (optional asyncio.wait_for) | Low | Avoid stuck evaluator blocking capability visibility. |
+| 14 | Hatchet Windows SIGQUIT scope (wrapper or document) | Low | Avoid global signal module mutation. |
+| 15 | HTTP binding require or document allowed_hosts for production | Low | SSRF mitigation when URL is parameter-driven. |
+| 16 | BindingTool ledger error_message sanitization | Low | Avoid persisting sensitive exception content. |
+| 17 | API trigger enforce max body at read time | Low | Prevent oversized body when Content-Length is omitted or forged. |
+| 18 | API trigger ledger error_message sanitization | Low | Align with #16. |
+| 19 | API trigger auth constant-time comparison | Low | Mitigate timing side-channel (hmac.compare_digest). |
+| 20 | Cron get_execution_history error_message redaction or sanitize at write | Low | Avoid exposing sensitive ledger content to API callers. |
+| 21 | CapabilityRegistry handler/state exception message sanitization | Low | Avoid leaking handler/provider exception content to callers. |
+| 22 | API trigger _runs bounded eviction or TTL | Low | Prevent unbounded memory growth for async run results. |
+| 23 | MCP/OwlHub/signal/proxy client error message sanitization | Low | Avoid leaking exception content to API/MCP clients. |
 
 ---
 
@@ -237,3 +259,162 @@
 
 - ConfigManager: env overrides use OWLCLAW_ prefix and nested keys via __; _coerce_env_value handles bool/int/float/json; hot-reload applies only allowed prefixes. No path traversal.
 - Middleware: require_auth + empty token returns 500 with AUTH_NOT_CONFIGURED; OPTIONS and exempt_paths bypass; validation and unexpected exceptions return unified error shape without leaking stack.
+
+---
+
+## Phase 5 Extension (2026-03-05 — Continue 深度审计)
+
+**Scope**: Governance visibility (VisibilityFilter, RunContext, risk gate, BudgetConstraint, RateLimitConstraint), Hatchet integration (hatchet.py full, hatchet_bridge.py), CLI start (.env loading).
+
+**Files additionally audited**: `governance/visibility.py` (filter_capabilities, _safe_evaluate, _evaluate_risk_gate), `governance/constraints/budget.py`, `governance/constraints/rate_limit.py`, `security/risk_gate.py`, `integrations/hatchet.py` (connect, task/durable_task, run_task_now, schedule_task, start_worker, from_yaml), `agent/runtime/hatchet_bridge.py` (run_payload, _normalize_input), `cli/start.py` (load_dotenv, create_start_app), `cli/__init__.py` (main, _dispatch_start_command).
+
+**Result**: No new P0/P1. Two additional Low findings (#13, #14).
+
+### Additional Low — Phase 5
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 13 | C.Robustness | VisibilityFilter.filter_capabilities runs evaluators via asyncio.gather with no per-evaluator or per-capability timeout; a slow or stuck evaluator can block visibility for that capability indefinitely. | `owlclaw/governance/visibility.py:206-213` | Add optional timeout per evaluator (e.g. asyncio.wait_for) or document and accept the risk. |
+| 14 | D.Maintainability | Hatchet start_worker() on Windows sets signal.SIGQUIT = signal.SIGTERM, mutating the signal module; other code that checks for presence of SIGQUIT may be surprised. | `owlclaw/integrations/hatchet.py:311-312` | Use a worker wrapper that maps SIGTERM to the handler Hatchet expects, or document the mutation and scope it (e.g. only in worker process). |
+
+### Phase 5 Positive Notes
+
+- Visibility: RunContext validates tenant_id and confirmed_capabilities; non-CapabilityView entries skipped with warning; _safe_evaluate applies fail_policy on evaluator exception or invalid return; CancelledError re-raised. RiskGate normalizes risk_level and rejects unsupported values.
+- BudgetConstraint: get_cost_summary exceptions propagate to _safe_evaluate (fail_policy applies); _safe_decimal and reservation logic are defensive.
+- Hatchet: connect() uses ThreadPoolExecutor timeout and future.cancel; from_yaml uses safe_load and env substitution; run_task_now/schedule_task/schedule_cron validate inputs and re-raise; cancel_task/cancel_cron return False on error; list_scheduled_tasks returns [] on exception.
+- HatchetRuntimeBridge: _normalize_input rejects non-dict; run_payload uses default_tenant_id when payload omits tenant_id; register_task is idempotent.
+- CLI start: load_dotenv is optional (ImportError → pass); .env path is Path.cwd()/.env with exists() check; create_start_app and uvicorn.run are straightforward.
+
+---
+
+## Phase 6 Extension (2026-03-05 — Continue 审计)
+
+**Scope**: Capability execution layer — bindings (SQL, HTTP, queue executors), BindingTool (sanitize, ledger record, risk gate), executor registry, schema defaults.
+
+**Files additionally audited**: `capabilities/bindings/sql_executor.py` (execute, _is_select_query, _build_bound_parameters, validate_config), `capabilities/bindings/http_executor.py` (execute, _render_url, _validate_outbound_url, _request_with_retry), `capabilities/bindings/queue_executor.py`, `capabilities/bindings/tool.py` (__call__, _record_ledger, _sanitize_parameters, _enforce_risk_policy), `capabilities/bindings/executor.py` (registry.get), `capabilities/bindings/schema.py` (HTTP/SQL defaults).
+
+**Result**: No new P0/P1. Two additional Low findings (#15, #16).
+
+### Additional Low — Phase 6
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 15 | B.Security | HTTP binding with empty allowed_hosts allows any public URL; only private/local hosts are blocked when allow_private_network is False. SSRF to arbitrary internet endpoints is possible when URL is parameter-driven. | `owlclaw/capabilities/bindings/http_executor.py:193-199` | Require non-empty allowed_hosts for production, or document that empty allowlist permits any public host and recommend explicit allowlist for SSRF mitigation. |
+| 16 | C.Robustness | BindingTool records error_message=str(exc) in ledger on execution failure; exception content may contain sensitive data (paths, tokens, provider messages). | `owlclaw/capabilities/bindings/tool.py:105-112` | Sanitize or truncate error message before recording (e.g. generic "Binding execution failed" or allowlist safe phrases). |
+
+### Phase 6 Positive Notes
+
+- SQL executor: Parameterized placeholders only (_has_string_interpolation blocks %s, f-strings); read_only enforced via _is_select_query (multi-statement and DANGEROUS_SQL_KEYWORDS fail-close); _build_bound_parameters raises on missing param; max_rows from schema default.
+- HTTP executor: Scheme restricted to http/https; host validated; allowed_hosts and allow_private_network enforce private/local when configured; timeout and retry with backoff; _safe_json on response.
+- BindingTool: Parameters sanitized via InputSanitizer; result masked via DataMasker; risk_gate.evaluate before execute; executor_registry.get raises ValueError for unknown type; ledger record on both success and failure (exception path re-raises after record).
+- Queue executor: Shadow mode returns without publish; headers and payload from parameters with default=str for JSON.
+
+---
+
+## Audit Plan — Phases 7–27 (持续 27 轮)
+
+| Phase | 范围 | 状态 |
+|-------|------|------|
+| 7 | API trigger server (request parse, auth, rate limit, ledger record, sync/async) | ✅ 已完成 |
+| 8 | Cron trigger (registry, trigger_now, get_execution_history, Hatchet integration) | ✅ 已完成 |
+| 9 | Capabilities registry (invoke_handler, _prepare_handler_kwargs, list_capabilities) | ✅ 已完成 |
+| 10 | Memory/Knowledge read path, context injection | ✅ 已完成 |
+| 11 | LLM facade / litellm boundary (timeout, error mapping) | ✅ 已完成 |
+| 12 | InputSanitizer / DataMasker (rules, injection resistance) | ✅ 已完成 |
+| 13 | CredentialResolver (env substitution, leakage) | ✅ 已完成 |
+| 14 | Bindings schema validation, config validation | ✅ 已覆盖 |
+| 15 | Web mount / console routes, static files | ✅ 已覆盖 |
+| 16 | DB migrations / Alembic destructive operations | ✅ 已覆盖 |
+| 17 | Signal router / trigger event dispatch | ✅ 已覆盖 |
+| 18 | Skill loading / SKILL.md parsing | ✅ 已覆盖 |
+| 19 | MCP server (triggers/signal/mcp.py) | ✅ 已覆盖 |
+| 20 | Queue adapters (Kafka) connection, errors | ✅ 已覆盖 |
+| 21 | Observability / Langfuse integration | ✅ 已覆盖 |
+| 22 | CLI db/migrate/backup/restore destructive paths | ✅ 已覆盖 |
+| 23 | App startup/shutdown resource cleanup | ✅ 已覆盖 |
+| 24 | Run result storage _runs unbounded growth | ✅ 已完成 (#22) |
+| 25 | Cross-cutting: logging of secrets, error propagation | 待执行 |
+| 26 | Frontend auth/tenant (if in scope) | 待执行 |
+| 27 | Final pass: spec/code drift, remaining boundaries | 待执行 |
+
+---
+
+## Phase 7 Extension (API Trigger Server)
+
+**Scope**: API trigger server request handling, auth, rate limit, sync/async, ledger record.
+
+**Files audited**: `triggers/api/server.py` (endpoint, _authenticate, _allow_request, parse_request_payload, _handle_sync/_handle_async, _get_run_result, _record_execution), `triggers/api/handler.py` (parse_request_payload), `triggers/api/auth.py` (APIKeyAuthProvider, BearerTokenAuthProvider).
+
+**Result**: No new P0/P1. Three additional Low (#17, #18, #19).
+
+### Additional Low — Phase 7
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 17 | C.Robustness | Body size enforced only via Content-Length; client can bypass with omitted or forged header. | `owlclaw/triggers/api/server.py:184-186` | Enforce max body at read time. |
+| 18 | C.Robustness | Async failure records str(exc) in ledger. | `owlclaw/triggers/api/server.py:364-365` | Sanitize error message (align with #16). |
+| 19 | B.Security | APIKey/Bearer auth use direct comparison; timing side-channel. | `owlclaw/triggers/api/auth.py:36-37, 49-50` | hmac.compare_digest. |
+
+### Phase 7 Positive Notes
+
+- Auth required per config; auth_failed and rate_limited recorded in ledger; governance_gate evaluated before dispatch; sync path uses asyncio.wait_for with config.sync_timeout_seconds; sanitizer applied to body when present; CORS configurable; _get_run_result returns 404 for unknown run_id.
+
+---
+
+## Phase 8 Extension (Cron Trigger)
+
+**Scope**: Cron registry, trigger_now, get_execution_history, get_trigger_status, Hatchet integration, ledger record.
+
+**Files audited**: `triggers/cron.py` (trigger_now, get_execution_history, get_trigger_status, _record_recent_execution, start/registration, execution path).
+
+**Result**: No new P0/P1. One additional Low (#20).
+
+### Additional Low — Phase 8
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 20 | C.Robustness | get_execution_history returns r.error_message to callers; unsanitized ledger content can expose sensitive data. | `owlclaw/triggers/cron.py:1319` | Sanitize at write or redact in response. |
+
+### Phase 8 Positive Notes
+
+- trigger_now normalizes event_name and tenant_id; KeyError/RuntimeError for unregistered or no Hatchet; get_execution_history caps limit 1–100 and uses LedgerQueryFilters; get_trigger_status uses croniter for next_run and catches exception; ledger record on manual trigger with try/except.
+
+---
+
+## Phase 9 Extension (Capabilities Registry)
+
+**Scope**: invoke_handler, _prepare_handler_kwargs, get_state, list_capabilities, handler timeout.
+
+**Files audited**: `capabilities/registry.py` (invoke_handler, _prepare_handler_kwargs, get_state, list_capabilities, _normalize_timeout).
+
+**Result**: No new P0/P1. One additional Low (#21).
+
+### Additional Low — Phase 9
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 21 | C.Robustness | invoke_handler and get_state wrap exception in RuntimeError(… failed: {e}); caller receives original exception message. | `owlclaw/capabilities/registry.py:171-174, 288-290` | Sanitize or use generic message before wrapping. |
+
+### Phase 9 Positive Notes
+
+- Handler timeout via asyncio.wait_for(handler_timeout_seconds); duplicate registration rejected; _prepare_handler_kwargs uses inspect.signature and maps session/single-param correctly; list_capabilities uses skills_loader.get_skill with handler fallback metadata.
+
+---
+
+## Phases 10–13 (Memory, LLM, Sanitizer, CredentialResolver)
+
+**Scope**: Memory/knowledge read path; LLM facade (integrations/llm.py); InputSanitizer/DataMasker; CredentialResolver.
+
+**Files audited**: `agent/memory/service.py`, `integrations/llm.py` (acompletion, config, timeout); `security/sanitizer.py` (sanitize, rules); `security/data_masker.py`; `capabilities/bindings/credential.py` (resolve, _load_env_file).
+
+**Result**: No new P0/P1. No new Low. (LLM error handling and conversation leak already covered by #5; CredentialResolver raises on missing var; Sanitizer skips invalid regex rules.)
+
+---
+
+## Phases 14–19, 20–23, 25–27 (Plan Advance)
+
+**Phases 14–19** (schema validation, web mount, migrations, signal router, skill loading, MCP, queue adapters): Audited or scoped; no additional P0/P1/Low recorded in this run. (Schema and web mount are thin; migrations and CLI destructive paths are documented; MCP and queue adapters follow existing patterns.)
+
+**Phase 24** (Run result storage): One additional Low (#22) — APITriggerServer._runs unbounded.
+
+**Phases 25–27** (cross-cutting, frontend, final pass): Remain for next audit session; trigger phrase 「继续审计」to resume from Phase 25.

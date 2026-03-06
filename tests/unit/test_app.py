@@ -232,6 +232,26 @@ async def test_start_registers_cron_and_exposes_health(tmp_path):
     await app.stop()
 
 
+def test_health_status_uses_public_trigger_counters() -> None:
+    app = OwlClaw("health-public")
+
+    class _DBManagerStub:
+        @property
+        def registered_channels_count(self) -> int:
+            return 3
+
+    class _APIServerStub:
+        @property
+        def registered_endpoints_count(self) -> int:
+            return 4
+
+    app.db_change_manager = _DBManagerStub()  # type: ignore[assignment]
+    app.api_trigger_server = _APIServerStub()  # type: ignore[assignment]
+    health = app.health_status()
+    assert health["db_change_registered_channels"] == 3
+    assert health["api_registered_endpoints"] == 4
+
+
 @pytest.mark.asyncio
 async def test_start_is_idempotent_returns_existing_runtime(tmp_path):
     (tmp_path / "entry-monitor").mkdir()

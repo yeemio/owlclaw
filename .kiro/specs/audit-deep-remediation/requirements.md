@@ -1,8 +1,8 @@
 # audit-deep-remediation — 深度审计修复
 
-> **来源**: `docs/review/DEEP_AUDIT_REPORT.md`（2026-03-05 四维度深度审计）
-> **目标**: 收口 2 个 P1 + 10 个 Low 发现，满足 SHIP WITH CONDITIONS
-> **优先级**: P1（2 项）+ Low（10 项）
+> **来源**: `docs/review/DEEP_AUDIT_REPORT.md`（2026-03-05 深度审计，持续扩展至 Phase 9）
+> **目标**: 收口 2 个 P1 + 19 个 Low 发现，满足 SHIP WITH CONDITIONS
+> **优先级**: P1（2 项）+ Low（19 项）
 > **预估工作量**: 2-3 天
 
 ---
@@ -10,8 +10,8 @@
 ## 1. 背景与动机
 
 ### 1.1 当前问题
-- 深度审计报告产出 12 项发现：2 个 P1（Skill 环境变量注入无边界、Console tenant_id 客户端可控）、10 个 Low（缓存策略、Heartbeat 耦合、LLM 错误信息泄露风险、engine 异常映射、provider/ledger/webhook/middleware 韧性与安全细节）。
-- 上述问题尚未纳入可执行任务清单与分配。
+- 深度审计报告已扩展至 21 项发现：2 个 P1（Skill 环境变量注入无边界、Console tenant_id 客户端可控）、19 个 Low（缓存策略、Heartbeat 耦合、LLM/ledger 错误脱敏、engine 异常映射、provider/webhook/middleware/API trigger/Cron/bindings/registry 韧性与安全细节等）。
+- 其中 D1/D3/D4a/D5/D8/D9/D10 已完成并合入 `main`；其余项需继续按 worktree 分配推进。
 
 ### 1.2 设计目标
 - 将报告中的每项发现转化为可验收的 task，并按 worktree 边界分配。
@@ -69,6 +69,42 @@
 - **问题**：Console API 认证中间件使用普通字符串比较（`provided_token != expected_token`），存在时序侧信道风险。
 - **需求**：使用 `hmac.compare_digest(provided_token, expected_token)` 进行常量时间比较，降低通过响应时间推断 token 的风险。
 
+### 2.13 Low-13（Phase 4）：VisibilityFilter evaluator 超时保护
+- **问题**：VisibilityFilter.filter_capabilities 使用 `asyncio.gather` 聚合 evaluator，缺少 per-evaluator / per-capability timeout；慢 evaluator 可能长期阻塞 capability 可见性判定。
+- **需求**：为 evaluator 增加可选 timeout（如 `asyncio.wait_for`）或明确记录并接受该风险，避免单个 evaluator 卡死整轮过滤。
+
+### 2.14 Low-14（Phase 4）：Hatchet Windows SIGQUIT 作用域
+- **问题**：Windows 下 `start_worker()` 将 `signal.SIGQUIT = signal.SIGTERM`，直接修改 `signal` 模块全局状态，其他代码可能误判 SIGQUIT 可用。
+- **需求**：将该兼容逻辑限制在 worker 进程作用域、改为 wrapper 映射，或至少在文档中明确该行为与适用边界。
+
+### 2.15 Low-15（Phase 5）：HTTP binding SSRF 边界
+- **问题**：HTTP binding 在 `allowed_hosts` 为空时允许访问任意公网地址，只阻止私网/本地地址；若 URL 可参数化，存在 SSRF 到任意公网端点的风险。
+- **需求**：要求生产场景配置非空 `allowed_hosts`，或在代码/文档中明确空 allowlist 等价于“允许任意公网 host”，并给出 SSRF 风险提示。
+
+### 2.16 Low-16（Phase 6）：BindingTool ledger 错误信息脱敏
+- **问题**：BindingTool 执行失败时将 `str(exc)` 直接写入 ledger `error_message`，可能持久化敏感路径、token 或上游 provider 原始报错。
+- **需求**：在写入 ledger 前脱敏或截断错误信息，优先使用通用文案或 allowlist 安全短语。
+
+### 2.17 Low-17（Phase 7）：API trigger 请求体大小在读取时强制限制
+- **问题**：API trigger 当前只依赖 `Content-Length` 头判断 body 大小，客户端可省略或伪造该头绕过限制。
+- **需求**：在实际读取请求体时执行上限校验，确保无论 header 是否可信，超限请求都会被拒绝。
+
+### 2.18 Low-18（Phase 7）：API trigger ledger 错误信息脱敏
+- **问题**：API trigger 异步失败路径同样将 `str(exc)` 写入 ledger，存在与 BindingTool 相同的敏感信息泄露风险。
+- **需求**：与 Low-16 对齐，在 ledger 写入前统一做错误消息脱敏或使用通用错误文案。
+
+### 2.19 Low-19（Phase 7）：API trigger 鉴权常量时间比较
+- **问题**：API trigger 的 `APIKeyAuthProvider` 与 `BearerTokenAuthProvider` 使用普通字符串比较，存在时序侧信道风险。
+- **需求**：改用 `hmac.compare_digest` 做常量时间比较。
+
+### 2.20 Low-20（Phase 8）：Cron 执行历史错误信息暴露
+- **问题**：Cron `get_execution_history` 直接把 ledger 中的 `error_message` 返回给调用方；若上游写入未脱敏异常，可能经 API 暴露敏感信息。
+- **需求**：从源头保证 ledger 写入已脱敏，或在该接口输出时对 `error_message` 做额外 redaction。
+
+### 2.21 Low-21（Phase 9）：CapabilityRegistry 异常包装脱敏
+- **问题**：`CapabilityRegistry.invoke_handler()` / `get_state()` 用 `RuntimeError(f\"... failed: {e}\")` 包装底层异常，调用方可直接获得敏感原始错误内容。
+- **需求**：包装异常时改为通用安全文案、类型级描述，或先对原始异常内容做脱敏/截断。
+
 ---
 
 ## 3. 验收标准（DoD）
@@ -85,3 +121,12 @@
 - [ ] Low-10：Ledger 队列有界或背压；文档化上限。
 - [ ] Low-11：Webhook 非 UTF-8 body 返回 400；有单测或手验。
 - [ ] Low-12：Console API token 使用 hmac.compare_digest；有单测或手验。
+- [ ] Low-13：Visibility evaluator 有 timeout 或文档明确该风险；有测试或手验。
+- [ ] Low-14：Hatchet Windows SIGQUIT 兼容逻辑已收敛作用域或文档明确；有手验或代码审查结论。
+- [ ] Low-15：HTTP binding 的 `allowed_hosts` 风险边界已实现或文档明确；有测试或审校结论。
+- [ ] Low-16：BindingTool 写入 ledger 前不再持久化原始 `str(exc)`；有测试。
+- [ ] Low-17：API trigger 在读取 body 时执行大小限制；有测试。
+- [ ] Low-18：API trigger ledger 错误写入已脱敏；有测试。
+- [ ] Low-19：API trigger auth 使用 hmac.compare_digest；有测试或手验。
+- [ ] Low-20：Cron 历史接口不再暴露未脱敏 ledger 错误；有测试或与 Low-16/18 的联动证明。
+- [ ] Low-21：CapabilityRegistry 不再把原始异常字符串直接包装回调用方；有测试。
