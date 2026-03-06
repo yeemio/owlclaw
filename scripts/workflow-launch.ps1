@@ -212,6 +212,44 @@ function Wait-WorkflowLaunchHealthy {
     }
 }
 
+function Write-LaunchState {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$Agent,
+        [Parameter(Mandatory = $true)]
+        [string]$Status,
+        [int]$Pid = 0,
+        [string]$Note = "",
+        [int]$ExitCode = -2147483648
+    )
+
+    $args = @(
+        "run",
+        "python",
+        "scripts/workflow_launch_state.py",
+        "--repo-root",
+        $RepoRoot,
+        "update",
+        "--agent",
+        $Agent,
+        "--status",
+        $Status
+    )
+    if ($Pid -gt 0) {
+        $args += @("--pid", "$Pid")
+    }
+    if ($Note) {
+        $args += @("--note", $Note)
+    }
+    if ($ExitCode -ne -2147483648) {
+        $args += @("--exit-code", "$ExitCode")
+    }
+    $args += "--json"
+    & poetry @args | Out-Null
+}
+
 function Get-WorkflowWindowHandle {
     param(
         [Parameter(Mandatory = $true)]
@@ -269,47 +307,7 @@ foreach ($role in $config.roles) {
     $maxAttempts = if ($role.startup.max_attempts) { [int]$role.startup.max_attempts } else { 1 }
     $retryDelaySeconds = if ($role.startup.retry_delay_seconds) { [int]$role.startup.retry_delay_seconds } else { 3 }
     $logPath = Get-LaunchLogPath -RepoRoot $mainRepo -Agent ([string]$role.agent)
-    $command = @"
-`$workflowLaunchAttempts = $maxAttempts
-`$workflowRetryDelaySeconds = $retryDelaySeconds
-`$workflowLaunchSucceeded = `$false
-1..`$workflowLaunchAttempts | ForEach-Object {
-    `$workflowAttempt = `$_
-    poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --pid `$PID --note `"attempt `$workflowAttempt/$maxAttempts`" --json | Out-Null
-    Add-Content -Path '$logPath' -Value ("[{0}] attempt {1}/{2} starting" -f [DateTime]::UtcNow.ToString("o"), `$workflowAttempt, $maxAttempts)
-    `$workflowLaunchMarker = Start-Job -ScriptBlock {
-        param(`$repoRoot, `$agent, `$delaySeconds, `$pidValue, `$attempt)
-        Start-Sleep -Seconds `$delaySeconds
-        Set-Location `$repoRoot
-        poetry run python scripts/workflow_launch_state.py --repo-root `$repoRoot update --agent `$agent --status running --pid `$pidValue --note `"startup grace passed on attempt `$attempt`" --json | Out-Null
-    } -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID, `$workflowAttempt
-    `$workflowStartTime = Get-Date
-    try {
-        Invoke-Expression $startupCommand
-    }
-    finally {
-        if (`$workflowLaunchMarker) {
-            Stop-Job -Job `$workflowLaunchMarker -ErrorAction SilentlyContinue | Out-Null
-            Remove-Job -Job `$workflowLaunchMarker -Force -ErrorAction SilentlyContinue | Out-Null
-        }
-    }
-    `$workflowExitCode = `$LASTEXITCODE
-    `$workflowRuntimeSeconds = ((Get-Date) - `$workflowStartTime).TotalSeconds
-    Add-Content -Path '$logPath' -Value ("[{0}] attempt {1}/{2} exited code={3} runtime_seconds={4}" -f [DateTime]::UtcNow.ToString("o"), `$workflowAttempt, $maxAttempts, `$workflowExitCode, [Math]::Round(`$workflowRuntimeSeconds, 2))
-    if (`$workflowRuntimeSeconds -ge $StartupGraceSeconds) {
-        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$workflowExitCode --note `"cli exited after running`" --json | Out-Null
-        `$workflowLaunchSucceeded = `$true
-        return
-    }
-    if (`$workflowAttempt -lt `$workflowLaunchAttempts) {
-        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status starting --pid `$PID --exit-code `$workflowExitCode --note `"retrying after quick exit on attempt `$workflowAttempt`" --json | Out-Null
-        Start-Sleep -Seconds `$workflowRetryDelaySeconds
-    }
-    else {
-        poetry run python scripts/workflow_launch_state.py --repo-root '$mainRepo' update --agent $($role.agent) --status exited --pid `$PID --exit-code `$workflowExitCode --note `"cli returned to powershell after retries`" --json | Out-Null
-    }
-}
-"@
+    $command = $startupCommand
 
     if ($startupType -eq "audit_agent") {
         $summary = [string]$role.startup.audit_summary
@@ -363,29 +361,66 @@ poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) 
         Workdir = [string]$role.repo_path
         Command = $command
         StartupType = $startupType
+        MaxAttempts = $maxAttempts
+        RetryDelaySeconds = $retryDelaySeconds
     }
 }
 
 $windowManifest = @{}
 foreach ($target in $targets) {
-    $process = Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command -StartupType $target.StartupType
-    if (-not $DryRun -and $null -ne $process) {
-        $hwnd = Get-WindowHandleByExactTitle -WindowTitle $target.Title
-        $windowManifest[$target.Agent] = @{
-            pid = $process.Id
-            hwnd = $hwnd
-            title = $target.Title
-            workdir = $target.Workdir
+    $started = $false
+    $attempt = 0
+    while (-not $started -and $attempt -lt $target.MaxAttempts) {
+        $attempt += 1
+        if (-not $DryRun) {
+            Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "starting" -Note ("attempt {0}/{1}" -f $attempt, $target.MaxAttempts)
+            Add-Content -Path (Get-LaunchLogPath -RepoRoot $mainRepo -Agent $target.Agent) -Value ("[{0}] attempt {1}/{2} launching via {3}" -f [DateTime]::UtcNow.ToString("o"), $attempt, $target.MaxAttempts, $target.StartupType)
         }
-        Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
-        $health = Wait-WorkflowLaunchHealthy -RepoRoot $mainRepo -Agent $target.Agent -ProcessId $process.Id -TimeoutSeconds $StartupTimeoutSeconds
-        if (-not $health.ok) {
-            Write-Error ("Launch failed for {0}: {1}" -f $target.Agent, $health.reason)
-            if (-not $ContinueOnLaunchFailure) {
+
+        $process = Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command -StartupType $target.StartupType
+        if (-not $DryRun -and $null -ne $process) {
+            $hwnd = Get-WindowHandleByExactTitle -WindowTitle $target.Title
+            $windowManifest[$target.Agent] = @{
+                pid = $process.Id
+                hwnd = $hwnd
+                title = $target.Title
+                workdir = $target.Workdir
+            }
+            Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
+
+            if ($target.StartupType -eq "direct_cli") {
+                Start-Sleep -Seconds $StartupGraceSeconds
+                $alive = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
+                if ($null -ne $alive) {
+                    Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "running" -Pid $process.Id -Note ("startup grace passed on attempt {0}" -f $attempt)
+                    $started = $true
+                }
+                else {
+                    Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "exited" -Pid $process.Id -ExitCode 1 -Note ("direct cli exited before grace on attempt {0}" -f $attempt)
+                }
+            }
+            else {
+                $health = Wait-WorkflowLaunchHealthy -RepoRoot $mainRepo -Agent $target.Agent -ProcessId $process.Id -TimeoutSeconds $StartupTimeoutSeconds
+                if ($health.ok) {
+                    $started = $true
+                }
+                else {
+                    Write-Error ("Launch failed for {0}: {1}" -f $target.Agent, $health.reason)
+                }
+            }
+        }
+
+        if (-not $started -and -not $DryRun) {
+            if ($attempt -lt $target.MaxAttempts) {
+                Start-Sleep -Seconds $target.RetryDelaySeconds
+            }
+            elseif (-not $ContinueOnLaunchFailure) {
+                Write-Error ("Launch failed for {0}: exhausted retries" -f $target.Agent)
                 exit 1
             }
         }
     }
+
     if (-not $DryRun) {
         Start-Sleep -Milliseconds $LaunchSpacingMilliseconds
     }
