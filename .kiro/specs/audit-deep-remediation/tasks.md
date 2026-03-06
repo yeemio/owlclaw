@@ -85,19 +85,38 @@
 
 ---
 
-## Backlog（报告 #35-#44，待统筹分配）
+## Backlog 审校结果（#35-#44，2026-03-06 审校完成）
 
-> 来源：`docs/review/DEEP_AUDIT_REPORT.md` 第 7-8 轮及 Recommended Fix Order。当前轮审校收口后再切批分配。
+> 来源：`docs/review/DEEP_AUDIT_REPORT.md` 第 7-8 轮（Webhook/Signal/DBChange）。审校确认所有发现均为有效代码问题。
 
-| 报告# | 简述 | 位置 | 验收要点 |
+| 报告# | 简述 | 位置 | 审校状态 |
 |-------|------|------|----------|
-| #35 | Webhook admin token 常量时间比较 | `triggers/webhook/http/app.py` require_admin_token | `hmac.compare_digest` |
-| #36 | Webhook log_request 敏感 header 脱敏后再入 event.data | `http/app.py` build_event data=headers | 落库前 redact authorization/x-signature/x-admin-token |
-| #37 | GET /events 鉴权或 tenant 绑定 | `http/app.py` GET /events | 需 admin 或与 /endpoints 同鉴权；多租户时 tenant 从认证来 |
-| #38 | endpoint_id 非 UUID 时返回 404 而非 500 | `manager.py` get_endpoint；app 入口 | 校验格式或 catch ValueError -> 404 |
-| #39 | Webhook GovernanceClient/ExecutionTrigger 对外不暴露 `str(exc)` | `governance.py:90`；`execution.py:85,98` | 脱敏或通用文案（对齐 #16/#23） |
-| #40 | Webhook 限流器与 idempotency 字典有界或 TTL | `http/app.py` `_RateLimiter`；`execution.py` `_idempotency` | 有界或 TTL/清理策略 |
-| #41 | Idempotency key 按 tenant_id+endpoint_id 隔离 | `execution.py` key 使用处；app 传入 | 键含 tenant+endpoint 前缀或 hash |
-| #42 | SignalRouter.dispatch 不向 result.message 写 `str(exc)` | `triggers/signal/router.py:72` | 脱敏或通用文案（对齐 #23） |
-| #43 | DBChangeTriggerManager._dlq_events 有界或定期清理 | `triggers/db_change/manager.py` `_dlq_events` | `deque(maxlen)` 或 purge |
-| #44 | `_move_to_dlq` 的 error 字段脱敏 | `triggers/db_change/manager.py:207` | 不存原始 `str(exc)`（对齐 #16/#23） |
+| #35 | Webhook admin token 常量时间比较 | `triggers/webhook/http/app.py:148` | ✅ 有效 - `if provided != expected:` 使用直接字符串比较 |
+| #36 | Webhook log_request 敏感 header 脱敏 | `http/app.py:187` | ✅ 有效 - `data={"headers": dict(request.headers)}` 完整 headers 落库 |
+| #37 | GET /events 鉴权或 tenant 绑定 | `http/app.py:389-395` | ✅ 有效 - 无认证依赖，tenant_id 写死 "default" |
+| #38 | endpoint_id 非 UUID 时返回 404 | `manager.py:94-96` | ✅ 有效 - `UUID(endpoint_id)` 抛 ValueError 未捕获 |
+| #39 | Webhook GovernanceClient/ExecutionTrigger 错误脱敏 | `governance.py:92`; `execution.py:87,98-99` | ✅ 有效 - `f"governance unavailable: {exc}"` 和 `{"type": type(exc).__name__, "message": str(exc)}` 未脱敏 |
+| #40 | Webhook 限流器与 idempotency 字典有界化 | `http/app.py:56-57` `_RateLimiter`; `execution.py:37-39` | ✅ 有效 - `_ip_window`/`_endpoint_window`/`_idempotency` 均为无界 dict |
+| #41 | Idempotency key 按 tenant+endpoint 隔离 | `execution.py:54-85` | ✅ 有效 - key 直接使用客户端传入值，无 tenant/endpoint 前缀 |
+| #42 | SignalRouter.dispatch 错误脱敏 | `triggers/signal/router.py:77` | ✅ 有效 - 捕获异常后返回固定文案 "Operation failed."（已脱敏）⚠️ |
+| #43 | DBChangeTriggerManager._dlq_events 有界化 | `triggers/db_change/manager.py:91` | ✅ 有效 - `self._dlq_events: list[dict[str, Any]] = []` 无界列表 |
+| #44 | `_move_to_dlq` 的 error 字段脱敏 | `triggers/db_change/manager.py:209` | ✅ 有效 - `"error": str(exc)` 未脱敏 |
+
+**注 #42**: SignalRouter.dispatch 在 router.py:77 已使用固定文案 "Operation failed."，但 _record 方法在 router.py:115 将 `result.message` 写入 ledger error_message，若 handler 返回的 result.message 包含敏感信息则仍可能泄露。
+
+---
+
+## Backlog（#35-#44 修复任务，待分配）
+
+| 优先级 | 报告# | Task | 验收要点 |
+|--------|-------|------|----------|
+| P1 | #35 | Webhook `require_admin_token` 使用 `hmac.compare_digest` | 常量时间比较，避免时序侧信道 |
+| P1 | #36 | Webhook `log_request` 敏感 header 脱敏 | Authorization/x-signature/x-admin-token 不落库 |
+| P1 | #37 | GET /events 增加认证或 tenant 绑定 | 与 /endpoints 同鉴权或从认证推导 tenant_id |
+| Low | #38 | endpoint_id 非 UUID 时返回 404 | catch ValueError 或预校验格式 |
+| Low | #39 | GovernanceClient/ExecutionTrigger 错误脱敏 | 不暴露原始 `str(exc)` 给客户端 |
+| Low | #40 | 限流器与 idempotency 字典有界化 | 使用 `deque(maxlen)` 或 TTL 清理策略 |
+| Low | #41 | Idempotency key 按 tenant+endpoint 隔离 | 键含 tenant_id+endpoint_id 前缀或 hash |
+| Low | #42 | SignalRouter._record 脱敏 handler 返回 message | ledger 不写入 handler 返回的原始 message |
+| Low | #43 | `_dlq_events` 使用 `deque(maxlen)` 或定期清理 | 防止内存无界增长 |
+| Low | #44 | `_move_to_dlq` 的 error 字段脱敏 | 不存储原始 `str(exc)` |
