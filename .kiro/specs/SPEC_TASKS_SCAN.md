@@ -343,11 +343,7 @@
 - [x] D9 Low-9 Ledger 异常时 batch 写 fallback（_background_writer）→ spec: audit-deep-remediation
 - [x] D10 Low-10 Ledger _write_queue 有界或背压→ spec: audit-deep-remediation
 - [x] D11 Low-11 Webhook 非 UTF-8 body 返回 400→ spec: audit-deep-remediation
-<<<<<<< HEAD
-- [ ] D12 Low-12 Console API token 常量时间比较（hmac.compare_digest）→ spec: audit-deep-remediation
-=======
 - [x] D12 Low-12 Console API token 常量时间比较（hmac.compare_digest）→ spec: audit-deep-remediation
->>>>>>> main
 - [x] D13 Low-13 VisibilityFilter evaluator timeout / 风险文档→ spec: audit-deep-remediation
 - [x] D14 Low-14 Hatchet Windows SIGQUIT 作用域收敛或文档说明→ spec: audit-deep-remediation
 - [ ] D15 Low-15 HTTP binding 空 `allowed_hosts` SSRF 边界→ spec: audit-deep-remediation
@@ -436,11 +432,7 @@
 | **governance-hardening** | `.kiro/specs/governance-hardening/` | ✅ 三层齐全，已完成（33/33） | 治理层加固：Ledger 索引 + UUID PK + fallback 路径 + MODEL_PRICING + QualityStore 索引 + env.py 导入 + session 缓存 + DB 异常包装 + SSL + Cron 去重 |
 | **phase13-low-findings** | `.kiro/specs/phase13-low-findings/` | 🟡 三层齐全，进行中（12/14） | v4 低优先级收口：#11~#14 实现完成，验收清单待勾选 |
 | **console-browser-real-e2e** | `.kiro/specs/console-browser-real-e2e/` | ✅ 三层齐全，已完成（13/13） | Console 真实浏览器验收：自动化 + 手工 + 审校放行（`CONDITIONAL_PASS`） |
-<<<<<<< HEAD
-| **audit-deep-remediation** | `.kiro/specs/audit-deep-remediation/` | 🟡 三层齐全，进行中（23/29） | 深度审计修复：codex-gpt-work 分配项已全部完成（D2/D4b/D6/D7/D11/D13/D14/D17–D20/D22/D25/D26/D27/D28/D29）；codex-work 待审 D12/D15/D16/D21；待 D23/D24 |
-=======
 | **audit-deep-remediation** | `.kiro/specs/audit-deep-remediation/` | ✅ 三层齐全，已完成（15/15） | 深度审计修复：D1-D14 + P1-2 文档已全部完成并自 review-work 合并入 main；D15-D29 为下一批 backlog。 |
->>>>>>> main
 
 ---
 
@@ -466,20 +458,7 @@
 
 | 字段 | 值 |
 |------|---|
-<<<<<<< HEAD
-| 最后更新 | 2026-03-06（codex-gpt-work sync main，解决 Checkpoint 冲突；Phase 15 进度 23/29，D30-D44 暂列 backlog） |
-| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（23/29）；codex-gpt-work 分配项已全部完成并提交；D30-D44 待统筹切批。 |
-| 批次状态 | codex-work 已提交 D12/D15/D16/D21/D23/D24 待审，后续 D13/D14/D25；codex-gpt-work 已提交 D2/D4b/D6/D7/D11/D13/D14/D17–D20/D22/D25/D26/D27/D28/D29 待审；D30-D44 暂未分配。 |
-| 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；…22) **Phase 14 浏览器验收收口**：`console-browser-real-e2e` 13/13；23) **Phase 15 codex-gpt-work**：D22/D25/D26/D27/D28/D29 已实现并提交。 |
-| 下一待执行 | 1) review-work 先审两编码分支已提交项；2) 审校通过后 codex-work 收口 D13/D14/D25；3) 当前轮收口后再统筹 D30-D44。 |
-| 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，…Phase 10 audit-fix-critical ✅，audit-fix-high ✅，其余 spec 全部 ✅。 |
-| 阻塞项 | release-supply-chain/owlhub/openclaw-skill-pack/content-launch 外部阻塞。 |
-| 健康状态 | ✅ 内部协作阻塞已清零；当前仅剩外部依赖阻塞项。 |
-| 连续无进展轮数 | 0 |
-| 分支量化进度 | codex-work 已提交 6 项待审，后续 3 项；codex-gpt-work 已提交 15 项待审，分配项已全部完成。 |
-| 审校状态 | review-work 下一轮：优先审校两编码分支；D30-D44 不在本轮审校窗口内。 |
-=======
-| 最后更新 | 2026-03-06（main 已合并 review-work；audit-deep-remediation D1-D14 + P1-2 共 15/15 完成；D15-D29 为下一批 backlog） |
+| 最后更新 | 2026-03-06（main 已合并 review-work；audit-deep-remediation 15/15 已合入 main；D15-D29 为下一批 backlog） |
 | 当前批次 | **Phase 15 收口**：`audit-deep-remediation`（15/15 已完成并合入 main）。 |
 | 批次状态 | D1-D14 + P1-2 全部完成；D15-D29 与 D30-D44 为后续 backlog，待统筹分配。 |
 | 已完成项 | （同前 21 项）22) **Phase 15 audit-deep-remediation 全部完成**（15/15），已自 review-work 合并入 main。 |
@@ -490,7 +469,6 @@
 | 连续无进展轮数 | 0 |
 | 分支量化进度 | main 已含 review-work；编码分支可 merge main 同步。 |
 | 审校状态 | audit-deep-remediation 15/15 已合入 main；审校报告见 `docs/review/REVIEW_LOOP_2026-03-06.md`。 |
->>>>>>> main
 
 ---
 

@@ -14,27 +14,11 @@
 | 2 | **Low-3** 将 `_visible_tools_cache` 与 skills 上下文缓存改为 LRU（如 cachetools.LRUCache 或 OrderedDict 按访问） | 缓存满时逐出最近最少使用项；现有缓存相关测试通过 | [x] |
 | 3 | **Low-5** 在 LLM 异常分支中不再向消息追加 `str(exc)`，改为固定文案或安全简短描述 | grep 确认无 `str(exc)` 进 assistant content；异常路径有测试 | [x] |
 | 4 | **Low-4a** 在 Ledger 上暴露 `get_readonly_session_factory()`（或等价）公开 API，内部复用现有 _session_factory | 方法存在且可返回只读用 session 工厂；不暴露 _session_factory | [x] |
-<<<<<<< HEAD
 
----
-
-## codex-gpt-work 负责
+### codex-work 负责（续）
 
 | # | Task | 验收 | 状态 |
 |---|------|------|------|
-| 5 | **P1-2** 在 docs 中新增/更新「Console 多租户与 tenant_id」：当前行为、适用场景、多租户须从认证推导 | 文档存在且包含上述三点 | [x] |
-| 6 | **Low-4b** 在 HeartbeatChecker 中改为使用 Ledger 的 `get_readonly_session_factory()`，移除对 `_session_factory` 的 getattr | grep 确认 heartbeat 无 _session_factory；heartbeat 相关测试通过 | [x] |
-| 7 | **Low-6** 在 `db/engine.py` 的 `create_engine` 中收窄异常映射：仅连接/认证类映射为 Database*Error；其余保留或 EngineError | 非连接类异常不再被误报为连接错误；有单测或集成验证 | [x] |
-| 10 | **Low-7** 在 `web/providers/capabilities.py` 的 `_collect_capability_stats` 中捕获 ConfigurationError，无 DB 时返回空 stats（与 ledger/triggers 一致，GET /capabilities 不 500） | 无 DB 时 GET /capabilities 返回 200 + items（零统计）；有单测或手验 | [x] |
-
----
-
-## codex-work 负责（续）
-
-| # | Task | 验收 | 状态 |
-|---|------|------|------|
-=======
->>>>>>> main
 | 11 | **Low-8** 在 `app.py` 的 `health_status()` 中避免直接读 `_states`/`_configs`：改为 manager/server 的公开 API 或只读属性，或文档明确该耦合 | 无私有属性访问或文档注明；health 相关测试通过 | [x] |
 | 12 | **Low-9** 在 Ledger._background_writer 的 except Exception 分支中，将当前 batch 写入 fallback 再继续循环，避免丢失已出队记录 | 异常路径有单测或集成验证；batch 不丢 | [x] |
 | 13 | **Low-10** Ledger._write_queue 设 maxsize 或实现背压（put 超时/丢弃策略），并文档化上限 | 队列有界或文档明确；压力测试可选 | [x] |
@@ -44,21 +28,6 @@
 
 | # | Task | 验收 | 状态 |
 |---|------|------|------|
-<<<<<<< HEAD
-| 14 | **Low-11** 在 webhook receive_webhook 中对 raw_body_bytes.decode("utf-8") 做 try/except UnicodeDecodeError，返回 400 及明确提示 | 非 UTF-8 body 返回 400 而非 500；有单测或手验 | [x] |
-| 16 | **Low-13** 在 VisibilityFilter evaluator 路径增加 timeout 或明确文档边界，避免单个 evaluator 长时间阻塞 capability 过滤 | 有测试、手验或文档结论；不会无限等待单个 evaluator | [x] |
-| 17 | **Low-14** 收敛 Hatchet Windows SIGQUIT 兼容逻辑的作用域，避免全局 `signal` 模块副作用 | 代码或文档说明明确；Windows 兼容逻辑边界清晰 | [x] |
-| 20 | **Low-17** 在 API trigger 请求读取路径按实际读取体积强制 body 大小上限，不再只信任 `Content-Length` | 超限请求在省略/伪造 header 时仍被拒绝；有测试 | [x] |
-| 21 | **Low-18** 在 API trigger 写 ledger 失败记录时复用安全错误消息，不持久化原始 `str(exc)` | grep 确认失败路径无原始异常写入 ledger；有测试 | [x] |
-| 22 | **Low-19** 在 API trigger `AuthProvider` 中用 `hmac.compare_digest` 做 key/token 常量时间比较 | grep 确认无直接 token 比较；有测试或手验 | [x] |
-| 23 | **Low-20** 在 cron `get_execution_history` 中避免向调用方返回未脱敏的 ledger 错误信息 | 输出已 redacted 或由上游写入统一脱敏；有测试 | [x] |
-| 25 | **Low-22** 为 API trigger `_runs` 增加 maxsize/LRU/TTL 清理，避免异步结果缓存无限增长 | 压测或单测证明缓存不再无界增长 | [x] |
-| 28 | **Low-25** 在 `KafkaQueueAdapter.connect()` 中增加可配置连接超时 | broker 不可达时不会无限阻塞；有测试或集成验证 | [x] |
-| 29 | **Low-26** 为 API rate limiter `_states` 增加 TTL/maxsize/LRU，避免 tenant/endpoint 组合无限累积 | 长时间运行下限流状态不再无界增长；有测试 | [x] |
-| 30 | **Low-27** 在 `APIKeyAuthProvider` 中移除 key 前 6 位 identity 暴露，改为 hash 或 opaque id | ledger/log/payload 中不再出现 key 前缀；有测试或手验 | [x] |
-| 31 | **Low-28** 将 CronMetrics 的 duration/delay/cost samples 改为有界容器 | 长时运行内存不再随样本无限增长；有测试 | [x] |
-| 32 | **Low-29** 在 cron 执行历史对外暴露路径中绑定 tenant 到认证上下文，或至少文档化其与 P1-2 同类 trust boundary | 不再信任客户端传入 tenant_id；有实现或文档结论 | [x] |
-=======
 | 5 | **P1-2** 在 docs 中新增/更新「Console 多租户与 tenant_id」：当前行为、适用场景、多租户须从认证推导 | 文档存在且包含上述三点 | [x] |
 | 6 | **Low-4b** 在 HeartbeatChecker 中改为使用 Ledger 的 `get_readonly_session_factory()`，移除对 `_session_factory` 的 getattr | grep 确认 heartbeat 无 _session_factory；heartbeat 相关测试通过 | [x] |
 | 7 | **Low-6** 在 `db/engine.py` 的 `create_engine` 中收窄异常映射：仅连接/认证类映射为 Database*Error；其余保留或 EngineError | 非连接类异常不再被误报为连接错误；有单测或集成验证 | [x] |
@@ -66,7 +35,6 @@
 | 14 | **Low-11** 在 webhook receive_webhook 中对 raw_body_bytes.decode("utf-8") 做 try/except UnicodeDecodeError，返回 400 及明确提示 | 非 UTF-8 body 返回 400 而非 500；有单测或手验 | [x] |
 | 16 | **Low-13** 在 VisibilityFilter evaluator 路径增加 timeout 或明确文档边界，避免单个 evaluator 长时间阻塞 capability 过滤 | 有测试、手验或文档结论；不会无限等待单个 evaluator | [x] |
 | 17 | **Low-14** 收敛 Hatchet Windows SIGQUIT 兼容逻辑的作用域，避免全局 `signal` 模块副作用 | 代码或文档说明明确；Windows 兼容逻辑边界清晰 | [x] |
->>>>>>> main
 
 ---
 
