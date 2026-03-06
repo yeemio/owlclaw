@@ -109,3 +109,6 @@ def test_write_runtime_files_creates_snapshot_and_instructions(tmp_path: Path) -
     assert mailbox_payload["action"] == "wait_for_review"
     assert mailbox_payload["priority"] == "high"
     assert mailbox_payload["pending_commits"] == ["abc fix"]
+
+    review_mailbox = json.loads((runtime_dir / "mailboxes" / "review.json").read_text(encoding="utf-8"))
+    assert review_mailbox["pending_commits"] == ["abc fix"]
