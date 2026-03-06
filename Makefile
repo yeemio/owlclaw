@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console
+.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status
 
 ## Show available commands
 help:
@@ -14,6 +14,7 @@ help:
 	@echo "  lint         Run Ruff checks"
 	@echo "  typecheck    Run MyPy checks"
 	@echo "  build-console Build frontend assets into owlclaw/web/static"
+	@echo "  workflow-status Inspect multi-worktree workflow state"
 	@echo ""
 	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
@@ -60,3 +61,7 @@ typecheck:
 ## Build console frontend assets
 build-console:
 	cd owlclaw/web/frontend && npm install && npm run build
+
+## Inspect multi-worktree workflow state
+workflow-status:
+	poetry run python scripts/workflow_status.py
