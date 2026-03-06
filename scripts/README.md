@@ -23,6 +23,7 @@
 | `console-local-setup.ps1` | Console 真实浏览器验收环境启动脚本（可选 DB 初始化/迁移/E2E） | `pwsh ./scripts/console-local-setup.ps1 -SkipDbInit -Port 8000` | 本地开发使用 |
 | `workflow_status.py` | 多 worktree 工作流巡检（脏工作区、待审分支、下一步动作建议） | `poetry run python scripts/workflow_status.py --help` | 本地开发使用 |
 | `workflow_orchestrator.py` | 持续轮询并写入 `.kiro/runtime/` 的工作流执行器（供统筹/各 agent 消费） | `poetry run python scripts/workflow_orchestrator.py --once` | 本地开发使用 |
+| `workflow_mailbox.py` | 读取 agent mailbox / 写入 ack 状态的轻量 CLI（文件信箱协议） | `poetry run python scripts/workflow_mailbox.py pull --agent review --json` | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
 | `test_template.py` | 测试模板脚手架检查 | `poetry run python scripts/test_template.py --help` | 本地开发使用 |
 | `completions/` | CLI 自动补全生成物 | 按 shell 类型加载 | 本地开发使用 |
@@ -32,3 +33,4 @@
 1. 所有脚本应支持 `--help`（或在文件头部给出使用说明）。
 2. CI 关键脚本改动必须附带对应单元测试或集成验证。
 3. 脚本内禁止硬编码密钥；凭证统一走环境变量。
+4. `workflow_orchestrator.py` 负责生成 `.kiro/runtime/mailboxes/*.json`；各 agent 通过 `workflow_mailbox.py pull/ack` 与统筹交换状态。

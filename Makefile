@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate
+.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate workflow-mailbox
 
 ## Show available commands
 help:
@@ -16,6 +16,7 @@ help:
 	@echo "  build-console Build frontend assets into owlclaw/web/static"
 	@echo "  workflow-status Inspect multi-worktree workflow state"
 	@echo "  workflow-orchestrate Run continuous workflow orchestrator loop"
+	@echo "  workflow-mailbox Pull mailbox or write ack status"
 	@echo ""
 	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
@@ -70,3 +71,7 @@ workflow-status:
 ## Run continuous workflow orchestrator loop
 workflow-orchestrate:
 	poetry run python scripts/workflow_orchestrator.py
+
+## Pull mailbox or write ack state for an agent
+workflow-mailbox:
+	poetry run python scripts/workflow_mailbox.py --help
