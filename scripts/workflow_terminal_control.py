@@ -224,11 +224,13 @@ def _message_for_mailbox(agent: str, mailbox: dict[str, object]) -> str | None:
             return "统筹"
         return None
     if agent == "review":
-        return "继续审校"
+        if action == "review_pending_commits":
+            return "继续审校"
+        return None
     if agent in {"codex", "codex-gpt"}:
-        if action in {"cleanup_or_commit_local_changes", "wait_for_review", "wait_for_assignment"}:
+        if action == "cleanup_or_commit_local_changes":
             return "继续spec循环"
-        return "继续"
+        return None
     return None
 
 
@@ -299,31 +301,16 @@ def _should_send(
         return True, "first_send"
     if previous.get("fingerprint") != fingerprint:
         return True, "fingerprint_changed"
-    if agent == "main":
-        return False, "main_waiting_for_state_change"
 
     last_attempt_value = previous.get("sent_at")
     last_attempt_age = _seconds_since(last_attempt_value) if last_attempt_value else None
     if last_attempt_age is not None and last_attempt_age < retry_seconds:
         return False, "recent_attempt"
-
-    status = _agent_runtime_status(repo_root, agent)
-    heartbeat_age = status["heartbeat_age"]
-    ack_age = status["ack_age"]
-    ack = status["ack"] or {}
-    ack_status = ack.get("status", "")
-
-    if heartbeat_age is None:
-        return True, "missing_heartbeat"
-    if heartbeat_age >= stale_seconds:
-        return True, "stale_heartbeat"
-    if ack_age is None:
-        return True, "missing_ack"
-    if ack_age >= stale_seconds:
-        return True, "stale_ack"
-    if ack_status in {"blocked", "idle"}:
-        return True, f"ack_{ack_status}"
-    return False, "fresh_runtime"
+    if previous.get("delivered") is False:
+        return True, "retry_after_failed_delivery"
+    if agent == "main":
+        return False, "main_waiting_for_state_change"
+    return False, "agent_waiting_for_state_change"
 
 
 def _send_to_window(
