@@ -450,9 +450,9 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（merge main 后 spec 循环：codex-gpt-work 解决冲突并续做 D4b/D13/D14/D17-D20） |
-| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（11/21，D1–D11 已实现；codex-gpt-work 本轮续做 Task 6/16/17）。 |
-| 批次状态 | codex-work 已完成 D1/D3/D4a/D5/D8/D9/D10，下一批 D12/D15/D16/D21；codex-gpt-work 已提交 D2/D6/D7/D11 待审，本轮执行 D4b/D13/D14/D17/D18/D19/D20。 |
+| 最后更新 | 2026-03-06（codex-gpt-work 本轮完成 D4b/D13/D14；待审 D2/D6/D7/D11，待做 D17–D20） |
+| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（13/21）；codex-gpt-work 本轮完成 Task 6/16/17。 |
+| 批次状态 | codex-work 下一批 D12/D15/D16/D21；codex-gpt-work 已提交 D2/D6/D7/D11 待审，本轮完成 D4b/D13/D14，待做 D17/D18/D19/D20。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；…22) **Phase 14 浏览器验收收口**：`console-browser-real-e2e` 已完成 13/13，审校结论 `CONDITIONAL_PASS`。 |
 | 下一待执行 | 1) review-work 审校 codex-gpt-work 的 D2/D6/D7/D11；2) codex-work 执行 D12/D15/D16/D21；3) codex-gpt-work 执行 D4b/D13/D14/D17/D18/D19/D20。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，…Phase 10 audit-fix-critical ✅，audit-fix-high ✅，其余 spec 全部 ✅。 |
