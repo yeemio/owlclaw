@@ -122,6 +122,37 @@ function Show-ControlResult {
     }
 }
 
+function Show-ControlStatus {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Result
+    )
+
+    if ($Result -isnot [System.Array]) {
+        $items = @($Result)
+    }
+    else {
+        $items = $Result
+    }
+
+    foreach ($item in $items) {
+        if ($null -eq $item) {
+            continue
+        }
+
+        if ($item.paused -eq $true) {
+            Write-Host "paused"
+            continue
+        }
+
+        $agent = [string]$item.agent
+        $status = if ($item.delivered -eq $true) { "sent" } else { "idle" }
+        $reason = if ($item.decision_reason) { [string]$item.decision_reason } else { [string]$item.reason }
+        $message = [string]$item.message
+        Write-Host ("{0,-10} status={1,-6} reason={2,-20} message={3}" -f $agent, $status, $reason, $message)
+    }
+}
+
 function Set-Paused {
     param(
         [bool]$Paused
@@ -175,7 +206,7 @@ while ($true) {
                     $raw = Invoke-Control @("--once", "--stale-seconds", "$StaleSeconds", "--json")
                     if ($raw) {
                         $parsed = $raw | ConvertFrom-Json
-                        $parsed | ConvertTo-Json -Depth 6
+                        Show-ControlStatus -Result $parsed
                     }
                 }
                 "send" {

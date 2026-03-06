@@ -51,6 +51,13 @@ pwsh ./scripts/workflow-launch.ps1 -SkipLayout
 - `owlclaw-audit-b`
 - `owlclaw-control`
 
+并且会自动为：
+
+- `audit-a`
+- `audit-b`
+
+写入初始 `audit-state=idle`，所以审计窗口不再需要先手工建状态文件。
+
 如果你希望降低批量起窗时的丢窗概率，可以加大间隔：
 
 ```powershell

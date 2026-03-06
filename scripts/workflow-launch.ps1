@@ -174,8 +174,16 @@ $targets = @(
     @{ Title = "owlclaw-review"; Workdir = $ReviewRepo; Command = "claude" },
     @{ Title = "owlclaw-codex"; Workdir = $CodexRepo; Command = "agent" },
     @{ Title = "owlclaw-codex-gpt"; Workdir = $CodexGptRepo; Command = "agent" },
-    @{ Title = "owlclaw-audit-a"; Workdir = $AuditARepo; Command = "agent" },
-    @{ Title = "owlclaw-audit-b"; Workdir = $AuditBRepo; Command = "agent" }
+    @{
+        Title = "owlclaw-audit-a"
+        Workdir = $AuditARepo
+        Command = "poetry run python scripts/workflow_audit_state.py update --agent audit-a --status idle --summary `"audit window launched`"; agent"
+    },
+    @{
+        Title = "owlclaw-audit-b"
+        Workdir = $AuditBRepo
+        Command = "poetry run python scripts/workflow_audit_state.py update --agent audit-b --status idle --summary `"audit review window launched`"; agent"
+    }
 )
 
 $windowManifest = @{}
