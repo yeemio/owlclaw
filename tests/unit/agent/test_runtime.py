@@ -741,18 +741,25 @@ metadata:
         rt.registry = MagicMock()
         rt.registry.handlers = {"skill-a": MagicMock()}
         rt._run_handler_names_snapshot = ("skill-a",)
-        monkeypatch.setenv("EXISTING_KEY", "old")
+        monkeypatch.setenv("OWLCLAW_SKILL_EXISTING_KEY", "old")
         rt.registry.skills_loader.get_skill.return_value = MagicMock(
-            owlclaw_config={"env": {"EXISTING_KEY": "new", "NEW_ONLY_KEY": "v2"}}
+            owlclaw_config={
+                "env": {
+                    "OWLCLAW_SKILL_EXISTING_KEY": "new",
+                    "OWLCLAW_SKILL_NEW_ONLY_KEY": "v2",
+                    "EXISTING_KEY": "should-be-ignored",
+                }
+            }
         )
 
         rt._inject_skill_env_for_run()
-        assert os.environ["EXISTING_KEY"] == "new"
-        assert os.environ["NEW_ONLY_KEY"] == "v2"
+        assert os.environ["OWLCLAW_SKILL_EXISTING_KEY"] == "new"
+        assert os.environ["OWLCLAW_SKILL_NEW_ONLY_KEY"] == "v2"
+        assert os.environ.get("EXISTING_KEY") != "should-be-ignored"
 
         rt._restore_skill_env_after_run()
-        assert os.environ["EXISTING_KEY"] == "old"
-        assert "NEW_ONLY_KEY" not in os.environ
+        assert os.environ["OWLCLAW_SKILL_EXISTING_KEY"] == "old"
+        assert "OWLCLAW_SKILL_NEW_ONLY_KEY" not in os.environ
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_accepts_dict_assistant_message(self, mock_llm, tmp_path) -> None:
@@ -1255,6 +1262,15 @@ metadata:
         result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
         assert result["status"] == "completed"
         assert "timed out" in result["final_response"]
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_llm_error_response_hides_exception_details(self, mock_llm, tmp_path) -> None:
+        mock_llm.side_effect = RuntimeError("secret backend details")
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert result["final_response"] == "LLM call failed due to an internal error."
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_invalid_llm_timeout_config_falls_back_to_default(

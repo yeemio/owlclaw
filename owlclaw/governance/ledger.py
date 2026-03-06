@@ -117,6 +117,7 @@ class Ledger:
         batch_size: int = 10,
         flush_interval: float = 5.0,
         fallback_log_path: str = "ledger_fallback.log",
+        queue_maxsize: int = 10_000,
     ) -> None:
         if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size < 1:
             raise ValueError("batch_size must be a positive integer")
@@ -127,14 +128,21 @@ class Ledger:
             raise ValueError("flush_interval must be a positive number")
         if not isinstance(fallback_log_path, str) or not fallback_log_path.strip():
             raise ValueError("fallback_log_path must be a non-empty string")
+        if isinstance(queue_maxsize, bool) or not isinstance(queue_maxsize, int) or queue_maxsize < 1:
+            raise ValueError("queue_maxsize must be a positive integer")
         self._session_factory = session_factory
         self._batch_size = batch_size
         self._flush_interval = flush_interval_value
         self._fallback_log_path = fallback_log_path.strip()
         self._flush_max_retries = 3
         self._flush_backoff_base_seconds = 0.1
-        self._write_queue: asyncio.Queue[LedgerRecord] = asyncio.Queue()
+        # Bounded queue to prevent unbounded memory growth under sustained DB backpressure.
+        self._write_queue: asyncio.Queue[LedgerRecord] = asyncio.Queue(maxsize=queue_maxsize)
         self._writer_task: asyncio.Task[None] | None = None
+
+    def get_readonly_session_factory(self) -> async_sessionmaker[AsyncSession]:
+        """Return read-only session factory view for query-only callers."""
+        return self._session_factory
 
     async def start(self) -> None:
         """Start the background writer task."""
@@ -215,7 +223,15 @@ class Ledger:
             approval_by=approval_by,
             approval_time=approval_time,
         )
-        self._write_queue.put_nowait(record)
+        try:
+            self._write_queue.put_nowait(record)
+        except asyncio.QueueFull:
+            # Drop oldest entry to prioritize recent records under overload.
+            with contextlib.suppress(asyncio.QueueEmpty):
+                _dropped = self._write_queue.get_nowait()
+                self._write_queue.task_done()
+            self._write_queue.put_nowait(record)
+            logger.warning("Ledger queue full; dropped oldest record to apply backpressure")
 
     async def query_records(
         self,
@@ -330,6 +346,9 @@ class Ledger:
                 raise
             except Exception as e:
                 logger.exception("Ledger background writer error: %s", e)
+                if batch:
+                    await self._write_to_fallback_log(batch)
+                    batch = []
 
     async def _flush_batch(self, batch: list[LedgerRecord]) -> None:
         """Write a batch of records to the database."""

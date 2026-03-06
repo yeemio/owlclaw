@@ -23,9 +23,9 @@ import math
 import os
 import re
 import time
-from collections import deque
-from pathlib import Path
+from collections import OrderedDict, deque
 from decimal import Decimal
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from owlclaw.agent.runtime.config import (
@@ -57,6 +57,7 @@ _DEFAULT_LLM_TIMEOUT_SECONDS = 60.0
 _DEFAULT_RUN_TIMEOUT_SECONDS = 300.0
 _DEFAULT_LLM_RETRY_ATTEMPTS = 1
 _CHARS_PER_TOKEN = 4
+_SKILL_ENV_PREFIX = "OWLCLAW_SKILL_"
 _MODEL_CONTEXT_WINDOWS: dict[str, int] = {
     "gpt-4o": 128_000,
     "gpt-4o-mini": 128_000,
@@ -159,8 +160,8 @@ class AgentRuntime:
         self._langfuse = self._init_langfuse_client()
         self._tool_call_timestamps: deque[float] = deque()
         self._tool_call_timestamps_lock = asyncio.Lock()
-        self._skills_context_cache: dict[tuple[str, str | None, tuple[str, ...]], str] = {}
-        self._visible_tools_cache: dict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = {}
+        self._skills_context_cache: OrderedDict[tuple[str, str | None, tuple[str, ...]], str] = OrderedDict()
+        self._visible_tools_cache: OrderedDict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = OrderedDict()
         self._run_handler_names_snapshot: tuple[str, ...] | None = None
         self._run_capabilities_snapshot: list[dict[str, Any]] | None = None
         self._run_env_restore: dict[str, str | None] = {}
@@ -831,7 +832,7 @@ class AgentRuntime:
                 messages.append(
                     {
                         "role": "assistant",
-                        "content": f"LLM call failed: {exc}",
+                        "content": "LLM call failed due to an internal error.",
                     }
                 )
                 break
@@ -1787,9 +1788,11 @@ class AgentRuntime:
         if not all_skill_names:
             return ""
         cache_key = (context.tenant_id, context.focus, tuple(sorted(all_skill_names)))
-        if cache_key in self._skills_context_cache:
+        cached = self._skills_context_cache.get(cache_key)
+        if cached is not None:
+            self._skills_context_cache.move_to_end(cache_key)
             self._perf_metrics["skills_cache_hits"] += 1
-            return self._skills_context_cache[cache_key]
+            return cached
 
         # Focus filter: if focus is set, prefer skills whose tag list includes it
         if context.focus:
@@ -1817,8 +1820,9 @@ class AgentRuntime:
         )
         out = report.content
         self._skills_context_cache[cache_key] = out
-        if len(self._skills_context_cache) > 64:
-            self._skills_context_cache.pop(next(iter(self._skills_context_cache)))
+        self._skills_context_cache.move_to_end(cache_key)
+        while len(self._skills_context_cache) > 64:
+            self._skills_context_cache.popitem(last=False)
         return out
 
     def _resolve_skill_token_budget(self) -> int | None:
@@ -1951,6 +1955,13 @@ class AgentRuntime:
                 key = raw_key.strip()
                 if not key:
                     continue
+                if not key.startswith(_SKILL_ENV_PREFIX):
+                    logger.debug(
+                        "Ignoring skill env key without %s prefix: %s",
+                        _SKILL_ENV_PREFIX,
+                        key,
+                    )
+                    continue
                 if key not in self._run_env_restore:
                     self._run_env_restore[key] = os.environ.get(key)
                 os.environ[key] = str(raw_value)
@@ -2010,9 +2021,11 @@ class AgentRuntime:
         """Build the governance-filtered OpenAI-style function schema list."""
         confirmed = self._extract_confirmed_capabilities(context.payload)
         cache_key = (context.agent_id, context.tenant_id, tuple(sorted(confirmed)))
-        if cache_key in self._visible_tools_cache:
+        cached_tools = self._visible_tools_cache.get(cache_key)
+        if cached_tools is not None:
+            self._visible_tools_cache.move_to_end(cache_key)
             self._perf_metrics["tools_cache_hits"] += 1
-            return list(self._visible_tools_cache[cache_key])
+            return list(cached_tools)
 
         all_schemas: list[dict[str, Any]] = []
 
@@ -2025,8 +2038,9 @@ class AgentRuntime:
         if self.visibility_filter is None:
             out = self._apply_tool_resource_limits(all_schemas)
             self._visible_tools_cache[cache_key] = list(out)
-            if len(self._visible_tools_cache) > 64:
-                self._visible_tools_cache.pop(next(iter(self._visible_tools_cache)))
+            self._visible_tools_cache.move_to_end(cache_key)
+            while len(self._visible_tools_cache) > 64:
+                self._visible_tools_cache.popitem(last=False)
             return out
 
         builtin_names = {s["function"]["name"] for s in all_schemas if self.builtin_tools and self.builtin_tools.is_builtin(s["function"]["name"])}
@@ -2069,8 +2083,9 @@ class AgentRuntime:
         out = all_schemas[: len(all_schemas) - len(cap_schemas)] + filtered_caps
         out = self._apply_tool_resource_limits(out)
         self._visible_tools_cache[cache_key] = list(out)
-        if len(self._visible_tools_cache) > 64:
-            self._visible_tools_cache.pop(next(iter(self._visible_tools_cache)))
+        self._visible_tools_cache.move_to_end(cache_key)
+        while len(self._visible_tools_cache) > 64:
+            self._visible_tools_cache.popitem(last=False)
         return out
 
     def _apply_tool_resource_limits(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:

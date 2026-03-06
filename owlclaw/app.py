@@ -1078,12 +1078,22 @@ class OwlClaw:
 
     def health_status(self) -> dict[str, Any]:
         """Return app-level health summary."""
+        db_change_channels = (
+            self.db_change_manager.registered_channels_count
+            if self.db_change_manager is not None
+            else 0
+        )
+        api_registered_endpoints = (
+            self.api_trigger_server.registered_endpoints_count
+            if self.api_trigger_server is not None
+            else 0
+        )
         return {
             "app": self.name,
             "runtime_initialized": bool(self._runtime and self._runtime.is_initialized),
             "cron": self.cron_registry.get_health_status(),
-            "db_change_registered_channels": len(self.db_change_manager._states) if self.db_change_manager else 0,  # noqa: SLF001
-            "api_registered_endpoints": len(self.api_trigger_server._configs) if self.api_trigger_server else 0,  # noqa: SLF001
+            "db_change_registered_channels": db_change_channels,
+            "api_registered_endpoints": api_registered_endpoints,
             "governance_enabled": self._ledger is not None,
         }
 
