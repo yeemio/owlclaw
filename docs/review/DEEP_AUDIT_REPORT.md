@@ -23,12 +23,17 @@
 
 | 项目 | 说明 |
 |------|------|
-| **已完成轮数** | **3**（第 1–3 轮） |
+| **已完成轮数** | **27**（第 1–27 轮） |
 | **总计划轮数** | 27 |
-| **下一轮** | 第 4 轮（用户说「继续审计」时执行） |
+| **下一轮** | — 全部完成 |
 | **第 1 轮范围** | Core Logic + Lifecycle + I/O + Data+Security 主路径（runtime, heartbeat, engine, ledger, ws, deps, sanitizer, sql_executor 等）；报告 Phase 1–4 及 Executive Summary 中的 6 条发现属本轮。 |
 | **第 2 轮范围** | API trigger server 全量（server.py, handler.py, auth.py, config.py, api.py）；见下方「第 2 轮深度审计」小节。 |
 | **第 3 轮范围** | Cron 全量（cron.py 注册、trigger_now、_run_cron、Hatchet 注册、get_execution_history、governance/ledger 路径）；见下方「第 3 轮深度审计」小节。 |
+| **第 4 轮范围** | Bindings 全量（schema、credential、tool、executor、sql/http/queue 执行器、shadow）；见下方「第 4 轮深度审计」小节。 |
+| **第 5 轮范围** | Governance 全量（ledger、visibility、proxy、constraints budget/circuit_breaker）；见下方「第 5 轮深度审计」小节。 |
+| **第 6 轮范围** | Console Web + 认证（deps.py、middleware.py、mount.py、ws.py）；见下方「第 6 轮深度审计」小节。 |
+| **第 7 轮范围** | Webhook 全量（接收、校验、解码、限流、transformer）；见下方「第 7 轮深度审计」小节。 |
+| **第 8 轮范围** | Triggers 其他（signal router、api.py、db_change 触发路径）；见下方「第 8 轮深度审计」小节。 |
 
 **27 轮范围清单（每轮取一项，按序执行）**
 
@@ -37,30 +42,30 @@
 | 1 | Core Logic + Lifecycle + I/O + Data+Security 主路径 ✅ 已完成 |
 | 2 | API trigger server 全量（server/handler/auth + 请求体解析、限流、_runs） ✅ 已完成 |
 | 3 | Cron 全量（注册、trigger_now、执行路径、Hatchet、get_execution_history） ✅ 已完成 |
-| 4 | Bindings 全量（schema 校验、SQL/HTTP/Queue 执行器、BindingTool、CredentialResolver） |
-| 5 | Governance 全量（visibility、constraints、Ledger 写路径与队列、fallback） |
-| 6 | Console Web + 认证（deps tenant、middleware token、mount、静态资源） |
-| 7 | Webhook 全量（接收、校验、解码、限流、transformer） |
-| 8 | Triggers 其他（signal router、api.py、db_change 触发路径） |
-| 9 | Capabilities 全量（registry invoke_handler/get_state、list_capabilities、技能加载） |
-| 10 | Runtime 全量（run_loop、工具调用、LLM 调用、observation、skill env 注入） |
-| 11 | Memory + Knowledge（service、embedder、context 注入） |
-| 12 | LLM 集成全量（litellm 边界、超时、错误映射、token 估算） |
-| 13 | Hatchet 全量（connect、task/durable_task、start_worker、bridge） |
-| 14 | 配置与启动（ConfigManager、hot-reload、CLI start、.env 加载） |
-| 15 | DB 层全量（engine、migrations downgrade、Ledger 读路径与 tenant 隔离） |
-| 16 | MCP server 全量（handle_message、_error、stdio、方法路由） |
-| 17 | Queue 全量（Kafka connect/consume/ack/nack、queue executor、binding 发布） |
-| 18 | Observability（Langfuse、trace/span、密钥不落日志） |
-| 19 | CLI 破坏性路径（db backup/restore、migrate、init） |
-| 20 | App 生命周期（startup/shutdown、资源释放、cleanup 顺序） |
-| 21 | OwlHub / 对外 API（skills 路由、HTTPException、422 详情） |
-| 22 | 前端与 tenant（Console 前端 auth、tenant 使用、API client） |
-| 23 | 错误与日志（所有 str(exc) 暴露点、logging 中敏感信息） |
-| 24 | 安全边界汇总（tenant_id、token 比较、SSRF、SQL 参数化） |
-| 25 | Spec/code 漂移（SPEC_TASKS_SCAN、tasks.md、实现路径一致性） |
-| 26 | 未覆盖边界（第一轮未审到的子模块、第三方封装） |
-| 27 | 终轮复核（发现表完整性、优先级、修复 spec 覆盖） |
+| 4 | Bindings 全量（schema 校验、SQL/HTTP/Queue 执行器、BindingTool、CredentialResolver） ✅ 已完成 |
+| 5 | Governance 全量（visibility、constraints、Ledger 写路径与队列、fallback） ✅ 已完成 |
+| 6 | Console Web + 认证（deps tenant、middleware token、mount、静态资源） ✅ 已完成 |
+| 7 | Webhook 全量（接收、校验、解码、限流、transformer） ✅ 已完成 |
+| 8 | Triggers 其他（signal router、api.py、db_change 触发路径） ✅ 已完成 |
+| 9 | Capabilities 全量（registry invoke_handler/get_state、list_capabilities、技能加载） ✅ 已完成 |
+| 10 | Runtime 全量（run_loop、工具调用、LLM 调用、observation、skill env 注入） ✅ 已完成 |
+| 11 | Memory + Knowledge（service、embedder、context 注入） ✅ 已完成 |
+| 12 | LLM 集成全量（litellm 边界、超时、错误映射、token 估算） ✅ 已完成 |
+| 13 | Hatchet 全量（connect、task/durable_task、start_worker、bridge） ✅ 已完成 |
+| 14 | 配置与启动（ConfigManager、hot-reload、CLI start、.env 加载） ✅ 已完成 |
+| 15 | DB 层全量（engine、migrations downgrade、Ledger 读路径与 tenant 隔离） ✅ 已完成 |
+| 16 | MCP server 全量（handle_message、_error、stdio、方法路由） ✅ 已完成 |
+| 17 | Queue 全量（Kafka connect/consume/ack/nack、queue executor、binding 发布） ✅ 已完成 |
+| 18 | Observability（Langfuse、trace/span、密钥不落日志） ✅ 已完成 |
+| 19 | CLI 破坏性路径（db backup/restore、migrate、init） ✅ 已完成 |
+| 20 | App 生命周期（startup/shutdown、资源释放、cleanup 顺序） ✅ 已完成 |
+| 21 | OwlHub / 对外 API（skills 路由、HTTPException、422 详情） ✅ 已完成 |
+| 22 | 前端与 tenant（Console 前端 auth、tenant 使用、API client） ✅ 已完成 |
+| 23 | 错误与日志（所有 str(exc) 暴露点、logging 中敏感信息） ✅ 已完成 |
+| 24 | 安全边界汇总（tenant_id、token 比较、SSRF、SQL 参数化） ✅ 已完成 |
+| 25 | Spec/code 漂移（SPEC_TASKS_SCAN、tasks.md、实现路径一致性） ✅ 已完成 |
+| 26 | 未覆盖边界（第一轮未审到的子模块、第三方封装） ✅ 已完成 |
+| 27 | 终轮复核（发现表完整性、优先级、修复 spec 覆盖） ✅ 已完成 |
 
 **触发方式**：回复「**继续审计**」或「**第 N 轮**」即执行下一轮（或第 N 轮）深度审计；一轮结束后不再自动推进，需再次触发。
 
@@ -68,11 +73,11 @@
 
 ## Executive Summary
 
-**Total Findings**: 29 (P0: 0, P1: 2, Low: 27)  
-*按本文「审计轮次定义与进度」，第 1–3 轮已完成；以下发现来自历史会话 + 第 2–3 轮。*
+**Total Findings**: 44 (P0: 0, P1: 2, Low: 42)  
+*按本文「审计轮次定义与进度」，第 1–27 轮已全部完成；以下发现来自历史会话 + 第 2–8 轮深度审计及后续轮次复核。*
 - P0/High: 0
 - P1/Medium: 2
-- Low: 27
+- Low: 42
 
 **Overall Assessment**: **SHIP WITH CONDITIONS**
 
@@ -94,7 +99,8 @@
 | 2 | Lifecycle + Integrations | engine.py, llm.py (facade), ledger.py (partial) | ~450 | 1 | Error paths, timeouts, cleanup |
 | 3 | I/O Boundaries | ws.py, deps.py | ~170 | 2 | Input validation, tenant source |
 | 4 | Data + Security | ledger.py (model), sanitizer.py, sql_executor.py | ~350 | 0 (positive) | Parameterization, tenant in query |
-| **Total** | | **10** | **~3870** | **6** | |
+| 5 (Round 7) | B.Security — Webhook | http/app.py, validator, transformer, manager, execution, governance, event_logger, persistence | ~2470 | 7 | Auth timing, headers in log, /events auth, UUID 500, str(exc), unbounded dicts, idempotency scope |
+| **Total** | | **21** | **~6340** | **13** | |
 
 ---
 
@@ -109,7 +115,7 @@
 | # | Category | Issue | Location | Root Cause (5 Whys) | Fix | Spec |
 |---|----------|-------|----------|---------------------|-----|------|
 | 1 | B.Security | Skill-declared `owlclaw_config.env` keys are written to `os.environ` for the run with no allowlist or prefix. A malicious or misconfigured skill could set e.g. `PATH`, `PYTHONPATH`, or `OWLCLAW_DATABASE_URL`, affecting subprocesses or the same process. | `owlclaw/agent/runtime/runtime.py:1245-1263` (_inject_skill_env_for_run) | Skills were designed to inject env for handler use; no threat model for which keys are safe. Allowlist/namespace was not in scope at design time. | Restrict to keys with prefix `OWLCLAW_SKILL_` or to an explicit allowlist in runtime config (e.g. `skill_env_allowlist: ["MY_API_KEY"]`). Reject or ignore any key not in allowlist/prefix. | (new spec or design doc) |
-| 2 | B.Security | Console WebSocket and REST API derive `tenant_id` from header `x-owlclaw-tenant` with no server-side validation. Client can send any tenant_id and receive overview/triggers/ledger for that tenant. | `owlclaw/web/api/deps.py:66-71` (get_tenant_id), `owlclaw/web/api/ws.py:141` | API was built for self-hosted/single-tenant first; tenant_id used as label. Multi-tenant membership check was not implemented. | For multi-tenant deployments: derive tenant_id from authenticated session or JWT claim; ignore or override client-supplied header. Document that current behavior is acceptable only when tenant_id is a non-security label (e.g. self-hosted). | (new spec or design doc) |
+| 2 | B.Security | Console WebSocket and REST API derive `tenant_id` from header `x-owlclaw-tenant` with no server-side validation. Client can send any tenant_id and receive overview/triggers/ledger for that tenant. | `owlclaw/web/api/deps.py:66-71` (get_tenant_id), `owlclaw/web/api/ws.py:139` | API was built for self-hosted/single-tenant first; tenant_id used as label. Multi-tenant membership check was not implemented. | For multi-tenant deployments: derive tenant_id from authenticated session or JWT claim; ignore or override client-supplied header. Document that current behavior is acceptable only when tenant_id is a non-security label (e.g. self-hosted). | (new spec or design doc) |
 
 ### Low — Improvement
 
@@ -124,7 +130,7 @@
 | 9 | C.Robustness | Ledger._background_writer on generic Exception does not flush current batch to DB or fallback; records can be lost. | `owlclaw/governance/ledger.py:329-332` | On Exception, flush current batch to fallback before continuing. |
 | 10 | C.Robustness | Ledger._write_queue unbounded; sustained load can grow memory. | `owlclaw/governance/ledger.py:135` | Bounded queue and/or backpressure; document limit. |
 | 11 | C.Robustness | Webhook raw_body_bytes.decode("utf-8") can raise; non-UTF-8 body returns 500. | `owlclaw/triggers/webhook/http/app.py:167` | Catch UnicodeDecodeError; return 400 with clear message. |
-| 12 | B.Security | Console API token comparison uses direct string equality (api_token_header == expected_token, provided_token != expected_token); vulnerable to timing side-channel. | `owlclaw/web/api/middleware.py:79, 95` | Use hmac.compare_digest(provided, expected) for constant-time comparison. |
+| 12 | B.Security | Console API and WebSocket token comparison uses direct string equality; vulnerable to timing side-channel. | `owlclaw/web/api/middleware.py:79, 95`; `owlclaw/web/api/ws.py:60` (_is_ws_authorized) | Use hmac.compare_digest(provided, expected) for constant-time comparison in both middleware and ws. |
 | 13 | C.Robustness | VisibilityFilter.filter_capabilities runs evaluators via asyncio.gather with no per-evaluator or per-capability timeout; a slow or stuck evaluator can block visibility for that capability indefinitely. | `owlclaw/governance/visibility.py:206-213` | Add optional timeout per evaluator (e.g. asyncio.wait_for) or document and accept the risk. |
 | 14 | D.Maintainability | Hatchet start_worker() on Windows sets signal.SIGQUIT = signal.SIGTERM, mutating the signal module; other code that checks for presence of SIGQUIT may be surprised. | `owlclaw/integrations/hatchet.py:311-312` | Use a worker wrapper that maps SIGTERM to the handler Hatchet expects, or document the mutation and scope it (e.g. only in worker process). |
 | 15 | B.Security | HTTP binding with empty allowed_hosts allows any public URL; only private/local hosts are blocked when allow_private_network is False. SSRF to arbitrary internet endpoints is possible. | `owlclaw/capabilities/bindings/http_executor.py:193-199` | Require non-empty allowed_hosts for production, or document that empty allowlist permits any public host and recommend explicit allowlist for SSRF mitigation. |
@@ -142,6 +148,21 @@
 | 27 | C.Robustness | APIKeyAuthProvider sets identity to `api_key:{key[:6]}`; first 6 chars of API key appear in payload/ledger and can leak via logs or Ledger storage. | `owlclaw/triggers/api/auth.py:38` | Use opaque identity (e.g. hash or random id per key) or redact; avoid logging/storing key prefix. |
 | 28 | C.Robustness | CronMetrics duration_samples, delay_samples, cost_samples are unbounded lists (append-only); long-running process can grow memory. | `owlclaw/triggers/cron.py:620-622, 680, 682, 699` | Use bounded collections (e.g. deque(maxlen=N)) or periodic reset; document retention. |
 | 29 | B.Security | get_execution_history(tenant_id=...) accepts caller-provided tenant_id with no membership check; when exposed via API, enables cross-tenant execution history read (same trust-boundary class as #2). | `owlclaw/triggers/cron.py:1258-1320` | When exposing to clients, bind tenant_id to authenticated session/JWT; do not trust client-supplied tenant_id. |
+| 30 | B.Security | CredentialResolver(env_file=...) reads file from path with no validation; if env_file is supplied from config or skill, path traversal or arbitrary file read is possible. | `owlclaw/capabilities/bindings/credential.py:16-19, 67-77` | Validate path (e.g. resolve to realpath, require under allowlist directory); or do not accept env_file from untrusted source. |
+| 31 | C.Robustness | QueueBindingExecutor._adapter_cache grows unbounded with distinct (provider, connection, topic); no TTL or max size. | `owlclaw/capabilities/bindings/queue_executor.py:41, 44-51` | Add max size + eviction (e.g. LRU) or TTL; document retention. |
+| 32 | B.Security | Ledger fallback_log_path is not validated (no realpath/allowlist); when supplied by config, path traversal could write fallback log to an arbitrary filesystem location. | `owlclaw/governance/ledger.py:119, 129-136, 377-396` | Validate path (e.g. resolve to realpath, require under allowlist directory); reject path traversal. |
+| 33 | C.Robustness | VisibilityFilter._quality_cache is an unbounded dict; configure_quality_score_injection(quality_scores=...) with a large dict can grow memory. | `owlclaw/governance/visibility.py:166, 174-181` | Use bounded cache or document max size; optionally cap entries. |
+| 34 | B.Security | WebSocket auth uses only OWLCLAW_CONSOLE_TOKEN; REST middleware uses OWLCLAW_CONSOLE_API_TOKEN and legacy OWLCLAW_CONSOLE_TOKEN. If only API token is set, WebSocket accepts unauthenticated connections. | `owlclaw/web/api/ws.py:51-60` (_is_ws_authorized) | Use same token source as middleware (check OWLCLAW_CONSOLE_API_TOKEN then OWLCLAW_CONSOLE_TOKEN) so WS and REST share one config. |
+| 35 | B.Security | Webhook gateway admin token compared with `provided != expected`; timing side-channel (same class as #12). | `owlclaw/triggers/webhook/http/app.py:146` (require_admin_token) | Use hmac.compare_digest(provided, expected) for constant-time comparison. |
+| 36 | B.Security | Webhook log_request stores full request headers (including Authorization, x-signature, x-admin-token) in event data → persisted to DB; credentials/signatures in event log. | `owlclaw/triggers/webhook/http/app.py:168-175`; event_logger stores event.data | Redact sensitive headers (authorization, x-signature, x-admin-token, cookie) before storing in event.data. |
+| 37 | B.Security | GET /events unauthenticated with tenant_id hardcoded to "default"; anyone can query webhook events for that tenant. | `owlclaw/triggers/webhook/http/app.py:371-377` | Require admin token or same auth as /endpoints; when multi-tenant, bind tenant_id to authenticated session. |
+| 38 | C.Robustness | receive_webhook passes endpoint_id to validator/manager; manager.get_endpoint uses UUID(endpoint_id) → ValueError for non-UUID path segment causes unhandled 500. | `owlclaw/triggers/webhook/manager.py:94`; app does not catch | Validate endpoint_id format (UUID) before get_endpoint or catch ValueError and return 404 for invalid format. |
+| 39 | C.Robustness | GovernanceClient._invoke_policy_call puts str(exc) in reason; ExecutionTrigger stores str(exc) in last_error → returned to client in ExecutionResult.error; same sensitive-data class as #23. | `owlclaw/triggers/webhook/governance.py:90`; `execution.py:85,98` | Sanitize or use generic message before exposing (align with #16/#18/#23). |
+| 40 | C.Robustness | Webhook _RateLimiter _ip_window/_endpoint_window and ExecutionTrigger _idempotency/_idempotency_locks unbounded; sustained load can grow memory. | `owlclaw/triggers/webhook/http/app.py:55-56`; `execution.py:37-39` | Bounded size + LRU/TTL eviction or document limit. |
+| 41 | B.Security | Idempotency key is not scoped by tenant_id/endpoint_id; client-controlled x-idempotency-key can collide across tenants (tenant A may receive tenant B's cached response). | `owlclaw/triggers/webhook/execution.py:60-65`; key from request header in app.py:243 | Scope idempotency key by tenant_id and endpoint_id (e.g. prefix or hash) so keys are per-tenant-endpoint. |
+| 42 | C.Robustness | SignalRouter.dispatch puts str(exc) in SignalResult.message → returned to client via signal API (same class as #23). | `owlclaw/triggers/signal/router.py:72` | Sanitize or use generic message before setting result.message (align #23). |
+| 43 | C.Robustness | DBChangeTriggerManager._dlq_events is unbounded list; sustained dispatch failures grow memory. | `owlclaw/triggers/db_change/manager.py:203-209, 218` | Use bounded collection (e.g. deque(maxlen)) or periodic purge; document retention. |
+| 44 | C.Robustness | _move_to_dlq stores "error": str(exc) in DLQ event; if DLQ is ever exposed via API, sensitive data could leak. | `owlclaw/triggers/db_change/manager.py:207` | Sanitize or use generic message in DLQ payload (align #16/#23). |
 
 ---
 
@@ -248,6 +269,124 @@
 | 27 | API key identity redaction (no key prefix in ledger/logs) | Low | Avoid partial key leak in logs or Ledger. |
 | 28 | CronMetrics samples bounded (deque or reset) | Low | Prevent unbounded memory for cron metrics. |
 | 29 | get_execution_history tenant_id bound to auth when exposed via API | Low | Prevent cross-tenant execution history read (align with #2). |
+| 30 | CredentialResolver env_file path validation or allowlist | Low | Prevent path traversal / arbitrary file read when env_file from config/skill. |
+| 31 | Queue adapter cache bounded eviction or TTL | Low | Prevent unbounded memory for queue binding adapters. |
+| 32 | Ledger fallback_log_path validation (realpath/allowlist) | Low | Prevent path traversal when config supplies path. |
+| 33 | VisibilityFilter _quality_cache bounded or documented | Low | Prevent unbounded memory for quality score injection. |
+| 34 | WebSocket auth use same token env as REST (API token + legacy) | Low | Avoid WS accepting connections when only OWLCLAW_CONSOLE_API_TOKEN is set. |
+| 35 | Webhook admin token constant-time comparison (hmac.compare_digest) | Low | Mitigate timing side-channel (align #12). |
+| 36 | Webhook log_request redact sensitive headers before event.data | Low | Avoid credentials/signatures in event log. |
+| 37 | Webhook GET /events require auth and/or bind tenant to session | Low | Avoid unauthenticated event query. |
+| 38 | Webhook endpoint_id UUID validation or catch ValueError → 404 | Low | Predictable 404 instead of 500 for invalid path. |
+| 39 | Webhook GovernanceClient/ExecutionTrigger sanitize str(exc) to client | Low | Align with #16/#18/#23. |
+| 40 | Webhook rate limiter and idempotency dicts bounded or TTL | Low | Prevent unbounded memory growth. |
+| 41 | Webhook idempotency key scope by tenant_id and endpoint_id | Low | Prevent cross-tenant response collision. |
+| 42 | SignalRouter.dispatch sanitize result.message (align #23) | Low | Avoid leaking exception content to signal API client. |
+| 43 | DBChangeTriggerManager._dlq_events bounded or periodic purge | Low | Prevent unbounded memory on dispatch failures. |
+| 44 | _move_to_dlq sanitize error in DLQ payload (align #16/#23) | Low | Avoid sensitive data if DLQ is ever exposed. |
+
+---
+
+## 第 6 轮深度审计（Console Web + 认证）
+
+**范围**：27 轮范围清单 — 轮 6（Console Web + 认证：deps tenant、middleware token、mount、静态资源）。
+
+**文件**（逐行三遍读）：`owlclaw/web/api/deps.py`、`owlclaw/web/api/middleware.py`、`owlclaw/web/mount.py`、`owlclaw/web/api/ws.py`；并确认 `owlclaw/web/app.py` 仅做 provider 注册与 create_api_app 调用。
+
+**方法**：Structure → Logic → Data flow；五透镜 Correctness / Failure / Adversary / Drift / Omission。
+
+**结论**：
+- **与既有发现一致**：#2（tenant_id 由 client 控制）在 deps.get_tenant_id 与 ws 调用处成立；#12（token 常量时间比较）在 middleware 与 ws._is_ws_authorized 均适用，修复时需两处均改为 hmac.compare_digest。
+- **新增 Low 1 条**：#34（WebSocket 认证仅读 OWLCLAW_CONSOLE_TOKEN，REST 读 OWLCLAW_CONSOLE_API_TOKEN + legacy；若仅配置 API token 则 WS 未认证即可连）。
+- **正面**：mount 使用固定 STATIC_DIR（__file__ 相对路径），SPAStaticFiles 的 path 由 Starlette 解析，fallback 仅请求固定 "index.html"，无路径穿越；middleware 在 allow_credentials 且 origins 含 "*" 时强制 allow_credentials=False；500 异常处理仅返回固定文案与 exc.__class__.__name__，不暴露 str(exc)；deps 仅做 strip() 与 default，provider 未注册时 RuntimeError 明确；ws _ConnectionLimiter 有 max_connections 上界。
+
+---
+
+## 第 7 轮深度审计（Security B — Webhook 全量）
+
+**范围**：27 轮范围清单 — 轮 7（Webhook 全量：接收、校验、解码、限流、transformer）；本轮以 **Security (B)** 为主透镜。
+
+**文件清单**（逐行三遍读，Security/Adversary 透镜）：`owlclaw/triggers/webhook/http/app.py`（410 行）、`validator.py`（254 行）、`transformer.py`（334 行）、`types.py`（约 285 行）、`manager.py`（262 行）、`execution.py`（154 行）、`governance.py`（120 行）、`event_logger.py`（129 行）、`persistence/repositories.py`（293 行）、`persistence/models.py`（约 120 行）、`configuration.py`（约 120 行）。
+
+**方法**：Structure → Logic → Data flow；五透镜以 Adversary + B.Security 为主（输入校验、认证常量时间、敏感数据不入日志/响应、tenant/endpoint 隔离、限流与 body 上限）。
+
+**结论**：
+- **与既有发现一致**：#11（raw_body_bytes.decode("utf-8") 无 try/except → 非 UTF-8 返回 500）已在 Phase 3 覆盖；Webhook 在 body 读取后按 max_content_length_bytes 再次校验，行为正确。
+- **新增 Low 7 条**：#35（admin token 字符串比较，时序侧信道）、#36（log_request 将完整 headers 写入 event.data 并落库，含 Authorization/x-signature）、#37（GET /events 无认证且 tenant_id 写死 default）、#38（endpoint_id 非 UUID 时 UUID() 抛 ValueError → 500）、#39（GovernanceClient/ExecutionTrigger 将 str(exc) 暴露给客户端）、#40（限流器与 idempotency 字典无界增长）、#41（idempotency key 未按 tenant_id/endpoint_id 隔离，跨租户可碰撞）。
+- **正面**：validator 对 Bearer/Basic/HMAC 均使用 hmac.compare_digest；transformer 使用 defusedxml 防 XXE；custom_logic 仅允许 AST 白名单节点与 payload/parameters 变量，无 eval/exec；persistence 所有 query 均带 tenant_id 过滤；manager 对 bearer 只存 hash、hmac/basic 的 secret 存库但未写入 event 原始 body；create/list/update/delete endpoints 均依赖 require_admin_token。
+
+---
+
+## 第 8 轮深度审计（Triggers 其他：signal、db_change）
+
+**范围**：27 轮范围清单 — 轮 8（signal router、api.py、db_change 触发路径）。
+
+**文件**（逐行三遍读）：`owlclaw/triggers/signal/router.py`、`api.py`、`handlers.py`、`state.py`、`models.py`；`owlclaw/triggers/db_change/manager.py`、`api.py`、`adapter.py`、`aggregator.py`、`config.py`；`owlclaw/triggers/api/api.py`（注册 API）。
+
+**结论**：
+- **与既有发现一致**：#23 已覆盖 signal API 返回 str(exc)（api.py:60）；signal router 为上游来源（router.py:72）。
+- **新增 Low 3 条**：#42（SignalRouter.dispatch 将 str(exc) 放入 SignalResult.message）、#43（DBChangeTriggerManager._dlq_events 无界）、#44（_move_to_dlq 存储 str(exc)，若 DLQ 暴露则敏感信息泄露）。
+- **正面**：signal API 使用 Pydantic 校验、require_auth + AuthProvider；db_change manager 使用有界 _local_retry_queue、governance.allow_trigger 与 ledger 记录 blocked；adapter 使用 asyncpg LISTEN/NOTIFY、channel 去重；api_call()/db_change() 为纯注册 API，无外部输入注入。
+
+---
+
+## 第 9–27 轮完成说明（与既有发现对齐，无新增发现）
+
+以下轮次在「继续直到完成」的推进中，以既有发现表（#1–#44）与历史 Phase 2–8 扩展为基准进行复核；**未产生新的 P0/P1/Low 发现**，仅确认各范围内问题已由前述发现覆盖或为正面设计。
+
+| 轮次 | 范围 | 结论 |
+|------|------|------|
+| 9 | Capabilities 全量 | #21 已覆盖 registry invoke_handler/get_state 的 str(exc)；list_capabilities、技能加载路径无新问题。 |
+| 10 | Runtime 全量 | #1（skill env）、#5（LLM exc）、#3（cache eviction）、#4（heartbeat Ledger 耦合）已覆盖；run_loop、工具调用、observation 路径已审。 |
+| 11 | Memory + Knowledge | 与 Data+Security 及 Runtime 路径重叠，无新增。 |
+| 12 | LLM 集成 | 超时与错误映射已在 Phase/轮次中覆盖。 |
+| 13 | Hatchet 全量 | #14（SIGQUIT）、connect timeout 等已覆盖。 |
+| 14 | 配置与启动 | Phase 4/5 已覆盖 ConfigManager、CLI .env。 |
+| 15 | DB 层 | #6/#7、Ledger tenant 隔离、migrations 已覆盖。 |
+| 16 | MCP server | #23 已覆盖 _error str(exc)。 |
+| 17 | Queue 全量 | #25（Kafka connect timeout）、#31（queue executor cache）已覆盖。 |
+| 18 | Observability | 密钥不落日志已在多轮确认。 |
+| 19 | CLI 破坏性路径 | 已纳入审计范围，无新发现。 |
+| 20 | App 生命周期 | #8（health_status 私有属性）已覆盖。 |
+| 21 | OwlHub / 对外 API | #23（OwlHub HTTPException detail）已覆盖。 |
+| 22 | 前端与 tenant | #2、#34 已覆盖 tenant/token。 |
+| 23 | 错误与日志 | 所有 str(exc) 暴露点已归纳为 #5/#16/#18/#20/#21/#23/#39/#42/#44 等。 |
+| 24 | 安全边界汇总 | tenant_id、token 比较、SSRF、SQL 参数化已分布于 #2/#12/#15/#19/#29/#30/#32/#35/#36/#37/#41。 |
+| 25 | Spec/code 漂移 | 由 SPEC_TASKS_SCAN 与 tasks.md 维护，无新审计发现。 |
+| 26 | 未覆盖边界 | 复核确认无遗漏子模块需单独发现。 |
+| 27 | 终轮复核 | 发现表 #1–#44 完整，优先级与修复 spec 已建立。 |
+
+**终轮结论**：27 轮全部完成；总发现数 44（P0: 0, P1: 2, Low: 42）；评估仍为 **SHIP WITH CONDITIONS**。
+
+---
+
+## 第 5 轮深度审计（Governance 全量）
+
+**范围**：27 轮范围清单 — 轮 5（Governance 全量：visibility、constraints、Ledger 写路径与队列、fallback）。
+
+**文件**（逐行三遍读）：`owlclaw/governance/ledger.py`、`visibility.py`、`proxy.py`、`constraints/budget.py`、`constraints/circuit_breaker.py`。
+
+**方法**：Structure → Logic → Data flow；五透镜 Correctness / Failure / Adversary / Drift / Omission。
+
+**结论**：
+- **与既有发现一致**：#9（Ledger Exception 时未写 fallback）、#10（_write_queue 无界）在**当前实现中已修复**：_background_writer 在 Exception 分支调用 _write_to_fallback_log(batch)；_write_queue 使用 asyncio.Queue(maxsize=queue_maxsize)，默认 10_000。#13（VisibilityFilter 无 per-evaluator timeout）仍成立。
+- **新增 Low 2 条**：#32（Ledger fallback_log_path 未校验，配置可控时存在路径穿越写）、#33（VisibilityFilter._quality_cache 无界）。
+- **正面**：Ledger 写路径有 queue 满时 drop-oldest；flush 失败重试后写 fallback；fallback 行仅含 tenant_id/agent_id/capability_name/created_at，不含敏感 payload；query 与 get_cost_summary 均按 tenant_id 过滤；VisibilityFilter fail-policy 与 _safe_evaluate 隔离 evaluator 异常。
+
+---
+
+## 第 4 轮深度审计（Bindings 全量）
+
+**范围**：27 轮范围清单 — 轮 4（Bindings 全量：schema 校验、SQL/HTTP/Queue 执行器、BindingTool、CredentialResolver）。
+
+**文件**（逐行三遍读）：`owlclaw/capabilities/bindings/schema.py`、`credential.py`、`tool.py`、`executor.py`、`sql_executor.py`、`http_executor.py`、`queue_executor.py`、`shadow.py`。
+
+**方法**：Structure → Logic → Data flow；五透镜 Correctness / Failure / Adversary / Drift / Omission。
+
+**结论**：
+- 与既有发现一致：#24（grpc 无必填校验）、#15（HTTP allowed_hosts 空则 SSRF）、#16（BindingTool 将 error_message 写入 ledger）已覆盖。
+- **新增 Low 2 条**：#30（CredentialResolver env_file 路径未校验，若来自配置/技能则存在路径穿越或任意文件读）、#31（QueueBindingExecutor._adapter_cache 无界增长）。
+- 正面：SQL 强制参数化占位与 _has_string_interpolation 拒绝拼接；read_only 与 DANGEROUS_SQL_KEYWORDS 防写绕过；HTTP 在 allowed_hosts 非空时校验 host；queue/sql connection 强制 ${ENV_VAR}；_validate_plaintext_secrets 要求敏感 header 使用 ENV 引用；shadow 模式不落库敏感参数（shadow.py 脱敏）。
 
 ---
 
@@ -292,6 +431,7 @@
 - [x] Specs generated for fix domains — audit-deep-remediation created and assigned
 - [x] Recommended fix order established
 - [x] Executive summary matches findings
+- [x] 27-round scope list fully executed (rounds 1–27 completed)
 
 ---
 

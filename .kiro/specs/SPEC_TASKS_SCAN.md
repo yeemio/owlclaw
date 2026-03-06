@@ -458,17 +458,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（codex-gpt-work 完成 D26/D27/D29：rate limiter 有界、API key identity 脱敏、get_execution_history trust boundary 文档） |
-| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（23/29）；codex-gpt-work 分配项已全部完成。 |
-| 批次状态 | codex-work 待审 D12/D15/D16/D21，审校后继续 D13/D14/D23/D24/D25；codex-gpt-work 本批全部完成（含 D26/D27/D29）。 |
-| 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；…23) **Phase 15 codex-gpt-work**：D22/D25/D26/D27/D28/D29 已实现（_runs 有界、Kafka 超时、CronMetrics 有界、rate limiter 有界、API key 脱敏、cron history trust boundary 文档）。 |
-| 下一待执行 | 1) review-work 审校两编码分支；2) codex-work 继续 D13/D14/D23/D24/D25。 |
+| 最后更新 | 2026-03-06（codex-gpt-work sync main，解决 Checkpoint 冲突；Phase 15 进度 23/29，D30-D44 暂列 backlog） |
+| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（23/29）；codex-gpt-work 分配项已全部完成并提交；D30-D44 待统筹切批。 |
+| 批次状态 | codex-work 已提交 D12/D15/D16/D21/D23/D24 待审，后续 D13/D14/D25；codex-gpt-work 已提交 D2/D4b/D6/D7/D11/D13/D14/D17–D20/D22/D25/D26/D27/D28/D29 待审；D30-D44 暂未分配。 |
+| 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；…22) **Phase 14 浏览器验收收口**：`console-browser-real-e2e` 13/13；23) **Phase 15 codex-gpt-work**：D22/D25/D26/D27/D28/D29 已实现并提交。 |
+| 下一待执行 | 1) review-work 先审两编码分支已提交项；2) 审校通过后 codex-work 收口 D13/D14/D25；3) 当前轮收口后再统筹 D30-D44。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，…Phase 10 audit-fix-critical ✅，audit-fix-high ✅，其余 spec 全部 ✅。 |
 | 阻塞项 | release-supply-chain/owlhub/openclaw-skill-pack/content-launch 外部阻塞。 |
 | 健康状态 | ✅ 内部协作阻塞已清零；当前仅剩外部依赖阻塞项。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | codex-work 已提交 4 项待审，后续 5 项；codex-gpt-work 分配项 23 项已全部完成并提交。 |
-| 审校状态 | review-work 下一轮：先审两编码分支 audit-deep-remediation 待审提交，再放行下一补丁。 |
+| 分支量化进度 | codex-work 已提交 6 项待审，后续 3 项；codex-gpt-work 已提交 15 项待审，分配项已全部完成。 |
+| 审校状态 | review-work 下一轮：优先审校两编码分支；D30-D44 不在本轮审校窗口内。 |
 
 ---
 
