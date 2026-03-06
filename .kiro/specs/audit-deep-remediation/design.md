@@ -8,7 +8,7 @@
 ## 1. 总体策略
 
 - **P1**：实现级修复 + 文档，带测试或可执行验收。
-- **Low**：共 23 项，按推荐顺序实现，不改变对外 API 契约；优先先封闭信任边界，再做韧性与可维护性修复。
+- **Low**：共 27 项，按推荐顺序实现，不改变对外 API 契约；优先先封闭信任边界，再做韧性与可维护性修复。
 
 ---
 
@@ -109,7 +109,11 @@
 | Low-22（Phase 24） | triggers/api/server.py（_runs eviction/TTL） | codex-gpt-work |
 | Low-23（Phase 25） | mcp/server.py + owlhub/api/routes/skills.py + triggers/signal/api.py + governance/proxy.py | codex-work |
 | Low-24（Second Pass） | capabilities/bindings/schema.py（grpc validation） | codex-work |
-| Low-25（Second Pass） | integrations/queue_adapters/kafka.py | codex-gpt-work |
+| Low-25（Second Pass） | integrations/queue_adapters/kafka.py | codex-work |
+| Low-26（Round 2） | triggers/api/server.py（rate limiter `_states`） | codex-gpt-work |
+| Low-27（Round 2） | triggers/api/auth.py（opaque identity） | codex-gpt-work |
+| Low-28（Round 3） | triggers/cron.py（bounded samples） | codex-gpt-work |
+| Low-29（Round 3） | triggers/cron.py（tenant bound to auth context） | codex-gpt-work |
 
 Ledger 与 Heartbeat 需顺序实现：Ledger API 先合并，再在 codex-gpt-work 改 Heartbeat。
 
@@ -244,3 +248,26 @@ Ledger 与 Heartbeat 需顺序实现：Ledger API 先合并，再在 codex-gpt-w
 
 ### 19.2 位置
 - `owlclaw/integrations/queue_adapters/kafka.py`：`connect()`。
+
+---
+
+## 20. Low-26 / Low-27（第 2 轮）：API limiter 与 identity 脱敏
+
+### 20.1 方案
+- `Low-26`：为 `_TokenBucketLimiter._states` 增加 TTL 或有界淘汰策略。
+- `Low-27`：`APIKeyAuthProvider` 使用 hash 或 opaque identity，不再泄露 key 前缀。
+
+### 20.2 位置
+- `owlclaw/triggers/api/server.py`
+- `owlclaw/triggers/api/auth.py`
+
+---
+
+## 21. Low-28 / Low-29（第 3 轮）：Cron 样本与 tenant trust boundary
+
+### 21.1 方案
+- `Low-28`：将 CronMetrics 采样容器改为有界集合。
+- `Low-29`：当 `get_execution_history()` 面向客户端暴露时，tenant_id 需与认证上下文绑定；至少先文档化为与 P1-2 同类边界。
+
+### 21.2 位置
+- `owlclaw/triggers/cron.py`

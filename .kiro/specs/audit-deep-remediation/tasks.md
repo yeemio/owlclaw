@@ -55,6 +55,10 @@
 | 23 | **Low-20** 在 cron `get_execution_history` 中避免向调用方返回未脱敏的 ledger 错误信息 | 输出已 redacted 或由上游写入统一脱敏；有测试 | [ ] |
 | 25 | **Low-22** 为 API trigger `_runs` 增加 maxsize/LRU/TTL 清理，避免异步结果缓存无限增长 | 压测或单测证明缓存不再无界增长 | [ ] |
 | 28 | **Low-25** 在 `KafkaQueueAdapter.connect()` 中增加可配置连接超时 | broker 不可达时不会无限阻塞；有测试或集成验证 | [ ] |
+| 29 | **Low-26** 为 API rate limiter `_states` 增加 TTL/maxsize/LRU，避免 tenant/endpoint 组合无限累积 | 长时间运行下限流状态不再无界增长；有测试 | [ ] |
+| 30 | **Low-27** 在 `APIKeyAuthProvider` 中移除 key 前 6 位 identity 暴露，改为 hash 或 opaque id | ledger/log/payload 中不再出现 key 前缀；有测试或手验 | [ ] |
+| 31 | **Low-28** 将 CronMetrics 的 duration/delay/cost samples 改为有界容器 | 长时运行内存不再随样本无限增长；有测试 | [ ] |
+| 32 | **Low-29** 在 cron 执行历史对外暴露路径中绑定 tenant 到认证上下文，或至少文档化其与 P1-2 同类 trust boundary | 不再信任客户端传入 tenant_id；有实现或文档结论 | [ ] |
 
 ---
 
@@ -69,6 +73,6 @@
 
 ## 执行顺序建议
 
-1. codex-work：首批 Task 1/2/3/4/11/12/13 已完成并合入 `main`；优先执行 Task 15/18/19/24，其次执行 Task 26/27（Low-23/24）。
-2. codex-gpt-work：Task 5（P1-2 文档）已在分支待审；Task 6（Low-4b）现已解锁；Task 7、10、14、16、17、20、21、22、23、25、28 可并行。
+1. codex-work：已提交 Task 15/18/19/24（D12/D15/D16/D21），审校后继续 Task 16/17/26/27/28（D13/D14/D23/D24/D25）。
+2. codex-gpt-work：已提交 Task 5/6/7/10/14/20/21/22/23（D2/D4b/D6/D7/D11/D17/D18/D19/D20），审校后继续 Task 25/29/30/31/32（D22/D26/D27/D28/D29）。
 3. 审校：两个分支分别 Review，通过后合并 review-work → main。

@@ -81,6 +81,10 @@
 | D20 | Low-20 | `owlclaw/triggers/cron.py` | D18 优先 | Cron 历史接口避免暴露未脱敏 ledger 错误 | 输出 redacted 或由上游统一脱敏 |
 | D22 | Low-22 | `owlclaw/triggers/api/server.py` | D17/D18 同轮更优 | `_runs` 增加 maxsize/LRU/TTL | 异步结果缓存不再无界增长 |
 | D25 | Low-25 | `owlclaw/integrations/queue_adapters/kafka.py` | 无 | Kafka connect 增加可配置超时 | broker 不可达时不会无限阻塞 |
+| D26 | Low-26 | `owlclaw/triggers/api/server.py` | D17/D18/D22 同文件簇 | rate limiter `_states` 增加 TTL/LRU | tenant/endpoint 状态不再无界增长 |
+| D27 | Low-27 | `owlclaw/triggers/api/auth.py` | D19 同文件簇 | API key identity 改为 opaque/hash | key 前缀不再入 ledger/log |
+| D28 | Low-28 | `owlclaw/triggers/cron.py` | D20 同文件簇 | CronMetrics 样本改为有界容器 | 长时运行内存可控 |
+| D29 | Low-29 | `owlclaw/triggers/cron.py` | D20 同文件簇 | get_execution_history tenant 绑定认证上下文 | 不再信任客户端 tenant_id |
 
 ---
 
@@ -131,8 +135,10 @@
 
 - 审校顺序：
   1. 先审 `codex-gpt-work` 已提交的 `D2/D6/D7/D11`，给出 `APPROVE` 或 `FIX_NEEDED`
-  2. 再审 `codex-work` 的 `D12/D13/D14/D15/D16/D21/D23/D24/D25`
-  3. 最后审 `codex-gpt-work` 的 `D4b/D17/D18/D19/D20/D22`
+  2. 再审 `codex-work` 的 `D12/D15/D16/D21`
+  3. 再审 `codex-gpt-work` 的 `D2/D4b/D6/D7/D11/D17/D18/D19/D20`
+  4. 审校通过后，按下一补丁继续 `codex-work` 的 `D13/D14/D23/D24/D25`
+  5. 最后审 `codex-gpt-work` 的 `D22/D26/D27/D28/D29`
 - 审校重点：
   - `P1` 是否真的封住信任边界
   - `Low` 是否引入回归

@@ -23,18 +23,20 @@
 
 | 项目 | 说明 |
 |------|------|
-| **已完成轮数** | **1**（第 1 轮） |
+| **已完成轮数** | **3**（第 1–3 轮） |
 | **总计划轮数** | 27 |
-| **下一轮** | 第 2 轮（用户说「继续审计」时执行） |
+| **下一轮** | 第 4 轮（用户说「继续审计」时执行） |
 | **第 1 轮范围** | Core Logic + Lifecycle + I/O + Data+Security 主路径（runtime, heartbeat, engine, ledger, ws, deps, sanitizer, sql_executor 等）；报告 Phase 1–4 及 Executive Summary 中的 6 条发现属本轮。 |
+| **第 2 轮范围** | API trigger server 全量（server.py, handler.py, auth.py, config.py, api.py）；见下方「第 2 轮深度审计」小节。 |
+| **第 3 轮范围** | Cron 全量（cron.py 注册、trigger_now、_run_cron、Hatchet 注册、get_execution_history、governance/ledger 路径）；见下方「第 3 轮深度审计」小节。 |
 
 **27 轮范围清单（每轮取一项，按序执行）**
 
 | 轮次 | 范围（深度审计目标） |
 |------|----------------------|
 | 1 | Core Logic + Lifecycle + I/O + Data+Security 主路径 ✅ 已完成 |
-| 2 | API trigger server 全量（server/handler/auth + 请求体解析、限流、_runs） |
-| 3 | Cron 全量（注册、trigger_now、执行路径、Hatchet、get_execution_history） |
+| 2 | API trigger server 全量（server/handler/auth + 请求体解析、限流、_runs） ✅ 已完成 |
+| 3 | Cron 全量（注册、trigger_now、执行路径、Hatchet、get_execution_history） ✅ 已完成 |
 | 4 | Bindings 全量（schema 校验、SQL/HTTP/Queue 执行器、BindingTool、CredentialResolver） |
 | 5 | Governance 全量（visibility、constraints、Ledger 写路径与队列、fallback） |
 | 6 | Console Web + 认证（deps tenant、middleware token、mount、静态资源） |
@@ -66,11 +68,11 @@
 
 ## Executive Summary
 
-**Total Findings**: 25 (P0: 0, P1: 2, Low: 23)  
-*按本文「审计轮次定义与进度」，当前仅第 1 轮已完成；以下发现来自历史审计会话。*
+**Total Findings**: 29 (P0: 0, P1: 2, Low: 27)  
+*按本文「审计轮次定义与进度」，第 1–3 轮已完成；以下发现来自历史会话 + 第 2–3 轮。*
 - P0/High: 0
 - P1/Medium: 2
-- Low: 23
+- Low: 27
 
 **Overall Assessment**: **SHIP WITH CONDITIONS**
 
@@ -136,6 +138,10 @@
 | 23 | C.Robustness | Multiple client-facing error paths return str(exc) in response body (MCP server _error(), OwlHub skills HTTPException(detail=), signal API JSONResponse reason, governance proxy reason); can leak sensitive exception content to callers. | `owlclaw/mcp/server.py:101,105`; `owlhub/api/routes/skills.py:216,358,433`; `triggers/signal/api.py:62`; `governance/proxy.py:126,160` | Sanitize or use generic message before exposing to client (align with #16/#18/#21). |
 | 24 | C.Robustness | Binding type `grpc` has no required-field validation; parse returns minimal config → runtime errors when grpc executor used. | `owlclaw/capabilities/bindings/schema.py:118-172` | Add grpc validation/required fields or document placeholder. |
 | 25 | C.Robustness | KafkaQueueAdapter.connect() has no timeout; unreachable broker can block indefinitely. | `owlclaw/integrations/queue_adapters/kafka.py:46-68` | Add connect_timeout (e.g. asyncio.wait_for). |
+| 26 | C.Robustness | _TokenBucketLimiter._states dict grows unbounded with distinct tenant/endpoint keys; no TTL or eviction. Long-lived server with many tenants or dynamic routes can grow memory. | `owlclaw/triggers/api/server.py:83-111, 148-149` | Add max size + LRU eviction, or TTL-based cleanup for _states. |
+| 27 | C.Robustness | APIKeyAuthProvider sets identity to `api_key:{key[:6]}`; first 6 chars of API key appear in payload/ledger and can leak via logs or Ledger storage. | `owlclaw/triggers/api/auth.py:38` | Use opaque identity (e.g. hash or random id per key) or redact; avoid logging/storing key prefix. |
+| 28 | C.Robustness | CronMetrics duration_samples, delay_samples, cost_samples are unbounded lists (append-only); long-running process can grow memory. | `owlclaw/triggers/cron.py:620-622, 680, 682, 699` | Use bounded collections (e.g. deque(maxlen=N)) or periodic reset; document retention. |
+| 29 | B.Security | get_execution_history(tenant_id=...) accepts caller-provided tenant_id with no membership check; when exposed via API, enables cross-tenant execution history read (same trust-boundary class as #2). | `owlclaw/triggers/cron.py:1258-1320` | When exposing to clients, bind tenant_id to authenticated session/JWT; do not trust client-supplied tenant_id. |
 
 ---
 
@@ -238,6 +244,40 @@
 | 23 | MCP/OwlHub/signal/proxy client error message sanitization | Low | Avoid leaking exception content to API/MCP clients. |
 | 24 | Binding schema grpc required fields or document placeholder | Low | Avoid runtime failure when grpc binding is used. |
 | 25 | Kafka adapter connect timeout | Low | Avoid indefinite block on unreachable broker. |
+| 26 | API trigger rate limiter _states bounded eviction or TTL | Low | Prevent unbounded memory for tenant/endpoint limiters. |
+| 27 | API key identity redaction (no key prefix in ledger/logs) | Low | Avoid partial key leak in logs or Ledger. |
+| 28 | CronMetrics samples bounded (deque or reset) | Low | Prevent unbounded memory for cron metrics. |
+| 29 | get_execution_history tenant_id bound to auth when exposed via API | Low | Prevent cross-tenant execution history read (align with #2). |
+
+---
+
+## 第 3 轮深度审计（Cron 全量）
+
+**范围**：27 轮范围清单 — 轮 3（Cron 全量：注册、trigger_now、执行路径、Hatchet、get_execution_history）。
+
+**文件**（逐行三遍读）：`owlclaw/triggers/cron.py`（约 1903 行）、`app.py` 内 cron 装饰器与 `cron_registry` 调用（register/start/wait_for_all_tasks/trigger_now）。
+
+**方法**：Structure → Logic → Data flow；五透镜 Correctness / Failure / Adversary / Drift / Omission。
+
+**结论**：
+- 与既有发现一致：#20（get_execution_history 返回 ledger.error_message，敏感信息暴露）已覆盖；_record_to_ledger 写入 execution.error_message 至 ledger，与 #18/#16 同源。
+- **新增 Low 2 条**：#28（CronMetrics duration/delay/cost samples 无界列表）、#29（get_execution_history 接受 caller 传入 tenant_id，API 暴露时存在跨租户读风险，与 #2 同属信任边界）。
+- 正面：cron 表达式用 croniter 校验；trigger_now 与 get_execution_history 均做 event_name 存在性检查；tenant_id 归一化；cooldown/max_daily_runs/max_daily_cost/circuit_breaker 与 ledger 联动；_acquire_run_slot/_release_run_slot 防并发重入；ConcurrencyController 与 PriorityScheduler 有界；CronCache 使用 deque(maxlen)。
+
+---
+
+## 第 2 轮深度审计（API trigger server 全量）
+
+**范围**：27 轮范围清单 — 轮 2（API trigger server 全量：server/handler/auth + 请求体解析、限流、_runs）。
+
+**文件**（逐行三遍读）：`owlclaw/triggers/api/server.py`（407 行）、`handler.py`（36 行）、`auth.py`（54 行）、`config.py`（37 行）、`api.py`（45 行）。
+
+**方法**：Structure → Logic → Data flow；五透镜 Correctness / Failure / Adversary / Drift / Omission。
+
+**结论**：
+- 与既有发现一致：#17（body 仅按 Content-Length 限流）、#18（async 失败 str(exc) 入 ledger）、#19（auth 常量时间）、#22（_runs 无界）已覆盖；本轮未改变其优先级。
+- **新增 Low 2 条**：#26（_TokenBucketLimiter._states 无界）、#27（APIKeyAuthProvider identity 泄露 key 前 6 位）。
+- 正面：auth 失败/限流/governance 拒绝均写入 ledger；sync timeout 返回 408；InvalidJSONPayloadError 返回 400；CORS 默认空列表；path/event_name/tenant_id 非空校验；Bearer/API-Key 校验路径清晰。
 
 ---
 
