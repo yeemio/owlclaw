@@ -1,6 +1,6 @@
 # audit-deep-remediation — 任务清单
 
-> **Authority**: `docs/review/DEEP_AUDIT_REPORT.md` + `.kiro/specs/audit-deep-remediation/requirements.md` + design.md
+> **Authority**: `docs/review/DEEP_AUDIT_REPORT.md` + `docs/review/DEEP_AUDIT_EXECUTION_CHECKLIST.md` + `.kiro/specs/audit-deep-remediation/requirements.md` + design.md
 
 ---
 
