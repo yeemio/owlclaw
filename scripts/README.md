@@ -21,6 +21,12 @@
 | `gateway_ops_drill.py` | 执行 canary 回滚/全量成功演练并产出报告 | `poetry run python scripts/gateway_ops_drill.py` | CI 使用 |
 | `test_queue_trigger.py` | 队列触发链路本地回归脚本 | `poetry run python scripts/test_queue_trigger.py` | 本地开发使用 |
 | `console-local-setup.ps1` | Console 真实浏览器验收环境启动脚本（可选 DB 初始化/迁移/E2E） | `pwsh ./scripts/console-local-setup.ps1 -SkipDbInit -Port 8000` | 本地开发使用 |
+| `workflow_status.py` | 多 worktree 工作流巡检（脏工作区、待审分支、下一步动作建议） | `poetry run python scripts/workflow_status.py --help` | 本地开发使用 |
+| `workflow_orchestrator.py` | 持续轮询并写入 `.kiro/runtime/` 的工作流执行器（供统筹/各 agent 消费） | `poetry run python scripts/workflow_orchestrator.py --once` | 本地开发使用 |
+| `workflow_mailbox.py` | 读取 agent mailbox / 写入 ack 状态的轻量 CLI（文件信箱协议） | `poetry run python scripts/workflow_mailbox.py pull --agent review --json` | 本地开发使用 |
+| `workflow_agent.py` | 半自动 agent consumer：轮询 mailbox、自动 `ack seen`、写 heartbeat 与 dispatch prompt | `poetry run python scripts/workflow_agent.py --agent review --once` | 本地开发使用 |
+| `workflow_supervisor.py` | 从主仓统一拉起/停止/巡检 orchestrator + 各 worktree agent 进程，写 PID 与日志 | `poetry run python scripts/workflow_supervisor.py start` | 本地开发使用 |
+| `workflow-supervisor-console.ps1` | 打开一个可视监控终端，前台运行 `workflow_supervisor.py watch --ensure-running` | `pwsh ./scripts/workflow-supervisor-console.ps1` | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
 | `test_template.py` | 测试模板脚手架检查 | `poetry run python scripts/test_template.py --help` | 本地开发使用 |
 | `completions/` | CLI 自动补全生成物 | 按 shell 类型加载 | 本地开发使用 |
@@ -30,3 +36,7 @@
 1. 所有脚本应支持 `--help`（或在文件头部给出使用说明）。
 2. CI 关键脚本改动必须附带对应单元测试或集成验证。
 3. 脚本内禁止硬编码密钥；凭证统一走环境变量。
+4. `workflow_orchestrator.py` 负责生成 `.kiro/runtime/mailboxes/*.json`；各 agent 通过 `workflow_mailbox.py pull/ack` 与统筹交换状态。
+5. `workflow_agent.py` 用于挂在各 agent 会话里持续消费 mailbox，生成 `.kiro/runtime/dispatch/*.md` 和 `.kiro/runtime/heartbeats/*.json`。
+6. `workflow_supervisor.py` 负责跨 worktree 启停 automation 进程；日志位于 `.kiro/runtime/supervisor/logs/`，PID manifest 位于 `.kiro/runtime/supervisor/pids/`。
+7. 如需一个长期可视监控终端，直接运行 `pwsh ./scripts/workflow-supervisor-console.ps1`；它会前台 watch，并在 worker 掉线时自动拉起。

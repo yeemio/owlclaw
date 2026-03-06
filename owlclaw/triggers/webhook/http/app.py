@@ -171,7 +171,11 @@ def create_webhook_app(
             return _error_response(
                 ValidationError(
                     code="INVALID_ENCODING",
+<<<<<<< HEAD
                     message="Request body must be UTF-8",
+=======
+                    message="request body must be valid UTF-8",
+>>>>>>> main
                     status_code=400,
                 ),
                 request_id=request_id,

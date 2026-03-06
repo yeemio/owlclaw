@@ -154,19 +154,29 @@ class VisibilityFilter:
     Evaluators are run in parallel per capability; evaluator failures follow
     configured fail-policy (`open` keeps visible, `close` hides capability).
     Default policy is `close` for secure-by-default behavior.
+
+    Args:
+        fail_policy: Either 'open' or 'close'. Default 'close'.
+        evaluator_timeout_seconds: Timeout for each evaluator execution.
+            Default None (no timeout). Set to avoid single evaluator blocking.
     """
 
     def __init__(
         self,
         *,
         fail_policy: str = "close",
+<<<<<<< HEAD
         evaluator_timeout_seconds: float | None = 5.0,
+=======
+        evaluator_timeout_seconds: float | None = None,
+>>>>>>> main
     ) -> None:
         normalized_policy = fail_policy.strip().lower()
         if normalized_policy not in {"open", "close"}:
             raise ValueError("fail_policy must be either 'open' or 'close'")
-        self._evaluators: list[ConstraintEvaluator] = []
         self._fail_policy = normalized_policy
+        self._evaluator_timeout_seconds = evaluator_timeout_seconds
+        self._evaluators: list[ConstraintEvaluator] = []
         self._risk_gate = RiskGate()
         self._inject_quality_score = False
         self._quality_cache: dict[str, float] = {}
@@ -278,11 +288,30 @@ class VisibilityFilter:
         agent_id: str,
         context: RunContext,
     ) -> FilterResult:
+<<<<<<< HEAD
         """Run one evaluator and apply fail-policy on errors. Optional timeout per evaluator."""
         async def _run() -> FilterResult:
             raw_result: Any = evaluator.evaluate(capability, agent_id, context)
             if inspect.isawaitable(raw_result):
                 raw_result = await raw_result
+=======
+        """Run one evaluator and apply fail-policy on errors.
+
+        If evaluator_timeout_seconds is configured, the evaluator execution
+        is wrapped with asyncio.timeout to prevent single evaluator from
+        blocking capability filtering indefinitely.
+        """
+        try:
+            if self._evaluator_timeout_seconds is not None:
+                async with asyncio.timeout(self._evaluator_timeout_seconds):
+                    raw_result: Any = evaluator.evaluate(capability, agent_id, context)
+                    if inspect.isawaitable(raw_result):
+                        raw_result = await raw_result
+            else:
+                raw_result = evaluator.evaluate(capability, agent_id, context)
+                if inspect.isawaitable(raw_result):
+                    raw_result = await raw_result
+>>>>>>> main
             if isinstance(raw_result, FilterResult):
                 return raw_result
             logger.warning(
@@ -292,6 +321,7 @@ class VisibilityFilter:
                 self._fail_policy,
             )
             return self._handle_evaluator_failure()
+<<<<<<< HEAD
 
         try:
             if self._evaluator_timeout_seconds is not None and self._evaluator_timeout_seconds > 0:
@@ -300,6 +330,16 @@ class VisibilityFilter:
                     timeout=self._evaluator_timeout_seconds,
                 )
             return await _run()
+=======
+        except asyncio.TimeoutError:
+            logger.warning(
+                "Evaluator %s timed out after %ss (fail-%s)",
+                type(evaluator).__name__,
+                self._evaluator_timeout_seconds,
+                self._fail_policy,
+            )
+            return self._handle_evaluator_failure()
+>>>>>>> main
         except asyncio.CancelledError:
             raise
         except asyncio.TimeoutError:

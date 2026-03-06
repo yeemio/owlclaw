@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console
+.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate workflow-mailbox workflow-agent workflow-supervisor workflow-supervisor-console
 
 ## Show available commands
 help:
@@ -14,6 +14,12 @@ help:
 	@echo "  lint         Run Ruff checks"
 	@echo "  typecheck    Run MyPy checks"
 	@echo "  build-console Build frontend assets into owlclaw/web/static"
+	@echo "  workflow-status Inspect multi-worktree workflow state"
+	@echo "  workflow-orchestrate Run continuous workflow orchestrator loop"
+	@echo "  workflow-mailbox Pull mailbox or write ack status"
+	@echo "  workflow-agent Run semi-automatic mailbox consumer"
+	@echo "  workflow-supervisor Start/stop/status for workflow automation processes"
+	@echo "  workflow-supervisor-console Open a visible watch terminal for the supervisor"
 	@echo ""
 	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
@@ -60,3 +66,27 @@ typecheck:
 ## Build console frontend assets
 build-console:
 	cd owlclaw/web/frontend && npm install && npm run build
+
+## Inspect multi-worktree workflow state
+workflow-status:
+	poetry run python scripts/workflow_status.py
+
+## Run continuous workflow orchestrator loop
+workflow-orchestrate:
+	poetry run python scripts/workflow_orchestrator.py
+
+## Pull mailbox or write ack state for an agent
+workflow-mailbox:
+	poetry run python scripts/workflow_mailbox.py --help
+
+## Run the semi-automatic mailbox consumer
+workflow-agent:
+	poetry run python scripts/workflow_agent.py --help
+
+## Start/stop/status the workflow automation supervisor
+workflow-supervisor:
+	poetry run python scripts/workflow_supervisor.py --help
+
+## Open a visible supervisor watch console (Windows PowerShell)
+workflow-supervisor-console:
+	pwsh ./scripts/workflow-supervisor-console.ps1
