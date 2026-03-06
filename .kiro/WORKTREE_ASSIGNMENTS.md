@@ -149,7 +149,7 @@ Spec 一致性：
 
 **权限**：全仓库读 + 轻量修正（文档、注释、类型注解、测试补全）。不做功能实现。可以在 review-work 分支上直接修复审校发现的轻量问题。
 
-**审校状态（2026-03-06 Review Loop）**：`console-browser-real-e2e` 已完成收口审校并合并到 `main`；下一审校目标为 `audit-deep-remediation`。
+**审校状态（2026-03-06 Review Loop）**：`audit-deep-remediation` 已完成审校并合并入 `main`；报告见 `docs/review/REVIEW_LOOP_2026-03-06.md`。下一步转入 backlog（D15-D29 / D30-D44）统筹分配。
 
 **审校输出格式**（每次 Review 后 commit message 中记录）：
 

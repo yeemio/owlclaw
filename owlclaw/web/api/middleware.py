@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 from collections.abc import Awaitable, Callable
@@ -94,7 +95,8 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
             )
 
         provided_token = auth_header[7:].strip()
-        if provided_token != expected_token:
+        # Use constant-time comparison to prevent timing attacks
+        if not hmac.compare_digest(provided_token.encode("utf-8"), expected_token.encode("utf-8")):
             return JSONResponse(
                 status_code=401,
                 content={
