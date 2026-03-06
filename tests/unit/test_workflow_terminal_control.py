@@ -22,6 +22,7 @@ def test_message_mapping_uses_fixed_utterances() -> None:
     control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
 
     assert control._message_for_mailbox("main", {"action": "clean_local_changes"}) == "统筹"
+    assert control._message_for_mailbox("main", {"action": "monitor"}) is None
     assert control._message_for_mailbox("review", {"action": "review_pending_commits"}) == "继续审校"
     assert control._message_for_mailbox("codex", {"action": "wait_for_review"}) == "继续spec循环"
     assert control._message_for_audit("audit-a") == "继续深度审计"
@@ -153,7 +154,7 @@ def test_drive_once_resends_when_heartbeat_stale(tmp_path: Path) -> None:
     assert result["decision_reason"] == "stale_heartbeat"
 
 
-def test_drive_once_skips_recent_retry_for_same_state(tmp_path: Path) -> None:
+def test_main_monitor_state_does_not_send_prompt(tmp_path: Path) -> None:
     mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
     control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
     mailbox_module.ensure_runtime_dirs(tmp_path)
@@ -172,17 +173,9 @@ def test_drive_once_skips_recent_retry_for_same_state(tmp_path: Path) -> None:
         json.dumps(mailbox_payload, ensure_ascii=True, indent=2),
         encoding="utf-8",
     )
-    fingerprint = control._fingerprint(mailbox_payload, "统筹")
-    (tmp_path / ".kiro" / "runtime" / "terminal-control").mkdir(parents=True, exist_ok=True)
-    (tmp_path / ".kiro" / "runtime" / "terminal-control" / "main.json").write_text(
-        json.dumps({"agent": "main", "fingerprint": fingerprint, "sent_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True, indent=2),
-        encoding="utf-8",
-    )
-
-    control._seconds_since = lambda value: 30.0
-    result = control.drive_once(tmp_path, "main", retry_seconds=120)
+    result = control.drive_once(tmp_path, "main")
     assert result["delivered"] is False
-    assert result["reason"] == "recent_attempt"
+    assert result["reason"] == "no_message"
 
 
 def test_audit_agent_without_state_is_not_auto_nudged(tmp_path: Path) -> None:
