@@ -116,3 +116,14 @@ def test_drive_all_includes_audit_terminals(tmp_path: Path) -> None:
     results = control.drive_all(tmp_path, force=True)
     agents = {result["agent"] for result in results}
     assert agents == set(control.ALL_TERMINAL_TARGETS)
+
+
+def test_pause_flag_round_trip(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+
+    assert control.is_paused(tmp_path) is False
+    control.set_paused(tmp_path, True)
+    assert control.is_paused(tmp_path) is True
+    control.set_paused(tmp_path, False)
+    assert control.is_paused(tmp_path) is False

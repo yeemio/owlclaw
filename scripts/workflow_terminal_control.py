@@ -42,6 +42,10 @@ def _state_dir(repo_root: Path) -> Path:
     return _runtime_dir(repo_root) / "terminal-control"
 
 
+def _pause_flag_path(repo_root: Path) -> Path:
+    return _state_dir(repo_root) / "paused.flag"
+
+
 def ensure_dirs(repo_root: Path) -> None:
     workflow_mailbox.ensure_runtime_dirs(repo_root)
     _state_dir(repo_root).mkdir(parents=True, exist_ok=True)
@@ -60,6 +64,21 @@ def _load_state(repo_root: Path, agent: str) -> dict[str, object] | None:
 
 def _save_state(repo_root: Path, agent: str, payload: dict[str, object]) -> None:
     _state_path(repo_root, agent).write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
+
+def is_paused(repo_root: Path) -> bool:
+    ensure_dirs(repo_root)
+    return _pause_flag_path(repo_root).exists()
+
+
+def set_paused(repo_root: Path, paused: bool) -> None:
+    ensure_dirs(repo_root)
+    flag = _pause_flag_path(repo_root)
+    if paused:
+        flag.write_text("paused\n", encoding="utf-8")
+        return
+    if flag.exists():
+        flag.unlink()
 
 
 def _fingerprint(mailbox: dict[str, object], message: str) -> str:
@@ -177,8 +196,13 @@ def main(argv: list[str] | None = None) -> int:
     repo_root = Path(args.repo_root).resolve()
 
     while True:
-        if args.agent:
-            payload: object = drive_once(repo_root, args.agent, force=args.force)
+        if is_paused(repo_root):
+            payload = {
+                "paused": True,
+                "sent_at": _utc_now(),
+            }
+        elif args.agent:
+            payload = drive_once(repo_root, args.agent, force=args.force)
         else:
             payload = drive_all(repo_root, force=args.force)
 

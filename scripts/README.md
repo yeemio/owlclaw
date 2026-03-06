@@ -30,6 +30,7 @@
 | `workflow-supervisor-console.ps1` | 打开一个可视监控终端，前台运行 `workflow_supervisor.py watch --ensure-running` | `pwsh ./scripts/workflow-supervisor-console.ps1` | 本地开发使用 |
 | `workflow_terminal_control.py` | 驱动已打开的终端窗口：按 mailbox 给现有 CLI 窗口发送固定话术（统筹/继续spec循环/继续审校/继续深度审计/继续审计统筹） | `poetry run python scripts/workflow_terminal_control.py --interval 15 --force` | 本地开发使用 |
 | `workflow-terminal-control-console.ps1` | 前台持续驱动现有 6 个 CLI 窗口，循环发送固定话术 | `pwsh ./scripts/workflow-terminal-control-console.ps1` | 本地开发使用 |
+| `workflow_focus_window.ps1` | 激活某个 workflow 终端窗口，供人工接管 | `pwsh ./scripts/workflow_focus_window.ps1 -WindowTitle owlclaw-main` | 本地开发使用 |
 | `workflow-launch.ps1` | 一键拉起 6 个独立工作窗口（main/review/coding/audit）并启动控制窗口 | `pwsh ./scripts/workflow-launch.ps1` | 本地开发使用 |
 | `workflow_terminal_title.ps1` | 给当前已打开终端设置可驱动标题（如 `owlclaw-codex`、`owlclaw-audit-a`） | `pwsh ./scripts/workflow_terminal_title.ps1 -Name codex` | 本地开发使用 |
 | `workflow_sendkeys.ps1` | 底层窗口驱动：激活指定窗口标题并粘贴/回车 | 内部脚本 | 本地开发使用 |
@@ -51,3 +52,4 @@
 9. 如需驱动已经打开的 CLI 窗口，先在每个窗口运行 `workflow_terminal_title.ps1` 设标题，再运行 `workflow_terminal_control.py` 或 `workflow-terminal-control-console.ps1`；它会把固定话术直接粘贴进对应窗口。
 10. 现有窗口标题建议统一为：`owlclaw-main`、`owlclaw-review`、`owlclaw-codex`、`owlclaw-codex-gpt`、`owlclaw-audit-a`、`owlclaw-audit-b`。
 11. 如果不想手动一个个开窗口，直接运行 `pwsh ./scripts/workflow-launch.ps1`；它会使用独立 `powershell.exe` 窗口启动 `codex` / `claude` / `agent`，并自动再开一个 `owlclaw-control` 控制窗口持续驱动。
+12. 控制窗口支持人工接管：`pause` 暂停自动发送，`resume` 恢复，`send <agent>` 立即发一次固定话术，`takeover <agent>` 激活目标窗口供人工操作，`status` 查看当前暂停状态。
