@@ -84,7 +84,7 @@ async def test_binding_tool_records_error_then_reraises() -> None:
     ledger.record_execution.assert_awaited_once()  # type: ignore[attr-defined]
     call_kwargs = ledger.record_execution.await_args.kwargs  # type: ignore[attr-defined]
     assert call_kwargs["status"] == "error"
-    assert call_kwargs["error_message"] == "executor failure"
+    assert call_kwargs["error_message"] == "Binding execution failed."
     assert call_kwargs["input_params"]["mode"] == "shadow"
 
 

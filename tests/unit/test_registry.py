@@ -199,7 +199,7 @@ async def test_invoke_handler_single_param_without_args_raises(registry):
         return {"symbol": symbol}
 
     registry.register_handler("entry-monitor", sync_handler)
-    with pytest.raises(RuntimeError, match="missing 1 required positional argument"):
+    with pytest.raises(RuntimeError, match="failed.*TypeError"):
         await registry.invoke_handler("entry-monitor")
 
 
@@ -295,12 +295,12 @@ async def test_get_state_non_string_name_raises(registry):
 
 @pytest.mark.asyncio
 async def test_get_state_non_dict_raises(registry):
-    """get_state() when provider returns non-dict raises (TypeError wrapped in RuntimeError)."""
+    """get_state() when provider returns non-dict raises RuntimeError (sanitized, no raw message)."""
     def bad_provider():
         return "not a dict"
 
     registry.register_state("bad_state", bad_provider)
-    with pytest.raises(RuntimeError, match="must return dict"):
+    with pytest.raises(RuntimeError, match="failed.*TypeError"):
         await registry.get_state("bad_state")
 
 

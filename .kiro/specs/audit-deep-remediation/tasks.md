@@ -33,10 +33,10 @@
 | 11 | **Low-8** 在 `app.py` 的 `health_status()` 中避免直接读 `_states`/`_configs`：改为 manager/server 的公开 API 或只读属性，或文档明确该耦合 | 无私有属性访问或文档注明；health 相关测试通过 | [x] |
 | 12 | **Low-9** 在 Ledger._background_writer 的 except Exception 分支中，将当前 batch 写入 fallback 再继续循环，避免丢失已出队记录 | 异常路径有单测或集成验证；batch 不丢 | [x] |
 | 13 | **Low-10** Ledger._write_queue 设 maxsize 或实现背压（put 超时/丢弃策略），并文档化上限 | 队列有界或文档明确；压力测试可选 | [x] |
-| 15 | **Low-12** 在 Console API TokenAuthMiddleware 中用 hmac.compare_digest 做 token 常量时间比较 | grep 确认无直接 !=/== 比较 token；有单测或手验 | [ ] |
-| 18 | **Low-15** 在 `http_executor.py` 中收紧/明确空 `allowed_hosts` 的安全边界，避免默认允许任意公网 host 而无告警 | 有测试、配置校验或明确文档；SSRF 风险边界可审计 | [ ] |
-| 19 | **Low-16** 在 `BindingTool` 写 ledger 失败记录时不再持久化原始 `str(exc)`，改为统一安全错误消息 | grep 确认无原始 `str(exc)` 写入 ledger；有测试 | [ ] |
-| 24 | **Low-21** 在 `CapabilityRegistry.invoke_handler()` / `get_state()` 中避免将原始异常字符串直接包装回调用方 | 调用方只见安全文案或类型级描述；有测试 | [ ] |
+| 15 | **Low-12** 在 Console API TokenAuthMiddleware 中用 hmac.compare_digest 做 token 常量时间比较 | grep 确认无直接 !=/== 比较 token；有单测或手验 | [x] |
+| 18 | **Low-15** 在 `http_executor.py` 中收紧/明确空 `allowed_hosts` 的安全边界，避免默认允许任意公网 host 而无告警 | 有测试、配置校验或明确文档；SSRF 风险边界可审计 | [x] |
+| 19 | **Low-16** 在 `BindingTool` 写 ledger 失败记录时不再持久化原始 `str(exc)`，改为统一安全错误消息 | grep 确认无原始 `str(exc)` 写入 ledger；有测试 | [x] |
+| 24 | **Low-21** 在 `CapabilityRegistry.invoke_handler()` / `get_state()` 中避免将原始异常字符串直接包装回调用方 | 调用方只见安全文案或类型级描述；有测试 | [x] |
 
 ---
 
