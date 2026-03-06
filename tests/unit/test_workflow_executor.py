@@ -43,6 +43,7 @@ def test_process_once_runs_review_execution(tmp_path: Path) -> None:
         invoked["prompt"] = prompt
         return {
             "agent": agent,
+            "runner": "claude",
             "executed_at": "2026-03-06T00:00:01+00:00",
             "workdir": str(workdir),
             "command": ["codex", "exec"],
@@ -53,7 +54,7 @@ def test_process_once_runs_review_execution(tmp_path: Path) -> None:
             "error_kind": "",
         }
 
-    executor_module._invoke_codex = fake_invoke
+    executor_module._invoke_runner = fake_invoke
     result = executor_module.process_once(tmp_path, "review")
 
     assert result["status"] == "done"
@@ -131,7 +132,7 @@ def test_process_once_skips_already_processed_mailbox(tmp_path: Path) -> None:
     assert result["reason"] == "already_processed"
 
 
-def test_invoke_codex_uses_wrapper_when_direct_command_missing(tmp_path: Path) -> None:
+def test_invoke_runner_uses_wrapper_when_direct_command_missing(tmp_path: Path) -> None:
     _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
     executor_module = _load_module("workflow_executor", "scripts/workflow_executor.py")
 
@@ -140,6 +141,8 @@ def test_invoke_codex_uses_wrapper_when_direct_command_missing(tmp_path: Path) -
 
     class Result:
         returncode = 0
+        stdout = ""
+        stderr = ""
 
     calls: list[list[str]] = []
 
@@ -160,7 +163,7 @@ def test_invoke_codex_uses_wrapper_when_direct_command_missing(tmp_path: Path) -
     executor_module.shutil.which = fake_which
     executor_module.subprocess.run = fake_run
     try:
-        result = executor_module._invoke_codex(tmp_path, "review", workdir=tmp_path, prompt="hello")
+        result = executor_module._invoke_runner(tmp_path, "main", workdir=tmp_path, prompt="hello")
     finally:
         executor_module.shutil.which = original_which
         executor_module.subprocess.run = original_run
@@ -168,6 +171,46 @@ def test_invoke_codex_uses_wrapper_when_direct_command_missing(tmp_path: Path) -
     assert calls
     assert calls[0][:3] == ["C:\\Program Files\\PowerShell\\7\\pwsh.exe", "-File", "C:\\Users\\yeemi\\AppData\\Roaming\\npm\\codex.ps1"]
     assert result["returncode"] == 0
+
+
+def test_invoke_runner_supports_agent_backend(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    executor_module = _load_module("workflow_executor", "scripts/workflow_executor.py")
+
+    original_which = executor_module.shutil.which
+    original_run = executor_module.subprocess.run
+
+    class Result:
+        returncode = 0
+        stdout = "agent completed"
+        stderr = ""
+
+    calls: list[list[str]] = []
+
+    def fake_which(name: str):
+        mapping = {
+            "agent": None,
+            "agent.ps1": "C:\\Users\\yeemi\\AppData\\Local\\cursor-agent\\agent.ps1",
+            "pwsh": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+        }
+        return mapping.get(name)
+
+    def fake_run(command, **kwargs):
+        calls.append(command)
+        return Result()
+
+    executor_module.shutil.which = fake_which
+    executor_module.subprocess.run = fake_run
+    try:
+        result = executor_module._invoke_runner(tmp_path, "codex", workdir=tmp_path, prompt="hello")
+    finally:
+        executor_module.shutil.which = original_which
+        executor_module.subprocess.run = original_run
+
+    assert calls
+    assert calls[0][:3] == ["C:\\Program Files\\PowerShell\\7\\pwsh.exe", "-File", "C:\\Users\\yeemi\\AppData\\Local\\cursor-agent\\agent.ps1"]
+    assert result["runner"] == "agent"
+    assert result["last_message"] == "agent completed"
 
 
 def test_mailbox_fingerprint_ignores_generated_at() -> None:

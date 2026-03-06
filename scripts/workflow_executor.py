@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import locale
 import shutil
 import subprocess
 import sys
@@ -18,7 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import workflow_mailbox  # noqa: E402
 
-PROMPT_VERSION = 2
+PROMPT_VERSION = 3
 
 
 def _utc_now() -> str:
@@ -109,6 +110,7 @@ def _action_prompt(agent: str, mailbox: dict[str, object]) -> str | None:
             "Start by inspecting git log/diff for those coding branches. Then perform the review and make the required review-work output changes in this repository.\n"
             "If the branches are ready, produce review output and apply the needed review-work changes. If blocked, explain the concrete blocker and stop.\n"
             "Do not stop after analysis if concrete review output can be produced in this run.\n"
+            "Do not end with a question asking what to do next. End with concrete review results only.\n"
         )
 
     if action == "cleanup_or_commit_local_changes" and agent in {"codex", "codex-gpt"}:
@@ -154,22 +156,34 @@ def _result_path(repo_root: Path, agent: str) -> Path:
     return _run_dir(repo_root, agent) / "result.json"
 
 
-def _codex_command_prefix() -> list[str]:
-    direct = shutil.which("codex")
+def _cli_command_prefix(name: str) -> list[str]:
+    direct = shutil.which(name)
     if direct:
         return [direct]
-    powershell_wrapper = shutil.which("codex.ps1")
+    powershell_wrapper = shutil.which(f"{name}.ps1")
     if powershell_wrapper:
         shell = shutil.which("pwsh") or shutil.which("powershell")
         if shell:
             return [shell, "-File", powershell_wrapper]
-    cmd_wrapper = shutil.which("codex.cmd")
+    cmd_wrapper = shutil.which(f"{name}.cmd")
     if cmd_wrapper:
         return [cmd_wrapper]
-    raise FileNotFoundError("codex executable not found in PATH")
+    raise FileNotFoundError(f"{name} executable not found in PATH")
 
 
-def _invoke_codex(
+def _text_encoding() -> str:
+    return locale.getpreferredencoding(False) or "utf-8"
+
+
+def _runner_name(agent: str) -> str:
+    if agent == "main":
+        return "codex"
+    if agent == "review":
+        return "claude"
+    return "agent"
+
+
+def _invoke_runner(
     repo_root: Path,
     agent: str,
     *,
@@ -178,35 +192,70 @@ def _invoke_codex(
 ) -> dict[str, object]:
     log_path = _log_path(repo_root, agent)
     last_message_path = _last_message_path(repo_root, agent)
-    command = [
-        *_codex_command_prefix(),
-        "exec",
-        "--cd",
-        str(workdir),
-        "-o",
-        str(last_message_path),
-        prompt,
-    ]
+    runner = _runner_name(agent)
+    if runner == "codex":
+        command = [
+            *_cli_command_prefix("codex"),
+            "exec",
+            "--cd",
+            str(workdir),
+            "-o",
+            str(last_message_path),
+            prompt,
+        ]
+    elif runner == "claude":
+        command = [
+            *_cli_command_prefix("claude"),
+            "-p",
+            "--output-format",
+            "text",
+            "--dangerously-skip-permissions",
+            prompt,
+        ]
+    else:
+        command = [
+            *_cli_command_prefix("agent"),
+            "--print",
+            "--output-format",
+            "text",
+            "--force",
+            "--trust",
+            "--workspace",
+            str(workdir),
+            prompt,
+        ]
 
-    with log_path.open("ab") as log_handle:
-        process = subprocess.run(
-            command,
-            cwd=workdir,
-            stdout=log_handle,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
+    process = subprocess.run(
+        command,
+        cwd=workdir,
+        capture_output=True,
+        text=True,
+        encoding=_text_encoding(),
+        errors="replace",
+        check=False,
+    )
+
+    stdout_text = process.stdout or ""
+    stderr_text = process.stderr or ""
+    combined_output = stdout_text + (f"\n{stderr_text}" if stderr_text else "")
+    log_path.write_text(combined_output, encoding="utf-8")
 
     last_message = ""
-    if last_message_path.exists():
-        last_message = last_message_path.read_text(encoding="utf-8", errors="replace").strip()
-    log_text = log_path.read_text(encoding="utf-8", errors="replace")
+    if runner == "codex":
+        if last_message_path.exists():
+            last_message = last_message_path.read_text(encoding="utf-8", errors="replace").strip()
+    else:
+        last_message = stdout_text.strip()
+        last_message_path.write_text(last_message, encoding="utf-8")
+
+    log_text = combined_output
     error_kind = ""
     if "You've hit your usage limit" in log_text:
         error_kind = "usage_limit"
 
     payload = {
         "agent": agent,
+        "runner": runner,
         "executed_at": _utc_now(),
         "workdir": str(workdir),
         "command": command,
@@ -257,7 +306,7 @@ def process_once(repo_root: Path, agent: str) -> dict[str, object]:
     workflow_mailbox.write_ack(repo_root, agent, status="started", note="workflow_executor started mailbox action")
     workdir = _default_workdirs(repo_root)[agent]
     try:
-        result = _invoke_codex(repo_root, agent, workdir=workdir, prompt=prompt)
+        result = _invoke_runner(repo_root, agent, workdir=workdir, prompt=prompt)
         final_status = "done" if result["returncode"] == 0 else "blocked"
     except FileNotFoundError as exc:
         result = {
