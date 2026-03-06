@@ -16,6 +16,14 @@ from owlclaw.security import DataMasker, InputSanitizer, RiskDecision, RiskGate
 
 logger = logging.getLogger(__name__)
 
+# Safe message for ledger when binding execution fails; do not persist raw exception text.
+LEDGER_ERROR_MESSAGE = "Binding execution failed."
+
+
+def _safe_ledger_error_message(exc: BaseException) -> str:
+    """Return a safe, non-leaking message for ledger records."""
+    return LEDGER_ERROR_MESSAGE
+
 
 class LedgerProtocol(Protocol):
     """Protocol for governance ledger integration."""
@@ -104,13 +112,14 @@ class BindingTool:
             return result
         except Exception as exc:
             elapsed_ms = int((time.monotonic() - start) * 1000)
+            safe_message = _safe_ledger_error_message(exc)
             await self._record_ledger(
                 run_id=run_id,
                 parameters=sanitized_parameters,
-                result_summary=self._summarize({"error": str(exc)}),
+                result_summary=self._summarize({"error": safe_message}),
                 elapsed_ms=elapsed_ms,
                 status="error",
-                error_message=str(exc),
+                error_message=safe_message,
             )
             raise
 

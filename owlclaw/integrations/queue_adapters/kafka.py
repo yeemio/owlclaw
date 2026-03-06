@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 from typing import Any
 
 from owlclaw.triggers.queue.models import RawMessage
+
+logger = logging.getLogger(__name__)
 
 
 def _import_aiokafka() -> tuple[type[Any], type[Any], type[Any]]:
@@ -30,11 +34,13 @@ class KafkaQueueAdapter:
         dlq_topic: str | None = None,
         consumer: Any | None = None,
         producer: Any | None = None,
+        connect_timeout: float = 30.0,
     ) -> None:
         self.topic = topic
         self.bootstrap_servers = bootstrap_servers
         self.consumer_group = consumer_group
         self.dlq_topic = dlq_topic or f"{topic}.dlq"
+        self._connect_timeout = max(0.1, connect_timeout)
 
         self._consumer = consumer
         self._producer = producer
@@ -62,8 +68,27 @@ class KafkaQueueAdapter:
             _, _, topic_partition_cls = _import_aiokafka()
             self._topic_partition_type = topic_partition_cls
 
-        await self._consumer.start()
-        await self._producer.start()
+        try:
+            await asyncio.wait_for(self._consumer.start(), timeout=self._connect_timeout)
+        except asyncio.TimeoutError as e:
+            logger.warning(
+                "Kafka consumer start timed out",
+                extra={"bootstrap_servers": self.bootstrap_servers, "timeout_s": self._connect_timeout},
+            )
+            raise TimeoutError(
+                f"Kafka consumer failed to start within {self._connect_timeout:.1f}s (broker unreachable?)"
+            ) from e
+        try:
+            await asyncio.wait_for(self._producer.start(), timeout=self._connect_timeout)
+        except asyncio.TimeoutError as e:
+            logger.warning(
+                "Kafka producer start timed out",
+                extra={"bootstrap_servers": self.bootstrap_servers, "timeout_s": self._connect_timeout},
+            )
+            await self._consumer.stop()
+            raise TimeoutError(
+                f"Kafka producer failed to start within {self._connect_timeout:.1f}s (broker unreachable?)"
+            ) from e
         self._connected = True
         self._closed = False
 

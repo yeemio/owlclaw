@@ -30,6 +30,7 @@
 | `workflow-supervisor-console.ps1` | 打开一个可视监控终端，前台运行 `workflow_supervisor.py watch --ensure-running` | `pwsh ./scripts/workflow-supervisor-console.ps1` | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
 | `test_template.py` | 测试模板脚手架检查 | `poetry run python scripts/test_template.py --help` | 本地开发使用 |
+| `workflow_agent.py` | 多 worktree 工作流入口（sync/status/test） | `poetry run python scripts/workflow_agent.py --agent codex` | 本地开发使用 |
 | `completions/` | CLI 自动补全生成物 | 按 shell 类型加载 | 本地开发使用 |
 
 ## 约定

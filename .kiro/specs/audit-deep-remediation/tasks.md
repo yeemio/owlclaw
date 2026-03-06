@@ -72,6 +72,12 @@
 | #28 | CronMetrics samples 有界化 | `triggers/cron.py:620-622` | ✅ 有效 - 无界列表（但 `_recent_executions` 已用 deque maxlen=50） |
 | #29 | Cron 历史 tenant 绑定认证上下文 | `triggers/cron.py:1258-1320` | ⚠️ 依赖认证中间件（同 #2 信任边界问题） |
 
+**D25 已完成**（codex-work）：`KafkaQueueAdapter` 增加 `connect_timeout` 参数，`connect()` 内对 `consumer.start()` / `producer.start()` 使用 `asyncio.wait_for`，超时抛出 `TimeoutError` 并记录日志；单测见 `test_queue_kafka_adapter_connect_timeout_*`。
+
+**D15 已完成**（codex-work）：HTTP binding 空 `allowed_hosts` 已 fail-closed（执行时拒绝 + `validate_config` 校验非空）；单测 `test_http_executor_empty_allowed_hosts_rejected`、`test_http_executor_validate_config_rejects_empty_allowed_hosts`。
+
+**D16 已完成**（codex-work）：BindingTool 写入 ledger 使用 `_safe_ledger_error_message`，不持久化原始 `str(exc)`；单测见 `test_binding_tool_records_error_then_reraises`（含 D16 断言）。
+
 ---
 
 ## Backlog（报告 #35-#44，待统筹分配）

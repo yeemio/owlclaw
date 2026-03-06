@@ -170,8 +170,9 @@ class CapabilityRegistry:
                 f"Handler '{skill_name}' timed out after {self._handler_timeout_seconds:.2f}s"
             ) from e
         except Exception as e:
+            logger.exception("Handler '%s' invocation failed", skill_name)
             raise RuntimeError(
-                f"Handler '{skill_name}' failed: {e}"
+                f"Handler '{skill_name}' failed: {type(e).__name__}"
             ) from e
 
     def _prepare_handler_kwargs(
@@ -285,8 +286,9 @@ class CapabilityRegistry:
 
             return result
         except Exception as e:
+            logger.exception("State provider '%s' invocation failed", state_name)
             raise RuntimeError(
-                f"State provider '{state_name}' failed: {e}"
+                f"State provider '{state_name}' failed: {type(e).__name__}"
             ) from e
 
     def list_capabilities(self) -> list[dict]:

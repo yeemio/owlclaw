@@ -23,6 +23,7 @@ async def test_http_executor_active_get_with_response_mapping() -> None:
         method="GET",
         url="https://svc.local/orders/{order_id}",
         response_mapping={"path": "$.data.id", "status_codes": {"200": "success"}},
+        allowed_hosts=["svc.local"],
     )
     result = await executor.execute(config, {"order_id": 42})
     assert result["status_code"] == 200
@@ -44,6 +45,7 @@ async def test_http_executor_active_post_with_template_substitution() -> None:
         url="https://svc.local/orders",
         headers={"Authorization": "Bearer ${API_TOKEN}"},
         body_template={"sku": "{sku}"},
+        allowed_hosts=["svc.local"],
     )
     result = await executor.execute(config, {"sku": "sku-001"})
     assert result["status_code"] == 201
@@ -59,7 +61,9 @@ async def test_http_executor_shadow_mode_blocks_write_operations() -> None:
         return httpx.Response(200, json={"ok": True})
 
     executor = HTTPBindingExecutor(transport=_transport(handler))
-    config = HTTPBindingConfig(method="POST", mode="shadow", url="https://svc.local/orders")
+    config = HTTPBindingConfig(
+        method="POST", mode="shadow", url="https://svc.local/orders", allowed_hosts=["svc.local"]
+    )
     result = await executor.execute(config, {"id": 1})
     assert result["status"] == "shadow"
     assert result["sent"] is False
@@ -82,6 +86,7 @@ async def test_http_executor_timeout_retry_with_backoff() -> None:
         url="https://svc.local/ping",
         retry=RetryConfig(max_attempts=2, backoff_ms=1, backoff_multiplier=1.0),
         timeout_ms=10,
+        allowed_hosts=["svc.local"],
     )
     result = await executor.execute(config, {})
     assert result["status_code"] == 200
@@ -98,6 +103,7 @@ async def test_http_executor_status_code_mapping_to_semantic_error() -> None:
         method="GET",
         url="https://svc.local/orders/404",
         response_mapping={"status_codes": {"404": "not_found"}},
+        allowed_hosts=["svc.local"],
     )
     result = await executor.execute(config, {})
     assert result["data"]["error_type"] == "not_found"
@@ -109,8 +115,12 @@ async def test_http_executor_blocks_private_metadata_ip_by_default() -> None:
         return httpx.Response(200, json={"ok": True})
 
     executor = HTTPBindingExecutor(transport=_transport(handler))
-    config = HTTPBindingConfig(method="GET", url="http://169.254.169.254/latest/meta-data")
-    with pytest.raises(PermissionError, match="blocked private/local host"):
+    config = HTTPBindingConfig(
+        method="GET",
+        url="http://169.254.169.254/latest/meta-data",
+        allowed_hosts=["api.example.com"],
+    )
+    with pytest.raises(PermissionError, match="not in allowlist"):
         await executor.execute(config, {})
 
 
@@ -143,4 +153,30 @@ async def test_http_executor_rejects_host_outside_allowlist() -> None:
     )
     with pytest.raises(PermissionError, match="not in allowlist"):
         await executor.execute(config, {})
+
+
+@pytest.mark.asyncio
+async def test_http_executor_empty_allowed_hosts_rejected() -> None:
+    """Empty allowed_hosts is rejected for SSRF safety (fail-closed)."""
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"ok": True})
+
+    executor = HTTPBindingExecutor(transport=_transport(handler))
+    config = HTTPBindingConfig(method="GET", url="https://api.example.com/orders/1")
+    assert config.allowed_hosts == []
+    with pytest.raises(PermissionError, match="allowed_hosts must be non-empty"):
+        await executor.execute(config, {})
+
+
+def test_http_executor_validate_config_rejects_empty_allowed_hosts() -> None:
+    """D15: validate_config fails fast when url is set but allowed_hosts is empty (SSRF boundary)."""
+    executor = HTTPBindingExecutor()
+    errors = executor.validate_config({"method": "GET", "url": "https://api.example.com/orders", "allowed_hosts": []})
+    assert any("allowed_hosts" in e and "non-empty" in e for e in errors)
+    errors2 = executor.validate_config({"method": "GET", "url": "https://api.example.com/orders"})
+    assert any("allowed_hosts" in e for e in errors2)
+    errors_ok = executor.validate_config(
+        {"method": "GET", "url": "https://api.example.com/orders", "allowed_hosts": ["api.example.com"]}
+    )
+    assert not [e for e in errors_ok if "allowed_hosts" in e]
 

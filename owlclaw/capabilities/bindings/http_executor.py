@@ -1,13 +1,20 @@
-"""HTTP binding executor implementation."""
+"""HTTP binding executor implementation.
+
+SSRF boundary: when ``allowed_hosts`` is empty, outbound requests are rejected.
+Configure a non-empty allowlist in production to avoid allowing arbitrary hosts.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import ipaddress
+import logging
 from urllib.parse import urlparse
 from typing import Any
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 from owlclaw.capabilities.bindings.credential import CredentialResolver
 from owlclaw.capabilities.bindings.executor import BindingExecutor
@@ -62,6 +69,14 @@ class HTTPBindingExecutor(BindingExecutor):
             errors.append("method must be one of GET/POST/PUT/PATCH/DELETE")
         if not str(config.get("url", "")).strip():
             errors.append("url is required")
+        # D15: SSRF boundary — require non-empty allowed_hosts when url is set (fail-fast)
+        if str(config.get("url", "")).strip():
+            raw = config.get("allowed_hosts", [])
+            allowed = [item for item in (raw if isinstance(raw, list) else []) if isinstance(item, str) and item.strip()]
+            if not allowed:
+                errors.append(
+                    "http.allowed_hosts must be non-empty for SSRF safety; configure an allowlist of allowed hostnames"
+                )
         return errors
 
     @property
@@ -191,10 +206,19 @@ class HTTPBindingExecutor(BindingExecutor):
             raise PermissionError("http binding URL must include hostname")
 
         allowed_hosts = [item for item in config.allowed_hosts if isinstance(item, str) and item.strip()]
-        if allowed_hosts and not self._host_allowed(host, allowed_hosts):
+        if not allowed_hosts:
+            logger.warning(
+                "http binding allowed_hosts is empty; rejecting outbound request to %s for SSRF safety",
+                host,
+            )
+            raise PermissionError(
+                "http binding allowed_hosts must be non-empty; configure an allowlist for outbound URLs"
+            )
+
+        if not self._host_allowed(host, allowed_hosts):
             raise PermissionError(f"http binding host '{host}' is not in allowlist")
 
         if not config.allow_private_network and self._is_private_or_local_host(host):
-            if not allowed_hosts or not self._host_allowed(host, allowed_hosts):
+            if not self._host_allowed(host, allowed_hosts):
                 raise PermissionError(f"http binding blocked private/local host '{host}'")
 

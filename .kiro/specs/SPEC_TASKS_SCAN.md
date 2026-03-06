@@ -346,17 +346,17 @@
 - [x] D12 Low-12 Console API token 常量时间比较（hmac.compare_digest）→ spec: audit-deep-remediation
 - [x] D13 Low-13 VisibilityFilter evaluator timeout / 风险文档→ spec: audit-deep-remediation
 - [x] D14 Low-14 Hatchet Windows SIGQUIT 作用域收敛或文档说明→ spec: audit-deep-remediation
-- [ ] D15 Low-15 HTTP binding 空 `allowed_hosts` SSRF 边界→ spec: audit-deep-remediation
-- [ ] D16 Low-16 BindingTool ledger 错误信息脱敏→ spec: audit-deep-remediation
+- [x] D15 Low-15 HTTP binding 空 `allowed_hosts` SSRF 边界→ spec: audit-deep-remediation
+- [x] D16 Low-16 BindingTool ledger 错误信息脱敏→ spec: audit-deep-remediation
 - [ ] D17 Low-17 API trigger 读取时强制 body 大小限制→ spec: audit-deep-remediation
 - [ ] D18 Low-18 API trigger ledger 错误信息脱敏→ spec: audit-deep-remediation
 - [ ] D19 Low-19 API trigger auth 常量时间比较→ spec: audit-deep-remediation
 - [ ] D20 Low-20 Cron 历史接口错误信息脱敏/隐藏→ spec: audit-deep-remediation
-- [ ] D21 Low-21 CapabilityRegistry 异常包装脱敏→ spec: audit-deep-remediation
+- [x] D21 Low-21 CapabilityRegistry 异常包装脱敏→ spec: audit-deep-remediation
 - [ ] D22 Low-22 API trigger `_runs` 有界化（maxsize/LRU/TTL）→ spec: audit-deep-remediation
-- [ ] D23 Low-23 客户端可见错误响应脱敏（MCP/OwlHub/signal/proxy）→ spec: audit-deep-remediation
-- [ ] D24 Low-24 grpc binding schema 校验补齐 / fail-fast→ spec: audit-deep-remediation
-- [ ] D25 Low-25 Kafka connect 超时→ spec: audit-deep-remediation
+- [x] D23 Low-23 客户端可见错误响应脱敏（MCP/OwlHub/signal/proxy）→ spec: audit-deep-remediation
+- [x] D24 Low-24 grpc binding schema 校验补齐 / fail-fast→ spec: audit-deep-remediation
+- [x] D25 Low-25 Kafka connect 超时→ spec: audit-deep-remediation
 - [ ] D26 Low-26 API rate limiter `_states` 有界化→ spec: audit-deep-remediation
 - [ ] D27 Low-27 API key identity 脱敏（不暴露 key 前缀）→ spec: audit-deep-remediation
 - [ ] D28 Low-28 CronMetrics 样本有界化→ spec: audit-deep-remediation
@@ -458,11 +458,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（main 已合并 review-work；audit-deep-remediation D1-D14 + P1-2 共 15/15 完成；D15-D29 为下一批 backlog） |
-| 当前批次 | **Phase 15 收口**：`audit-deep-remediation`（15/15 已完成并合入 main）。 |
-| 批次状态 | D1-D14 + P1-2 全部完成；D15-D29 与 D30-D44 为后续 backlog，待统筹分配。 |
-| 已完成项 | （同前 21 项）22) **Phase 15 audit-deep-remediation 全部完成**（15/15），已自 review-work 合并入 main。 |
-| 下一待执行 | 1) 统筹可分配 D15-D29 至编码 worktree；2) 或处理外部阻塞项（release-supply-chain、owlhub、openclaw-skill-pack、content-launch）。 |
+| 最后更新 | 2026-03-06（codex-work spec 循环：D15/D16 已实现并验收） |
+| 当前批次 | **Phase 15 收口**：`audit-deep-remediation`（D15/D16/D25 已由 codex-work 完成）。 |
+| 批次状态 | D1-D16 + D21/D23/D24/D25 已完成；D17-D20/D22/D26-D29 待 codex-gpt-work 或统筹分配。 |
+| 已完成项 | （同前）23) D25 Kafka；24) **D15** HTTP allowed_hosts SSRF（validate_config + 单测）；25) **D16** BindingTool ledger 脱敏（已有实现 + 单测断言）。 |
+| 下一待执行 | 1) 统筹分配 D17-D20/D22/D26-D29 至编码 worktree；2) 或处理外部阻塞项。 |
 | 验收快照 | （同前）**Phase 15**：audit-deep-remediation ✅(15/15)。 |
 | 阻塞项 | （同前） |
 | 健康状态 | ✅ 内部协作阻塞已清零；Phase 15 已合入 main；仅剩外部依赖阻塞项。 |

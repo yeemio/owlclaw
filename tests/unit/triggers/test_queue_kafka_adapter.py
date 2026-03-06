@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -188,6 +189,55 @@ async def test_kafka_queue_adapter_requires_aiokafka(monkeypatch: pytest.MonkeyP
 
     with pytest.raises(RuntimeError, match="poetry add aiokafka"):
         await adapter.connect()
+
+
+@pytest.mark.asyncio
+async def test_kafka_queue_adapter_connect_timeout_raises_on_hang() -> None:
+    """D25: connect() raises TimeoutError when consumer start hangs (broker unreachable)."""
+
+    class _ConsumerThatHangs(_FakeConsumer):
+        async def start(self) -> None:
+            await asyncio.Future()
+
+    consumer = _ConsumerThatHangs()
+    producer = _FakeProducer()
+    adapter = KafkaQueueAdapter(
+        topic="orders",
+        bootstrap_servers="localhost:9092",
+        consumer_group="g1",
+        consumer=consumer,
+        producer=producer,
+        connect_timeout=0.1,
+    )
+    adapter._topic_partition_type = _FakeTopicPartition
+
+    with pytest.raises(TimeoutError, match="consumer failed to start within"):
+        await adapter.connect()
+
+
+@pytest.mark.asyncio
+async def test_kafka_queue_adapter_connect_timeout_producer_hang_stops_consumer() -> None:
+    """D25: when producer.start() times out, consumer is stopped and TimeoutError is raised."""
+
+    class _ProducerThatHangs(_FakeProducer):
+        async def start(self) -> None:
+            await asyncio.Future()
+
+    consumer = _FakeConsumer()
+    producer = _ProducerThatHangs()
+    adapter = KafkaQueueAdapter(
+        topic="orders",
+        bootstrap_servers="localhost:9092",
+        consumer_group="g1",
+        consumer=consumer,
+        producer=producer,
+        connect_timeout=0.1,
+    )
+    adapter._topic_partition_type = _FakeTopicPartition
+
+    with pytest.raises(TimeoutError, match="producer failed to start within"):
+        await adapter.connect()
+    assert consumer.stopped is True
 
 
 def test_kafka_queue_adapter_message_id_fallback_to_topic_partition_offset() -> None:
