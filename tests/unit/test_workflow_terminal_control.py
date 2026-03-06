@@ -27,6 +27,8 @@ def test_message_mapping_uses_fixed_utterances() -> None:
     assert control._message_for_audit("audit-a") == "继续深度审计"
     assert control._message_for_audit("audit-b") == "继续审计复核"
     assert control.TITLE_MAP["review"] == ["owlclaw-review", "claude"]
+    assert "audit-a" in control.ALL_TERMINAL_TARGETS
+    assert "audit-b" in control.ALL_TERMINAL_TARGETS
 
 
 def test_drive_once_skips_same_fingerprint(tmp_path: Path) -> None:
@@ -235,6 +237,24 @@ def test_drive_all_includes_audit_terminals(tmp_path: Path) -> None:
     results = control.drive_all(tmp_path, force=True)
     agents = {result["agent"] for result in results}
     assert agents == set(control.ALL_TERMINAL_TARGETS)
+
+
+def test_workflow_config_matches_expected_topology() -> None:
+    payload = json.loads(Path(".kiro/workflow_terminal_config.json").read_text(encoding="utf-8"))
+    roles = {role["agent"]: role for role in payload["roles"]}
+
+    assert roles["main"]["repo_path"] == "D:\\AI\\owlclaw"
+    assert roles["main"]["controller"] == "codex"
+    assert roles["audit-a"]["repo_path"] == "D:\\AI\\owlclaw"
+    assert roles["audit-a"]["controller"] == "agent"
+    assert roles["audit-b"]["repo_path"] == "D:\\AI\\owlclaw"
+    assert roles["audit-b"]["default_prompt"] == "继续审计复核"
+    assert roles["review"]["repo_path"] == "D:\\AI\\owlclaw-review"
+    assert roles["review"]["controller"] == "claude"
+    assert roles["codex"]["repo_path"] == "D:\\AI\\owlclaw-codex"
+    assert roles["codex"]["controller"] == "agent"
+    assert roles["codex-gpt"]["repo_path"] == "D:\\AI\\owlclaw-codex-gpt"
+    assert roles["codex-gpt"]["controller"] == "agent"
 
 
 def test_pause_flag_round_trip(tmp_path: Path) -> None:

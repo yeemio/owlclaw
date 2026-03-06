@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "description": "Workflow terminal role topology for local orchestration.",
+  "roles": [
+    {
+      "agent": "main",
+      "role_name": "orchestrator",
+      "description": "统筹",
+      "repo_path": "D:\\AI\\owlclaw",
+      "branch": "main",
+      "controller": "codex",
+      "window_title": "owlclaw-main",
+      "window_title_fallbacks": [
+        "owlclaw-main"
+      ],
+      "default_prompt": "统筹",
+      "startup": {
+        "type": "cli",
+        "command": "codex"
+      }
+    },
+    {
+      "agent": "audit-a",
+      "role_name": "deep_audit",
+      "description": "深度审计",
+      "repo_path": "D:\\AI\\owlclaw",
+      "branch": "main",
+      "controller": "agent",
+      "window_title": "owlclaw-audit-a",
+      "window_title_fallbacks": [
+        "owlclaw-audit-a"
+      ],
+      "default_prompt": "继续深度审计",
+      "startup": {
+        "type": "audit_agent",
+        "command": "agent",
+        "audit_summary": "audit window launched",
+        "heartbeat_interval_seconds": 60
+      }
+    },
+    {
+      "agent": "audit-b",
+      "role_name": "audit_review",
+      "description": "审计复核",
+      "repo_path": "D:\\AI\\owlclaw",
+      "branch": "main",
+      "controller": "agent",
+      "window_title": "owlclaw-audit-b",
+      "window_title_fallbacks": [
+        "owlclaw-audit-b"
+      ],
+      "default_prompt": "继续审计复核",
+      "startup": {
+        "type": "audit_agent",
+        "command": "agent",
+        "audit_summary": "audit review window launched",
+        "heartbeat_interval_seconds": 60
+      }
+    },
+    {
+      "agent": "review",
+      "role_name": "review_gate",
+      "description": "审校",
+      "repo_path": "D:\\AI\\owlclaw-review",
+      "branch": "review-work",
+      "controller": "claude",
+      "window_title": "owlclaw-review",
+      "window_title_fallbacks": [
+        "owlclaw-review",
+        "claude"
+      ],
+      "default_prompt": "继续审校",
+      "startup": {
+        "type": "cli",
+        "command": "claude"
+      }
+    },
+    {
+      "agent": "codex",
+      "role_name": "coding_primary",
+      "description": "代码",
+      "repo_path": "D:\\AI\\owlclaw-codex",
+      "branch": "codex-work",
+      "controller": "agent",
+      "window_title": "owlclaw-codex",
+      "window_title_fallbacks": [
+        "owlclaw-codex"
+      ],
+      "default_prompt": "继续spec循环",
+      "startup": {
+        "type": "cli",
+        "command": "agent"
+      }
+    },
+    {
+      "agent": "codex-gpt",
+      "role_name": "coding_secondary",
+      "description": "代码",
+      "repo_path": "D:\\AI\\owlclaw-codex-gpt",
+      "branch": "codex-gpt-work",
+      "controller": "agent",
+      "window_title": "owlclaw-codex-gpt",
+      "window_title_fallbacks": [
+        "owlclaw-codex-gpt"
+      ],
+      "default_prompt": "继续spec循环",
+      "startup": {
+        "type": "cli",
+        "command": "agent"
+      }
+    }
+  ]
+}

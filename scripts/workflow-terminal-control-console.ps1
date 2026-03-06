@@ -6,7 +6,9 @@ param(
 $repoRoot = (Resolve-Path ".").Path
 $controlScript = "scripts/workflow_terminal_control.py"
 $focusScript = "scripts/workflow_focus_window.ps1"
-$agents = @("main", "review", "codex", "codex-gpt", "audit-a", "audit-b")
+$configPath = Join-Path $repoRoot ".kiro\workflow_terminal_config.json"
+$config = Get-Content $configPath -Raw | ConvertFrom-Json
+$agents = @($config.roles | ForEach-Object { [string]$_.agent })
 
 function Get-WorkflowWindowPid {
     param(

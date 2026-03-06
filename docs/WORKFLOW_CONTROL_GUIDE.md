@@ -11,6 +11,12 @@
 - `audit-a`：深度审计，使用 `agent`
 - `audit-b`：审计复核，使用 `agent`
 
+角色真源配置文件：
+
+- [.kiro/workflow_terminal_config.json](/D:/AI/owlclaw/.kiro/workflow_terminal_config.json)
+
+以后如果要调整目录、CLI 类型、窗口标题、固定话术，优先改这一个 JSON，再让启动器和控制器读取它。
+
 控制器不会长期无脑发命令。它会参考 `.kiro/runtime/` 下的 mailbox、ack、heartbeat 状态，只在任务变化、停滞或阻塞时催办。
 
 ---

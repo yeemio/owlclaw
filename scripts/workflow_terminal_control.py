@@ -12,22 +12,30 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+WORKFLOW_CONFIG_PATH = REPO_ROOT / ".kiro" / "workflow_terminal_config.json"
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import workflow_mailbox  # noqa: E402
 
 
+def _load_workflow_config() -> dict[str, object]:
+    return json.loads(WORKFLOW_CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+WORKFLOW_CONFIG = _load_workflow_config()
+ROLE_CONFIGS = {
+    role["agent"]: role
+    for role in WORKFLOW_CONFIG["roles"]
+    if isinstance(role, dict) and isinstance(role.get("agent"), str)
+}
 TITLE_MAP = {
-    "main": ["owlclaw-main"],
-    "review": ["owlclaw-review", "claude"],
-    "codex": ["owlclaw-codex"],
-    "codex-gpt": ["owlclaw-codex-gpt"],
-    "audit-a": ["owlclaw-audit-a"],
-    "audit-b": ["owlclaw-audit-b"],
+    agent: list(role.get("window_title_fallbacks", [role.get("window_title", "")]))
+    for agent, role in ROLE_CONFIGS.items()
 }
 MAILBOX_AGENTS = sorted(workflow_mailbox.VALID_AGENT_NAMES)
-ALL_TERMINAL_TARGETS = MAILBOX_AGENTS + ["audit-a", "audit-b"]
+ALL_TERMINAL_TARGETS = [role["agent"] for role in WORKFLOW_CONFIG["roles"]]
 
 
 def _utc_now() -> str:
@@ -223,11 +231,9 @@ def _message_for_mailbox(agent: str, mailbox: dict[str, object]) -> str | None:
 
 
 def _message_for_audit(agent: str) -> str | None:
-    if agent == "audit-a":
-        return "继续深度审计"
-    if agent == "audit-b":
-        return "继续审计复核"
-    return None
+    role = ROLE_CONFIGS.get(agent, {})
+    prompt = role.get("default_prompt")
+    return prompt if isinstance(prompt, str) and prompt else None
 
 
 def _agent_runtime_status(repo_root: Path, agent: str) -> dict[str, object]:

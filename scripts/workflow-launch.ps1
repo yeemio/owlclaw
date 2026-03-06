@@ -1,10 +1,5 @@
 param(
-    [string]$MainRepo = "D:\AI\owlclaw",
-    [string]$ReviewRepo = "D:\AI\owlclaw-review",
-    [string]$CodexRepo = "D:\AI\owlclaw-codex",
-    [string]$CodexGptRepo = "D:\AI\owlclaw-codex-gpt",
-    [string]$AuditARepo = "D:\AI\owlclaw",
-    [string]$AuditBRepo = "D:\AI\owlclaw",
+    [string]$ConfigPath = "D:\AI\owlclaw\.kiro\workflow_terminal_config.json",
     [int]$LaunchSpacingMilliseconds = 1200,
     [int]$ControllerDelaySeconds = 6,
     [int]$ControlInterval = 20,
@@ -169,29 +164,36 @@ function Set-WorkflowGridLayout {
     }
 }
 
-$targets = @(
-    @{ Title = "owlclaw-main"; Workdir = $MainRepo; Command = "codex" },
-    @{ Title = "owlclaw-review"; Workdir = $ReviewRepo; Command = "claude" },
-    @{ Title = "owlclaw-codex"; Workdir = $CodexRepo; Command = "agent" },
-    @{ Title = "owlclaw-codex-gpt"; Workdir = $CodexGptRepo; Command = "agent" },
-    @{
-        Title = "owlclaw-audit-a"
-        Workdir = $AuditARepo
-        Command = "`$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent audit-a --status idle --summary `"audit window launched`" --interval 60 } -ArgumentList '$AuditARepo'; poetry run python scripts/workflow_audit_state.py update --agent audit-a --status idle --summary `"audit window launched`"; agent"
-    },
-    @{
-        Title = "owlclaw-audit-b"
-        Workdir = $AuditBRepo
-        Command = "`$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent audit-b --status idle --summary `"audit review window launched`" --interval 60 } -ArgumentList '$AuditBRepo'; poetry run python scripts/workflow_audit_state.py update --agent audit-b --status idle --summary `"audit review window launched`"; agent"
+$config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
+$mainRole = $config.roles | Where-Object { $_.agent -eq "main" } | Select-Object -First 1
+$mainRepo = [string]$mainRole.repo_path
+
+$targets = @()
+foreach ($role in $config.roles) {
+    $startupType = [string]$role.startup.type
+    $startupCommand = [string]$role.startup.command
+    $command = $startupCommand
+
+    if ($startupType -eq "audit_agent") {
+        $summary = [string]$role.startup.audit_summary
+        $interval = [int]$role.startup.heartbeat_interval_seconds
+        $command = "`$null = Start-Job -ScriptBlock { param(`$repo) Set-Location `$repo; poetry run python scripts/workflow_audit_heartbeat.py --agent $($role.agent) --status idle --summary `"$summary`" --interval $interval } -ArgumentList '$($role.repo_path)'; poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) --status idle --summary `"$summary`"; $startupCommand"
     }
-)
+
+    $targets += @{
+        Agent = [string]$role.agent
+        Title = [string]$role.window_title
+        Workdir = [string]$role.repo_path
+        Command = $command
+    }
+}
 
 $windowManifest = @{}
 foreach ($target in $targets) {
     $process = Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command
     if (-not $DryRun -and $null -ne $process) {
         $hwnd = Get-WindowHandleByExactTitle -WindowTitle $target.Title
-        $windowManifest[$target.Title.Replace("owlclaw-", "")] = @{
+        $windowManifest[$target.Agent] = @{
             pid = $process.Id
             hwnd = $hwnd
             title = $target.Title
@@ -204,7 +206,7 @@ foreach ($target in $targets) {
 }
 
 if (-not $DryRun) {
-    Save-WindowManifest -RepoRoot $MainRepo -Windows $windowManifest
+    Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
 }
 
 if (-not $SkipLayout -and -not $DryRun) {
@@ -214,5 +216,5 @@ if (-not $SkipLayout -and -not $DryRun) {
 
 if (-not $SkipController) {
     $controllerCommand = "Start-Sleep -Seconds $ControllerDelaySeconds; pwsh ./scripts/workflow-terminal-control-console.ps1 -Interval $ControlInterval"
-    Start-WorkflowWindow -WindowTitle "owlclaw-control" -Workdir $MainRepo -CommandText $controllerCommand
+    Start-WorkflowWindow -WindowTitle "owlclaw-control" -Workdir $mainRepo -CommandText $controllerCommand
 }
