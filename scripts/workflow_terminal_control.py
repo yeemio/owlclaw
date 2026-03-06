@@ -19,12 +19,12 @@ import workflow_mailbox  # noqa: E402
 
 
 TITLE_MAP = {
-    "main": "owlclaw-main",
-    "review": "owlclaw-review",
-    "codex": "owlclaw-codex",
-    "codex-gpt": "owlclaw-codex-gpt",
-    "audit-a": "owlclaw-audit-a",
-    "audit-b": "owlclaw-audit-b",
+    "main": ["owlclaw-main"],
+    "review": ["owlclaw-review", "claude"],
+    "codex": ["owlclaw-codex"],
+    "codex-gpt": ["owlclaw-codex-gpt"],
+    "audit-a": ["owlclaw-audit-a"],
+    "audit-b": ["owlclaw-audit-b"],
 }
 MAILBOX_AGENTS = sorted(workflow_mailbox.VALID_AGENT_NAMES)
 ALL_TERMINAL_TARGETS = MAILBOX_AGENTS + ["audit-a", "audit-b"]
@@ -138,6 +138,23 @@ def _send_to_window(repo_root: Path, window_title: str, message: str) -> subproc
     )
 
 
+def _send_to_window_candidates(
+    repo_root: Path, window_titles: list[str], message: str
+) -> tuple[str, subprocess.CompletedProcess[str]]:
+    last_result: subprocess.CompletedProcess[str] | None = None
+    last_title = window_titles[0]
+
+    for title in window_titles:
+        result = _send_to_window(repo_root, title, message)
+        if result.returncode == 0:
+            return title, result
+        last_title = title
+        last_result = result
+
+    assert last_result is not None
+    return last_title, last_result
+
+
 def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str, object]:
     ensure_dirs(repo_root)
     if agent in workflow_mailbox.VALID_AGENT_NAMES:
@@ -157,8 +174,8 @@ def drive_once(repo_root: Path, agent: str, *, force: bool = False) -> dict[str,
     if not force and previous and previous.get("fingerprint") == fingerprint:
         return {"agent": agent, "delivered": False, "reason": "already_sent", "message": message}
 
-    window_title = TITLE_MAP[agent]
-    result = _send_to_window(repo_root, window_title, message)
+    window_titles = TITLE_MAP[agent]
+    window_title, result = _send_to_window_candidates(repo_root, window_titles, message)
     delivered = result.returncode == 0
     payload = {
         "agent": agent,

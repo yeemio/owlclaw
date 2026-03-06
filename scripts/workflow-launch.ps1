@@ -5,6 +5,7 @@ param(
     [string]$CodexGptRepo = "D:\AI\owlclaw-codex-gpt",
     [string]$AuditARepo = "D:\AI\owlclaw",
     [string]$AuditBRepo = "D:\AI\owlclaw",
+    [int]$LaunchSpacingMilliseconds = 1200,
     [int]$ControllerDelaySeconds = 6,
     [int]$ControlInterval = 20,
     [int]$LayoutDelaySeconds = 8,
@@ -130,6 +131,9 @@ $targets = @(
 
 foreach ($target in $targets) {
     Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command
+    if (-not $DryRun) {
+        Start-Sleep -Milliseconds $LaunchSpacingMilliseconds
+    }
 }
 
 if (-not $SkipLayout -and -not $DryRun) {

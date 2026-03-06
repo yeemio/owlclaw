@@ -50,7 +50,7 @@
 7. `workflow_supervisor.py` 负责跨 worktree 启停 automation 进程；日志位于 `.kiro/runtime/supervisor/logs/`，PID manifest 位于 `.kiro/runtime/supervisor/pids/`。
 8. 如需一个长期可视监控终端，直接运行 `pwsh ./scripts/workflow-supervisor-console.ps1`；它会前台 watch，并在 worker 掉线时自动拉起。
 9. 如需驱动已经打开的 CLI 窗口，先在每个窗口运行 `workflow_terminal_title.ps1` 设标题，再运行 `workflow_terminal_control.py` 或 `workflow-terminal-control-console.ps1`；它会把固定话术直接粘贴进对应窗口。
-10. 现有窗口标题建议统一为：`owlclaw-main`、`owlclaw-review`、`owlclaw-codex`、`owlclaw-codex-gpt`、`owlclaw-audit-a`、`owlclaw-audit-b`。
+10. 现有窗口标题建议统一为：`owlclaw-main`、`owlclaw-review`、`owlclaw-codex`、`owlclaw-codex-gpt`、`owlclaw-audit-a`、`owlclaw-audit-b`；其中 `review` 窗口如果被 Claude CLI 覆盖标题，控制器会回退匹配 `claude`。
 11. 如果不想手动一个个开窗口，直接运行 `pwsh ./scripts/workflow-launch.ps1`；它会使用独立终端窗口启动 `codex` / `claude` / `agent`，自动将 6 个工作窗口按 `3x2` 平铺到主屏，并再开一个 `owlclaw-control` 控制窗口持续驱动。
-12. 如需禁用平铺，可追加 `-SkipLayout`；如需调整等待窗口出现后再布局的时间，可设置 `-LayoutDelaySeconds <n>`。
+12. 如需禁用平铺，可追加 `-SkipLayout`；如需调整等待窗口出现后再布局的时间，可设置 `-LayoutDelaySeconds <n>`；如需减慢批量起窗速度避免丢窗，可设置 `-LaunchSpacingMilliseconds <n>`。
 13. 控制窗口支持人工接管：`pause` 暂停自动发送，`resume` 恢复，`send <agent>` 立即发一次固定话术，`takeover <agent>` 激活目标窗口供人工操作，`status` 查看当前暂停状态。

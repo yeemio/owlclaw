@@ -26,6 +26,7 @@ def test_message_mapping_uses_fixed_utterances() -> None:
     assert control._message_for_mailbox("codex", {"action": "wait_for_review"}) == "继续spec循环"
     assert control._message_for_audit("audit-a") == "继续深度审计"
     assert control._message_for_audit("audit-b") == "继续审计统筹"
+    assert control.TITLE_MAP["review"] == ["owlclaw-review", "claude"]
 
 
 def test_drive_once_skips_same_fingerprint(tmp_path: Path) -> None:
