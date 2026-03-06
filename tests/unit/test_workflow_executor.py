@@ -60,7 +60,7 @@ def test_process_once_runs_review_execution(tmp_path: Path) -> None:
     assert result["status"] == "done"
     assert result["executed"] is True
     assert invoked["agent"] == "review"
-    assert "Do not review DEEP_AUDIT_REPORT.md itself" in str(invoked["prompt"])
+    assert str(invoked["prompt"]) == "继续审校。只审 codex-work 和 codex-gpt-work 的代码提交，不审计审计报告。直接执行，不要反问。"
 
     ack = mailbox_module.read_ack(tmp_path, "review")
     assert ack is not None
@@ -85,10 +85,21 @@ def test_process_once_idles_when_no_executable_action(tmp_path: Path) -> None:
     mailbox_path = tmp_path / ".kiro" / "runtime" / "mailboxes" / "codex.json"
     mailbox_path.write_text(json.dumps(mailbox_payload, ensure_ascii=True, indent=2), encoding="utf-8")
 
+    executor_module._invoke_runner = lambda *args, **kwargs: {
+        "agent": "codex",
+        "runner": "agent",
+        "executed_at": "2026-03-06T00:00:01+00:00",
+        "workdir": str(tmp_path),
+        "command": ["agent"],
+        "returncode": 0,
+        "last_message_path": str(tmp_path / "last.txt"),
+        "log_path": str(tmp_path / "log.txt"),
+        "last_message": "waiting for review",
+        "error_kind": "",
+    }
     result = executor_module.process_once(tmp_path, "codex")
-    assert result["status"] == "idle"
-    assert result["executed"] is False
-    assert result["reason"] == "no_action"
+    assert result["status"] == "done"
+    assert result["executed"] is True
 
 
 def test_process_once_skips_already_processed_mailbox(tmp_path: Path) -> None:

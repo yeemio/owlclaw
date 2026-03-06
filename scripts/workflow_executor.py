@@ -19,7 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import workflow_mailbox  # noqa: E402
 
-PROMPT_VERSION = 3
+PROMPT_VERSION = 4
 RUNNER_TIMEOUT_SECONDS = 120
 
 
@@ -91,56 +91,21 @@ def _save_state(repo_root: Path, agent: str, payload: dict[str, object]) -> None
 
 def _action_prompt(agent: str, mailbox: dict[str, object]) -> str | None:
     action = str(mailbox.get("action", ""))
-    summary = str(mailbox.get("summary", ""))
-    blockers = mailbox.get("blockers") or []
-    pending_commits = mailbox.get("pending_commits") or []
-    dirty_files = mailbox.get("dirty_files") or []
 
     if action == "review_pending_commits" and agent == "review":
-        commits = "\n".join(f"- {item}" for item in pending_commits) or "- none listed"
-        return (
-            "You are the review-work executor in D:\\AI\\owlclaw-review.\n"
-            "Execute the Review Loop now. Do not reply with an acknowledgement-only message.\n"
-            "Review codex-work and codex-gpt-work code submissions against main and produce actual review work.\n"
-            "Do not review DEEP_AUDIT_REPORT.md itself; audit reports are owned by orchestrator/main.\n"
-            "Focus on code correctness, tests, spec/task consistency, architecture compliance, and merge readiness.\n"
-            "Use the repository guidance in .kiro/WORKTREE_ASSIGNMENTS.md and docs/WORKTREE_GUIDE.md.\n"
-            f"Mailbox summary: {summary}\n"
-            "Pending commits:\n"
-            f"{commits}\n"
-            "Start by inspecting git log/diff for those coding branches. Then perform the review and make the required review-work output changes in this repository.\n"
-            "If the branches are ready, produce review output and apply the needed review-work changes. If blocked, explain the concrete blocker and stop.\n"
-            "Do not stop after analysis if concrete review output can be produced in this run.\n"
-            "Do not end with a question asking what to do next. End with concrete review results only.\n"
-        )
+        return "继续审校。只审 codex-work 和 codex-gpt-work 的代码提交，不审计审计报告。直接执行，不要反问。"
 
     if action == "cleanup_or_commit_local_changes" and agent in {"codex", "codex-gpt"}:
-        dirty = "\n".join(f"- {item}" for item in dirty_files) or "- no dirty files listed"
-        return (
-            f"You are the {agent} executor working in your assigned worktree.\n"
-            "Execute the cleanup/commit task now. Do not answer with acknowledgement only.\n"
-            "Your current job is to safely resolve local uncommitted changes in your own worktree.\n"
-            "Inspect git status and only act on your own branch/worktree files.\n"
-            "Do not touch main worktree files or unrelated audit report edits.\n"
-            "If the local changes are valid current-task work, commit them with a focused message.\n"
-            "If they are invalid/generated leftovers, clean them safely without disturbing user changes.\n"
-            "Do not reset or discard user-owned changes outside your worktree.\n"
-            f"Mailbox summary: {summary}\n"
-            "Dirty files:\n"
-            f"{dirty}\n"
-            "When finished, leave the worktree clean and report exactly what you committed or cleaned.\n"
-            "Do the work in this run; do not stop after restating the plan.\n"
-        )
+        return "继续spec循环。先处理并收口你当前 worktree 的未提交改动，直接执行，不要反问。"
+
+    if action == "wait_for_review" and agent in {"codex", "codex-gpt"}:
+        return "继续spec循环。如果当前确实应等待审校，就只汇报等待审校且不要反问。"
 
     if action == "merge_review_work" and agent == "main":
-        return (
-            "You are the main worktree executor in D:\\AI\\owlclaw.\n"
-            "Execute the merge task now. Do not respond with acknowledgement only.\n"
-            "Merge review-work into main if the main worktree is clean and the review branch is ready.\n"
-            "Do not touch audit-report-only edits owned by the orchestrator.\n"
-            f"Mailbox summary: {summary}\n"
-            "Verify git status, merge review-work, resolve only safe conflicts, and report the result.\n"
-        )
+        return "统筹。直接推进当前 merge/sync/分配动作，不要反问。"
+
+    if action == "clean_local_changes" and agent == "main":
+        return "统筹。先处理 main 当前阻塞，再继续后续动作，不要反问。"
 
     return None
 
