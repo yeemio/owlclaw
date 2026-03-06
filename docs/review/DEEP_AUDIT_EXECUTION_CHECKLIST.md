@@ -89,9 +89,11 @@
 ### 给 codex-work
 
 - 批次：`audit-deep-remediation / Batch B`
-- 任务：`D12 D15 D16 D21 D23 D24`
+- 任务：`D12 D13 D14 D15 D16 D21 D23 D24 D25`
 - 文件边界：
   - 可改：`owlclaw/web/api/middleware.py`
+  - 可改：`owlclaw/governance/visibility.py`
+  - 可改：`owlclaw/integrations/hatchet.py`
   - 可改：`owlclaw/capabilities/bindings/http_executor.py`
   - 可改：`owlclaw/capabilities/bindings/tool.py`
   - 可改：`owlclaw/capabilities/registry.py`
@@ -100,6 +102,7 @@
   - 可改：`owlclaw/triggers/signal/api.py`
   - 可改：`owlclaw/governance/proxy.py`
   - 可改：`owlclaw/capabilities/bindings/schema.py`
+  - 可改：`owlclaw/integrations/queue_adapters/kafka.py`
   - 禁止改：`heartbeat.py` `engine.py` `capabilities.py` `webhook http/app.py` `docs/` `triggers/api/`
 - 审校移交条件：
   - 至少包含对应测试
@@ -109,20 +112,17 @@
 ### 给 codex-gpt-work
 
 - 批次：`audit-deep-remediation / Batch B`
-- 任务：`D2 D4b D6 D7 D11 D13 D14 D17 D18 D19 D20 D22 D25`
+- 任务：`D2 D4b D6 D7 D11 D17 D18 D19 D20 D22`
 - 文件边界：
   - 可改：`docs/`
   - 可改：`owlclaw/db/engine.py`
   - 可改：`owlclaw/web/providers/capabilities.py`
   - 可改：`owlclaw/triggers/webhook/http/app.py`
-  - 可改：`owlclaw/governance/visibility.py`
-  - 可改：`owlclaw/integrations/hatchet.py`
   - 可改：`owlclaw/triggers/api/server.py`
   - 可改：`owlclaw/triggers/api/auth.py`
   - 可改：`owlclaw/triggers/cron.py`
   - 可改：`owlclaw/agent/runtime/heartbeat.py`
-  - 可改：`owlclaw/integrations/queue_adapters/kafka.py`
-  - 禁止改：`runtime.py` `ledger.py` `app.py` `capabilities/bindings/` `capabilities/registry.py`
+  - 禁止改：`runtime.py` `ledger.py` `app.py` `capabilities/bindings/` `capabilities/registry.py` `governance/visibility.py` `integrations/hatchet.py` `integrations/queue_adapters/kafka.py`
 - 额外说明：
   - `D4b` 现已解锁，可与其余项并行
   - `D18` 与 `D20` 最好共用一套错误消息脱敏策略
@@ -131,8 +131,8 @@
 
 - 审校顺序：
   1. 先审 `codex-gpt-work` 已提交的 `D2/D6/D7/D11`，给出 `APPROVE` 或 `FIX_NEEDED`
-  2. 再审 `codex-work` 的 `D12/D15/D16/D21/D23/D24`
-  3. 最后审 `codex-gpt-work` 的 `D4b/D13/D14/D17/D18/D19/D20/D22/D25`
+  2. 再审 `codex-work` 的 `D12/D13/D14/D15/D16/D21/D23/D24/D25`
+  3. 最后审 `codex-gpt-work` 的 `D4b/D17/D18/D19/D20/D22`
 - 审校重点：
   - `P1` 是否真的封住信任边界
   - `Low` 是否引入回归

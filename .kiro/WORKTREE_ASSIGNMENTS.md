@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-06（新审计提交已纳入；`audit-deep-remediation` 扩展到 D1-D25，并重排优先级）
+> **最后更新**: 2026-03-06（按剩余工作量重新均衡 `audit-deep-remediation`；减轻 `codex-gpt-work` 负载）
 
 ---
 
@@ -178,7 +178,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **config-propagation-fix** | ✅ 25/25 | 已完成并合并到 main |
 | **security-hardening** | ✅ 46/46 | 已完成并合并到 main |
 
-**当前任务**：`audit-deep-remediation` 首批 Task 1/2/3/4/11/12/13 已完成并合入 `main`；下一批执行 Task 15/18/19/24（middleware token 常量时间比较 + bindings SSRF/错误脱敏 + registry 异常脱敏）。
+**当前任务**：`audit-deep-remediation` 首批 Task 1/2/3/4/11/12/13 已完成并合入 `main`；下一批执行 Task 15/16/17/18/19/24/26/27/28（中低风险收口 + 集成超时/可维护性项）。
 
 **共享文件修改范围约定**（避免冲突）：
 
@@ -220,7 +220,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
 | **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
 
-**当前任务**：优先让 review-work 审校分支上已提交的 Task 5/7/10/14（D2/D6/D7/D11）；本地先清理 merge conflict，再继续 Task 6/16/17/20/21/22/23/25/28（D4b/D13/D14/D17/D18/D19/D20/D22/D25）。
+**当前任务**：优先让 review-work 审校分支上已提交的 Task 5/7/10/14（D2/D6/D7/D11）；本地先清理 merge conflict，再继续 Task 6/20/21/22/23/25（D4b/D17/D18/D19/D20/D22）。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
@@ -282,7 +282,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 追加 Task 12/13/14**：深度审计 Phase 3 纳入。codex-work **Task 12**（Low-9）：Ledger._background_writer 异常时将当前 batch 写 fallback；**Task 13**（Low-10）：Ledger._write_queue 有界或背压。codex-gpt-work **Task 14**（Low-11）：Webhook receive_webhook 非 UTF-8 body 返回 400。 | ✅ 已收口至主线分配 |
 | 2026-03-06 | 统筹(main) | codex-work | **Phase 15 首批收口确认**：Task 1/2/3/4/11/12/13（D1/D3/D4a/D5/D8/D9/D10）已完成并合入 `main`。下一批分配切换为 Task 15/18/19/24（D12/D15/D16/D21）。 | 🟢 已同步 |
 | 2026-03-06 | 统筹(main) | codex-gpt-work + review-work | **Phase 15 待审与续做**：`codex-gpt-work` 分支已提交 D2/D6/D7/D11，review-work 优先审校；D4b 已因 D4a 合入而解锁，后续继续 D13/D14/D17/D18/D19/D20。 | 🟡 待读 |
-| 2026-03-06 | 统筹(main) | codex-work + codex-gpt-work + review-work | **新审计提交优先纳入**：深度审计新增 D22（API `_runs` 有界化）、D23（客户端可见错误脱敏）、D24（grpc binding schema 校验）、D25（Kafka connect 超时）。分配：codex-work → D23/D24；codex-gpt-work → D22/D25；review-work 继续先审已完成的 D2/D6/D7/D11。 | 🟡 待读 |
+| 2026-03-06 | 统筹(main) | codex-work + codex-gpt-work + review-work | **负载再平衡**：按剩余工作量重分配。将 `D13`（visibility）、`D14`（hatchet）、`D25`（Kafka connect timeout）从 `codex-gpt-work` 转给空闲中的 `codex-work`；`codex-gpt-work` 保留已在分支上的 D2/D6/D7/D11 和同文件簇 D4b/D17/D18/D19/D20/D22。 | 🟢 已同步 |
 
 ### 已归档消息
 
@@ -372,23 +372,23 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **audit-deep-remediation** | Phase 15 | Task 15/18/19/24/26/27 | D12/D15/D16/D21/D23/D24 | P1+Low | 🟡 待开始 |
+| **audit-deep-remediation** | Phase 15 | Task 15/16/17/18/19/24/26/27/28 | D12/D13/D14/D15/D16/D21/D23/D24/D25 | P1+Low | 🟡 待开始 |
 
 **codex-work 执行顺序**：
 1. 先完成 Task 15，补齐 Console API token 常量时间比较
-2. 再完成 Task 18/19/24，并提交给 review-work
-3. 最后完成 Task 26/27（客户端错误脱敏 + grpc schema 校验）
+2. 再完成 Task 16/17/18/19（visibility + hatchet + bindings）
+3. 最后完成 Task 24/26/27/28（registry + 客户端错误脱敏 + grpc schema + Kafka timeout）
 
 ### codex-gpt-work 分配（当前批次）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **audit-deep-remediation** | Phase 15 | Task 5/6/7/10/14/16/17/20/21/22/23/25/28 | D2/D4b/D6/D7/D11/D13/D14/D17/D18/D19/D20/D22/D25 | P1+Low | 🟡 待审 + 待续做 |
+| **audit-deep-remediation** | Phase 15 | Task 5/6/7/10/14/20/21/22/23/25 | D2/D4b/D6/D7/D11/D17/D18/D19/D20/D22 | P1+Low | 🟡 待审 + 待续做 |
 
 **codex-gpt-work 执行顺序**：
 1. 先将分支上已完成的 Task 5/7/10/14 送审
 2. 先清理本地 merge conflict，恢复干净工作区
-3. Task 6 已解锁，随后继续 Task 6/16/17/20/21/22/23/25/28
+3. Task 6 已解锁，随后继续 Task 6/20/21/22/23/25
 
 ### 共享文件修改边界（当前批次：audit-deep-remediation）
 
@@ -401,8 +401,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | `owlclaw/db/engine.py` | 不修改 | D6 |
 | `owlclaw/web/providers/capabilities.py` | 不修改 | D7 |
 | `owlclaw/triggers/webhook/http/app.py` | 不修改 | D11 |
-| `owlclaw/governance/visibility.py` | 不修改 | D13 |
-| `owlclaw/integrations/hatchet.py` | 不修改 | D14 |
+| `owlclaw/governance/visibility.py` | D13 | 不修改 |
+| `owlclaw/integrations/hatchet.py` | D14 | 不修改 |
 | `owlclaw/web/api/middleware.py` | D12（token 常量时间比较） | 不修改 |
 | `owlclaw/capabilities/bindings/schema.py` | D24 | 不修改 |
 | `owlclaw/mcp/server.py` | D23 | 不修改 |
@@ -411,7 +411,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | `owlclaw/governance/proxy.py` | D23 | 不修改 |
 | `docs/` | 不修改 | D2 |
 | `owlclaw/triggers/api/server.py` | 不修改 | D17 / D18 / D22 |
-| `owlclaw/integrations/queue_adapters/kafka.py` | 不修改 | D25 |
+| `owlclaw/integrations/queue_adapters/kafka.py` | D25 | 不修改 |
 
 ### 审校与放行
 
@@ -426,8 +426,8 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Worktree | 任务 | 内容 | 依赖 |
 |----------|------|------|------|
-| **codex-work** | Task 15, 18, 19, 24, 26, 27 | **Low-12** Console API token 常量时间比较；**Low-15** HTTP binding SSRF 边界；**Low-16** BindingTool ledger 错误脱敏；**Low-21** CapabilityRegistry 异常包装脱敏；**Low-23** 客户端可见错误脱敏；**Low-24** grpc binding schema 校验 | 无 |
-| **codex-gpt-work** | Task 5, 6, 7, 10, 14, 16, 17, 20, 21, 22, 23, 25, 28 | P1-2/Low-4b/Low-6/Low-7；**Low-11** Webhook 非 UTF-8 body 返回 400；**Low-13** Visibility evaluator timeout；**Low-14** Hatchet Windows SIGQUIT 作用域；**Low-17~20** API trigger/Cron 收口；**Low-22** `_runs` 有界化；**Low-25** Kafka connect 超时 | Low-4b 已解锁；但需先清理本地冲突 |
+| **codex-work** | Task 15, 16, 17, 18, 19, 24, 26, 27, 28 | **Low-12** Console API token 常量时间比较；**Low-13** Visibility evaluator timeout；**Low-14** Hatchet Windows SIGQUIT 作用域；**Low-15** HTTP binding SSRF 边界；**Low-16** BindingTool ledger 错误脱敏；**Low-21** CapabilityRegistry 异常包装脱敏；**Low-23** 客户端可见错误脱敏；**Low-24** grpc binding schema 校验；**Low-25** Kafka connect 超时 | 无 |
+| **codex-gpt-work** | Task 5, 6, 7, 10, 14, 20, 21, 22, 23, 25 | P1-2/Low-4b/Low-6/Low-7；**Low-11** Webhook 非 UTF-8 body 返回 400；**Low-17~20** API trigger/Cron 收口；**Low-22** `_runs` 有界化 | Low-4b 已解锁；但需先清理本地冲突 |
 
 **共享文件边界**：codex-work 修改 `owlclaw/agent/runtime/runtime.py`、`owlclaw/governance/ledger.py`、`owlclaw/app.py`（仅 health_status）、`owlclaw/web/api/middleware.py`（D12）；codex-gpt-work 修改 `owlclaw/agent/runtime/heartbeat.py`、`owlclaw/db/engine.py`、`owlclaw/web/providers/capabilities.py`、`owlclaw/triggers/webhook/http/app.py`、`owlclaw/governance/visibility.py`、`owlclaw/integrations/hatchet.py`、`docs/`、可选 `owlclaw/web/api/deps.py`。两方不重叠。
 
