@@ -154,7 +154,7 @@ function Wait-WorkflowLaunchHealthy {
         [Parameter(Mandatory = $true)]
         [string]$Agent,
         [Parameter(Mandatory = $true)]
-        [int]$Pid,
+        [int]$ProcessId,
         [int]$TimeoutSeconds = 30
     )
 
@@ -180,7 +180,7 @@ function Wait-WorkflowLaunchHealthy {
             }
         }
 
-        $process = Get-Process -Id $Pid -ErrorAction SilentlyContinue
+        $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
         if ($null -eq $process) {
             return @{
                 ok = $false
@@ -272,7 +272,7 @@ foreach ($role in $config.roles) {
     } -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID, `$workflowAttempt
     `$workflowStartTime = Get-Date
     try {
-        & $startupCommand 2>&1 | Tee-Object -FilePath '$logPath' -Append
+        Invoke-Expression $startupCommand
     }
     finally {
         if (`$workflowLaunchMarker) {
@@ -318,7 +318,7 @@ poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) 
     } -ArgumentList '$mainRepo', '$($role.agent)', $StartupGraceSeconds, `$PID, `$workflowAttempt
     `$workflowStartTime = Get-Date
     try {
-        & $startupCommand 2>&1 | Tee-Object -FilePath '$logPath' -Append
+        Invoke-Expression $startupCommand
     }
     finally {
         if (`$workflowLaunchMarker) {
@@ -364,7 +364,7 @@ foreach ($target in $targets) {
             workdir = $target.Workdir
         }
         Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
-        $health = Wait-WorkflowLaunchHealthy -RepoRoot $mainRepo -Agent $target.Agent -Pid $process.Id -TimeoutSeconds $StartupTimeoutSeconds
+        $health = Wait-WorkflowLaunchHealthy -RepoRoot $mainRepo -Agent $target.Agent -ProcessId $process.Id -TimeoutSeconds $StartupTimeoutSeconds
         if (-not $health.ok) {
             Write-Error ("Launch failed for {0}: {1}" -f $target.Agent, $health.reason)
             if (-not $ContinueOnLaunchFailure) {
