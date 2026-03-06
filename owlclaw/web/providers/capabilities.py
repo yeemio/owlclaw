@@ -85,22 +85,6 @@ class DefaultCapabilitiesProvider:
         return self._build_schema_from_handler(handler)
 
     async def _collect_capability_stats(self, tenant_id: str) -> dict[str, dict[str, Any]]:
-<<<<<<< HEAD
-        success_case = case((func.lower(LedgerRecord.status) == "success", 1), else_=0)
-        try:
-            engine = get_engine()
-            session_factory = create_session_factory(engine)
-            async with session_factory() as session:
-                statement = (
-                    select(
-                        LedgerRecord.capability_name,
-                        func.count(LedgerRecord.id).label("executions"),
-                        func.coalesce(func.sum(success_case), 0).label("successes"),
-                        func.coalesce(func.avg(LedgerRecord.execution_time_ms), 0).label("avg_latency_ms"),
-                    )
-                    .where(LedgerRecord.tenant_id == tenant_id)
-                    .group_by(LedgerRecord.capability_name)
-=======
         """Collect capability execution statistics from ledger.
 
         Returns empty dict if database is not configured (ConfigurationError),
@@ -111,18 +95,20 @@ class DefaultCapabilitiesProvider:
             engine = get_engine()
             session_factory = create_session_factory(engine)
         except ConfigurationError:
-            # Database not configured - return empty stats for graceful degradation
             logger.debug("Database not configured, returning empty capability stats")
             return {}
 
-        async with session_factory() as session:
-            statement = (
-                select(
-                    LedgerRecord.capability_name,
-                    func.count(LedgerRecord.id).label("executions"),
-                    func.coalesce(func.sum(success_case), 0).label("successes"),
-                    func.coalesce(func.avg(LedgerRecord.execution_time_ms), 0).label("avg_latency_ms"),
->>>>>>> main
+        try:
+            async with session_factory() as session:
+                statement = (
+                    select(
+                        LedgerRecord.capability_name,
+                        func.count(LedgerRecord.id).label("executions"),
+                        func.coalesce(func.sum(success_case), 0).label("successes"),
+                        func.coalesce(func.avg(LedgerRecord.execution_time_ms), 0).label("avg_latency_ms"),
+                    )
+                    .where(LedgerRecord.tenant_id == tenant_id)
+                    .group_by(LedgerRecord.capability_name)
                 )
                 rows = (await session.execute(statement)).all()
         except ConfigurationError:

@@ -165,11 +165,7 @@ class VisibilityFilter:
         self,
         *,
         fail_policy: str = "close",
-<<<<<<< HEAD
         evaluator_timeout_seconds: float | None = 5.0,
-=======
-        evaluator_timeout_seconds: float | None = None,
->>>>>>> main
     ) -> None:
         normalized_policy = fail_policy.strip().lower()
         if normalized_policy not in {"open", "close"}:
@@ -288,13 +284,6 @@ class VisibilityFilter:
         agent_id: str,
         context: RunContext,
     ) -> FilterResult:
-<<<<<<< HEAD
-        """Run one evaluator and apply fail-policy on errors. Optional timeout per evaluator."""
-        async def _run() -> FilterResult:
-            raw_result: Any = evaluator.evaluate(capability, agent_id, context)
-            if inspect.isawaitable(raw_result):
-                raw_result = await raw_result
-=======
         """Run one evaluator and apply fail-policy on errors.
 
         If evaluator_timeout_seconds is configured, the evaluator execution
@@ -311,7 +300,6 @@ class VisibilityFilter:
                 raw_result = evaluator.evaluate(capability, agent_id, context)
                 if inspect.isawaitable(raw_result):
                     raw_result = await raw_result
->>>>>>> main
             if isinstance(raw_result, FilterResult):
                 return raw_result
             logger.warning(
@@ -321,25 +309,6 @@ class VisibilityFilter:
                 self._fail_policy,
             )
             return self._handle_evaluator_failure()
-<<<<<<< HEAD
-
-        try:
-            if self._evaluator_timeout_seconds is not None and self._evaluator_timeout_seconds > 0:
-                return await asyncio.wait_for(
-                    _run(),
-                    timeout=self._evaluator_timeout_seconds,
-                )
-            return await _run()
-=======
-        except asyncio.TimeoutError:
-            logger.warning(
-                "Evaluator %s timed out after %ss (fail-%s)",
-                type(evaluator).__name__,
-                self._evaluator_timeout_seconds,
-                self._fail_policy,
-            )
-            return self._handle_evaluator_failure()
->>>>>>> main
         except asyncio.CancelledError:
             raise
         except asyncio.TimeoutError:
