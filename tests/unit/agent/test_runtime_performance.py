@@ -84,6 +84,35 @@ def test_skills_context_cache_isolated_by_tenant(tmp_path) -> None:
     assert rt.knowledge_injector.get_skills_knowledge_report.call_count == 2
 
 
+def test_skills_context_cache_uses_lru_eviction(tmp_path) -> None:
+    rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+    rt.registry = MagicMock()
+    rt.registry.handlers = {"skill-a": MagicMock()}
+    rt.knowledge_injector = MagicMock()
+
+    def _build_report(*_args, **kwargs):
+        focus = kwargs.get("focus")
+        report = MagicMock()
+        report.content = f"skills-{focus}"
+        report.total_tokens = 10
+        report.selected_skill_names = ["skill-a"]
+        report.dropped_skill_names = []
+        report.per_skill_tokens = {"skill-a": 10}
+        return report
+
+    rt.knowledge_injector.get_skills_knowledge_report.side_effect = _build_report
+    for i in range(64):
+        rt._build_skills_context(AgentRunContext(agent_id="bot", trigger="cron", tenant_id=f"tenant-{i}"))
+    # Touch oldest key so LRU order changes.
+    rt._build_skills_context(AgentRunContext(agent_id="bot", trigger="cron", tenant_id="tenant-0"))
+    rt._build_skills_context(AgentRunContext(agent_id="bot", trigger="cron", tenant_id="tenant-64"))
+
+    cached_tenants = {key[0] for key in rt._skills_context_cache.keys()}
+    assert "tenant-0" in cached_tenants
+    assert "tenant-1" not in cached_tenants
+    assert len(cached_tenants) == 64
+
+
 @pytest.mark.asyncio
 async def test_visible_tools_resource_limit(tmp_path) -> None:
     rt = AgentRuntime(
@@ -99,6 +128,35 @@ async def test_visible_tools_resource_limit(tmp_path) -> None:
     rt.visibility_filter = None
     out = await rt._get_visible_tools(AgentRunContext(agent_id="bot", trigger="cron"))
     assert len(out) == 1
+
+
+@pytest.mark.asyncio
+async def test_visible_tools_cache_uses_lru_eviction(tmp_path) -> None:
+    rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
+    rt.registry = MagicMock()
+    rt.registry.list_capabilities.return_value = [{"name": "a", "description": "A"}]
+    rt.visibility_filter = None
+
+    for i in range(64):
+        await rt._get_visible_tools(
+            AgentRunContext(
+                agent_id="bot",
+                trigger="cron",
+                payload={"confirmed_capabilities": [f"cap-{i}"]},
+            )
+        )
+    # Touch oldest key so LRU order changes.
+    await rt._get_visible_tools(
+        AgentRunContext(agent_id="bot", trigger="cron", payload={"confirmed_capabilities": ["cap-0"]})
+    )
+    await rt._get_visible_tools(
+        AgentRunContext(agent_id="bot", trigger="cron", payload={"confirmed_capabilities": ["cap-64"]})
+    )
+
+    cached_confirmed = {key[2] for key in rt._visible_tools_cache.keys()}
+    assert ("cap-0",) in cached_confirmed
+    assert ("cap-1",) not in cached_confirmed
+    assert len(cached_confirmed) == 64
 
 
 @pytest.mark.asyncio

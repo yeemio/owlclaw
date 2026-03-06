@@ -168,6 +168,12 @@ def test_ledger_rejects_blank_fallback_log_path() -> None:
         Ledger(session_factory, batch_size=1, flush_interval=1, fallback_log_path=" ")
 
 
+def test_ledger_rejects_invalid_queue_maxsize() -> None:
+    session_factory = MagicMock()
+    with pytest.raises(ValueError, match="queue_maxsize must be a positive integer"):
+        Ledger(session_factory, batch_size=1, flush_interval=1, queue_maxsize=0)
+
+
 def _make_record() -> LedgerRecord:
     return LedgerRecord(
         tenant_id="default",
@@ -317,6 +323,113 @@ async def test_ledger_flush_batch_retries_and_falls_back(monkeypatch):
     assert session.commit.await_count == 3
     assert sleep_mock.await_count == 2
     ledger._write_to_fallback_log.assert_awaited_once_with(batch)  # type: ignore[attr-defined]
+
+
+def test_get_readonly_session_factory_returns_internal_factory() -> None:
+    session_factory = MagicMock()
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0)
+    assert ledger.get_readonly_session_factory() is session_factory
+
+
+@pytest.mark.asyncio
+async def test_record_execution_drops_oldest_when_queue_full() -> None:
+    session_factory = MagicMock()
+    ledger = Ledger(session_factory, batch_size=10, flush_interval=1.0, queue_maxsize=1)
+    await ledger.record_execution(
+        tenant_id="default",
+        agent_id="agent1",
+        run_id="run-old",
+        capability_name="cap1",
+        task_type="t1",
+        input_params={},
+        output_result=None,
+        decision_reasoning=None,
+        execution_time_ms=100,
+        llm_model="gpt-4o-mini",
+        llm_tokens_input=10,
+        llm_tokens_output=5,
+        estimated_cost=Decimal("0.001"),
+        status="success",
+        error_message=None,
+    )
+    await ledger.record_execution(
+        tenant_id="default",
+        agent_id="agent1",
+        run_id="run-new",
+        capability_name="cap2",
+        task_type="t2",
+        input_params={},
+        output_result=None,
+        decision_reasoning=None,
+        execution_time_ms=100,
+        llm_model="gpt-4o-mini",
+        llm_tokens_input=10,
+        llm_tokens_output=5,
+        estimated_cost=Decimal("0.001"),
+        status="success",
+        error_message=None,
+    )
+    assert ledger._write_queue.qsize() == 1
+    only_record = ledger._write_queue.get_nowait()
+    assert only_record.run_id == "run-new"
+
+
+@pytest.mark.asyncio
+async def test_background_writer_persists_batch_to_fallback_on_unexpected_error() -> None:
+    session_factory = MagicMock()
+    ledger = Ledger(session_factory, batch_size=2, flush_interval=60.0)
+    ledger._flush_batch = AsyncMock(side_effect=RuntimeError("boom"))  # type: ignore[method-assign]
+    ledger._write_to_fallback_log = AsyncMock()  # type: ignore[method-assign]
+    task = asyncio.create_task(ledger._background_writer())
+
+    try:
+        await ledger.record_execution(
+            tenant_id="default",
+            agent_id="agent1",
+            run_id="run1",
+            capability_name="cap1",
+            task_type="t1",
+            input_params={},
+            output_result=None,
+            decision_reasoning=None,
+            execution_time_ms=100,
+            llm_model="gpt-4o-mini",
+            llm_tokens_input=10,
+            llm_tokens_output=5,
+            estimated_cost=Decimal("0.001"),
+            status="success",
+            error_message=None,
+        )
+        await ledger.record_execution(
+            tenant_id="default",
+            agent_id="agent1",
+            run_id="run2",
+            capability_name="cap2",
+            task_type="t2",
+            input_params={},
+            output_result=None,
+            decision_reasoning=None,
+            execution_time_ms=100,
+            llm_model="gpt-4o-mini",
+            llm_tokens_input=10,
+            llm_tokens_output=5,
+            estimated_cost=Decimal("0.001"),
+            status="success",
+            error_message=None,
+        )
+
+        for _ in range(50):
+            if ledger._write_to_fallback_log.await_count >= 1:  # type: ignore[attr-defined]
+                break
+            await asyncio.sleep(0.01)
+    finally:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+
+    assert ledger._write_to_fallback_log.await_count >= 1  # type: ignore[attr-defined]
+    fallback_batch = ledger._write_to_fallback_log.await_args.args[0]  # type: ignore[attr-defined]
+    assert len(fallback_batch) == 2
 
 
 @pytest.mark.asyncio

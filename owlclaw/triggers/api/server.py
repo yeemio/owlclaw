@@ -158,6 +158,11 @@ class APITriggerServer:
     def app(self) -> Starlette:
         return self._app
 
+    @property
+    def registered_endpoints_count(self) -> int:
+        """Expose registered API trigger endpoint count without leaking config map."""
+        return len(self._configs)
+
     def register(self, config: APITriggerConfig, fallback: Callable[[dict[str, Any]], Awaitable[Any]] | None = None) -> None:
         route_key = f"{config.method}:{config.path}"
         if route_key in self._configs:

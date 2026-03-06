@@ -108,6 +108,11 @@ class DBChangeTriggerManager:
         self._states[config.channel] = _TriggerState(config=config, aggregator=aggregator)
         self._handlers[config.channel] = handler
 
+    @property
+    def registered_channels_count(self) -> int:
+        """Expose registered channel count without leaking internal state mapping."""
+        return len(self._states)
+
     async def start(self) -> None:
         async with self._lock:
             if self._started:
