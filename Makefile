@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate workflow-mailbox
+.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate workflow-mailbox workflow-agent
 
 ## Show available commands
 help:
@@ -17,6 +17,7 @@ help:
 	@echo "  workflow-status Inspect multi-worktree workflow state"
 	@echo "  workflow-orchestrate Run continuous workflow orchestrator loop"
 	@echo "  workflow-mailbox Pull mailbox or write ack status"
+	@echo "  workflow-agent Run semi-automatic mailbox consumer"
 	@echo ""
 	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
@@ -75,3 +76,7 @@ workflow-orchestrate:
 ## Pull mailbox or write ack state for an agent
 workflow-mailbox:
 	poetry run python scripts/workflow_mailbox.py --help
+
+## Run the semi-automatic mailbox consumer
+workflow-agent:
+	poetry run python scripts/workflow_agent.py --help
