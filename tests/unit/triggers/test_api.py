@@ -135,6 +135,33 @@ def test_api_trigger_server_async_mode_returns_202_and_result_query() -> None:
         assert result.json()["status"] == "completed"
 
 
+def test_api_trigger_server_runs_cache_bounded_by_maxsize() -> None:
+    """Async run results cache is bounded; oldest entries evicted when over maxsize (Low-22)."""
+    runtime = _Runtime()
+    server = APITriggerServer(
+        auth_provider=APIKeyAuthProvider({"k1"}),
+        agent_runtime=runtime,
+        runs_cache_maxsize=2,
+    )
+    server.register(APITriggerConfig(path="/api/v1/async", method="POST", event_name="async_request", response_mode="async"))
+
+    with TestClient(server.app) as client:
+        run_ids: list[str] = []
+        for _ in range(3):
+            resp = client.post("/api/v1/async", headers={"X-API-Key": "k1"}, json={"foo": "bar"})
+            assert resp.status_code == 202
+            run_ids.append(resp.json()["run_id"])
+        for run_id in run_ids:
+            for _ in range(50):
+                result = client.get(f"/runs/{run_id}/result")
+                if result.json().get("status") in ("completed", "failed"):
+                    break
+                time.sleep(0.02)
+        assert len(server._runs) == 2
+        assert run_ids[0] not in server._runs
+        assert run_ids[1] in server._runs and run_ids[2] in server._runs
+
+
 def test_api_trigger_server_sync_timeout_returns_408(monkeypatch: pytest.MonkeyPatch) -> None:
     runtime = _Runtime()
     server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)

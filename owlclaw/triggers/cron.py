@@ -612,14 +612,17 @@ class BatchOperations:
         return out
 
 
+CRON_METRICS_SAMPLES_MAXLEN = 10_000
+
+
 class CronMetrics:
     """Metrics collector with optional Prometheus backend and in-memory fallback."""
 
     def __init__(self) -> None:
         self.execution_counts: dict[tuple[str, str, str], int] = {}
-        self.duration_samples: list[float] = []
-        self.delay_samples: list[float] = []
-        self.cost_samples: list[float] = []
+        self.duration_samples: deque[float] = deque(maxlen=CRON_METRICS_SAMPLES_MAXLEN)
+        self.delay_samples: deque[float] = deque(maxlen=CRON_METRICS_SAMPLES_MAXLEN)
+        self.cost_samples: deque[float] = deque(maxlen=CRON_METRICS_SAMPLES_MAXLEN)
         self.llm_calls_total = 0
         self.active_tasks = 0
         self.circuit_breaker_open = 0

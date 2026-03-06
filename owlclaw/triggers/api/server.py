@@ -5,12 +5,15 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from time import monotonic
 from typing import Any, Protocol
 from uuid import uuid4
+
+DEFAULT_RUNS_CACHE_MAXSIZE = 1000
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -135,6 +138,7 @@ class APITriggerServer:
         cors_origins: list[str] | None = None,
         tenant_rate_limit_per_minute: int = 120,
         endpoint_rate_limit_per_minute: int = 60,
+        runs_cache_maxsize: int = DEFAULT_RUNS_CACHE_MAXSIZE,
     ) -> None:
         self._host = host
         self._port = port
@@ -150,7 +154,8 @@ class APITriggerServer:
         self._app = Starlette(routes=[])
         self._server: Any | None = None
         self._server_task: asyncio.Task[None] | None = None
-        self._runs: dict[str, dict[str, Any]] = {}
+        self._runs: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self._runs_maxsize = max(1, int(runs_cache_maxsize))
         self._signal_admin_registered: bool = False
         self._tenant_limiter = _TokenBucketLimiter(rate_per_minute=tenant_rate_limit_per_minute)
         self._endpoint_limiter = _TokenBucketLimiter(rate_per_minute=endpoint_rate_limit_per_minute)
@@ -343,6 +348,8 @@ class APITriggerServer:
         started: float,
     ) -> JSONResponse:
         run_id = f"run-{uuid4().hex}"
+        while len(self._runs) >= self._runs_maxsize:
+            self._runs.popitem(last=False)
         self._runs[run_id] = {"status": "pending"}
 
         async def _background() -> None:
@@ -378,6 +385,7 @@ class APITriggerServer:
         run = self._runs.get(run_id)
         if run is None:
             return JSONResponse({"error": "not_found"}, status_code=404)
+        self._runs.move_to_end(run_id)
         return JSONResponse({"run_id": run_id, **run})
 
     async def _record_execution(

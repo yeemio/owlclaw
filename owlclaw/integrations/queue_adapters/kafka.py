@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 from typing import Any
 
 from owlclaw.triggers.queue.models import RawMessage
+
+DEFAULT_CONNECT_TIMEOUT_SECONDS = 30.0
 
 
 def _import_aiokafka() -> tuple[type[Any], type[Any], type[Any]]:
@@ -30,11 +33,13 @@ class KafkaQueueAdapter:
         dlq_topic: str | None = None,
         consumer: Any | None = None,
         producer: Any | None = None,
+        connect_timeout_seconds: float = DEFAULT_CONNECT_TIMEOUT_SECONDS,
     ) -> None:
         self.topic = topic
         self.bootstrap_servers = bootstrap_servers
         self.consumer_group = consumer_group
         self.dlq_topic = dlq_topic or f"{topic}.dlq"
+        self._connect_timeout_seconds = max(0.1, float(connect_timeout_seconds))
 
         self._consumer = consumer
         self._producer = producer
@@ -44,7 +49,7 @@ class KafkaQueueAdapter:
         self._topic_partition_type: type[Any] | None = None
 
     async def connect(self) -> None:
-        """Connect and start Kafka consumer/producer."""
+        """Connect and start Kafka consumer/producer with configurable timeout."""
         if self._consumer is None or self._producer is None:
             consumer_cls, producer_cls, topic_partition_cls = _import_aiokafka()
             self._topic_partition_type = topic_partition_cls
@@ -62,8 +67,14 @@ class KafkaQueueAdapter:
             _, _, topic_partition_cls = _import_aiokafka()
             self._topic_partition_type = topic_partition_cls
 
-        await self._consumer.start()
-        await self._producer.start()
+        await asyncio.wait_for(
+            self._consumer.start(),
+            timeout=self._connect_timeout_seconds,
+        )
+        await asyncio.wait_for(
+            self._producer.start(),
+            timeout=self._connect_timeout_seconds,
+        )
         self._connected = True
         self._closed = False
 

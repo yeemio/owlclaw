@@ -53,11 +53,11 @@
 | 21 | **Low-18** 在 API trigger 写 ledger 失败记录时复用安全错误消息，不持久化原始 `str(exc)` | grep 确认失败路径无原始异常写入 ledger；有测试 | [x] |
 | 22 | **Low-19** 在 API trigger `AuthProvider` 中用 `hmac.compare_digest` 做 key/token 常量时间比较 | grep 确认无直接 token 比较；有测试或手验 | [x] |
 | 23 | **Low-20** 在 cron `get_execution_history` 中避免向调用方返回未脱敏的 ledger 错误信息 | 输出已 redacted 或由上游写入统一脱敏；有测试 | [x] |
-| 25 | **Low-22** 为 API trigger `_runs` 增加 maxsize/LRU/TTL 清理，避免异步结果缓存无限增长 | 压测或单测证明缓存不再无界增长 | [ ] |
-| 28 | **Low-25** 在 `KafkaQueueAdapter.connect()` 中增加可配置连接超时 | broker 不可达时不会无限阻塞；有测试或集成验证 | [ ] |
+| 25 | **Low-22** 为 API trigger `_runs` 增加 maxsize/LRU/TTL 清理，避免异步结果缓存无限增长 | 压测或单测证明缓存不再无界增长 | [x] |
+| 28 | **Low-25** 在 `KafkaQueueAdapter.connect()` 中增加可配置连接超时 | broker 不可达时不会无限阻塞；有测试或集成验证 | [x] |
 | 29 | **Low-26** 为 API rate limiter `_states` 增加 TTL/maxsize/LRU，避免 tenant/endpoint 组合无限累积 | 长时间运行下限流状态不再无界增长；有测试 | [ ] |
 | 30 | **Low-27** 在 `APIKeyAuthProvider` 中移除 key 前 6 位 identity 暴露，改为 hash 或 opaque id | ledger/log/payload 中不再出现 key 前缀；有测试或手验 | [ ] |
-| 31 | **Low-28** 将 CronMetrics 的 duration/delay/cost samples 改为有界容器 | 长时运行内存不再随样本无限增长；有测试 | [ ] |
+| 31 | **Low-28** 将 CronMetrics 的 duration/delay/cost samples 改为有界容器 | 长时运行内存不再随样本无限增长；有测试 | [x] |
 | 32 | **Low-29** 在 cron 执行历史对外暴露路径中绑定 tenant 到认证上下文，或至少文档化其与 P1-2 同类 trust boundary | 不再信任客户端传入 tenant_id；有实现或文档结论 | [ ] |
 
 ---

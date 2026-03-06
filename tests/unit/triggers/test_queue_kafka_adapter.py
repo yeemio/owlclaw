@@ -190,6 +190,25 @@ async def test_kafka_queue_adapter_requires_aiokafka(monkeypatch: pytest.MonkeyP
         await adapter.connect()
 
 
+@pytest.mark.asyncio
+async def test_kafka_queue_adapter_connect_timeout_parameter() -> None:
+    """Kafka adapter accepts connect_timeout_seconds and uses it in connect (Low-25)."""
+    consumer = _FakeConsumer()
+    producer = _FakeProducer()
+    adapter = KafkaQueueAdapter(
+        topic="orders",
+        bootstrap_servers="localhost:9092",
+        consumer_group="g1",
+        consumer=consumer,
+        producer=producer,
+        connect_timeout_seconds=5.0,
+    )
+    adapter._topic_partition_type = _FakeTopicPartition
+    await adapter.connect()
+    assert adapter._connected is True
+    await adapter.close()
+
+
 def test_kafka_queue_adapter_message_id_fallback_to_topic_partition_offset() -> None:
     adapter = KafkaQueueAdapter(
         topic="orders",
