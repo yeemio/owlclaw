@@ -2,7 +2,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-const baseUrl = process.env.CONSOLE_E2E_BASE_URL || "http://127.0.0.1:8000";
 
 /** Assert overview API response matches contract: health_checks[].component, healthy */
 function assertOverviewContract(json: unknown): void {
@@ -18,7 +17,7 @@ function assertOverviewContract(json: unknown): void {
 
 test.describe("Console flow", () => {
   test("Overview -> Governance -> Ledger navigation", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
 
     await page.getByRole("link", { name: "Governance" }).click();
@@ -29,7 +28,7 @@ test.describe("Console flow", () => {
   });
 
   test("Overview -> Agents navigation and empty state", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
 
     await page.getByRole("link", { name: "Agents" }).click();
@@ -44,7 +43,7 @@ test.describe("Console flow", () => {
       if (req.url().includes("/api/v1/")) apiCalls.push(req.url());
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     // Wait for loading to complete (day/week/month buttons or error) so API calls have fired
@@ -64,7 +63,7 @@ test.describe("Console flow", () => {
       if (req.url().includes("/api/v1/")) apiCalls.push(req.url());
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await page.getByRole("button", { name: /day/i }).waitFor({ state: "visible", timeout: 8000 });
@@ -83,7 +82,7 @@ test.describe("Console flow", () => {
       if (req.url().includes("/api/v1/ledger")) apiCalls.push(req.url());
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { name: "Filters" })).toBeVisible({ timeout: 5000 });
@@ -111,7 +110,7 @@ test.describe("Console flow", () => {
       });
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await page.getByLabel("Order By").selectOption("cost_desc");
@@ -123,7 +122,7 @@ test.describe("Console flow", () => {
   });
 
   test("Ledger filter panel and empty state", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { name: "Filters" })).toBeVisible({ timeout: 5000 });
@@ -133,19 +132,19 @@ test.describe("Console flow", () => {
 
   test("First load under 5s", async ({ page }) => {
     const start = Date.now();
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     const elapsed = Date.now() - start;
     expect(elapsed).toBeLessThan(5000);
   });
 
   test("Capabilities, Triggers, and Settings pages load", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Capabilities" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Capabilities" })).toBeVisible();
 
     await page.getByRole("link", { name: "Triggers" }).click();
-    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers" })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers", exact: true })).toBeVisible();
     await page.waitForTimeout(2000);
     // No-DB: loading, error, empty state, or list — not white screen
     const content = page.getByRole("main");
@@ -155,8 +154,79 @@ test.describe("Console flow", () => {
     await expect(page.getByRole("main").getByRole("heading", { name: "Settings" })).toBeVisible();
   });
 
+  test("Agents detail panel renders identity/memory/knowledge/history with mock data (F-16)", async ({ page }) => {
+    await page.route("**/api/v1/agents", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [
+            {
+              id: "agent-1",
+              name: "Agent One",
+              role: "trading",
+              status: "active",
+              identity_summary: "Primary trading agent",
+            },
+          ],
+        }),
+      });
+    });
+    await page.route("**/api/v1/agents/agent-1", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: "agent-1",
+          name: "Agent One",
+          role: "trading",
+          status: "active",
+          identity: { soul: "disciplined", timezone: "Asia/Shanghai" },
+          memory: { short_term_count: 3, long_term_count: 7 },
+          knowledge: { skills: ["entry-monitor"], references_count: 2 },
+          recent_runs: [{ timestamp: "2026-03-05T10:00:00Z", capability: "entry-monitor", status: "success", cost_usd: 0.02 }],
+        }),
+      });
+    });
+
+    await page.goto(`/console/agents`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Agents", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /Agent One/i }).click();
+    await expect(page.getByText("Identity Config")).toBeVisible();
+    await expect(page.getByText("STM Records")).toBeVisible();
+    await expect(page.getByText("LTM Records")).toBeVisible();
+    await expect(page.getByText("Knowledge")).toBeVisible();
+    await expect(page.getByText("Recent Runs")).toBeVisible();
+  });
+
+  test("Triggers list renders with mock trigger records (F-18)", async ({ page }) => {
+    await page.route("**/api/v1/triggers*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          items: [
+            {
+              id: "t-1",
+              type: "cron",
+              name: "daily-budget-check",
+              next_run: "2026-03-06T00:00:00Z",
+              last_status: "success",
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto(`/console/triggers`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Triggers", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Trigger List" })).toBeVisible();
+    await expect(page.getByText("daily-budget-check")).toBeVisible();
+    await expect(page.getByText("Next run: 2026-03-06T00:00:00Z")).toBeVisible();
+  });
+
   test("Tab key traverses sidebar", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => document.activeElement?.tagName);
@@ -165,7 +235,7 @@ test.describe("Console flow", () => {
 
   // --- Deep tests: Overview ---
   test("Overview has System Health and component checks (F-1)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "System Health" })).toBeVisible({ timeout: 5000 });
     // At least one component (runtime, db, hatchet, llm, etc.)
@@ -174,7 +244,7 @@ test.describe("Console flow", () => {
   });
 
   test("Overview has First Run Guide with Quick Start link (F-5)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("heading", { name: "First Run Guide" })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("link", { name: "Quick Start" })).toBeVisible();
     await expect(page.getByRole("link", { name: "SKILL.md Guide" })).toBeVisible();
@@ -185,7 +255,7 @@ test.describe("Console flow", () => {
     page.on("websocket", (ws) => {
       wsUrls.push(ws.url());
     });
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.waitForTimeout(1500);
     const apiWs = wsUrls.filter((u) => u.includes("/api/v1/ws"));
@@ -194,14 +264,14 @@ test.describe("Console flow", () => {
 
   // --- Deep tests: Governance ---
   test("Governance has Circuit Breakers section (F-8)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Circuit Breakers" })).toBeVisible({ timeout: 5000 });
   });
 
   test("Governance has Capability Visibility Matrix (F-9)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("heading", { name: "Capability Visibility Matrix" })).toBeVisible({ timeout: 5000 });
   });
@@ -233,7 +303,7 @@ test.describe("Console flow", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockLedger) });
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Execution Records" })).toBeVisible({ timeout: 5000 });
@@ -283,7 +353,7 @@ test.describe("Console flow", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("heading", { name: "Execution Records" })).toBeVisible({ timeout: 5000 });
     const beforeNext = ledgerUrls.length;
@@ -303,7 +373,7 @@ test.describe("Console flow", () => {
       }
     });
 
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
@@ -325,7 +395,7 @@ test.describe("Console flow", () => {
 
   // --- Deep tests: Settings structure ---
   test("Settings shows runtime, database, version sections", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Settings" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Settings" })).toBeVisible();
     // Settings page has key sections
@@ -338,7 +408,7 @@ test.describe("Console flow", () => {
       (r) => r.url().includes("/api/v1/overview") && r.status() === 200,
       { timeout: 10000 }
     );
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     const resp = await respPromise;
     const json = await resp.json();
     assertOverviewContract(json);
@@ -352,7 +422,7 @@ test.describe("Console flow", () => {
         body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Server error" } }),
       })
     );
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.waitForTimeout(2500);
     const main = page.getByRole("main");
     await expect(main).toBeVisible();
@@ -362,8 +432,10 @@ test.describe("Console flow", () => {
 
   test("Negative: governance 500 returns friendly error", async ({ page }) => {
     const errBody = { status: 500, contentType: "application/json" as const, body: JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Governance unavailable" } }) };
-    await page.context().route("**/api/v1/governance/**", (r) => r.fulfill(errBody));
-    await page.goto(`${baseUrl}/console/governance`);
+    await page.context().route("**/api/v1/governance/budget*", (r) => r.fulfill(errBody));
+    await page.context().route("**/api/v1/governance/circuit-breakers*", (r) => r.fulfill(errBody));
+    await page.context().route("**/api/v1/governance/visibility-matrix*", (r) => r.fulfill(errBody));
+    await page.goto(`/console/governance`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await expect(page.getByText(/Failed to load governance data/i)).toBeVisible({ timeout: 8000 });
   });
@@ -377,7 +449,7 @@ test.describe("Console flow", () => {
         body: JSON.stringify(errBody),
       })
     );
-    await page.goto(`${baseUrl}/console/ledger`);
+    await page.goto(`/console/ledger`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByText(/Failed to load ledger|Invalid filter parameters/i)).toBeVisible({ timeout: 8000 });
   });
@@ -385,7 +457,7 @@ test.describe("Console flow", () => {
   test("No uncaught JavaScript errors on Overview load", async ({ page }) => {
     const errors: Error[] = [];
     page.on("pageerror", (e) => errors.push(e));
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.waitForTimeout(500);
     expect(errors).toHaveLength(0);
@@ -394,7 +466,7 @@ test.describe("Console flow", () => {
   test("No uncaught JavaScript errors across main nav (N-10)", async ({ page }) => {
     const errors: Error[] = [];
     page.on("pageerror", (e) => errors.push(e));
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
@@ -409,7 +481,7 @@ test.describe("Console flow", () => {
   test("No sensitive info leak in console (no raw credentials in logs)", async ({ page }) => {
     const consoleLogs: string[] = [];
     page.on("console", (msg) => consoleLogs.push(msg.text()));
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.waitForTimeout(1000);
     // No log should contain JWT-like (eyJ...) or API key-like (sk-...) patterns
@@ -418,7 +490,7 @@ test.describe("Console flow", () => {
   });
 
   test("Accessibility: Overview has no WCAG A/AA violations (axe)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
@@ -427,7 +499,7 @@ test.describe("Console flow", () => {
   });
 
   test("Accessibility: Governance has no WCAG A/AA violations (axe)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await page.getByRole("button", { name: /day/i }).waitFor({ state: "visible", timeout: 8000 }).catch(() => null);
@@ -438,7 +510,7 @@ test.describe("Console flow", () => {
   });
 
   test("Accessibility: Ledger has no WCAG A/AA violations (axe)", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.getByRole("link", { name: "Ledger" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { name: "Filters" })).toBeVisible({ timeout: 8000 });
@@ -449,7 +521,7 @@ test.describe("Console flow", () => {
   });
 
   test("Governance API response matches contract: budget and circuit_breakers", async ({ page }) => {
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     const budgetPromise = page.waitForResponse(
       (r) => r.url().includes("/api/v1/governance/budget") && r.status() === 200,
       { timeout: 10000 }
@@ -475,7 +547,7 @@ test.describe("Console flow", () => {
       const u = req.url();
       if (u.endsWith("/console/") || u.endsWith("/console") || u.match(/\/console\/?$/)) htmlRequests.push(u);
     });
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
     await page.getByRole("link", { name: "Governance" }).click();
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
@@ -483,6 +555,34 @@ test.describe("Console flow", () => {
     await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
     // Only initial load should fetch HTML; SPA nav does not reload
     expect(htmlRequests.length).toBeLessThanOrEqual(1);
+  });
+
+  test("E-2: 1024px layout keeps sidebar and main content usable", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto(`/console/`);
+    await expect(page.getByRole("complementary")).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    await page.getByRole("link", { name: "Ledger" }).click();
+    await expect(page.getByRole("main").getByRole("heading", { name: "Ledger", exact: true })).toBeVisible();
+  });
+
+  test("F-20: Traces and Workflows pages expose external dashboard links", async ({ page }) => {
+    await page.goto(`/console/traces`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Traces", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Langfuse Dashboard" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Traces in New Tab" })).toBeVisible();
+
+    await page.goto(`/console/workflows`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Workflows", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Hatchet Dashboard" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Workflows" })).toBeVisible();
+  });
+
+  test("E-9: Overview color contrast has no violations (axe color-contrast rule)", async ({ page }) => {
+    await page.goto(`/console/`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
+    const results = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(results.violations).toEqual([]);
   });
 
   test("E-6: Governance with empty data shows chart/sections, no white screen", async ({ page }) => {
@@ -495,7 +595,7 @@ test.describe("Console flow", () => {
           : { items: [] };
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
     });
-    await page.goto(`${baseUrl}/console/governance`);
+    await page.goto(`/console/governance`);
     await expect(page.getByRole("main").getByRole("heading", { name: "Governance" })).toBeVisible();
     await expect(page.getByRole("button", { name: /day/i })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("heading", { name: "Budget Consumption Trend" })).toBeVisible({ timeout: 3000 });
@@ -509,7 +609,7 @@ test.describe("Console flow", () => {
         body: "not valid json",
       })
     );
-    await page.goto(`${baseUrl}/console/`);
+    await page.goto(`/console/`);
     await page.waitForTimeout(3000);
     await expect(page.getByRole("main")).toBeVisible();
     await expect(page.getByRole("main").getByRole("heading", { name: "Overview" })).toBeVisible();
@@ -518,3 +618,4 @@ test.describe("Console flow", () => {
     expect(failed || loading).toBe(true);
   });
 });
+

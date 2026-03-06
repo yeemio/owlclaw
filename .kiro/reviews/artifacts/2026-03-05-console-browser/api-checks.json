@@ -1,0 +1,56 @@
+{
+  "/api/v1/ledger?order_by=invalid": {
+    "url": "/api/v1/ledger?order_by=invalid",
+    "status": 422,
+    "body": null,
+    "error": "Response status code does not indicate success: 422 (Unprocessable Entity)."
+  },
+  "/api/v1/triggers/demo/history": {
+    "url": "/api/v1/triggers/demo/history",
+    "status": 200,
+    "body": "{\"items\":[],\"total\":0,\"offset\":0,\"limit\":50}",
+    "error": null
+  },
+  "/api/v1/overview": {
+    "url": "/api/v1/overview",
+    "status": 200,
+    "body": "{\"total_cost_today\":\"0\",\"total_executions_today\":0,\"success_rate_today\":0.0,\"active_agents\":0,\"health_checks\":[{\"component\":\"runtime\",\"healthy\":true,\"latency_ms\":null,\"message\":\"api_process_alive\"},{\"component\":\"db\",\"healthy\":false,\"latency_ms\":0.013,\"message\":\"ConfigurationError: Database URL not set. Set OWLCLAW_DATABASE_URL or pass database_url.\"},{\"component\":\"hatchet\",\"healthy\":true,\"latency_ms\":2696.001,\"message\":\"connected\"},{\"component\":\"llm\",\"healthy\":false,\"latency_ms\":0.025,\"message\":\"no_llm_provider_key\"},{\"component\":\"langfuse\",\"healthy\":false,\"latency_ms\":0.004,\"message\":\"LANGFUSE_PUBLIC_KEY or LANGFUSE_SECRET_KEY missing\"}]}",
+    "error": null
+  },
+  "/api/v1/settings": {
+    "url": "/api/v1/settings",
+    "status": 200,
+    "body": "{\"runtime\":{\"console_enabled\":true,\"env\":{\"OWLCLAW_CONSOLE_TOKEN\":null,\"OWLCLAW_CONSOLE_CORS_ORIGINS\":null,\"OWLCLAW_DATABASE_URL\":null,\"HATCHET_SERVER_URL\":\"http://localhost:17077\",\"LANGFUSE_HOST\":null}},\"mcp\":{\"enabled\":false,\"connected_clients\":[]},\"database\":{\"migration_version\":null},\"owlhub\":{\"connected\":false,\"installed_skills\":[]},\"system\":{\"version\":\"0.1.0\",\"build_time\":\"2026-03-05T08:17:33.015454+00:00\",\"commit_hash\":\"unknown\",\"platform\":\"Windows-10-10.0.26200-SP0\",\"python_version\":\"3.11.6\"}}",
+    "error": null
+  },
+  "/api/v1/agents": {
+    "url": "/api/v1/agents",
+    "status": 200,
+    "body": "{\"items\":[],\"message\":\"Database not configured\"}",
+    "error": null
+  },
+  "/api/v1/triggers": {
+    "url": "/api/v1/triggers",
+    "status": 200,
+    "body": "{\"items\":[]}",
+    "error": null
+  },
+  "/api/v1/governance/budget": {
+    "url": "/api/v1/governance/budget",
+    "status": 200,
+    "body": "{\"start_date\":\"2026-02-27\",\"end_date\":\"2026-03-05\",\"granularity\":\"day\",\"items\":[]}",
+    "error": null
+  },
+  "/api/v1/agents/demo-agent": {
+    "url": "/api/v1/agents/demo-agent",
+    "status": 404,
+    "body": null,
+    "error": "Response status code does not indicate success: 404 (Not Found)."
+  },
+  "/api/v1/ws": {
+    "url": "/api/v1/ws",
+    "status": 404,
+    "body": null,
+    "error": "Response status code does not indicate success: 404 (Not Found)."
+  }
+}

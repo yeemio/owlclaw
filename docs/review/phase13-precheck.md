@@ -16,6 +16,30 @@
 
 ---
 
+## 0.5 一键执行（建议复制整段）
+
+```powershell
+# 1) 同步基线（在 review-work）
+git merge main
+
+# 2) 拉取待审分支差异（按需）
+git log --oneline main..codex-work
+git diff --stat main..codex-work
+
+# 3) 运行 #11/#12 定向测试
+poetry run pytest tests/unit/integrations/test_langfuse.py tests/unit/capabilities/test_bindings_sql_executor.py
+
+# 4) 快速定位关键实现
+rg -n "to_safe_dict|_safe_error_message|_is_select_query|read_only|multi" owlclaw/integrations/langfuse.py owlclaw/capabilities/bindings/sql_executor.py
+```
+
+通过门槛：
+- pytest 退出码 `0`
+- 差异中能定位 #11/#12 对应实现与测试
+- 无新增阻断回归
+
+---
+
 ## 1. Spec 对齐检查
 
 - [ ] `tasks.md` 勾选状态与 `SPEC_TASKS_SCAN.md` 的 L1/L2 一致
@@ -54,6 +78,18 @@
 - 结论：
 - 风险点：
 - 建议：
+
+---
+
+## 2.3 阻断判定矩阵（快速给 Verdict）
+
+| 触发条件 | 结论 | 说明 |
+|---|---|---|
+| 密钥明文出现在 `repr/log/error` 任一路径 | `REJECT` | 安全阻断，禁止合并 |
+| 只读 SQL 可被注释/多语句绕过 | `REJECT` | 违反只读承诺，禁止合并 |
+| 关键测试失败或新增回归 | `FIX_NEEDED` | 先修复再审 |
+| 代码通过但 spec/checkpoint 未对齐 | `FIX_NEEDED` | 先补文档一致性 |
+| 代码 + 测试 + spec 全通过 | `APPROVE` | 允许进入 merge 步骤 |
 
 ---
 
@@ -112,3 +148,8 @@ review(phase13-low-findings): REJECT — <严重问题结论>
 - 审校 commit：
 - 是否合并到 `review-work`：
 - 是否更新 `SPEC_TASKS_SCAN` Checkpoint：
+
+证据归档（建议）：
+- 审校报告：`.kiro/reviews/YYYY-MM-DD-incremental-review-roundXX.md`
+- 关键 diff：`git diff --name-only main..codex-work`
+- 测试摘要：pytest 末尾通过行（总用例数 + 耗时）

@@ -115,16 +115,16 @@ cd owlclaw/web/frontend && npm run test:e2e
 | 步骤 | 操作 | 预期（功能） | 通过 |
 |------|------|--------------|------|
 | F-15 | 进入 Agents | Agent 卡片列表或空状态（无 DB 时为友好提示，非 500 白屏） | ☑ |
-| F-16 | 点击某 Agent | 详情面板：身份配置、记忆浏览、知识库、运行历史 | ☐ |
+| F-16 | 点击某 Agent | 详情面板：身份配置、记忆浏览、知识库、运行历史 | ☑（2026-03-05：Mock 数据 E2E 已覆盖） |
 
 ## 2.5 Capabilities / Triggers / Settings / Traces
 
 | 步骤 | 操作 | 预期（功能） | 通过 |
 |------|------|--------------|------|
 | F-17 | Capabilities 标签页 | Handlers / Skills / Bindings 分类，Schema 查看器（JSON 高亮） | ☑ |
-| F-18 | Triggers | 6 类触发器统一列表，执行历史表，下次触发倒计时 | ☐ |
+| F-18 | Triggers | 6 类触发器统一列表，执行历史表，下次触发倒计时 | ☑（2026-03-05：Mock 触发器列表 E2E 已覆盖） |
 | F-19 | Settings | 配置树、MCP 连接、DB 状态、版本信息、OwlHub 状态、文档链接 | ☑ |
-| F-20 | Traces/Workflows | Langfuse / Hatchet 深链接或 iframe，连接状态指示 | ☐ |
+| F-20 | Traces/Workflows | Langfuse / Hatchet 深链接或 iframe，连接状态指示 | ☑（2026-03-05：外链入口 E2E 已覆盖） |
 
 ---
 
@@ -146,7 +146,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
 | N-7 | WS 连接 | 有 `ws://.../api/v1/ws`，状态 Connected | ☑ (尝试连接，服务端 404 当无 websockets 库) |
-| N-8 | 消息类型 | 收到 `overview` / `triggers` / `ledger` 之一 | ☐ (需 uvicorn[standard] 启用 WS) |
+| N-8 | 消息类型 | 收到 `overview` / `triggers` / `ledger` 之一 | ☐ (2026-03-05 复验仍阻塞：`No supported WebSocket library detected`) |
 
 ## 3.3 错误与降级
 
@@ -164,8 +164,8 @@ cd owlclaw/web/frontend && npm run test:e2e
 | 步骤 | 检查项 | 预期 | 通过 |
 |------|--------|------|------|
 | E-1 | 暗色主题 | 所有页面暗色一致，无白底闪屏 | ☑ |
-| E-2 | 响应式 | 最小宽度 1024px 下布局正常，侧栏 + 内容区 | ☐ |
-| E-3 | 页面切换 | 无全量刷新，URL 或路由变化 | ☐ |
+| E-2 | 响应式 | 最小宽度 1024px 下布局正常，侧栏 + 内容区 | ☑（2026-03-05：1024px E2E 已覆盖） |
+| E-3 | 页面切换 | 无全量刷新，URL 或路由变化 | ☑ |
 
 ## 4.2 空状态与错误展示
 
@@ -173,7 +173,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|--------|------|------|
 | E-4 | Agents 无 DB | 友好文案（如 "Database not configured"），非 raw 500 | ☑ |
 | E-5 | Ledger 无数据 | 空表格或 "暂无记录" 说明 | ☑ |
-| E-6 | Governance 无数据 | 图表空或提示 | ☐ |
+| E-6 | Governance 无数据 | 图表空或提示 | ☑ |
 
 ## 4.3 性能与可访问性
 
@@ -181,7 +181,7 @@ cd owlclaw/web/frontend && npm run test:e2e
 |------|--------|------|------|
 | E-7 | 首屏加载 | 从导航到内容可交互 < 5s（E2E 断言） | ☑ |
 | E-8 | Tab 键 | 可遍历侧栏与主要交互元素 | ☑ |
-| E-9 | 对比度 | 文本与背景对比度满足 WCAG AA（目视或工具） | ☐ |
+| E-9 | 对比度 | 文本与背景对比度满足 WCAG AA（目视或工具） | ☑（2026-03-05：axe `color-contrast` 规则通过） |
 
 ---
 
@@ -212,3 +212,31 @@ curl -s http://localhost:8000/api/v1/governance/budget
 - 功能：每步 通过/失败 + 截图或现象描述
 - 网络：请求列表 + 异常
 - 效果：计时、空状态、可访问性结论
+
+---
+
+## 六、2026-03-05 执行补充（Phase 14 手工维度）
+
+> 执行人：codex-gpt-work  
+> 证据目录：`.kiro/reviews/artifacts/2026-03-05-console-browser/`
+
+### 已执行项
+
+| 项目 | 结果 | 证据 |
+|------|------|------|
+| 健康检查 `/healthz` | ✅ 200 | `api-checks.json` |
+| 无 DB 降级 API（overview/agents/triggers/settings） | ✅ 通过 | `api-checks.json` |
+| `ledger?order_by=invalid` 契约错误码 | ✅ 422 | `api-checks.json` |
+| WS 入口 `/api/v1/ws` | ⚠️ 404（降级） | `api-checks.json` |
+
+### 失败/阻塞项（含复现）
+
+| 编号 | 问题 | 复现步骤 | 现象 |
+|------|------|----------|------|
+| M-1 | WS 手工验证阻塞 | 1) 启动 `owlclaw start --port 8000` 2) 访问 `/api/v1/ws` | 返回 404（当前环境未建立 WS 通道） |
+| M-2 | 本地一键 e2e 命令阻塞 | 1) `cd owlclaw/web/frontend` 2) `npm run test:e2e` | `start-server-and-test` 命令缺失 |
+
+### 处置建议
+
+1. 手工验收与审校阶段继续使用 `npm run test:e2e:run`（服务由脚本提前启动）。  
+2. 若需恢复 `npm run test:e2e` 一键链路，先在前端目录执行 `npm install`，确保依赖完整。

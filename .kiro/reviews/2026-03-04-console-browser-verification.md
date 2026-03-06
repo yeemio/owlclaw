@@ -16,7 +16,10 @@
 | 关键路径可走通 | ✅ 通过 | Overview → Governance → Ledger → Agents + Capabilities/Settings，Playwright 18/18 通过 |
 | 无敏感信息泄露 | ✅ 通过 | Network/响应无 token 泄露 |
 
-**放行建议**：**通过** — BUG-1、BUG-2 已修复并补回归测试。当前自动化覆盖达到测试总监要求的最低覆盖，核心主路径均已验证。
+**放行建议**：**条件通过（CONDITIONAL_PASS）** — BUG-1、BUG-2 已修复并补回归测试；但手工维度仍有待补项（见 2026-03-05 补充报告）。
+
+补充报告：
+- `.kiro/reviews/2026-03-05-console-browser-manual-codex-work.md`
 
 ---
 
