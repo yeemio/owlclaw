@@ -458,17 +458,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（Phase 15 主线修复已全部并入 `main`；深度审计新增 #45-#55 已完成分配） |
+| 最后更新 | 2026-03-06（review-work 常规审校：lint 修复 + Phase 16 验收清单准备） |
 | 当前批次 | **Phase 16 follow-up**：深度审计新增问题 #45-#55（runtime/llm + registry/memory 两条并行修复线）。 |
-| 批次状态 | 旧批次 D15-D29 已收口；两个编码 worktree 已清空待审状态并重新切到 #45-#55 待开始。 |
-| 已完成项 | 23) D25 Kafka connect timeout；24) D15-D29 全部修复并合入 main；25) 深度审计主审 27 轮完成；26) 加审补充 #55；27) #45-#55 已完成统筹分配。 |
+| 批次状态 | 编码 worktree 待开始（IDLE）；review-work 已准备验收清单。 |
+| 已完成项 | 28) review-work lint 修复（F841/F811）；29) Phase 16 验收清单整理完成。 |
 | 下一待执行 | 1) `codex-work` 实施 #47/#48/#49/#52/#55；2) `codex-gpt-work` 实施 #45/#46/#50/#51/#53/#54；3) review-work 审校并回写验收结果。 |
 | 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 已分配，待实现/验证。 |
-| 阻塞项 | 无内部阻塞；仅剩外部依赖阻塞项（若有）。 |
-| 健康状态 | ✅ 分支已全部与 `main` 对齐；内部协作阻塞为 0；当前仅剩新一批 backlog 待执行。 |
+| 阻塞项 | 无内部阻塞；编码 worktree 待启动。 |
+| 健康状态 | ✅ review-work 已与 `main` 同步；lint 修复已提交。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | main/review-work/codex-work/codex-gpt-work 当前均无待合并提交；本轮新增主线文档校准 3 文件。 |
-| 审校状态 | `audit-deep-remediation` 主线已审校完成；下一轮审校目标切换为 #45-#55 follow-up。 |
+| 分支量化进度 | review-work 领先 main 1 commit（lint 修复）；codex-work/codex-gpt-work 与 main 对齐。 |
+| 审校状态 | 常规审校完成（lint 修复）；Phase 16 验收清单已准备。 |
 
 ---
 
