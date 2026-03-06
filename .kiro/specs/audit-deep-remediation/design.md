@@ -8,7 +8,7 @@
 ## 1. 总体策略
 
 - **P1**：实现级修复 + 文档，带测试或可执行验收。
-- **Low**：共 12 项，按推荐顺序实现，不改变对外 API 契约；优先解耦与可维护性。
+- **Low**：共 19 项，按推荐顺序实现，不改变对外 API 契约；优先先封闭信任边界，再做韧性与可维护性修复。
 
 ---
 
@@ -99,6 +99,13 @@
 | Low-12（Phase 4） | web/api/middleware.py（TokenAuthMiddleware） | codex-work |
 | Low-13（Phase 4） | governance/visibility.py | codex-gpt-work |
 | Low-14（Phase 4） | integrations/hatchet.py | codex-gpt-work |
+| Low-15（Phase 5） | capabilities/bindings/http_executor.py | codex-work |
+| Low-16（Phase 6） | capabilities/bindings/tool.py | codex-work |
+| Low-17（Phase 7） | triggers/api/server.py（body limit） | codex-gpt-work |
+| Low-18（Phase 7） | triggers/api/server.py（ledger error sanitize） | codex-gpt-work |
+| Low-19（Phase 7） | triggers/api/auth.py | codex-gpt-work |
+| Low-20（Phase 8） | triggers/cron.py | codex-gpt-work |
+| Low-21（Phase 9） | capabilities/registry.py | codex-work |
 
 Ledger 与 Heartbeat 需顺序实现：Ledger API 先合并，再在 codex-gpt-work 改 Heartbeat。
 
@@ -138,3 +145,51 @@ Ledger 与 Heartbeat 需顺序实现：Ledger API 先合并，再在 codex-gpt-w
 
 ### 11.2 位置
 - `owlclaw/integrations/hatchet.py`：`start_worker()`。
+
+---
+
+## 12. Low-15（Phase 5）：HTTP binding SSRF 边界
+
+### 12.1 方案
+- 在 `owlclaw/capabilities/bindings/http_executor.py` 中明确 `allowed_hosts` 为空时的安全语义。
+- 倾向实现为 fail-closed：生产配置要求非空 allowlist；若保持兼容，则至少在验证与文档中明确“空 allowlist 允许任意公网 host”，并记录 SSRF 风险。
+
+### 12.2 位置
+- `owlclaw/capabilities/bindings/http_executor.py`：`_validate_outbound_url()` 及相关配置校验路径。
+
+---
+
+## 13. Low-16（Phase 6）：BindingTool ledger 错误信息脱敏
+
+### 13.1 方案
+- 在 `owlclaw/capabilities/bindings/tool.py` 中，为 ledger 记录失败结果时统一使用安全错误消息构造函数。
+- 若未来 API trigger / cron 也需共享同一策略，可抽成 ledger 错误消息 sanitizer，避免不同入口出现不同脱敏规则。
+
+### 13.2 位置
+- `owlclaw/capabilities/bindings/tool.py`：失败路径 `_record_ledger(...)` 调用点。
+
+---
+
+## 14. Low-17 / Low-18 / Low-19 / Low-20（Phase 7-8）：API trigger 与 Cron 收口
+
+### 14.1 方案
+- `Low-17`：在 `owlclaw/triggers/api/server.py` 读取 body 时执行长度上限检查，不再仅信任 `Content-Length`。
+- `Low-18`：API trigger 写 ledger 时复用统一安全错误消息，不持久化原始 `str(exc)`。
+- `Low-19`：`owlclaw/triggers/api/auth.py` 中 token/key 比较改为 `hmac.compare_digest`。
+- `Low-20`：`owlclaw/triggers/cron.py` 输出执行历史时，依赖已脱敏 ledger 写入，必要时二次 redaction。
+
+### 14.2 位置
+- `owlclaw/triggers/api/server.py`
+- `owlclaw/triggers/api/auth.py`
+- `owlclaw/triggers/cron.py`
+
+---
+
+## 15. Low-21（Phase 9）：CapabilityRegistry 异常包装脱敏
+
+### 15.1 方案
+- `CapabilityRegistry.invoke_handler()` 与 `get_state()` 不再直接把原始异常字符串拼进 `RuntimeError`。
+- 改为通用安全文案，必要时仅保留异常类型名，并通过日志记录详细原因。
+
+### 15.2 位置
+- `owlclaw/capabilities/registry.py`：`invoke_handler()`、`get_state()`。
