@@ -362,6 +362,23 @@
 - [x] D28 Low-28 CronMetrics 样本有界化→ spec: audit-deep-remediation
 - [x] D29 Low-29 get_execution_history tenant 绑定认证上下文→ spec: audit-deep-remediation
 
+### Phase 16：深度审计 Follow-up（#45–#55，2026-03-06 分配）
+
+> **来源**: `docs/review/DEEP_AUDIT_REPORT.md` 加审与扩展发现
+> **分配**: codex-gpt-work #45/#46/#50/#51/#53/#54；codex-work #47/#48/#49/#52/#55
+
+- [x] #45 CapabilityRegistry.get_state 异步 state provider timeout → spec: audit-deep-remediation-followup
+- [x] #46 SkillDocExtractor.read_document path 限制在 base_dir 下 → spec: audit-deep-remediation-followup
+- [ ] #47 Runtime final summarization 错误脱敏（codex-work）
+- [ ] #48 Observation 工具参数脱敏（codex-work）
+- [ ] #49/#52/#55 LLM facade/client timeout 与错误元数据脱敏（codex-work）
+- [x] #50 MemoryService file_fallback_path 校验 → spec: audit-deep-remediation-followup
+- [x] #51 compact 单次加载上限（compaction_max_entries）→ spec: audit-deep-remediation-followup
+- [ ] #52 aembedding timeout（codex-work）
+- [x] #53 MemorySystem memory_file 路径校验 → spec: audit-deep-remediation-followup
+- [x] #54 _index_entry 日志脱敏（不 log str(exc)）→ spec: audit-deep-remediation-followup
+- [ ] #55 LLMClient timeout（codex-work）
+
 ---
 
 ## Spec 索引
@@ -458,11 +475,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（Phase 15 主线修复已全部并入 `main`；深度审计新增 #45-#55 已完成分配） |
-| 当前批次 | **Phase 16 follow-up**：深度审计新增问题 #45-#55（runtime/llm + registry/memory 两条并行修复线）。 |
-| 批次状态 | 旧批次 D15-D29 已收口；两个编码 worktree 已清空待审状态并重新切到 #45-#55 待开始。 |
-| 已完成项 | 23) D25 Kafka connect timeout；24) D15-D29 全部修复并合入 main；25) 深度审计主审 27 轮完成；26) 加审补充 #55；27) #45-#55 已完成统筹分配。 |
-| 下一待执行 | 1) `codex-work` 实施 #47/#48/#49/#52/#55；2) `codex-gpt-work` 实施 #45/#46/#50/#51/#53/#54；3) review-work 审校并回写验收结果。 |
+| 最后更新 | 2026-03-06（codex-gpt-work 完成 #45/#46/#50/#51/#53/#54 并提交） |
+| 当前批次 | **Phase 16 follow-up**：codex-gpt-work 本批已收口；codex-work 待实施 #47/#48/#49/#52/#55。 |
+| 批次状态 | codex-gpt-work 已提交 2 commits（#45/#46 + #50/#51/#53/#54）；待 review-work 审校。 |
+| 已完成项 | 28) #45 get_state timeout；29) #46 SkillDocExtractor base_dir；30) #50 file_fallback_path 校验；31) #51 compact cap；32) #53 memory_file 校验；33) #54 _index_entry 日志脱敏。 |
+| 下一待执行 | 1) `codex-work` 实施 #47/#48/#49/#52/#55；2) review-work 审校 codex-gpt-work 两提交。 |
 | 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 已分配，待实现/验证。 |
 | 阻塞项 | 无内部阻塞；仅剩外部依赖阻塞项（若有）。 |
 | 健康状态 | ✅ 分支已全部与 `main` 对齐；内部协作阻塞为 0；当前仅剩新一批 backlog 待执行。 |
