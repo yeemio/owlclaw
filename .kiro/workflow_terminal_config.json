@@ -15,7 +15,7 @@
       ],
       "default_prompt": "统筹",
       "startup": {
-        "type": "cli",
+        "type": "direct_cli",
         "command": "codex",
         "max_attempts": 2,
         "retry_delay_seconds": 3
@@ -77,7 +77,7 @@
       ],
       "default_prompt": "继续审校",
       "startup": {
-        "type": "cli",
+        "type": "direct_cli",
         "command": "claude",
         "max_attempts": 3,
         "retry_delay_seconds": 5
@@ -96,7 +96,7 @@
       ],
       "default_prompt": "继续spec循环",
       "startup": {
-        "type": "cli",
+        "type": "direct_cli",
         "command": "agent",
         "max_attempts": 3,
         "retry_delay_seconds": 5
@@ -115,7 +115,7 @@
       ],
       "default_prompt": "继续spec循环",
       "startup": {
-        "type": "cli",
+        "type": "direct_cli",
         "command": "agent",
         "max_attempts": 3,
         "retry_delay_seconds": 5

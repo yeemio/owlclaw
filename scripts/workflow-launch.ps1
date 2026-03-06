@@ -89,22 +89,35 @@ function Start-WorkflowWindow {
         [Parameter(Mandatory = $true)]
         [string]$Workdir,
         [Parameter(Mandatory = $true)]
-        [string]$CommandText
+        [string]$CommandText,
+        [string]$StartupType = "cli"
     )
+
+    if ($DryRun) {
+        Write-Output ("launch:{0}:{1}:{2}:{3}" -f $WindowTitle, $Workdir, $StartupType, $CommandText)
+        return $null
+    }
+
+    $wt = Get-Command "wt.exe" -ErrorAction SilentlyContinue
+    if ($null -ne $wt -and $StartupType -eq "direct_cli") {
+        return Start-Process -PassThru -FilePath $wt.Source -ArgumentList @(
+            "-w",
+            "new",
+            "--title",
+            $WindowTitle,
+            "-d",
+            $Workdir,
+            $CommandText
+        )
+    }
 
     $script = @"
 Set-Location '$Workdir'
 `$Host.UI.RawUI.WindowTitle = '$WindowTitle'
 $CommandText
 "@
-
-    if ($DryRun) {
-        Write-Output ("launch:{0}:{1}:{2}" -f $WindowTitle, $Workdir, $CommandText)
-        return $null
-    }
-
     $encoded = New-EncodedCommand -ScriptText $script
-    $wt = Get-Command "wt.exe" -ErrorAction SilentlyContinue
+
     if ($null -ne $wt) {
         return Start-Process -PassThru -FilePath $wt.Source -ArgumentList @(
             "-w",
@@ -349,12 +362,13 @@ poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) 
         Title = [string]$role.window_title
         Workdir = [string]$role.repo_path
         Command = $command
+        StartupType = $startupType
     }
 }
 
 $windowManifest = @{}
 foreach ($target in $targets) {
-    $process = Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command
+    $process = Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command -StartupType $target.StartupType
     if (-not $DryRun -and $null -ne $process) {
         $hwnd = Get-WindowHandleByExactTitle -WindowTitle $target.Title
         $windowManifest[$target.Agent] = @{
