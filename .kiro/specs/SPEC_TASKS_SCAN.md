@@ -353,6 +353,14 @@
 - [x] D19 Low-19 API trigger auth 常量时间比较→ spec: audit-deep-remediation
 - [x] D20 Low-20 Cron 历史接口错误信息脱敏/隐藏→ spec: audit-deep-remediation
 - [ ] D21 Low-21 CapabilityRegistry 异常包装脱敏→ spec: audit-deep-remediation
+- [ ] D22 Low-22 API trigger `_runs` 有界化（maxsize/LRU/TTL）→ spec: audit-deep-remediation
+- [ ] D23 Low-23 客户端可见错误响应脱敏（MCP/OwlHub/signal/proxy）→ spec: audit-deep-remediation
+- [ ] D24 Low-24 grpc binding schema 校验补齐 / fail-fast→ spec: audit-deep-remediation
+- [ ] D25 Low-25 Kafka connect 超时→ spec: audit-deep-remediation
+- [ ] D26 Low-26 API rate limiter `_states` 有界化→ spec: audit-deep-remediation
+- [ ] D27 Low-27 API key identity 脱敏（不暴露 key 前缀）→ spec: audit-deep-remediation
+- [ ] D28 Low-28 CronMetrics 样本有界化→ spec: audit-deep-remediation
+- [ ] D29 Low-29 get_execution_history tenant 绑定认证上下文→ spec: audit-deep-remediation
 
 ---
 
@@ -424,7 +432,7 @@
 | **governance-hardening** | `.kiro/specs/governance-hardening/` | ✅ 三层齐全，已完成（33/33） | 治理层加固：Ledger 索引 + UUID PK + fallback 路径 + MODEL_PRICING + QualityStore 索引 + env.py 导入 + session 缓存 + DB 异常包装 + SSL + Cron 去重 |
 | **phase13-low-findings** | `.kiro/specs/phase13-low-findings/` | 🟡 三层齐全，进行中（12/14） | v4 低优先级收口：#11~#14 实现完成，验收清单待勾选 |
 | **console-browser-real-e2e** | `.kiro/specs/console-browser-real-e2e/` | ✅ 三层齐全，已完成（13/13） | Console 真实浏览器验收：自动化 + 手工 + 审校放行（`CONDITIONAL_PASS`） |
-| **audit-deep-remediation** | `.kiro/specs/audit-deep-remediation/` | 🟡 三层齐全，进行中（11/21） | 深度审计修复：D1–D11 已实现（main 已合 D1/D3/D4a/D5/D8/D9/D10；codex-gpt-work 分支已提交 D2/D6/D7/D11 待审）；待 D4b/D12–D21 |
+| **audit-deep-remediation** | `.kiro/specs/audit-deep-remediation/` | 🟡 三层齐全，进行中（17/29） | 深度审计修复：D1–D11+D13/D14/D17–D20 已实现（main 已合 D1/D3/D4a/D5/D8/D9/D10；codex-gpt-work 已提交 D2/D4b/D6/D7/D11/D13/D14/D17–D20 待审）；codex-work 待审 D12/D15/D16/D21；待 D22/D23–D29 |
 
 ---
 
@@ -450,17 +458,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（codex-gpt-work 完成 D17–D20；Phase 15 本 worktree 分配项已全部完成） |
-| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（17/21）；codex-gpt-work 负责项已全部完成。 |
-| 批次状态 | codex-work 待做 D12/D15/D16/D21；codex-gpt-work 已提交 D2/D6/D7/D11 待审，D4b/D13/D14/D17–D20 已实现并提交。 |
+| 最后更新 | 2026-03-06（codex-gpt-work merge main 并解决冲突；Phase 15 本 worktree 分配项 D2/D4b/D6/D7/D11/D13/D14/D17–D20 已全部实现并提交） |
+| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（17/29）；spec 已扩展 D22–D29，codex-gpt-work 本批已全部完成并待审。 |
+| 批次状态 | codex-work 已提交 D12/D15/D16/D21 待审，审校后继续 D13/D14/D23/D24/D25；codex-gpt-work 已提交 D2/D4b/D6/D7/D11/D13/D14/D17–D20 待审，审校后继续 D22/D26/D27/D28/D29。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；…22) **Phase 14 浏览器验收收口**：`console-browser-real-e2e` 已完成 13/13，审校结论 `CONDITIONAL_PASS`。 |
-| 下一待执行 | 1) review-work 审校 codex-gpt-work 的 D2/D6/D7/D11；2) codex-work 执行 D12/D15/D16/D21；3) codex-gpt-work 执行 D4b/D13/D14/D17/D18/D19/D20。 |
+| 下一待执行 | 1) review-work 审校 codex-work 的 D12/D15/D16/D21 与 codex-gpt-work 的 D2/D4b/D6/D7/D11/D13/D14/D17–D20；2) 审校通过后 codex-work 继续 D13/D14/D23/D24/D25；3) codex-gpt-work 继续 D22/D26/D27/D28/D29。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，…Phase 10 audit-fix-critical ✅，audit-fix-high ✅，其余 spec 全部 ✅。 |
 | 阻塞项 | release-supply-chain/owlhub/openclaw-skill-pack/content-launch 外部阻塞。 |
 | 健康状态 | ✅ 内部协作阻塞已清零；当前仅剩外部依赖阻塞项。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | codex-work 主线 7/21，待 4 项；codex-gpt-work 已提交 4 项待审，本轮续做 7 项。 |
-| 审校状态 | review-work 下一轮：`audit-deep-remediation`（先审 codex-gpt-work D2/D6/D7/D11）。 |
+| 分支量化进度 | codex-work 已提交 4 项待审，后续 5 项；codex-gpt-work 已提交 10 项待审（D2/D4b/D6/D7/D11/D13/D14/D17–D20），后续 5 项（D22/D26–D29）。 |
+| 审校状态 | review-work 下一轮：先审两编码分支 audit-deep-remediation 待审提交，再放行下一补丁。 |
 
 ---
 

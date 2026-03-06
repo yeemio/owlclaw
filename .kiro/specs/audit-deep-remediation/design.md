@@ -8,7 +8,7 @@
 ## 1. 总体策略
 
 - **P1**：实现级修复 + 文档，带测试或可执行验收。
-- **Low**：共 19 项，按推荐顺序实现，不改变对外 API 契约；优先先封闭信任边界，再做韧性与可维护性修复。
+- **Low**：共 27 项，按推荐顺序实现，不改变对外 API 契约；优先先封闭信任边界，再做韧性与可维护性修复。
 
 ---
 
@@ -106,6 +106,14 @@
 | Low-19（Phase 7） | triggers/api/auth.py | codex-gpt-work |
 | Low-20（Phase 8） | triggers/cron.py | codex-gpt-work |
 | Low-21（Phase 9） | capabilities/registry.py | codex-work |
+| Low-22（Phase 24） | triggers/api/server.py（_runs eviction/TTL） | codex-gpt-work |
+| Low-23（Phase 25） | mcp/server.py + owlhub/api/routes/skills.py + triggers/signal/api.py + governance/proxy.py | codex-work |
+| Low-24（Second Pass） | capabilities/bindings/schema.py（grpc validation） | codex-work |
+| Low-25（Second Pass） | integrations/queue_adapters/kafka.py | codex-work |
+| Low-26（Round 2） | triggers/api/server.py（rate limiter `_states`） | codex-gpt-work |
+| Low-27（Round 2） | triggers/api/auth.py（opaque identity） | codex-gpt-work |
+| Low-28（Round 3） | triggers/cron.py（bounded samples） | codex-gpt-work |
+| Low-29（Round 3） | triggers/cron.py（tenant bound to auth context） | codex-gpt-work |
 
 Ledger 与 Heartbeat 需顺序实现：Ledger API 先合并，再在 codex-gpt-work 改 Heartbeat。
 
@@ -193,3 +201,73 @@ Ledger 与 Heartbeat 需顺序实现：Ledger API 先合并，再在 codex-gpt-w
 
 ### 15.2 位置
 - `owlclaw/capabilities/registry.py`：`invoke_handler()`、`get_state()`。
+
+---
+
+## 16. Low-22（Phase 24）：API trigger `_runs` 有界化
+
+### 16.1 方案
+- 在 `owlclaw/triggers/api/server.py` 中，为异步运行结果缓存 `_runs` 增加 `maxsize` + 淘汰策略，或引入 TTL 清理。
+- 倾向与现有 D17/D18 同 worktree 一并处理，复用 API trigger 测试与配置入口。
+
+### 16.2 位置
+- `owlclaw/triggers/api/server.py`：`_runs` 初始化、写入、读取与清理路径。
+
+---
+
+## 17. Low-23（Phase 25）：客户端可见错误信息脱敏
+
+### 17.1 方案
+- 对外错误响应统一通过安全错误消息 helper 输出，不直接透传 `str(exc)`。
+- 详细异常仅进入 structlog；HTTP/RPC/MCP 响应只返回类型级或通用文案。
+
+### 17.2 位置
+- `owlclaw/mcp/server.py`
+- `owlhub/api/routes/skills.py`
+- `owlclaw/triggers/signal/api.py`
+- `owlclaw/governance/proxy.py`
+
+---
+
+## 18. Low-24（Second Pass）：grpc binding schema 校验
+
+### 18.1 方案
+- 在 `owlclaw/capabilities/bindings/schema.py` 中为 `grpc` 分支补齐 schema 必填项与验证。
+- 若当前 grpc 仅为占位能力，则在 schema 与文档中显式 fail-fast，避免生成“合法但不可运行”的配置。
+
+### 18.2 位置
+- `owlclaw/capabilities/bindings/schema.py`：`validate_binding_config()` / `parse_binding_config()`。
+
+---
+
+## 19. Low-25（Second Pass）：Kafka connect 超时
+
+### 19.1 方案
+- 在 `owlclaw/integrations/queue_adapters/kafka.py` 的 producer/consumer 启动流程外包一层可配置 timeout。
+- 失败时抛出明确连接超时异常并记录日志，避免启动流程无限悬挂。
+
+### 19.2 位置
+- `owlclaw/integrations/queue_adapters/kafka.py`：`connect()`。
+
+---
+
+## 20. Low-26 / Low-27（第 2 轮）：API limiter 与 identity 脱敏
+
+### 20.1 方案
+- `Low-26`：为 `_TokenBucketLimiter._states` 增加 TTL 或有界淘汰策略。
+- `Low-27`：`APIKeyAuthProvider` 使用 hash 或 opaque identity，不再泄露 key 前缀。
+
+### 20.2 位置
+- `owlclaw/triggers/api/server.py`
+- `owlclaw/triggers/api/auth.py`
+
+---
+
+## 21. Low-28 / Low-29（第 3 轮）：Cron 样本与 tenant trust boundary
+
+### 21.1 方案
+- `Low-28`：将 CronMetrics 采样容器改为有界集合。
+- `Low-29`：当 `get_execution_history()` 面向客户端暴露时，tenant_id 需与认证上下文绑定；至少先文档化为与 P1-2 同类边界。
+
+### 21.2 位置
+- `owlclaw/triggers/cron.py`
