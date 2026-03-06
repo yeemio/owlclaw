@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 from collections.abc import Awaitable, Callable
 from decimal import Decimal
 from typing import Protocol
 
 from owlclaw.triggers.signal.models import Signal, SignalResult, SignalType
+
+logger = logging.getLogger(__name__)
 
 
 class SignalHandler(Protocol):
@@ -70,7 +73,8 @@ class SignalRouter:
             await self._record(signal, result, "success")
             return result
         except Exception as exc:
-            result = SignalResult(status="error", error_code="bad_request", message=str(exc))
+            logger.warning("Signal handler failed: %s", exc)
+            result = SignalResult(status="error", error_code="bad_request", message="Operation failed.")
             await self._record(signal, result, "failed")
             return result
 

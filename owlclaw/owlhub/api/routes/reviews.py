@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+
+logger = logging.getLogger(__name__)
 
 from owlclaw.owlhub.api.auth import Principal, get_current_principal
 from owlclaw.owlhub.api.schemas import AppealRequest, RejectRequest, ReviewRecordResponse
@@ -33,7 +36,8 @@ def approve_review(review_id: str, request: Request, principal: current_principa
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="review not found") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        logger.debug("Approve review failed: %s", exc)
+        raise HTTPException(status_code=409, detail="operation_failed") from exc
     return _to_response(record)
 
 
@@ -53,7 +57,8 @@ def reject_review(
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="review not found") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        logger.debug("Reject review failed: %s", exc)
+        raise HTTPException(status_code=409, detail="operation_failed") from exc
     return _to_response(record)
 
 
@@ -77,9 +82,11 @@ def appeal_review(
     try:
         appeal = system.appeal(review_id=review_id, publisher=review.publisher, reason=payload.reason)
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        logger.debug("Appeal review failed: %s", exc)
+        raise HTTPException(status_code=409, detail="operation_failed") from exc
     except PermissionError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
+        logger.debug("Appeal permission denied: %s", exc)
+        raise HTTPException(status_code=403, detail="operation_failed") from exc
     return {"review_id": appeal.review_id, "publisher": appeal.publisher, "reason": appeal.reason}
 
 

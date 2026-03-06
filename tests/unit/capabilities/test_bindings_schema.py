@@ -86,3 +86,9 @@ def test_binding_validation_rejects_non_parameterized_sql() -> None:
             }
         )
 
+
+def test_binding_validation_rejects_grpc_not_implemented() -> None:
+    """grpc binding is not implemented; validation must fail-fast."""
+    with pytest.raises(ValueError, match="grpc binding is not yet implemented"):
+        validate_binding_config({"type": "grpc", "timeout_ms": 5000})
+

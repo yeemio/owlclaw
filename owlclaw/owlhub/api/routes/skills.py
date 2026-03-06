@@ -213,7 +213,8 @@ def publish_skill(
     try:
         request_payload = PublishRequest.model_validate(payload)
     except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        logger.debug("Publish request validation failed: %s", exc)
+        raise HTTPException(status_code=422, detail="validation_error") from exc
     publisher = _sanitize_text(request_payload.publisher)
     skill_name = _sanitize_text(request_payload.skill_name)
     version = _sanitize_text(request_payload.version)
@@ -355,7 +356,8 @@ def update_skill_state(
     try:
         request_payload = UpdateStateRequest.model_validate(payload)
     except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        logger.debug("Update state validation failed: %s", exc)
+        raise HTTPException(status_code=422, detail="validation_error") from exc
     state = request_payload.state.strip().lower()
     if state not in {member.value for member in VersionState}:
         raise HTTPException(status_code=422, detail="invalid version state")
@@ -430,7 +432,8 @@ def takedown_skill(
     try:
         request_payload = TakedownRequest.model_validate(payload)
     except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
+        logger.debug("Takedown request validation failed: %s", exc)
+        raise HTTPException(status_code=422, detail="validation_error") from exc
 
     index_data = _load_index()
     skills = index_data.get("skills", [])

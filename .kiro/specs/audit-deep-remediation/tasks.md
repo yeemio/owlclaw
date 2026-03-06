@@ -37,8 +37,8 @@
 | 18 | **Low-15** 在 `http_executor.py` 中收紧/明确空 `allowed_hosts` 的安全边界，避免默认允许任意公网 host 而无告警 | 有测试、配置校验或明确文档；SSRF 风险边界可审计 | [x] |
 | 19 | **Low-16** 在 `BindingTool` 写 ledger 失败记录时不再持久化原始 `str(exc)`，改为统一安全错误消息 | grep 确认无原始 `str(exc)` 写入 ledger；有测试 | [x] |
 | 24 | **Low-21** 在 `CapabilityRegistry.invoke_handler()` / `get_state()` 中避免将原始异常字符串直接包装回调用方 | 调用方只见安全文案或类型级描述；有测试 | [x] |
-| 26 | **Low-23** 在 MCP / OwlHub / signal API / governance proxy 的对外错误响应中避免直接返回原始 `str(exc)` | 客户端只见安全文案；详细异常仅进日志；有测试或手验 | [ ] |
-| 27 | **Low-24** 在 `bindings/schema.py` 中为 `grpc` 配置补齐必填校验，或 fail-fast 明确其仅为占位 | `grpc` 配置不再“合法但不可运行”；有测试或文档 | [ ] |
+| 26 | **Low-23** 在 MCP / OwlHub / signal API / governance proxy 的对外错误响应中避免直接返回原始 `str(exc)` | 客户端只见安全文案；详细异常仅进日志；有测试或手验 | [x] |
+| 27 | **Low-24** 在 `bindings/schema.py` 中为 `grpc` 配置补齐必填校验，或 fail-fast 明确其仅为占位 | `grpc` 配置不再“合法但不可运行”；有测试或文档 | [x] |
 ---
 
 ## codex-gpt-work 负责（续）

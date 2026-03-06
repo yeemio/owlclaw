@@ -129,7 +129,8 @@ class GovernanceProxy:
             raise
         except Exception as exc:
             if not self.passthrough_on_error:
-                raise
+                logger.exception("GovernanceProxy gate error")
+                raise RuntimeError("Governance proxy call failed.") from exc
             logger.warning("GovernanceProxy gate error, passthrough enabled: %s", exc)
             return await self._passthrough_call(model=model, messages=messages, **kwargs)
 
@@ -160,7 +161,8 @@ class GovernanceProxy:
                 reason=str(exc),
                 elapsed_ms=int((time.perf_counter() - started) * 1000),
             )
-            raise
+            logger.exception("GovernanceProxy LLM call failed")
+            raise RuntimeError("Governance proxy call failed.") from exc
 
     async def _passthrough_call(
         self,

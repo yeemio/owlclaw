@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Literal
+
+logger = logging.getLogger(__name__)
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from starlette.requests import Request
@@ -59,7 +62,8 @@ def register_signal_admin_route(
         try:
             payload = SignalAPIRequest.model_validate(await request.json())
         except Exception as exc:
-            return JSONResponse({"error": "bad_request", "reason": str(exc)}, status_code=400)
+            logger.debug("Signal API request validation failed: %s", exc)
+            return JSONResponse({"error": "bad_request", "reason": "invalid_request"}, status_code=400)
 
         operator = (payload.operator or "").strip() or (auth_identity or "api")
         if payload.type == "instruct" and not payload.message.strip():

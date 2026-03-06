@@ -167,6 +167,8 @@ def validate_binding_config(data: dict[str, Any]) -> None:
         max_rows = data.get("max_rows", 1000)
         if not isinstance(max_rows, int) or max_rows <= 0:
             errors.append("sql.max_rows must be int > 0")
+    elif binding_type == "grpc":
+        errors.append("grpc binding is not yet implemented; use http, queue, or sql")
 
     if errors:
         raise ValueError("; ".join(errors))

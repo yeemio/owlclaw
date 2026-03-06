@@ -354,8 +354,8 @@
 - [ ] D20 Low-20 Cron 历史接口错误信息脱敏/隐藏→ spec: audit-deep-remediation
 - [x] D21 Low-21 CapabilityRegistry 异常包装脱敏→ spec: audit-deep-remediation
 - [ ] D22 Low-22 API trigger `_runs` 有界化（maxsize/LRU/TTL）→ spec: audit-deep-remediation
-- [ ] D23 Low-23 客户端可见错误响应脱敏（MCP/OwlHub/signal/proxy）→ spec: audit-deep-remediation
-- [ ] D24 Low-24 grpc binding schema 校验补齐 / fail-fast→ spec: audit-deep-remediation
+- [x] D23 Low-23 客户端可见错误响应脱敏（MCP/OwlHub/signal/proxy）→ spec: audit-deep-remediation
+- [x] D24 Low-24 grpc binding schema 校验补齐 / fail-fast→ spec: audit-deep-remediation
 - [ ] D25 Low-25 Kafka connect 超时→ spec: audit-deep-remediation
 - [ ] D26 Low-26 API rate limiter `_states` 有界化→ spec: audit-deep-remediation
 - [ ] D27 Low-27 API key identity 脱敏（不暴露 key 前缀）→ spec: audit-deep-remediation
@@ -432,7 +432,7 @@
 | **governance-hardening** | `.kiro/specs/governance-hardening/` | ✅ 三层齐全，已完成（33/33） | 治理层加固：Ledger 索引 + UUID PK + fallback 路径 + MODEL_PRICING + QualityStore 索引 + env.py 导入 + session 缓存 + DB 异常包装 + SSL + Cron 去重 |
 | **phase13-low-findings** | `.kiro/specs/phase13-low-findings/` | 🟡 三层齐全，进行中（12/14） | v4 低优先级收口：#11~#14 实现完成，验收清单待勾选 |
 | **console-browser-real-e2e** | `.kiro/specs/console-browser-real-e2e/` | ✅ 三层齐全，已完成（13/13） | Console 真实浏览器验收：自动化 + 手工 + 审校放行（`CONDITIONAL_PASS`） |
-| **audit-deep-remediation** | `.kiro/specs/audit-deep-remediation/` | 🟡 三层齐全，进行中（11/29） | 深度审计修复：D1/D3/D4a/D5/D8/D9/D10/D12/D15/D16/D21 已完成（codex-work 本批已实现）；待审 D2/D4b/D6/D7/D11；待 D13/D14/D17~D20/D22~D29 |
+| **audit-deep-remediation** | `.kiro/specs/audit-deep-remediation/` | 🟡 三层齐全，进行中（13/29） | 深度审计修复：D1/D3/D4a/D5/D8/D9/D10/D12/D15/D16/D21/D23/D24 已完成（codex-work）；待审 D12/D15/D16/D21；待 D2/D4b/D6/D7/D11/D13/D14/D17~D20/D22/D25~D29 |
 
 ---
 
@@ -459,8 +459,8 @@
 | 字段 | 值 |
 |------|---|
 | 最后更新 | 2026-03-06（codex-work 合并 main 并解决冲突；D12/D15/D16/D21 已实现待审，清单扩展至 D29） |
-| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（11/29，codex-work 本批 D12/D15/D16/D21 已实现，待审校；main 已扩展 D22-D29）。 |
-| 批次状态 | `audit-deep-remediation`：codex-work 已完成 D1/D3/D4a/D5/D8/D9/D10/D12/D15/D16/D21，待 review-work 审校；codex-gpt-work 已提交 D2/D6/D7/D11 等待审；审校通过后 codex-work 继续 D13/D14/D23/D24/D25，codex-gpt-work 继续 D17~D20/D22/D26~D29。 |
+| 当前批次 | **Phase 15 / audit-deep-remediation**：`audit-deep-remediation`（13/29，codex-work 本批 D23/D24 已完成，D12/D15/D16/D21 待审校）。 |
+| 批次状态 | `audit-deep-remediation`：codex-work 已完成 D1/D3/D4a/D5/D8/D9/D10/D12/D15/D16/D21/D23/D24，待 review-work 审校；codex-gpt-work 已提交多项待审；审校通过后 codex-work 继续 D13/D14/D25，codex-gpt-work 继续 D17~D20/D22/D26~D29。 |
 | 已完成项 | 1) `mionyee-governance-overlay` 已完成（14/14）；2) `mcp-capability-export` 已完成（18/18）；3) `mionyee-hatchet-migration` 已完成 Task 0~5（15/15）；4) `openclaw-skill-pack` 已完成基础包、结构/兼容测试、ClawHub 发布前置（PR `openclaw/clawhub#556`）与中英双语一键教程；5) `content-launch` 已完成咨询模板产物（总模板 + 3 个场景变体）与 Task 1 数据采集脚手架（采集脚本+输入校验+指南+清单+单测）；6) `content-launch` 已完成第一篇文章双语草稿与 3 步可运行示例：`first-article-draft-en.md`、`first-article-draft-zh.md`、`snippets/openclaw_one_command_demo.py`、`test_content_article_demo.py`；7) `content-launch` 已完成案例材料文档与双场景复用验证：`docs/content/mionyee-case-study.md` + `tests/unit/test_mionyee_case_study_material.py`（Task 3.1/3.3）；8) `content-launch` 验收项 5.2/5.4 已完成（示例可运行 + 咨询模板可参数化）；9) `content-launch` 已完成文章方向自动决策工具链（`scripts/content/select_article_direction.py` + `tests/unit/test_select_article_direction.py` + 指南更新），待真实数据触发 `2.1` 最终选择；10) `content-launch` 已完成发布证据自动校验工具链（`scripts/content/record_publication_results.py` + `docs/content/publication-evidence-template.json` + `tests/unit/test_publication_results.py`），待外部发布后触发 `2.6/2.7/5.1` 勾选；11) `content-launch` 已完成一键收口评估脚本（`scripts/content/assess_content_launch_readiness.py` + `tests/unit/test_content_launch_readiness.py`），可自动产出剩余外部待办；12) `D14-1` 运行模式契约已完成（`app.start()`/`app.run()` docstring + Quick Start + complete-workflow heartbeat 服务化示例 + `test_runtime_mode_contract.py`）；13) `D14-2` 闭环门禁已落地（`tests/integration/test_e2e_closed_loop.py`，并回写 `release-supply-chain/requirements.md` 的验收矩阵）；14) `D14-3` Heartbeat 韧性基线已落地（`_check_database_events()` 只读查询 + SLO 集成测试 `tests/integration/test_heartbeat_resilience.py`）；15) **Phase 10 全部完成**：audit-fix-critical ✅(11/11) + audit-fix-high ✅(23/23)，经 Round 13 APPROVE；16) **Phase 12 增量修复**：根据 review Round 16 的 FIX_NEEDED，完成 S12 回补（bearer token 仅 hash 持久化 + hash-only 验证 + create/update 回归测试）；17) **Phase 12 安全加固收口**：`security-hardening` v4 Task1~Task15 全部完成，含 S13（Console API 鉴权 + auth_token 哈希存储 + 全量回归通过）；18) **Console 无 DB 降级回归修复**：`/agents/{id}`、`/triggers`、`/triggers/{id}/history` 不再因 DB 缺失抛 500，新增单测；19) **Console 验证文档归一化**：`BROWSER_VERIFICATION_CHECKLIST.md` 与 `2026-03-04-console-browser-verification.md` 已按最新回归结果更新；20) **Ledger 排序参数接线**：前端新增 `order_by` 过滤控件与查询参数透传；21) **Phase 13 审校**：codex-work L1/L2 APPROVE 已合并，review-work 含 codex-gpt-work L3/L4 + codex-work L1/L2；22) **Phase 14 浏览器验收收口**：`console-browser-real-e2e` 已完成 13/13，审校结论 `CONDITIONAL_PASS`，自动化 38/38 通过，手工与审校证据已归档。 |
 | 下一待执行 | 1) review-work 审校 codex-work 的 D12/D15/D16/D21 与 codex-gpt-work 的 D2/D6/D7/D11 等；2) 审校通过后 codex-work 继续 D13/D14/D23/D24/D25（Task 16/17/26/27）；3) codex-gpt-work 继续 D17~D20/D22/D26~D29。 |
 | 验收快照 | quick-start ✅(13/13)，complete-workflow ✅(18/18)，architecture-roadmap ✅(13/13)，skill-dx ✅(25/25)，skill-ai-assist ✅(28/28)，progressive-migration ✅(31/31)，skills-quality ✅(27/27)，industry-skills ✅(12/12)，protocol-governance ✅(27/27)，contract-testing ✅(19/19)，gateway-runtime-ops ✅(18/18)，cross-lang-golden-path ✅(16/16)，protocol-first-api-mcp ✅(24/24)，test-infra ✅(11/11)，mionyee-governance-overlay ✅(14/14)，mcp-capability-export ✅(18/18)，mionyee-hatchet-migration ✅(15/15)，openclaw-skill-pack 🟡(18/22)，content-launch 🟡(14/16)，release-supply-chain 🟡(11/15)，release 🟡(28/32，外部阻塞)，owlhub 🟡(141/143，仅 40/40.4 未完成)，Phase 8.5：D14-1 ✅(1/1)，D14-2 ✅(1/1)，D14-3 ✅(1/1)，Phase 9：console-backend-api ✅(11/11)，console-frontend ✅(10/10)，console-integration ✅(5/5)，**Phase 10**：audit-fix-critical ✅(11/11)，audit-fix-high ✅(23/23)，其余 spec 全部 ✅。 |
