@@ -182,7 +182,7 @@ def test_invoke_runner_supports_agent_backend(tmp_path: Path) -> None:
 
     class Result:
         returncode = 0
-        stdout = "agent completed"
+        stdout = json.dumps({"type": "result", "result": "agent completed"})
         stderr = ""
 
     calls: list[list[str]] = []
@@ -228,3 +228,36 @@ def test_mailbox_fingerprint_ignores_generated_at() -> None:
     }
     second = {**first, "generated_at": "2026-03-06T00:01:00+00:00"}
     assert executor_module._mailbox_fingerprint(first) == executor_module._mailbox_fingerprint(second)
+
+
+def test_detect_invalid_output_flags_ready_reply() -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    executor_module = _load_module("workflow_executor", "scripts/workflow_executor.py")
+    assert executor_module._detect_invalid_output("What would you like me to work on next?") == "non_executing_reply"
+
+
+def test_process_once_marks_timeout_blocked(tmp_path: Path) -> None:
+    mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    executor_module = _load_module("workflow_executor", "scripts/workflow_executor.py")
+    mailbox_module.ensure_runtime_dirs(tmp_path)
+
+    mailbox_payload = {
+        "mailbox_version": 1,
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "agent": "review",
+        "action": "review_pending_commits",
+        "summary": "Review pending coding submissions in order: codex-work.",
+        "pending_commits": ["eb308ad D12/D15/D16/D21"],
+        "blockers": [],
+        "dirty_files": [],
+    }
+    mailbox_path = tmp_path / ".kiro" / "runtime" / "mailboxes" / "review.json"
+    mailbox_path.write_text(json.dumps(mailbox_payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
+    def fake_invoke(*args, **kwargs):
+        raise executor_module.subprocess.TimeoutExpired(cmd=["claude"], timeout=120)
+
+    executor_module._invoke_runner = fake_invoke
+    result = executor_module.process_once(tmp_path, "review")
+    assert result["status"] == "blocked"
+    assert result["result"]["error_kind"] == "timeout"

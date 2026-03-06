@@ -20,6 +20,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import workflow_mailbox  # noqa: E402
 
 PROMPT_VERSION = 3
+RUNNER_TIMEOUT_SECONDS = 120
 
 
 def _utc_now() -> str:
@@ -183,6 +184,44 @@ def _runner_name(agent: str) -> str:
     return "agent"
 
 
+def _extract_runner_message(runner: str, stdout_text: str, last_message_path: Path) -> str:
+    if runner == "codex":
+        if last_message_path.exists():
+            return last_message_path.read_text(encoding="utf-8", errors="replace").strip()
+        return ""
+    if runner in {"claude", "agent"}:
+        text = stdout_text.strip()
+        if not text:
+            return ""
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            return text
+        if isinstance(payload, dict):
+            result = payload.get("result", "")
+            if isinstance(result, str):
+                return result.strip()
+        return text
+    return stdout_text.strip()
+
+
+def _detect_invalid_output(message: str) -> str:
+    lowered = message.lower()
+    invalid_markers = [
+        "what would you like me to do",
+        "what would you like me to work on",
+        "something else you have in mind",
+        "i'm ready to execute",
+        "ready to execute tasks",
+        "tell me whether you want",
+        "send the target branch",
+    ]
+    for marker in invalid_markers:
+        if marker in lowered:
+            return "non_executing_reply"
+    return ""
+
+
 def _invoke_runner(
     repo_root: Path,
     agent: str,
@@ -208,8 +247,9 @@ def _invoke_runner(
             *_cli_command_prefix("claude"),
             "-p",
             "--output-format",
-            "text",
-            "--dangerously-skip-permissions",
+            "json",
+            "--permission-mode",
+            "bypassPermissions",
             prompt,
         ]
     else:
@@ -217,7 +257,7 @@ def _invoke_runner(
             *_cli_command_prefix("agent"),
             "--print",
             "--output-format",
-            "text",
+            "json",
             "--force",
             "--trust",
             "--workspace",
@@ -233,6 +273,7 @@ def _invoke_runner(
         encoding=_text_encoding(),
         errors="replace",
         check=False,
+        timeout=RUNNER_TIMEOUT_SECONDS,
     )
 
     stdout_text = process.stdout or ""
@@ -240,18 +281,17 @@ def _invoke_runner(
     combined_output = stdout_text + (f"\n{stderr_text}" if stderr_text else "")
     log_path.write_text(combined_output, encoding="utf-8")
 
-    last_message = ""
-    if runner == "codex":
-        if last_message_path.exists():
-            last_message = last_message_path.read_text(encoding="utf-8", errors="replace").strip()
-    else:
-        last_message = stdout_text.strip()
+    last_message = _extract_runner_message(runner, stdout_text, last_message_path)
+    if runner != "codex":
         last_message_path.write_text(last_message, encoding="utf-8")
 
     log_text = combined_output
     error_kind = ""
     if "You've hit your usage limit" in log_text:
         error_kind = "usage_limit"
+    invalid_output = _detect_invalid_output(last_message)
+    if invalid_output:
+        error_kind = invalid_output
 
     payload = {
         "agent": agent,
@@ -307,10 +347,26 @@ def process_once(repo_root: Path, agent: str) -> dict[str, object]:
     workdir = _default_workdirs(repo_root)[agent]
     try:
         result = _invoke_runner(repo_root, agent, workdir=workdir, prompt=prompt)
-        final_status = "done" if result["returncode"] == 0 else "blocked"
+        final_status = "done" if result["returncode"] == 0 and not result.get("error_kind") else "blocked"
+    except subprocess.TimeoutExpired as exc:
+        result = {
+            "agent": agent,
+            "runner": _runner_name(agent),
+            "executed_at": _utc_now(),
+            "workdir": str(workdir),
+            "command": exc.cmd,
+            "returncode": 124,
+            "last_message_path": "",
+            "log_path": str(_log_path(repo_root, agent)),
+            "last_message": "",
+            "error_kind": "timeout",
+        }
+        _result_path(repo_root, agent).write_text(json.dumps(result, ensure_ascii=True, indent=2), encoding="utf-8")
+        final_status = "blocked"
     except FileNotFoundError as exc:
         result = {
             "agent": agent,
+            "runner": _runner_name(agent),
             "executed_at": _utc_now(),
             "workdir": str(workdir),
             "command": [],
@@ -331,7 +387,15 @@ def process_once(repo_root: Path, agent: str) -> dict[str, object]:
             else (
                 "workflow_executor blocked by codex usage limit"
                 if result.get("error_kind") == "usage_limit"
-                else "workflow_executor failed mailbox action"
+                else (
+                    "workflow_executor got non-executing reply"
+                    if result.get("error_kind") == "non_executing_reply"
+                    else (
+                        "workflow_executor timed out"
+                        if result.get("error_kind") == "timeout"
+                        else "workflow_executor failed mailbox action"
+                    )
+                )
             )
         ),
         commit_ref=result.get("last_message_path", ""),
