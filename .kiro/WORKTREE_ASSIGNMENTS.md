@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-05（统筹分配：console-browser-real-e2e 真实浏览器验收批次）
+> **最后更新**: 2026-03-06（Phase 14 浏览器验收收口，切换到 Phase 15 `audit-deep-remediation`）
 
 ---
 
@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：启动 `console-browser-real-e2e` 批次（真实浏览器验收）。主 worktree 负责统筹、合并与放行决策。
+**当前编码任务**：`console-browser-real-e2e` 已收口（`CONDITIONAL_PASS`），当前切换为 `audit-deep-remediation` 批次统筹、合并与放行决策。
 
 ---
 
@@ -149,7 +149,7 @@ Spec 一致性：
 
 **权限**：全仓库读 + 轻量修正（文档、注释、类型注解、测试补全）。不做功能实现。可以在 review-work 分支上直接修复审校发现的轻量问题。
 
-**审校状态（2026-03-05 Review Loop）**：Phase 13 L1/L2 审校中。codex-work（#11/#12）APPROVE；codex-gpt-work（#13/#14）FIX_NEEDED（mypy 类型注解，轻量修复）。
+**审校状态（2026-03-06 Review Loop）**：`console-browser-real-e2e` 已完成收口审校并合并到 `main`；下一审校目标为 `audit-deep-remediation`。
 
 **审校输出格式**（每次 Review 后 commit message 中记录）：
 
@@ -169,7 +169,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex\` |
 | 分支 | `codex-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE`（Phase 12 分配任务已完成并合并） |
+| 工作状态 | `IDLE`（已同步到 Phase 14 收口后的 main，等待启动 Phase 15） |
 
 **当前分配的 spec**：
 
@@ -178,7 +178,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **config-propagation-fix** | ✅ 25/25 | 已完成并合并到 main |
 | **security-hardening** | ✅ 46/46 | 已完成并合并到 main |
 
-**当前任务**：执行 `console-browser-real-e2e` Task 1.1~1.4（自动化主路径 + 网络断言）。
+**当前任务**：执行 `audit-deep-remediation` Task 1/2/3/4/11/12/13（runtime + ledger + app health_status）。
 
 **共享文件修改范围约定**（避免冲突）：
 
@@ -211,7 +211,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE`（Phase 12 分配任务已完成并合并） |
+| 工作状态 | `WORKING`（`scripts/console-local-setup.ps1` 有待收口改动，完成后切回 DONE/IDLE） |
 
 **当前分配的 spec**：
 
@@ -220,7 +220,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
 | **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
 
-**当前任务**：执行 `console-browser-real-e2e` Task 2.1~2.3（真实环境脚本 + 手工维度验收）。
+**当前任务**：执行 `audit-deep-remediation` Task 5/6/7/10/14（docs + heartbeat + engine + capabilities + webhook）。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
@@ -276,7 +276,10 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 时间 | 发送方 | 接收方 | 消息 | 状态 |
 |------|--------|--------|------|------|
 | 2026-03-05 | 统筹(main) | 全部 | **Phase 12 收口确认**：`config-propagation-fix`/`security-hardening`/`runtime-robustness`/`governance-hardening` 已在 main 收口，进入下一轮分配准备。 | 🟢 已同步 |
-| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work + review-work | **新批次启动**：`console-browser-real-e2e` 已立项并分配。codex-work 负责 Playwright 自动化主路径与网络断言；codex-gpt-work 负责真实环境脚本与手工维度；review-work 负责证据审校与放行结论。 | 🟡 待执行 |
+| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work + review-work | **新批次启动**：`console-browser-real-e2e` 已立项并分配。codex-work 负责 Playwright 自动化主路径与网络断言；codex-gpt-work 负责真实环境脚本与手工维度；review-work 负责证据审校与放行结论。 | ✅ 已收口（2026-03-06） |
+| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 深度审计修复已分配**：spec `audit-deep-remediation`（.kiro/specs/audit-deep-remediation/）。codex-work：Task 1~4（P1-1 Skill env + Low-3 LRU + Low-5 错误脱敏 + Low-4a Ledger API）；codex-gpt-work：Task 5~7（P1-2 文档 + Low-4b Heartbeat + Low-6 engine）。**注意**：Task 6（Low-4b）需等 codex-work 的 Task 4（Ledger get_readonly_session_factory）合并到 main 后再做。可与 console-browser-real-e2e 并行或在其后执行。 | 🟡 待读 |
+| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 追加 Task 10/11**：深度审计 Phase 2 扩展纳入。codex-gpt-work **追加 Task 10**（Low-7）：`web/providers/capabilities.py` 无 DB 时捕获 ConfigurationError，GET /capabilities 不 500。codex-work **追加 Task 11**（Low-8）：`app.py` health_status() 不读私有 _states/_configs，改为公开 API 或文档。详见 tasks.md。 | 🟡 待读 |
+| 2026-03-05 | 统筹(main) | codex-work + codex-gpt-work | **Phase 15 追加 Task 12/13/14**：深度审计 Phase 3 纳入。codex-work **Task 12**（Low-9）：Ledger._background_writer 异常时将当前 batch 写 fallback；**Task 13**（Low-10）：Ledger._write_queue 有界或背压。codex-gpt-work **Task 14**（Low-11）：Webhook receive_webhook 非 UTF-8 body 返回 400。详见 tasks.md。 | 🟡 待读 |
 
 ### 已归档消息
 
@@ -339,6 +342,10 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-05 | **统筹校准**：确认 Phase 12 四个 spec 已在 main 收口（config-propagation-fix/security-hardening/runtime-robustness/governance-hardening），分配表切换为 Phase 13 low findings 预分配方案。 | 消除分配表与 SPEC_TASKS_SCAN 漂移，降低误派单风险 |
 | 2026-03-05 | **Phase 13 放行**：已创建 `phase13-low-findings` 三层 spec，并将 codex-work/codex-gpt-work 从“待立项”切换为“待开始”。 | 使低优先级审计项进入可执行闭环 |
 | 2026-03-05 | **浏览器验收批次分配**：新建 `console-browser-real-e2e` 三层 spec；codex-work 负责自动化主路径与网络断言，codex-gpt-work 负责真实环境脚本与手工项，review-work 负责放行审校报告。 | 将 Console 发布门禁从 pytest/mock 提升为真实浏览器证据化验收 |
+| 2026-03-05 | **深度审计修复分配**：新建 `audit-deep-remediation` 三层 spec（来源 `docs/review/DEEP_AUDIT_REPORT.md`，2 P1 + 4 Low）。codex-work → P1-1/Low-3/Low-5/Low-4a（runtime.py + ledger.py）；codex-gpt-work → P1-2/Low-4b/Low-6（docs + heartbeat.py + engine.py）。Low-4b 依赖 Low-4a 合并后执行。 | 统筹将深度审计发现纳入可执行任务并分配至两编码 worktree |
+| 2026-03-05 | **深度审计 Phase 2 纳入**：报告 Phase 2 扩展新增 Low-7（capabilities 无 DB 不 500）、Low-8（health_status 不读私有属性）。纳入同一 spec：codex-gpt-work 追加 Task 10（capabilities.py）；codex-work 追加 Task 11（app.py health_status）。 | 继续深度审计后补齐任务分配 |
+| 2026-03-05 | **深度审计 Phase 3 纳入**：报告 Phase 3 扩展新增 Low-9（Ledger 异常 batch 写 fallback）、Low-10（Ledger 队列有界）、Low-11（Webhook 非 UTF-8 返回 400）。codex-work 追加 Task 12/13（ledger.py）；codex-gpt-work 追加 Task 14（webhook http/app.py）。 | 继续深度审计 + 统筹分配 |
+| 2026-03-06 | **Phase 14 收口**：`console-browser-real-e2e` 已由 review-work 审校并合并到 `main`（13/13，`CONDITIONAL_PASS`）；当前批次切换为 `audit-deep-remediation`。 | 消除分配漂移，避免编码 worktree 继续执行过期浏览器验收任务 |
 
 ---
 
@@ -348,7 +355,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 1-11 全部已分配完毕 ✅**
 
-**Phase 12/13 已完成**（2026-03-05）
+**Phase 12/13/14 已完成**（截至 2026-03-06）
 
 ### 任务优先级说明
 
@@ -362,42 +369,54 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **console-browser-real-e2e** | Phase 1 | Playwright 主路径自动化（Overview/Governance/Ledger/Agents） | FR-B1 | P1 | 🟡 待开始 |
-| **console-browser-real-e2e** | Phase 1 | Network/API 参数断言（筛选/分页/order_by） | FR-B1 | P1 | 🟡 待开始 |
+| **audit-deep-remediation** | Phase 15 | Task 1/2/3/4/11/12/13 | D1/D3/D5/D4a/D8/D9/D10 | P1+Low | 🟡 待开始 |
 
 **codex-work 执行顺序**：
-1. 先完成 Task 1.1~1.3，再提交自动化证据
-2. Task 1.4 汇总执行结果并移交 review-work
+1. 先完成 Task 1/4，建立 Skill env 边界与 Ledger 公开只读会话 API
+2. 再完成 Task 2/3/11/12/13，并提交给 review-work
 
 ### codex-gpt-work 分配（当前批次）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **console-browser-real-e2e** | Phase 1 | 真实环境启动脚本/步骤强化 | FR-B3 | P1 | 🟡 待开始 |
-| **console-browser-real-e2e** | Phase 1 | 手工 Checklist 补齐（WS/效果/可访问性） | FR-B2 | P1 | 🟡 待开始 |
+| **audit-deep-remediation** | Phase 15 | Task 5/6/7/10/14 | D2/D4b/D6/D7/D11 | P1+Low | 🟡 待开始 |
 
 **codex-gpt-work 执行顺序**：
-1. 先完成 Task 2.1，保证环境可复现
-2. 执行 Task 2.2/2.3 并输出失败复现与证据
+1. 先收口 `scripts/console-local-setup.ps1` 的遗留改动，恢复干净工作区
+2. 启动 Task 5/7/10/14；Task 6（Low-4b）继续等待 Task 4 合并到 `main`
 
-### 共享文件修改边界（浏览器验收批次）
+### 共享文件修改边界（当前批次：audit-deep-remediation）
 
 | 共享文件 | codex-work 范围 | codex-gpt-work 范围 |
 |---------|----------------|-------------------|
-| `owlclaw/web/frontend/e2e/` | Playwright 场景与断言 | 不修改 |
-| `owlclaw/web/frontend/playwright.config.ts` | 可改（仅自动化稳定性相关） | 不修改 |
-| `docs/console/BROWSER_VERIFICATION_CHECKLIST.md` | 不修改 | 手工验收记录补充 |
-| `.kiro/reviews/` | 不修改 | 生成当次浏览器验收报告草稿 |
-| `scripts/console-local-setup.ps1` | 不修改 | 环境脚本增强 |
+| `owlclaw/agent/runtime/runtime.py` | D1 / D3 / D5 | 不修改 |
+| `owlclaw/governance/ledger.py` | D4a / D9 / D10 | 不修改 |
+| `owlclaw/app.py` | D8（仅 `health_status()`） | 不修改 |
+| `owlclaw/agent/runtime/heartbeat.py` | 不修改 | D4b |
+| `owlclaw/db/engine.py` | 不修改 | D6 |
+| `owlclaw/web/providers/capabilities.py` | 不修改 | D7 |
+| `owlclaw/triggers/webhook/http/app.py` | 不修改 | D11 |
+| `docs/` | 不修改 | D2 |
 
 ### 审校与放行
 
-- review-work 负责 `console-browser-real-e2e` Task 3.1~3.3：
-- 证据完整性审查
-- 高风险项复核（无 DB 降级、无敏感泄露、无白屏）
-- 输出放行结论 `PASS / CONDITIONAL_PASS / FAIL`
+- review-work 负责 `audit-deep-remediation` 的审校与收口：
+- D1~D14 与 spec/task 对齐
+- 错误处理、测试覆盖、架构边界复核
+- 输出 `APPROVE / FIX_NEEDED / REJECT`
 
-**下一轮待分配**：执行 `console-browser-real-e2e` 批次；完成后回到外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
+**下一轮待分配**：当前无新的内部开发 spec 待分配；`audit-deep-remediation` 已是当前批次，完成后回到外部阻塞项跟踪。
+
+### audit-deep-remediation 专项分配（Phase 15）
+
+| Worktree | 任务 | 内容 | 依赖 |
+|----------|------|------|------|
+| **codex-work** | Task 1, 2, 3, 4, 11, 12, 13 | P1-1/Low-3/Low-5/Low-4a/Low-8；**Low-9** Ledger 异常时 batch 写 fallback；**Low-10** Ledger 队列有界/背压 | 无 |
+| **codex-gpt-work** | Task 5, 6, 7, 10, 14 | P1-2/Low-4b/Low-6/Low-7；**Low-11** Webhook 非 UTF-8 body 返回 400 | Low-4b 需等 Task 4 合并后执行 |
+
+**共享文件边界**：codex-work 修改 `owlclaw/agent/runtime/runtime.py`、`owlclaw/governance/ledger.py`、`owlclaw/app.py`（仅 health_status）；codex-gpt-work 修改 `owlclaw/agent/runtime/heartbeat.py`、`owlclaw/db/engine.py`、`owlclaw/web/providers/capabilities.py`、`owlclaw/triggers/webhook/http/app.py`、`docs/`、可选 `owlclaw/web/api/deps.py`。两方不重叠。
+
+**完成后**：回到外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 
