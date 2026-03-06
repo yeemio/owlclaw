@@ -220,7 +220,9 @@ def _message_for_mailbox(agent: str, mailbox: dict[str, object]) -> str | None:
     action = str(mailbox.get("action", ""))
 
     if agent == "main":
-        return "统筹"
+        if action in {"clean_local_changes", "merge_review_work"}:
+            return "统筹"
+        return None
     if agent == "review":
         return "继续审校"
     if agent in {"codex", "codex-gpt"}:
