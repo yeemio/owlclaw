@@ -31,10 +31,41 @@ class SkillDocExtractor:
         self.available_tools = available_tools if available_tools is not None else parse_available_tools()
         self.matcher = CapabilityMatcher(enable_llm_confirmation=False)
 
-    def read_document(self, path: Path | str) -> str:
-        target = Path(path).expanduser()
+    def read_document(
+        self, path: Path | str, *, base_dir: Path | str | None = None
+    ) -> str:
+        """Read document from path, optionally restricted to an allowed base directory.
+
+        Args:
+            path: Path to the document (file must have .md, .markdown, or .txt suffix).
+            base_dir: If set, path must resolve under this directory (realpath);
+                used to prevent path traversal / arbitrary file read when path is
+                user-controlled.
+
+        Returns:
+            Document content as UTF-8 text.
+
+        Raises:
+            ValueError: Unsupported suffix or path outside base_dir.
+            FileNotFoundError: File does not exist or is not a file.
+        """
+        target = Path(path).expanduser().resolve()
+        if base_dir is not None:
+            allowed = Path(base_dir).expanduser().resolve()
+            if not allowed.is_dir():
+                raise ValueError(
+                    f"base_dir must be an existing directory: {allowed}"
+                )
+            try:
+                target.relative_to(allowed)
+            except ValueError:
+                raise ValueError(
+                    f"path must be under base_dir: {target} not under {allowed}"
+                ) from None
         if target.suffix.lower() not in self.SUPPORTED_SUFFIXES:
-            raise ValueError("only markdown/text documents are supported (.md/.markdown/.txt)")
+            raise ValueError(
+                "only markdown/text documents are supported (.md/.markdown/.txt)"
+            )
         if not target.exists() or not target.is_file():
             raise FileNotFoundError(f"document not found: {target}")
         return target.read_text(encoding="utf-8").lstrip("\ufeff")
@@ -83,8 +114,21 @@ class SkillDocExtractor:
             rendered = rendered.rstrip() + "\n\n> NOTE: trigger expression confidence is low, please review wording.\n"
         return rendered
 
-    def generate_from_document(self, source: Path | str, output_dir: Path | str) -> list[Path]:
-        text = self.read_document(source)
+    def generate_from_document(
+        self,
+        source: Path | str,
+        output_dir: Path | str,
+        *,
+        base_dir: Path | str | None = None,
+    ) -> list[Path]:
+        """Generate SKILL.md files from a business document.
+
+        Args:
+            source: Path to the source document.
+            output_dir: Directory to write generated SKILL.md files.
+            base_dir: If set, source must resolve under this directory (Finding #46).
+        """
+        text = self.read_document(source, base_dir=base_dir)
         drafts = self.extract_from_text(text)
         out_root = Path(output_dir).expanduser()
         out_root.mkdir(parents=True, exist_ok=True)

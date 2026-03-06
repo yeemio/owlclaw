@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from owlclaw.capabilities.skill_doc_extractor import SkillDocExtractor
 
 
@@ -23,6 +25,34 @@ def test_skill_doc_extractor_rejects_unsupported_suffix(tmp_path: Path) -> None:
         assert "only markdown/text documents are supported" in str(exc)
     else:
         raise AssertionError("expected ValueError")
+
+
+def test_skill_doc_extractor_read_document_base_dir_allows_under(
+    tmp_path: Path,
+) -> None:
+    """read_document(path, base_dir=X) accepts path under X (Finding #46)."""
+    base = tmp_path / "allowed"
+    base.mkdir()
+    doc = base / "sop.md"
+    doc.write_text("# SOP\ncontent", encoding="utf-8")
+    extractor = SkillDocExtractor()
+    text = extractor.read_document(doc, base_dir=base)
+    assert "SOP" in text and "content" in text
+
+
+def test_skill_doc_extractor_read_document_base_dir_rejects_outside(
+    tmp_path: Path,
+) -> None:
+    """read_document(path, base_dir=X) rejects path outside X (Finding #46)."""
+    base = tmp_path / "allowed"
+    base.mkdir()
+    outside = tmp_path / "other"
+    outside.mkdir()
+    doc = outside / "sop.md"
+    doc.write_text("# SOP\ncontent", encoding="utf-8")
+    extractor = SkillDocExtractor()
+    with pytest.raises(ValueError, match="must be under base_dir"):
+        extractor.read_document(doc, base_dir=base)
 
 
 def test_skill_doc_extractor_generates_skill_files(tmp_path: Path) -> None:
