@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import locale
 import os
 import signal
 import subprocess
 import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,6 +38,10 @@ class WorkerSpec:
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _windows_text_encoding() -> str:
+    return locale.getpreferredencoding(False) or "utf-8"
 
 
 def _runtime_dir(repo_root: Path) -> Path:
@@ -205,9 +210,10 @@ def _is_pid_running(pid: int) -> bool:
                 capture_output=True,
                 text=True,
                 check=True,
-                encoding="utf-8",
+                encoding=_windows_text_encoding(),
+                errors="replace",
             )
-            output = result.stdout.strip()
+            output = (result.stdout or "").strip()
             return bool(output) and "No tasks are running" not in output
         os.kill(pid, 0)
         return True
@@ -258,7 +264,14 @@ def stop_worker(repo_root: Path, name: str) -> dict[str, object]:
     running = _is_pid_running(pid)
     if running:
         if os.name == "nt":
-            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], check=False, capture_output=True)
+            subprocess.run(
+                ["taskkill", "/PID", str(pid), "/T", "/F"],
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding=_windows_text_encoding(),
+                errors="replace",
+            )
         else:
             os.kill(pid, signal.SIGTERM)
 

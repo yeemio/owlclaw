@@ -122,3 +122,21 @@ def test_reconcile_workers_restarts_missing_worker(tmp_path: Path) -> None:
     statuses = supervisor_module.reconcile_workers(tmp_path, 15, True)
     assert restarted == ["orchestrator"]
     assert statuses[0]["name"] == "orchestrator"
+
+
+def test_is_pid_running_handles_windows_non_utf8_stdout(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    supervisor_module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
+
+    class Result:
+        stdout = None
+
+    original_name = supervisor_module.os.name
+    original_run = supervisor_module.subprocess.run
+    supervisor_module.os.name = "nt"
+    supervisor_module.subprocess.run = lambda *args, **kwargs: Result()
+    try:
+        assert supervisor_module._is_pid_running(1234) is False
+    finally:
+        supervisor_module.os.name = original_name
+        supervisor_module.subprocess.run = original_run
