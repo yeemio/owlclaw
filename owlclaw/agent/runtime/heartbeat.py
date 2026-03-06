@@ -307,7 +307,18 @@ class HeartbeatChecker:
             return configured
         if self._ledger is None:
             return None
-        candidate = getattr(self._ledger, "_session_factory", None)  # noqa: SLF001
+        get_readonly_session_factory = getattr(self._ledger, "get_readonly_session_factory", None)
+        if not callable(get_readonly_session_factory):
+            return None
+        try:
+            candidate = get_readonly_session_factory()
+        except Exception:
+            logger.warning(
+                "HeartbeatChecker ledger readonly session factory resolution failed agent_id=%s",
+                self.agent_id,
+                exc_info=True,
+            )
+            return None
         return candidate if callable(candidate) else None
 
     async def _check_database_events(self, *, tenant_id: str) -> bool:

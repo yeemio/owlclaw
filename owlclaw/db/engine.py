@@ -5,6 +5,7 @@ from ssl import create_default_context
 from typing import Any
 from urllib.parse import urlparse
 
+from sqlalchemy.exc import InterfaceError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from owlclaw.db.exceptions import (
@@ -128,7 +129,7 @@ def create_engine(
         return create_async_engine(url, **kwargs)
     except ConfigurationError:
         raise
-    except Exception as exc:
+    except (OperationalError, InterfaceError) as exc:
         raise _map_connection_exception(exc, url) from exc
 
 

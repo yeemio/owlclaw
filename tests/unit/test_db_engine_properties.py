@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+from sqlalchemy.exc import InterfaceError, OperationalError
 
 from owlclaw.db import (
     AuthenticationError,
@@ -167,7 +168,7 @@ def test_create_engine_wraps_connection_errors() -> None:
     original = db_engine.create_async_engine
 
     def fake_create_async_engine(url: str, **kwargs: Any) -> object:  # noqa: ARG001
-        raise RuntimeError("connection refused")
+        raise OperationalError("SELECT 1", {}, ConnectionRefusedError("connection refused"))
 
     db_engine.create_async_engine = fake_create_async_engine  # type: ignore[assignment]
     try:
@@ -181,11 +182,29 @@ def test_create_engine_wraps_authentication_errors() -> None:
     original = db_engine.create_async_engine
 
     def fake_create_async_engine(url: str, **kwargs: Any) -> object:  # noqa: ARG001
-        raise RuntimeError("password authentication failed for user")
+        raise InterfaceError(
+            "SELECT 1",
+            {},
+            RuntimeError("password authentication failed for user"),
+        )
 
     db_engine.create_async_engine = fake_create_async_engine  # type: ignore[assignment]
     try:
         with pytest.raises(AuthenticationError):
+            db_engine.create_engine("postgresql://user:pass@localhost/propdb")
+    finally:
+        db_engine.create_async_engine = original  # type: ignore[assignment]
+
+
+def test_create_engine_preserves_non_connection_exceptions() -> None:
+    original = db_engine.create_async_engine
+
+    def fake_create_async_engine(url: str, **kwargs: Any) -> object:  # noqa: ARG001
+        raise RuntimeError("unexpected setup failure")
+
+    db_engine.create_async_engine = fake_create_async_engine  # type: ignore[assignment]
+    try:
+        with pytest.raises(RuntimeError, match="unexpected setup failure"):
             db_engine.create_engine("postgresql://user:pass@localhost/propdb")
     finally:
         db_engine.create_async_engine = original  # type: ignore[assignment]
