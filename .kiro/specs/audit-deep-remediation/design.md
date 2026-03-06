@@ -8,7 +8,7 @@
 ## 1. 总体策略
 
 - **P1**：实现级修复 + 文档，带测试或可执行验收。
-- **Low**：按推荐顺序实现，不改变对外 API 契约；优先解耦与可维护性。
+- **Low**：共 10 项，按推荐顺序实现，不改变对外 API 契约；优先解耦与可维护性。
 
 ---
 
@@ -96,5 +96,17 @@
 | Low-9（Phase 3） | governance/ledger.py（_background_writer） | codex-work |
 | Low-10（Phase 3） | governance/ledger.py（_write_queue） | codex-work |
 | Low-11（Phase 3） | triggers/webhook/http/app.py | codex-gpt-work |
+| Low-12（Phase 4） | web/api/middleware.py（TokenAuthMiddleware） | codex-work |
 
 Ledger 与 Heartbeat 需顺序实现：Ledger API 先合并，再在 codex-gpt-work 改 Heartbeat。
+
+---
+
+## 9. Low-12（Phase 4）：Console API token 常量时间比较
+
+### 9.1 方案
+- 在 `owlclaw/web/api/middleware.py` 中，将 token 校验由 `provided_token != expected_token` / `api_token_header == expected_token` 改为 `hmac.compare_digest(provided_token, expected_token)`（或等价常量时间比较）。
+- 确保 `provided_token` 与 `expected_token` 均为 bytes 或 str 且类型一致；若从 header 读取为 str，expected 也为 str 即可。
+
+### 9.2 位置
+- `owlclaw/web/api/middleware.py`：TokenAuthMiddleware 内两处比较（约 79、95 行附近）。

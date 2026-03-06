@@ -33,6 +33,7 @@
 | 11 | **Low-8** 在 `app.py` 的 `health_status()` 中避免直接读 `_states`/`_configs`：改为 manager/server 的公开 API 或只读属性，或文档明确该耦合 | 无私有属性访问或文档注明；health 相关测试通过 | [ ] |
 | 12 | **Low-9** 在 Ledger._background_writer 的 except Exception 分支中，将当前 batch 写入 fallback 再继续循环，避免丢失已出队记录 | 异常路径有单测或集成验证；batch 不丢 | [ ] |
 | 13 | **Low-10** Ledger._write_queue 设 maxsize 或实现背压（put 超时/丢弃策略），并文档化上限 | 队列有界或文档明确；压力测试可选 | [ ] |
+| 15 | **Low-12** 在 Console API TokenAuthMiddleware 中用 hmac.compare_digest 做 token 常量时间比较 | grep 确认无直接 !=/== 比较 token；有单测或手验 | [ ] |
 
 ---
 
@@ -55,6 +56,6 @@
 
 ## 执行顺序建议
 
-1. codex-work：Task 1（P1-1）→ Task 2（Low-3）→ Task 3（Low-5）→ Task 4（Low-4a）→ Task 11（Low-8）→ Task 12（Low-9）→ Task 13（Low-10）；提交后合并到 main。
+1. codex-work：Task 1（P1-1）→ Task 2（Low-3）→ Task 3（Low-5）→ Task 4（Low-4a）→ Task 11（Low-8）→ Task 12（Low-9）→ Task 13（Low-10）→ Task 15（Low-12）；提交后合并到 main。
 2. codex-gpt-work：Task 5（P1-2 文档）可随时做；Task 6（Low-4b）需等 Task 4 合并后执行；Task 7、10、14（Low-6/7/11）可并行。
 3. 审校：两个分支分别 Review，通过后合并 review-work → main。
