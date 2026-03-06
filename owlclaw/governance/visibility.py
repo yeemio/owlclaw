@@ -165,7 +165,7 @@ class VisibilityFilter:
         self,
         *,
         fail_policy: str = "close",
-        evaluator_timeout_seconds: float | None = None,
+        evaluator_timeout_seconds: float | None = 5.0,
     ) -> None:
         normalized_policy = fail_policy.strip().lower()
         if normalized_policy not in {"open", "close"}:
@@ -176,6 +176,12 @@ class VisibilityFilter:
         self._risk_gate = RiskGate()
         self._inject_quality_score = False
         self._quality_cache: dict[str, float] = {}
+        # Per-evaluator timeout to avoid a single slow evaluator blocking capability filtering.
+        # None or <=0 disables timeout.
+        self._evaluator_timeout_seconds: float | None = (
+            float(evaluator_timeout_seconds) if evaluator_timeout_seconds is not None and evaluator_timeout_seconds > 0
+            else None
+        )
 
     def register_evaluator(self, evaluator: ConstraintEvaluator) -> None:
         """Register a constraint evaluator."""
@@ -303,16 +309,16 @@ class VisibilityFilter:
                 self._fail_policy,
             )
             return self._handle_evaluator_failure()
+        except asyncio.CancelledError:
+            raise
         except asyncio.TimeoutError:
             logger.warning(
-                "Evaluator %s timed out after %ss (fail-%s)",
+                "Evaluator %s timed out after %.1fs (fail-%s)",
                 type(evaluator).__name__,
-                self._evaluator_timeout_seconds,
+                self._evaluator_timeout_seconds or 0,
                 self._fail_policy,
             )
             return self._handle_evaluator_failure()
-        except asyncio.CancelledError:
-            raise
         except Exception as e:
             logger.warning(
                 "Evaluator %s raised (fail-%s): %s",

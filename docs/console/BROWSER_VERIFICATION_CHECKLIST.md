@@ -234,9 +234,10 @@ curl -s http://localhost:8000/api/v1/governance/budget
 | 编号 | 问题 | 复现步骤 | 现象 |
 |------|------|----------|------|
 | M-1 | WS 手工验证阻塞 | 1) 启动 `owlclaw start --port 8000` 2) 访问 `/api/v1/ws` | 返回 404（当前环境未建立 WS 通道） |
-| M-2 | 本地一键 e2e 命令阻塞 | 1) `cd owlclaw/web/frontend` 2) `npm run test:e2e` | `start-server-and-test` 命令缺失 |
+| M-2 | 本地一键链路曾阻塞（已解除） | 1) 执行 `pwsh -File scripts/console-local-setup.ps1 -SkipDbInit -SkipMigrate -RunE2E` | 脚本会自动 `npm ci` 自愈依赖，已不再因 `start-server-and-test` 缺失失败 |
+| A-1 | 自动化用例剩余 1 条失败 | 同上运行 `-RunE2E` | Playwright 目前 `37 passed, 1 failed`（`Negative: overview 500 returns friendly error, no white screen`） |
 
 ### 处置建议
 
-1. 手工验收与审校阶段继续使用 `npm run test:e2e:run`（服务由脚本提前启动）。  
-2. 若需恢复 `npm run test:e2e` 一键链路，先在前端目录执行 `npm install`，确保依赖完整。
+1. 手工验收与审校阶段继续使用 `scripts/console-local-setup.ps1 -RunE2E`（脚本含依赖自愈与健康检查）。  
+2. A-1 属于自动化断言稳定性问题，移交 `codex-work`/`review-work` 在 Playwright 用例层处理。

@@ -36,3 +36,9 @@ poetry run python -m pip install "uvicorn[standard]"
 ```
 
 否则会出现 `No supported WebSocket library detected`，只能验证连接尝试（`N-7`），无法完成消息接收验证（`N-8`）。
+
+## 5. Console 多租户与 tenant_id
+
+- 当前行为：Console API 通过 `x-owlclaw-tenant` 请求头读取 tenant_id（缺省回落为 `default`），服务端不对该 header 做租户身份校验。
+- 适用场景：单租户或自托管环境中，将 tenant_id 作为命名空间标签使用，而非安全边界。
+- 多租户要求：生产多租户部署必须从认证上下文推导 tenant_id（例如 session/JWT/API key scope），不要信任客户端直接传入的 `x-owlclaw-tenant`。

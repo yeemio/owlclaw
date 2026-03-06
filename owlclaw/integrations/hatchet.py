@@ -410,11 +410,19 @@ class HatchetClient:
             return []
 
     def start_worker(self) -> None:
-        """Start the Hatchet worker (blocking)."""
+        """Start the Hatchet worker (blocking).
+
+        On Windows, SIGQUIT is not defined; the Hatchet SDK expects it for
+        graceful shutdown. We set signal.SIGQUIT = signal.SIGTERM only here,
+        immediately before starting the worker, so the process behaves as a
+        Hatchet worker and is not used as a library in the same process with
+        other code that might rely on SIGQUIT being absent. This is the only
+        place in OwlClaw that mutates the signal module.
+        """
         if self._hatchet is None:
             raise RuntimeError("Must call connect() before start_worker()")
         if not hasattr(signal, "SIGQUIT"):
-            # Hatchet SDK expects SIGQUIT on POSIX; map to SIGTERM for Windows.
+            # Scoped to this process: Hatchet worker expects SIGQUIT for shutdown.
             signal.SIGQUIT = signal.SIGTERM  # type: ignore[attr-defined,misc]
         worker_name = self.config.worker_name or f"owlclaw-worker-{os.getpid()}"
         workflows = list(self._workflows.values())

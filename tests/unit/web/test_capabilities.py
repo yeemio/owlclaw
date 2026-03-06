@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.web import create_console_app
 from owlclaw.web.providers import capabilities as capabilities_module
 from owlclaw.web.providers.capabilities import DefaultCapabilitiesProvider
@@ -346,3 +347,16 @@ async def test_default_capabilities_provider_collect_stats_aggregates_rows(monke
     assert stats["cap_a"]["success_rate"] == 0.75
     assert stats["cap_a"]["avg_latency_ms"] == 12.5
     assert stats["cap_b"]["success_rate"] == 0.0
+
+
+@pytest.mark.asyncio
+async def test_default_capabilities_provider_collect_stats_returns_empty_when_db_not_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        capabilities_module,
+        "get_engine",
+        lambda: (_ for _ in ()).throw(ConfigurationError("missing db url")),
+    )
+    provider = DefaultCapabilitiesProvider(capability_registry=None, stats_fetcher=lambda _tenant_id: _async_value({}))
+    assert await provider._collect_capability_stats("tenant-a") == {}

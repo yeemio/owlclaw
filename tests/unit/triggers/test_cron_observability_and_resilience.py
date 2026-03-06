@@ -157,6 +157,20 @@ def test_cron_metrics_records_execution_in_fallback_store() -> None:
     assert metrics.circuit_breaker_open == 1
 
 
+def test_cron_metrics_samples_bounded() -> None:
+    """CronMetrics duration/delay/cost samples are bounded (Low-28)."""
+    from owlclaw.triggers.cron import CRON_METRICS_SAMPLES_MAXLEN, CronMetrics
+
+    metrics = CronMetrics()
+    for i in range(CRON_METRICS_SAMPLES_MAXLEN + 500):
+        metrics.duration_samples.append(float(i))
+        metrics.delay_samples.append(float(i))
+        metrics.cost_samples.append(0.01 * i)
+    assert len(metrics.duration_samples) == CRON_METRICS_SAMPLES_MAXLEN
+    assert len(metrics.delay_samples) == CRON_METRICS_SAMPLES_MAXLEN
+    assert len(metrics.cost_samples) == CRON_METRICS_SAMPLES_MAXLEN
+
+
 @pytest.mark.asyncio
 async def test_governance_blocks_when_circuit_breaker_open() -> None:
     reg = CronTriggerRegistry(app=None)

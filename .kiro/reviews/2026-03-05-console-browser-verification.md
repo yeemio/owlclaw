@@ -13,7 +13,7 @@
 |------|------|------|
 | 真实环境启动脚本强化 | ✅ 完成 | `scripts/console-local-setup.ps1` 增加参数化、健康检查、可选 E2E、日志落盘 |
 | 手工维度执行（可 CLI 复现实项） | ✅ 完成 | 已执行 `/healthz` 与关键 API/降级链路并固化输出 |
-| 失败项与复现步骤记录 | ✅ 完成 | M-1（WS 404）与 M-2（`start-server-and-test` 缺失）已归档 |
+| 失败项与复现步骤记录 | ✅ 完成 | M-1（WS 404）+ A-1（自动化 1 条失败）已归档；M-2 已解除 |
 
 ---
 
@@ -53,18 +53,27 @@
 - 影响：无法在当前环境完成 WS 消息类型手工验收（N-8）
 - 建议：审校阶段在具备 WS 依赖的环境复验 N-7/N-8。
 
-### M-2：前端一键 E2E 命令阻塞（缺少 start-server-and-test）
+### M-2：前端一键 E2E 命令阻塞（已解除）
 
 - 复现步骤：
 1. `cd owlclaw/web/frontend`
 2. `npm run test:e2e`
-- 实际：`start-server-and-test is not recognized`
+- 实际：历史问题为 `start-server-and-test is not recognized`；当前已通过脚本自愈解除
 - 复现输出（摘录）：
   - `> owlclaw-console-frontend@0.0.0 test:e2e`
   - `> start-server-and-test server http://127.0.0.1:8000/healthz test:e2e:run`
   - `'start-server-and-test' is not recognized as an internal or external command`
-- 影响：一键链路不可用；需改用手动启动服务 + `npm run test:e2e:run`
-- 建议：执行 `npm install` 补齐依赖，或改脚本统一走 `test:e2e:run`。
+- 处置：`scripts/console-local-setup.ps1` 新增 `npm ci` 自愈与 `uvicorn` 前置检查，`-RunE2E` 可稳定拉起并执行。
+- 当前状态：已解除，不再作为阻塞项。
+
+### A-1：自动化链路剩余 1 条失败（Playwright）
+
+- 复现步骤：
+1. `pwsh -File scripts/console-local-setup.ps1 -SkipDbInit -SkipMigrate -RunE2E`
+- 实际：`37 passed, 1 failed`
+- 失败用例：`Negative: overview 500 returns friendly error, no white screen`
+- 影响：自动化门禁未全绿，需由自动化责任侧修复断言/桩行为后复测
+- 建议：移交 `codex-work` / `review-work` 处理用例稳定性，当前分支脚本与手工维度范围已完成。
 
 ---
 
@@ -106,5 +115,5 @@ Get-Content .kiro/reviews/2026-03-05-console-browser-verification.md
 
 ### 5.4 放行提示
 
-1. M-1 / M-2 属于环境与工具链阻塞，不是后端契约回退。  
-2. 若 codex-work 自动化证据齐全且高风险项无新增故障，可评估 `CONDITIONAL_PASS`，并保留 WS 复验后续动作。
+1. M-1 为环境阻塞，A-1 为自动化用例阻塞；M-2 已解除。  
+2. 若 codex-work 修复 A-1 并补齐自动化证据，可在保留 WS 复验动作的前提下评估 `CONDITIONAL_PASS`。

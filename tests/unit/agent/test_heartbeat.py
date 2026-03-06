@@ -274,6 +274,23 @@ async def test_database_source_throttles_queries_with_min_interval() -> None:
     assert len(session.statements) == 1
 
 
+@pytest.mark.asyncio
+async def test_database_source_uses_ledger_readonly_session_factory_api() -> None:
+    session = _Session(value="row")
+
+    class _Ledger:
+        def get_readonly_session_factory(self) -> _SessionFactory:
+            return _SessionFactory(session)
+
+    checker = HeartbeatChecker(
+        agent_id="bot",
+        config={"event_sources": ["database"]},
+        ledger=_Ledger(),
+    )
+    assert await checker.check_events("tenant-a") is True
+    assert len(session.statements) == 1
+
+
 class _ScheduleClient:
     def __init__(self, tasks: list[dict[str, Any]]) -> None:
         self._tasks = tasks

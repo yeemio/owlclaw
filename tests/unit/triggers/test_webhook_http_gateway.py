@@ -172,6 +172,20 @@ def test_webhook_request_body_too_large_returns_413() -> None:
     assert oversized.status_code == 413
 
 
+def test_webhook_non_utf8_body_returns_400() -> None:
+    client = _create_client()
+    endpoint_id, token = _create_endpoint(client)
+    non_utf8 = client.post(
+        f"/webhooks/{endpoint_id}",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/octet-stream"},
+        content=b"\xff\xfe\x00",
+    )
+    assert non_utf8.status_code == 400
+    payload = non_utf8.json()
+    assert payload["error"]["code"] == "INVALID_ENCODING"
+    assert payload["error"]["message"] == "Request body must be UTF-8"
+
+
 def test_http_gateway_config_default_cors_origins_is_closed() -> None:
     cfg = HttpGatewayConfig()
     assert cfg.cors_origins == []

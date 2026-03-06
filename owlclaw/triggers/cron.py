@@ -612,14 +612,17 @@ class BatchOperations:
         return out
 
 
+CRON_METRICS_SAMPLES_MAXLEN = 10_000
+
+
 class CronMetrics:
     """Metrics collector with optional Prometheus backend and in-memory fallback."""
 
     def __init__(self) -> None:
         self.execution_counts: dict[tuple[str, str, str], int] = {}
-        self.duration_samples: list[float] = []
-        self.delay_samples: list[float] = []
-        self.cost_samples: list[float] = []
+        self.duration_samples: deque[float] = deque(maxlen=CRON_METRICS_SAMPLES_MAXLEN)
+        self.delay_samples: deque[float] = deque(maxlen=CRON_METRICS_SAMPLES_MAXLEN)
+        self.cost_samples: deque[float] = deque(maxlen=CRON_METRICS_SAMPLES_MAXLEN)
         self.llm_calls_total = 0
         self.active_tasks = 0
         self.circuit_breaker_open = 0
@@ -1266,6 +1269,11 @@ class CronTriggerRegistry:
         Queries Ledger for cron_execution records with capability_name=event_name.
         Must be called after start() with a Ledger.
 
+        Trust boundary (same as P1-2 Console multi-tenant): *tenant_id* is taken
+        from the parameter or from start() when None. In multi-tenant deployments,
+        tenant should be derived from the authenticated caller (e.g. request context)
+        rather than trusting a client-supplied value. See docs on Console tenant_id.
+
         Args:
             event_name: The registered trigger event name.
             limit: Max number of records to return (default 10).
@@ -1308,13 +1316,15 @@ class CronTriggerRegistry:
         records = await self._ledger.query_records(tenant_id=tid, filters=filters)
         out: list[dict[str, Any]] = []
         for r in records:
+            # Redact ledger error_message so callers do not receive raw exception text.
+            error_display = "Execution failed." if (r.error_message and r.error_message.strip()) else None
             out.append({
                 "run_id": r.run_id,
                 "status": r.status,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
                 "execution_time_ms": r.execution_time_ms,
                 "agent_run_id": (r.output_result or {}).get("agent_run_id"),
-                "error_message": r.error_message,
+                "error_message": error_display,
             })
         return out
 

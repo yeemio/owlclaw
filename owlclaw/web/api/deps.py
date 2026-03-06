@@ -65,7 +65,13 @@ async def get_settings_provider() -> SettingsProvider:
 
 
 async def get_tenant_id(x_owlclaw_tenant: str | None = Header(default=None)) -> str:
-    """Extract tenant id from request header with default fallback."""
+    """Extract tenant id from request header with default fallback.
+
+    Note:
+        This header-based fallback is suitable for single-tenant/self-hosted usage.
+        In multi-tenant production deployments, tenant_id should come from
+        authenticated request context, not directly from client headers.
+    """
     if x_owlclaw_tenant is None or not x_owlclaw_tenant.strip():
         return "default"
     return x_owlclaw_tenant.strip()

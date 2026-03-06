@@ -307,8 +307,21 @@ class HeartbeatChecker:
             return configured
         if self._ledger is None:
             return None
-        # Use public API for read-only session factory access
-        candidate = getattr(self._ledger, "get_readonly_session_factory", None)
+        # Use Ledger's public API only (no access to private _session_factory).
+        if not hasattr(self._ledger, "get_readonly_session_factory"):
+            return None
+        get_factory = self._ledger.get_readonly_session_factory
+        if not callable(get_factory):
+            return None
+        try:
+            candidate = get_factory()
+        except Exception:
+            logger.warning(
+                "HeartbeatChecker ledger readonly session factory resolution failed agent_id=%s",
+                self.agent_id,
+                exc_info=True,
+            )
+            return None
         return candidate if callable(candidate) else None
 
     async def _check_database_events(self, *, tenant_id: str) -> bool:

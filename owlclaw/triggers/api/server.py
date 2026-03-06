@@ -5,12 +5,15 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from time import monotonic
 from typing import Any, Protocol
 from uuid import uuid4
+
+DEFAULT_RUNS_CACHE_MAXSIZE = 1000
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -21,7 +24,11 @@ from starlette.routing import Route
 from owlclaw.security.sanitizer import InputSanitizer
 from owlclaw.triggers.api.auth import AuthProvider
 from owlclaw.triggers.api.config import APITriggerConfig
-from owlclaw.triggers.api.handler import InvalidJSONPayloadError, parse_request_payload
+from owlclaw.triggers.api.handler import (
+    BodyTooLargeError,
+    InvalidJSONPayloadError,
+    parse_request_payload_with_limit,
+)
 from owlclaw.triggers.signal.api import register_signal_admin_route
 from owlclaw.triggers.signal.router import SignalRouter
 
@@ -81,13 +88,17 @@ class _BucketState:
     last_refill: float
 
 
-class _TokenBucketLimiter:
-    """In-memory token bucket limiter keyed by arbitrary strings."""
+LIMITER_STATES_MAXSIZE = 10_000
 
-    def __init__(self, *, rate_per_minute: int | None) -> None:
+
+class _TokenBucketLimiter:
+    """In-memory token bucket limiter keyed by arbitrary strings. States are bounded (LRU)."""
+
+    def __init__(self, *, rate_per_minute: int | None, max_states: int = LIMITER_STATES_MAXSIZE) -> None:
         self._rate = int(rate_per_minute or 0)
         self._capacity = float(max(1, self._rate)) if self._rate > 0 else 0.0
-        self._states: dict[str, _BucketState] = {}
+        self._states: OrderedDict[str, _BucketState] = OrderedDict()
+        self._max_states = max(1, int(max_states))
         self._lock = asyncio.Lock()
 
     @property
@@ -102,8 +113,11 @@ class _TokenBucketLimiter:
         async with self._lock:
             state = self._states.get(key)
             if state is None:
+                while len(self._states) >= self._max_states:
+                    self._states.popitem(last=False)
                 self._states[key] = _BucketState(tokens=self._capacity - 1.0, last_refill=now)
                 return True
+            self._states.move_to_end(key)
             elapsed = max(0.0, now - state.last_refill)
             state.tokens = min(self._capacity, state.tokens + elapsed * refill_rate)
             state.last_refill = now
@@ -131,6 +145,7 @@ class APITriggerServer:
         cors_origins: list[str] | None = None,
         tenant_rate_limit_per_minute: int = 120,
         endpoint_rate_limit_per_minute: int = 60,
+        runs_cache_maxsize: int = DEFAULT_RUNS_CACHE_MAXSIZE,
     ) -> None:
         self._host = host
         self._port = port
@@ -146,7 +161,8 @@ class APITriggerServer:
         self._app = Starlette(routes=[])
         self._server: Any | None = None
         self._server_task: asyncio.Task[None] | None = None
-        self._runs: dict[str, dict[str, Any]] = {}
+        self._runs: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self._runs_maxsize = max(1, int(runs_cache_maxsize))
         self._signal_admin_registered: bool = False
         self._tenant_limiter = _TokenBucketLimiter(rate_per_minute=tenant_rate_limit_per_minute)
         self._endpoint_limiter = _TokenBucketLimiter(rate_per_minute=endpoint_rate_limit_per_minute)
@@ -183,13 +199,10 @@ class APITriggerServer:
                 )
                 return auth_response
 
-            if request.headers.get("content-length"):
-                with contextlib.suppress(ValueError):
-                    if int(request.headers["content-length"]) > self._max_body_bytes:
-                        return JSONResponse({"error": "payload_too_large"}, status_code=413)
-
             try:
-                parsed = await parse_request_payload(request)
+                parsed = await parse_request_payload_with_limit(request, self._max_body_bytes)
+            except BodyTooLargeError:
+                return JSONResponse({"error": "payload_too_large"}, status_code=413)
             except InvalidJSONPayloadError:
                 return JSONResponse({"error": "Invalid JSON"}, status_code=400)
             body = parsed.body
@@ -342,6 +355,8 @@ class APITriggerServer:
         started: float,
     ) -> JSONResponse:
         run_id = f"run-{uuid4().hex}"
+        while len(self._runs) >= self._runs_maxsize:
+            self._runs.popitem(last=False)
         self._runs[run_id] = {"status": "pending"}
 
         async def _background() -> None:
@@ -360,8 +375,10 @@ class APITriggerServer:
                 self._runs[run_id] = {"status": "completed", "result": result}
                 await self._record_execution(config, run_id, "success", started, payload, {"result": result}, "async_completed")
             except Exception as exc:
-                self._runs[run_id] = {"status": "failed", "error": str(exc)}
-                await self._record_execution(config, run_id, "failed", started, payload, None, "async_failed", str(exc))
+                self._runs[run_id] = {"status": "failed", "error": "Execution failed."}
+                await self._record_execution(
+                    config, run_id, "failed", started, payload, None, "async_failed", "Execution failed."
+                )
 
         asyncio.create_task(_background())
         return JSONResponse(
@@ -375,6 +392,7 @@ class APITriggerServer:
         run = self._runs.get(run_id)
         if run is None:
             return JSONResponse({"error": "not_found"}, status_code=404)
+        self._runs.move_to_end(run_id)
         return JSONResponse({"run_id": run_id, **run})
 
     async def _record_execution(
