@@ -8,7 +8,7 @@
 ## 1. 总体策略
 
 - **P1**：实现级修复 + 文档，带测试或可执行验收。
-- **Low**：按推荐顺序实现，不改变对外 API 契约；优先解耦与可维护性。
+- **Low**：共 12 项，按推荐顺序实现，不改变对外 API 契约；优先解耦与可维护性。
 
 ---
 
@@ -96,5 +96,45 @@
 | Low-9（Phase 3） | governance/ledger.py（_background_writer） | codex-work |
 | Low-10（Phase 3） | governance/ledger.py（_write_queue） | codex-work |
 | Low-11（Phase 3） | triggers/webhook/http/app.py | codex-gpt-work |
+| Low-12（Phase 4） | web/api/middleware.py（TokenAuthMiddleware） | codex-work |
+| Low-13（Phase 4） | governance/visibility.py | codex-gpt-work |
+| Low-14（Phase 4） | integrations/hatchet.py | codex-gpt-work |
 
 Ledger 与 Heartbeat 需顺序实现：Ledger API 先合并，再在 codex-gpt-work 改 Heartbeat。
+
+---
+
+## 9. Low-12（Phase 4）：Console API token 常量时间比较
+
+### 9.1 方案
+- 在 `owlclaw/web/api/middleware.py` 中，将 token 校验由 `provided_token != expected_token` / `api_token_header == expected_token` 改为 `hmac.compare_digest(provided_token, expected_token)`（或等价常量时间比较）。
+- 确保 `provided_token` 与 `expected_token` 均为 bytes 或 str 且类型一致；若从 header 读取为 str，expected 也为 str 即可。
+
+### 9.2 位置
+- `owlclaw/web/api/middleware.py`：TokenAuthMiddleware 内两处比较（约 79、95 行附近）。
+
+---
+
+## 10. Low-13（Phase 4）：VisibilityFilter evaluator 超时保护
+
+### 10.1 方案
+- 在 `owlclaw/governance/visibility.py` 中，为单个 evaluator 执行增加可选 timeout。
+- 可采用 `asyncio.wait_for` 包裹 evaluator，超时后按保守策略处理，并记录 debug/warning 日志。
+- 若当前架构不适合直接加 timeout，至少在文档中明确该风险和适用边界。
+
+### 10.2 位置
+- `owlclaw/governance/visibility.py`：`filter_capabilities` / evaluator 聚合路径。
+
+---
+
+## 11. Low-14（Phase 4）：Hatchet Windows SIGQUIT 作用域
+
+### 11.1 方案
+- 收敛 `signal.SIGQUIT = signal.SIGTERM` 的影响范围，避免修改全局 `signal` 模块状态后影响其他代码路径。
+- 可选方案：
+  - worker wrapper 内做局部兼容映射；
+  - 仅在 worker 子进程入口设置；
+  - 若暂不改实现，则在文档中明确 Windows 上的该行为与边界。
+
+### 11.2 位置
+- `owlclaw/integrations/hatchet.py`：`start_worker()`。

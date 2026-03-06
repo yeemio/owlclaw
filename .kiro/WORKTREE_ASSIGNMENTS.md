@@ -178,7 +178,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **config-propagation-fix** | ✅ 25/25 | 已完成并合并到 main |
 | **security-hardening** | ✅ 46/46 | 已完成并合并到 main |
 
-**当前任务**：执行 `audit-deep-remediation` Task 1/2/3/4/11/12/13（runtime + ledger + app health_status）。
+**当前任务**：执行 `audit-deep-remediation` Task 1/2/3/4/11/12/13/15（runtime + ledger + app health_status + middleware token 常量时间比较）。
 
 **共享文件修改范围约定**（避免冲突）：
 
@@ -220,7 +220,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
 | **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
 
-**当前任务**：执行 `audit-deep-remediation` Task 5/6/7/10/14（docs + heartbeat + engine + capabilities + webhook）。
+**当前任务**：执行 `audit-deep-remediation` Task 5/6/7/10/14/16/17（docs + heartbeat + engine + capabilities + webhook + visibility + hatchet）。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
@@ -369,7 +369,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **audit-deep-remediation** | Phase 15 | Task 1/2/3/4/11/12/13 | D1/D3/D5/D4a/D8/D9/D10 | P1+Low | 🟡 待开始 |
+| **audit-deep-remediation** | Phase 15 | Task 1/2/3/4/11/12/13/15 | D1/D3/D5/D4a/D8/D9/D10/D12 | P1+Low | 🟡 待开始 |
 
 **codex-work 执行顺序**：
 1. 先完成 Task 1/4，建立 Skill env 边界与 Ledger 公开只读会话 API
@@ -379,11 +379,11 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **audit-deep-remediation** | Phase 15 | Task 5/6/7/10/14 | D2/D4b/D6/D7/D11 | P1+Low | 🟡 待开始 |
+| **audit-deep-remediation** | Phase 15 | Task 5/6/7/10/14/16/17 | D2/D4b/D6/D7/D11/D13/D14 | P1+Low | 🟡 待开始 |
 
 **codex-gpt-work 执行顺序**：
 1. 先收口 `scripts/console-local-setup.ps1` 的遗留改动，恢复干净工作区
-2. 启动 Task 5/7/10/14；Task 6（Low-4b）继续等待 Task 4 合并到 `main`
+2. 启动 Task 5/7/10/14/16/17；Task 6（Low-4b）继续等待 Task 4 合并到 `main`
 
 ### 共享文件修改边界（当前批次：audit-deep-remediation）
 
@@ -396,12 +396,15 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | `owlclaw/db/engine.py` | 不修改 | D6 |
 | `owlclaw/web/providers/capabilities.py` | 不修改 | D7 |
 | `owlclaw/triggers/webhook/http/app.py` | 不修改 | D11 |
+| `owlclaw/governance/visibility.py` | 不修改 | D13 |
+| `owlclaw/integrations/hatchet.py` | 不修改 | D14 |
+| `owlclaw/web/api/middleware.py` | D12（token 常量时间比较） | 不修改 |
 | `docs/` | 不修改 | D2 |
 
 ### 审校与放行
 
 - review-work 负责 `audit-deep-remediation` 的审校与收口：
-- D1~D14 与 spec/task 对齐
+- D1~D12 与 spec/task 对齐
 - 错误处理、测试覆盖、架构边界复核
 - 输出 `APPROVE / FIX_NEEDED / REJECT`
 
@@ -411,10 +414,10 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 | Worktree | 任务 | 内容 | 依赖 |
 |----------|------|------|------|
-| **codex-work** | Task 1, 2, 3, 4, 11, 12, 13 | P1-1/Low-3/Low-5/Low-4a/Low-8；**Low-9** Ledger 异常时 batch 写 fallback；**Low-10** Ledger 队列有界/背压 | 无 |
-| **codex-gpt-work** | Task 5, 6, 7, 10, 14 | P1-2/Low-4b/Low-6/Low-7；**Low-11** Webhook 非 UTF-8 body 返回 400 | Low-4b 需等 Task 4 合并后执行 |
+| **codex-work** | Task 1, 2, 3, 4, 11, 12, 13, 15 | P1-1/Low-3/Low-5/Low-4a/Low-8；**Low-9** Ledger 异常时 batch 写 fallback；**Low-10** Ledger 队列有界/背压；**Low-12** Console API token 常量时间比较（hmac.compare_digest） | 无 |
+| **codex-gpt-work** | Task 5, 6, 7, 10, 14, 16, 17 | P1-2/Low-4b/Low-6/Low-7；**Low-11** Webhook 非 UTF-8 body 返回 400；**Low-13** Visibility evaluator timeout；**Low-14** Hatchet Windows SIGQUIT 作用域 | Low-4b 需等 Task 4 合并后执行 |
 
-**共享文件边界**：codex-work 修改 `owlclaw/agent/runtime/runtime.py`、`owlclaw/governance/ledger.py`、`owlclaw/app.py`（仅 health_status）；codex-gpt-work 修改 `owlclaw/agent/runtime/heartbeat.py`、`owlclaw/db/engine.py`、`owlclaw/web/providers/capabilities.py`、`owlclaw/triggers/webhook/http/app.py`、`docs/`、可选 `owlclaw/web/api/deps.py`。两方不重叠。
+**共享文件边界**：codex-work 修改 `owlclaw/agent/runtime/runtime.py`、`owlclaw/governance/ledger.py`、`owlclaw/app.py`（仅 health_status）、`owlclaw/web/api/middleware.py`（D12）；codex-gpt-work 修改 `owlclaw/agent/runtime/heartbeat.py`、`owlclaw/db/engine.py`、`owlclaw/web/providers/capabilities.py`、`owlclaw/triggers/webhook/http/app.py`、`owlclaw/governance/visibility.py`、`owlclaw/integrations/hatchet.py`、`docs/`、可选 `owlclaw/web/api/deps.py`。两方不重叠。
 
 **完成后**：回到外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
 

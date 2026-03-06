@@ -10,10 +10,10 @@
 
 ## Executive Summary
 
-**Total Findings**: 11 (Phase 1: 6; Phase 2: +2 Low; Phase 3: +3 Low)
+**Total Findings**: 14 (Phase 1: 6; Phase 2: +2 Low; Phase 3: +3 Low; Phase 4: +1 Low; Phase 5: +2 Low)
 - P0/High: 0
 - P1/Medium: 2
-- Low: 9
+- Low: 12
 
 **Overall Assessment**: **SHIP WITH CONDITIONS**
 
@@ -65,6 +65,9 @@
 | 9 | C.Robustness | Ledger._background_writer on generic Exception does not flush current batch to DB or fallback; records can be lost. | `owlclaw/governance/ledger.py:329-332` | On Exception, flush current batch to fallback before continuing. |
 | 10 | C.Robustness | Ledger._write_queue unbounded; sustained load can grow memory. | `owlclaw/governance/ledger.py:135` | Bounded queue and/or backpressure; document limit. |
 | 11 | C.Robustness | Webhook raw_body_bytes.decode("utf-8") can raise; non-UTF-8 body returns 500. | `owlclaw/triggers/webhook/http/app.py:167` | Catch UnicodeDecodeError; return 400 with clear message. |
+| 12 | B.Security | Console API token comparison uses direct string equality (api_token_header == expected_token, provided_token != expected_token); vulnerable to timing side-channel. | `owlclaw/web/api/middleware.py:79, 95` | Use hmac.compare_digest(provided, expected) for constant-time comparison. |
+| 13 | C.Robustness | VisibilityFilter.filter_capabilities runs evaluators via asyncio.gather with no per-evaluator or per-capability timeout; a slow or stuck evaluator can block visibility for that capability indefinitely. | `owlclaw/governance/visibility.py:206-213` | Add optional timeout per evaluator (e.g. asyncio.wait_for) or document and accept the risk. |
+| 14 | D.Maintainability | Hatchet start_worker() on Windows sets signal.SIGQUIT = signal.SIGTERM, mutating the signal module; other code that checks for presence of SIGQUIT may be surprised. | `owlclaw/integrations/hatchet.py:311-312` | Use a worker wrapper that maps SIGTERM to the handler Hatchet expects, or document the mutation and scope it (e.g. only in worker process). |
 
 ---
 
@@ -153,6 +156,9 @@
 | 9 | Ledger _background_writer flush batch to fallback on Exception | Low | Avoid losing in-memory batch on unexpected error. |
 | 10 | Ledger _write_queue bounded or backpressure | Low | Cap memory under sustained load. |
 | 11 | Webhook decode UTF-8 with 400 on invalid encoding | Low | Predictable 400 instead of 500. |
+| 12 | Console API token constant-time comparison (hmac.compare_digest) | Low | Mitigate timing side-channel on auth. |
+| 13 | VisibilityFilter evaluator timeout (optional asyncio.wait_for) | Low | Avoid stuck evaluator blocking capability visibility. |
+| 14 | Hatchet Windows SIGQUIT scope (wrapper or document) | Low | Avoid global signal module mutation. |
 
 ---
 
@@ -214,3 +220,49 @@
 - Ledger record_execution validates tenant_id, agent_id, run_id, capability_name, task_type and normalizes strings; input_params/output_result type-checked. _flush_batch retries with backoff and falls back to file on final failure.
 - Hatchet connect() uses timeout and cancels future on timeout; run_task_now/schedule_task log and re-raise.
 - Webhook enforces max_content_length_bytes (header and after body read); rate limiter and validator in place.
+
+---
+
+## Phase 4 Extension (2026-03-05 — Continue 深度审计)
+
+**Scope**: Config loading (env overlay, merge, hot-reload), Console API auth middleware (token check, CORS, exception handlers).
+
+**Files additionally audited**: `config/manager.py` (_collect_env_overrides, _coerce_env_value, load, reload), `web/api/middleware.py` (TokenAuthMiddleware, _read_expected_token, exception handlers).
+
+**Result**: No new P0/P1. One additional Low finding (#12).
+
+### Additional Low — Phase 4
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 12 | B.Security | Console API token comparison uses direct string equality; an attacker could measure response time to infer token characters (timing side-channel). | `owlclaw/web/api/middleware.py:79, 95` | Use `hmac.compare_digest(provided_token, expected_token)` for constant-time comparison. |
+
+### Phase 4 Positive Notes
+
+- ConfigManager: env overrides use OWLCLAW_ prefix and nested keys via __; _coerce_env_value handles bool/int/float/json; hot-reload applies only allowed prefixes. No path traversal.
+- Middleware: require_auth + empty token returns 500 with AUTH_NOT_CONFIGURED; OPTIONS and exempt_paths bypass; validation and unexpected exceptions return unified error shape without leaking stack.
+
+---
+
+## Phase 5 Extension (2026-03-05 — Continue 深度审计)
+
+**Scope**: Governance visibility (VisibilityFilter, RunContext, risk gate, BudgetConstraint, RateLimitConstraint), Hatchet integration (hatchet.py full, hatchet_bridge.py), CLI start (.env loading).
+
+**Files additionally audited**: `governance/visibility.py` (filter_capabilities, _safe_evaluate, _evaluate_risk_gate), `governance/constraints/budget.py`, `governance/constraints/rate_limit.py`, `security/risk_gate.py`, `integrations/hatchet.py` (connect, task/durable_task, run_task_now, schedule_task, start_worker, from_yaml), `agent/runtime/hatchet_bridge.py` (run_payload, _normalize_input), `cli/start.py` (load_dotenv, create_start_app), `cli/__init__.py` (main, _dispatch_start_command).
+
+**Result**: No new P0/P1. Two additional Low findings (#13, #14).
+
+### Additional Low — Phase 5
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 13 | C.Robustness | VisibilityFilter.filter_capabilities runs evaluators via asyncio.gather with no per-evaluator or per-capability timeout; a slow or stuck evaluator can block visibility for that capability indefinitely. | `owlclaw/governance/visibility.py:206-213` | Add optional timeout per evaluator (e.g. asyncio.wait_for) or document and accept the risk. |
+| 14 | D.Maintainability | Hatchet start_worker() on Windows sets signal.SIGQUIT = signal.SIGTERM, mutating the signal module; other code that checks for presence of SIGQUIT may be surprised. | `owlclaw/integrations/hatchet.py:311-312` | Use a worker wrapper that maps SIGTERM to the handler Hatchet expects, or document the mutation and scope it (e.g. only in worker process). |
+
+### Phase 5 Positive Notes
+
+- Visibility: RunContext validates tenant_id and confirmed_capabilities; non-CapabilityView entries skipped with warning; _safe_evaluate applies fail_policy on evaluator exception or invalid return; CancelledError re-raised. RiskGate normalizes risk_level and rejects unsupported values.
+- BudgetConstraint: get_cost_summary exceptions propagate to _safe_evaluate (fail_policy applies); _safe_decimal and reservation logic are defensive.
+- Hatchet: connect() uses ThreadPoolExecutor timeout and future.cancel; from_yaml uses safe_load and env substitution; run_task_now/schedule_task/schedule_cron validate inputs and re-raise; cancel_task/cancel_cron return False on error; list_scheduled_tasks returns [] on exception.
+- HatchetRuntimeBridge: _normalize_input rejects non-dict; run_payload uses default_tenant_id when payload omits tenant_id; register_task is idempotent.
+- CLI start: load_dotenv is optional (ImportError → pass); .env path is Path.cwd()/.env with exists() check; create_start_app and uvicorn.run are straightforward.

@@ -1,6 +1,6 @@
 # audit-deep-remediation — 任务清单
 
-> **Authority**: `docs/review/DEEP_AUDIT_REPORT.md` + `.kiro/specs/audit-deep-remediation/requirements.md` + design.md
+> **Authority**: `docs/review/DEEP_AUDIT_REPORT.md` + `docs/review/DEEP_AUDIT_EXECUTION_CHECKLIST.md` + `.kiro/specs/audit-deep-remediation/requirements.md` + design.md
 
 ---
 
@@ -30,9 +30,11 @@
 
 | # | Task | 验收 | 状态 |
 |---|------|------|------|
+<<<<<<< HEAD
 | 11 | **Low-8** 在 `app.py` 的 `health_status()` 中避免直接读 `_states`/`_configs`：改为 manager/server 的公开 API 或只读属性，或文档明确该耦合 | 无私有属性访问或文档注明；health 相关测试通过 | [x] |
 | 12 | **Low-9** 在 Ledger._background_writer 的 except Exception 分支中，将当前 batch 写入 fallback 再继续循环，避免丢失已出队记录 | 异常路径有单测或集成验证；batch 不丢 | [x] |
 | 13 | **Low-10** Ledger._write_queue 设 maxsize 或实现背压（put 超时/丢弃策略），并文档化上限 | 队列有界或文档明确；压力测试可选 | [x] |
+| 15 | **Low-12** 在 Console API TokenAuthMiddleware 中用 hmac.compare_digest 做 token 常量时间比较 | grep 确认无直接 !=/== 比较 token；有单测或手验 | [ ] |
 
 ---
 
@@ -41,6 +43,8 @@
 | # | Task | 验收 | 状态 |
 |---|------|------|------|
 | 14 | **Low-11** 在 webhook receive_webhook 中对 raw_body_bytes.decode("utf-8") 做 try/except UnicodeDecodeError，返回 400 及明确提示 | 非 UTF-8 body 返回 400 而非 500；有单测或手验 | [ ] |
+| 16 | **Low-13** 在 VisibilityFilter evaluator 路径增加 timeout 或明确文档边界，避免单个 evaluator 长时间阻塞 capability 过滤 | 有测试、手验或文档结论；不会无限等待单个 evaluator | [ ] |
+| 17 | **Low-14** 收敛 Hatchet Windows SIGQUIT 兼容逻辑的作用域，避免全局 `signal` 模块副作用 | 代码或文档说明明确；Windows 兼容逻辑边界清晰 | [ ] |
 
 ---
 
@@ -55,6 +59,6 @@
 
 ## 执行顺序建议
 
-1. codex-work：Task 1（P1-1）→ Task 2（Low-3）→ Task 3（Low-5）→ Task 4（Low-4a）→ Task 11（Low-8）→ Task 12（Low-9）→ Task 13（Low-10）；提交后合并到 main。
-2. codex-gpt-work：Task 5（P1-2 文档）可随时做；Task 6（Low-4b）需等 Task 4 合并后执行；Task 7、10、14（Low-6/7/11）可并行。
+1. codex-work：Task 1（P1-1）→ Task 2（Low-3）→ Task 3（Low-5）→ Task 4（Low-4a）→ Task 11（Low-8）→ Task 12（Low-9）→ Task 13（Low-10）→ Task 15（Low-12）；提交后合并到 main。
+2. codex-gpt-work：Task 5（P1-2 文档）可随时做；Task 6（Low-4b）需等 Task 4 合并后执行；Task 7、10、14、16、17（Low-6/7/11/13/14）可并行。
 3. 审校：两个分支分别 Review，通过后合并 review-work → main。
