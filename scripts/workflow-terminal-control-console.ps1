@@ -106,7 +106,7 @@ function Show-ControlResult {
         }
 
         $reason = [string]$item.reason
-        if ($reason -in @("fresh_runtime", "audit_recently_sent")) {
+        if ($reason -in @("fresh_runtime", "fresh_audit_state", "missing_audit_state", "recent_attempt")) {
             continue
         }
 

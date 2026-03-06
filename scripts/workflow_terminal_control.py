@@ -42,6 +42,10 @@ def _state_dir(repo_root: Path) -> Path:
     return _runtime_dir(repo_root) / "terminal-control"
 
 
+def _audit_state_path(repo_root: Path, agent: str) -> Path:
+    return _runtime_dir(repo_root) / "audit-state" / f"{agent}.json"
+
+
 def _heartbeat_path(repo_root: Path, agent: str) -> Path:
     return _runtime_dir(repo_root) / "heartbeats" / f"{agent}.json"
 
@@ -191,6 +195,17 @@ def _agent_runtime_status(repo_root: Path, agent: str) -> dict[str, object]:
     }
 
 
+def _audit_runtime_status(repo_root: Path, agent: str) -> dict[str, object] | None:
+    payload = _read_json(_audit_state_path(repo_root, agent))
+    if payload is None:
+        return None
+    return {
+        "payload": payload,
+        "updated_age": _seconds_since(payload.get("updated_at")),
+        "status": payload.get("status", ""),
+    }
+
+
 def _should_send(
     repo_root: Path,
     agent: str,
@@ -198,7 +213,13 @@ def _should_send(
     *,
     force: bool,
     stale_seconds: int,
+    retry_seconds: int,
 ) -> tuple[bool, str]:
+    if agent not in workflow_mailbox.VALID_AGENT_NAMES:
+        audit_status = _audit_runtime_status(repo_root, agent)
+        if not force and audit_status is None:
+            return False, "missing_audit_state"
+
     previous = _load_state(repo_root, agent)
     if force:
         return True, "forced"
@@ -207,11 +228,21 @@ def _should_send(
     if previous.get("fingerprint") != fingerprint:
         return True, "fingerprint_changed"
 
+    last_attempt_value = previous.get("sent_at")
+    last_attempt_age = _seconds_since(last_attempt_value) if last_attempt_value else None
+    if last_attempt_age is not None and last_attempt_age < retry_seconds:
+        return False, "recent_attempt"
+
     if agent not in workflow_mailbox.VALID_AGENT_NAMES:
-        last_sent_age = _seconds_since(previous.get("sent_at"))
-        if last_sent_age is None or last_sent_age >= stale_seconds:
-            return True, "audit_nudge_due"
-        return False, "audit_recently_sent"
+        audit_status = _audit_runtime_status(repo_root, agent)
+        assert audit_status is not None
+        updated_age = audit_status["updated_age"]
+        status = audit_status["status"]
+        if updated_age is None or updated_age >= stale_seconds:
+            return True, "stale_audit_state"
+        if status in {"blocked", "idle"}:
+            return True, f"audit_{status}"
+        return False, "fresh_audit_state"
 
     status = _agent_runtime_status(repo_root, agent)
     heartbeat_age = status["heartbeat_age"]
@@ -299,7 +330,14 @@ def _send_to_window_candidates(
     return last_title, last_result
 
 
-def drive_once(repo_root: Path, agent: str, *, force: bool = False, stale_seconds: int = 180) -> dict[str, object]:
+def drive_once(
+    repo_root: Path,
+    agent: str,
+    *,
+    force: bool = False,
+    stale_seconds: int = 180,
+    retry_seconds: int = 120,
+) -> dict[str, object]:
     ensure_dirs(repo_root)
     if agent in workflow_mailbox.VALID_AGENT_NAMES:
         workflow_mailbox._validate_agent(agent)
@@ -314,7 +352,14 @@ def drive_once(repo_root: Path, agent: str, *, force: bool = False, stale_second
             return {"agent": agent, "delivered": False, "reason": "unknown_agent"}
 
     fingerprint = _fingerprint(mailbox, message)
-    should_send, reason = _should_send(repo_root, agent, fingerprint, force=force, stale_seconds=stale_seconds)
+    should_send, reason = _should_send(
+        repo_root,
+        agent,
+        fingerprint,
+        force=force,
+        stale_seconds=stale_seconds,
+        retry_seconds=retry_seconds,
+    )
     if not should_send:
         return {"agent": agent, "delivered": False, "reason": reason, "message": message}
 
@@ -341,13 +386,21 @@ def drive_once(repo_root: Path, agent: str, *, force: bool = False, stale_second
         "fingerprint": fingerprint,
         "decision_reason": reason,
     }
-    if delivered:
-        _save_state(repo_root, agent, payload)
+    _save_state(repo_root, agent, payload)
     return payload
 
 
-def drive_all(repo_root: Path, *, force: bool = False, stale_seconds: int = 180) -> list[dict[str, object]]:
-    return [drive_once(repo_root, agent, force=force, stale_seconds=stale_seconds) for agent in ALL_TERMINAL_TARGETS]
+def drive_all(
+    repo_root: Path,
+    *,
+    force: bool = False,
+    stale_seconds: int = 180,
+    retry_seconds: int = 120,
+) -> list[dict[str, object]]:
+    return [
+        drive_once(repo_root, agent, force=force, stale_seconds=stale_seconds, retry_seconds=retry_seconds)
+        for agent in ALL_TERMINAL_TARGETS
+    ]
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -358,6 +411,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--once", action="store_true", help="Run one delivery pass and exit.")
     parser.add_argument("--interval", type=int, default=15, help="Polling interval in seconds.")
     parser.add_argument("--stale-seconds", type=int, default=180, help="Treat heartbeat/ack inactivity beyond this threshold as stalled.")
+    parser.add_argument("--retry-seconds", type=int, default=120, help="Minimum retry interval for the same unchanged target state.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output.")
     return parser.parse_args(argv)
 
@@ -373,9 +427,20 @@ def main(argv: list[str] | None = None) -> int:
                 "sent_at": _utc_now(),
             }
         elif args.agent:
-            payload = drive_once(repo_root, args.agent, force=args.force, stale_seconds=args.stale_seconds)
+            payload = drive_once(
+                repo_root,
+                args.agent,
+                force=args.force,
+                stale_seconds=args.stale_seconds,
+                retry_seconds=args.retry_seconds,
+            )
         else:
-            payload = drive_all(repo_root, force=args.force, stale_seconds=args.stale_seconds)
+            payload = drive_all(
+                repo_root,
+                force=args.force,
+                stale_seconds=args.stale_seconds,
+                retry_seconds=args.retry_seconds,
+            )
 
         if args.json:
             print(json.dumps(payload, ensure_ascii=True, indent=2))

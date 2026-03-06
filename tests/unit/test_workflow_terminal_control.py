@@ -146,9 +146,50 @@ def test_drive_once_resends_when_heartbeat_stale(tmp_path: Path) -> None:
 
     control._seconds_since = lambda value: 999.0
     control._send_to_window_candidates = lambda repo_root, window_titles, message, **kwargs: (window_titles[0], Result())
-    result = control.drive_once(tmp_path, "review", stale_seconds=180)
+    result = control.drive_once(tmp_path, "review", stale_seconds=180, retry_seconds=0)
     assert result["delivered"] is True
     assert result["decision_reason"] == "stale_heartbeat"
+
+
+def test_drive_once_skips_recent_retry_for_same_state(tmp_path: Path) -> None:
+    mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    mailbox_module.ensure_runtime_dirs(tmp_path)
+
+    mailbox_payload = {
+        "mailbox_version": 1,
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "agent": "main",
+        "action": "monitor",
+        "stage": "review",
+        "summary": "No immediate main-branch action.",
+        "pending_commits": [],
+        "dirty_files": [],
+    }
+    (tmp_path / ".kiro" / "runtime" / "mailboxes" / "main.json").write_text(
+        json.dumps(mailbox_payload, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+    fingerprint = control._fingerprint(mailbox_payload, "统筹")
+    (tmp_path / ".kiro" / "runtime" / "terminal-control").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".kiro" / "runtime" / "terminal-control" / "main.json").write_text(
+        json.dumps({"agent": "main", "fingerprint": fingerprint, "sent_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+
+    control._seconds_since = lambda value: 30.0
+    result = control.drive_once(tmp_path, "main", retry_seconds=120)
+    assert result["delivered"] is False
+    assert result["reason"] == "recent_attempt"
+
+
+def test_audit_agent_without_state_is_not_auto_nudged(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+
+    result = control.drive_once(tmp_path, "audit-a")
+    assert result["delivered"] is False
+    assert result["reason"] == "missing_audit_state"
 
 
 def test_drive_all_includes_audit_terminals(tmp_path: Path) -> None:
