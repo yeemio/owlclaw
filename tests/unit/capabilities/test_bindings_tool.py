@@ -86,6 +86,11 @@ async def test_binding_tool_records_error_then_reraises() -> None:
     assert call_kwargs["status"] == "error"
     assert call_kwargs["error_message"] == "Binding execution failed."
     assert call_kwargs["input_params"]["mode"] == "shadow"
+    # D16: ledger must not persist raw exception text
+    assert "executor failure" not in (call_kwargs.get("error_message") or "")
+    result_summary = call_kwargs.get("output_result", {}).get("result_summary", "")
+    assert "executor failure" not in result_summary
+    assert "Binding execution failed." in result_summary
 
 
 def test_binding_tool_summarize_truncates_long_payload() -> None:

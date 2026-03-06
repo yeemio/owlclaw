@@ -69,6 +69,14 @@ class HTTPBindingExecutor(BindingExecutor):
             errors.append("method must be one of GET/POST/PUT/PATCH/DELETE")
         if not str(config.get("url", "")).strip():
             errors.append("url is required")
+        # D15: SSRF boundary — require non-empty allowed_hosts when url is set (fail-fast)
+        if str(config.get("url", "")).strip():
+            raw = config.get("allowed_hosts", [])
+            allowed = [item for item in (raw if isinstance(raw, list) else []) if isinstance(item, str) and item.strip()]
+            if not allowed:
+                errors.append(
+                    "http.allowed_hosts must be non-empty for SSRF safety; configure an allowlist of allowed hostnames"
+                )
         return errors
 
     @property

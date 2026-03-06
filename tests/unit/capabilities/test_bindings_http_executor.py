@@ -167,3 +167,16 @@ async def test_http_executor_empty_allowed_hosts_rejected() -> None:
     with pytest.raises(PermissionError, match="allowed_hosts must be non-empty"):
         await executor.execute(config, {})
 
+
+def test_http_executor_validate_config_rejects_empty_allowed_hosts() -> None:
+    """D15: validate_config fails fast when url is set but allowed_hosts is empty (SSRF boundary)."""
+    executor = HTTPBindingExecutor()
+    errors = executor.validate_config({"method": "GET", "url": "https://api.example.com/orders", "allowed_hosts": []})
+    assert any("allowed_hosts" in e and "non-empty" in e for e in errors)
+    errors2 = executor.validate_config({"method": "GET", "url": "https://api.example.com/orders"})
+    assert any("allowed_hosts" in e for e in errors2)
+    errors_ok = executor.validate_config(
+        {"method": "GET", "url": "https://api.example.com/orders", "allowed_hosts": ["api.example.com"]}
+    )
+    assert not [e for e in errors_ok if "allowed_hosts" in e]
+
