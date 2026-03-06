@@ -22,6 +22,7 @@ def test_message_mapping_uses_fixed_utterances() -> None:
     control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
 
     assert control._message_for_mailbox("main", {"action": "clean_local_changes"}) == "统筹"
+    assert control._message_for_mailbox("main", {"action": "assign_next_batch"}) == "统筹"
     assert control._message_for_mailbox("main", {"action": "monitor"}) is None
     assert control._message_for_mailbox("review", {"action": "review_pending_commits"}) == "继续审校"
     assert control._message_for_mailbox("codex", {"action": "wait_for_review"}) == "继续spec循环"
@@ -176,6 +177,37 @@ def test_main_monitor_state_does_not_send_prompt(tmp_path: Path) -> None:
     result = control.drive_once(tmp_path, "main")
     assert result["delivered"] is False
     assert result["reason"] == "no_message"
+
+
+def test_main_prompt_waits_for_state_change_after_first_send(tmp_path: Path) -> None:
+    mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    mailbox_module.ensure_runtime_dirs(tmp_path)
+
+    mailbox_payload = {
+        "mailbox_version": 1,
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "agent": "main",
+        "action": "assign_next_batch",
+        "stage": "assign",
+        "summary": "Coding and review queues are clear; assign the next batch before nudging agents.",
+        "pending_commits": [],
+        "dirty_files": [],
+    }
+    (tmp_path / ".kiro" / "runtime" / "mailboxes" / "main.json").write_text(
+        json.dumps(mailbox_payload, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+    fingerprint = control._fingerprint(mailbox_payload, "统筹")
+    (tmp_path / ".kiro" / "runtime" / "terminal-control").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".kiro" / "runtime" / "terminal-control" / "main.json").write_text(
+        json.dumps({"agent": "main", "fingerprint": fingerprint, "sent_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+
+    result = control.drive_once(tmp_path, "main")
+    assert result["delivered"] is False
+    assert result["reason"] == "main_waiting_for_state_change"
 
 
 def test_audit_agent_without_state_is_not_auto_nudged(tmp_path: Path) -> None:

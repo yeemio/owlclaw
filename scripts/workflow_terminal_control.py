@@ -220,7 +220,7 @@ def _message_for_mailbox(agent: str, mailbox: dict[str, object]) -> str | None:
     action = str(mailbox.get("action", ""))
 
     if agent == "main":
-        if action in {"clean_local_changes", "merge_review_work"}:
+        if action in {"clean_local_changes", "merge_review_work", "assign_next_batch"}:
             return "统筹"
         return None
     if agent == "review":
@@ -299,6 +299,8 @@ def _should_send(
         return True, "first_send"
     if previous.get("fingerprint") != fingerprint:
         return True, "fingerprint_changed"
+    if agent == "main":
+        return False, "main_waiting_for_state_change"
 
     last_attempt_value = previous.get("sent_at")
     last_attempt_age = _seconds_since(last_attempt_value) if last_attempt_value else None
