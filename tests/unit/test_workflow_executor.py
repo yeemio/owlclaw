@@ -60,7 +60,7 @@ def test_process_once_runs_review_execution(tmp_path: Path) -> None:
     assert result["status"] == "done"
     assert result["executed"] is True
     assert invoked["agent"] == "review"
-    assert "Do not review DEEP_AUDIT_REPORT.md itself" in str(invoked["prompt"])
+    assert str(invoked["prompt"]) == "继续审校。只审 codex-work 和 codex-gpt-work 的代码提交，不审计审计报告。直接执行，不要反问。"
 
     ack = mailbox_module.read_ack(tmp_path, "review")
     assert ack is not None
@@ -85,10 +85,21 @@ def test_process_once_idles_when_no_executable_action(tmp_path: Path) -> None:
     mailbox_path = tmp_path / ".kiro" / "runtime" / "mailboxes" / "codex.json"
     mailbox_path.write_text(json.dumps(mailbox_payload, ensure_ascii=True, indent=2), encoding="utf-8")
 
+    executor_module._invoke_runner = lambda *args, **kwargs: {
+        "agent": "codex",
+        "runner": "agent",
+        "executed_at": "2026-03-06T00:00:01+00:00",
+        "workdir": str(tmp_path),
+        "command": ["agent"],
+        "returncode": 0,
+        "last_message_path": str(tmp_path / "last.txt"),
+        "log_path": str(tmp_path / "log.txt"),
+        "last_message": "waiting for review",
+        "error_kind": "",
+    }
     result = executor_module.process_once(tmp_path, "codex")
-    assert result["status"] == "idle"
-    assert result["executed"] is False
-    assert result["reason"] == "no_action"
+    assert result["status"] == "done"
+    assert result["executed"] is True
 
 
 def test_process_once_skips_already_processed_mailbox(tmp_path: Path) -> None:
@@ -182,7 +193,7 @@ def test_invoke_runner_supports_agent_backend(tmp_path: Path) -> None:
 
     class Result:
         returncode = 0
-        stdout = "agent completed"
+        stdout = json.dumps({"type": "result", "result": "agent completed"})
         stderr = ""
 
     calls: list[list[str]] = []
@@ -228,3 +239,36 @@ def test_mailbox_fingerprint_ignores_generated_at() -> None:
     }
     second = {**first, "generated_at": "2026-03-06T00:01:00+00:00"}
     assert executor_module._mailbox_fingerprint(first) == executor_module._mailbox_fingerprint(second)
+
+
+def test_detect_invalid_output_flags_ready_reply() -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    executor_module = _load_module("workflow_executor", "scripts/workflow_executor.py")
+    assert executor_module._detect_invalid_output("What would you like me to work on next?") == "non_executing_reply"
+
+
+def test_process_once_marks_timeout_blocked(tmp_path: Path) -> None:
+    mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    executor_module = _load_module("workflow_executor", "scripts/workflow_executor.py")
+    mailbox_module.ensure_runtime_dirs(tmp_path)
+
+    mailbox_payload = {
+        "mailbox_version": 1,
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "agent": "review",
+        "action": "review_pending_commits",
+        "summary": "Review pending coding submissions in order: codex-work.",
+        "pending_commits": ["eb308ad D12/D15/D16/D21"],
+        "blockers": [],
+        "dirty_files": [],
+    }
+    mailbox_path = tmp_path / ".kiro" / "runtime" / "mailboxes" / "review.json"
+    mailbox_path.write_text(json.dumps(mailbox_payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
+    def fake_invoke(*args, **kwargs):
+        raise executor_module.subprocess.TimeoutExpired(cmd=["claude"], timeout=120)
+
+    executor_module._invoke_runner = fake_invoke
+    result = executor_module.process_once(tmp_path, "review")
+    assert result["status"] == "blocked"
+    assert result["result"]["error_kind"] == "timeout"

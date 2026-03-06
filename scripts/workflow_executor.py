@@ -19,7 +19,8 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import workflow_mailbox  # noqa: E402
 
-PROMPT_VERSION = 3
+PROMPT_VERSION = 4
+RUNNER_TIMEOUT_SECONDS = 120
 
 
 def _utc_now() -> str:
@@ -90,56 +91,21 @@ def _save_state(repo_root: Path, agent: str, payload: dict[str, object]) -> None
 
 def _action_prompt(agent: str, mailbox: dict[str, object]) -> str | None:
     action = str(mailbox.get("action", ""))
-    summary = str(mailbox.get("summary", ""))
-    blockers = mailbox.get("blockers") or []
-    pending_commits = mailbox.get("pending_commits") or []
-    dirty_files = mailbox.get("dirty_files") or []
 
     if action == "review_pending_commits" and agent == "review":
-        commits = "\n".join(f"- {item}" for item in pending_commits) or "- none listed"
-        return (
-            "You are the review-work executor in D:\\AI\\owlclaw-review.\n"
-            "Execute the Review Loop now. Do not reply with an acknowledgement-only message.\n"
-            "Review codex-work and codex-gpt-work code submissions against main and produce actual review work.\n"
-            "Do not review DEEP_AUDIT_REPORT.md itself; audit reports are owned by orchestrator/main.\n"
-            "Focus on code correctness, tests, spec/task consistency, architecture compliance, and merge readiness.\n"
-            "Use the repository guidance in .kiro/WORKTREE_ASSIGNMENTS.md and docs/WORKTREE_GUIDE.md.\n"
-            f"Mailbox summary: {summary}\n"
-            "Pending commits:\n"
-            f"{commits}\n"
-            "Start by inspecting git log/diff for those coding branches. Then perform the review and make the required review-work output changes in this repository.\n"
-            "If the branches are ready, produce review output and apply the needed review-work changes. If blocked, explain the concrete blocker and stop.\n"
-            "Do not stop after analysis if concrete review output can be produced in this run.\n"
-            "Do not end with a question asking what to do next. End with concrete review results only.\n"
-        )
+        return "继续审校。只审 codex-work 和 codex-gpt-work 的代码提交，不审计审计报告。直接执行，不要反问。"
 
     if action == "cleanup_or_commit_local_changes" and agent in {"codex", "codex-gpt"}:
-        dirty = "\n".join(f"- {item}" for item in dirty_files) or "- no dirty files listed"
-        return (
-            f"You are the {agent} executor working in your assigned worktree.\n"
-            "Execute the cleanup/commit task now. Do not answer with acknowledgement only.\n"
-            "Your current job is to safely resolve local uncommitted changes in your own worktree.\n"
-            "Inspect git status and only act on your own branch/worktree files.\n"
-            "Do not touch main worktree files or unrelated audit report edits.\n"
-            "If the local changes are valid current-task work, commit them with a focused message.\n"
-            "If they are invalid/generated leftovers, clean them safely without disturbing user changes.\n"
-            "Do not reset or discard user-owned changes outside your worktree.\n"
-            f"Mailbox summary: {summary}\n"
-            "Dirty files:\n"
-            f"{dirty}\n"
-            "When finished, leave the worktree clean and report exactly what you committed or cleaned.\n"
-            "Do the work in this run; do not stop after restating the plan.\n"
-        )
+        return "继续spec循环。先处理并收口你当前 worktree 的未提交改动，直接执行，不要反问。"
+
+    if action == "wait_for_review" and agent in {"codex", "codex-gpt"}:
+        return "继续spec循环。如果当前确实应等待审校，就只汇报等待审校且不要反问。"
 
     if action == "merge_review_work" and agent == "main":
-        return (
-            "You are the main worktree executor in D:\\AI\\owlclaw.\n"
-            "Execute the merge task now. Do not respond with acknowledgement only.\n"
-            "Merge review-work into main if the main worktree is clean and the review branch is ready.\n"
-            "Do not touch audit-report-only edits owned by the orchestrator.\n"
-            f"Mailbox summary: {summary}\n"
-            "Verify git status, merge review-work, resolve only safe conflicts, and report the result.\n"
-        )
+        return "统筹。直接推进当前 merge/sync/分配动作，不要反问。"
+
+    if action == "clean_local_changes" and agent == "main":
+        return "统筹。先处理 main 当前阻塞，再继续后续动作，不要反问。"
 
     return None
 
@@ -183,6 +149,44 @@ def _runner_name(agent: str) -> str:
     return "agent"
 
 
+def _extract_runner_message(runner: str, stdout_text: str, last_message_path: Path) -> str:
+    if runner == "codex":
+        if last_message_path.exists():
+            return last_message_path.read_text(encoding="utf-8", errors="replace").strip()
+        return ""
+    if runner in {"claude", "agent"}:
+        text = stdout_text.strip()
+        if not text:
+            return ""
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            return text
+        if isinstance(payload, dict):
+            result = payload.get("result", "")
+            if isinstance(result, str):
+                return result.strip()
+        return text
+    return stdout_text.strip()
+
+
+def _detect_invalid_output(message: str) -> str:
+    lowered = message.lower()
+    invalid_markers = [
+        "what would you like me to do",
+        "what would you like me to work on",
+        "something else you have in mind",
+        "i'm ready to execute",
+        "ready to execute tasks",
+        "tell me whether you want",
+        "send the target branch",
+    ]
+    for marker in invalid_markers:
+        if marker in lowered:
+            return "non_executing_reply"
+    return ""
+
+
 def _invoke_runner(
     repo_root: Path,
     agent: str,
@@ -208,8 +212,9 @@ def _invoke_runner(
             *_cli_command_prefix("claude"),
             "-p",
             "--output-format",
-            "text",
-            "--dangerously-skip-permissions",
+            "json",
+            "--permission-mode",
+            "bypassPermissions",
             prompt,
         ]
     else:
@@ -217,7 +222,7 @@ def _invoke_runner(
             *_cli_command_prefix("agent"),
             "--print",
             "--output-format",
-            "text",
+            "json",
             "--force",
             "--trust",
             "--workspace",
@@ -233,6 +238,7 @@ def _invoke_runner(
         encoding=_text_encoding(),
         errors="replace",
         check=False,
+        timeout=RUNNER_TIMEOUT_SECONDS,
     )
 
     stdout_text = process.stdout or ""
@@ -240,18 +246,17 @@ def _invoke_runner(
     combined_output = stdout_text + (f"\n{stderr_text}" if stderr_text else "")
     log_path.write_text(combined_output, encoding="utf-8")
 
-    last_message = ""
-    if runner == "codex":
-        if last_message_path.exists():
-            last_message = last_message_path.read_text(encoding="utf-8", errors="replace").strip()
-    else:
-        last_message = stdout_text.strip()
+    last_message = _extract_runner_message(runner, stdout_text, last_message_path)
+    if runner != "codex":
         last_message_path.write_text(last_message, encoding="utf-8")
 
     log_text = combined_output
     error_kind = ""
     if "You've hit your usage limit" in log_text:
         error_kind = "usage_limit"
+    invalid_output = _detect_invalid_output(last_message)
+    if invalid_output:
+        error_kind = invalid_output
 
     payload = {
         "agent": agent,
@@ -307,10 +312,26 @@ def process_once(repo_root: Path, agent: str) -> dict[str, object]:
     workdir = _default_workdirs(repo_root)[agent]
     try:
         result = _invoke_runner(repo_root, agent, workdir=workdir, prompt=prompt)
-        final_status = "done" if result["returncode"] == 0 else "blocked"
+        final_status = "done" if result["returncode"] == 0 and not result.get("error_kind") else "blocked"
+    except subprocess.TimeoutExpired as exc:
+        result = {
+            "agent": agent,
+            "runner": _runner_name(agent),
+            "executed_at": _utc_now(),
+            "workdir": str(workdir),
+            "command": exc.cmd,
+            "returncode": 124,
+            "last_message_path": "",
+            "log_path": str(_log_path(repo_root, agent)),
+            "last_message": "",
+            "error_kind": "timeout",
+        }
+        _result_path(repo_root, agent).write_text(json.dumps(result, ensure_ascii=True, indent=2), encoding="utf-8")
+        final_status = "blocked"
     except FileNotFoundError as exc:
         result = {
             "agent": agent,
+            "runner": _runner_name(agent),
             "executed_at": _utc_now(),
             "workdir": str(workdir),
             "command": [],
@@ -331,7 +352,15 @@ def process_once(repo_root: Path, agent: str) -> dict[str, object]:
             else (
                 "workflow_executor blocked by codex usage limit"
                 if result.get("error_kind") == "usage_limit"
-                else "workflow_executor failed mailbox action"
+                else (
+                    "workflow_executor got non-executing reply"
+                    if result.get("error_kind") == "non_executing_reply"
+                    else (
+                        "workflow_executor timed out"
+                        if result.get("error_kind") == "timeout"
+                        else "workflow_executor failed mailbox action"
+                    )
+                )
             )
         ),
         commit_ref=result.get("last_message_path", ""),
