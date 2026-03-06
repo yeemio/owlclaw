@@ -211,7 +211,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `WORKING`（`scripts/console-local-setup.ps1` 有待收口改动，完成后切回 DONE/IDLE） |
+| 工作状态 | `IDLE`（浏览器验收残留脚本修复已合入 main，等待启动 Phase 15） |
 
 **当前分配的 spec**：
 
