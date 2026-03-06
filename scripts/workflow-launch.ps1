@@ -100,14 +100,20 @@ function Start-WorkflowWindow {
 
     $wt = Get-Command "wt.exe" -ErrorAction SilentlyContinue
     if ($null -ne $wt -and $StartupType -eq "direct_cli") {
+        $directScript = @"
+Set-Location '$Workdir'
+`$Host.UI.RawUI.WindowTitle = '$WindowTitle'
+$CommandText
+"@
         return Start-Process -PassThru -FilePath $wt.Source -ArgumentList @(
             "-w",
             "new",
             "--title",
             $WindowTitle,
-            "-d",
-            $Workdir,
-            $CommandText
+            "powershell.exe",
+            "-NoExit",
+            "-Command",
+            $directScript
         )
     }
 
