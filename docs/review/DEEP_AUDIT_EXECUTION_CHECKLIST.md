@@ -3,7 +3,7 @@
 > **来源**: [DEEP_AUDIT_REPORT.md](/D:/AI/owlclaw/docs/review/DEEP_AUDIT_REPORT.md)
 > **对应 spec**: [audit-deep-remediation/tasks.md](/D:/AI/owlclaw/.kiro/specs/audit-deep-remediation/tasks.md)
 > **用途**: 供“统筹”在下一轮直接分配给 `codex-work` / `codex-gpt-work` / `review-work`
-> **最后更新**: 2026-03-06
+> **最后更新**: 2026-03-06（补充 Backlog #35–#44 至 tasks.md；新增 §6 审校快速检查）
 
 ---
 
@@ -168,3 +168,16 @@
 - 有测试或明确手验记录
 - review-work 给出 `APPROVE` 或 `FIX_NEEDED`
 - 合入 `main` 后同步所有 worktree
+
+---
+
+## 6. review-work 审校快速检查（当前批次）
+
+审校两编码分支时，可按下表做最小验证（grep / 单测 / 手验）。
+
+| 分支 | 本批提交对应 | 必查 |
+|------|--------------|------|
+| **codex-work** | D12/D15/D16/D21（及 D23/D24 若已包含） | `middleware.py`：token 比较处为 `hmac.compare_digest`；`ws.py`：_is_ws_authorized 同改。`http_executor.py`：allowed_hosts 空时文档或校验。`tool.py`：ledger 写入无原始 `str(exc)`。`registry.py`：invoke_handler/get_state 异常包装无原始消息。`poetry run pytest` 通过。 |
+| **codex-gpt-work** | D2/D4b/D6/D7/D11/D17/D18/D19/D20（及 D22/D25–D29 若已包含） | `docs/` 存在 tenant_id 多租户说明。`heartbeat.py`：无 `_session_factory`，改用 Ledger 公开 API。`engine.py`：仅连接/认证类异常映射。`capabilities.py`：ConfigurationError 捕获。`webhook http/app.py`：decode UTF-8 有 try/except 且返回 400。`triggers/api/server.py`：body 读取上限、ledger 错误脱敏。`auth.py`：hmac.compare_digest。`cron.py`：历史接口错误脱敏、tenant 文档或绑定。`poetry run pytest` 通过。 |
+
+- **Backlog（#35–#44）**：已写入 `audit-deep-remediation/tasks.md` 的 Backlog 表，当前轮收口后再统筹分配。

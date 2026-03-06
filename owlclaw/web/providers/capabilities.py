@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 import types
 from collections.abc import Awaitable, Callable
 from decimal import Decimal
@@ -12,8 +13,11 @@ from sqlalchemy import case, func, select
 
 from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.db import get_engine
+from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.db.session import create_session_factory
 from owlclaw.governance.ledger import LedgerRecord
+
+logger = logging.getLogger(__name__)
 
 StatsFetcher = Callable[[str], Awaitable[dict[str, dict[str, Any]]]]
 
@@ -80,9 +84,20 @@ class DefaultCapabilitiesProvider:
         return self._build_schema_from_handler(handler)
 
     async def _collect_capability_stats(self, tenant_id: str) -> dict[str, dict[str, Any]]:
-        success_case = case((func.lower(LedgerRecord.status) == "success", 1), else_=0)
-        engine = get_engine()
-        session_factory = create_session_factory(engine)
+        """Collect capability execution statistics from ledger.
+
+        Returns empty dict if database is not configured (ConfigurationError),
+        allowing graceful degradation for Lite Mode.
+        """
+        try:
+            success_case = case((func.lower(LedgerRecord.status) == "success", 1), else_=0)
+            engine = get_engine()
+            session_factory = create_session_factory(engine)
+        except ConfigurationError:
+            # Database not configured - return empty stats for graceful degradation
+            logger.debug("Database not configured, returning empty capability stats")
+            return {}
+
         async with session_factory() as session:
             statement = (
                 select(

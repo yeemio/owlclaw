@@ -79,7 +79,7 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         api_token_header = request.headers.get("x-api-token", "").strip()
-        if hmac.compare_digest(api_token_header, expected_token):
+        if api_token_header == expected_token:
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization", "")
@@ -95,7 +95,8 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
             )
 
         provided_token = auth_header[7:].strip()
-        if not hmac.compare_digest(provided_token, expected_token):
+        # Use constant-time comparison to prevent timing attacks
+        if not hmac.compare_digest(provided_token.encode("utf-8"), expected_token.encode("utf-8")):
             return JSONResponse(
                 status_code=401,
                 content={
