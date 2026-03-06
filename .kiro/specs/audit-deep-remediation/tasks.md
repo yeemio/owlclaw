@@ -37,7 +37,8 @@
 | 18 | **Low-15** 在 `http_executor.py` 中收紧/明确空 `allowed_hosts` 的安全边界，避免默认允许任意公网 host 而无告警 | 有测试、配置校验或明确文档；SSRF 风险边界可审计 | [x] |
 | 19 | **Low-16** 在 `BindingTool` 写 ledger 失败记录时不再持久化原始 `str(exc)`，改为统一安全错误消息 | grep 确认无原始 `str(exc)` 写入 ledger；有测试 | [x] |
 | 24 | **Low-21** 在 `CapabilityRegistry.invoke_handler()` / `get_state()` 中避免将原始异常字符串直接包装回调用方 | 调用方只见安全文案或类型级描述；有测试 | [x] |
-
+| 26 | **Low-23** 在 MCP / OwlHub / signal API / governance proxy 的对外错误响应中避免直接返回原始 `str(exc)` | 客户端只见安全文案；详细异常仅进日志；有测试或手验 | [ ] |
+| 27 | **Low-24** 在 `bindings/schema.py` 中为 `grpc` 配置补齐必填校验，或 fail-fast 明确其仅为占位 | `grpc` 配置不再“合法但不可运行”；有测试或文档 | [ ] |
 ---
 
 ## codex-gpt-work 负责（续）
@@ -51,6 +52,12 @@
 | 21 | **Low-18** 在 API trigger 写 ledger 失败记录时复用安全错误消息，不持久化原始 `str(exc)` | grep 确认失败路径无原始异常写入 ledger；有测试 | [ ] |
 | 22 | **Low-19** 在 API trigger `AuthProvider` 中用 `hmac.compare_digest` 做 key/token 常量时间比较 | grep 确认无直接 token 比较；有测试或手验 | [ ] |
 | 23 | **Low-20** 在 cron `get_execution_history` 中避免向调用方返回未脱敏的 ledger 错误信息 | 输出已 redacted 或由上游写入统一脱敏；有测试 | [ ] |
+| 25 | **Low-22** 为 API trigger `_runs` 增加 maxsize/LRU/TTL 清理，避免异步结果缓存无限增长 | 压测或单测证明缓存不再无界增长 | [ ] |
+| 28 | **Low-25** 在 `KafkaQueueAdapter.connect()` 中增加可配置连接超时 | broker 不可达时不会无限阻塞；有测试或集成验证 | [ ] |
+| 29 | **Low-26** 为 API rate limiter `_states` 增加 TTL/maxsize/LRU，避免 tenant/endpoint 组合无限累积 | 长时间运行下限流状态不再无界增长；有测试 | [ ] |
+| 30 | **Low-27** 在 `APIKeyAuthProvider` 中移除 key 前 6 位 identity 暴露，改为 hash 或 opaque id | ledger/log/payload 中不再出现 key 前缀；有测试或手验 | [ ] |
+| 31 | **Low-28** 将 CronMetrics 的 duration/delay/cost samples 改为有界容器 | 长时运行内存不再随样本无限增长；有测试 | [ ] |
+| 32 | **Low-29** 在 cron 执行历史对外暴露路径中绑定 tenant 到认证上下文，或至少文档化其与 P1-2 同类 trust boundary | 不再信任客户端传入 tenant_id；有实现或文档结论 | [ ] |
 
 ---
 
@@ -65,6 +72,6 @@
 
 ## 执行顺序建议
 
-1. codex-work：首批 Task 1/2/3/4/11/12/13 已完成并合入 `main`；下一批执行 Task 15/18/19/24（Low-12/15/16/21）。
-2. codex-gpt-work：Task 5（P1-2 文档）可随时做；Task 6（Low-4b）在 Task 4 已合入 `main` 后可启动；Task 7、10、14、16、17、20、21、22、23 可并行。
+1. codex-work：已提交 Task 15/18/19/24（D12/D15/D16/D21），审校后继续 Task 16/17/26/27/28（D13/D14/D23/D24/D25）。
+2. codex-gpt-work：已提交 Task 5/6/7/10/14/20/21/22/23（D2/D4b/D6/D7/D11/D17/D18/D19/D20），审校后继续 Task 25/29/30/31/32（D22/D26/D27/D28/D29）。
 3. 审校：两个分支分别 Review，通过后合并 review-work → main。

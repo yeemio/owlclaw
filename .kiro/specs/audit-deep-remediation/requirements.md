@@ -1,8 +1,8 @@
 # audit-deep-remediation — 深度审计修复
 
 > **来源**: `docs/review/DEEP_AUDIT_REPORT.md`（2026-03-05 深度审计，持续扩展至 Phase 9）
-> **目标**: 收口 2 个 P1 + 19 个 Low 发现，满足 SHIP WITH CONDITIONS
-> **优先级**: P1（2 项）+ Low（19 项）
+> **目标**: 收口 2 个 P1 + 27 个 Low 发现，满足 SHIP WITH CONDITIONS
+> **优先级**: P1（2 项）+ Low（27 项）
 > **预估工作量**: 2-3 天
 
 ---
@@ -10,7 +10,7 @@
 ## 1. 背景与动机
 
 ### 1.1 当前问题
-- 深度审计报告已扩展至 21 项发现：2 个 P1（Skill 环境变量注入无边界、Console tenant_id 客户端可控）、19 个 Low（缓存策略、Heartbeat 耦合、LLM/ledger 错误脱敏、engine 异常映射、provider/webhook/middleware/API trigger/Cron/bindings/registry 韧性与安全细节等）。
+- 深度审计报告已扩展至 29 项发现：2 个 P1（Skill 环境变量注入无边界、Console tenant_id 客户端可控）、27 个 Low（缓存策略、Heartbeat 耦合、LLM/ledger/客户端错误脱敏、engine 异常映射、provider/webhook/middleware/API trigger/Cron/bindings/registry/Kafka 韧性与安全细节等）。
 - 其中 D1/D3/D4a/D5/D8/D9/D10 已完成并合入 `main`；其余项需继续按 worktree 分配推进。
 
 ### 1.2 设计目标
@@ -105,6 +105,38 @@
 - **问题**：`CapabilityRegistry.invoke_handler()` / `get_state()` 用 `RuntimeError(f\"... failed: {e}\")` 包装底层异常，调用方可直接获得敏感原始错误内容。
 - **需求**：包装异常时改为通用安全文案、类型级描述，或先对原始异常内容做脱敏/截断。
 
+### 2.22 Low-22（Phase 24）：API trigger `_runs` 有界化
+- **问题**：`APITriggerServer._runs` 会无限保存异步触发执行结果，在持续请求下内存持续增长。
+- **需求**：为 `_runs` 增加容量上限、LRU 淘汰或 TTL 清理，防止异步历史缓存无限膨胀。
+
+### 2.23 Low-23（Phase 25）：客户端可见错误信息脱敏
+- **问题**：MCP server、OwlHub skills API、signal API、governance proxy 等客户端可见路径会直接返回 `str(exc)`，可能泄露敏感异常内容。
+- **需求**：对外错误响应统一使用安全文案或脱敏后的消息，详细错误仅进入日志。
+
+### 2.24 Low-24（Second Pass）：binding grpc 配置校验补齐
+- **问题**：binding schema 接受 `grpc` 类型，但未要求连接/endpoint 等必填字段，运行时使用时会晚失败。
+- **需求**：为 `grpc` binding 增加专门的 schema 校验和必填字段，或明确文档说明当前仅占位不可用。
+
+### 2.25 Low-25（Second Pass）：Kafka connect 超时
+- **问题**：`KafkaQueueAdapter.connect()` 对 producer/consumer 启动没有超时，broker 不可达时可无限阻塞。
+- **需求**：增加可配置 connect timeout，或用 `asyncio.wait_for` 包裹连接流程。
+
+### 2.26 Low-26（第 2 轮）：API rate limiter `_states` 有界化
+- **问题**：`_TokenBucketLimiter._states` 按 tenant/endpoint 累积，无 TTL 或淘汰策略，长时间运行时可持续增长。
+- **需求**：增加 TTL、maxsize 或 LRU 淘汰，防止限流状态表无界增长。
+
+### 2.27 Low-27（第 2 轮）：API key identity 脱敏
+- **问题**：`APIKeyAuthProvider` 目前将 identity 设为 `api_key:{key[:6]}`，会把 key 前缀写入 payload/ledger/log。
+- **需求**：改为 hash、opaque id 或其他不可逆标识，不向持久化/日志暴露 key 前缀。
+
+### 2.28 Low-28（第 3 轮）：CronMetrics 采样有界化
+- **问题**：`CronMetrics.duration_samples/delay_samples/cost_samples` 为无界 list，长时运行会持续占用内存。
+- **需求**：改为 `deque(maxlen=N)` 或周期性清理，保留可控窗口的样本。
+
+### 2.29 Low-29（第 3 轮）：Cron 执行历史 tenant 绑定认证上下文
+- **问题**：`get_execution_history(tenant_id=...)` 接受调用方传入 tenant_id；一旦经 API 暴露，属于与 P1-2 同类的 tenant trust boundary。
+- **需求**：对外暴露时必须从认证上下文绑定 tenant，不可信任客户端传入 tenant_id。
+
 ---
 
 ## 3. 验收标准（DoD）
@@ -130,3 +162,11 @@
 - [ ] Low-19：API trigger auth 使用 hmac.compare_digest；有测试或手验。
 - [ ] Low-20：Cron 历史接口不再暴露未脱敏 ledger 错误；有测试或与 Low-16/18 的联动证明。
 - [ ] Low-21：CapabilityRegistry 不再把原始异常字符串直接包装回调用方；有测试。
+- [ ] Low-22：API trigger `_runs` 有界或带 TTL 清理；有测试。
+- [ ] Low-23：客户端可见错误路径不再直接暴露原始 `str(exc)`；有测试或手验。
+- [ ] Low-24：grpc binding schema 具备明确校验边界；有测试或文档说明。
+- [ ] Low-25：Kafka 连接流程具备超时；有测试或集成验证。
+- [ ] Low-26：API rate limiter `_states` 有 TTL 或淘汰策略；有测试。
+- [ ] Low-27：API key identity 不再暴露 key 前缀；有测试或手验。
+- [ ] Low-28：CronMetrics 样本容器有界；有测试。
+- [ ] Low-29：Cron 历史 tenant 不再由客户端直接决定；有文档或实现证明。
