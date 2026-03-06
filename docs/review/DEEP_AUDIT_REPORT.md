@@ -23,9 +23,9 @@
 
 | 项目 | 说明 |
 |------|------|
-| **已完成轮数** | **27**（第 1–27 轮） |
+| **已完成轮数** | **9**（第 1–9 轮） |
 | **总计划轮数** | 27 |
-| **下一轮** | — 全部完成 |
+| **下一轮** | 第 10 轮（用户说「继续审计」时执行） |
 | **第 1 轮范围** | Core Logic + Lifecycle + I/O + Data+Security 主路径（runtime, heartbeat, engine, ledger, ws, deps, sanitizer, sql_executor 等）；报告 Phase 1–4 及 Executive Summary 中的 6 条发现属本轮。 |
 | **第 2 轮范围** | API trigger server 全量（server.py, handler.py, auth.py, config.py, api.py）；见下方「第 2 轮深度审计」小节。 |
 | **第 3 轮范围** | Cron 全量（cron.py 注册、trigger_now、_run_cron、Hatchet 注册、get_execution_history、governance/ledger 路径）；见下方「第 3 轮深度审计」小节。 |
@@ -34,6 +34,7 @@
 | **第 6 轮范围** | Console Web + 认证（deps.py、middleware.py、mount.py、ws.py）；见下方「第 6 轮深度审计」小节。 |
 | **第 7 轮范围** | Webhook 全量（接收、校验、解码、限流、transformer）；见下方「第 7 轮深度审计」小节。 |
 | **第 8 轮范围** | Triggers 其他（signal router、api.py、db_change 触发路径）；见下方「第 8 轮深度审计」小节。 |
+| **第 9 轮范围** | Capabilities 全量（registry、skills 加载、knowledge）；见下方「第 9 轮深度审计」小节。 |
 
 **27 轮范围清单（每轮取一项，按序执行）**
 
@@ -48,24 +49,24 @@
 | 7 | Webhook 全量（接收、校验、解码、限流、transformer） ✅ 已完成 |
 | 8 | Triggers 其他（signal router、api.py、db_change 触发路径） ✅ 已完成 |
 | 9 | Capabilities 全量（registry invoke_handler/get_state、list_capabilities、技能加载） ✅ 已完成 |
-| 10 | Runtime 全量（run_loop、工具调用、LLM 调用、observation、skill env 注入） ✅ 已完成 |
-| 11 | Memory + Knowledge（service、embedder、context 注入） ✅ 已完成 |
-| 12 | LLM 集成全量（litellm 边界、超时、错误映射、token 估算） ✅ 已完成 |
-| 13 | Hatchet 全量（connect、task/durable_task、start_worker、bridge） ✅ 已完成 |
-| 14 | 配置与启动（ConfigManager、hot-reload、CLI start、.env 加载） ✅ 已完成 |
-| 15 | DB 层全量（engine、migrations downgrade、Ledger 读路径与 tenant 隔离） ✅ 已完成 |
-| 16 | MCP server 全量（handle_message、_error、stdio、方法路由） ✅ 已完成 |
-| 17 | Queue 全量（Kafka connect/consume/ack/nack、queue executor、binding 发布） ✅ 已完成 |
-| 18 | Observability（Langfuse、trace/span、密钥不落日志） ✅ 已完成 |
-| 19 | CLI 破坏性路径（db backup/restore、migrate、init） ✅ 已完成 |
-| 20 | App 生命周期（startup/shutdown、资源释放、cleanup 顺序） ✅ 已完成 |
-| 21 | OwlHub / 对外 API（skills 路由、HTTPException、422 详情） ✅ 已完成 |
-| 22 | 前端与 tenant（Console 前端 auth、tenant 使用、API client） ✅ 已完成 |
-| 23 | 错误与日志（所有 str(exc) 暴露点、logging 中敏感信息） ✅ 已完成 |
-| 24 | 安全边界汇总（tenant_id、token 比较、SSRF、SQL 参数化） ✅ 已完成 |
-| 25 | Spec/code 漂移（SPEC_TASKS_SCAN、tasks.md、实现路径一致性） ✅ 已完成 |
-| 26 | 未覆盖边界（第一轮未审到的子模块、第三方封装） ✅ 已完成 |
-| 27 | 终轮复核（发现表完整性、优先级、修复 spec 覆盖） ✅ 已完成 |
+| 10 | Runtime 全量（run_loop、工具调用、LLM 调用、observation、skill env 注入） |
+| 11 | Memory + Knowledge（service、embedder、context 注入） |
+| 12 | LLM 集成全量（litellm 边界、超时、错误映射、token 估算） |
+| 13 | Hatchet 全量（connect、task/durable_task、start_worker、bridge） |
+| 14 | 配置与启动（ConfigManager、hot-reload、CLI start、.env 加载） |
+| 15 | DB 层全量（engine、migrations downgrade、Ledger 读路径与 tenant 隔离） |
+| 16 | MCP server 全量（handle_message、_error、stdio、方法路由） |
+| 17 | Queue 全量（Kafka connect/consume/ack/nack、queue executor、binding 发布） |
+| 18 | Observability（Langfuse、trace/span、密钥不落日志） |
+| 19 | CLI 破坏性路径（db backup/restore、migrate、init） |
+| 20 | App 生命周期（startup/shutdown、资源释放、cleanup 顺序） |
+| 21 | OwlHub / 对外 API（skills 路由、HTTPException、422 详情） |
+| 22 | 前端与 tenant（Console 前端 auth、tenant 使用、API client） |
+| 23 | 错误与日志（所有 str(exc) 暴露点、logging 中敏感信息） |
+| 24 | 安全边界汇总（tenant_id、token 比较、SSRF、SQL 参数化） |
+| 25 | Spec/code 漂移（SPEC_TASKS_SCAN、tasks.md、实现路径一致性） |
+| 26 | 未覆盖边界（第一轮未审到的子模块、第三方封装） |
+| 27 | 终轮复核（发现表完整性、优先级、修复 spec 覆盖） |
 
 **触发方式**：回复「**继续审计**」或「**第 N 轮**」即执行下一轮（或第 N 轮）深度审计；一轮结束后不再自动推进，需再次触发。
 
@@ -73,11 +74,11 @@
 
 ## Executive Summary
 
-**Total Findings**: 44 (P0: 0, P1: 2, Low: 42)  
-*按本文「审计轮次定义与进度」，第 1–27 轮已全部完成；以下发现来自历史会话 + 第 2–8 轮深度审计及后续轮次复核。*
+**Total Findings**: 46 (P0: 0, P1: 2, Low: 44)  
+*按本文「审计轮次定义与进度」，第 1–9 轮已完成深度审计；第 10 轮起继续深度审计。*
 - P0/High: 0
 - P1/Medium: 2
-- Low: 42
+- Low: 44
 
 **Overall Assessment**: **SHIP WITH CONDITIONS**
 
@@ -163,6 +164,8 @@
 | 42 | C.Robustness | SignalRouter.dispatch puts str(exc) in SignalResult.message → returned to client via signal API (same class as #23). | `owlclaw/triggers/signal/router.py:72` | Sanitize or use generic message before setting result.message (align #23). |
 | 43 | C.Robustness | DBChangeTriggerManager._dlq_events is unbounded list; sustained dispatch failures grow memory. | `owlclaw/triggers/db_change/manager.py:203-209, 218` | Use bounded collection (e.g. deque(maxlen)) or periodic purge; document retention. |
 | 44 | C.Robustness | _move_to_dlq stores "error": str(exc) in DLQ event; if DLQ is ever exposed via API, sensitive data could leak. | `owlclaw/triggers/db_change/manager.py:207` | Sanitize or use generic message in DLQ payload (align #16/#23). |
+| 45 | C.Robustness | CapabilityRegistry.get_state awaits async state provider with no timeout; slow or stuck provider can block indefinitely (invoke_handler has wait_for). | `owlclaw/capabilities/registry.py:275-277` | Apply asyncio.wait_for(result, timeout=...) when awaiting async provider; consider same handler_timeout_seconds or dedicated state_timeout. |
+| 46 | B.Security | SkillDocExtractor.read_document(path) does not restrict path to an allowed base; if path is user-controlled, arbitrary file read is possible. | `owlclaw/capabilities/skill_doc_extractor.py:36-41` | Validate path (e.g. resolve to realpath, require path under allowed base_dir) or document that path must be trusted. |
 
 ---
 
@@ -330,33 +333,18 @@
 
 ---
 
-## 第 9–27 轮完成说明（与既有发现对齐，无新增发现）
+## 第 9 轮深度审计（Capabilities 全量）
 
-以下轮次在「继续直到完成」的推进中，以既有发现表（#1–#44）与历史 Phase 2–8 扩展为基准进行复核；**未产生新的 P0/P1/Low 发现**，仅确认各范围内问题已由前述发现覆盖或为正面设计。
+**范围**：27 轮范围清单 — 轮 9（registry invoke_handler/get_state、list_capabilities、技能加载）。
 
-| 轮次 | 范围 | 结论 |
-|------|------|------|
-| 9 | Capabilities 全量 | #21 已覆盖 registry invoke_handler/get_state 的 str(exc)；list_capabilities、技能加载路径无新问题。 |
-| 10 | Runtime 全量 | #1（skill env）、#5（LLM exc）、#3（cache eviction）、#4（heartbeat Ledger 耦合）已覆盖；run_loop、工具调用、observation 路径已审。 |
-| 11 | Memory + Knowledge | 与 Data+Security 及 Runtime 路径重叠，无新增。 |
-| 12 | LLM 集成 | 超时与错误映射已在 Phase/轮次中覆盖。 |
-| 13 | Hatchet 全量 | #14（SIGQUIT）、connect timeout 等已覆盖。 |
-| 14 | 配置与启动 | Phase 4/5 已覆盖 ConfigManager、CLI .env。 |
-| 15 | DB 层 | #6/#7、Ledger tenant 隔离、migrations 已覆盖。 |
-| 16 | MCP server | #23 已覆盖 _error str(exc)。 |
-| 17 | Queue 全量 | #25（Kafka connect timeout）、#31（queue executor cache）已覆盖。 |
-| 18 | Observability | 密钥不落日志已在多轮确认。 |
-| 19 | CLI 破坏性路径 | 已纳入审计范围，无新发现。 |
-| 20 | App 生命周期 | #8（health_status 私有属性）已覆盖。 |
-| 21 | OwlHub / 对外 API | #23（OwlHub HTTPException detail）已覆盖。 |
-| 22 | 前端与 tenant | #2、#34 已覆盖 tenant/token。 |
-| 23 | 错误与日志 | 所有 str(exc) 暴露点已归纳为 #5/#16/#18/#20/#21/#23/#39/#42/#44 等。 |
-| 24 | 安全边界汇总 | tenant_id、token 比较、SSRF、SQL 参数化已分布于 #2/#12/#15/#19/#29/#30/#32/#35/#36/#37/#41。 |
-| 25 | Spec/code 漂移 | 由 SPEC_TASKS_SCAN 与 tasks.md 维护，无新审计发现。 |
-| 26 | 未覆盖边界 | 复核确认无遗漏子模块需单独发现。 |
-| 27 | 终轮复核 | 发现表 #1–#44 完整，优先级与修复 spec 已建立。 |
+**文件清单**（三遍读）：`owlclaw/capabilities/registry.py`（404 行）、`skills.py`（754 行）、`skill_doc_extractor.py`（138 行）、`knowledge.py`（227 行）；并交叉引用 bindings（第 4 轮已审）、tool_schema.py、capability_matcher.py。
 
-**终轮结论**：27 轮全部完成；总发现数 44（P0: 0, P1: 2, Low: 42）；评估仍为 **SHIP WITH CONDITIONS**。
+**方法**：Structure → Logic → Data flow；五透镜 Correctness / Failure / Adversary / Drift / Omission。
+
+**结论**：
+- **与既有发现一致**：#21 已覆盖 invoke_handler/get_state 将 str(e) 包装进 RuntimeError 暴露给调用方。
+- **新增 Low 2 条**：#45（get_state 在 await 异步 state provider 时无 timeout，与 invoke_handler 的 wait_for 不一致，可被慢/恶意 provider 拖住）、#46（SkillDocExtractor.read_document(path) 未限制 path 在允许基目录下，path 若用户可控则存在任意文件读）。
+- **正面**：SkillsLoader.scan 使用 base_path.rglob("SKILL.md")，file_path 均源于扫描，无用户可控路径穿越；_parse_skill_file 用 yaml.safe_load、name 符合 _SKILL_NAME_PATTERN；get_skill 仅查内存 dict 不抛；list_capabilities 的 get_skill 不涉及 I/O；_prepare_handler_kwargs 按签名过滤/映射，**kwargs 时透传（设计如此）；Skill.load_full_content 惰性读文件，调用方需处理 OSError；skill_doc_extractor 的 _to_kebab_case 产出无路径分隔符的 name，generate_from_document 写路径安全。
 
 ---
 
@@ -431,7 +419,6 @@
 - [x] Specs generated for fix domains — audit-deep-remediation created and assigned
 - [x] Recommended fix order established
 - [x] Executive summary matches findings
-- [x] 27-round scope list fully executed (rounds 1–27 completed)
 
 ---
 

@@ -76,3 +76,22 @@
 1. codex-work：已提交 Task 15/18/19/24（D12/D15/D16/D21），审校后继续 Task 16/17/26/27/28（D13/D14/D23/D24/D25）。
 2. codex-gpt-work：已提交 Task 5/6/7/10/14/20/21/22/23（D2/D4b/D6/D7/D11/D17/D18/D19/D20），审校后继续 Task 25/29/30/31/32（D22/D26/D27/D28/D29）。
 3. 审校：两个分支分别 Review，通过后合并 review-work → main。
+
+---
+
+## Backlog（报告 #35–#44，待统筹分配）
+
+> 来源：`docs/review/DEEP_AUDIT_REPORT.md` 第 7–8 轮及 Recommended Fix Order。当前轮审校收口后再切批分配。
+
+| 报告# | 简述 | 位置 | 验收要点 |
+|-------|------|------|----------|
+| #35 | Webhook admin token 常量时间比较 | `triggers/webhook/http/app.py` require_admin_token | hmac.compare_digest |
+| #36 | Webhook log_request 敏感 header 脱敏后再入 event.data | `http/app.py` build_event data=headers | 落库前 redact authorization/x-signature/x-admin-token |
+| #37 | GET /events 鉴权或 tenant 绑定 | `http/app.py` GET /events | 需 admin 或与 /endpoints 同鉴权；多租户时 tenant 从认证来 |
+| #38 | endpoint_id 非 UUID 时返回 404 而非 500 | `manager.py` get_endpoint；app 入口 | 校验格式或 catch ValueError → 404 |
+| #39 | Webhook GovernanceClient/ExecutionTrigger 对外不暴露 str(exc) | governance.py:90；execution.py:85,98 | 脱敏或通用文案（对齐 #16/#23） |
+| #40 | Webhook 限流器与 idempotency 字典有界或 TTL | http/app.py _RateLimiter；execution.py _idempotency | 有界或 TTL/清理策略 |
+| #41 | Idempotency key 按 tenant_id+endpoint_id 隔离 | execution.py key 使用处；app 传入 | 键含 tenant+endpoint 前缀或 hash |
+| #42 | SignalRouter.dispatch 不向 result.message 写 str(exc) | triggers/signal/router.py:72 | 脱敏或通用文案（对齐 #23） |
+| #43 | DBChangeTriggerManager._dlq_events 有界或定期清理 | triggers/db_change/manager.py _dlq_events | deque(maxlen) 或 purge |
+| #44 | _move_to_dlq 的 error 字段脱敏 | triggers/db_change/manager.py:207 | 不存原始 str(exc)（对齐 #16/#23） |
