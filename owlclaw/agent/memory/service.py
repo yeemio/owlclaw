@@ -33,11 +33,14 @@ class MemoryService:
         embedder: EmbeddingProvider,
         config: MemoryConfig,
         ledger: Any = None,
+        *,
+        file_fallback_allowed_base: Path | None = None,
     ) -> None:
         self._store = store
         self._embedder = embedder
         self._config = config
         self._ledger = ledger
+        self._file_fallback_allowed_base = file_fallback_allowed_base
         self._snapshot_builder = SnapshotBuilder(store, embedder)
         self._classifier = SecurityClassifier()
         self._security_filter = MemorySecurityFilter()
@@ -103,6 +106,18 @@ class MemoryService:
             for entry, score in chosen
         ]
 
+    @staticmethod
+    def _resolve_file_fallback_path(raw: str, *, allowed_base: Path) -> Path:
+        """Resolve file_fallback_path and ensure it is under allowed_base (Finding #50)."""
+        path = Path(raw).expanduser().resolve()
+        try:
+            path.relative_to(allowed_base)
+        except ValueError:
+            raise ValueError(
+                f"file_fallback_path must be under allowed directory: {path} not under {allowed_base}"
+            ) from None
+        return path
+
     async def _append_file_fallback(
         self,
         agent_id: str,
@@ -111,7 +126,14 @@ class MemoryService:
         tags: list[str],
         security_level: SecurityLevel,
     ) -> UUID:
-        path = Path(self._config.file_fallback_path)
+        allowed_base = (
+            self._file_fallback_allowed_base.resolve()
+            if self._file_fallback_allowed_base is not None
+            else Path.cwd().resolve()
+        )
+        path = self._resolve_file_fallback_path(
+            self._config.file_fallback_path, allowed_base=allowed_base
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
         memory_id = uuid4()
         sanitized_content = content.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
@@ -296,11 +318,12 @@ class MemoryService:
         """Merge large same-tag memory groups into summary entries."""
         normalized_agent, normalized_tenant = self._normalize_scope(agent_id, tenant_id)
         threshold = self._config.compaction_threshold
+        cap = self._config.compaction_max_entries
         entries = await self._store.list_entries(
             agent_id=normalized_agent,
             tenant_id=normalized_tenant,
             order_created_asc=True,
-            limit=100000,
+            limit=cap,
             include_archived=False,
         )
         groups: dict[str, list[MemoryEntry]] = {}

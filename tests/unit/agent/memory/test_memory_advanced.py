@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -186,6 +187,22 @@ async def test_compact_merges_same_tag_group() -> None:
     assert any("compaction:trading" in e.content for e in entries)
 
 
+def test_file_fallback_path_must_be_under_allowed_base(tmp_path: Path) -> None:
+    """MemoryService rejects file_fallback_path outside allowed base (Finding #50)."""
+    from owlclaw.agent.memory.service import MemoryService
+
+    allowed = tmp_path / "allowed"
+    allowed.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    path_outside = (outside / "MEMORY.md").resolve()
+    with pytest.raises(ValueError, match="must be under allowed"):
+        MemoryService._resolve_file_fallback_path(str(path_outside), allowed_base=allowed)
+    under = (allowed / "MEMORY.md").resolve()
+    result = MemoryService._resolve_file_fallback_path(str(under), allowed_base=allowed)
+    assert result == under
+
+
 @pytest.mark.asyncio
 async def test_remember_file_fallback_sanitizes_multiline_content(tmp_path) -> None:
     cfg = MemoryConfig(
@@ -205,7 +222,12 @@ async def test_remember_file_fallback_sanitizes_multiline_content(tmp_path) -> N
         def dimensions(self) -> int:
             return 2
 
-    service = MemoryService(store=_FailingSaveStore(), embedder=_StaticEmbedder(), config=cfg)
+    service = MemoryService(
+        store=_FailingSaveStore(),
+        embedder=_StaticEmbedder(),
+        config=cfg,
+        file_fallback_allowed_base=tmp_path,
+    )
     await service.remember("agent-a", "default", "line1\nline2", tags=["a,b", " c "])
     text = (tmp_path / "MEMORY.md").read_text(encoding="utf-8")
     assert "content: line1\\nline2" in text

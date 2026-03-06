@@ -77,6 +77,7 @@ class MemoryConfig(BaseModel):
     max_entries: int = Field(default=10000, gt=0)
     retention_days: int = Field(default=365, gt=0)
     compaction_threshold: int = Field(default=50, gt=0)
+    compaction_max_entries: int = Field(default=10_000, gt=0, le=100_000)
     embedding_cache_size: int = Field(default=1000, ge=0)
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection_name: str = "owlclaw_memory"

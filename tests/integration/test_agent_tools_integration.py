@@ -242,6 +242,7 @@ async def test_remember_writes_memory_md_when_store_fallback_enabled(tmp_path) -
             enable_file_fallback=True,
             file_fallback_path=str(memory_file),
         ),
+        file_fallback_allowed_base=tmp_path,
     )
     memory = _MemoryServiceAdapter(service, agent_id="agent-a", tenant_id="tenant-a")
     tools = BuiltInTools(memory_system=memory)
