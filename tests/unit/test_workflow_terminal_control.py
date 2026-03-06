@@ -253,3 +253,20 @@ def test_window_manifest_process_id_lookup(tmp_path: Path) -> None:
     assert control._window_handle(tmp_path, "main") == 4321
     assert control._window_handle(tmp_path, "review") == 8765
     assert control._window_handle(tmp_path, "codex") is None
+
+
+def test_refresh_window_binding_updates_manifest(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+
+    class Result:
+        returncode = 0
+        stdout = json.dumps({"found": True, "title": "owlclaw-codex", "pid": 2222, "hwnd": 3333})
+        stderr = ""
+
+    control.subprocess.run = lambda *args, **kwargs: Result()
+    payload = control._refresh_window_binding(tmp_path, "codex", ["owlclaw-codex"])
+    assert payload == {"title": "owlclaw-codex", "pid": 2222, "hwnd": 3333}
+    manifest = json.loads((tmp_path / ".kiro" / "runtime" / "terminal-windows.json").read_text(encoding="utf-8"))
+    assert manifest["windows"]["codex"]["pid"] == 2222
+    assert manifest["windows"]["codex"]["hwnd"] == 3333

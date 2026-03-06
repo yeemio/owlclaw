@@ -82,6 +82,12 @@ def _save_state(repo_root: Path, agent: str, payload: dict[str, object]) -> None
     _state_path(repo_root, agent).write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
 
 
+def _save_window_manifest(repo_root: Path, manifest: dict[str, object]) -> None:
+    path = _window_manifest_path(repo_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(manifest, ensure_ascii=True, indent=2), encoding="utf-8")
+
+
 def is_paused(repo_root: Path) -> bool:
     ensure_dirs(repo_root)
     return _pause_flag_path(repo_root).exists()
@@ -160,6 +166,46 @@ def _window_handle(repo_root: Path, agent: str) -> int | None:
         return None
     handle = payload.get("hwnd")
     return handle if isinstance(handle, int) and handle > 0 else None
+
+
+def _refresh_window_binding(repo_root: Path, agent: str, window_titles: list[str]) -> dict[str, int | str] | None:
+    script_path = SCRIPT_DIR / "workflow_find_window.ps1"
+    command = ["pwsh", "-NoProfile", "-File", str(script_path)]
+    for title in window_titles:
+        command.extend(["-WindowTitles", title])
+    result = subprocess.run(
+        command,
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if result.returncode != 0 and not result.stdout.strip():
+        return None
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+    if not payload.get("found"):
+        return None
+
+    manifest = _load_window_manifest(repo_root)
+    windows = manifest.setdefault("windows", {})
+    current = windows.get(agent, {}) if isinstance(windows, dict) else {}
+    if not isinstance(current, dict):
+        current = {}
+    current.update(
+        {
+            "title": payload["title"],
+            "pid": payload["pid"],
+            "hwnd": payload["hwnd"],
+        }
+    )
+    windows[agent] = current
+    _save_window_manifest(repo_root, manifest)
+    return {"title": payload["title"], "pid": payload["pid"], "hwnd": payload["hwnd"]}
 
 
 def _message_for_mailbox(agent: str, mailbox: dict[str, object]) -> str | None:
@@ -315,6 +361,17 @@ def _send_to_window_candidates(
         )
         if result.returncode == 0:
             return window_titles[0], result
+        refreshed = _refresh_window_binding(repo_root, window_titles[0].replace("owlclaw-", ""), window_titles)
+        if refreshed:
+            result = _send_to_window(
+                repo_root,
+                str(refreshed["title"]),
+                message,
+                process_id=int(refreshed["pid"]),
+                window_handle=int(refreshed["hwnd"]),
+            )
+            if result.returncode == 0:
+                return str(refreshed["title"]), result
 
     last_result: subprocess.CompletedProcess[str] | None = None
     last_title = window_titles[0]
