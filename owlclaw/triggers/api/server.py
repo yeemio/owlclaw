@@ -88,13 +88,17 @@ class _BucketState:
     last_refill: float
 
 
-class _TokenBucketLimiter:
-    """In-memory token bucket limiter keyed by arbitrary strings."""
+LIMITER_STATES_MAXSIZE = 10_000
 
-    def __init__(self, *, rate_per_minute: int | None) -> None:
+
+class _TokenBucketLimiter:
+    """In-memory token bucket limiter keyed by arbitrary strings. States are bounded (LRU)."""
+
+    def __init__(self, *, rate_per_minute: int | None, max_states: int = LIMITER_STATES_MAXSIZE) -> None:
         self._rate = int(rate_per_minute or 0)
         self._capacity = float(max(1, self._rate)) if self._rate > 0 else 0.0
-        self._states: dict[str, _BucketState] = {}
+        self._states: OrderedDict[str, _BucketState] = OrderedDict()
+        self._max_states = max(1, int(max_states))
         self._lock = asyncio.Lock()
 
     @property
@@ -109,8 +113,11 @@ class _TokenBucketLimiter:
         async with self._lock:
             state = self._states.get(key)
             if state is None:
+                while len(self._states) >= self._max_states:
+                    self._states.popitem(last=False)
                 self._states[key] = _BucketState(tokens=self._capacity - 1.0, last_refill=now)
                 return True
+            self._states.move_to_end(key)
             elapsed = max(0.0, now - state.last_refill)
             state.tokens = min(self._capacity, state.tokens + elapsed * refill_rate)
             state.last_refill = now

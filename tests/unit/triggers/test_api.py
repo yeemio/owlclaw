@@ -102,6 +102,36 @@ def test_api_key_auth_provider() -> None:
         assert ok.json()["status"] == "ok"
 
 
+@pytest.mark.asyncio
+async def test_api_key_auth_provider_identity_opaque_no_key_prefix() -> None:
+    """APIKeyAuthProvider identity is opaque (hash), not key prefix (Low-27)."""
+    from starlette.requests import Request
+
+    provider = APIKeyAuthProvider({"secret-key-12345"})
+    req = Request(scope={"type": "http", "headers": [(b"x-api-key", b"secret-key-12345")]})
+    result = await provider.authenticate(req)
+    assert result.ok is True
+    assert result.identity is not None
+    assert result.identity.startswith("api_key:")
+    assert "secret" not in result.identity
+    assert "12345" not in result.identity
+    assert len(result.identity) == len("api_key:") + 16
+
+
+@pytest.mark.asyncio
+async def test_token_bucket_limiter_states_bounded() -> None:
+    """Rate limiter _states is bounded by max_states (Low-26)."""
+    from owlclaw.triggers.api.server import _TokenBucketLimiter
+
+    limiter = _TokenBucketLimiter(rate_per_minute=60, max_states=2)
+    await limiter.allow("key1")
+    await limiter.allow("key2")
+    await limiter.allow("key3")
+    assert len(limiter._states) == 2
+    assert "key1" not in limiter._states
+    assert "key2" in limiter._states and "key3" in limiter._states
+
+
 def test_bearer_auth_provider() -> None:
     runtime = _Runtime()
     server = APITriggerServer(auth_provider=BearerTokenAuthProvider({"t1"}), agent_runtime=runtime)

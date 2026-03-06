@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -42,7 +43,8 @@ class APIKeyAuthProvider(AuthProvider):
             return AuthResult(ok=False, reason="missing_api_key")
         if not any(_constant_time_equals(key, k) for k in self._valid_keys):
             return AuthResult(ok=False, reason="invalid_api_key")
-        return AuthResult(ok=True, identity=f"api_key:{key[:6]}")
+        opaque = hashlib.sha256(key.encode()).hexdigest()[:16]
+        return AuthResult(ok=True, identity=f"api_key:{opaque}")
 
 
 class BearerTokenAuthProvider(AuthProvider):

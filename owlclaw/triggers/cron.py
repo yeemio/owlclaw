@@ -1269,6 +1269,11 @@ class CronTriggerRegistry:
         Queries Ledger for cron_execution records with capability_name=event_name.
         Must be called after start() with a Ledger.
 
+        Trust boundary (same as P1-2 Console multi-tenant): *tenant_id* is taken
+        from the parameter or from start() when None. In multi-tenant deployments,
+        tenant should be derived from the authenticated caller (e.g. request context)
+        rather than trusting a client-supplied value. See docs on Console tenant_id.
+
         Args:
             event_name: The registered trigger event name.
             limit: Max number of records to return (default 10).
