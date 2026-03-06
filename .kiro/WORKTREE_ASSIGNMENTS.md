@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-06（编码分支新提交已形成；新增审计 D26-D29 预分配到下一批）
+> **最后更新**: 2026-03-06（编码分支新提交已形成；审计报告已扩展到 D44，D30-D44 暂列下一批 backlog）
 
 ---
 
@@ -284,6 +284,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-06 | 统筹(main) | codex-gpt-work + review-work | **Phase 15 待审与续做**：`codex-gpt-work` 分支已提交 D2/D6/D7/D11，review-work 优先审校；D4b 已因 D4a 合入而解锁，后续继续 D13/D14/D17/D18/D19/D20。 | 🟡 待读 |
 | 2026-03-06 | 统筹(main) | codex-work + codex-gpt-work + review-work | **负载再平衡**：按剩余工作量重分配。将 `D13`（visibility）、`D14`（hatchet）、`D25`（Kafka connect timeout）从 `codex-gpt-work` 转给空闲中的 `codex-work`；`codex-gpt-work` 保留已在分支上的 D2/D6/D7/D11 和同文件簇 D4b/D17/D18/D19/D20/D22。 | 🟢 已同步 |
 | 2026-03-06 | 统筹(main) | codex-work + codex-gpt-work + review-work | **新提交状态校准**：`codex-work` 已提交 D12/D15/D16/D21；`codex-gpt-work` 已提交 D2/D4b/D6/D7/D11/D17/D18/D19/D20。`review-work` 下一轮先审这两组提交。新增审计 D26-D29 因与 API/Cron 文件簇重叠，预分配给 `codex-gpt-work` 下一补丁。 | 🟢 已同步 |
+| 2026-03-06 | 统筹(main) | 全部 | **审计 backlog 扩展**：`DEEP_AUDIT_REPORT.md` 已继续扩展到 D44。为避免在当前审校窗口中途改派，D30-D44 暂不并入本轮编码分配，待 review-work 收口当前待审提交后再统一切下一批。 | 🟡 已登记 |
 
 ### 已归档消息
 
