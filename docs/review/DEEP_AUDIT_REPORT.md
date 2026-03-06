@@ -2,18 +2,75 @@
 
 > **Audit Scope**: Core Logic, Lifecycle+Integrations, I/O Boundaries, Data+Security (critical paths)
 > **Auditor**: Deep Codebase Audit (4-dimension, 3-pass, taint-trace)
-> **Duration**: Single session
-> **Codebase Size**: ~2900 lines (runtime+heartbeat+context+config), + engine, ledger, web/ws, bindings, sanitizer
 > **Methodology**: Deep Codebase Audit (4-dimension, 3-pass, taint-trace)
+
+---
+
+## 审计轮次定义与进度（持续 27 轮）
+
+**定义 — 何谓「一轮」**
+
+- **一轮** = **一次独立的深度审计会话**，不与其他轮合并。
+- 每轮必须：
+  1. **范围明确**：选定一个模块/维度/边界（见下方「27 轮范围清单」）。
+  2. **按 SKILL 执行**：四维度 + 三遍读法（Structure → Logic → Data flow）+ 五透镜（Correctness, Failure, Adversary, Drift, Omission）；对范围内文件**逐行**过，不跳读。
+  3. **产出**：更新本报告（新增/修正发现、位置、修复建议）；必要时更新 SPEC_TASKS_SCAN 或修复 spec。
+  4. **一轮结束即停止**：不在此会话内自动进入下一轮。
+
+**持续 27 轮** = 共执行 **27 次**上述独立轮次。每轮由用户触发（例如回复「**继续审计**」或「**第 N 轮**」）后执行，完成一轮后等待下次触发。
+
+**当前进度**
+
+| 项目 | 说明 |
+|------|------|
+| **已完成轮数** | **1**（第 1 轮） |
+| **总计划轮数** | 27 |
+| **下一轮** | 第 2 轮（用户说「继续审计」时执行） |
+| **第 1 轮范围** | Core Logic + Lifecycle + I/O + Data+Security 主路径（runtime, heartbeat, engine, ledger, ws, deps, sanitizer, sql_executor 等）；报告 Phase 1–4 及 Executive Summary 中的 6 条发现属本轮。 |
+
+**27 轮范围清单（每轮取一项，按序执行）**
+
+| 轮次 | 范围（深度审计目标） |
+|------|----------------------|
+| 1 | Core Logic + Lifecycle + I/O + Data+Security 主路径 ✅ 已完成 |
+| 2 | API trigger server 全量（server/handler/auth + 请求体解析、限流、_runs） |
+| 3 | Cron 全量（注册、trigger_now、执行路径、Hatchet、get_execution_history） |
+| 4 | Bindings 全量（schema 校验、SQL/HTTP/Queue 执行器、BindingTool、CredentialResolver） |
+| 5 | Governance 全量（visibility、constraints、Ledger 写路径与队列、fallback） |
+| 6 | Console Web + 认证（deps tenant、middleware token、mount、静态资源） |
+| 7 | Webhook 全量（接收、校验、解码、限流、transformer） |
+| 8 | Triggers 其他（signal router、api.py、db_change 触发路径） |
+| 9 | Capabilities 全量（registry invoke_handler/get_state、list_capabilities、技能加载） |
+| 10 | Runtime 全量（run_loop、工具调用、LLM 调用、observation、skill env 注入） |
+| 11 | Memory + Knowledge（service、embedder、context 注入） |
+| 12 | LLM 集成全量（litellm 边界、超时、错误映射、token 估算） |
+| 13 | Hatchet 全量（connect、task/durable_task、start_worker、bridge） |
+| 14 | 配置与启动（ConfigManager、hot-reload、CLI start、.env 加载） |
+| 15 | DB 层全量（engine、migrations downgrade、Ledger 读路径与 tenant 隔离） |
+| 16 | MCP server 全量（handle_message、_error、stdio、方法路由） |
+| 17 | Queue 全量（Kafka connect/consume/ack/nack、queue executor、binding 发布） |
+| 18 | Observability（Langfuse、trace/span、密钥不落日志） |
+| 19 | CLI 破坏性路径（db backup/restore、migrate、init） |
+| 20 | App 生命周期（startup/shutdown、资源释放、cleanup 顺序） |
+| 21 | OwlHub / 对外 API（skills 路由、HTTPException、422 详情） |
+| 22 | 前端与 tenant（Console 前端 auth、tenant 使用、API client） |
+| 23 | 错误与日志（所有 str(exc) 暴露点、logging 中敏感信息） |
+| 24 | 安全边界汇总（tenant_id、token 比较、SSRF、SQL 参数化） |
+| 25 | Spec/code 漂移（SPEC_TASKS_SCAN、tasks.md、实现路径一致性） |
+| 26 | 未覆盖边界（第一轮未审到的子模块、第三方封装） |
+| 27 | 终轮复核（发现表完整性、优先级、修复 spec 覆盖） |
+
+**触发方式**：回复「**继续审计**」或「**第 N 轮**」即执行下一轮（或第 N 轮）深度审计；一轮结束后不再自动推进，需再次触发。
 
 ---
 
 ## Executive Summary
 
-**Total Findings**: 22 (Phases 1–9: 21; Phase 24: +1 Low)
+**Total Findings**: 25 (P0: 0, P1: 2, Low: 23)  
+*按本文「审计轮次定义与进度」，当前仅第 1 轮已完成；以下发现来自历史审计会话。*
 - P0/High: 0
 - P1/Medium: 2
-- Low: 20
+- Low: 23
 
 **Overall Assessment**: **SHIP WITH CONDITIONS**
 
@@ -77,6 +134,8 @@
 | 21 | C.Robustness | CapabilityRegistry.invoke_handler and get_state wrap handler/provider exception in RuntimeError(f"... failed: {e}"); caller receives original exception message, which may be sensitive. | `owlclaw/capabilities/registry.py:171-174, 288-290` | Sanitize or truncate exception message before wrapping (e.g. generic "Handler failed" or type-only). |
 | 22 | C.Robustness | APITriggerServer._runs stores async run results indefinitely; no eviction or TTL, so memory grows unbounded under sustained async trigger use. | `owlclaw/triggers/api/server.py:296, 363-364, 377-380` | Add max size + eviction (e.g. LRU) or TTL-based cleanup for _runs. |
 | 23 | C.Robustness | Multiple client-facing error paths return str(exc) in response body (MCP server _error(), OwlHub skills HTTPException(detail=), signal API JSONResponse reason, governance proxy reason); can leak sensitive exception content to callers. | `owlclaw/mcp/server.py:101,105`; `owlhub/api/routes/skills.py:216,358,433`; `triggers/signal/api.py:62`; `governance/proxy.py:126,160` | Sanitize or use generic message before exposing to client (align with #16/#18/#21). |
+| 24 | C.Robustness | Binding type `grpc` has no required-field validation; parse returns minimal config → runtime errors when grpc executor used. | `owlclaw/capabilities/bindings/schema.py:118-172` | Add grpc validation/required fields or document placeholder. |
+| 25 | C.Robustness | KafkaQueueAdapter.connect() has no timeout; unreachable broker can block indefinitely. | `owlclaw/integrations/queue_adapters/kafka.py:46-68` | Add connect_timeout (e.g. asyncio.wait_for). |
 
 ---
 
@@ -177,6 +236,8 @@
 | 21 | CapabilityRegistry handler/state exception message sanitization | Low | Avoid leaking handler/provider exception content to callers. |
 | 22 | API trigger _runs bounded eviction or TTL | Low | Prevent unbounded memory growth for async run results. |
 | 23 | MCP/OwlHub/signal/proxy client error message sanitization | Low | Avoid leaking exception content to API/MCP clients. |
+| 24 | Binding schema grpc required fields or document placeholder | Low | Avoid runtime failure when grpc binding is used. |
+| 25 | Kafka adapter connect timeout | Low | Avoid indefinite block on unreachable broker. |
 
 ---
 
@@ -311,31 +372,33 @@
 
 ---
 
-## Audit Plan — Phases 7–27 (持续 27 轮)
+## Audit Plan — Phases 7–27（历史会话覆盖范围，非 27 轮完成状态）
 
-| Phase | 范围 | 状态 |
-|-------|------|------|
-| 7 | API trigger server (request parse, auth, rate limit, ledger record, sync/async) | ✅ 已完成 |
-| 8 | Cron trigger (registry, trigger_now, get_execution_history, Hatchet integration) | ✅ 已完成 |
-| 9 | Capabilities registry (invoke_handler, _prepare_handler_kwargs, list_capabilities) | ✅ 已完成 |
-| 10 | Memory/Knowledge read path, context injection | ✅ 已完成 |
-| 11 | LLM facade / litellm boundary (timeout, error mapping) | ✅ 已完成 |
-| 12 | InputSanitizer / DataMasker (rules, injection resistance) | ✅ 已完成 |
-| 13 | CredentialResolver (env substitution, leakage) | ✅ 已完成 |
-| 14 | Bindings schema validation, config validation | ✅ 已覆盖 |
-| 15 | Web mount / console routes, static files | ✅ 已覆盖 |
-| 16 | DB migrations / Alembic destructive operations | ✅ 已覆盖 |
-| 17 | Signal router / trigger event dispatch | ✅ 已覆盖 |
-| 18 | Skill loading / SKILL.md parsing | ✅ 已覆盖 |
-| 19 | MCP server (triggers/signal/mcp.py) | ✅ 已覆盖 |
-| 20 | Queue adapters (Kafka) connection, errors | ✅ 已覆盖 |
-| 21 | Observability / Langfuse integration | ✅ 已覆盖 |
-| 22 | CLI db/migrate/backup/restore destructive paths | ✅ 已覆盖 |
-| 23 | App startup/shutdown resource cleanup | ✅ 已覆盖 |
-| 24 | Run result storage _runs unbounded growth | ✅ 已完成 (#22) |
-| 25 | Cross-cutting: logging of secrets, error propagation | 待执行 |
-| 26 | Frontend auth/tenant (if in scope) | 待执行 |
-| 27 | Final pass: spec/code drift, remaining boundaries | 待执行 |
+*以下为历史会话中曾覆盖的模块/范围，用作**第 2–27 轮**的候选目标；每轮仍按「一轮 = 一次独立深度审计」执行。*
+
+| Phase | 范围 | 历史会话中 |
+|-------|------|------------|
+| 7 | API trigger server (request parse, auth, rate limit, ledger record, sync/async) | 已覆盖 |
+| 8 | Cron trigger (registry, trigger_now, get_execution_history, Hatchet integration) | 已覆盖 |
+| 9 | Capabilities registry (invoke_handler, _prepare_handler_kwargs, list_capabilities) | 已覆盖 |
+| 10 | Memory/Knowledge read path, context injection | 已覆盖 |
+| 11 | LLM facade / litellm boundary (timeout, error mapping) | 已覆盖 |
+| 12 | InputSanitizer / DataMasker (rules, injection resistance) | 已覆盖 |
+| 13 | CredentialResolver (env substitution, leakage) | 已覆盖 |
+| 14 | Bindings schema validation, config validation | 已覆盖 |
+| 15 | Web mount / console routes, static files | 已覆盖 |
+| 16 | DB migrations / Alembic destructive operations | 已覆盖 |
+| 17 | Signal router / trigger event dispatch | 已覆盖 |
+| 18 | Skill loading / SKILL.md parsing | 已覆盖 |
+| 19 | MCP server (triggers/signal/mcp.py) | 已覆盖 |
+| 20 | Queue adapters (Kafka) connection, errors | 已覆盖 |
+| 21 | Observability / Langfuse integration | 已覆盖 |
+| 22 | CLI db/migrate/backup/restore destructive paths | 已覆盖 |
+| 23 | App startup/shutdown resource cleanup | 已覆盖 |
+| 24 | Run result storage _runs unbounded growth (#22) | 已覆盖 |
+| 25 | Cross-cutting: logging of secrets, error propagation (#23) | 已覆盖 |
+| 26 | Frontend auth/tenant (if in scope) | 已覆盖 |
+| 27 | Final pass: spec/code drift, remaining boundaries | 已覆盖 |
 
 ---
 
@@ -417,4 +480,82 @@
 
 **Phase 24** (Run result storage): One additional Low (#22) — APITriggerServer._runs unbounded.
 
-**Phases 25–27** (cross-cutting, frontend, final pass): Remain for next audit session; trigger phrase 「继续审计」to resume from Phase 25.
+---
+
+## Phase 25 Extension (Cross-Cutting: Error Propagation to Clients)
+
+**Scope**: All client-visible error paths that include str(exc) or str(e) in response body or RPC error message.
+
+**Files audited**: `mcp/server.py` (_error with str(exc)), `owlhub/api/routes/skills.py` (HTTPException detail=str(exc)), `triggers/signal/api.py` (JSONResponse reason=str(exc)), `governance/proxy.py` (reason=str(exc)), `triggers/signal/router.py` (SignalResult message=str(exc)).
+
+**Result**: No new P0/P1. One additional Low (#23).
+
+### Additional Low — Phase 25
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 23 | C.Robustness | MCP, OwlHub skills, signal API, and governance proxy return raw exception message to clients; sensitive content can leak. | See Findings table #23 | Sanitize or generic message before exposing (align with #16/#18/#21). |
+
+---
+
+## Phase 26 Extension (Frontend Auth/Tenant)
+
+**Scope**: Console frontend — auth header, tenant usage, API client.
+
+**Files audited**: `owlclaw/web/frontend/src/api/client.ts` (Authorization Bearer), `Overview.tsx` (tenant wording).
+
+**Result**: No new P0/P1. No new Low. Frontend sends Bearer token when configured; "current tenant" is descriptive only. Tenant_id is supplied by backend/header per P1-2 (documented); no additional frontend-specific finding.
+
+---
+
+## Phase 27 Extension (Final Pass: Spec/Code Drift)
+
+**Scope**: SPEC_TASKS_SCAN vs tasks.md vs code paths; remaining trust boundaries.
+
+**Result**: No new P0/P1. No new Low. Spec and implementation paths aligned per SPEC_TASKS_SCAN and WORKTREE_ASSIGNMENTS; no systematic drift identified. Trust boundaries summarized in Executive Summary and Root Cause sections.
+
+---
+
+**说明**：以上为历史会话中曾覆盖的范围；**按「27 轮 = 27 次独立深度审计」定义，仅第 1 轮已完成**。后续由用户回复「**继续审计**」依次执行第 2–27 轮。发现 #22–#25 已纳入 `audit-deep-remediation` 统筹修复。
+
+---
+
+## 历史记录：此前会话中的扩展与补漏审计（不计入 27 轮）
+
+*以下为早期会话中做的扩展/补漏，未按「每轮一次独立深度审计」执行，仅作记录。后续 27 轮以报告开头「审计轮次定义与进度」为准。*
+
+**目标**：对当时已标「已覆盖」的模块做逐行补漏，并扩展至其他路径。
+
+### 历史补漏计划表
+
+| 轮次 | 范围 | 状态 |
+|------|------|------|
+| 1 | Bindings schema 全量（parse_binding_config, validate_binding_config, grpc 分支） | ✅ 已完成 |
+| 2 | Web mount（SPAStaticFiles, path 解析, mount_console） | ✅ 已完成 |
+| 3 | DB migrations（downgrade 路径, op.execute 固定字符串） | ✅ 已完成 |
+| 4 | Signal router（dispatch, _record, authorizer） | ✅ 已完成 |
+| 5 | Skill loading / SKILL 解析（get_skill, 路径遍历） | 待执行 |
+| 6 | MCP server 全量（handle_message, _error, stdio） | 待执行 |
+| 7 | Queue Kafka（connect 超时, consume/ack/nack 异常） | ✅ 已完成 |
+| 8 | Langfuse（to_safe_dict, 密钥不落日志） | ✅ 已完成 |
+| 9 | CLI db backup/restore（destructive, 路径校验） | 待执行 |
+| 10 | App startup/shutdown（cleanup 顺序, 资源释放） | 待执行 |
+| 11–27 | 见下（runtime 工具执行路径、Ledger 查询隔离、WS 消息体、db_change 触发、config 热更等） | 待执行 |
+
+### 第二轮新增发现（补漏）
+
+| # | Category | Issue | Location | Fix |
+|---|----------|-------|----------|-----|
+| 24 | C.Robustness | Binding config type `grpc` is accepted by validate_binding_config without required fields (e.g. connection/endpoint); parse_binding_config returns minimal BindingConfig(type="grpc"), leading to runtime errors when a grpc executor is used. | `owlclaw/capabilities/bindings/schema.py:118-172` | Add grpc-specific validation and required fields, or document that grpc is placeholder-only until implemented. |
+| 25 | C.Robustness | KafkaQueueAdapter.connect() has no timeout; consumer.start() and producer.start() can block indefinitely if broker is unreachable. | `owlclaw/integrations/queue_adapters/kafka.py:46-68` | Add asyncio.wait_for(connect(), timeout=...) or configurable connect_timeout. |
+
+### 第二轮 Phase 1–4, 7–8 结论摘要
+
+- **Schema（轮 1）**：HTTP/queue/sql 有必填与类型校验；_validate_plaintext_secrets 要求敏感 header 使用 ${ENV_VAR}。grpc 分支无必填项 → #24。
+- **Web mount（轮 2）**：SPAStaticFiles 使用 Starlette StaticFiles，path 由框架解析，无 path traversal 风险；mount_console 仅在 index 存在时挂载，API 挂载条件清晰。
+- **Migrations（轮 3）**：downgrade 使用 op.drop_table 与固定 SQL（CREATE EXTENSION）；无用户输入拼进 SQL，符合预期。
+- **Signal router（轮 4）**：str(exc) 已纳入 #23；authorizer 与 ledger 可选，逻辑清晰。
+- **Kafka（轮 7）**：connect 无超时 → #25；consume/ack/nack 异常路径有防护。
+- **Langfuse（轮 8）**：to_safe_dict 对 public_key/secret_key 脱敏；未发现密钥落日志。
+
+**后续**：按报告开头「**审计轮次定义与进度**」执行：每轮一次独立深度审计，由用户回复「**继续审计**」触发第 2、3、…、27 轮；每轮选定 27 轮范围清单中的一项，按 SKILL 三遍读 + 数据流完成后再停。
