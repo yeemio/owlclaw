@@ -1,4 +1,4 @@
-.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate workflow-mailbox workflow-agent workflow-supervisor workflow-supervisor-console
+.PHONY: help dev-up dev-down dev-reset test-up test-down test test-unit test-int lint typecheck build-console workflow-status workflow-orchestrate workflow-mailbox workflow-agent workflow-supervisor workflow-supervisor-console workflow-launch
 
 ## Show available commands
 help:
@@ -20,6 +20,7 @@ help:
 	@echo "  workflow-agent Run semi-automatic mailbox consumer"
 	@echo "  workflow-supervisor Start/stop/status for workflow automation processes"
 	@echo "  workflow-supervisor-console Open a visible watch terminal for the supervisor"
+	@echo "  workflow-launch One-click launch 6 workflow windows plus control window"
 	@echo ""
 	@echo "Windows: use PowerShell scripts under scripts/ when make is unavailable."
 
@@ -90,3 +91,6 @@ workflow-supervisor:
 ## Open a visible supervisor watch console (Windows PowerShell)
 workflow-supervisor-console:
 	pwsh ./scripts/workflow-supervisor-console.ps1
+
+workflow-launch:
+	pwsh ./scripts/workflow-launch.ps1
