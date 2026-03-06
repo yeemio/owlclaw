@@ -28,7 +28,7 @@
 | `workflow_executor.py` | 真正执行 mailbox 动作：按角色调用 `codex exec` / `agent --print` / `claude -p` 在对应 worktree 中执行任务 | `poetry run python scripts/workflow_executor.py --agent review --once` | 本地开发使用 |
 | `workflow_supervisor.py` | 从主仓统一拉起/停止/巡检 orchestrator + 各 worktree agent 进程，写 PID 与日志 | `poetry run python scripts/workflow_supervisor.py start` | 本地开发使用 |
 | `workflow-supervisor-console.ps1` | 打开一个可视监控终端，前台运行 `workflow_supervisor.py watch --ensure-running` | `pwsh ./scripts/workflow-supervisor-console.ps1` | 本地开发使用 |
-| `workflow_terminal_control.py` | 驱动已打开的终端窗口：按 mailbox 给现有 CLI 窗口发送固定话术（统筹/继续spec循环/继续审校/继续深度审计/继续审计统筹） | `poetry run python scripts/workflow_terminal_control.py --interval 15 --force` | 本地开发使用 |
+| `workflow_terminal_control.py` | 驱动已打开的终端窗口：按 mailbox 给现有 CLI 窗口发送固定话术（统筹/继续spec循环/继续审校/继续深度审计/继续审计复核） | `poetry run python scripts/workflow_terminal_control.py --interval 15 --force` | 本地开发使用 |
 | `workflow-terminal-control-console.ps1` | 前台持续驱动现有 6 个 CLI 窗口，循环发送固定话术 | `pwsh ./scripts/workflow-terminal-control-console.ps1` | 本地开发使用 |
 | `workflow_focus_window.ps1` | 激活某个 workflow 终端窗口，供人工接管 | `pwsh ./scripts/workflow_focus_window.ps1 -WindowTitle owlclaw-main` | 本地开发使用 |
 | `workflow-launch.ps1` | 一键拉起 6 个独立工作窗口（main/review/coding/audit），自动按 `3x2` 平铺，并启动控制窗口 | `pwsh ./scripts/workflow-launch.ps1` | 本地开发使用 |

@@ -176,7 +176,7 @@ def _message_for_audit(agent: str) -> str | None:
     if agent == "audit-a":
         return "继续深度审计"
     if agent == "audit-b":
-        return "继续审计统筹"
+        return "继续审计复核"
     return None
 
 
