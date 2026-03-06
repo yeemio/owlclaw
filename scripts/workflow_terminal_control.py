@@ -267,6 +267,7 @@ def _should_send(
     stale_seconds: int,
     retry_seconds: int,
 ) -> tuple[bool, str]:
+    previous = _load_state(repo_root, agent)
     if agent not in workflow_mailbox.VALID_AGENT_NAMES:
         audit_status = _audit_runtime_status(repo_root, agent)
         if not force and audit_status is None:
@@ -274,15 +275,22 @@ def _should_send(
         if force:
             return True, "forced"
         assert audit_status is not None
+        if previous is None:
+            return True, "first_send"
+        if previous.get("fingerprint") != fingerprint:
+            return True, "fingerprint_changed"
+        last_attempt_value = previous.get("sent_at")
+        last_attempt_age = _seconds_since(last_attempt_value) if last_attempt_value else None
+        if last_attempt_age is not None and last_attempt_age < retry_seconds:
+            return False, "recent_attempt"
         updated_age = audit_status["updated_age"]
         status = audit_status["status"]
         if updated_age is None or updated_age >= stale_seconds:
             return True, "stale_audit_state"
-        if status == "blocked":
+        if status in {"blocked", "idle"}:
             return True, f"audit_{status}"
         return False, "fresh_audit_state"
 
-    previous = _load_state(repo_root, agent)
     if force:
         return True, "forced"
     if previous is None:

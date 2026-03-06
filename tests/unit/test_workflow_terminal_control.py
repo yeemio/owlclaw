@@ -194,7 +194,7 @@ def test_audit_agent_without_state_is_not_auto_nudged(tmp_path: Path) -> None:
     assert result["reason"] == "missing_audit_state"
 
 
-def test_audit_agent_with_fresh_idle_state_stays_silent(tmp_path: Path) -> None:
+def test_audit_agent_with_fresh_idle_state_is_nudged(tmp_path: Path) -> None:
     _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
     control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
     audit_dir = tmp_path / ".kiro" / "runtime" / "audit-state"
@@ -203,10 +203,50 @@ def test_audit_agent_with_fresh_idle_state_stays_silent(tmp_path: Path) -> None:
         json.dumps({"agent": "audit-a", "status": "idle", "updated_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True),
         encoding="utf-8",
     )
+
+    class Result:
+        returncode = 0
+        stdout = "sent"
+        stderr = ""
+
     control._seconds_since = lambda value: 10.0
+    control._send_to_window_candidates = lambda repo_root, window_titles, message, **kwargs: (window_titles[0], Result())
     result = control.drive_once(tmp_path, "audit-a")
+    assert result["delivered"] is True
+    assert result["decision_reason"] == "first_send"
+
+
+def test_audit_agent_skips_recent_retry_for_same_idle_state(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    runtime_dir = tmp_path / ".kiro" / "runtime"
+    (runtime_dir / "audit-state").mkdir(parents=True, exist_ok=True)
+    (runtime_dir / "terminal-control").mkdir(parents=True, exist_ok=True)
+    (runtime_dir / "audit-state" / "audit-a.json").write_text(
+        json.dumps({"agent": "audit-a", "status": "idle", "updated_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True),
+        encoding="utf-8",
+    )
+    fingerprint = json.dumps(
+        {
+            "action": "fixed",
+            "dirty_files": [],
+            "message": "继续深度审计",
+            "pending_commits": [],
+            "stage": "fixed",
+            "summary": "fixed audit prompt",
+        },
+        ensure_ascii=True,
+        sort_keys=True,
+    )
+    (runtime_dir / "terminal-control" / "audit-a.json").write_text(
+        json.dumps({"agent": "audit-a", "fingerprint": fingerprint, "sent_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True),
+        encoding="utf-8",
+    )
+
+    control._seconds_since = lambda value: 10.0
+    result = control.drive_once(tmp_path, "audit-a", retry_seconds=120)
     assert result["delivered"] is False
-    assert result["reason"] == "fresh_audit_state"
+    assert result["reason"] == "recent_attempt"
 
 
 def test_drive_all_includes_audit_terminals(tmp_path: Path) -> None:
