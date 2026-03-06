@@ -77,6 +77,50 @@ function Invoke-Control {
     & poetry run python $controlScript @Arguments
 }
 
+function Show-ControlResult {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Result
+    )
+
+    if ($Result -isnot [System.Array]) {
+        $items = @($Result)
+    }
+    else {
+        $items = $Result
+    }
+
+    foreach ($item in $items) {
+        if ($null -eq $item) {
+            continue
+        }
+
+        if ($item.paused -eq $true) {
+            Write-Host "paused"
+            continue
+        }
+
+        if ($item.delivered -eq $true) {
+            Write-Host ("sent {0}: {1} ({2})" -f $item.agent, $item.message, $item.decision_reason)
+            continue
+        }
+
+        $reason = [string]$item.reason
+        if ($reason -in @("fresh_runtime", "audit_recently_sent")) {
+            continue
+        }
+
+        if ($reason) {
+            Write-Host ("pending {0}: {1}" -f $item.agent, $reason)
+            continue
+        }
+
+        if ($item.stderr) {
+            Write-Host ("failed {0}: {1}" -f $item.agent, $item.stderr)
+        }
+    }
+}
+
 function Set-Paused {
     param(
         [bool]$Paused
@@ -96,7 +140,11 @@ Show-Help
 Write-Host ("Controller loop running every {0}s (stale threshold {1}s). Type a command and press Enter." -f $Interval, $StaleSeconds)
 
 while ($true) {
-    Invoke-Control @("--once", "--stale-seconds", "$StaleSeconds", "--json")
+    $raw = Invoke-Control @("--once", "--stale-seconds", "$StaleSeconds", "--json")
+    if ($raw) {
+        $parsed = $raw | ConvertFrom-Json
+        Show-ControlResult -Result $parsed
+    }
 
     $deadline = (Get-Date).AddSeconds($Interval)
     while ((Get-Date) -lt $deadline) {
@@ -123,14 +171,22 @@ while ($true) {
                     Write-Host "resumed"
                 }
                 "status" {
-                    Invoke-Control @("--once", "--stale-seconds", "$StaleSeconds", "--json")
+                    $raw = Invoke-Control @("--once", "--stale-seconds", "$StaleSeconds", "--json")
+                    if ($raw) {
+                        $parsed = $raw | ConvertFrom-Json
+                        $parsed | ConvertTo-Json -Depth 6
+                    }
                 }
                 "send" {
                     if ($agents -notcontains $target) {
                         Write-Host "unknown agent"
                     }
                     else {
-                        Invoke-Control @("--agent", $target, "--once", "--force", "--json")
+                        $raw = Invoke-Control @("--agent", $target, "--once", "--force", "--json")
+                        if ($raw) {
+                            $parsed = $raw | ConvertFrom-Json
+                            $parsed | ConvertTo-Json -Depth 6
+                        }
                     }
                 }
                 "takeover" {
