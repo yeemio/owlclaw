@@ -183,7 +183,7 @@ def test_webhook_non_utf8_body_returns_400() -> None:
     assert non_utf8.status_code == 400
     payload = non_utf8.json()
     assert payload["error"]["code"] == "INVALID_ENCODING"
-    assert payload["error"]["message"] == "Request body must be UTF-8"
+    assert payload["error"]["message"] == "request body must be valid UTF-8"
 
 
 def test_http_gateway_config_default_cors_origins_is_closed() -> None:
