@@ -375,22 +375,23 @@
 - [x] D28 Low-28 CronMetrics 样本有界化→ spec: audit-deep-remediation
 - [x] D29 Low-29 get_execution_history tenant 绑定认证上下文→ spec: audit-deep-remediation
 
-### Phase 16：深度审计 Follow-up（#45–#55，2026-03-06 分配）
+### Phase 16：深度审计 Follow-up（#45–#55，2026-03-06 分配，已收口）
 
 > **来源**: `docs/review/DEEP_AUDIT_REPORT.md` 加审与扩展发现
 > **分配**: codex-gpt-work #45/#46/#50/#51/#53/#54；codex-work #47/#48/#49/#52/#55
+> **状态**: 全部完成并审校 APPROVE，已合并到 review-work
 
 - [x] #45 CapabilityRegistry.get_state 异步 state provider timeout → spec: audit-deep-remediation-followup
 - [x] #46 SkillDocExtractor.read_document path 限制在 base_dir 下 → spec: audit-deep-remediation-followup
-- [ ] #47 Runtime final summarization 错误脱敏（codex-work）
-- [ ] #48 Observation 工具参数脱敏（codex-work）
-- [ ] #49/#52/#55 LLM facade/client timeout 与错误元数据脱敏（codex-work）
+- [x] #47 Runtime final summarization 错误脱敏（固定文案替代 str(exc)）→ spec: audit-deep-remediation-followup
+- [x] #48 Observation 工具参数脱敏（Langfuse span/event 敏感 key redact）→ spec: audit-deep-remediation-followup
+- [x] #49 LLM 集成 Langfuse metadata error_message 脱敏→ spec: audit-deep-remediation-followup
 - [x] #50 MemoryService file_fallback_path 校验 → spec: audit-deep-remediation-followup
 - [x] #51 compact 单次加载上限（compaction_max_entries）→ spec: audit-deep-remediation-followup
-- [ ] #52 aembedding timeout（codex-work）
+- [x] #52 aembedding 超时（facade timeout_seconds + wait_for）→ spec: audit-deep-remediation-followup
 - [x] #53 MemorySystem memory_file 路径校验 → spec: audit-deep-remediation-followup
 - [x] #54 _index_entry 日志脱敏（不 log str(exc)）→ spec: audit-deep-remediation-followup
-- [ ] #55 LLMClient timeout（codex-work）
+- [x] #55 LLMClient.complete / _call_with_fallback 可选 timeout→ spec: audit-deep-remediation-followup
 
 ---
 
@@ -488,17 +489,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-07（review-work 审校完成：codex-gpt-work #45/#46/#50/#51/#53/#54 ✅ APPROVE；codex-work #47/#48/#49/#52/#55 ✅ APPROVE；正在合并到 review-work） |
-| 当前批次 | **Phase 16 follow-up**：深度审计 #45-#55 审校完成，正在合并。 |
-| 批次状态 | codex-gpt-work 已审校 APPROVE（6/6）；codex-work 已审校 APPROVE（5/5）；正在合并到 review-work。 |
-| 已完成项 | 30) codex-gpt-work #45/#46/#50/#51/#53/#54 审校 APPROVE；31) codex-work #47/#48/#49/#52/#55 审校 APPROVE；32) 合并 codex-gpt-work 到 review-work。 |
-| 下一待执行 | 1) 合并 codex-work 到 review-work；2) 更新 SPEC_TASKS_SCAN.md checkpoint；3) 推送 review-work 到远程。 |
-| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 全部审校通过 ✅。 |
+| 最后更新 | 2026-03-07（Phase 16 收口：codex-gpt-work #45/#46/#50/#51/#53/#54 ✅ APPROVE + 合并；codex-work #47/#48/#49/#52/#55 ✅ APPROVE + 合并） |
+| 当前批次 | **Phase 16 follow-up 已收口**：深度审计 #45-#55 全部完成并合并到 review-work。Backlog：#30-#44（未分配）、#56-#124，待后续统筹分配。 |
+| 批次状态 | codex-gpt-work 已审校 APPROVE（6/6）并合并；codex-work 已审校 APPROVE（5/5）并合并。Phase 16 完成收口。 |
+| 已完成项 | 30) codex-gpt-work #45/#46/#50/#51/#53/#54 审校 APPROVE；31) codex-work #47/#48/#49/#52/#55 审校 APPROVE；32) 合并 codex-gpt-work 到 review-work；33) 合并 codex-work 到 review-work。 |
+| 下一待执行 | 1) 推送 review-work 到远程；2) 等待新的审校任务或统筹分配 #56-#124。 |
+| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 全部审校通过并合并 ✅。 |
 | 阻塞项 | 无内部阻塞。 |
-| 健康状态 | ✅ review-work Phase 16 审校完成，正在合并两个 worktree。 |
+| 健康状态 | ✅ Phase 16 已完成收口；两个 coding worktree 已合并到 review-work。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | review-work 领先 main 2 commits（verdict + merge）；codex-work 领先 main 46 commits；codex-gpt-work 领先 main 12 commits。 |
-| 审校状态 | Phase 16 审校完成；verdict 文件已归档于 `.kiro/reviews/`；正在合并。 |
+| 分支量化进度 | review-work 包含 Phase 16 全部修复；codex-work 和 codex-gpt-work 可归档或重置。 |
+| 审校状态 | Phase 16 审校完成并合并；verdict 文件已归档于 `.kiro/reviews/`。 |
 
 ---
 

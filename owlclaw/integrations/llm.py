@@ -229,17 +229,25 @@ async def acompletion(**kwargs: Any) -> Any:
                         "cost_usd": 0.0,
                         "latency_ms": round((time.perf_counter() - started) * 1000, 3),
                         "status": "error",
-                        "error_message": str(exc),
+                        "error_message": "LLM call failed",
                     },
                 )
         raise
 
 
-async def aembedding(**kwargs: Any) -> Any:
-    """Async embedding facade. All embedding callers must use this."""
+async def aembedding(*, timeout_seconds: float | None = 60.0, **kwargs: Any) -> Any:
+    """Async embedding facade. All embedding callers must use this.
+
+    Args:
+        timeout_seconds: Max wait for embedding API; None disables timeout.
+        **kwargs: Passed to litellm.aembedding (e.g. model, input).
+    """
     import litellm
 
-    return await litellm.aembedding(**kwargs)
+    coro = litellm.aembedding(**kwargs)
+    if timeout_seconds is not None and timeout_seconds > 0:
+        return await asyncio.wait_for(coro, timeout=timeout_seconds)
+    return await coro
 
 
 @dataclass(frozen=True)
@@ -534,8 +542,14 @@ class LLMClient:
         self,
         params: dict[str, Any],
         fallback_models: list[str],
+        timeout_seconds: float | None = None,
     ) -> tuple[Any, str]:
         """Call litellm; on failure try fallback models.
+
+        Args:
+            params: Litellm completion params (model, messages, etc.).
+            fallback_models: Fallback model names to try on failure.
+            timeout_seconds: Max wait per completion call; None = no limit.
 
         Returns:
             Tuple of (litellm response, model name actually used).
@@ -556,7 +570,11 @@ class LLMClient:
                     call_params["api_base"] = mc.api_base
             for retry_idx in range(retries_per_model):
                 try:
-                    response = await acompletion(**call_params)
+                    coro = acompletion(**call_params)
+                    if timeout_seconds is not None and timeout_seconds > 0:
+                        response = await asyncio.wait_for(coro, timeout=timeout_seconds)
+                    else:
+                        response = await coro
                     return response, model
                 except Exception as e:
                     last_error = e
@@ -620,8 +638,13 @@ class LLMClient:
         temperature: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
+        timeout_seconds: float | None = None,
     ) -> LLMResponse:
-        """Complete LLM call with routing and fallback."""
+        """Complete LLM call with routing and fallback.
+
+        Args:
+            timeout_seconds: Max wait per model call; None = no limit (caller can wrap in wait_for).
+        """
         if stream:
             raise ValueError(
                 "LLMClient.complete(stream=True) is not supported; "
@@ -684,7 +707,9 @@ class LLMClient:
             except Exception as e:
                 logger.warning("Langfuse trace create failed: %s", e)
         try:
-            response, used_model = await self._call_with_fallback(params, fallback)
+            response, used_model = await self._call_with_fallback(
+                params, fallback, timeout_seconds=timeout_seconds
+            )
             llm_resp = self._parse_response(response, used_model)
             if trace:
                 try:
@@ -712,7 +737,7 @@ class LLMClient:
         except Exception as e:
             if trace:
                 with contextlib.suppress(Exception):
-                    trace.update(status="error", output=str(e))
+                    trace.update(status="error", output="LLM call failed")
             raise
 
 
