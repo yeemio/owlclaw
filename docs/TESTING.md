@@ -23,7 +23,9 @@ poetry run pytest tests/unit/ -q
 # integration only
 poetry run pytest tests/integration/ -q
 
-# 指定 marker
+# 指定 marker（仅 unit / 仅 integration）
+poetry run pytest -m unit -q
+poetry run pytest -m "not integration" -q
 poetry run pytest -m requires_postgres -q
 ```
 
