@@ -25,7 +25,9 @@ def test_message_mapping_uses_fixed_utterances() -> None:
     assert control._message_for_mailbox("main", {"action": "assign_next_batch"}) == "统筹"
     assert control._message_for_mailbox("main", {"action": "monitor"}) is None
     assert control._message_for_mailbox("review", {"action": "review_pending_commits"}) == "继续审校"
-    assert control._message_for_mailbox("codex", {"action": "wait_for_review"}) == "继续spec循环"
+    assert control._message_for_mailbox("review", {"action": "idle"}) is None
+    assert control._message_for_mailbox("codex", {"action": "cleanup_or_commit_local_changes"}) == "继续spec循环"
+    assert control._message_for_mailbox("codex", {"action": "wait_for_review"}) is None
     assert control._message_for_audit("audit-a") == "继续深度审计"
     assert control._message_for_audit("audit-b") == "继续审计复核"
     assert control.TITLE_MAP["review"] == ["owlclaw-review", "claude"]
@@ -75,7 +77,7 @@ def test_drive_once_skips_same_fingerprint(tmp_path: Path) -> None:
     control._seconds_since = lambda value: 10.0
     result = control.drive_once(tmp_path, "review")
     assert result["delivered"] is False
-    assert result["reason"] == "fresh_runtime"
+    assert result["reason"] == "agent_waiting_for_state_change"
 
 
 def test_drive_once_records_delivery(tmp_path: Path) -> None:
@@ -87,11 +89,11 @@ def test_drive_once_records_delivery(tmp_path: Path) -> None:
         "mailbox_version": 1,
         "generated_at": "2026-03-06T00:00:00+00:00",
         "agent": "codex",
-        "action": "wait_for_review",
-        "stage": "review",
-        "summary": "Stop coding and wait for review-work verdict.",
+        "action": "cleanup_or_commit_local_changes",
+        "stage": "cleanup",
+        "summary": "Clean or commit local changes before continuing.",
         "pending_commits": [],
-        "dirty_files": [],
+        "dirty_files": ["M file.py"],
     }
     mailbox_path = tmp_path / ".kiro" / "runtime" / "mailboxes" / "codex.json"
     mailbox_path.write_text(json.dumps(mailbox_payload, ensure_ascii=True, indent=2), encoding="utf-8")
@@ -107,7 +109,7 @@ def test_drive_once_records_delivery(tmp_path: Path) -> None:
     assert result["message"] == "继续spec循环"
 
 
-def test_drive_once_resends_when_heartbeat_stale(tmp_path: Path) -> None:
+def test_drive_once_resends_when_delivery_failed(tmp_path: Path) -> None:
     mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
     control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
     mailbox_module.ensure_runtime_dirs(tmp_path)
@@ -129,17 +131,7 @@ def test_drive_once_resends_when_heartbeat_stale(tmp_path: Path) -> None:
     fingerprint = control._fingerprint(mailbox_payload, "继续审校")
     (tmp_path / ".kiro" / "runtime" / "terminal-control").mkdir(parents=True, exist_ok=True)
     (tmp_path / ".kiro" / "runtime" / "terminal-control" / "review.json").write_text(
-        json.dumps({"agent": "review", "fingerprint": fingerprint, "sent_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True, indent=2),
-        encoding="utf-8",
-    )
-    (tmp_path / ".kiro" / "runtime" / "heartbeats").mkdir(parents=True, exist_ok=True)
-    (tmp_path / ".kiro" / "runtime" / "acks").mkdir(parents=True, exist_ok=True)
-    (tmp_path / ".kiro" / "runtime" / "heartbeats" / "review.json").write_text(
-        json.dumps({"polled_at": "2026-03-06T00:00:00+00:00"}, ensure_ascii=True, indent=2),
-        encoding="utf-8",
-    )
-    (tmp_path / ".kiro" / "runtime" / "acks" / "review.json").write_text(
-        json.dumps({"acked_at": "2026-03-06T00:00:00+00:00", "status": "seen"}, ensure_ascii=True, indent=2),
+        json.dumps({"agent": "review", "fingerprint": fingerprint, "sent_at": "2026-03-06T00:00:00+00:00", "delivered": False}, ensure_ascii=True, indent=2),
         encoding="utf-8",
     )
 
@@ -150,9 +142,9 @@ def test_drive_once_resends_when_heartbeat_stale(tmp_path: Path) -> None:
 
     control._seconds_since = lambda value: 999.0
     control._send_to_window_candidates = lambda repo_root, window_titles, message, **kwargs: (window_titles[0], Result())
-    result = control.drive_once(tmp_path, "review", stale_seconds=180, retry_seconds=0)
+    result = control.drive_once(tmp_path, "review", retry_seconds=0)
     assert result["delivered"] is True
-    assert result["decision_reason"] == "stale_heartbeat"
+    assert result["decision_reason"] == "retry_after_failed_delivery"
 
 
 def test_main_monitor_state_does_not_send_prompt(tmp_path: Path) -> None:
@@ -208,6 +200,56 @@ def test_main_prompt_waits_for_state_change_after_first_send(tmp_path: Path) -> 
     result = control.drive_once(tmp_path, "main")
     assert result["delivered"] is False
     assert result["reason"] == "main_waiting_for_state_change"
+
+
+def test_review_idle_state_does_not_send_prompt(tmp_path: Path) -> None:
+    mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    mailbox_module.ensure_runtime_dirs(tmp_path)
+
+    mailbox_payload = {
+        "mailbox_version": 1,
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "agent": "review",
+        "action": "idle",
+        "stage": "stable",
+        "summary": "No coding branch is waiting for review.",
+        "pending_commits": [],
+        "dirty_files": [],
+    }
+    (tmp_path / ".kiro" / "runtime" / "mailboxes" / "review.json").write_text(
+        json.dumps(mailbox_payload, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+
+    result = control.drive_once(tmp_path, "review")
+    assert result["delivered"] is False
+    assert result["reason"] == "no_message"
+
+
+def test_codex_wait_for_review_state_does_not_send_prompt(tmp_path: Path) -> None:
+    mailbox_module = _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    control = _load_module("workflow_terminal_control", "scripts/workflow_terminal_control.py")
+    mailbox_module.ensure_runtime_dirs(tmp_path)
+
+    mailbox_payload = {
+        "mailbox_version": 1,
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "agent": "codex",
+        "action": "wait_for_review",
+        "stage": "review",
+        "summary": "Stop coding and wait for review-work verdict.",
+        "pending_commits": [],
+        "dirty_files": [],
+    }
+    (tmp_path / ".kiro" / "runtime" / "mailboxes" / "codex.json").write_text(
+        json.dumps(mailbox_payload, ensure_ascii=True, indent=2),
+        encoding="utf-8",
+    )
+
+    result = control.drive_once(tmp_path, "codex")
+    assert result["delivered"] is False
+    assert result["reason"] == "no_message"
 
 
 def test_audit_agent_without_state_is_not_auto_nudged(tmp_path: Path) -> None:

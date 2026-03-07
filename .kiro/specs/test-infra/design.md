@@ -167,3 +167,16 @@ pgvector 扩展初始化：两处都执行
 ```sql
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
+
+## Backlog：测试数据工厂
+
+待实现时在 **factory_boy** 与 **polyfactory** 中二选一（或并存）：
+
+- **factory_boy**：成熟、与 Django/ORM 生态常见组合；适合固定 schema 的 Model factory。
+- **polyfactory**：基于类型注解与 Pydantic，无需手写 subclass；适合 API 请求体/响应体与 Pydantic 模型。
+
+选型时考虑：现有 tests 中 fixture 是否已大量手写 dict/list、是否有 Pydantic 模型、CI 依赖体积。实现时在对应 spec 的 tasks 中拆子任务（安装、conftest 集成、首批 1～2 个用例迁移）。
+
+## Backlog：Kafka 本地 mock
+
+Queue trigger 相关测试目前依赖真实 Kafka 或 skip。实现时可用 **aiokafka** 的 mock（或内存 transport）在 unit 层替代真实 broker，使 `tests/unit/triggers/test_queue_*`、`tests/unit/capabilities/test_bindings_queue_executor.py` 等在不起 Kafka 时也可运行。子任务：在 conftest 中提供 mock 注入点、替换 adapter 的 connect/consume 为内存实现、至少 1 个用例从 skip 改为必跑。
