@@ -14,7 +14,6 @@ from sqlalchemy import case, func, select
 from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.capabilities.registry import CapabilityRegistry
 from owlclaw.db import get_engine
-from owlclaw.db.exceptions import ConfigurationError
 from owlclaw.db.session import create_session_factory
 from owlclaw.governance.ledger import LedgerRecord
 
