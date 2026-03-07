@@ -14,6 +14,7 @@ DEFAULT_RUNTIME_CONFIG: dict[str, Any] = {
     "llm_retry_attempts": 1,
     "llm_fallback_models": [],
     "heartbeat": {"enabled": True},
+    "skill_env_allowlist": [],
 }
 
 
@@ -62,6 +63,17 @@ def validate_runtime_config(config: dict[str, Any]) -> dict[str, Any]:
         enabled = heartbeat.get("enabled", True)
         if not isinstance(enabled, bool):
             raise ValueError("heartbeat.enabled must be a boolean")
+
+    if "skill_env_allowlist" in normalized:
+        allowlist = normalized["skill_env_allowlist"]
+        if not isinstance(allowlist, list):
+            raise ValueError("skill_env_allowlist must be a list")
+        cleaned: list[str] = []
+        for item in allowlist:
+            if not isinstance(item, str) or not item.strip():
+                raise ValueError("skill_env_allowlist must contain non-empty strings")
+            cleaned.append(item.strip())
+        normalized["skill_env_allowlist"] = cleaned
 
     return normalized
 

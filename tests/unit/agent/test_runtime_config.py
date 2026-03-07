@@ -42,6 +42,12 @@ def test_validate_runtime_config_rejects_invalid_values() -> None:
         validate_runtime_config({"llm_timeout_seconds": -1})
     with pytest.raises(ValueError, match="heartbeat.enabled"):
         validate_runtime_config({"heartbeat": {"enabled": "yes"}})
+    with pytest.raises(ValueError, match="skill_env_allowlist"):
+        validate_runtime_config({"skill_env_allowlist": "not_a_list"})
+    with pytest.raises(ValueError, match="skill_env_allowlist"):
+        validate_runtime_config({"skill_env_allowlist": [""]})
+    cfg = validate_runtime_config({"skill_env_allowlist": ["MY_KEY", "  OTHER  "]})
+    assert cfg["skill_env_allowlist"] == ["MY_KEY", "OTHER"]
 
 
 def test_runtime_load_and_reload_config(tmp_path: Path) -> None:

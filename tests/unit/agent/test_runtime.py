@@ -761,6 +761,33 @@ metadata:
         assert os.environ["OWLCLAW_SKILL_EXISTING_KEY"] == "old"
         assert "OWLCLAW_SKILL_NEW_ONLY_KEY" not in os.environ
 
+    def test_skill_env_allowlist_injects_non_prefix_key(self, tmp_path, monkeypatch) -> None:
+        """With skill_env_allowlist, keys in the list are injected even without OWLCLAW_SKILL_ prefix."""
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            config={"skill_env_allowlist": ["MY_CUSTOM_KEY", "ANOTHER_ALLOWED"]},
+        )
+        rt.registry = MagicMock()
+        rt.registry.handlers = {"skill-a": MagicMock()}
+        rt._run_handler_names_snapshot = ("skill-a",)
+        rt.registry.skills_loader.get_skill.return_value = MagicMock(
+            owlclaw_config={
+                "env": {
+                    "MY_CUSTOM_KEY": "allowlist_value",
+                    "ANOTHER_ALLOWED": "second_value",
+                    "NOT_IN_ALLOWLIST": "ignored",
+                }
+            }
+        )
+        rt._inject_skill_env_for_run()
+        assert os.environ["MY_CUSTOM_KEY"] == "allowlist_value"
+        assert os.environ["ANOTHER_ALLOWED"] == "second_value"
+        assert os.environ.get("NOT_IN_ALLOWLIST") != "ignored"
+        rt._restore_skill_env_after_run()
+        assert "MY_CUSTOM_KEY" not in os.environ
+        assert "ANOTHER_ALLOWED" not in os.environ
+
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_accepts_dict_assistant_message(self, mock_llm, tmp_path) -> None:
         """Runtime should support providers returning dict message objects."""
