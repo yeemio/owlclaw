@@ -107,7 +107,7 @@
 - [ ] pytest-xdist 并行测试（加速 CI）
 - [ ] 测试数据工厂（factory_boy 或 polyfactory）
 - [ ] Kafka 本地 mock（用 `aiokafka` mock 替代真实 Kafka）
-- [ ] 测试报告 HTML 输出（`pytest-html`）
+- [x] 测试报告 HTML 输出（`pytest-html`）：已加入 dev 依赖与 `docs/TESTING.md` 使用说明
 
 ---
 

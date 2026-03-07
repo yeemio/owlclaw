@@ -34,6 +34,16 @@ poetry run pytest -m requires_postgres -q
 | unit | 否（应为 0 外部依赖） | 否 | 否 | 否 |
 | integration | 是（默认） | 按用例 | 按用例 | 按用例 |
 
+## HTML 报告
+
+生成自包含 HTML 测试报告（依赖 `pytest-html`）：
+
+```bash
+poetry run pytest --html=report.html --self-contained-html
+```
+
+报告输出到 `report.html`，可在浏览器中打开查看结果与时长分布。
+
 ## 覆盖率目标
 
 1. unit 目标：`>= 73%`（当前阶段可执行门槛，避免伪失败阻塞）
