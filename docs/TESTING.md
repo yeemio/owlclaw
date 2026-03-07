@@ -34,6 +34,16 @@ poetry run pytest -m requires_postgres -q
 | unit | 否（应为 0 外部依赖） | 否 | 否 | 否 |
 | integration | 是（默认） | 按用例 | 按用例 | 按用例 |
 
+## 并行测试
+
+使用 `pytest-xdist` 多进程加速（CI 或本地大批量时）：
+
+```bash
+poetry run pytest tests/unit/ -n auto -q
+```
+
+`-n auto` 使用与 CPU 核数相当的 worker 数。
+
 ## HTML 报告
 
 生成自包含 HTML 测试报告（依赖 `pytest-html`）：

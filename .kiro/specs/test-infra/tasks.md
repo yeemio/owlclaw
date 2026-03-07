@@ -104,7 +104,7 @@
 
 ## Backlog
 
-- [ ] pytest-xdist 并行测试（加速 CI）
+- [x] pytest-xdist 并行测试（加速 CI）：依赖已存在，使用说明已写入 `docs/TESTING.md`（`-n auto`）
 - [ ] 测试数据工厂（factory_boy 或 polyfactory）
 - [ ] Kafka 本地 mock（用 `aiokafka` mock 替代真实 Kafka）
 - [x] 测试报告 HTML 输出（`pytest-html`）：已加入 dev 依赖与 `docs/TESTING.md` 使用说明
