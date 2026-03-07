@@ -54,11 +54,17 @@ poetry run pytest --html=report.html --self-contained-html
 
 报告输出到 `report.html`，可在浏览器中打开查看结果与时长分布。
 
-## 覆盖率目标
+## 覆盖率目标与 HTML 报告
 
 1. unit 目标：`>= 73%`（当前阶段可执行门槛，避免伪失败阻塞）
 2. overall 目标：`>= 75%`（integration 叠加后的当前阶段门槛）
 3. 配置位置：`pyproject.toml` 的 `[tool.coverage.*]`
+
+生成覆盖率 HTML 报告（输出到 `htmlcov/`）：
+
+```bash
+poetry run pytest --cov=owlclaw --cov-report=html
+```
 
 ## 新增测试建议
 
