@@ -27,6 +27,8 @@ poetry run pytest tests/integration/ -q
 poetry run pytest -m unit -q
 poetry run pytest -m "not integration" -q
 poetry run pytest -m requires_postgres -q
+# 排除慢速用例（若有 slow marker）
+poetry run pytest -m "not slow" -q
 ```
 
 ## 服务依赖矩阵
