@@ -17,7 +17,16 @@
 
 以后如果要调整目录、CLI 类型、窗口标题、固定话术，优先改这一个 JSON，再让启动器和控制器读取它。
 
-控制器不会长期无脑发命令。它会参考 `.kiro/runtime/` 下的 mailbox、ack、heartbeat 状态，只在任务变化、停滞或阻塞时催办。
+控制器不会长期无脑发命令。它会参考 `.kiro/runtime/` 下的 mailbox、ack、heartbeat，以及 mailbox 里绑定的 `object_type/object_id`，只在任务变化、停滞或阻塞时催办。
+
+每个 agent 现在还会在 mailbox 中持续收到自己的“岗位合同”：
+
+- `role_title`
+- `role_contract`
+- `must_do`
+- `must_not_do`
+
+也就是每一轮都重复告诉它“你是谁、该做什么、不能做什么”，不再只靠一句短提示词。
 
 ---
 
@@ -32,10 +41,17 @@
 - `audit-a` -> `继续深度审计`
 - `audit-b` -> `继续审计复核`
 
+其中两条审计话术现在不是“空口号”，而是强约束提示：
+
+- `audit-a` 必须按 `deep-codebase-audit` skill 做多维度代码审计，不能只读文档，不能改代码，只能提交 structured findings 给 `main`
+- `audit-b` 必须按同一 skill 做独立复核，重新读代码验证并继续找漏项，不能只复述已有报告，不能改代码
+
 说明：
 
-- `codex` / `codex-gpt` 在 `wait_for_review`、`wait_for_assignment`、`cleanup_or_commit_local_changes` 这类状态下会收到 `继续spec循环`
-- 其余编码推进状态会收到 `继续`
+- `main` 在 `monitor`、`clean_local_changes`、`merge_review_work`、`assign_next_batch`、`process_triage`、`process_verdict` 这些统筹状态下都会收到 `统筹`
+- `review` 在 `review_pending_commits`、`idle`、`review_delivery` 状态下都会收到 `继续审校`
+- `codex` / `codex-gpt` 在 `wait_for_review`、`wait_for_assignment`、`cleanup_or_commit_local_changes`、`execute_assignment` 状态下会收到 `继续spec循环`
+- 这样 6 个窗口不会因为进入“等待态/监控态”而整体停转
 
 ---
 
@@ -56,6 +72,22 @@ pwsh ./scripts/workflow-launch.ps1 -SkipLayout
 - `owlclaw-audit-a`
 - `owlclaw-audit-b`
 - `owlclaw-control`
+
+默认情况下，`owlclaw-control` 运行的是 `workflow-supervisor-console.ps1`，也就是无头执行链的前台观察窗口。
+
+如果你要显式使用旧的窗口催办控制台，才额外加：
+
+```powershell
+pwsh ./scripts/workflow-launch.ps1 -SkipLayout -UseTerminalController
+```
+
+这时 `owlclaw-control` 会运行 `workflow-terminal-control-console.ps1`。默认是 observe-only，不会抢鼠标、焦点和剪贴板；只有显式加 `-EnableSendKeys` 才会启用旧的窗口注入链路。
+
+默认的 supervisor 控制台用于观察闭环主链：
+
+- `workflow_orchestrator.py`
+- `workflow_agent.py`
+- `workflow_executor.py`
 
 并且会自动为：
 
@@ -103,10 +135,22 @@ Get-Content .kiro\runtime\launch-logs\codex.log
 
 ## 控制窗口
 
-控制窗口脚本：
+默认控制窗口脚本：
+
+```powershell
+pwsh ./scripts/workflow-supervisor-console.ps1
+```
+
+旧的窗口催办控制台：
 
 ```powershell
 pwsh ./scripts/workflow-terminal-control-console.ps1
+```
+
+如果你明确接受窗口激活和剪贴板注入，再显式开启：
+
+```powershell
+pwsh ./scripts/workflow-terminal-control-console.ps1 -EnableSendKeys
 ```
 
 支持命令：
@@ -138,12 +182,13 @@ status
 - `.kiro/runtime/mailboxes/*.json`
 - `.kiro/runtime/acks/*.json`
 - `.kiro/runtime/heartbeats/*.json`
+- `.kiro/runtime/findings/`、`triage/`、`assignments/`、`deliveries/`、`verdicts/`、`merges/`、`blockers/`
 - `.kiro/runtime/audit-state/*.json`
 - `.kiro/runtime/terminal-windows.json`
 
 触发发送的典型条件：
 
-- mailbox 指纹变化
+- mailbox 指纹变化（包括 `object_type/object_id` 变化）
 - ack 缺失
 - heartbeat 缺失
 - ack 过旧
@@ -168,6 +213,20 @@ poetry run python scripts/workflow_audit_state.py update --agent audit-a --statu
 poetry run python scripts/workflow_audit_state.py update --agent audit-b --status blocked --finding-ref D49 --note "need human confirmation"
 ```
 
+推荐同时回写本轮真实阅读范围：
+
+```powershell
+poetry run python scripts/workflow_audit_state.py update --agent audit-a --status started --summary "auditing runtime" --file-read owlclaw/agent/runtime/runtime.py --dimension-covered core_logic --lines-read 400
+```
+
+提交审计 finding 时，必须带代码证据、文件路径、审计维度和 thinking lens：
+
+```powershell
+poetry run python scripts/workflow_audit_state.py finding --agent audit-a --title "Observation tool leaks unsanitized args" --summary "Tool output flows into prompt without sanitizer." --severity p1 --spec workflow-closed-loop --task-ref 3.3 --target-agent codex --target-branch codex-work --file owlclaw/agent/runtime/runtime.py --dimension core_logic --lens adversary --evidence "Traced tool result into runtime._build_messages() without sanitizer."
+```
+
+缺少这些字段的 audit finding 会被协议层拒绝，避免“只看文档”的假审计进入主链。
+
 查看当前状态：
 
 ```powershell
@@ -179,7 +238,8 @@ poetry run python scripts/workflow_audit_state.py show --agent audit-a --json
 - 没有 `audit-state` 文件：静默，不自动催
 - `updated_at` 过旧：催办
 - `status=blocked`：催办
-- `status=idle` 且状态新鲜：不催
+- 首次启动且 `status=idle`：会先催一次，避免审计窗口冷启动静默
+- `status=idle` 且状态新鲜、且刚刚催过：不重复催
 - 状态新鲜：不催
 
 ---
@@ -201,6 +261,12 @@ takeover codex-gpt
 
 接管后，控制器会尝试优先按 `HWND` 聚焦窗口；如果句柄不可用，再回退到 PID 或标题。
 控制器在发送失败时也会尝试重新扫描顶层窗口并刷新 manifest，避免窗口句柄漂移后永久失联。
+
+注意：
+
+- `workflow-supervisor-console.ps1` 不会抢占鼠标和剪贴板
+- `workflow-terminal-control-console.ps1` 默认仅记录 observe 状态，不做窗口注入
+- 只有 `-EnableSendKeys` 时，才会调用 `workflow_sendkeys.ps1` 激活窗口并粘贴固定话术
 
 如果你只想临时暂停自动催办：
 
