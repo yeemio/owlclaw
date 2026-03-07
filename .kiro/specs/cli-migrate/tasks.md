@@ -8,7 +8,7 @@
 - status source: `.kiro/specs/SPEC_TASKS_SCAN.md`
 
 > **状态**：已完成  
-> **最后更新**：2026-02-25
+> **最后更新**：2026-03-07
 
 ---
 

@@ -31,6 +31,8 @@ poetry run pytest -m requires_postgres -q
 poetry run pytest -m "not slow" -q
 # 首次失败即停（调试用）
 poetry run pytest -x
+# 详细输出（单用例调试）
+poetry run pytest path/to/test_file.py -v
 ```
 
 ## 服务依赖矩阵
