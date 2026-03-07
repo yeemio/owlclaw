@@ -36,7 +36,7 @@
 | `workflow_audit_state.py` | 审计窗口状态协议：更新/查看 `audit-a`、`audit-b` 的 runtime 状态，并以“只读代码审计”模式提交带代码证据的 structured finding | `poetry run python scripts/workflow_audit_state.py update --agent audit-a --status started` | 本地开发使用 |
 | `workflow_audit_heartbeat.py` | 审计窗口状态心跳：持续刷新 `audit-a`、`audit-b` 的 runtime 状态时间 | `poetry run python scripts/workflow_audit_heartbeat.py --agent audit-a --once` | 本地开发使用 |
 | `workflow_focus_window.ps1` | 激活某个 workflow 终端窗口，供人工接管 | `pwsh ./scripts/workflow_focus_window.ps1 -WindowTitle owlclaw-main` | 本地开发使用 |
-| `workflow-launch.ps1` | 一键拉起 6 个独立工作窗口（main/review/coding/audit），自动按 `3x2` 平铺，并启动控制窗口 | `pwsh ./scripts/workflow-launch.ps1` | 本地开发使用 |
+| `workflow-launch.ps1` | 一键拉起 6 个独立工作窗口（默认 observer 视图，不抢焦点/剪贴板），自动按 `3x2` 平铺，并启动控制窗口 | `pwsh ./scripts/workflow-launch.ps1` | 本地开发使用 |
 | `workflow_terminal_title.ps1` | 给当前已打开终端设置可驱动标题（如 `owlclaw-codex`、`owlclaw-audit-a`） | `pwsh ./scripts/workflow_terminal_title.ps1 -Name codex` | 本地开发使用 |
 | `workflow_sendkeys.ps1` | 底层窗口驱动：激活指定窗口标题并粘贴/回车；仅在显式启用 sendkeys transport 时使用 | 内部脚本 | 本地开发使用 |
 | `review_template.py` | 生成/检查审校模板 | `poetry run python scripts/review_template.py --help` | 本地开发使用 |
@@ -56,7 +56,7 @@
 8. 如需一个长期可视监控终端，直接运行 `pwsh ./scripts/workflow-supervisor-console.ps1`；它会前台 watch，并在 worker 掉线时自动拉起。
 9. 如需观察已经打开的 CLI 窗口，先在每个窗口运行 `workflow_terminal_title.ps1` 设标题，再运行 `workflow_terminal_control.py` 或 `workflow-terminal-control-console.ps1`；默认只写 observe 状态，不会再直接粘贴固定话术。只有显式传 `--transport sendkeys` 或 `-EnableSendKeys` 时，才会启用旧的窗口注入。
 10. 现有窗口标题建议统一为：`owlclaw-main`、`owlclaw-review`、`owlclaw-codex`、`owlclaw-codex-gpt`、`owlclaw-audit-a`、`owlclaw-audit-b`；其中 `review` 窗口如果被 Claude CLI 覆盖标题，控制器会回退匹配 `claude`。新版启动器还会写出 `.kiro/runtime/terminal-windows.json`，人工 `takeover` 时会优先按 PID/HWND 聚焦窗口。
-11. 如果不想手动一个个开窗口，直接运行 `pwsh ./scripts/workflow-launch.ps1`；它会按串行方式启动 `codex` / `claude` / `agent` 的 6 个工作窗口，自动将窗口按 `3x2` 平铺到主屏，并再开一个 `owlclaw-control` 控制窗口。默认控制窗口现在运行 `workflow-supervisor-console.ps1`；只有显式加 `-UseTerminalController` 时，才切到 `workflow-terminal-control-console.ps1`。
+11. 如果不想手动一个个开窗口，直接运行 `pwsh ./scripts/workflow-launch.ps1`；它会按串行方式启动 6 个 observer 工作窗口，分别显示 main/review/coding/audit 的 mailbox、最近执行结果、最近 assistant 输出、最近 workflow 对象和日志，再开一个 `owlclaw-control` 控制窗口。默认控制窗口现在运行 `workflow-supervisor-console.ps1`；只有显式加 `-UseTerminalController` 时，才切到 `workflow-terminal-control-console.ps1`。
 12. 如需禁用平铺，可追加 `-SkipLayout`；如需调整等待窗口出现后再布局的时间，可设置 `-LayoutDelaySeconds <n>`；如需减慢批量起窗速度避免丢窗，可设置 `-LaunchSpacingMilliseconds <n>`。
 13. 控制窗口支持人工接管：`pause` 暂停自动发送，`resume` 恢复，`send <agent>` 立即发一次固定话术，`takeover <agent>` 激活目标窗口供人工操作，`status` 查看当前暂停状态。自动循环默认会参考 mailbox 指纹、`object_type/object_id`、ack、heartbeat 的更新时间，只在任务变化或 agent 停滞时催办，不再固定盲发。
 14. `audit-a` / `audit-b` 也应维护自己的状态文件，使用 `workflow_audit_state.py update --agent audit-a|audit-b ...` 写入 `.kiro/runtime/audit-state/*.json`；控制器会据此判断是否需要催办。新版 `workflow-launch.ps1` 会在启动审计窗口时自动写入初始 `idle` 状态，并启动 `workflow_audit_heartbeat.py` 持续刷新状态时间。

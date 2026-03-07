@@ -73,6 +73,14 @@ pwsh ./scripts/workflow-launch.ps1 -SkipLayout
 - `owlclaw-audit-b`
 - `owlclaw-control`
 
+默认 6 个角色窗口现在是 observer 视图，不直接往 CLI 注入输入，因此不会抢鼠标、焦点或剪贴板。每个窗口会持续展示：
+
+- 当前 mailbox / stage / object
+- 最近一次 executor 结果
+- 最近一条 assistant 输出
+- 最近相关 workflow 对象（finding / triage / assignment / verdict / delivery / blocker）
+- 最近 supervisor / execution 日志
+
 默认情况下，`owlclaw-control` 运行的是 `workflow-supervisor-console.ps1`，也就是无头执行链的前台观察窗口。
 
 如果你要显式使用旧的窗口催办控制台，才额外加：

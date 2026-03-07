@@ -10,6 +10,7 @@ param(
     [switch]$SkipController,
     [switch]$UseTerminalController,
     [switch]$UseSupervisorController,
+    [switch]$UseInteractiveCliWindows,
     [switch]$DryRun,
     [switch]$SkipLayout
 )
@@ -323,6 +324,17 @@ $StartupCommand
 "@
 }
 
+function New-ObserverLaunchCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$Agent
+    )
+
+    return "pwsh ./scripts/workflow-agent-observer.ps1 -Agent $Agent -RepoRoot '$RepoRoot'"
+}
+
 function Get-LaunchStatePath {
     param(
         [Parameter(Mandatory = $true)]
@@ -500,6 +512,14 @@ $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
 $mainRole = $config.roles | Where-Object { $_.agent -eq "main" } | Select-Object -First 1
 $mainRepo = [string]$mainRole.repo_path
 
+if (-not $UseInteractiveCliWindows -and -not $DryRun) {
+    poetry run python scripts/workflow_supervisor.py --repo-root $mainRepo start | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error ("workflow supervisor failed to start (exit code {0})" -f $LASTEXITCODE)
+        exit $LASTEXITCODE
+    }
+}
+
 $targets = @()
 foreach ($role in $config.roles) {
     $startupType = [string]$role.startup.type
@@ -509,7 +529,11 @@ foreach ($role in $config.roles) {
     $logPath = Get-LaunchLogPath -RepoRoot $mainRepo -Agent ([string]$role.agent)
     $command = $startupCommand
 
-    if ($startupType -eq "direct_cli") {
+    if (-not $UseInteractiveCliWindows) {
+        $startupType = "observer_window"
+        $command = New-ObserverLaunchCommand -RepoRoot $mainRepo -Agent ([string]$role.agent)
+    }
+    elseif ($startupType -eq "direct_cli") {
         $command = New-DirectCliLaunchCommand -RepoRoot $mainRepo -Agent ([string]$role.agent) -StartupCommand $startupCommand -LogPath $logPath -StartupGraceSeconds $StartupGraceSeconds -MaxAttempts $maxAttempts -RetryDelaySeconds $retryDelaySeconds
     }
     elseif ($startupType -eq "audit_agent") {
@@ -598,7 +622,14 @@ foreach ($target in $targets) {
             }
             Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
 
-            if ($target.StartupType -eq "direct_cli" -or $target.StartupType -eq "audit_agent") {
+            if ($target.StartupType -eq "observer_window") {
+                Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "running" -ProcessId $process.Id -Note "observer window ready"
+                if (-not $SkipLayout) {
+                    Set-WorkflowGridLayout -WindowTitles ($targets | ForEach-Object { $_.Title })
+                }
+                $started = $true
+            }
+            elseif ($target.StartupType -eq "direct_cli" -or $target.StartupType -eq "audit_agent") {
                 $health = Wait-WorkflowLaunchHealthy -RepoRoot $mainRepo -Agent $target.Agent -ProcessId $process.Id -TimeoutSeconds $StartupTimeoutSeconds
                 if ($health.ok) {
                     $statePid = 0
@@ -655,11 +686,14 @@ if (-not $SkipLayout -and -not $DryRun) {
 }
 
 if (-not $SkipController) {
+    if (-not $DryRun) {
+        Stop-WorkflowWindowsByExactTitle -WindowTitle "owlclaw-control"
+    }
     if ($UseTerminalController) {
         $controllerCommand = "Start-Sleep -Seconds $ControllerDelaySeconds; pwsh ./scripts/workflow-terminal-control-console.ps1 -Interval $ControlInterval"
     }
     else {
-        $controllerCommand = "Start-Sleep -Seconds $ControllerDelaySeconds; pwsh ./scripts/workflow-supervisor-console.ps1 -Interval $ControlInterval"
+        $controllerCommand = "Start-Sleep -Seconds $ControllerDelaySeconds; pwsh ./scripts/workflow-supervisor-console.ps1 -Interval $ControlInterval -NoNewWindow"
     }
     Start-WorkflowWindow -WindowTitle "owlclaw-control" -Workdir $mainRepo -CommandText $controllerCommand
 }

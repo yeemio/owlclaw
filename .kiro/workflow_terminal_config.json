@@ -32,7 +32,7 @@
       "window_title_fallbacks": [
         "owlclaw-audit-a"
       ],
-      "default_prompt": "继续深度审计",
+      "default_prompt": "继续深度审计。严格按 deep-codebase-audit skill 做多维度代码审计：必须读代码，不得只读文档；不得修改代码；只允许通过 workflow_audit_state.py finding 向 main 提交结构化 findings。",
       "startup": {
         "type": "audit_agent",
         "command": "agent",
@@ -53,7 +53,7 @@
       "window_title_fallbacks": [
         "owlclaw-audit-b"
       ],
-      "default_prompt": "继续审计复核",
+      "default_prompt": "继续审计复核。严格按 deep-codebase-audit skill 复核本轮审计：必须重新读代码验证并继续找漏项，不得只复述已有报告；不得修改代码；只允许通过 workflow_audit_state.py finding 向 main 提交结构化 findings。",
       "startup": {
         "type": "audit_agent",
         "command": "agent",

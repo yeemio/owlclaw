@@ -86,3 +86,50 @@ def test_main_once_quiet_when_mailbox_unchanged(tmp_path: Path, capsys: pytest.C
     assert agent_module.main(["--repo-root", str(tmp_path), "--agent", "codex", "--once"]) == 0
     second_output = capsys.readouterr().out
     assert second_output == ""
+
+
+def test_process_once_writes_object_refs_into_dispatch(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    agent_module = _load_module("workflow_agent", "scripts/workflow_agent.py")
+
+    runtime_dir = tmp_path / ".kiro" / "runtime" / "mailboxes"
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    mailbox_payload = {
+        "mailbox_version": 1,
+        "generated_at": "2026-03-06T00:00:00+00:00",
+        "agent": "main",
+        "stage": "assign",
+        "owner": "main",
+        "action": "process_triage",
+        "priority": "high",
+        "summary": "Structured findings are waiting for triage and assignment.",
+        "blockers": [],
+        "pending_commits": [],
+        "object_type": "triage_decision",
+        "object_id": "triage-123",
+    }
+    (runtime_dir / "main.json").write_text(json.dumps(mailbox_payload, ensure_ascii=True, indent=2), encoding="utf-8")
+
+    result = agent_module.process_once(tmp_path, "main")
+    assert result["changed"] is True
+
+    dispatch_text = (tmp_path / ".kiro" / "runtime" / "dispatch" / "main.md").read_text(encoding="utf-8")
+    assert "- object_type: triage_decision" in dispatch_text
+    assert "- object_id: triage-123" in dispatch_text
+    assert "形成明确 assignment；必要时安排后续合并、提交与同步" in dispatch_text
+
+    heartbeat_payload = json.loads((tmp_path / ".kiro" / "runtime" / "heartbeats" / "main.json").read_text(encoding="utf-8"))
+    assert heartbeat_payload["object_type"] == "triage_decision"
+    assert heartbeat_payload["object_id"] == "triage-123"
+
+
+def test_process_once_handles_missing_mailbox_gracefully(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    agent_module = _load_module("workflow_agent", "scripts/workflow_agent.py")
+
+    result = agent_module.process_once(tmp_path, "main")
+
+    assert result["changed"] is False
+    assert result["reason"] == "mailbox_missing"
+    heartbeat_payload = json.loads((tmp_path / ".kiro" / "runtime" / "heartbeats" / "main.json").read_text(encoding="utf-8"))
+    assert heartbeat_payload["mailbox_action"] == ""
