@@ -83,6 +83,7 @@ async def test_remember_falls_back_to_memory_file_when_store_unavailable(tmp_pat
         store=_StoreSaveUnavailable(),
         embedder=RandomEmbedder(dimensions=32),
         config=config,
+        file_fallback_allowed_base=tmp_path,
     )
     memory_id = await service.remember("agent-a", "tenant-a", "critical outage runbook", tags=["ops"])
 

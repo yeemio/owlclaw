@@ -36,6 +36,7 @@ class MemorySystem:
         *,
         memory_file: str | None = None,
         memory_file_size_limit_bytes: int = 10 * 1024 * 1024,
+        memory_file_allowed_base: Path | str | None = None,
         vector_index: Any | None = None,
         embedder: Any | None = None,
     ) -> None:
@@ -45,7 +46,23 @@ class MemorySystem:
             raise ValueError("memory_file_size_limit_bytes must be an integer >= 1024")
         self.short_term_token_limit = short_term_token_limit
         self.memory_file_size_limit_bytes = memory_file_size_limit_bytes
-        self.memory_file = Path(memory_file) if memory_file else None
+        if memory_file:
+            path = Path(memory_file).expanduser().resolve()
+            if memory_file_allowed_base is not None:
+                base = Path(memory_file_allowed_base).expanduser().resolve()
+                if not base.is_dir():
+                    raise ValueError(
+                        f"memory_file_allowed_base must be an existing directory: {base}"
+                    )
+                try:
+                    path.relative_to(base)
+                except ValueError:
+                    raise ValueError(
+                        f"memory_file must be under memory_file_allowed_base: {path} not under {base}"
+                    ) from None
+            self.memory_file = path
+        else:
+            self.memory_file = None
         self.vector_index = vector_index
         self.embedder = embedder
         self.vector_index_degraded = False
@@ -255,4 +272,7 @@ class MemorySystem:
                 self.vector_index.add(payload)
         except Exception as exc:
             self.vector_index_degraded = True
-            logger.warning("Vector index degraded, falling back to MEMORY.md only: %s", exc)
+            logger.warning(
+                "Vector index degraded, falling back to MEMORY.md only: %s",
+                type(exc).__name__,
+            )

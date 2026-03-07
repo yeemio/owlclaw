@@ -304,6 +304,23 @@ async def test_get_state_non_dict_raises(registry):
         await registry.get_state("bad_state")
 
 
+@pytest.mark.asyncio
+async def test_get_state_async_provider_timeout(skills_loader_with_skill):
+    """get_state() applies timeout to async state provider (Finding #45)."""
+    import asyncio
+
+    async def slow_provider():
+        await asyncio.sleep(10.0)
+        return {"key": "value"}
+
+    registry = CapabilityRegistry(
+        skills_loader_with_skill, handler_timeout_seconds=0.05
+    )
+    registry.register_state("slow_state", slow_provider)
+    with pytest.raises(RuntimeError, match="timed out after"):
+        await registry.get_state("slow_state")
+
+
 def test_filter_by_task_type(tmp_path):
     """filter_by_task_type() returns skill names matching task_type."""
     for name, task_type in [("a", "t1"), ("b", "t1"), ("c", "t2")]:

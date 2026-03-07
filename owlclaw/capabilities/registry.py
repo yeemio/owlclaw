@@ -276,7 +276,9 @@ class CapabilityRegistry:
         try:
             result = provider()
             if inspect.isawaitable(result):
-                result = await result
+                result = await asyncio.wait_for(
+                    result, timeout=self._handler_timeout_seconds
+                )
 
             if not isinstance(result, dict):
                 raise TypeError(
@@ -285,6 +287,11 @@ class CapabilityRegistry:
                 )
 
             return result
+        except asyncio.TimeoutError as e:
+            raise RuntimeError(
+                f"State provider '{state_name}' timed out after "
+                f"{self._handler_timeout_seconds:.2f}s"
+            ) from e
         except Exception as e:
             logger.exception("State provider '%s' invocation failed", state_name)
             raise RuntimeError(

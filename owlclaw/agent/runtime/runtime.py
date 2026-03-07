@@ -349,6 +349,7 @@ class AgentRuntime:
                         logger.debug("Langfuse observation finish failed", exc_info=True)
                 except Exception:
                     logger.debug("Langfuse observation finish failed", exc_info=True)
+                    return
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -1933,6 +1934,7 @@ class AgentRuntime:
         get_skill = getattr(loader, "get_skill", None)
         if not callable(get_skill):
             return
+        allowlist: set[str] = set(self.config.get("skill_env_allowlist") or [])
         skill_names = (
             list(self._run_handler_names_snapshot)
             if self._run_handler_names_snapshot is not None
@@ -1955,9 +1957,9 @@ class AgentRuntime:
                 key = raw_key.strip()
                 if not key:
                     continue
-                if not key.startswith(_SKILL_ENV_PREFIX):
+                if not key.startswith(_SKILL_ENV_PREFIX) and key not in allowlist:
                     logger.debug(
-                        "Ignoring skill env key without %s prefix: %s",
+                        "Ignoring skill env key without %s prefix or allowlist: %s",
                         _SKILL_ENV_PREFIX,
                         key,
                     )

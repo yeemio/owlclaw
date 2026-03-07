@@ -30,7 +30,9 @@ def create_command(
     if from_doc:
         extractor = SkillDocExtractor()
         try:
-            written = extractor.generate_from_document(from_doc.strip(), output)
+            written = extractor.generate_from_document(
+                from_doc.strip(), output, base_dir=Path.cwd()
+            )
         except FileNotFoundError as exc:
             typer.echo(f"Error: {exc}", err=True)
             raise typer.Exit(2) from exc
