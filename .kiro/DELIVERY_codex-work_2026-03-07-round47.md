@@ -7,16 +7,17 @@
 
 ## 本轮回合
 
-1. **Sync**  
-   - `git merge main`：Already up to date。
+1. **未提交改动收口**  
+   - `git status`：工作区干净，无未提交修改。  
+   - 无需 commit，仅确认收口。
 
-2. **Assignment**  
+2. **Assignment 状态**  
    - 本 worktree 分配：Phase 16 **#47 / #48 / #49 / #52 / #55**（audit-deep-remediation-followup）。  
-   - 上述项在 SPEC_TASKS_SCAN 中已全部 [x]；无新 task 分配。  
-   - **无新 assignment**，等待统筹下一批。
+   - 上述项已实现、已审校（APPROVE）、已合并入 review-work（见 `docs/review/REVIEW_VERDICT_codex-work_Phase16_2026-03-07.md`）。  
+   - **无新 assignment**，等待统筹下一批分配。
 
-3. **Mailbox**  
-   - 无发给 codex-work 的未读新消息。
+3. **验证**  
+   - `poetry run pytest tests/unit/agent/test_runtime.py tests/unit/agent/test_runtime_config.py tests/unit/integrations/test_llm.py`：148 passed。
 
 ---
 
@@ -24,13 +25,13 @@
 
 | 类型 | 说明 |
 |------|------|
-| 代码 | 无 |
-| 测试 | 无 |
-| 文档 | 本交付说明 |
+| 代码 | 无（本批已交付并合并） |
+| 测试 | 无新增；相关单元测试 148 通过 |
+| 文档 | 本交付说明 + Checkpoint 更新 |
 
 ---
 
 ## 状态
 
-- Phase 16 本 worktree 批次已完成并已由 review-work 合并。  
-- **零残留**：工作区干净；本轮回合仅新增本文件。
+- **零残留**：工作区已收口；本轮回合仅新增本 delivery 与 SPEC_TASKS_SCAN Checkpoint 更新。  
+- Phase 16 本 worktree 批次已全部完成，等待主线合并与统筹下一批分配。
