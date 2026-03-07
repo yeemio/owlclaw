@@ -19,6 +19,17 @@ import workflow_mailbox  # noqa: E402
 import workflow_status  # noqa: E402
 
 
+def _coding_worktrees(snapshot: workflow_status.WorkflowSnapshot) -> list[workflow_status.WorktreeState]:
+    """Return coding worktrees from the snapshot."""
+    return [worktree for worktree in snapshot.worktrees if worktree.role == "coding"]
+
+
+def _all_coding_queues_clear(snapshot: workflow_status.WorkflowSnapshot) -> bool:
+    """Check if all coding worktrees are clean and have no pending commits."""
+    coding = _coding_worktrees(snapshot)
+    return all(worktree.clean and worktree.ahead_of_main == 0 for worktree in coding)
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -50,10 +61,9 @@ def _next_transition_for_state(
     snapshot: workflow_status.WorkflowSnapshot,
 ) -> str:
     if state.name == "main":
-        coding = [worktree for worktree in snapshot.worktrees if worktree.role == "coding"]
         if (
             snapshot.worktrees[1].ahead_of_main == 0
-            and all(worktree.clean and worktree.ahead_of_main == 0 for worktree in coding)
+            and _all_coding_queues_clear(snapshot)
         ):
             return "assign_next_batch"
         return "merge_review" if snapshot.worktrees[1].ahead_of_main > 0 else "monitor"
@@ -72,12 +82,11 @@ def _mailbox_action_text(
     snapshot: workflow_status.WorkflowSnapshot,
 ) -> str:
     if state.name == "main":
-        coding = [worktree for worktree in snapshot.worktrees if worktree.role == "coding"]
         if not state.clean:
             return "clean_local_changes"
         if snapshot.worktrees[1].ahead_of_main > 0:
             return "merge_review_work"
-        if all(worktree.clean and worktree.ahead_of_main == 0 for worktree in coding):
+        if _all_coding_queues_clear(snapshot):
             return "assign_next_batch"
         return "monitor"
     if state.role == "review":
@@ -95,12 +104,11 @@ def _mailbox_summary(
     snapshot: workflow_status.WorkflowSnapshot,
 ) -> str:
     if state.name == "main":
-        coding = [worktree for worktree in snapshot.worktrees if worktree.role == "coding"]
         if not state.clean:
             return "Clean local changes before orchestrating merges or sync."
         if snapshot.worktrees[1].ahead_of_main > 0:
             return "review-work is ahead of main; merge it into main and push."
-        if all(worktree.clean and worktree.ahead_of_main == 0 for worktree in coding):
+        if _all_coding_queues_clear(snapshot):
             return "Coding and review queues are clear; assign the next batch before nudging agents."
         return "No immediate main-branch action."
     if state.role == "review":
@@ -168,7 +176,7 @@ def _collect_acks(repo_root: Path) -> dict[str, dict[str, object] | None]:
 
 def _classify_action(snapshot: workflow_status.WorkflowSnapshot) -> dict[str, object]:
     worktrees = {state.name: state for state in snapshot.worktrees}
-    coding = [state for state in snapshot.worktrees if state.role == "coding"]
+    coding = _coding_worktrees(snapshot)
     pending_coding = [state for state in coding if state.ahead_of_main > 0]
     review = worktrees["review"]
     main = worktrees["main"]
@@ -204,7 +212,7 @@ def _classify_action(snapshot: workflow_status.WorkflowSnapshot) -> dict[str, ob
 
 def _render_actions(snapshot: workflow_status.WorkflowSnapshot, action: dict[str, object]) -> str:
     worktrees = {state.name: state for state in snapshot.worktrees}
-    coding = [state for state in snapshot.worktrees if state.role == "coding"]
+    coding = _coding_worktrees(snapshot)
     lines = [
         f"# Workflow Actions",
         "",
@@ -220,7 +228,7 @@ def _render_actions(snapshot: workflow_status.WorkflowSnapshot, action: dict[str
         lines.append("- Clean uncommitted changes before any merge or review promotion.")
     elif worktrees["review"].ahead_of_main > 0:
         lines.append("- Merge `review-work` into `main` and push.")
-    elif all(state.clean and state.ahead_of_main == 0 for state in coding):
+    elif _all_coding_queues_clear(snapshot):
         lines.append("- Coding queues are clear; assign the next batch before sending new prompts.")
     else:
         lines.append("- No immediate main-branch action.")
@@ -281,11 +289,7 @@ def _render_worktree_instruction(
             lines.append("Action: clean local changes before orchestrating merges.")
         elif snapshot.worktrees[1].ahead_of_main > 0:
             lines.append("Action: merge review-work into main.")
-        elif all(
-            worktree.clean and worktree.ahead_of_main == 0
-            for worktree in snapshot.worktrees
-            if worktree.role == "coding"
-        ):
+        elif _all_coding_queues_clear(snapshot):
             lines.append("Action: assign the next batch only after coding and review are both clear.")
         else:
             lines.append("Action: monitor only.")

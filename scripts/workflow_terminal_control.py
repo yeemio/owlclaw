@@ -54,14 +54,6 @@ def _audit_state_path(repo_root: Path, agent: str) -> Path:
     return _runtime_dir(repo_root) / "audit-state" / f"{agent}.json"
 
 
-def _heartbeat_path(repo_root: Path, agent: str) -> Path:
-    return _runtime_dir(repo_root) / "heartbeats" / f"{agent}.json"
-
-
-def _ack_path(repo_root: Path, agent: str) -> Path:
-    return _runtime_dir(repo_root) / "acks" / f"{agent}.json"
-
-
 def _window_manifest_path(repo_root: Path) -> Path:
     return _runtime_dir(repo_root) / "terminal-windows.json"
 
@@ -238,17 +230,6 @@ def _message_for_audit(agent: str) -> str | None:
     role = ROLE_CONFIGS.get(agent, {})
     prompt = role.get("default_prompt")
     return prompt if isinstance(prompt, str) and prompt else None
-
-
-def _agent_runtime_status(repo_root: Path, agent: str) -> dict[str, object]:
-    heartbeat = _read_json(_heartbeat_path(repo_root, agent))
-    ack = _read_json(_ack_path(repo_root, agent))
-    return {
-        "heartbeat": heartbeat,
-        "ack": ack,
-        "heartbeat_age": _seconds_since(heartbeat.get("polled_at")) if heartbeat else None,
-        "ack_age": _seconds_since(ack.get("acked_at")) if ack else None,
-    }
 
 
 def _audit_runtime_status(repo_root: Path, agent: str) -> dict[str, object] | None:
