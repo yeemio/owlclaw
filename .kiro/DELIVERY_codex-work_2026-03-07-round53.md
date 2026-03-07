@@ -7,18 +7,15 @@
 
 ## 本轮回合
 
-1. **未提交改动收口**  
-   - `git status`：工作区干净，无未提交改动。无需 commit 收口。
-
-2. **Sync**  
+1. **Sync**  
    - `git merge main`：Already up to date。
 
-3. **Assignment**  
+2. **Assignment**  
    - 本 worktree 分配：Phase 16 **#47 / #48 / #49 / #52 / #55**（audit-deep-remediation-followup）。  
    - 上述项在 SPEC_TASKS_SCAN 中已全部 [x]；无新 task 分配。  
-   - **无新 assignment**，等待审校合并。
+   - **无新 assignment**，等待统筹下一批。
 
-4. **Mailbox**  
+3. **Mailbox**  
    - 无发给 codex-work 的未读新消息。
 
 ---
@@ -29,11 +26,11 @@
 |------|------|
 | 代码 | 无 |
 | 测试 | 无 |
-| 文档 | SPEC_TASKS_SCAN Checkpoint 已完成项 65；本 delivery |
+| 文档 | 本交付说明 |
 
 ---
 
 ## 状态
 
-- Phase 16 本 worktree 批次（#47/#48/#49/#52/#55）已全部交付，等待 review-work 审校合并。  
-- **零残留**：工作区干净；本轮回合仅更新 Checkpoint + 本 delivery。
+- Phase 16 本 worktree 批次已完成并已由 review-work 合并。  
+- **零残留**：工作区干净；本轮回合仅新增本文件。
