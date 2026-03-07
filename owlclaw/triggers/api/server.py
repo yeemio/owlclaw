@@ -374,7 +374,7 @@ class APITriggerServer:
                     raise RuntimeError("runtime_unavailable")
                 self._runs[run_id] = {"status": "completed", "result": result}
                 await self._record_execution(config, run_id, "success", started, payload, {"result": result}, "async_completed")
-            except Exception as exc:
+            except Exception:
                 self._runs[run_id] = {"status": "failed", "error": "Execution failed."}
                 await self._record_execution(
                     config, run_id, "failed", started, payload, None, "async_failed", "Execution failed."
