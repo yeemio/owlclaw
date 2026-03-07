@@ -14,6 +14,7 @@ DEFAULT_RUNTIME_CONFIG: dict[str, Any] = {
     "llm_retry_attempts": 1,
     "llm_fallback_models": [],
     "heartbeat": {"enabled": True},
+    # Keys listed here are injected from skill owlclaw_config.env even without OWLCLAW_SKILL_ prefix.
     "skill_env_allowlist": [],
 }
 
