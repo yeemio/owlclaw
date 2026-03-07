@@ -482,6 +482,7 @@
 | 连续无进展轮数 | 0 |
 | 分支量化进度 | `review-work` 0 commit ahead、工作区干净；`codex-work` 0 commit ahead + 2 个已修改文件；`codex-gpt-work` 1 commit ahead（`e8766ea`）、工作区干净；`main` 存在用户本地改动，故本轮未执行统筹 commit。 |
 | 审校状态 | `audit-deep-remediation` 主线已审校完成；`review-work` 不再待机，下一轮审校目标为 `codex-gpt-work` 提交 `e8766ea`（#45/#46），随后再接续 Phase 16 其余修复。 |
+| 持续轮次目标 | 主 worktree spec 循环目标 999 轮；每轮 1～3 项，每回复「继续」执行下一批；累计轮数在「已完成项」中递增；说「停」即止。 |
 
 ---
 
@@ -494,6 +495,7 @@
 5. 新增 spec 时须同步更新 Spec 索引表
 6. **跳过测试的验收**：若某功能在 spec 中记录了 SKIP/外部依赖测试，后续具备条件时必须回补真实环境验收并更新本清单
 7. 详细 Spec 循环流程见 `.cursor/rules/owlclaw_core.mdc` 第四节
+8. **持续 999 轮**：用户说「继续，持续999轮」时，主 worktree 每收到「继续」即执行一批（约 3～5 轮），直至累计 999 轮或用户说「停」或遇 Exit 条件
 
 
 
