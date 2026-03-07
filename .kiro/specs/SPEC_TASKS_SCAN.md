@@ -458,17 +458,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-06（review-work 常规审校：lint 修复 + Phase 16 验收清单准备） |
-| 当前批次 | **Phase 16 follow-up**：深度审计新增问题 #45-#55（runtime/llm + registry/memory 两条并行修复线）。 |
-| 批次状态 | 编码 worktree 待开始（IDLE）；review-work 已准备验收清单。 |
-| 已完成项 | 28) review-work lint 修复（F841/F811）；29) Phase 16 验收清单整理完成。 |
-| 下一待执行 | 1) `codex-work` 实施 #47/#48/#49/#52/#55；2) `codex-gpt-work` 实施 #45/#46/#50/#51/#53/#54；3) review-work 审校并回写验收结果。 |
-| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 已分配，待实现/验证。 |
-| 阻塞项 | 无内部阻塞；编码 worktree 待启动。 |
-| 健康状态 | ✅ review-work 已与 `main` 同步；lint 修复已提交。 |
+| 最后更新 | 2026-03-07（review-work 审校完成：codex-gpt-work #45/#46/#50/#51/#53/#54 ✅ APPROVE；codex-work #47/#48/#49/#52/#55 ✅ APPROVE） |
+| 当前批次 | **Phase 16 follow-up**：深度审计 #45-#55 审校完成，待合并。 |
+| 批次状态 | codex-gpt-work 已审校 APPROVE（6/6）；codex-work 已审校 APPROVE（5/5）；等待合并到 main。 |
+| 已完成项 | 30) codex-gpt-work #45/#46/#50/#51/#53/#54 审校 APPROVE；31) codex-work #47/#48/#49/#52/#55 审校 APPROVE。 |
+| 下一待执行 | 1) 合并 codex-gpt-work 到 review-work；2) 合并 codex-work 到 review-work；3) 更新 main 分支。 |
+| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 全部审校通过 ✅。 |
+| 阻塞项 | 无内部阻塞。 |
+| 健康状态 | ✅ review-work 已完成 Phase 16 审校；两个 coding worktree 的提交均已 APPROVE。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | review-work 领先 main 1 commit（lint 修复）；codex-work/codex-gpt-work 与 main 对齐。 |
-| 审校状态 | 常规审校完成（lint 修复）；Phase 16 验收清单已准备。 |
+| 分支量化进度 | review-work 领先 main 1 commit（lint 修复）；codex-work 领先 main 46 commits；codex-gpt-work 领先 main 12 commits。 |
+| 审校状态 | Phase 16 审校完成；verdict 文件已归档于 `.kiro/reviews/`。 |
 
 ---
 
