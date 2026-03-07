@@ -211,7 +211,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 目录 | `D:\AI\owlclaw-codex-gpt\` |
 | 分支 | `codex-gpt-work` |
 | 角色 | 编码：功能实现 + 测试 |
-| 工作状态 | `IDLE`（分支与 `main` 对齐，工作区干净，等待新批次开始） |
+| 工作状态 | `DONE`（Phase 16 已交付并 commit，等待审校合并） |
 
 **当前分配的 spec**：
 
@@ -219,8 +219,9 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 |------|------|---------|
 | **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
 | **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
+| **audit-deep-remediation-followup** | ✅ 6/6（#45/#46/#50/#51/#53/#54） | 已交付，见 `.kiro/delivery-phase16-codex-gpt-work.md` |
 
-**当前任务**：上一批 `audit-deep-remediation` 已全部合入 `main`。下一批分配切换为深度审计新增问题 #45/#46/#50/#51/#53/#54（registry + memory + path validation 相关）。
+**当前任务**：Phase 16 #45/#46/#50/#51/#53/#54 已实现、测试通过并写入 delivery，待 review-work 审校合并。下一批等待统筹分配。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
