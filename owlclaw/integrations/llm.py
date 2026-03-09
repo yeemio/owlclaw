@@ -152,6 +152,18 @@ def configure_mock(mock_responses: dict[str, Any] | None) -> None:
         return
     _mock_config = dict(mock_responses)
 
+
+def _coerce_timeout(timeout_value: Any) -> float | None:
+    if timeout_value is None or isinstance(timeout_value, bool):
+        return None
+    try:
+        timeout = float(timeout_value)
+    except (TypeError, ValueError):
+        return None
+    if timeout <= 0:
+        return None
+    return timeout
+
 # ---------------------------------------------------------------------------
 # Minimal facade (architecture rule)
 # ---------------------------------------------------------------------------
@@ -180,12 +192,17 @@ async def acompletion(**kwargs: Any) -> Any:
 
     import litellm
 
+    timeout_seconds = _coerce_timeout(kwargs.get("timeout"))
+
     trace_ctx = TraceContext.get_current()
     trace = trace_ctx.metadata.get("langfuse_trace") if trace_ctx and trace_ctx.metadata else None
     model_name = str(kwargs.get("model", ""))
     started = time.perf_counter()
     try:
-        response = await litellm.acompletion(**kwargs)
+        if timeout_seconds is not None:
+            response = await asyncio.wait_for(litellm.acompletion(**kwargs), timeout=timeout_seconds)
+        else:
+            response = await litellm.acompletion(**kwargs)
         if trace is not None and hasattr(trace, "generation"):
             prompt_tokens, completion_tokens, total_tokens = TokenCalculator.extract_tokens_from_response(response)
             cost = TokenCalculator.calculate_cost(model_name, prompt_tokens, completion_tokens)
@@ -229,25 +246,21 @@ async def acompletion(**kwargs: Any) -> Any:
                         "cost_usd": 0.0,
                         "latency_ms": round((time.perf_counter() - started) * 1000, 3),
                         "status": "error",
-                        "error_message": "LLM call failed",
+                        "error_type": type(exc).__name__,
+                        "error_message": "internal_error",
                     },
                 )
         raise
 
 
-async def aembedding(*, timeout_seconds: float | None = 60.0, **kwargs: Any) -> Any:
-    """Async embedding facade. All embedding callers must use this.
-
-    Args:
-        timeout_seconds: Max wait for embedding API; None disables timeout.
-        **kwargs: Passed to litellm.aembedding (e.g. model, input).
-    """
+async def aembedding(**kwargs: Any) -> Any:
+    """Async embedding facade. All embedding callers must use this."""
     import litellm
 
-    coro = litellm.aembedding(**kwargs)
-    if timeout_seconds is not None and timeout_seconds > 0:
-        return await asyncio.wait_for(coro, timeout=timeout_seconds)
-    return await coro
+    timeout_seconds = _coerce_timeout(kwargs.get("timeout"))
+    if timeout_seconds is not None:
+        return await asyncio.wait_for(litellm.aembedding(**kwargs), timeout=timeout_seconds)
+    return await litellm.aembedding(**kwargs)
 
 
 @dataclass(frozen=True)
@@ -387,6 +400,7 @@ class LLMConfig(BaseModel):
     task_type_routing: list[TaskTypeRouting] = Field(default_factory=list)
     max_retries: int = 3
     retry_delay_seconds: float = 1.0
+    timeout_seconds: float = 30.0
     langfuse_enabled: bool = False
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
@@ -542,14 +556,8 @@ class LLMClient:
         self,
         params: dict[str, Any],
         fallback_models: list[str],
-        timeout_seconds: float | None = None,
     ) -> tuple[Any, str]:
         """Call litellm; on failure try fallback models.
-
-        Args:
-            params: Litellm completion params (model, messages, etc.).
-            fallback_models: Fallback model names to try on failure.
-            timeout_seconds: Max wait per completion call; None = no limit.
 
         Returns:
             Tuple of (litellm response, model name actually used).
@@ -562,6 +570,7 @@ class LLMClient:
             last_model = model
             mc = self.config.models.get(model)
             call_params = {**params, "model": model}
+            call_params.setdefault("timeout", self.config.timeout_seconds)
             if mc:
                 api_key = os.environ.get(mc.api_key_env, "").strip()
                 if api_key:
@@ -570,11 +579,7 @@ class LLMClient:
                     call_params["api_base"] = mc.api_base
             for retry_idx in range(retries_per_model):
                 try:
-                    coro = acompletion(**call_params)
-                    if timeout_seconds is not None and timeout_seconds > 0:
-                        response = await asyncio.wait_for(coro, timeout=timeout_seconds)
-                    else:
-                        response = await coro
+                    response = await acompletion(**call_params)
                     return response, model
                 except Exception as e:
                     last_error = e
@@ -638,13 +643,8 @@ class LLMClient:
         temperature: float | None = None,
         max_tokens: int | None = None,
         stream: bool = False,
-        timeout_seconds: float | None = None,
     ) -> LLMResponse:
-        """Complete LLM call with routing and fallback.
-
-        Args:
-            timeout_seconds: Max wait per model call; None = no limit (caller can wrap in wait_for).
-        """
+        """Complete LLM call with routing and fallback."""
         if stream:
             raise ValueError(
                 "LLMClient.complete(stream=True) is not supported; "
@@ -707,9 +707,7 @@ class LLMClient:
             except Exception as e:
                 logger.warning("Langfuse trace create failed: %s", e)
         try:
-            response, used_model = await self._call_with_fallback(
-                params, fallback, timeout_seconds=timeout_seconds
-            )
+            response, used_model = await self._call_with_fallback(params, fallback)
             llm_resp = self._parse_response(response, used_model)
             if trace:
                 try:
@@ -737,7 +735,10 @@ class LLMClient:
         except Exception as e:
             if trace:
                 with contextlib.suppress(Exception):
-                    trace.update(status="error", output="LLM call failed")
+                    trace.update(
+                        status="error",
+                        output={"error_type": type(e).__name__, "error_message": "internal_error"},
+                    )
             raise
 
 
