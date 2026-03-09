@@ -133,6 +133,7 @@ def test_ws_stream_sends_overview_triggers_and_ledger_messages() -> None:
 
 def test_ws_requires_token_when_configured(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OWLCLAW_CONSOLE_TOKEN", "secret-token")
+    monkeypatch.setenv("OWLCLAW_REQUIRE_AUTH", "true")
     app = _build_app()
     client = TestClient(app)
     with pytest.raises(WebSocketDisconnect):
@@ -140,5 +141,27 @@ def test_ws_requires_token_when_configured(monkeypatch: pytest.MonkeyPatch) -> N
             pass
 
     with client.websocket_connect("/api/v1/ws?token=secret-token") as ws:
+        msg = ws.receive_json()
+        assert msg["type"] == "overview"
+
+    with client.websocket_connect(
+        "/api/v1/ws?token=secret-token",
+        headers={"x-owlclaw-tenant": "tenant-a"},
+    ) as ws:
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_ws_accepts_console_api_token_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("OWLCLAW_CONSOLE_TOKEN", raising=False)
+    monkeypatch.setenv("OWLCLAW_CONSOLE_API_TOKEN", "api-token")
+    app = _build_app()
+    client = TestClient(app)
+
+    with pytest.raises(WebSocketDisconnect):
+        with client.websocket_connect("/api/v1/ws"):
+            pass
+
+    with client.websocket_connect("/api/v1/ws?token=api-token") as ws:
         msg = ws.receive_json()
         assert msg["type"] == "overview"

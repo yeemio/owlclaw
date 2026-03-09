@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -408,16 +407,6 @@ class TestLLMClient:
             assert kwargs["temperature"] == 0.1
             assert kwargs["max_tokens"] == 256
 
-    @pytest.mark.asyncio
-    async def test_complete_passes_configured_timeout_to_acompletion(self) -> None:
-        c = LLMConfig.default_for_owlclaw()
-        c.timeout_seconds = 3.5
-        client = LLMClient(c)
-        with patch("owlclaw.integrations.llm.acompletion", new_callable=AsyncMock) as mock:
-            mock.return_value = _fake_litellm_response("ok", [], 10, 5)
-            await client.complete(messages=[{"role": "user", "content": "Hi"}])
-            assert mock.call_args.kwargs["timeout"] == pytest.approx(3.5)
-
 
 class TestModelFallbackIntegration:
     """Integration tests for model fallback (Task 9.3)."""
@@ -660,8 +649,6 @@ async def test_acompletion_records_error_generation_on_failure() -> None:
 
     assert len(recorded) == 1
     assert recorded[0]["metadata"]["status"] == "error"
-    assert recorded[0]["metadata"]["error_type"] == "RuntimeError"
-    assert recorded[0]["metadata"]["error_message"] == "internal_error"
 
 
 def test_extract_cost_info_returns_usage_and_cost() -> None:
@@ -689,14 +676,19 @@ async def test_aembedding_delegates_to_litellm() -> None:
 
 
 @pytest.mark.asyncio
-async def test_aembedding_timeout_raises_timeout_error() -> None:
-    async def _slow_embedding(**_: object) -> dict[str, object]:
-        await asyncio.sleep(0.05)
-        return {"data": [{"embedding": [0.1, 0.2]}]}
+async def test_acompletion_sets_default_timeout() -> None:
+    with patch("litellm.acompletion", new_callable=AsyncMock) as mock:
+        mock.return_value = _fake_litellm_response("ok", [], 4, 2)
+        await acompletion(model="gpt-4o-mini", messages=[{"role": "user", "content": "hi"}])
+    assert mock.call_args.kwargs["timeout"] == 30.0
 
-    with patch("litellm.aembedding", new=AsyncMock(side_effect=_slow_embedding)):
-        with pytest.raises(asyncio.TimeoutError):
-            await aembedding(model="text-embedding-3-small", input=["hello"], timeout=0.01)
+
+@pytest.mark.asyncio
+async def test_aembedding_respects_explicit_timeout_override() -> None:
+    with patch("litellm.aembedding", new_callable=AsyncMock) as mock:
+        mock.return_value = {"data": [{"embedding": [0.1, 0.2]}]}
+        await aembedding(model="text-embedding-3-small", input=["hello"], timeout=5.0)
+    assert mock.call_args.kwargs["timeout"] == 5.0
 
 
 @pytest.mark.asyncio

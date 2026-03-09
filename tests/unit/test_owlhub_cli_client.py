@@ -434,6 +434,24 @@ def test_install_rollback_on_validation_failure(tmp_path: Path) -> None:
     assert not (tmp_path / "skills" / "broken" / "1.0.0").exists()
 
 
+def test_install_rejects_tar_path_traversal_member(tmp_path: Path) -> None:
+    bad_archive = tmp_path / "unsafe-1.0.0.tar.gz"
+    with tarfile.open(bad_archive, "w:gz") as archive:
+        payload = b"owned"
+        info = tarfile.TarInfo(name="../owned.txt")
+        info.size = len(payload)
+        archive.addfile(info, io.BytesIO(payload))
+    index_file = _build_index_file(tmp_path, bad_archive, name="unsafe", publisher="acme", version="1.0.0")
+    client = OwlHubClient(index_url=str(index_file), install_dir=tmp_path / "skills", lock_file=tmp_path / "lock.json")
+    outside_target = tmp_path / "owned.txt"
+    try:
+        client.install(name="unsafe")
+        raise AssertionError("expected tar traversal protection failure")
+    except ValueError as exc:
+        assert "unsafe archive member path" in str(exc)
+    assert not outside_target.exists()
+
+
 def test_force_install_bypasses_checksum_and_moderation(tmp_path: Path) -> None:
     archive = _build_skill_archive(tmp_path, name="force-skill", publisher="acme", version="1.0.0")
     index_file = _build_index_file(tmp_path, archive, name="force-skill", publisher="acme", version="1.0.0")

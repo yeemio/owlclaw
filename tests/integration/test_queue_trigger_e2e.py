@@ -91,7 +91,7 @@ async def test_queue_trigger_e2e_full_processing_flow() -> None:
     store = MockIdempotencyStore()
 
     trigger = QueueTrigger(
-        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1", trust_tenant_header=True),
         adapter=adapter,
         agent_runtime=runtime,
         governance=governance,

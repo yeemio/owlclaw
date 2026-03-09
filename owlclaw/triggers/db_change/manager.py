@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from decimal import Decimal
@@ -17,6 +18,37 @@ from owlclaw.triggers.db_change.aggregator import EventAggregator
 from owlclaw.triggers.db_change.config import DBChangeTriggerConfig
 
 logger = logging.getLogger(__name__)
+_SENSITIVE_KEYS = ("password", "passwd", "pwd", "token", "api_key", "apikey", "secret", "authorization")
+_KEY_VALUE_PATTERN = re.compile(
+    r"(?i)\b(password|passwd|pwd|token|api[_-]?key|secret|authorization)\b\s*([:=])\s*([^\s,;]+)"
+)
+_BEARER_PATTERN = re.compile(r"(?i)\bbearer\s+\S+")
+_URL_CRED_PATTERN = re.compile(r"(?i)\b([a-z][a-z0-9+\-.]*://)([^:/\s]+):([^@/\s]+)@")
+
+
+def _redact_sensitive_text(text: str) -> str:
+    redacted = _KEY_VALUE_PATTERN.sub(lambda match: f"{match.group(1)}{match.group(2)}***", text)
+    redacted = _BEARER_PATTERN.sub("Bearer ***", redacted)
+    redacted = _URL_CRED_PATTERN.sub(r"\1***:***@", redacted)
+    return redacted
+
+
+def _redact_sensitive_data(value: Any) -> Any:
+    if isinstance(value, dict):
+        redacted: dict[str, Any] = {}
+        for key, item in value.items():
+            if any(marker in key.lower() for marker in _SENSITIVE_KEYS):
+                redacted[key] = "***"
+                continue
+            redacted[key] = _redact_sensitive_data(item)
+        return redacted
+    if isinstance(value, list):
+        return [_redact_sensitive_data(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_sensitive_data(item) for item in value)
+    if isinstance(value, str):
+        return _redact_sensitive_text(value)
+    return value
 
 
 class GovernanceServiceProtocol(Protocol):
@@ -182,7 +214,7 @@ class DBChangeTriggerManager:
             )
             return True
         except Exception as exc:
-            logger.warning("db_change trigger dispatch failed, queued locally: %s", exc)
+            logger.warning("db_change trigger dispatch failed, queued locally: %s", _redact_sensitive_text(str(exc)))
             await self._enqueue_local_retry(config, payload, attempt=0)
             return False
 
@@ -204,16 +236,17 @@ class DBChangeTriggerManager:
             {
                 "event_name": config.event_name,
                 "tenant_id": config.tenant_id,
-                "payload": payload,
+                "payload": _redact_sensitive_data(payload),
                 "attempt": attempt,
-                "error": str(exc),
+                "error": _redact_sensitive_text(str(exc)),
             }
         )
+        safe_error = _redact_sensitive_text(str(exc))
         logger.warning(
             "db_change retries exhausted for %s after %d attempts, moved to DLQ: %s",
             config.event_name,
             attempt,
-            exc,
+            safe_error,
         )
 
     async def _retry_loop(self) -> None:
@@ -231,7 +264,11 @@ class DBChangeTriggerManager:
                 if next_attempt >= self._max_retry_attempts:
                     await self._move_to_dlq(config, payload, next_attempt, exc)
                 else:
-                    logger.warning("db_change retry failed for %s, requeueing: %s", config.event_name, exc)
+                    logger.warning(
+                        "db_change retry failed for %s, requeueing: %s",
+                        config.event_name,
+                        _redact_sensitive_text(str(exc)),
+                    )
                     await asyncio.sleep(self._retry_interval_seconds)
                     await self._enqueue_local_retry(config, payload, next_attempt)
             finally:

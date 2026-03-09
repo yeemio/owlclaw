@@ -17,7 +17,11 @@ def test_backup_command_success(monkeypatch, tmp_path: Path, capsys: pytest.Capt
     monkeypatch.setattr("owlclaw.cli.db_backup._check_pg_dump_available", lambda: True)
     monkeypatch.setattr("owlclaw.cli.db_backup.progress_after", lambda *_a, **_k: nullcontext())
 
+    captured: dict[str, object] = {}
+
     def _fake_run(args, **kwargs):  # type: ignore[no-untyped-def]
+        captured["args"] = args
+        captured["env"] = kwargs.get("env")
         output_path = Path(args[args.index("-f") + 1])
         output_path.write_text("-- dump", encoding="utf-8")
         return SimpleNamespace(returncode=0, stderr="")
@@ -28,6 +32,13 @@ def test_backup_command_success(monkeypatch, tmp_path: Path, capsys: pytest.Capt
     out = capsys.readouterr().out
     assert "Backup written:" in out
     assert "Size:" in out
+    args = captured["args"]
+    assert isinstance(args, list)
+    conn_str = str(args[args.index("-d") + 1])
+    assert ":p@" not in conn_str
+    env = captured["env"]
+    assert isinstance(env, dict)
+    assert env.get("PGPASSWORD") == "p"
 
 
 def test_build_pg_dump_args_custom_format_and_schema_only() -> None:

@@ -20,6 +20,8 @@
 | `gateway_ops_gate.py` | 网关发布门禁决策与回滚执行辅助 | `poetry run python scripts/gateway_ops_gate.py` | CI 使用 |
 | `gateway_ops_drill.py` | 执行 canary 回滚/全量成功演练并产出报告 | `poetry run python scripts/gateway_ops_drill.py` | CI 使用 |
 | `test_queue_trigger.py` | 队列触发链路本地回归脚本 | `poetry run python scripts/test_queue_trigger.py` | 本地开发使用 |
+| `regression-core.ps1` | 核心链路一键回归（触发器/MCP/Web API，含可选 integration） | `pwsh ./scripts/regression-core.ps1` | 本地开发使用 |
+| `regression-failure-paths.ps1` | 失败注入与异常路径一键回归（超时/依赖故障/重试/脱敏） | `pwsh ./scripts/regression-failure-paths.ps1` | 本地开发使用 |
 | `console-local-setup.ps1` | Console 真实浏览器验收环境启动脚本（可选 DB 初始化/迁移/E2E） | `pwsh ./scripts/console-local-setup.ps1 -SkipDbInit -Port 8000` | 本地开发使用 |
 | `workflow_status.py` | 多 worktree 工作流巡检（脏工作区、待审分支、下一步动作建议） | `poetry run python scripts/workflow_status.py --help` | 本地开发使用 |
 | `workflow_orchestrator.py` | 持续轮询并写入 `.kiro/runtime/` 的工作流执行器（供统筹/各 agent 消费） | `poetry run python scripts/workflow_orchestrator.py --once` | 本地开发使用 |

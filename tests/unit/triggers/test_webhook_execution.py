@@ -96,3 +96,35 @@ async def test_execution_trigger_execution_result_cache() -> None:
     assert cached is not None
     assert cached.execution_id == "exec-cache"
     assert cached.output == {"value": 42}
+
+
+@pytest.mark.asyncio
+async def test_execution_trigger_limits_execution_cache_size() -> None:
+    async def _ok(input_data: AgentInput) -> dict[str, Any]:
+        return {"execution_id": str(input_data.parameters["id"]), "status": "completed", "output": {"ok": True}}
+
+    runtime = _Runtime(handler=_ok)
+    trigger = ExecutionTrigger(runtime, max_execution_entries=2)
+    await trigger.trigger(AgentInput(agent_id="agent-1", parameters={"id": "exec-1"}), ExecutionOptions(mode="sync"))
+    await trigger.trigger(AgentInput(agent_id="agent-1", parameters={"id": "exec-2"}), ExecutionOptions(mode="sync"))
+    await trigger.trigger(AgentInput(agent_id="agent-1", parameters={"id": "exec-3"}), ExecutionOptions(mode="sync"))
+
+    assert await trigger.get_execution_status("exec-1") is None
+    assert await trigger.get_execution_status("exec-2") is not None
+    assert await trigger.get_execution_status("exec-3") is not None
+
+
+@pytest.mark.asyncio
+async def test_execution_trigger_limits_idempotency_cache_size() -> None:
+    async def _ok(input_data: AgentInput) -> dict[str, Any]:
+        return {"execution_id": str(input_data.parameters["id"]), "status": "completed", "output": {"ok": True}}
+
+    runtime = _Runtime(handler=_ok)
+    trigger = ExecutionTrigger(runtime, max_idempotency_entries=2)
+    await trigger.trigger(AgentInput(agent_id="agent-1", parameters={"id": "exec-1"}), ExecutionOptions(mode="sync", idempotency_key="idem-1"))
+    await trigger.trigger(AgentInput(agent_id="agent-1", parameters={"id": "exec-2"}), ExecutionOptions(mode="sync", idempotency_key="idem-2"))
+    await trigger.trigger(AgentInput(agent_id="agent-1", parameters={"id": "exec-3"}), ExecutionOptions(mode="sync", idempotency_key="idem-3"))
+
+    assert await trigger.check_idempotency("idem-1") is None
+    assert await trigger.check_idempotency("idem-2") is not None
+    assert await trigger.check_idempotency("idem-3") is not None

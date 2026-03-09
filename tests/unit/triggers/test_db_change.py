@@ -102,11 +102,12 @@ class _Governance:
 class _Runtime:
     calls: int = 0
     fail_until: int = 0
+    fail_message: str = "runtime unavailable"
 
     async def trigger_event(self, event_name: str, payload: dict[str, Any], focus: str | None = None, tenant_id: str = "default") -> None:  # noqa: ARG002
         if self.calls < self.fail_until:
             self.calls += 1
-            raise RuntimeError("runtime unavailable")
+            raise RuntimeError(self.fail_message)
         self.calls += 1
 
 
@@ -219,6 +220,46 @@ async def test_manager_moves_to_dlq_after_retry_exhausted() -> None:
     assert len(manager._dlq_events) == 1  # noqa: SLF001
     assert manager._dlq_events[0]["event_name"] == "order_changed"  # noqa: SLF001
     await manager.stop()
+
+
+@pytest.mark.asyncio
+async def test_manager_dlq_redacts_sensitive_payload_and_error() -> None:
+    adapter = _Adapter()
+    runtime = _Runtime(
+        fail_until=99,
+        fail_message="token=abc123 password=secret postgresql://user:pwd@localhost:5432/db",
+    )
+    manager = DBChangeTriggerManager(
+        adapter=adapter,
+        governance=_Governance(allowed=True),
+        agent_runtime=runtime,
+        retry_interval_seconds=0.01,
+        max_retry_attempts=1,
+        local_queue_max_size=4,
+    )
+    manager.register(DBChangeTriggerConfig(channel="orders", event_name="order_changed", agent_id="agent-1", batch_size=1))
+    await manager.start()
+    try:
+        assert adapter.callback is not None
+        await adapter.callback(
+            DBChangeEvent(
+                channel="orders",
+                payload={"api_key": "k-123", "dsn": "postgresql://user:pwd@localhost:5432/db"},
+                timestamp=datetime.now(timezone.utc),
+            )
+        )
+        await asyncio.sleep(0.05)
+
+        assert len(manager._dlq_events) == 1  # noqa: SLF001
+        dlq_event = manager._dlq_events[0]  # noqa: SLF001
+        assert "abc123" not in dlq_event["error"]
+        assert "secret" not in dlq_event["error"]
+        assert "pwd" not in str(dlq_event["payload"])
+        event_payload = dlq_event["payload"]["events"][0]
+        assert event_payload["api_key"] == "***"
+        assert "***:***@" in event_payload["dsn"]
+    finally:
+        await manager.stop()
 
 
 def test_db_change_function_api_registration_payload() -> None:
