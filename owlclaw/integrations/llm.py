@@ -14,6 +14,7 @@ import contextlib
 import importlib
 import json
 import logging
+import math
 import os
 import re
 import time
@@ -30,6 +31,20 @@ logger = logging.getLogger(__name__)
 
 _mock_config: dict[str, Any] | None = None
 _DEFAULT_LLM_TIMEOUT_SECONDS = 30.0
+
+
+def _resolve_timeout_seconds(kwargs: dict[str, Any], *, default: float = _DEFAULT_LLM_TIMEOUT_SECONDS) -> float:
+    """Resolve timeout from kwargs with validation and sane fallback."""
+    raw_timeout = kwargs.get("timeout")
+    if raw_timeout is None:
+        raw_timeout = kwargs.get("request_timeout")
+    try:
+        timeout = float(raw_timeout) if raw_timeout is not None else default
+    except (TypeError, ValueError):
+        timeout = default
+    if timeout <= 0 or not math.isfinite(timeout):
+        return default
+    return timeout
 
 
 class _MockFunction:
@@ -168,9 +183,10 @@ async def acompletion(**kwargs: Any) -> Any:
     Returns:
         litellm response object (e.g. choices[0].message with tool_calls).
     """
+    timeout_seconds = _resolve_timeout_seconds(kwargs)
     timeout = kwargs.get("timeout")
     if timeout is None and kwargs.get("request_timeout") is None:
-        kwargs["timeout"] = _DEFAULT_LLM_TIMEOUT_SECONDS
+        kwargs["timeout"] = timeout_seconds
 
     if _mock_config is not None:
         task_type = kwargs.get("task_type")
@@ -190,7 +206,10 @@ async def acompletion(**kwargs: Any) -> Any:
     model_name = str(kwargs.get("model", ""))
     started = time.perf_counter()
     try:
-        response = await litellm.acompletion(**kwargs)
+        response = await asyncio.wait_for(
+            litellm.acompletion(**kwargs),
+            timeout=timeout_seconds,
+        )
         if trace is not None and hasattr(trace, "generation"):
             prompt_tokens, completion_tokens, total_tokens = TokenCalculator.extract_tokens_from_response(response)
             cost = TokenCalculator.calculate_cost(model_name, prompt_tokens, completion_tokens)
@@ -242,12 +261,16 @@ async def acompletion(**kwargs: Any) -> Any:
 
 async def aembedding(**kwargs: Any) -> Any:
     """Async embedding facade. All embedding callers must use this."""
+    timeout_seconds = _resolve_timeout_seconds(kwargs)
     timeout = kwargs.get("timeout")
     if timeout is None and kwargs.get("request_timeout") is None:
-        kwargs["timeout"] = _DEFAULT_LLM_TIMEOUT_SECONDS
+        kwargs["timeout"] = timeout_seconds
     import litellm
 
-    return await litellm.aembedding(**kwargs)
+    return await asyncio.wait_for(
+        litellm.aembedding(**kwargs),
+        timeout=timeout_seconds,
+    )
 
 
 @dataclass(frozen=True)
@@ -510,21 +533,22 @@ class LLMClient:
         err_name = type(e).__name__
         msg_lower = msg.lower()
         logger.warning(
-            "LLM call failed model=%s error_type=%s message=%s",
+            "LLM call failed model=%s error_type=%s",
             model,
             err_name,
-            msg[:200] + ("..." if len(msg) > 200 else ""),
         )
         if "Authentication" in err_name or "authentication" in msg_lower or ("invalid" in msg_lower and "api" in msg_lower and "key" in msg_lower):
-            return AuthenticationError(msg, model=model, cause=e)
+            return AuthenticationError("LLM authentication failed.", model=model, cause=e)
         if self._is_rate_limit_error(err_name, msg_lower):
-            return RateLimitError(msg, model=model, cause=e)
+            return RateLimitError("LLM rate limit exceeded.", model=model, cause=e)
         if "ContextWindow" in err_name or ("context" in msg_lower and "window" in msg_lower):
-            return ContextWindowExceededError(msg, model=model, cause=e)
+            return ContextWindowExceededError("LLM context window exceeded.", model=model, cause=e)
         if "ServiceUnavailable" in err_name or "503" in msg or "unavailable" in msg_lower:
-            return ServiceUnavailableError(msg, model=model, cause=e)
+            return ServiceUnavailableError("LLM service unavailable.", model=model, cause=e)
         return ServiceUnavailableError(
-            f"LLM call failed: {msg}", model=model, cause=e
+            "LLM call failed due to an internal provider error.",
+            model=model,
+            cause=e,
         )
 
     @staticmethod
@@ -720,7 +744,7 @@ class LLMClient:
         except Exception as e:
             if trace:
                 with contextlib.suppress(Exception):
-                    trace.update(status="error", output=str(e))
+                    trace.update(status="error", output=type(e).__name__)
             raise
 
 

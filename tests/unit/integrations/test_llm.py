@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -243,7 +244,7 @@ class TestLLMClient:
             mock.side_effect = Exception("AuthenticationError: Invalid API key")
             with pytest.raises(AuthenticationError) as exc_info:
                 await client.complete(messages=[{"role": "user", "content": "Hi"}])
-            assert "Invalid API key" in str(exc_info.value)
+            assert str(exc_info.value) == "LLM authentication failed."
             assert exc_info.value.model == "gpt-4o-mini"
 
     @pytest.mark.asyncio
@@ -255,7 +256,7 @@ class TestLLMClient:
             mock.side_effect = Exception("RateLimitError: Too many requests")
             with pytest.raises(RateLimitError) as exc_info:
                 await client.complete(messages=[{"role": "user", "content": "Hi"}])
-            assert "Too many" in str(exc_info.value)
+            assert str(exc_info.value) == "LLM rate limit exceeded."
 
     @pytest.mark.asyncio
     async def test_complete_retries_same_model_on_rate_limit_then_succeeds(self) -> None:
@@ -689,6 +690,38 @@ async def test_aembedding_respects_explicit_timeout_override() -> None:
         mock.return_value = {"data": [{"embedding": [0.1, 0.2]}]}
         await aembedding(model="text-embedding-3-small", input=["hello"], timeout=5.0)
     assert mock.call_args.kwargs["timeout"] == 5.0
+
+
+@pytest.mark.asyncio
+async def test_acompletion_enforces_hard_timeout() -> None:
+    async def _slow_completion(**_: object) -> object:
+        await asyncio.sleep(0.05)
+        return _fake_litellm_response("late", [], 1, 1)
+
+    with patch("litellm.acompletion", new_callable=AsyncMock) as mock:
+        mock.side_effect = _slow_completion
+        with pytest.raises(asyncio.TimeoutError):
+            await acompletion(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": "hi"}],
+                timeout=0.01,
+            )
+
+
+@pytest.mark.asyncio
+async def test_aembedding_enforces_hard_timeout() -> None:
+    async def _slow_embedding(**_: object) -> object:
+        await asyncio.sleep(0.05)
+        return {"data": [{"embedding": [0.1, 0.2]}]}
+
+    with patch("litellm.aembedding", new_callable=AsyncMock) as mock:
+        mock.side_effect = _slow_embedding
+        with pytest.raises(asyncio.TimeoutError):
+            await aembedding(
+                model="text-embedding-3-small",
+                input=["hello"],
+                timeout=0.01,
+            )
 
 
 @pytest.mark.asyncio

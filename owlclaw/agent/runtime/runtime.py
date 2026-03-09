@@ -63,6 +63,16 @@ _MODEL_CONTEXT_WINDOWS: dict[str, int] = {
     "gpt-4o-mini": 128_000,
 }
 _INTERNAL_ERROR_MESSAGE = "Tool execution failed due to an internal error."
+_SENSITIVE_OBSERVATION_KEYWORDS: tuple[str, ...] = (
+    "api_key",
+    "apikey",
+    "token",
+    "secret",
+    "password",
+    "authorization",
+    "auth",
+    "cookie",
+)
 
 
 def _coerce_confirmation_flag(value: Any) -> bool:
@@ -357,6 +367,26 @@ class AgentRuntime:
                     logger.debug("Langfuse observation %s() failed", method_name, exc_info=True)
             except Exception:
                 logger.debug("Langfuse observation %s() failed", method_name, exc_info=True)
+
+    @classmethod
+    def _redact_sensitive_args(cls, payload: Any) -> Any:
+        """Redact sensitive fields before writing observation payloads."""
+        if isinstance(payload, dict):
+            redacted: dict[Any, Any] = {}
+            for key, value in payload.items():
+                key_text = str(key).strip().lower()
+                if any(keyword in key_text for keyword in _SENSITIVE_OBSERVATION_KEYWORDS):
+                    redacted[key] = "[REDACTED]"
+                else:
+                    redacted[key] = cls._redact_sensitive_args(value)
+            return redacted
+        if isinstance(payload, list):
+            return [cls._redact_sensitive_args(item) for item in payload]
+        if isinstance(payload, tuple):
+            return tuple(cls._redact_sensitive_args(item) for item in payload)
+        if isinstance(payload, set):
+            return {cls._redact_sensitive_args(item) for item in payload}
+        return payload
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -922,11 +952,11 @@ class AgentRuntime:
                 )
             except Exception as exc:
                 logger.warning(
-                    "Final summarization failed after max iterations (max_iterations=%s): %s",
+                    "Final summarization failed after max iterations (max_iterations=%s, error_type=%s)",
                     max_iterations,
-                    exc,
-                    exc_info=True,
+                    type(exc).__name__,
                 )
+                logger.debug("Final summarization stack trace", exc_info=True)
                 messages.append(
                     {
                         "role": "assistant",
@@ -1226,7 +1256,11 @@ class AgentRuntime:
             observation = self._observe_tool(
                 trace,
                 "tool_execution",
-                {"tool": tool_name, "run_id": context.run_id, "arguments": builtin_arguments},
+                {
+                    "tool": tool_name,
+                    "run_id": context.run_id,
+                    "arguments": self._redact_sensitive_args(builtin_arguments),
+                },
             )
             try:
                 result = await self.builtin_tools.execute(tool_name, builtin_arguments, ctx)
@@ -1334,7 +1368,11 @@ class AgentRuntime:
         observation = self._observe_tool(
             trace,
             "tool_execution",
-            {"tool": tool_name, "run_id": context.run_id, "arguments": invoke_arguments},
+            {
+                "tool": tool_name,
+                "run_id": context.run_id,
+                "arguments": self._redact_sensitive_args(invoke_arguments),
+            },
         )
         start_ns = time.perf_counter_ns()
         try:
