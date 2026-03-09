@@ -471,11 +471,11 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-09（Phase 16R 审校进入 `FIX_NEEDED`：双分支安全修复方向正确，但 review-work 标记“测试失败需修复兼容性”） |
+| 最后更新 | 2026-03-09（Phase 16R 审校进入 `FIX_NEEDED`；`codex-gpt-work` 本地复现回归集 205/205 通过，未复现失败） |
 | 当前批次 | **Phase 16R（REJECT 回流修复）**：`codex-work` 处理 R1-R4；`codex-gpt-work` 处理 G1-G5（runtime/LLM 脱敏与 timeout）。Backlog 仍为 #30-#44、#56-#124 + 独立审计新增 4 条 Low findings。 |
-| 批次状态 | `review-work` 新 verdict：`review(Phase 16R): FIX_NEEDED`（`ac8f6987`）。当前结论为“安全修复正确，但测试失败”；`codex-gpt-work`（`c93f25e5`）与 `codex-work`（`b40599c4`）需等待失败用例明细后执行兼容性修复。 |
-| 已完成项 | 在既有 63 项基础上新增 64) `codex-gpt-work` 完成 G1-G5：runtime observation 参数脱敏、final summarization 错误脱敏、`aembedding` timeout、`LLMClient` timeout、LLM 错误元数据脱敏；65) 新增/更新单测并通过 `tests/unit/agent/test_runtime.py` + `tests/unit/integrations/test_llm.py`（146 passed）；66) `codex-work` 已提交 R1-R4 返工（`b40599c4`）。 |
-| 下一待执行 | 1) `review-work` 补充 `FIX_NEEDED` 的失败测试明细（最小可复现用例/日志）；2) `codex-gpt-work` 与 `codex-work` 按失败明细分别提交兼容性修复；3) 审校通过后再切入独立审计新增 4 条 Low findings。 |
+| 批次状态 | `review-work` 新 verdict：`review(Phase 16R): FIX_NEEDED`（`ac8f6987`）。`codex-gpt-work` 已执行 Phase16R 相关回归（registry + memory + runtime + llm 共 205 tests）全部通过，当前无法本地复现“测试失败”；仍需 review-work 提供失败用例与日志明细定位兼容性问题。 |
+| 已完成项 | 在既有 63 项基础上新增 64) `codex-gpt-work` 完成 G1-G5：runtime observation 参数脱敏、final summarization 错误脱敏、`aembedding` timeout、`LLMClient` timeout、LLM 错误元数据脱敏；65) 新增/更新单测并通过 `tests/unit/agent/test_runtime.py` + `tests/unit/integrations/test_llm.py`（146 passed）；66) `codex-work` 已提交 R1-R4 返工（`b40599c4`）；67) `codex-gpt-work` 追加执行 Phase16R 兼容性回归集合（6 文件）205/205 passed，未本地复现 FIX_NEEDED 测试失败。 |
+| 下一待执行 | 1) `review-work` 补充 `FIX_NEEDED` 的失败测试明细（测试名、报错栈、运行命令、是否仅在合并态复现）；2) `codex-gpt-work` 与 `codex-work` 按明细分别提交兼容性修复；3) 审校通过后再切入独立审计新增 4 条 Low findings。 |
 | 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16R**：`codex-gpt-work` G1-G5 已完成并通过定向验收，待 `review-work` 最终放行。 |
 | 阻塞项 | 当前无编码阻塞；放行依赖 `review-work` 审校 verdict。 |
 | 健康状态 | 🟡 进行中：返工链路已恢复推进，`codex-gpt-work` 本轮实现+验收已完成，等待审校消费。 |
