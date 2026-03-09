@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,6 +31,18 @@ class SkillDocExtractor:
     def __init__(self, *, available_tools: list[str] | None = None) -> None:
         self.available_tools = available_tools if available_tools is not None else parse_available_tools()
         self.matcher = CapabilityMatcher(enable_llm_confirmation=False)
+
+    @staticmethod
+    def _derive_base_dir(*paths: Path | str, fallback: Path) -> Path:
+        resolved: list[Path] = []
+        for path in paths:
+            candidate = Path(path).expanduser().resolve()
+            resolved.append(candidate.parent if candidate.suffix else candidate)
+        if resolved and all(path.is_relative_to(fallback) for path in resolved):
+            return fallback
+        if resolved:
+            return Path(os.path.commonpath([str(path) for path in resolved])).resolve()
+        return fallback
 
     def read_document(
         self, path: Path | str, *, base_dir: Path | str | None = None
@@ -128,7 +141,10 @@ class SkillDocExtractor:
             output_dir: Directory to write generated SKILL.md files.
             base_dir: If set, source must resolve under this directory (Finding #46).
         """
-        text = self.read_document(source, base_dir=base_dir)
+        effective_base_dir = self._derive_base_dir(source, output_dir, fallback=Path.cwd().resolve())
+        if base_dir is not None:
+            effective_base_dir = Path(base_dir).expanduser().resolve()
+        text = self.read_document(source, base_dir=effective_base_dir)
         drafts = self.extract_from_text(text)
         out_root = Path(output_dir).expanduser()
         out_root.mkdir(parents=True, exist_ok=True)
