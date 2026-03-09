@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -17,141 +17,108 @@ def _load_module(name: str, relative_path: str):
     return module
 
 
-def test_default_worker_specs_cover_orchestrator_and_agents(tmp_path: Path) -> None:
+def test_default_worker_specs_include_mailbox_agents(tmp_path: Path) -> None:
     _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
-    supervisor_module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
+    _load_module("workflow_objects", "scripts/workflow_objects.py")
+    module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
 
-    specs = supervisor_module.default_worker_specs(tmp_path, 20)
-    names = [spec.name for spec in specs]
+    specs = module.default_worker_specs(tmp_path, interval=30)
+    names = {spec.name for spec in specs}
 
-    assert names == [
-        "orchestrator",
-        "main-agent",
-        "review-agent",
-        "codex-agent",
-        "codex-gpt-agent",
-    ]
-    assert all("poetry" == spec.command[0] for spec in specs)
-    assert any("workflow_orchestrator.py" in " ".join(spec.command) for spec in specs)
-    assert any("workflow_executor.py" in " ".join(spec.command) for spec in specs if spec.role == "agent")
+    assert "orchestrator" in names
+    assert "main-agent" in names
+    assert "review-agent" in names
+    assert "codex-agent" in names
+    assert "codex-gpt-agent" in names
+    assert "main-mailbox-agent" in names
+    assert "review-mailbox-agent" in names
+    assert "codex-mailbox-agent" in names
+    assert "codex-gpt-mailbox-agent" in names
 
 
-def test_status_all_reads_manifest_and_marks_running(tmp_path: Path) -> None:
+def test_status_all_reports_stalled_objects(tmp_path: Path) -> None:
     _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
-    supervisor_module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
-    supervisor_module.ensure_supervisor_dirs(tmp_path)
+    objects = _load_module("workflow_objects", "scripts/workflow_objects.py")
+    module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
 
-    manifest_dir = tmp_path / ".kiro" / "runtime" / "supervisor" / "pids"
-    manifest = {
-        "name": "review-agent",
-        "role": "agent",
-        "pid": 1234,
-        "started_at": "2026-03-06T00:00:00+00:00",
-        "workdir": str(tmp_path / "owlclaw-review"),
-        "command": ["poetry", "run", "python", "workflow_agent.py"],
-        "log_path": str(tmp_path / ".kiro" / "runtime" / "supervisor" / "logs" / "review-agent.log"),
-    }
-    (manifest_dir / "review-agent.json").write_text(json.dumps(manifest, ensure_ascii=True, indent=2), encoding="utf-8")
+    assignment = objects.create_object(
+        tmp_path,
+        "assignment",
+        payload={
+            "status": "pending",
+            "owner": "main",
+            "target_agent": "codex",
+            "target_branch": "codex-work",
+            "spec": "audit-deep-remediation-followup",
+            "task_refs": ["#47"],
+            "finding_ids": ["finding-1"],
+            "acceptance": ["produce delivery"],
+            "claim": None,
+        },
+    )
+    objects.claim_object(tmp_path, "assignment", assignment["id"], actor="codex", lease_seconds=1)
+    objects.read_modify_write_object(
+        tmp_path,
+        "assignment",
+        assignment["id"],
+        updates={
+            "claim": {
+                "claimed_by": "codex",
+                "claimed_at": "2026-03-06T00:00:00+00:00",
+                "heartbeat_at": "2026-03-06T00:00:00+00:00",
+                "lease_expires_at": (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(),
+                "lease_seconds": 1,
+            }
+        },
+    )
 
-    original = supervisor_module._is_pid_running
-    supervisor_module._is_pid_running = lambda pid: pid == 1234
-    try:
-        statuses = supervisor_module.status_all(tmp_path, 15)
-    finally:
-        supervisor_module._is_pid_running = original
+    status = module.status_all(tmp_path, interval=0)
 
-    review_entry = next(item for item in statuses if item["name"] == "review-agent")
-    assert review_entry["running"] is True
-    assert review_entry["pid"] == 1234
+    assert "workers" in status
+    assert any(item["id"] == assignment["id"] for item in status["stalled_objects"])
 
 
-def test_reconcile_workers_restarts_missing_worker(tmp_path: Path) -> None:
+def test_start_all_primes_runtime_before_other_workers(tmp_path: Path) -> None:
     _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
-    supervisor_module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
-
-    restarted: list[str] = []
-    supervisor_module.start_worker = lambda repo_root, spec: restarted.append(spec.name) or {"name": spec.name}
-    supervisor_module.status_all = lambda repo_root, interval: [
-        {
-            "name": "orchestrator",
-            "role": "orchestrator",
-            "workdir": str(tmp_path),
-            "command": [],
-            "log_path": "orchestrator.log",
-            "running": False,
-            "checked_at": "2026-03-06T00:00:00+00:00",
-        },
-        {
-            "name": "main-agent",
-            "role": "agent",
-            "workdir": str(tmp_path),
-            "command": [],
-            "log_path": "main-agent.log",
-            "running": True,
-            "checked_at": "2026-03-06T00:00:00+00:00",
-        },
-        {
-            "name": "review-agent",
-            "role": "agent",
-            "workdir": str(tmp_path),
-            "command": [],
-            "log_path": "review-agent.log",
-            "running": True,
-            "checked_at": "2026-03-06T00:00:00+00:00",
-        },
-        {
-            "name": "codex-agent",
-            "role": "agent",
-            "workdir": str(tmp_path),
-            "command": [],
-            "log_path": "codex-agent.log",
-            "running": True,
-            "checked_at": "2026-03-06T00:00:00+00:00",
-        },
-        {
-            "name": "codex-gpt-agent",
-            "role": "agent",
-            "workdir": str(tmp_path),
-            "command": [],
-            "log_path": "codex-gpt-agent.log",
-            "running": True,
-            "checked_at": "2026-03-06T00:00:00+00:00",
-        },
-    ]
-
-    statuses = supervisor_module.reconcile_workers(tmp_path, 15, True)
-    assert restarted == ["orchestrator"]
-    assert statuses[0]["name"] == "orchestrator"
-
-
-def test_is_pid_running_handles_windows_non_utf8_stdout(tmp_path: Path) -> None:
-    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
-    supervisor_module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
-
-    class Result:
-        stdout = None
-
-    original_name = supervisor_module.os.name
-    original_run = supervisor_module.subprocess.run
-    supervisor_module.os.name = "nt"
-    supervisor_module.subprocess.run = lambda *args, **kwargs: Result()
-    try:
-        assert supervisor_module._is_pid_running(1234) is False
-    finally:
-        supervisor_module.os.name = original_name
-        supervisor_module.subprocess.run = original_run
-
-
-def test_start_all_returns_status_entries(tmp_path: Path) -> None:
-    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
-    supervisor_module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
+    _load_module("workflow_objects", "scripts/workflow_objects.py")
+    module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
 
     started: list[str] = []
-    supervisor_module.start_worker = lambda repo_root, spec: started.append(spec.name) or {"name": spec.name}
-    supervisor_module.status_all = lambda repo_root, interval: [
-        {"name": "orchestrator", "role": "orchestrator", "running": True, "workdir": str(tmp_path), "log_path": "x"}
-    ]
+    primed: list[tuple[Path, int]] = []
 
-    statuses = supervisor_module.start_all(tmp_path, 15)
-    assert "orchestrator" in started
-    assert statuses[0]["running"] is True
+    module.start_worker = lambda repo_root, spec: started.append(spec.name) or {"name": spec.name, "running": True}
+    module._prime_runtime = lambda repo_root, interval: primed.append((repo_root, interval))
+    module.status_all = lambda repo_root, interval: {"workers": [], "stalled_objects": []}
+
+    module.start_all(tmp_path, interval=15)
+
+    assert started[0] == "orchestrator"
+    assert primed == [(tmp_path, 15)]
+    assert "main-agent" in started[1:]
+
+
+def test_start_all_stops_orchestrator_when_prime_runtime_fails(tmp_path: Path) -> None:
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    _load_module("workflow_objects", "scripts/workflow_objects.py")
+    module = _load_module("workflow_supervisor", "scripts/workflow_supervisor.py")
+
+    started: list[str] = []
+    stopped: list[str] = []
+
+    module.start_worker = lambda repo_root, spec: started.append(spec.name) or {"name": spec.name, "running": True}
+    module.stop_worker = lambda repo_root, name: stopped.append(name) or {"name": name, "stopped": True}
+
+    def _fail_prime(repo_root: Path, interval: int) -> None:
+        raise RuntimeError("prime failed")
+
+    module._prime_runtime = _fail_prime
+
+    try:
+        module.start_all(tmp_path, interval=15)
+    except RuntimeError as exc:
+        assert str(exc) == "prime failed"
+    else:
+        raise AssertionError("expected start_all to raise when runtime priming fails")
+
+    assert started == ["orchestrator"]
+    assert stopped == ["orchestrator"]

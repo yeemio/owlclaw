@@ -20,6 +20,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import workflow_mailbox  # noqa: E402
+import workflow_objects  # noqa: E402
 
 
 DETACHED_FLAGS = 0
@@ -62,6 +63,7 @@ def _supervisor_logs_dir(repo_root: Path) -> Path:
 
 def ensure_supervisor_dirs(repo_root: Path) -> None:
     workflow_mailbox.ensure_runtime_dirs(repo_root)
+    workflow_objects.ensure_object_dirs(repo_root)
     _supervisor_pids_dir(repo_root).mkdir(parents=True, exist_ok=True)
     _supervisor_logs_dir(repo_root).mkdir(parents=True, exist_ok=True)
 
@@ -123,6 +125,24 @@ def default_worker_specs(repo_root: Path, interval: int) -> list[WorkerSpec]:
             log_path=str(_log_path(repo_root, "main-agent")),
         ),
         WorkerSpec(
+            name="main-mailbox-agent",
+            role="mailbox-agent",
+            workdir=str(worktrees["main"]),
+            command=[
+                "poetry",
+                "run",
+                "python",
+                str(script_root / "workflow_agent.py"),
+                "--repo-root",
+                str(repo_root),
+                "--agent",
+                "main",
+                "--interval",
+                str(interval),
+            ],
+            log_path=str(_log_path(repo_root, "main-mailbox-agent")),
+        ),
+        WorkerSpec(
             name="review-agent",
             role="agent",
             workdir=str(worktrees["review"]),
@@ -139,6 +159,24 @@ def default_worker_specs(repo_root: Path, interval: int) -> list[WorkerSpec]:
                 str(interval),
             ],
             log_path=str(_log_path(repo_root, "review-agent")),
+        ),
+        WorkerSpec(
+            name="review-mailbox-agent",
+            role="mailbox-agent",
+            workdir=str(worktrees["review"]),
+            command=[
+                "poetry",
+                "run",
+                "python",
+                str(script_root / "workflow_agent.py"),
+                "--repo-root",
+                str(repo_root),
+                "--agent",
+                "review",
+                "--interval",
+                str(interval),
+            ],
+            log_path=str(_log_path(repo_root, "review-mailbox-agent")),
         ),
         WorkerSpec(
             name="codex-agent",
@@ -159,6 +197,24 @@ def default_worker_specs(repo_root: Path, interval: int) -> list[WorkerSpec]:
             log_path=str(_log_path(repo_root, "codex-agent")),
         ),
         WorkerSpec(
+            name="codex-mailbox-agent",
+            role="mailbox-agent",
+            workdir=str(worktrees["codex"]),
+            command=[
+                "poetry",
+                "run",
+                "python",
+                str(script_root / "workflow_agent.py"),
+                "--repo-root",
+                str(repo_root),
+                "--agent",
+                "codex",
+                "--interval",
+                str(interval),
+            ],
+            log_path=str(_log_path(repo_root, "codex-mailbox-agent")),
+        ),
+        WorkerSpec(
             name="codex-gpt-agent",
             role="agent",
             workdir=str(worktrees["codex-gpt"]),
@@ -175,6 +231,24 @@ def default_worker_specs(repo_root: Path, interval: int) -> list[WorkerSpec]:
                 str(interval),
             ],
             log_path=str(_log_path(repo_root, "codex-gpt-agent")),
+        ),
+        WorkerSpec(
+            name="codex-gpt-mailbox-agent",
+            role="mailbox-agent",
+            workdir=str(worktrees["codex-gpt"]),
+            command=[
+                "poetry",
+                "run",
+                "python",
+                str(script_root / "workflow_agent.py"),
+                "--repo-root",
+                str(repo_root),
+                "--agent",
+                "codex-gpt",
+                "--interval",
+                str(interval),
+            ],
+            log_path=str(_log_path(repo_root, "codex-gpt-mailbox-agent")),
         ),
     ]
 
@@ -237,6 +311,46 @@ def _open_log(path: Path):
     return path.open("ab")
 
 
+def _prime_runtime(repo_root: Path, interval: int) -> None:
+    script_path = repo_root / "scripts" / "workflow_orchestrator.py"
+    result = subprocess.run(
+        [
+            "poetry",
+            "run",
+            "python",
+            str(script_path),
+            "--repo-root",
+            str(repo_root),
+            "--interval",
+            str(interval),
+            "--once",
+        ],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        stdin=subprocess.DEVNULL,
+        check=False,
+    )
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()
+        stdout = (result.stdout or "").strip()
+        details = stderr or stdout or "workflow_orchestrator.py --once returned non-zero"
+        raise RuntimeError(f"failed to prime workflow runtime: {details}")
+
+    missing_mailboxes = [
+        agent
+        for agent in workflow_mailbox.VALID_AGENT_NAMES
+        if not (_runtime_dir(repo_root) / "mailboxes" / f"{agent}.json").exists()
+    ]
+    if missing_mailboxes:
+        raise RuntimeError(
+            "failed to prime workflow runtime: missing mailboxes for "
+            + ", ".join(sorted(missing_mailboxes))
+        )
+
+
 def start_worker(repo_root: Path, spec: WorkerSpec) -> dict[str, object]:
     existing = _load_manifest(repo_root, spec.name)
     if existing and _is_pid_running(int(existing["pid"])):
@@ -279,21 +393,35 @@ def stop_worker(repo_root: Path, name: str) -> dict[str, object]:
     return {"name": name, "stopped": running, "pid": pid, "stopped_at": _utc_now()}
 
 
-def start_all(repo_root: Path, interval: int) -> list[dict[str, object]]:
+def _stalled_objects(repo_root: Path, stale_seconds: int) -> list[dict[str, object]]:
+    return workflow_objects.find_stale_objects(repo_root, stale_seconds=stale_seconds)
+
+
+def start_all(repo_root: Path, interval: int) -> dict[str, object]:
     ensure_supervisor_dirs(repo_root)
-    for spec in default_worker_specs(repo_root, interval):
+    specs = default_worker_specs(repo_root, interval)
+    orchestrator_spec = next(spec for spec in specs if spec.name == "orchestrator")
+    start_worker(repo_root, orchestrator_spec)
+    try:
+        _prime_runtime(repo_root, interval)
+    except Exception:
+        stop_worker(repo_root, orchestrator_spec.name)
+        raise
+    for spec in specs:
+        if spec.name == "orchestrator":
+            continue
         start_worker(repo_root, spec)
     return status_all(repo_root, interval)
 
 
-def stop_all(repo_root: Path) -> list[dict[str, object]]:
+def stop_all(repo_root: Path) -> dict[str, object]:
     ensure_supervisor_dirs(repo_root)
     for spec in default_worker_specs(repo_root, 15):
         stop_worker(repo_root, spec.name)
     return status_all(repo_root, 15)
 
 
-def status_all(repo_root: Path, interval: int) -> list[dict[str, object]]:
+def status_all(repo_root: Path, interval: int) -> dict[str, object]:
     ensure_supervisor_dirs(repo_root)
     statuses: list[dict[str, object]] = []
     for spec in default_worker_specs(repo_root, interval):
@@ -312,15 +440,19 @@ def status_all(repo_root: Path, interval: int) -> list[dict[str, object]]:
                     "checked_at": _utc_now(),
                 }
             )
-    return statuses
+    return {
+        "checked_at": _utc_now(),
+        "workers": statuses,
+        "stalled_objects": _stalled_objects(repo_root, stale_seconds=max(interval * 2, 30)),
+    }
 
 
-def reconcile_workers(repo_root: Path, interval: int, ensure_running: bool) -> list[dict[str, object]]:
+def reconcile_workers(repo_root: Path, interval: int, ensure_running: bool) -> dict[str, object]:
     statuses = status_all(repo_root, interval)
     if not ensure_running:
         return statuses
 
-    status_by_name = {entry["name"]: entry for entry in statuses}
+    status_by_name = {entry["name"]: entry for entry in statuses["workers"]}
     restarted = False
     for spec in default_worker_specs(repo_root, interval):
         entry = status_by_name[spec.name]
@@ -331,15 +463,20 @@ def reconcile_workers(repo_root: Path, interval: int, ensure_running: bool) -> l
     return status_all(repo_root, interval) if restarted else statuses
 
 
-def _render_status(entries: list[dict[str, object]]) -> str:
+def _render_status(payload: dict[str, object]) -> str:
     lines = ["# Workflow Supervisor", ""]
-    for entry in entries:
+    for entry in payload["workers"]:
         state = "running" if entry["running"] else "stopped"
         lines.append(f"- {entry['name']}: {state}")
         lines.append(f"  role={entry['role']} workdir={entry['workdir']}")
         lines.append(f"  log={entry['log_path']}")
         if entry.get("pid"):
             lines.append(f"  pid={entry['pid']}")
+    stalled_objects = payload.get("stalled_objects", [])
+    lines.append("")
+    lines.append(f"stalled_objects={len(stalled_objects)}")
+    for item in stalled_objects[:5]:
+        lines.append(f"  {item['object_type']}:{item['id']} {item['reason']}")
     return "\n".join(lines) + "\n"
 
 

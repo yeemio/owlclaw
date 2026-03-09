@@ -8,20 +8,88 @@ param(
     [int]$StartupTimeoutSeconds = 30,
     [switch]$ContinueOnLaunchFailure,
     [switch]$SkipController,
+    [switch]$UseTerminalController,
+    [switch]$UseSupervisorController,
+    [switch]$UseInteractiveCliWindows,
     [switch]$DryRun,
     [switch]$SkipLayout
 )
 
 Add-Type @"
 using System;
+using System.Collections.Generic;
+using System.Text;
 using System.Runtime.InteropServices;
 
 public static class WorkflowWindowLayout
 {
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int X,
+        int Y,
+        int cx,
+        int cy,
+        uint uFlags);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    public static List<WorkflowWindowInfo> EnumerateWindows()
+    {
+        var windows = new List<WorkflowWindowInfo>();
+        EnumWindows(delegate (IntPtr hWnd, IntPtr lParam)
+        {
+            if (!IsWindowVisible(hWnd))
+            {
+                return true;
+            }
+
+            var titleBuilder = new StringBuilder(512);
+            GetWindowText(hWnd, titleBuilder, titleBuilder.Capacity);
+            var title = titleBuilder.ToString() ?? string.Empty;
+
+            uint processId;
+            GetWindowThreadProcessId(hWnd, out processId);
+            windows.Add(new WorkflowWindowInfo
+            {
+                Handle = hWnd,
+                Title = title,
+                ProcessId = processId,
+            });
+            return true;
+        }, IntPtr.Zero);
+
+        return windows;
+    }
+}
+
+public class WorkflowWindowInfo
+{
+    public IntPtr Handle { get; set; }
+    public string Title { get; set; }
+    public uint ProcessId { get; set; }
 }
 "@
+
+$SWP_NOSIZE = 0x0001
+$SWP_NOZORDER = 0x0004
+$SWP_NOACTIVATE = 0x0010
 
 function Get-WindowManifestPath {
     param(
@@ -63,14 +131,100 @@ function Get-WindowHandleByExactTitle {
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
-        $process = Get-Process | Where-Object { $_.MainWindowTitle -eq $WindowTitle } | Select-Object -First 1
-        if ($null -ne $process -and $process.MainWindowHandle -ne 0) {
-            return [Int64]$process.MainWindowHandle
+        $window = [WorkflowWindowLayout]::EnumerateWindows() | Where-Object { $_.Title -eq $WindowTitle } | Select-Object -First 1
+        if ($null -ne $window -and $window.Handle -ne [IntPtr]::Zero) {
+            return [Int64]$window.Handle
         }
         Start-Sleep -Milliseconds 400
     }
 
     return [Int64]0
+}
+
+function Get-WindowInfoByExactTitle {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WindowTitle,
+        [int]$TimeoutSeconds = 20
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $window = [WorkflowWindowLayout]::EnumerateWindows() | Where-Object { $_.Title -eq $WindowTitle } | Select-Object -First 1
+        if ($null -ne $window -and $window.Handle -ne [IntPtr]::Zero) {
+            return $window
+        }
+        Start-Sleep -Milliseconds 400
+    }
+
+    return $null
+}
+
+function Get-WindowInfoByTitleCandidates {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$WindowTitles,
+        [int]$TimeoutSeconds = 20
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $windows = [WorkflowWindowLayout]::EnumerateWindows()
+        foreach ($windowTitle in $WindowTitles) {
+            $window = $windows | Where-Object { $_.Title -eq $windowTitle } | Select-Object -First 1
+            if ($null -ne $window -and $window.Handle -ne [IntPtr]::Zero) {
+                return $window
+            }
+        }
+        foreach ($windowTitle in $WindowTitles) {
+            if ([string]::IsNullOrWhiteSpace($windowTitle)) {
+                continue
+            }
+            $window = $windows | Where-Object { $_.Title -like ("*" + $windowTitle + "*") } | Select-Object -First 1
+            if ($null -ne $window -and $window.Handle -ne [IntPtr]::Zero) {
+                return $window
+            }
+        }
+        Start-Sleep -Milliseconds 400
+    }
+
+    return $null
+}
+
+function Get-WindowInfoByProcessId {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$ProcessId,
+        [int]$TimeoutSeconds = 20
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $windows = [WorkflowWindowLayout]::EnumerateWindows()
+        $window = $windows | Where-Object { [int]$_.ProcessId -eq $ProcessId } | Select-Object -First 1
+        if ($null -ne $window -and $window.Handle -ne [IntPtr]::Zero) {
+            return $window
+        }
+        Start-Sleep -Milliseconds 400
+    }
+
+    return $null
+}
+
+function Stop-WorkflowWindowsByExactTitle {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$WindowTitle
+    )
+
+    $windows = [WorkflowWindowLayout]::EnumerateWindows() | Where-Object { $_.Title -eq $WindowTitle }
+    $processIds = @($windows | ForEach-Object { [int]$_.ProcessId } | Sort-Object -Unique)
+    foreach ($processId in $processIds) {
+        if ($processId -le 0 -or $processId -eq $PID) {
+            continue
+        }
+        Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function New-EncodedCommand {
@@ -98,25 +252,6 @@ function Start-WorkflowWindow {
         return $null
     }
 
-    $wt = Get-Command "wt.exe" -ErrorAction SilentlyContinue
-    if ($null -ne $wt -and $StartupType -eq "direct_cli") {
-        $directScript = @"
-Set-Location '$Workdir'
-`$Host.UI.RawUI.WindowTitle = '$WindowTitle'
-$CommandText
-"@
-        return Start-Process -PassThru -FilePath $wt.Source -ArgumentList @(
-            "-w",
-            "new",
-            "--title",
-            $WindowTitle,
-            "powershell.exe",
-            "-NoExit",
-            "-Command",
-            $directScript
-        )
-    }
-
     $script = @"
 Set-Location '$Workdir'
 `$Host.UI.RawUI.WindowTitle = '$WindowTitle'
@@ -124,20 +259,80 @@ $CommandText
 "@
     $encoded = New-EncodedCommand -ScriptText $script
 
-    if ($null -ne $wt) {
-        return Start-Process -PassThru -FilePath $wt.Source -ArgumentList @(
-            "-w",
-            "new",
-            "--title",
-            $WindowTitle,
-            "powershell.exe",
-            "-NoExit",
-            "-EncodedCommand",
-            $encoded
-        )
-    }
+    return Start-Process -PassThru -WindowStyle Normal -FilePath "powershell.exe" -WorkingDirectory $Workdir -ArgumentList @("-NoExit", "-EncodedCommand", $encoded)
+}
 
-    return Start-Process -PassThru -FilePath "powershell.exe" -ArgumentList @("-NoExit", "-EncodedCommand", $encoded)
+function New-DirectCliLaunchCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$Agent,
+        [Parameter(Mandatory = $true)]
+        [string]$StartupCommand,
+        [Parameter(Mandatory = $true)]
+        [string]$LogPath,
+        [Parameter(Mandatory = $true)]
+        [int]$StartupGraceSeconds,
+        [Parameter(Mandatory = $true)]
+        [int]$MaxAttempts,
+        [Parameter(Mandatory = $true)]
+        [int]$RetryDelaySeconds
+    )
+
+    return @"
+`$workflowLaunchAttempts = $MaxAttempts
+`$workflowRetryDelaySeconds = $RetryDelaySeconds
+1..`$workflowLaunchAttempts | ForEach-Object {
+    `$workflowAttempt = `$_
+    poetry run python scripts/workflow_launch_state.py --repo-root '$RepoRoot' update --agent $Agent --status starting --pid `$PID --note `"attempt `$workflowAttempt/$MaxAttempts`" --json | Out-Null
+    Add-Content -Path '$LogPath' -Value ("[{0}] attempt {1}/{2} starting" -f [DateTime]::UtcNow.ToString("o"), `$workflowAttempt, $MaxAttempts)
+    `$workflowLaunchMarker = Start-Job -ScriptBlock {
+        param(`$repoRoot, `$agent, `$delaySeconds, `$pidValue, `$attempt)
+        Start-Sleep -Seconds `$delaySeconds
+        Set-Location `$repoRoot
+        poetry run python scripts/workflow_launch_state.py --repo-root `$repoRoot update --agent `$agent --status running --pid `$pidValue --note `"startup grace passed on attempt `$attempt`" --json | Out-Null
+    } -ArgumentList '$RepoRoot', '$Agent', $StartupGraceSeconds, `$PID, `$workflowAttempt
+    `$workflowStartTime = Get-Date
+    try {
+$StartupCommand
+    }
+    finally {
+        if (`$workflowLaunchMarker) {
+            Stop-Job -Job `$workflowLaunchMarker -ErrorAction SilentlyContinue | Out-Null
+            Remove-Job -Job `$workflowLaunchMarker -Force -ErrorAction SilentlyContinue | Out-Null
+        }
+    }
+    `$workflowExitCode = `$LASTEXITCODE
+    if ($null -eq `$workflowExitCode) {
+        `$workflowExitCode = 0
+    }
+    `$workflowRuntimeSeconds = ((Get-Date) - `$workflowStartTime).TotalSeconds
+    Add-Content -Path '$LogPath' -Value ("[{0}] attempt {1}/{2} exited code={3} runtime_seconds={4}" -f [DateTime]::UtcNow.ToString("o"), `$workflowAttempt, $MaxAttempts, `$workflowExitCode, [Math]::Round(`$workflowRuntimeSeconds, 2))
+    if (`$workflowRuntimeSeconds -ge $StartupGraceSeconds) {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$RepoRoot' update --agent $Agent --status exited --pid `$PID --exit-code `$workflowExitCode --note `"cli exited after running`" --json | Out-Null
+        return
+    }
+    if (`$workflowAttempt -lt `$workflowLaunchAttempts) {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$RepoRoot' update --agent $Agent --status starting --pid `$PID --exit-code `$workflowExitCode --note `"retrying after quick exit on attempt `$workflowAttempt`" --json | Out-Null
+        Start-Sleep -Seconds `$workflowRetryDelaySeconds
+    }
+    else {
+        poetry run python scripts/workflow_launch_state.py --repo-root '$RepoRoot' update --agent $Agent --status exited --pid `$PID --exit-code `$workflowExitCode --note `"cli returned to powershell after retries`" --json | Out-Null
+    }
+}
+"@
+}
+
+function New-ObserverLaunchCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$Agent
+    )
+
+    return "pwsh ./scripts/workflow-agent-observer.ps1 -Agent $Agent -RepoRoot '$RepoRoot'"
 }
 
 function Get-LaunchStatePath {
@@ -265,9 +460,9 @@ function Get-WorkflowWindowHandle {
 
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline) {
-        $process = Get-Process | Where-Object { $_.MainWindowTitle -eq $WindowTitle } | Select-Object -First 1
-        if ($null -ne $process) {
-            return $process.MainWindowHandle
+        $window = [WorkflowWindowLayout]::EnumerateWindows() | Where-Object { $_.Title -eq $WindowTitle } | Select-Object -First 1
+        if ($null -ne $window) {
+            return $window.Handle
         }
         Start-Sleep -Milliseconds 400
     }
@@ -285,8 +480,11 @@ function Set-WorkflowGridLayout {
     $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     $columns = 3
     $rows = 2
-    $width = [Math]::Floor($bounds.Width / $columns)
-    $height = [Math]::Floor($bounds.Height / $rows)
+    $outerPadding = 12
+    $horizontalGap = 10
+    $verticalGap = 10
+    $maxWidth = [Math]::Floor(($bounds.Width - ($outerPadding * 2) - ($horizontalGap * ($columns - 1))) / $columns)
+    $maxHeight = [Math]::Floor(($bounds.Height - ($outerPadding * 2) - ($verticalGap * ($rows - 1))) / $rows)
 
     for ($index = 0; $index -lt $WindowTitles.Count; $index++) {
         $handle = Get-WorkflowWindowHandle -WindowTitle $WindowTitles[$index]
@@ -296,15 +494,31 @@ function Set-WorkflowGridLayout {
 
         $column = $index % $columns
         $row = [Math]::Floor($index / $columns)
-        $x = $bounds.Left + ($column * $width)
-        $y = $bounds.Top + ($row * $height)
-        [WorkflowWindowLayout]::MoveWindow($handle, $x, $y, $width, $height, $true) | Out-Null
+        $x = $bounds.Left + $outerPadding + ($column * ($maxWidth + $horizontalGap))
+        $y = $bounds.Top + $outerPadding + ($row * ($maxHeight + $verticalGap))
+        [WorkflowWindowLayout]::SetWindowPos(
+            $handle,
+            [IntPtr]::Zero,
+            $x,
+            $y,
+            0,
+            0,
+            ($SWP_NOSIZE -bor $SWP_NOZORDER -bor $SWP_NOACTIVATE)
+        ) | Out-Null
     }
 }
 
 $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
 $mainRole = $config.roles | Where-Object { $_.agent -eq "main" } | Select-Object -First 1
 $mainRepo = [string]$mainRole.repo_path
+
+if (-not $UseInteractiveCliWindows -and -not $DryRun) {
+    poetry run python scripts/workflow_supervisor.py --repo-root $mainRepo start | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error ("workflow supervisor failed to start (exit code {0})" -f $LASTEXITCODE)
+        exit $LASTEXITCODE
+    }
+}
 
 $targets = @()
 foreach ($role in $config.roles) {
@@ -315,7 +529,14 @@ foreach ($role in $config.roles) {
     $logPath = Get-LaunchLogPath -RepoRoot $mainRepo -Agent ([string]$role.agent)
     $command = $startupCommand
 
-    if ($startupType -eq "audit_agent") {
+    if (-not $UseInteractiveCliWindows) {
+        $startupType = "observer_window"
+        $command = New-ObserverLaunchCommand -RepoRoot $mainRepo -Agent ([string]$role.agent)
+    }
+    elseif ($startupType -eq "direct_cli") {
+        $command = New-DirectCliLaunchCommand -RepoRoot $mainRepo -Agent ([string]$role.agent) -StartupCommand $startupCommand -LogPath $logPath -StartupGraceSeconds $StartupGraceSeconds -MaxAttempts $maxAttempts -RetryDelaySeconds $retryDelaySeconds
+    }
+    elseif ($startupType -eq "audit_agent") {
         $summary = [string]$role.startup.audit_summary
         $interval = [int]$role.startup.heartbeat_interval_seconds
         $command = @"
@@ -364,6 +585,7 @@ poetry run python scripts/workflow_audit_state.py update --agent $($role.agent) 
     $targets += @{
         Agent = [string]$role.agent
         Title = [string]$role.window_title
+        TitleCandidates = @($role.window_title_fallbacks | ForEach-Object { [string]$_ })
         Workdir = [string]$role.repo_path
         Command = $command
         StartupType = $startupType
@@ -379,36 +601,62 @@ foreach ($target in $targets) {
     while (-not $started -and $attempt -lt $target.MaxAttempts) {
         $attempt += 1
         if (-not $DryRun) {
+            Stop-WorkflowWindowsByExactTitle -WindowTitle $target.Title
             Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "starting" -Note ("attempt {0}/{1}" -f $attempt, $target.MaxAttempts)
             Add-Content -Path (Get-LaunchLogPath -RepoRoot $mainRepo -Agent $target.Agent) -Value ("[{0}] attempt {1}/{2} launching via {3}" -f [DateTime]::UtcNow.ToString("o"), $attempt, $target.MaxAttempts, $target.StartupType)
         }
 
         $process = Start-WorkflowWindow -WindowTitle $target.Title -Workdir $target.Workdir -CommandText $target.Command -StartupType $target.StartupType
         if (-not $DryRun -and $null -ne $process) {
-            $hwnd = Get-WindowHandleByExactTitle -WindowTitle $target.Title
+            $windowInfo = Get-WindowInfoByTitleCandidates -WindowTitles $target.TitleCandidates
+            if ($null -eq $windowInfo) {
+                $windowInfo = Get-WindowInfoByProcessId -ProcessId $process.Id -TimeoutSeconds 2
+            }
+            $hwnd = if ($null -ne $windowInfo) { [Int64]$windowInfo.Handle } else { [Int64]0 }
+            $windowPid = if ($null -ne $windowInfo) { [int]$windowInfo.ProcessId } else { $process.Id }
             $windowManifest[$target.Agent] = @{
-                pid = $process.Id
+                pid = $windowPid
                 hwnd = $hwnd
                 title = $target.Title
                 workdir = $target.Workdir
             }
             Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
 
-            if ($target.StartupType -eq "direct_cli") {
-                Start-Sleep -Seconds $StartupGraceSeconds
-                $alive = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-                if ($null -ne $alive) {
-                    Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "running" -ProcessId $process.Id -Note ("startup grace passed on attempt {0}" -f $attempt)
-                    $started = $true
+            if ($target.StartupType -eq "observer_window") {
+                Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "running" -ProcessId $process.Id -Note "observer window ready"
+                if (-not $SkipLayout) {
+                    Set-WorkflowGridLayout -WindowTitles ($targets | ForEach-Object { $_.Title })
                 }
-                else {
-                    Write-LaunchState -RepoRoot $mainRepo -Agent $target.Agent -Status "exited" -ProcessId $process.Id -ExitCode 1 -Note ("direct cli exited before grace on attempt {0}" -f $attempt)
-                }
+                $started = $true
             }
-            else {
+            elseif ($target.StartupType -eq "direct_cli" -or $target.StartupType -eq "audit_agent") {
                 $health = Wait-WorkflowLaunchHealthy -RepoRoot $mainRepo -Agent $target.Agent -ProcessId $process.Id -TimeoutSeconds $StartupTimeoutSeconds
                 if ($health.ok) {
-                    $started = $true
+                    $statePid = 0
+                    if ($null -ne $health.state -and $health.state.PSObject.Properties.Name -contains "pid") {
+                        $statePid = [int]$health.state.pid
+                    }
+                    $aliveWindow = Get-WindowInfoByTitleCandidates -WindowTitles $target.TitleCandidates -TimeoutSeconds 2
+                    if ($null -eq $aliveWindow) {
+                        $candidatePid = if ($statePid -gt 0) { $statePid } else { $process.Id }
+                        $aliveWindow = Get-WindowInfoByProcessId -ProcessId $candidatePid -TimeoutSeconds 2
+                    }
+                    if ($null -eq $aliveWindow) {
+                        Write-Error ("Launch failed for {0}: window_binding_missing" -f $target.Agent)
+                    }
+                    else {
+                        $windowManifest[$target.Agent] = @{
+                            pid = if ($statePid -gt 0) { $statePid } else { $process.Id }
+                            hwnd = [Int64]$aliveWindow.Handle
+                            title = if ([string]::IsNullOrWhiteSpace([string]$aliveWindow.Title)) { $target.Title } else { [string]$aliveWindow.Title }
+                            workdir = $target.Workdir
+                        }
+                        Save-WindowManifest -RepoRoot $mainRepo -Windows $windowManifest
+                        if (-not $SkipLayout) {
+                            Set-WorkflowGridLayout -WindowTitles ($targets | ForEach-Object { $_.Title })
+                        }
+                        $started = $true
+                    }
                 }
                 else {
                     Write-Error ("Launch failed for {0}: {1}" -f $target.Agent, $health.reason)
@@ -438,6 +686,14 @@ if (-not $SkipLayout -and -not $DryRun) {
 }
 
 if (-not $SkipController) {
-    $controllerCommand = "Start-Sleep -Seconds $ControllerDelaySeconds; pwsh ./scripts/workflow-terminal-control-console.ps1 -Interval $ControlInterval"
+    if (-not $DryRun) {
+        Stop-WorkflowWindowsByExactTitle -WindowTitle "owlclaw-control"
+    }
+    if ($UseTerminalController) {
+        $controllerCommand = "Start-Sleep -Seconds $ControllerDelaySeconds; pwsh ./scripts/workflow-terminal-control-console.ps1 -Interval $ControlInterval"
+    }
+    else {
+        $controllerCommand = "Start-Sleep -Seconds $ControllerDelaySeconds; pwsh ./scripts/workflow-supervisor-console.ps1 -Interval $ControlInterval -NoNewWindow"
+    }
     Start-WorkflowWindow -WindowTitle "owlclaw-control" -Workdir $mainRepo -CommandText $controllerCommand
 }

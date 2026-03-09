@@ -79,7 +79,7 @@ class TokenAuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         api_token_header = request.headers.get("x-api-token", "").strip()
-        if api_token_header == expected_token:
+        if hmac.compare_digest(api_token_header.encode("utf-8"), expected_token.encode("utf-8")):
             return await call_next(request)
 
         auth_header = request.headers.get("Authorization", "")
