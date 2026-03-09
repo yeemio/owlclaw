@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Repo Data Viewer</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 24px;
+        color: #1f2937;
+      }
+      h1 {
+        margin: 0 0 8px;
+      }
+      .sub {
+        margin: 0 0 16px;
+        color: #6b7280;
+      }
+      .filters {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        font-size: 12px;
+        color: #4b5563;
+        margin-bottom: 4px;
+      }
+      select {
+        width: 100%;
+        padding: 6px 8px;
+      }
+      .summary {
+        margin-bottom: 10px;
+        font-size: 13px;
+        color: #374151;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th,
+      td {
+        border: 1px solid #e5e7eb;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #f9fafb;
+        position: sticky;
+        top: 0;
+      }
+      tbody tr:nth-child(odd) {
+        background: #fcfcfd;
+      }
+      .repo a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .repo a:hover {
+        text-decoration: underline;
+      }
+      #error {
+        color: #b91c1c;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Repository Data Viewer</h1>
+    <p class="sub">
+      Source mapped from <code>20-normalized/repo_master_latest.csv</code> into
+      <code>repo-data.json</code>.
+    </p>
+
+    <div class="filters">
+      <div>
+        <label for="topic">topic</label>
+        <select id="topic"></select>
+      </div>
+      <div>
+        <label for="relevance">relevance</label>
+        <select id="relevance"></select>
+      </div>
+      <div>
+        <label for="risk">risk</label>
+        <select id="risk"></select>
+      </div>
+      <div>
+        <label for="adoption_priority">adoption_priority</label>
+        <select id="adoption_priority"></select>
+      </div>
+    </div>
+
+    <div class="summary" id="summary">Loading...</div>
+    <div id="error"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>repo</th>
+          <th>topic</th>
+          <th>relevance</th>
+          <th>risk</th>
+          <th>adoption_priority</th>
+          <th>activity</th>
+          <th>license</th>
+          <th>updated_at</th>
+          <th>why_relevant</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <script src="./data.js"></script>
+    <script>
+      const filters = {
+        topic: document.getElementById("topic"),
+        relevance: document.getElementById("relevance"),
+        risk: document.getElementById("risk"),
+        adoption_priority: document.getElementById("adoption_priority"),
+      };
+      const rowsEl = document.getElementById("rows");
+      const summaryEl = document.getElementById("summary");
+      const errorEl = document.getElementById("error");
+
+      let allRows = [];
+
+      function buildOptions(select, values) {
+        select.innerHTML = "";
+        const all = document.createElement("option");
+        all.value = "";
+        all.textContent = "All";
+        select.appendChild(all);
+        for (const value of values) {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        }
+      }
+
+      function renderRows(rows) {
+        rowsEl.innerHTML = "";
+        for (const row of rows) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="repo"><a href="${row.url}" target="_blank" rel="noreferrer">${row.repo}</a></td>
+            <td>${row.topic || ""}</td>
+            <td>${row.relevance || ""}</td>
+            <td>${row.risk || ""}</td>
+            <td>${row.adoption_priority || ""}</td>
+            <td>${row.activity || ""}</td>
+            <td>${row.license || ""}</td>
+            <td>${row.updated_at || ""}</td>
+            <td>${row.why_relevant || ""}</td>
+          `;
+          rowsEl.appendChild(tr);
+        }
+      }
+
+      function applyAndRender() {
+        const selected = {
+          topic: filters.topic.value,
+          relevance: filters.relevance.value,
+          risk: filters.risk.value,
+          adoption_priority: filters.adoption_priority.value,
+        };
+        const filtered = window.RepoData.applyFilters(allRows, selected);
+        summaryEl.textContent = `Showing ${filtered.length} / ${allRows.length} repositories`;
+        renderRows(filtered);
+      }
+
+      async function boot() {
+        try {
+          allRows = await window.RepoData.loadRepoData();
+          buildOptions(filters.topic, window.RepoData.uniqueValues(allRows, "topic"));
+          buildOptions(filters.relevance, window.RepoData.uniqueValues(allRows, "relevance"));
+          buildOptions(filters.risk, window.RepoData.uniqueValues(allRows, "risk"));
+          buildOptions(
+            filters.adoption_priority,
+            window.RepoData.uniqueValues(allRows, "adoption_priority")
+          );
+          Object.values(filters).forEach((select) =>
+            select.addEventListener("change", applyAndRender)
+          );
+          applyAndRender();
+        } catch (error) {
+          summaryEl.textContent = "Failed to load data";
+          errorEl.textContent = String(error);
+        }
+      }
+
+      boot();
+    </script>
+  </body>
+</html>
+
