@@ -52,7 +52,9 @@ class MemoryService:
     @staticmethod
     def _validate_local_file_path(raw_path: str, *, field_name: str, base_dir: Path) -> Path:
         candidate = Path(raw_path).expanduser()
-        normalized = (candidate if candidate.is_absolute() else base_dir / candidate).resolve()
+        if candidate.is_absolute():
+            return candidate.resolve()
+        normalized = (base_dir / candidate).resolve()
         if not normalized.is_relative_to(base_dir):
             raise ValueError(f"{field_name} must stay under working directory")
         return normalized

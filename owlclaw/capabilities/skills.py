@@ -26,6 +26,7 @@ from owlclaw.config.loader import ConfigLoadError, YAMLConfigLoader
 logger = logging.getLogger(__name__)
 _SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 _FRONTMATTER_PATTERN = re.compile(r"^---\r?\n(.*?)\r?\n---(?:\r?\n(.*))?$", re.DOTALL)
+_RAW_NAME_PATTERN = re.compile(r"^name:\s*(.+)$", re.MULTILINE)
 
 if TYPE_CHECKING:
     from owlclaw.capabilities.registry import CapabilityRegistry
@@ -48,6 +49,20 @@ def _body_contains_trigger_hint(body_text: str) -> bool:
         "inventory change",
     )
     return any(token in body_text or token in normalized for token in hints)
+
+
+def _contains_control_chars(value: str) -> bool:
+    return any(ord(ch) < 32 or 127 <= ord(ch) <= 159 for ch in value)
+
+
+def _has_valid_raw_skill_name(frontmatter_raw: str) -> bool:
+    match = _RAW_NAME_PATTERN.search(frontmatter_raw)
+    if match is None:
+        return False
+    raw_name = match.group(1)
+    if raw_name != raw_name.strip() or _contains_control_chars(raw_name):
+        return False
+    return _SKILL_NAME_PATTERN.match(raw_name) is not None
 
 
 class Skill:
@@ -335,6 +350,9 @@ class SkillsLoader:
         except yaml.YAMLError as e:
             logger.warning("Skill file %s YAML parse error: %s", file_path, e)
             return None
+        if not _has_valid_raw_skill_name(frontmatter_raw):
+            logger.warning("Skill file %s name must be kebab-case", file_path)
+            return None
 
         if frontmatter is None:
             logger.warning("Skill file %s empty frontmatter", file_path)
@@ -353,7 +371,8 @@ class SkillsLoader:
         if not isinstance(frontmatter_map["name"], str) or not frontmatter_map["name"].strip():
             logger.warning("Skill file %s invalid name field", file_path)
             return None
-        if not _SKILL_NAME_PATTERN.match(frontmatter_map["name"].strip()):
+        raw_name = frontmatter_map["name"]
+        if raw_name != raw_name.strip() or _contains_control_chars(raw_name) or not _SKILL_NAME_PATTERN.match(raw_name):
             logger.warning("Skill file %s name must be kebab-case", file_path)
             return None
         if not isinstance(frontmatter_map["description"], str) or not frontmatter_map["description"].strip():
@@ -439,7 +458,7 @@ class SkillsLoader:
                 resolved_tools = sorted({item.tool_name for item in matches})
 
         return Skill(
-            name=frontmatter_map["name"].strip(),
+            name=raw_name,
             description=frontmatter_map["description"].strip(),
             file_path=file_path,
             metadata=metadata,

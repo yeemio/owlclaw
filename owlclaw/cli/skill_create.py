@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import typer
@@ -28,9 +29,12 @@ def create_command(
 ) -> None:
     """Create SKILL.md using interactive mode or templates."""
     if from_doc:
-        extractor = SkillDocExtractor()
+        source_path = Path(from_doc.strip()).expanduser().resolve()
+        output_path = Path(output).expanduser().resolve()
+        base_dir = Path(os.path.commonpath([str(source_path.parent), str(output_path)])).resolve()
+        extractor = SkillDocExtractor(base_dir=base_dir)
         try:
-            written = extractor.generate_from_document(from_doc.strip(), output)
+            written = extractor.generate_from_document(source_path, output_path)
         except FileNotFoundError as exc:
             typer.echo(f"Error: {exc}", err=True)
             raise typer.Exit(2) from exc
