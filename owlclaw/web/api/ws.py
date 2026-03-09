@@ -9,12 +9,12 @@ import os
 from collections.abc import AsyncIterator
 from typing import Any
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 
 from owlclaw.web.api.deps import (
     get_ledger_provider,
     get_overview_provider,
-    get_tenant_id,
+    resolve_tenant_id,
     get_triggers_provider,
 )
 
@@ -51,7 +51,9 @@ def _resolve_limiter(websocket: WebSocket) -> _ConnectionLimiter:
 
 
 def _is_ws_authorized(websocket: WebSocket) -> bool:
-    expected = os.getenv("OWLCLAW_CONSOLE_TOKEN", "").strip()
+    expected = os.getenv("OWLCLAW_CONSOLE_API_TOKEN", "").strip()
+    if not expected:
+        expected = os.getenv("OWLCLAW_CONSOLE_TOKEN", "").strip()
     if not expected:
         return True
     provided = websocket.query_params.get("token", "").strip()
@@ -140,7 +142,15 @@ async def ws_stream(websocket: WebSocket) -> None:
 
     stream: AsyncIterator[dict[str, Any]] | None = None
     try:
-        tenant_id = await get_tenant_id(websocket.headers.get("x-owlclaw-tenant"))
+        auth_tenant = getattr(websocket.state, "auth_tenant_id", None)
+        try:
+            tenant_id = resolve_tenant_id(
+                tenant_header=websocket.headers.get("x-owlclaw-tenant"),
+                auth_tenant_id=auth_tenant if isinstance(auth_tenant, str) else None,
+            )
+        except HTTPException:
+            await websocket.close(code=4403)
+            return
         overview_provider = await get_overview_provider()
         triggers_provider = await get_triggers_provider()
         ledger_provider = await get_ledger_provider()

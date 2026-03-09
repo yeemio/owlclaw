@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import logging
+import os
 from typing import Any, cast
 
-from fastapi import Header
+from fastapi import Header, HTTPException, Request
 
 from owlclaw.web.contracts import (
     AgentsProvider,
@@ -17,6 +19,7 @@ from owlclaw.web.contracts import (
 )
 
 _PROVIDERS: dict[str, Any] = {}
+logger = logging.getLogger(__name__)
 
 
 def set_providers(**providers: Any) -> None:
@@ -64,7 +67,42 @@ async def get_settings_provider() -> SettingsProvider:
     return cast(SettingsProvider, _get_provider("settings"))
 
 
-async def get_tenant_id(x_owlclaw_tenant: str | None = Header(default=None)) -> str:
+def resolve_tenant_id(
+    *,
+    tenant_header: str | None,
+    auth_tenant_id: str | None,
+) -> str:
+    """Resolve tenant id with authenticated context priority.
+
+    Security policy:
+    - If authenticated tenant context exists, always use it.
+    - If auth is required but tenant context is missing, reject non-default
+      header tenant values to avoid cross-tenant header spoofing.
+    - Otherwise, keep backward-compatible header fallback.
+    """
+    if isinstance(auth_tenant_id, str) and auth_tenant_id.strip():
+        return auth_tenant_id.strip()
+
+    requested_tenant = ""
+    if isinstance(tenant_header, str):
+        requested_tenant = tenant_header.strip()
+    if not requested_tenant:
+        return "default"
+
+    require_auth = os.getenv("OWLCLAW_REQUIRE_AUTH", "").strip().lower() in {"1", "true", "yes", "on"}
+    if require_auth and requested_tenant != "default":
+        logger.warning(
+            "Rejected tenant header without authenticated tenant context: %s",
+            requested_tenant,
+        )
+        raise HTTPException(status_code=403, detail="Tenant must be derived from authenticated context")
+    return requested_tenant
+
+
+async def get_tenant_id(
+    request: Request,
+    x_owlclaw_tenant: str | None = Header(default=None),
+) -> str:
     """Extract tenant id from request header with default fallback.
 
     Note:
@@ -72,7 +110,9 @@ async def get_tenant_id(x_owlclaw_tenant: str | None = Header(default=None)) -> 
         In multi-tenant production deployments, tenant_id should come from
         authenticated request context, not directly from client headers.
     """
-    if x_owlclaw_tenant is None or not x_owlclaw_tenant.strip():
-        return "default"
-    return x_owlclaw_tenant.strip()
+    auth_tenant = getattr(request.state, "auth_tenant_id", None)
+    return resolve_tenant_id(
+        tenant_header=x_owlclaw_tenant,
+        auth_tenant_id=auth_tenant if isinstance(auth_tenant, str) else None,
+    )
 

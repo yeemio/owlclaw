@@ -31,9 +31,13 @@ class ExecutionTrigger:
         runtime: RuntimeInvokerProtocol,
         *,
         sleeper: Any = asyncio.sleep,
+        max_idempotency_entries: int = 1024,
+        max_execution_entries: int = 2048,
     ) -> None:
         self._runtime = runtime
         self._sleeper = sleeper
+        self._max_idempotency_entries = max(1, int(max_idempotency_entries))
+        self._max_execution_entries = max(1, int(max_execution_entries))
         self._idempotency: dict[str, _IdempotencyEntry] = {}
         self._executions: dict[str, ExecutionResult] = {}
         self._idempotency_locks: dict[str, asyncio.Lock] = {}
@@ -50,6 +54,7 @@ class ExecutionTrigger:
     async def record_idempotency(self, key: str, result: ExecutionResult, ttl_seconds: float) -> None:
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
         self._idempotency[key] = _IdempotencyEntry(result=result, expires_at=expires_at)
+        self._trim_idempotency_cache()
 
     async def trigger(self, input_data: AgentInput, options: ExecutionOptions) -> ExecutionResult:
         if options.idempotency_key:
@@ -80,6 +85,7 @@ class ExecutionTrigger:
                 runtime_result = await self._invoke_runtime(input_data, timeout_seconds=options.timeout_seconds)
                 result = self._to_execution_result(runtime_result, options.mode)
                 self._executions[result.execution_id] = result
+                self._trim_execution_cache()
                 if options.idempotency_key:
                     await self.record_idempotency(options.idempotency_key, result, ttl_seconds=3600)
                 return result
@@ -99,12 +105,37 @@ class ExecutionTrigger:
             error=None if last_error is None else {**last_error, "status_code": status_code},
         )
         self._executions[failed.execution_id] = failed
+        self._trim_execution_cache()
         if options.idempotency_key:
             await self.record_idempotency(options.idempotency_key, failed, ttl_seconds=3600)
         return failed
 
     async def get_execution_status(self, execution_id: str) -> ExecutionResult | None:
         return self._executions.get(execution_id)
+
+    def _trim_idempotency_cache(self) -> None:
+        now = datetime.now(timezone.utc)
+        expired = [key for key, entry in self._idempotency.items() if entry.expires_at <= now]
+        for key in expired:
+            self._idempotency.pop(key, None)
+            lock = self._idempotency_locks.get(key)
+            if lock is not None and not lock.locked():
+                self._idempotency_locks.pop(key, None)
+        while len(self._idempotency) > self._max_idempotency_entries:
+            oldest_key = next(iter(self._idempotency))
+            self._idempotency.pop(oldest_key, None)
+            lock = self._idempotency_locks.get(oldest_key)
+            if lock is not None and not lock.locked():
+                self._idempotency_locks.pop(oldest_key, None)
+        if len(self._idempotency_locks) > self._max_idempotency_entries * 2:
+            removable = [key for key, lock in self._idempotency_locks.items() if key not in self._idempotency and not lock.locked()]
+            for key in removable:
+                self._idempotency_locks.pop(key, None)
+
+    def _trim_execution_cache(self) -> None:
+        while len(self._executions) > self._max_execution_entries:
+            oldest_key = next(iter(self._executions))
+            self._executions.pop(oldest_key, None)
 
     async def _invoke_runtime(self, input_data: AgentInput, *, timeout_seconds: float | None) -> dict[str, Any]:
         coro = self._runtime.trigger(input_data)

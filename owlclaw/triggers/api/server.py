@@ -13,8 +13,6 @@ from time import monotonic
 from typing import Any, Protocol
 from uuid import uuid4
 
-DEFAULT_RUNS_CACHE_MAXSIZE = 1000
-
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -31,6 +29,8 @@ from owlclaw.triggers.api.handler import (
 )
 from owlclaw.triggers.signal.api import register_signal_admin_route
 from owlclaw.triggers.signal.router import SignalRouter
+
+DEFAULT_RUNS_CACHE_MAXSIZE = 1000
 
 
 class AgentRuntimeProtocol(Protocol):
@@ -162,6 +162,7 @@ class APITriggerServer:
         self._server: Any | None = None
         self._server_task: asyncio.Task[None] | None = None
         self._runs: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self._background_tasks: set[asyncio.Task[None]] = set()
         self._runs_maxsize = max(1, int(runs_cache_maxsize))
         self._signal_admin_registered: bool = False
         self._tenant_limiter = _TokenBucketLimiter(rate_per_minute=tenant_rate_limit_per_minute)
@@ -253,7 +254,7 @@ class APITriggerServer:
                 response = await self._handle_sync(config, payload, fallback, started)
                 return response
 
-            return await self._handle_async(config, payload, fallback, started)
+            return await self._handle_async(config, payload, fallback, started, auth_identity)
 
         self._app.router.routes.append(Route(config.path, endpoint=endpoint, methods=[config.method]))
         self._configs[route_key] = config
@@ -300,6 +301,12 @@ class APITriggerServer:
     async def stop(self) -> None:
         if self._server is not None:
             self._server.should_exit = True
+        if self._background_tasks:
+            tasks = tuple(self._background_tasks)
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            self._background_tasks.clear()
         if self._server_task is not None:
             await self._server_task
             self._server_task = None
@@ -353,11 +360,18 @@ class APITriggerServer:
         payload: dict[str, Any],
         fallback: Callable[[dict[str, Any]], Awaitable[Any]] | None,
         started: float,
+        auth_identity: str | None,
     ) -> JSONResponse:
         run_id = f"run-{uuid4().hex}"
         while len(self._runs) >= self._runs_maxsize:
             self._runs.popitem(last=False)
-        self._runs[run_id] = {"status": "pending"}
+        self._runs[run_id] = {
+            "status": "pending",
+            "_auth_required": bool(config.auth_required),
+            "_auth_identity": auth_identity,
+            "_tenant_id": config.tenant_id,
+            "_query_count": 0,
+        }
 
         async def _background() -> None:
             try:
@@ -372,15 +386,20 @@ class APITriggerServer:
                     result = await fallback(payload)
                 else:
                     raise RuntimeError("runtime_unavailable")
-                self._runs[run_id] = {"status": "completed", "result": result}
+                self._runs[run_id] = {**self._runs.get(run_id, {}), "status": "completed", "result": result}
                 await self._record_execution(config, run_id, "success", started, payload, {"result": result}, "async_completed")
+            except asyncio.CancelledError:
+                self._runs[run_id] = {**self._runs.get(run_id, {}), "status": "cancelled", "error": "Execution cancelled."}
+                raise
             except Exception:
-                self._runs[run_id] = {"status": "failed", "error": "Execution failed."}
+                self._runs[run_id] = {**self._runs.get(run_id, {}), "status": "failed", "error": "Execution failed."}
                 await self._record_execution(
                     config, run_id, "failed", started, payload, None, "async_failed", "Execution failed."
                 )
 
-        asyncio.create_task(_background())
+        task = asyncio.create_task(_background())
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
         return JSONResponse(
             {"status": "accepted", "run_id": run_id},
             status_code=202,
@@ -392,8 +411,46 @@ class APITriggerServer:
         run = self._runs.get(run_id)
         if run is None:
             return JSONResponse({"error": "not_found"}, status_code=404)
+        query_identity: str | None = None
+        auth_required = bool(run.get("_auth_required", False))
+        if auth_required:
+            if self._auth_provider is None:
+                return JSONResponse({"error": "unauthorized", "reason": "auth_provider_missing"}, status_code=401)
+            result = await self._auth_provider.authenticate(request)
+            if not result.ok:
+                return JSONResponse({"error": "unauthorized", "reason": result.reason or "auth_failed"}, status_code=401)
+            expected_identity = run.get("_auth_identity")
+            if expected_identity is not None and result.identity != expected_identity:
+                return JSONResponse({"error": "not_found"}, status_code=404)
+            query_identity = result.identity
+        else:
+            query_identity = "anonymous"
+        query_tenant = self._resolve_query_tenant(request, run)
+        run["_query_count"] = int(run.get("_query_count", 0)) + 1
+        run["_last_query_identity"] = query_identity
+        run["_last_query_tenant"] = query_tenant
         self._runs.move_to_end(run_id)
-        return JSONResponse({"run_id": run_id, **run})
+        public_run = {key: value for key, value in run.items() if not key.startswith("_")}
+        return JSONResponse(
+            {
+                "run_id": run_id,
+                **public_run,
+                "query_audit": {
+                    "query_identity": query_identity,
+                    "query_tenant": query_tenant,
+                    "query_count": run["_query_count"],
+                },
+            }
+        )
+
+    @staticmethod
+    def _resolve_query_tenant(request: Request, run: dict[str, Any]) -> str:
+        """Resolve audit tenant from request header with safe fallback."""
+        header_tenant = request.headers.get("x-owlclaw-tenant", "").strip()
+        if header_tenant:
+            return header_tenant
+        run_tenant = run.get("_tenant_id", "default")
+        return str(run_tenant).strip() or "default"
 
     async def _record_execution(
         self,

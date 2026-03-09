@@ -100,7 +100,7 @@ def test_http_gateway_error_scenarios() -> None:
     bad_payload = client.post(
         f"/webhooks/{endpoint_id}",
         headers={"Authorization": "Bearer token-abc", "Content-Type": "application/json"},
-        data="{bad-json",
+        content="{bad-json",
     )
     assert bad_payload.status_code == 400
 
@@ -167,7 +167,7 @@ def test_webhook_request_body_too_large_returns_413() -> None:
     oversized = client.post(
         f"/webhooks/{endpoint_id}",
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-        data='{"value":"this payload is too large"}',
+        content='{"value":"this payload is too large"}',
     )
     assert oversized.status_code == 413
 
@@ -189,3 +189,40 @@ def test_webhook_non_utf8_body_returns_400() -> None:
 def test_http_gateway_config_default_cors_origins_is_closed() -> None:
     cfg = HttpGatewayConfig()
     assert cfg.cors_origins == []
+
+
+def test_events_endpoint_requires_admin_token_and_redacts_sensitive_headers() -> None:
+    manager = WebhookEndpointManager(InMemoryEndpointRepository())
+    event_repo = InMemoryEventRepository()
+    app = create_webhook_app(
+        manager=manager,
+        validator=RequestValidator(manager),
+        transformer=PayloadTransformer(),
+        governance=GovernanceClient(_AllowPolicy()),
+        execution=ExecutionTrigger(_Runtime()),
+        event_logger=EventLogger(event_repo),
+        monitoring=MonitoringService(),
+        config=HttpGatewayConfig(admin_token="admin-secret"),
+    )
+    client = TestClient(app)
+    endpoint_id, token = _create_endpoint(client)
+    webhook = client.post(
+        f"/webhooks/{endpoint_id}",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        json={"x": 1},
+    )
+    assert webhook.status_code == 202
+
+    unauthorized = client.get("/events")
+    assert unauthorized.status_code == 401
+
+    authorized = client.get("/events", headers={"Authorization": "Bearer admin-secret"})
+    assert authorized.status_code == 200
+    response_items = authorized.json().get("items", [])
+    assert response_items
+    assert isinstance(response_items[0].get("timestamp"), str)
+
+    request_events = [item for item in event_repo._items if item.event_type == "request"]  # noqa: SLF001
+    assert request_events
+    logged_headers = request_events[0].data.get("headers", {})
+    assert logged_headers.get("authorization") == "Bearer ***"

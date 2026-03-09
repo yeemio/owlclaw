@@ -29,6 +29,14 @@ queue_trigger:
   enable_dedup: false
   parser_type: text
   event_name_header: x-custom-event
+  default_tenant_id: tenant-a
+  trust_tenant_header: true
+  tenant_header_name: x-tenant-id
+  trusted_producer_header: x-producer-id
+  trusted_producers: [producer-a, producer-b]
+  tenant_signature_header: x-tenant-signature
+  tenant_signature_secret_env: OWLCLAW_TENANT_SIG_SECRET
+  tenant_signature_secret_envs: [OWLCLAW_TENANT_SIG_SECRET_NEXT, OWLCLAW_TENANT_SIG_SECRET_PREV]
   focus: ops
 """.strip(),
     )
@@ -46,6 +54,17 @@ queue_trigger:
     assert config.enable_dedup is False
     assert config.parser_type == "text"
     assert config.event_name_header == "x-custom-event"
+    assert config.default_tenant_id == "tenant-a"
+    assert config.trust_tenant_header is True
+    assert config.tenant_header_name == "x-tenant-id"
+    assert config.trusted_producer_header == "x-producer-id"
+    assert config.trusted_producers == ["producer-a", "producer-b"]
+    assert config.tenant_signature_header == "x-tenant-signature"
+    assert config.tenant_signature_secret_env == "OWLCLAW_TENANT_SIG_SECRET"
+    assert config.tenant_signature_secret_envs == [
+        "OWLCLAW_TENANT_SIG_SECRET_NEXT",
+        "OWLCLAW_TENANT_SIG_SECRET_PREV",
+    ]
     assert config.focus == "ops"
 
 
@@ -71,7 +90,47 @@ queue_trigger:
     assert config.enable_dedup is True
     assert config.parser_type == "json"
     assert config.event_name_header == "x-event-name"
+    assert config.default_tenant_id == "default"
+    assert config.trust_tenant_header is False
+    assert config.tenant_header_name == "x-tenant-id"
+    assert config.trusted_producer_header == "x-producer-id"
+    assert config.trusted_producers is None
+    assert config.tenant_signature_header == "x-tenant-signature"
+    assert config.tenant_signature_secret_env is None
+    assert config.tenant_signature_secret_envs is None
     assert config.focus is None
+
+
+def test_load_queue_trigger_config_supports_comma_separated_trusted_producers(tmp_path: Path) -> None:
+    config_file = tmp_path / "queue.yaml"
+    _write_yaml(
+        config_file,
+        """
+queue_trigger:
+  queue_name: orders
+  consumer_group: workers
+  trusted_producers: producer-a, producer-b, producer-c
+""".strip(),
+    )
+
+    config = load_queue_trigger_config(str(config_file))
+    assert config.trusted_producers == ["producer-a", "producer-b", "producer-c"]
+
+
+def test_load_queue_trigger_config_supports_comma_separated_signature_secret_envs(tmp_path: Path) -> None:
+    config_file = tmp_path / "queue.yaml"
+    _write_yaml(
+        config_file,
+        """
+queue_trigger:
+  queue_name: orders
+  consumer_group: workers
+  tenant_signature_secret_envs: SIG_ENV_A, SIG_ENV_B
+""".strip(),
+    )
+
+    config = load_queue_trigger_config(str(config_file))
+    assert config.tenant_signature_secret_envs == ["SIG_ENV_A", "SIG_ENV_B"]
 
 
 def test_load_queue_trigger_config_rejects_invalid_enums(tmp_path: Path) -> None:
