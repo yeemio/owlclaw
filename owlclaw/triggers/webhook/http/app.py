@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 from collections import deque
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -145,7 +146,9 @@ def create_webhook_app(
             prefix = "Bearer "
             if authorization.startswith(prefix):
                 provided = authorization[len(prefix) :].strip()
-        if provided != expected:
+        if provided is None:
+            provided = ""
+        if not hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8")):
             raise HTTPException(status_code=401, detail="admin token required")
 
     @app.post("/webhooks/{endpoint_id}")

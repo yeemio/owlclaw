@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import inspect
 import json
 import logging
@@ -129,7 +130,9 @@ class McpProtocolServer:
             return None
         if method == "initialize":
             token = params.get("token")
-            if not isinstance(token, str) or token.strip() != self._auth_token:
+            if not isinstance(token, str) or not token.strip():
+                return "unauthorized: invalid or missing MCP token"
+            if not hmac.compare_digest(token.strip().encode("utf-8"), self._auth_token.encode("utf-8")):
                 return "unauthorized: invalid or missing MCP token"
             self._is_authenticated = True
             return None

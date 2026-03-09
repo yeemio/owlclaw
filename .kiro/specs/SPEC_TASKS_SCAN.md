@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-07（深度审计报告 124 条发现；Phase 15 已收口，Phase 16 #45–#55 进行中，workflow-closed-loop 已完成对象层 + audit/triage + assignment/delivery/verdict/merge 基础链路）
+> **最后更新**: 2026-03-07（深度审计报告 124 条发现；Phase 15 已收口，Phase 16 #45–#55 进行中，workflow-closed-loop 已完成对象层 + audit/triage + assignment/delivery/verdict/merge 全链路，并补齐人工分配边界校验、claim/lease、幂等恢复、岗位合同注入与审计只读约束）
 
 ---
 
@@ -266,11 +266,11 @@
 > **前置**: 现有 `workflow_orchestrator.py` / `workflow_agent.py` / `workflow_executor.py` / `workflow_terminal_control.py`
 
 - [x] `workflow-closed-loop` — 定义 findings / triage / assignments / deliveries / review_verdicts / merge_decisions / blockers 的文件协议对象模型 → spec: workflow-closed-loop
-- [ ] `workflow-closed-loop` — audit-a / audit-b 进入主协议，不再只是 `audit-state` 旁路 → spec: workflow-closed-loop
-- [ ] `workflow-closed-loop` — review 产出结构化 verdict 与 findings，可回流给 main → spec: workflow-closed-loop
-- [ ] `workflow-closed-loop` — main 从 findings/verdicts 生成 assignment，驱动 coding worktree → spec: workflow-closed-loop
-- [ ] `workflow-closed-loop` — coding 交付 delivery，review 消费 delivery，main 决定 merge/reassign → spec: workflow-closed-loop
-- [ ] `workflow-closed-loop` — claim/lease/幂等/恢复/汇总视图/supervisor 补齐 → spec: workflow-closed-loop
+- [x] `workflow-closed-loop` — audit-a / audit-b 进入主协议，不再只是 `audit-state` 旁路 → spec: workflow-closed-loop
+- [x] `workflow-closed-loop` — review 产出结构化 verdict 与 findings，可回流给 main → spec: workflow-closed-loop
+- [x] `workflow-closed-loop` — main 从 findings/verdicts 生成 assignment，驱动 coding worktree → spec: workflow-closed-loop
+- [x] `workflow-closed-loop` — coding 交付 delivery，review 消费 delivery，main 决定 merge/reassign → spec: workflow-closed-loop
+- [x] `workflow-closed-loop` — claim/lease/幂等/恢复/汇总视图/supervisor 补齐 → spec: workflow-closed-loop
 
 - [x] S1 工具结果消毒与注入拦截（v4 Task 1）→ spec: security-hardening
 - [x] S2 工具参数 Schema 校验与约束（v4 Task 2）→ spec: security-hardening
@@ -375,23 +375,6 @@
 - [x] D28 Low-28 CronMetrics 样本有界化→ spec: audit-deep-remediation
 - [x] D29 Low-29 get_execution_history tenant 绑定认证上下文→ spec: audit-deep-remediation
 
-### Phase 16：深度审计 Follow-up（#45–#55，2026-03-06 分配）
-
-> **来源**: `docs/review/DEEP_AUDIT_REPORT.md` 加审与扩展发现
-> **分配**: codex-gpt-work #45/#46/#50/#51/#53/#54；codex-work #47/#48/#49/#52/#55
-
-- [x] #45 CapabilityRegistry.get_state 异步 state provider timeout → spec: audit-deep-remediation-followup
-- [x] #46 SkillDocExtractor.read_document path 限制在 base_dir 下 → spec: audit-deep-remediation-followup
-- [ ] #47 Runtime final summarization 错误脱敏（codex-work）
-- [ ] #48 Observation 工具参数脱敏（codex-work）
-- [ ] #49/#52/#55 LLM facade/client timeout 与错误元数据脱敏（codex-work）
-- [x] #50 MemoryService file_fallback_path 校验 → spec: audit-deep-remediation-followup
-- [x] #51 compact 单次加载上限（compaction_max_entries）→ spec: audit-deep-remediation-followup
-- [ ] #52 aembedding timeout（codex-work）
-- [x] #53 MemorySystem memory_file 路径校验 → spec: audit-deep-remediation-followup
-- [x] #54 _index_entry 日志脱敏（不 log str(exc)）→ spec: audit-deep-remediation-followup
-- [ ] #55 LLMClient timeout（codex-work）
-
 ---
 
 ## Spec 索引
@@ -488,17 +471,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-07（深度审计 124 条；Phase 16 #45-#55；主 worktree spec 循环累计 63 项已完成；codex-gpt-work 本分支已完成 #45/#46/#50/#51/#53/#54 并提交） |
-| 当前批次 | **Phase 16 follow-up**：深度审计 #45-#55。Backlog：#30-#44（未分配）、#56-#124，待后续统筹分配。 |
-| 批次状态 | `codex-work` 仍在实现 #47/#48/#49/#52/#55；`codex-gpt-work` 已提交 #45/#46/#50/#51/#53/#54 全部 6 项，本批已收口，待 review-work 审校。 |
-| 已完成项 | （同 main 已完成项）；codex-gpt-work Phase 16：#45 get_state timeout、#46 SkillDocExtractor base_dir、#50 file_fallback_path 校验、#51 compact cap、#53 memory_file 校验、#54 _index_entry 日志脱敏。 |
-| 下一待执行 | 1) `review-work` 审校 `codex-gpt-work` 的 Phase 16 提交（#45/#46/#50/#51/#53/#54）；2) `codex-work` 完成并提交 #47/#48/#49/#52/#55；3) `codex-gpt-work` Phase 16 已全部收口，等待统筹分配下一 spec。 |
-| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：codex-gpt-work #45/#46/#50/#51/#53/#54 ✅；codex-work #47/#48/#49/#52/#55 待实施。 |
-| 阻塞项 | 无内部阻塞；仅剩外部依赖阻塞项（若有）。 |
-| 健康状态 | 🟡 进行中：`codex-gpt-work` 已形成待审提交，`codex-work` 仍有未提交改动；内部协作阻塞为 0，但 `review-work` 需尽快消费待审队列，避免后续堆积。 |
+| 最后更新 | 2026-03-07（深度审计 124+4 条；当前有效批次切换为 Phase 16R 双 `REJECT` 返工；主 worktree spec 循环累计 63 项已完成） |
+| 当前批次 | **Phase 16R（triage 校准）**：以 `review(codex-work): REJECT` / `review(codex-gpt-work): REJECT` 为唯一有效队列。Backlog：#30-#44（未分配）、#56-#124（含第 32 轮 #83-#87、第 33 轮 #88-#94、第 34 轮 #95-#103、第 35 轮 #104-#113、第 36 轮 #114-#116、第 37 轮 #117-#119、第 38 轮 #120-#121、第 39–40 轮 #122-#124 生产代码补审），以及 2026-03-07 独立审计新增 4 条 Low findings（runtime/API trigger）。 |
+| 批次状态 | Phase 16 follow-up 的早期 `APPROVE` 已被 rollback 审查覆盖；当前生效 verdict 为：`codex-work` 命中 memory/path/registry 安全基线回滚（R1-R4），`codex-gpt-work` 命中 runtime/LLM 脱敏与 timeout 回滚（G1-G5）。`review-work` ahead 的 REJECT 包仅作为 gate 与回流依据，不进入 `main`；本轮不执行主线 merge。 |
+| 已完成项 | 23) D25 Kafka connect timeout；24) D15-D29 全部修复并合入 main；25) 深度审计主审 27 轮完成；26) 加审补充 #55；27) #45-#55 已完成统筹分配；28) Phase 16 工作状态完成校准；29) `codex-gpt-work` 已提交首批 #45/#46 修复，进入待审；30) 深度审计第 28–31 轮 #56-#82；31) 第 32 轮 #83-#87；32) 第 33 轮 #88-#94；33) 审计复核 Order 45–94；34) 第 34 轮 #95-#103；35) 审计复核 Order 95–103；36) 第 35 轮（scripts 非 workflow）#104-#113；37) 审计复核第四轮 113 条；38) 第 36 轮（tests 关键路径）#114-#116；39) 审计复核第五轮 116 条；40) 第 37 轮（tests 扩展）#117-#119；41) 审计复核第六轮 119 条；42) 第 38 轮（tests web + CWD）#120-#121；43) 审计复核第七轮 121 条；44) 第 39 轮（生产代码补审）#122-#123 入报告；45) 审计复核第八轮：SPEC_TASKS_SCAN 与报告对齐至 124 条、Backlog #56-#124；46) 主 worktree spec 循环：audit-deep-remediation 可选 Task 8（skill_env_allowlist）实现+验收；47) test-infra backlog：pytest-html 测试报告 HTML 输出（dev 依赖 + docs/TESTING.md）；48) test-infra backlog：pytest-xdist 并行测试说明（docs/TESTING.md）；49) ruff F841/F811 修复（server.py exc、capabilities.py 重复 import）；50) docs/TESTING.md 补充覆盖率 HTML 报告命令；51) test-infra tasks.md 最后更新日期校准；52) local-devenv tasks.md 最后更新 2026-03-07；53) test-infra design 补充 Backlog「测试数据工厂」选型说明（factory_boy vs polyfactory）；54) docs/TESTING.md 常用命令补充 unit / not integration marker 示例；55) test-infra design 补充 Backlog「Kafka 本地 mock」实现要点；56) declarative-binding tasks.md 最后更新 2026-03-07；57) docs/TESTING.md 补充 -m \"not slow\" 示例；58) repo-hygiene / contract-testing tasks.md 最后更新 2026-03-07；59) docs/TESTING.md 补充 -x 首次失败即停；60) gateway-runtime-ops / cross-lang-golden-path / protocol-governance / examples tasks.md 最后更新 2026-03-07；61) cli-migrate tasks.md 最后更新 2026-03-07；62) docs/TESTING.md 补充 -v 详细输出示例；63) release / release-supply-chain / console-integration / console-frontend / protocol-first-api-mcp / mcp-server / security / skill-templates / governance tasks.md 最后更新 2026-03-07。 |
+| 下一待执行 | 1) `codex-work` 直接消费 `0f29664c`，按 R1-R4 返工 `MemoryService`/`MemorySystem`/`SkillDocExtractor`/`CapabilityRegistry`；2) `codex-gpt-work` 直接消费 `6f867c7a`，按 G1-G5 返工 runtime/LLM 脱敏与 timeout；3) `review-work` 等待两支返工提交并输出新的 verdict，当前 REJECT 包不递送 `main`；4) `main` 继续隔离本地改动，暂不执行 merge；5) 双 REJECT 收口后，再分配 2026-03-07 独立审计新增 4 条 Low findings。 |
+| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16**：#45-#55 当前状态从“待审”切换为“审校拒绝并回流 coding”，尚未形成新的可放行审校包。 |
+| 阻塞项 | 内部阻塞 2 项：1) `review-work` 存在未归档 verdict 文档，当前不适合递送主线；2) `main` 本地未提交改动阻止主线 merge。两个 coding worktree 已校准为干净，但 verdict 尚未消化。 |
+| 健康状态 | 🟠 审校拒绝待返工：本轮 merge conflicts 0，review rejection 2/2，连续测试失败 0；`codex-work` 与 `codex-gpt-work` 已干净，`review-work` 与 `main` 仍非干净。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | `review-work` 0 commit ahead、工作区干净；`codex-work` 0 commit ahead + 2 个已修改文件；`codex-gpt-work` 1 commit ahead（`e8766ea`）、工作区干净；`main` 存在用户本地改动，故本轮未执行统筹 commit。 |
-| 审校状态 | `audit-deep-remediation` 主线已审校完成；`review-work` 不再待机，下一轮审校目标为 `codex-gpt-work` 提交 `e8766ea`（#45/#46），随后再接续 Phase 16 其余修复。 |
+| 分支量化进度 | `review-work` 3 commits ahead，另有 4 个未跟踪 verdict 文档；`codex-work` ahead 以返工前历史提交为主，但 worktree 已干净；`codex-gpt-work` ahead 以返工前历史提交为主，但 worktree 已干净；`main` 存在用户本地改动，故本轮未执行统筹 commit/merge。 |
+| 审校状态 | `audit-deep-remediation` 主线已审校完成；Phase 16 follow-up 当前有效状态为 2 个 `REJECT` verdict：`review(codex-work): REJECT`（`0f29664c`）与 `review(codex-gpt-work): REJECT`（`6f867c7a`）。当前无可合入 `main` 的新审校包。 |
 | 持续轮次目标 | 主 worktree spec 循环目标 999 轮；每轮 1～3 项，每回复「继续」执行下一批；累计轮数在「已完成项」中递增；说「停」即止。 |
 
 ---

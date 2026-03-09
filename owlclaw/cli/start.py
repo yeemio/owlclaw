@@ -44,5 +44,5 @@ def start_command(*, host: str = "127.0.0.1", port: int = 8000) -> None:
         raise RuntimeError("uvicorn is required for `owlclaw start`") from exc
 
     app = create_start_app()
-    print(f"Starting OwlClaw on http://{host}:{port}")
+    logger.info("Starting OwlClaw on http://%s:%s", host, port)
     uvicorn.run(app, host=host, port=port, log_level="info")

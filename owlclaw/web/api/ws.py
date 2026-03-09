@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hmac
 import os
 from collections.abc import AsyncIterator
 from typing import Any
@@ -58,7 +59,7 @@ def _is_ws_authorized(websocket: WebSocket) -> bool:
         auth_header = websocket.headers.get("authorization", "")
         if auth_header.lower().startswith("bearer "):
             provided = auth_header[7:].strip()
-    return provided == expected
+    return hmac.compare_digest(provided.encode("utf-8"), expected.encode("utf-8"))
 
 
 async def _stream_messages(

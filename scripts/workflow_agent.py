@@ -103,9 +103,21 @@ def _dispatch_prompt(agent: str, mailbox: dict[str, object]) -> str:
         f"# Agent Dispatch: {agent}",
         "",
         f"- generated_at: {mailbox.get('generated_at', '')}",
+        f"- role_title: {mailbox.get('role_title', '')}",
         f"- stage: {mailbox.get('stage', '')}",
         f"- action: {action}",
         f"- priority: {mailbox.get('priority', '')}",
+        f"- object_type: {mailbox.get('object_type', '')}",
+        f"- object_id: {mailbox.get('object_id', '')}",
+        "",
+        "## Role Contract",
+        str(mailbox.get("role_contract", "")),
+        "",
+        "## Must Do",
+        *(f"- {item}" for item in (mailbox.get("must_do") or [])),
+        "",
+        "## Must Not Do",
+        *(f"- {item}" for item in (mailbox.get("must_not_do") or [])),
         "",
         "## Summary",
         str(summary),
@@ -119,11 +131,29 @@ def _dispatch_prompt(agent: str, mailbox: dict[str, object]) -> str:
 
     lines.extend(["", "## Suggested Prompt"])
     if agent == "review":
-        lines.append("审校当前 mailbox 指定的 coding branch 代码提交，只看代码、测试、spec/task 勾选一致性。")
+        if action == "review_delivery":
+            lines.append("审校当前 delivery 对象，必须给出结构化 verdict；若发现新问题，必须写回新的 findings，不得只写自然语言结论。")
+        elif action == "wait_for_rework_submissions":
+            lines.append("当前处于 REJECT 之后的重做等待阶段；保持待命，等待 coding 分支重新提交 delivery。")
+        else:
+            lines.append("审校当前 mailbox 指定的 coding branch 代码提交，只看代码、测试、spec/task 勾选一致性。")
     elif agent == "main":
-        lines.append("统筹执行当前 mailbox 指令，只处理 merge/sync/cleanup，不把审计报告交给 review-work。")
+        if action == "process_triage":
+            lines.append("统筹处理当前 triage 对象，为 findings 形成明确 assignment；必要时安排后续合并、提交与同步，不要停留在文本分析。")
+        elif action == "process_verdict":
+            lines.append("统筹处理当前 review verdict，生成 merge 或重新分配决策，并准备主线收口动作。")
+        elif action == "apply_merge_decision":
+            lines.append("统筹执行当前 merge_decision，完成合并、必要提交、同步和对象链条收口，不要只停留在待处理状态。")
+        elif action == "hold_merge_and_wait_for_rework":
+            lines.append("当前禁止主线 merge；先处理 reject/rework 阻塞，等待 coding 分支重做并重新提交。")
+        else:
+            lines.append("统筹执行当前 mailbox 指令，负责 merge、commit、sync、cleanup 和主线收口，不把审计报告交给 review-work。")
+    elif action == "execute_assignment":
+        lines.append("执行当前 assignment，对应工作完成后必须生成 structured delivery。")
     elif action == "wait_for_review":
         lines.append("当前分支等待 review-work 审校，不继续重叠开发；仅在需要时回执 waiting_review。")
+    elif action == "consume_reject_cleanup_and_sync_main":
+        lines.append("当前分支收到 REJECT；先清理本地改动并同步 main，只重做被拒绝的基线问题，再重新提交 delivery。")
     elif action == "cleanup_or_commit_local_changes":
         lines.append("先收口本地未提交改动，再继续本轮分配任务。")
     else:
@@ -174,6 +204,8 @@ def _write_heartbeat(
         "mailbox_changed": changed,
         "ack_status": ack.get("status", "") if ack else "",
         "ack_at": ack.get("acked_at", "") if ack else "",
+        "object_type": mailbox.get("object_type", ""),
+        "object_id": mailbox.get("object_id", ""),
     }
     _heartbeat_path(repo_root, agent).write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
     return payload
@@ -188,7 +220,38 @@ def process_once(
     workflow_mailbox._validate_agent(agent)
     ensure_agent_runtime_dirs(repo_root)
 
-    mailbox = workflow_mailbox.read_mailbox(repo_root, agent)
+    try:
+        mailbox = workflow_mailbox.read_mailbox(repo_root, agent)
+    except FileNotFoundError:
+        heartbeat = _write_heartbeat(
+            repo_root,
+            agent,
+            mailbox={},
+            ack=None,
+            changed=False,
+        )
+        _save_state(
+            repo_root,
+            agent,
+            {
+                "agent": agent,
+                "updated_at": _utc_now(),
+                "fingerprint": "",
+                "mailbox_generated_at": "",
+                "last_action": "",
+                "last_ack_status": "",
+                "reason": "mailbox_missing",
+            },
+        )
+        return {
+            "agent": agent,
+            "changed": False,
+            "dispatch_path": "",
+            "mailbox": None,
+            "ack": None,
+            "heartbeat": heartbeat,
+            "reason": "mailbox_missing",
+        }
     previous = _load_state(repo_root, agent)
     fingerprint = _mailbox_fingerprint(mailbox)
     changed = previous is None or previous.get("fingerprint") != fingerprint
