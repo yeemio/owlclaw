@@ -275,6 +275,19 @@ async def test_get_state_success_async_callable_object(registry):
 
 
 @pytest.mark.asyncio
+async def test_get_state_timeout_returns_runtime_error(skills_loader_with_skill):
+    registry = CapabilityRegistry(skills_loader_with_skill, state_timeout_seconds=0.01)
+
+    async def slow_provider():
+        await asyncio.sleep(0.05)
+        return {"ok": True}
+
+    registry.register_state("market_state", slow_provider)
+    with pytest.raises(RuntimeError, match="timed out"):
+        await registry.get_state("market_state")
+
+
+@pytest.mark.asyncio
 async def test_get_state_not_found_raises(registry):
     """get_state() for unregistered state raises ValueError."""
     with pytest.raises(ValueError, match="No state provider registered"):

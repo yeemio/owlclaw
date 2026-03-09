@@ -8,7 +8,7 @@ from owlclaw.capabilities.skill_doc_extractor import SkillDocExtractor
 def test_skill_doc_extractor_reads_supported_text_file(tmp_path: Path) -> None:
     source = tmp_path / "sop.md"
     source.write_text("# Inventory\n每天早上 9 点检查库存", encoding="utf-8")
-    extractor = SkillDocExtractor(available_tools=["check-inventory"])
+    extractor = SkillDocExtractor(available_tools=["check-inventory"], base_dir=tmp_path)
     text = extractor.read_document(source)
     assert "检查库存" in text
 
@@ -16,7 +16,7 @@ def test_skill_doc_extractor_reads_supported_text_file(tmp_path: Path) -> None:
 def test_skill_doc_extractor_rejects_unsupported_suffix(tmp_path: Path) -> None:
     source = tmp_path / "sop.pdf"
     source.write_text("x", encoding="utf-8")
-    extractor = SkillDocExtractor()
+    extractor = SkillDocExtractor(base_dir=tmp_path)
     try:
         extractor.read_document(source)
     except ValueError as exc:
@@ -32,7 +32,7 @@ def test_skill_doc_extractor_generates_skill_files(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     output_dir = tmp_path / "skills"
-    extractor = SkillDocExtractor(available_tools=["send-email", "check-inventory"])
+    extractor = SkillDocExtractor(available_tools=["send-email", "check-inventory"], base_dir=tmp_path)
     written = extractor.generate_from_document(source, output_dir)
     assert len(written) == 1
     generated = written[0]
@@ -40,3 +40,15 @@ def test_skill_doc_extractor_generates_skill_files(tmp_path: Path) -> None:
     content = generated.read_text(encoding="utf-8")
     assert "name: daily-inventory-monitor" in content
     assert "## Suggested Tools" in content
+
+
+def test_skill_doc_extractor_rejects_document_outside_base_dir(tmp_path: Path) -> None:
+    outside = tmp_path.parent / "outside.md"
+    outside.write_text("# x\n", encoding="utf-8")
+    extractor = SkillDocExtractor(base_dir=tmp_path)
+    try:
+        extractor.read_document(outside)
+    except ValueError as exc:
+        assert "document path must stay under base_dir" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")

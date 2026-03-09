@@ -28,6 +28,11 @@ def test_add_short_term_validates_inputs() -> None:
         memory.add_short_term("user", " ")
 
 
+def test_memory_file_rejects_path_outside_base_dir() -> None:
+    with pytest.raises(ValueError, match="memory_file must stay under base_dir"):
+        MemorySystem(memory_file="../MEMORY.md", base_dir=".")
+
+
 def test_long_term_write_appends_memory_file_and_indexes(tmp_path: Path) -> None:
     events: list[dict[str, object]] = []
 
@@ -36,7 +41,7 @@ def test_long_term_write_appends_memory_file_and_indexes(tmp_path: Path) -> None
             events.append(payload)
 
     memory_path = tmp_path / "MEMORY.md"
-    memory = MemorySystem(memory_file=str(memory_path), vector_index=_Index())
+    memory = MemorySystem(memory_file="MEMORY.md", base_dir=str(tmp_path), vector_index=_Index())
     record = memory.write("Important lesson", tags=["Risk", "Ops"])
     assert "important lesson" in memory_path.read_text(encoding="utf-8").lower()
     assert record["tags"] == ["risk", "ops"]
@@ -58,7 +63,7 @@ def test_long_term_search_and_recall_relevant() -> None:
 
 def test_memory_file_size_limit_rotates_archive(tmp_path: Path) -> None:
     memory_path = tmp_path / "MEMORY.md"
-    memory = MemorySystem(memory_file=str(memory_path), memory_file_size_limit_bytes=1024)
+    memory = MemorySystem(memory_file="MEMORY.md", base_dir=str(tmp_path), memory_file_size_limit_bytes=1024)
     for _ in range(40):
         memory.write("x" * 120, tags=["archive"])
     archives = list(tmp_path.glob("MEMORY.*.archive.md"))
@@ -118,7 +123,7 @@ def test_property_short_term_auto_compression(limit: int, words: list[str]) -> N
 def test_property_long_term_write_round_trip(content: str, tags: list[str], tmp_path: Path) -> None:
     """Property 6: write() persists retrievable long-term record (round-trip)."""
     memory_path = tmp_path / "MEMORY.md"
-    memory = MemorySystem(memory_file=str(memory_path))
+    memory = MemorySystem(memory_file="MEMORY.md", base_dir=str(tmp_path))
     memory.write(content, tags=tags)
     hits = memory.search(content, limit=1)
     assert hits
@@ -162,7 +167,7 @@ def test_property_vector_search_relevance(pair: tuple[str, str]) -> None:
 def test_property_memory_file_size_limit(payload: list[str], tmp_path: Path) -> None:
     """Property 8: memory file is rotated when size exceeds configured limit."""
     memory_path = tmp_path / "MEMORY.md"
-    memory = MemorySystem(memory_file=str(memory_path), memory_file_size_limit_bytes=1024)
+    memory = MemorySystem(memory_file="MEMORY.md", base_dir=str(tmp_path), memory_file_size_limit_bytes=1024)
     for item in payload:
         memory.write(item, tags=["limit"])
     archives = list(tmp_path.glob("MEMORY.*.archive.md"))

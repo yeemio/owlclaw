@@ -27,12 +27,20 @@ class SkillDocExtractor:
 
     SUPPORTED_SUFFIXES = {".md", ".markdown", ".txt"}
 
-    def __init__(self, *, available_tools: list[str] | None = None) -> None:
+    def __init__(self, *, available_tools: list[str] | None = None, base_dir: Path | str | None = None) -> None:
         self.available_tools = available_tools if available_tools is not None else parse_available_tools()
         self.matcher = CapabilityMatcher(enable_llm_confirmation=False)
+        self.base_dir = Path(base_dir).expanduser().resolve() if base_dir else Path.cwd().resolve()
+
+    def _resolve_within_base_dir(self, path: Path | str, *, field_name: str) -> Path:
+        candidate = Path(path).expanduser()
+        normalized = candidate.resolve()
+        if not normalized.is_relative_to(self.base_dir):
+            raise ValueError(f"{field_name} must stay under base_dir")
+        return normalized
 
     def read_document(self, path: Path | str) -> str:
-        target = Path(path).expanduser()
+        target = self._resolve_within_base_dir(path, field_name="document path")
         if target.suffix.lower() not in self.SUPPORTED_SUFFIXES:
             raise ValueError("only markdown/text documents are supported (.md/.markdown/.txt)")
         if not target.exists() or not target.is_file():
@@ -86,7 +94,7 @@ class SkillDocExtractor:
     def generate_from_document(self, source: Path | str, output_dir: Path | str) -> list[Path]:
         text = self.read_document(source)
         drafts = self.extract_from_text(text)
-        out_root = Path(output_dir).expanduser()
+        out_root = self._resolve_within_base_dir(output_dir, field_name="output_dir")
         out_root.mkdir(parents=True, exist_ok=True)
         written: list[Path] = []
         for draft in drafts:

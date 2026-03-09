@@ -36,6 +36,7 @@ class MemorySystem:
         *,
         memory_file: str | None = None,
         memory_file_size_limit_bytes: int = 10 * 1024 * 1024,
+        base_dir: str | None = None,
         vector_index: Any | None = None,
         embedder: Any | None = None,
     ) -> None:
@@ -45,12 +46,23 @@ class MemorySystem:
             raise ValueError("memory_file_size_limit_bytes must be an integer >= 1024")
         self.short_term_token_limit = short_term_token_limit
         self.memory_file_size_limit_bytes = memory_file_size_limit_bytes
-        self.memory_file = Path(memory_file) if memory_file else None
+        resolved_base_dir = Path(base_dir).expanduser().resolve() if base_dir else Path.cwd().resolve()
+        self.memory_file = (
+            self._validate_memory_file_path(memory_file, base_dir=resolved_base_dir) if memory_file else None
+        )
         self.vector_index = vector_index
         self.embedder = embedder
         self.vector_index_degraded = False
         self._short_term_entries: list[_ShortTermEntry] = []
         self._long_term_entries: list[_LongTermEntry] = []
+
+    @staticmethod
+    def _validate_memory_file_path(memory_file: str, *, base_dir: Path) -> Path:
+        candidate = Path(memory_file).expanduser()
+        normalized = (candidate if candidate.is_absolute() else base_dir / candidate).resolve()
+        if not normalized.is_relative_to(base_dir):
+            raise ValueError("memory_file must stay under base_dir")
+        return normalized
 
     def add_short_term(self, role: str, content: str) -> None:
         """Append a short-term memory entry for this run."""

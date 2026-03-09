@@ -30,7 +30,13 @@ class CapabilityRegistry:
         states: Dictionary mapping state names to provider functions
     """
 
-    def __init__(self, skills_loader: SkillsLoader, *, handler_timeout_seconds: float = 30.0):
+    def __init__(
+        self,
+        skills_loader: SkillsLoader,
+        *,
+        handler_timeout_seconds: float = 30.0,
+        state_timeout_seconds: float | None = None,
+    ):
         """Initialize the CapabilityRegistry.
 
         Args:
@@ -41,6 +47,11 @@ class CapabilityRegistry:
         self.handlers: dict[str, Callable] = {}
         self.states: dict[str, Callable] = {}
         self._handler_timeout_seconds = self._normalize_timeout(handler_timeout_seconds)
+        self._state_timeout_seconds = (
+            self._handler_timeout_seconds
+            if state_timeout_seconds is None
+            else self._normalize_timeout(state_timeout_seconds)
+        )
 
     @staticmethod
     def _normalize_timeout(value: Any) -> float:
@@ -276,7 +287,7 @@ class CapabilityRegistry:
         try:
             result = provider()
             if inspect.isawaitable(result):
-                result = await result
+                result = await asyncio.wait_for(result, timeout=self._state_timeout_seconds)
 
             if not isinstance(result, dict):
                 raise TypeError(
@@ -285,6 +296,10 @@ class CapabilityRegistry:
                 )
 
             return result
+        except asyncio.TimeoutError as e:
+            raise RuntimeError(
+                f"State provider '{state_name}' timed out after {self._state_timeout_seconds:.2f}s"
+            ) from e
         except Exception as e:
             logger.exception("State provider '%s' invocation failed", state_name)
             raise RuntimeError(

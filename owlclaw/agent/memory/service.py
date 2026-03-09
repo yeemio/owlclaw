@@ -42,6 +42,20 @@ class MemoryService:
         self._classifier = SecurityClassifier()
         self._security_filter = MemorySecurityFilter()
         self._fallback_embedder: EmbeddingProvider | None = None
+        self._fallback_base_dir = Path.cwd().resolve()
+        self._file_fallback_path = self._validate_local_file_path(
+            self._config.file_fallback_path,
+            field_name="file_fallback_path",
+            base_dir=self._fallback_base_dir,
+        )
+
+    @staticmethod
+    def _validate_local_file_path(raw_path: str, *, field_name: str, base_dir: Path) -> Path:
+        candidate = Path(raw_path).expanduser()
+        normalized = (candidate if candidate.is_absolute() else base_dir / candidate).resolve()
+        if not normalized.is_relative_to(base_dir):
+            raise ValueError(f"{field_name} must stay under working directory")
+        return normalized
 
     def _get_fallback_embedder(self) -> EmbeddingProvider:
         if self._fallback_embedder is not None:
@@ -111,7 +125,7 @@ class MemoryService:
         tags: list[str],
         security_level: SecurityLevel,
     ) -> UUID:
-        path = Path(self._config.file_fallback_path)
+        path = self._file_fallback_path
         path.parent.mkdir(parents=True, exist_ok=True)
         memory_id = uuid4()
         sanitized_content = content.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")

@@ -210,3 +210,13 @@ async def test_recall_rejects_blank_tenant_id() -> None:
             tenant_id="  ",
             query="hello",
         )
+
+
+def test_memory_service_rejects_fallback_path_outside_working_directory() -> None:
+    store = _CaptureLimitStore()
+    with pytest.raises(ValueError, match="file_fallback_path must stay under working directory"):
+        MemoryService(
+            store=store,
+            embedder=_DummyEmbedder(),
+            config=MemoryConfig(file_fallback_path="../MEMORY.md"),
+        )
