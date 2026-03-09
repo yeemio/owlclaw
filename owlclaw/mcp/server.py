@@ -104,7 +104,7 @@ class McpProtocolServer:
             return self._error(request_id, -32602, f"missing required field: {exc.args[0]}")
         except Exception as exc:  # pragma: no cover - defensive guard
             logger.exception("Unhandled MCP server error")
-            return self._error(request_id, -32005, f"execution error: {exc}")
+            return self._error(request_id, -32005, "execution error")
 
     async def process_stdio_line(self, line: str) -> str:
         """Parse one input line and return JSON-RPC response line."""

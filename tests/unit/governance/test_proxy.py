@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from owlclaw.governance.ledger import LedgerQueryFilters
 from owlclaw.governance.proxy import GovernanceProxy, GovernanceRejectedError
 
 
@@ -81,6 +82,27 @@ async def test_proxy_opens_circuit_after_consecutive_failures() -> None:
             messages=[{"role": "user", "content": "x"}],
             caller="mionyee.ai.trading_decision",
         )
+
+
+@pytest.mark.asyncio
+async def test_proxy_failure_audit_reason_is_sanitized() -> None:
+    async def _fail_call(**_: object) -> dict[str, object]:
+        raise RuntimeError("provider down secret token=abc")
+
+    proxy = GovernanceProxy(llm_call=_fail_call, tenant_id="mionyee")
+    with pytest.raises(RuntimeError):
+        await proxy.acompletion(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": "x"}],
+            caller="mionyee.ai.trading_decision",
+        )
+
+    rows = await proxy.ledger.query_records(
+        tenant_id="mionyee",
+        filters=LedgerQueryFilters(capability_name="mionyee.ai.trading_decision", status="failure"),
+    )
+    assert len(rows) == 1
+    assert rows[0].error_message == "RuntimeError"
 
 
 @pytest.mark.asyncio

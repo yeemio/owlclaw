@@ -154,11 +154,12 @@ class GovernanceProxy:
         except Exception as exc:
             async with self._lock:
                 self._on_failure(caller)
+            safe_reason = self._safe_reason(exc)
             await self._record_event(
                 caller=caller,
                 model=model,
                 status="failure",
-                reason=str(exc),
+                reason=safe_reason,
                 elapsed_ms=int((time.perf_counter() - started) * 1000),
             )
             logger.exception("GovernanceProxy LLM call failed")
@@ -255,6 +256,11 @@ class GovernanceProxy:
             status=status,
             error_message=reason or None,
         )
+
+    @staticmethod
+    def _safe_reason(exc: Exception) -> str:
+        """Return sanitized reason string for audit records."""
+        return exc.__class__.__name__
 
     @staticmethod
     def _normalize_response(raw: Any) -> dict[str, Any]:

@@ -10,6 +10,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.responses import Response
@@ -78,6 +79,43 @@ class _RateLimiter:
             return True
         window.append(now)
         return False
+
+
+_SENSITIVE_HEADERS = {
+    "authorization",
+    "proxy-authorization",
+    "x-api-key",
+    "x-signature",
+    "x-admin-token",
+    "cookie",
+    "set-cookie",
+}
+
+
+async def _read_body_with_limit(request: Request, max_bytes: int) -> bytes:
+    chunks: list[bytes] = []
+    total = 0
+    async for chunk in request.stream():
+        total += len(chunk)
+        if total > max_bytes:
+            raise ValueError("request body too large")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+def _sanitize_logged_headers(headers: dict[str, str]) -> dict[str, str]:
+    sanitized: dict[str, str] = {}
+    for key, value in headers.items():
+        normalized = key.strip().lower()
+        if normalized in _SENSITIVE_HEADERS:
+            if normalized in {"authorization", "proxy-authorization"}:
+                prefix = value.split(" ", 1)[0].strip()
+                sanitized[key] = f"{prefix} ***" if prefix else "***"
+            else:
+                sanitized[key] = "***"
+            continue
+        sanitized[key] = value
+    return sanitized
 
 
 def create_webhook_app(
@@ -156,8 +194,9 @@ def create_webhook_app(
         request_id = str(getattr(request.state, "request_id", uuid4()))
         ip = request.client.host if request.client else "unknown"
         user_agent = request.headers.get("user-agent")
-        raw_body_bytes = await request.body()
-        if len(raw_body_bytes) > cfg.max_content_length_bytes:
+        try:
+            raw_body_bytes = await _read_body_with_limit(request, cfg.max_content_length_bytes)
+        except ValueError:
             await monitoring.record_metric(MetricRecord(name="request_status", value=1, tags={"status": "failure"}))
             return _error_response(
                 ValidationError(
@@ -187,7 +226,7 @@ def create_webhook_app(
                 event_type="request",
                 source_ip=ip,
                 user_agent=user_agent,
-                data={"headers": dict(request.headers)},
+                data={"headers": _sanitize_logged_headers(dict(request.headers))},
             )
         )
         limit_error = limiter.check(ip=ip, endpoint_id=endpoint_id)
@@ -389,12 +428,12 @@ def create_webhook_app(
             },
         )
 
-    @app.get("/events")
+    @app.get("/events", dependencies=[Depends(require_admin_token)])
     async def events(request_id: str | None = None) -> JSONResponse:
         items = await event_logger.query_events(EventFilter(tenant_id="default", request_id=request_id))
         return JSONResponse(
             status_code=200,
-            content={"items": [asdict(item) for item in items]},
+            content={"items": [jsonable_encoder(asdict(item)) for item in items]},
         )
 
     return app

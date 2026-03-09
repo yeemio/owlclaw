@@ -9,6 +9,8 @@ from hypothesis import strategies as st
 from owlclaw.integrations.queue_adapters import MockQueueAdapter
 from owlclaw.triggers.queue import MockIdempotencyStore, QueueTrigger, QueueTriggerConfig, RawMessage
 
+_SAFE_TENANT = st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_", min_size=1, max_size=12)
+
 
 class _CountingRuntime:
     def __init__(self) -> None:
@@ -277,7 +279,7 @@ def test_property_retry_attempts_are_bounded(fail_times: int, max_retries: int) 
 
 @given(
     event_name=st.one_of(st.none(), st.text(min_size=1, max_size=12)),
-    tenant_id=st.one_of(st.none(), st.text(min_size=1, max_size=12)),
+    tenant_id=st.one_of(st.none(), _SAFE_TENANT),
 )
 @settings(max_examples=20, deadline=None)
 def test_property_trigger_event_context_and_routing(event_name: str | None, tenant_id: str | None) -> None:
@@ -293,7 +295,7 @@ def test_property_trigger_event_context_and_routing(event_name: str | None, tena
             headers["x-tenant-id"] = tenant_id
 
         trigger = QueueTrigger(
-            config=QueueTriggerConfig(queue_name="q", consumer_group="g"),
+            config=QueueTriggerConfig(queue_name="q", consumer_group="g", trust_tenant_header=True),
             adapter=adapter,
             agent_runtime=runtime,
         )
@@ -348,7 +350,7 @@ def test_property_processing_error_respects_ack_policy(policy: str) -> None:
 
 
 @given(
-    tenant_id=st.text(min_size=1, max_size=12),
+    tenant_id=_SAFE_TENANT,
     event_name=st.text(min_size=1, max_size=12),
 )
 @settings(max_examples=20, deadline=None)
@@ -359,7 +361,7 @@ def test_property_ledger_success_record_completeness(tenant_id: str, event_name:
         adapter = MockQueueAdapter()
         ledger = _CollectLedger()
         trigger = QueueTrigger(
-            config=QueueTriggerConfig(queue_name="q", consumer_group="g"),
+            config=QueueTriggerConfig(queue_name="q", consumer_group="g", trust_tenant_header=True),
             adapter=adapter,
             agent_runtime=_CaptureRuntime(),
             ledger=ledger,
@@ -388,8 +390,8 @@ def test_property_ledger_success_record_completeness(tenant_id: str, event_name:
 
 
 @given(
-    tenant_a=st.text(min_size=1, max_size=8),
-    tenant_b=st.text(min_size=1, max_size=8).filter(lambda t: t.strip() != ""),
+    tenant_a=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_", min_size=1, max_size=8),
+    tenant_b=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-_", min_size=1, max_size=8),
 )
 @settings(max_examples=20, deadline=None)
 def test_property_multi_tenant_isolation_propagation(tenant_a: str, tenant_b: str) -> None:
@@ -403,7 +405,7 @@ def test_property_multi_tenant_isolation_propagation(tenant_a: str, tenant_b: st
         ledger = _CollectLedger()
         runtime = _CaptureRuntime()
         trigger = QueueTrigger(
-            config=QueueTriggerConfig(queue_name="q", consumer_group="g"),
+            config=QueueTriggerConfig(queue_name="q", consumer_group="g", trust_tenant_header=True),
             adapter=adapter,
             agent_runtime=runtime,
             governance=governance,

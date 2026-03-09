@@ -62,6 +62,7 @@ _MODEL_CONTEXT_WINDOWS: dict[str, int] = {
     "gpt-4o": 128_000,
     "gpt-4o-mini": 128_000,
 }
+_INTERNAL_ERROR_MESSAGE = "Tool execution failed due to an internal error."
 
 
 def _coerce_confirmation_flag(value: Any) -> bool:
@@ -160,6 +161,7 @@ class AgentRuntime:
         self._langfuse = self._init_langfuse_client()
         self._tool_call_timestamps: deque[float] = deque()
         self._tool_call_timestamps_lock = asyncio.Lock()
+        self._run_lock = asyncio.Lock()
         self._skills_context_cache: OrderedDict[tuple[str, str | None, tuple[str, ...]], str] = OrderedDict()
         self._visible_tools_cache: OrderedDict[tuple[str, str, tuple[str, ...]], list[dict[str, Any]]] = OrderedDict()
         self._run_handler_names_snapshot: tuple[str, ...] | None = None
@@ -254,6 +256,11 @@ class AgentRuntime:
         if isinstance(exc, ConnectionError | OSError):
             return "dependency_error"
         return "runtime_error"
+
+    @staticmethod
+    def _safe_error_message(exc: Exception) -> str:
+        """Return a sanitized exception description safe for logs/records."""
+        return exc.__class__.__name__
 
     async def _notify_error(
         self,
@@ -381,7 +388,7 @@ class AgentRuntime:
                 context=None,
                 stage="setup",
                 category=category,
-                message=str(exc),
+                message=self._safe_error_message(exc),
             )
             raise
 
@@ -586,114 +593,115 @@ class AgentRuntime:
             context.trigger,
             context.focus,
         )
-        self._capture_run_skill_snapshot()
-        self._inject_skill_env_for_run()
+        async with self._run_lock:
+            self._capture_run_skill_snapshot()
+            self._inject_skill_env_for_run()
 
-        if context.trigger == "heartbeat":
-            if self._heartbeat_checker is None:
-                logger.info(
-                    "Heartbeat checker unavailable, running decision loop directly agent_id=%s run_id=%s",
-                    context.agent_id,
-                    context.run_id,
-                )
-            else:
-                has_events = self._heartbeat_payload_has_events(context.payload)
-                if not has_events:
-                    has_events = await self._heartbeat_checker.check_events(context.tenant_id)
-                if not has_events:
+            if context.trigger == "heartbeat":
+                if self._heartbeat_checker is None:
                     logger.info(
-                        "Heartbeat no events, skipping LLM agent_id=%s run_id=%s",
+                        "Heartbeat checker unavailable, running decision loop directly agent_id=%s run_id=%s",
                         context.agent_id,
                         context.run_id,
                     )
-                    self._reset_builtin_tool_budget(context.run_id)
-                    self._release_skill_content_cache()
-                    self._clear_run_skill_snapshot()
-                    self._restore_skill_env_after_run()
-                    return {
-                        "status": "skipped",
-                        "run_id": context.run_id,
-                        "reason": "heartbeat_no_events",
-                    }
+                else:
+                    has_events = self._heartbeat_payload_has_events(context.payload)
+                    if not has_events:
+                        has_events = await self._heartbeat_checker.check_events(context.tenant_id)
+                    if not has_events:
+                        logger.info(
+                            "Heartbeat no events, skipping LLM agent_id=%s run_id=%s",
+                            context.agent_id,
+                            context.run_id,
+                        )
+                        self._reset_builtin_tool_budget(context.run_id)
+                        self._release_skill_content_cache()
+                        self._clear_run_skill_snapshot()
+                        self._restore_skill_env_after_run()
+                        return {
+                            "status": "skipped",
+                            "run_id": context.run_id,
+                            "reason": "heartbeat_no_events",
+                        }
 
-        trace = self._create_trace(context)
-        previous_trace_ctx = TraceContext.get_current()
-        trace_id = getattr(trace, "id", None)
-        if isinstance(trace_id, str) and trace_id:
-            TraceContext.set_current(
-                TraceContext(
-                    trace_id=trace_id,
-                    metadata={
-                        "agent_id": context.agent_id,
-                        "run_id": context.run_id,
-                        "langfuse_trace": trace,
-                    },
+            trace = self._create_trace(context)
+            previous_trace_ctx = TraceContext.get_current()
+            trace_id = getattr(trace, "id", None)
+            if isinstance(trace_id, str) and trace_id:
+                TraceContext.set_current(
+                    TraceContext(
+                        trace_id=trace_id,
+                        metadata={
+                            "agent_id": context.agent_id,
+                            "run_id": context.run_id,
+                            "langfuse_trace": trace,
+                        },
+                    )
                 )
-            )
 
-        run_timeout_raw = self.config.get(
-            "run_timeout_seconds", _DEFAULT_RUN_TIMEOUT_SECONDS
-        )
-        if isinstance(run_timeout_raw, bool):
-            run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
-        else:
-            try:
-                run_timeout = float(run_timeout_raw)
-            except (TypeError, ValueError):
-                run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
-        if run_timeout <= 0:
-            run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
-        if not math.isfinite(run_timeout):
-            run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
-        try:
-            decision_loop_fn = self._decision_loop
-            decision_loop_params = inspect.signature(decision_loop_fn).parameters
-            if len(decision_loop_params) >= 2:
-                decision_loop_coro = decision_loop_fn(context, trace)
-            else:
-                decision_loop_coro = decision_loop_fn(context)
-            result = await asyncio.wait_for(
-                decision_loop_coro,
-                timeout=run_timeout,
+            run_timeout_raw = self.config.get(
+                "run_timeout_seconds", _DEFAULT_RUN_TIMEOUT_SECONDS
             )
-        except asyncio.TimeoutError:
-            logger.error(
-                "Agent run timed out agent_id=%s run_id=%s timeout=%ss",
+            if isinstance(run_timeout_raw, bool):
+                run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
+            else:
+                try:
+                    run_timeout = float(run_timeout_raw)
+                except (TypeError, ValueError):
+                    run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
+            if run_timeout <= 0:
+                run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
+            if not math.isfinite(run_timeout):
+                run_timeout = _DEFAULT_RUN_TIMEOUT_SECONDS
+            try:
+                decision_loop_fn = self._decision_loop
+                decision_loop_params = inspect.signature(decision_loop_fn).parameters
+                if len(decision_loop_params) >= 2:
+                    decision_loop_coro = decision_loop_fn(context, trace)
+                else:
+                    decision_loop_coro = decision_loop_fn(context)
+                result = await asyncio.wait_for(
+                    decision_loop_coro,
+                    timeout=run_timeout,
+                )
+            except asyncio.TimeoutError:
+                logger.error(
+                    "Agent run timed out agent_id=%s run_id=%s timeout=%ss",
+                    context.agent_id,
+                    context.run_id,
+                    run_timeout,
+                )
+                self._update_trace(
+                    trace,
+                    status="error",
+                    output=f"run timed out after {run_timeout:.1f}s",
+                )
+                await self._notify_error(
+                    context=context,
+                    stage="run",
+                    category="timeout_error",
+                    message=f"run timed out after {run_timeout:.1f}s",
+                )
+                return {
+                    "status": "failed",
+                    "run_id": context.run_id,
+                    "error": f"run timed out after {run_timeout:.1f}s",
+                }
+            finally:
+                self._reset_builtin_tool_budget(context.run_id)
+                self._release_skill_content_cache()
+                self._clear_run_skill_snapshot()
+                self._restore_skill_env_after_run()
+                TraceContext.set_current(previous_trace_ctx)
+
+            logger.info(
+                "Agent run completed agent_id=%s run_id=%s iterations=%s",
                 context.agent_id,
                 context.run_id,
-                run_timeout,
+                result.get("iterations", 0),
             )
-            self._update_trace(
-                trace,
-                status="error",
-                output=f"run timed out after {run_timeout:.1f}s",
-            )
-            await self._notify_error(
-                context=context,
-                stage="run",
-                category="timeout_error",
-                message=f"run timed out after {run_timeout:.1f}s",
-            )
-            return {
-                "status": "failed",
-                "run_id": context.run_id,
-                "error": f"run timed out after {run_timeout:.1f}s",
-            }
-        finally:
-            self._reset_builtin_tool_budget(context.run_id)
-            self._release_skill_content_cache()
-            self._clear_run_skill_snapshot()
-            self._restore_skill_env_after_run()
-            TraceContext.set_current(previous_trace_ctx)
-
-        logger.info(
-            "Agent run completed agent_id=%s run_id=%s iterations=%s",
-            context.agent_id,
-            context.run_id,
-            result.get("iterations", 0),
-        )
-        self._update_trace(trace, status="success", output=result)
-        return {"status": "completed", "run_id": context.run_id, **result}
+            self._update_trace(trace, status="success", output=result)
+            return {"status": "completed", "run_id": context.run_id, **result}
 
     def _reset_builtin_tool_budget(self, run_id: str) -> None:
         """Reset built-in tool run budget after each run to avoid state growth."""
@@ -821,14 +829,14 @@ class AgentRuntime:
                     estimated_cost=Decimal("0"),
                     execution_time_ms=0,
                     status="error",
-                    error_message=str(exc),
+                    error_message=self._safe_error_message(exc),
                 )
                 logger.error("LLM call failed agent_id=%s run_id=%s error=%s", context.agent_id, context.run_id, exc)
                 await self._notify_error(
                     context=context,
                     stage="llm_call",
                     category=self._classify_error(exc),
-                    message=str(exc),
+                    message=self._safe_error_message(exc),
                 )
                 messages.append(
                     {
@@ -1242,10 +1250,14 @@ class AgentRuntime:
                     status="success",
                 )
                 return result
-            except Exception as exc:
+            except Exception:
                 logger.exception("Built-in tool '%s' failed", tool_name)
-                self._finish_observation(observation, status="error", output={"error": str(exc)})
-                return {"error": str(exc)}
+                self._finish_observation(
+                    observation,
+                    status="error",
+                    output={"error": _INTERNAL_ERROR_MESSAGE},
+                )
+                return {"error": _INTERNAL_ERROR_MESSAGE}
 
         if self.registry is None:
             return {"error": f"No capability registry configured for tool '{tool_name}'"}
@@ -1376,11 +1388,12 @@ class AgentRuntime:
             return {"error": f"Capability '{tool_name}' is not registered"}
         except Exception as exc:
             logger.exception("Tool '%s' failed", tool_name)
+            safe_error = self._safe_error_message(exc)
             await self._notify_error(
                 context=context,
                 stage="tool_execution",
                 category=self._classify_error(exc),
-                message=f"{tool_name}: {exc}",
+                message=f"{tool_name}: {safe_error}",
             )
             if self._ledger is not None:
                 execution_time_ms = (time.perf_counter_ns() - start_ns) // 1_000_000
@@ -1402,15 +1415,19 @@ class AgentRuntime:
                         llm_tokens_output=0,
                         estimated_cost=Decimal("0"),
                         status="error",
-                        error_message=str(exc),
+                        error_message=safe_error,
                         migration_weight=migration_outcome["migration_weight"],
                         execution_mode="auto",
                         risk_level=Decimal(str(migration_outcome["risk_level"])),
                     )
                 except Exception as ledger_exc:
                     logger.exception("Ledger record_execution failed: %s", ledger_exc)
-            self._finish_observation(observation, status="error", output={"error": str(exc)})
-            return {"error": str(exc)}
+            self._finish_observation(
+                observation,
+                status="error",
+                output={"error": _INTERNAL_ERROR_MESSAGE},
+            )
+            return {"error": _INTERNAL_ERROR_MESSAGE}
 
     def _enforce_tool_permissions(self, tool_name: str) -> str | None:
         security = self.config.get("security")

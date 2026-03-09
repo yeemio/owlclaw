@@ -29,6 +29,7 @@ from owlclaw.integrations.langfuse import TokenCalculator, TraceContext
 logger = logging.getLogger(__name__)
 
 _mock_config: dict[str, Any] | None = None
+_DEFAULT_LLM_TIMEOUT_SECONDS = 30.0
 
 
 class _MockFunction:
@@ -167,6 +168,10 @@ async def acompletion(**kwargs: Any) -> Any:
     Returns:
         litellm response object (e.g. choices[0].message with tool_calls).
     """
+    timeout = kwargs.get("timeout")
+    if timeout is None and kwargs.get("request_timeout") is None:
+        kwargs["timeout"] = _DEFAULT_LLM_TIMEOUT_SECONDS
+
     if _mock_config is not None:
         task_type = kwargs.get("task_type")
         key = task_type if isinstance(task_type, str) and task_type.strip() else "default"
@@ -229,7 +234,7 @@ async def acompletion(**kwargs: Any) -> Any:
                         "cost_usd": 0.0,
                         "latency_ms": round((time.perf_counter() - started) * 1000, 3),
                         "status": "error",
-                        "error_message": str(exc),
+                        "error_type": exc.__class__.__name__,
                     },
                 )
         raise
@@ -237,6 +242,9 @@ async def acompletion(**kwargs: Any) -> Any:
 
 async def aembedding(**kwargs: Any) -> Any:
     """Async embedding facade. All embedding callers must use this."""
+    timeout = kwargs.get("timeout")
+    if timeout is None and kwargs.get("request_timeout") is None:
+        kwargs["timeout"] = _DEFAULT_LLM_TIMEOUT_SECONDS
     import litellm
 
     return await litellm.aembedding(**kwargs)

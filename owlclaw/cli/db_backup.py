@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from contextlib import suppress
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
 
 import typer
 from typer.models import OptionInfo
@@ -63,7 +63,15 @@ def _connection_string_for_pg_dump(url: str) -> str:
         pass
     else:
         url = "postgresql://" + url
-    return url
+    parsed = urlparse(url)
+    if not parsed.password:
+        return url
+    username = parsed.username or ""
+    host = parsed.hostname or ""
+    port = f":{parsed.port}" if parsed.port is not None else ""
+    userinfo = f"{username}@" if username else ""
+    sanitized_netloc = f"{userinfo}{host}{port}"
+    return urlunparse(parsed._replace(netloc=sanitized_netloc))
 
 
 def _build_pg_dump_env(url: str) -> dict[str, str]:
@@ -192,7 +200,7 @@ def backup_command(
         schema_only,
         data_only,
     )
-    env = _build_pg_dump_env(_connection_string_for_pg_dump(database_url))
+    env = _build_pg_dump_env(database_url)
 
     if verbose:
         typer.echo("Running pg_dump...")

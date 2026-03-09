@@ -300,7 +300,7 @@ class OwlHubClient:
         try:
             if tarfile.is_tarfile(downloaded):
                 with tarfile.open(downloaded, "r:*") as archive:
-                    archive.extractall(target)
+                    _safe_extract_tar(archive, target)
             else:
                 if downloaded.is_dir():
                     shutil.copytree(downloaded, target, dirs_exist_ok=True)
@@ -423,3 +423,19 @@ def _is_cache_fresh(path: Path, *, ttl_seconds: int) -> bool:
 
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _safe_extract_tar(archive: tarfile.TarFile, target: Path) -> None:
+    target_root = target.resolve()
+    members = archive.getmembers()
+    for member in members:
+        # Reject link entries to avoid archive-based filesystem escapes.
+        if member.islnk() or member.issym():
+            raise ValueError(f"unsafe archive member: {member.name}")
+        member_path = (target_root / member.name).resolve()
+        try:
+            member_path.relative_to(target_root)
+        except ValueError as exc:
+            raise ValueError(f"unsafe archive member path: {member.name}") from exc
+    for member in members:
+        archive.extract(member, path=target_root)

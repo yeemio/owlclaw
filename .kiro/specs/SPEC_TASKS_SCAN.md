@@ -2,7 +2,7 @@
 
 > **来源**: `docs/ARCHITECTURE_ANALYSIS.md` v4.8（§6.2 MVP 模块清单 + §9 下一步行动 + §4.8 编排框架标准接入 + §2.7 产品愿景 + §4.10 Skills 生态 + §8.5 安全模型 + §5.3.1 六类触发入口 + §6.4 技术栈 + §8.9 Spec 洞察反哺架构 + §4.11 Protocol-first + §4.12 Declarative Binding + cli-migrate 集成 + §4.13 双模接入架构 + §4.14 运行模式契约/闭环门禁/Heartbeat 韧性 + §4.15 Web Console 决策）+ `docs/DATABASE_ARCHITECTURE.md` + `docs/DUAL_MODE_ARCHITECTURE_DECISION.md`（已批准 2026-02-27）
 > **角色**: Spec 循环的**单一真源**（Authority），所有 spec 的 tasks.md 必须映射到此清单
-> **最后更新**: 2026-03-07（深度审计报告 124 条发现；Phase 15 已收口，Phase 16 #45–#55 进行中，workflow-closed-loop 已完成对象层 + audit/triage + assignment/delivery/verdict/merge 全链路，并补齐人工分配边界校验、claim/lease、幂等恢复、岗位合同注入与审计只读约束）
+> **最后更新**: 2026-03-09（高价值收尾模式持续推进：完成 API/Queue/Signal/db_change 高风险修复 8 项并补测，新增 Queue tenant 签名多密钥轮换窗口与 API run 查询审计字段，沉淀审计收口清单/回归矩阵/技术债清单/故障SOP）
 
 ---
 
@@ -471,8 +471,8 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-07（深度审计 124+4 条；当前有效批次切换为 Phase 16R 双 `REJECT` 返工；主 worktree spec 循环累计 63 项已完成） |
-| 当前批次 | **Phase 16R（triage 校准）**：以 `review(codex-work): REJECT` / `review(codex-gpt-work): REJECT` 为唯一有效队列。Backlog：#30-#44（未分配）、#56-#124（含第 32 轮 #83-#87、第 33 轮 #88-#94、第 34 轮 #95-#103、第 35 轮 #104-#113、第 36 轮 #114-#116、第 37 轮 #117-#119、第 38 轮 #120-#121、第 39–40 轮 #122-#124 生产代码补审），以及 2026-03-07 独立审计新增 4 条 Low findings（runtime/API trigger）。 |
+| 最后更新 | 2026-03-09（高价值收尾模式：完成 API/Queue/Signal/db_change 高风险修复补测，并新增 Queue tenant 签名多密钥轮换窗口与 API run 查询审计字段能力及回归，沉淀审计终清单/回归矩阵/技术债清单/故障SOP 资产） |
+| 当前批次 | **Phase 16R + 收尾资产化**：持续消费审计 backlog 的同时，新增“回归矩阵 + 故障手册 + 可执行技术债 + 审计收口清单”四类可交接资产。 |
 | 批次状态 | Phase 16 follow-up 的早期 `APPROVE` 已被 rollback 审查覆盖；当前生效 verdict 为：`codex-work` 命中 memory/path/registry 安全基线回滚（R1-R4），`codex-gpt-work` 命中 runtime/LLM 脱敏与 timeout 回滚（G1-G5）。`review-work` ahead 的 REJECT 包仅作为 gate 与回流依据，不进入 `main`；本轮不执行主线 merge。 |
 | 已完成项 | 23) D25 Kafka connect timeout；24) D15-D29 全部修复并合入 main；25) 深度审计主审 27 轮完成；26) 加审补充 #55；27) #45-#55 已完成统筹分配；28) Phase 16 工作状态完成校准；29) `codex-gpt-work` 已提交首批 #45/#46 修复，进入待审；30) 深度审计第 28–31 轮 #56-#82；31) 第 32 轮 #83-#87；32) 第 33 轮 #88-#94；33) 审计复核 Order 45–94；34) 第 34 轮 #95-#103；35) 审计复核 Order 95–103；36) 第 35 轮（scripts 非 workflow）#104-#113；37) 审计复核第四轮 113 条；38) 第 36 轮（tests 关键路径）#114-#116；39) 审计复核第五轮 116 条；40) 第 37 轮（tests 扩展）#117-#119；41) 审计复核第六轮 119 条；42) 第 38 轮（tests web + CWD）#120-#121；43) 审计复核第七轮 121 条；44) 第 39 轮（生产代码补审）#122-#123 入报告；45) 审计复核第八轮：SPEC_TASKS_SCAN 与报告对齐至 124 条、Backlog #56-#124；46) 主 worktree spec 循环：audit-deep-remediation 可选 Task 8（skill_env_allowlist）实现+验收；47) test-infra backlog：pytest-html 测试报告 HTML 输出（dev 依赖 + docs/TESTING.md）；48) test-infra backlog：pytest-xdist 并行测试说明（docs/TESTING.md）；49) ruff F841/F811 修复（server.py exc、capabilities.py 重复 import）；50) docs/TESTING.md 补充覆盖率 HTML 报告命令；51) test-infra tasks.md 最后更新日期校准；52) local-devenv tasks.md 最后更新 2026-03-07；53) test-infra design 补充 Backlog「测试数据工厂」选型说明（factory_boy vs polyfactory）；54) docs/TESTING.md 常用命令补充 unit / not integration marker 示例；55) test-infra design 补充 Backlog「Kafka 本地 mock」实现要点；56) declarative-binding tasks.md 最后更新 2026-03-07；57) docs/TESTING.md 补充 -m \"not slow\" 示例；58) repo-hygiene / contract-testing tasks.md 最后更新 2026-03-07；59) docs/TESTING.md 补充 -x 首次失败即停；60) gateway-runtime-ops / cross-lang-golden-path / protocol-governance / examples tasks.md 最后更新 2026-03-07；61) cli-migrate tasks.md 最后更新 2026-03-07；62) docs/TESTING.md 补充 -v 详细输出示例；63) release / release-supply-chain / console-integration / console-frontend / protocol-first-api-mcp / mcp-server / security / skill-templates / governance tasks.md 最后更新 2026-03-07。 |
 | 下一待执行 | 1) `codex-work` 直接消费 `0f29664c`，按 R1-R4 返工 `MemoryService`/`MemorySystem`/`SkillDocExtractor`/`CapabilityRegistry`；2) `codex-gpt-work` 直接消费 `6f867c7a`，按 G1-G5 返工 runtime/LLM 脱敏与 timeout；3) `review-work` 等待两支返工提交并输出新的 verdict，当前 REJECT 包不递送 `main`；4) `main` 继续隔离本地改动，暂不执行 merge；5) 双 REJECT 收口后，再分配 2026-03-07 独立审计新增 4 条 Low findings。 |

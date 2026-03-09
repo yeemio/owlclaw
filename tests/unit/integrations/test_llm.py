@@ -676,6 +676,22 @@ async def test_aembedding_delegates_to_litellm() -> None:
 
 
 @pytest.mark.asyncio
+async def test_acompletion_sets_default_timeout() -> None:
+    with patch("litellm.acompletion", new_callable=AsyncMock) as mock:
+        mock.return_value = _fake_litellm_response("ok", [], 4, 2)
+        await acompletion(model="gpt-4o-mini", messages=[{"role": "user", "content": "hi"}])
+    assert mock.call_args.kwargs["timeout"] == 30.0
+
+
+@pytest.mark.asyncio
+async def test_aembedding_respects_explicit_timeout_override() -> None:
+    with patch("litellm.aembedding", new_callable=AsyncMock) as mock:
+        mock.return_value = {"data": [{"embedding": [0.1, 0.2]}]}
+        await aembedding(model="text-embedding-3-small", input=["hello"], timeout=5.0)
+    assert mock.call_args.kwargs["timeout"] == 5.0
+
+
+@pytest.mark.asyncio
 async def test_acompletion_uses_module_mock_response_with_tool_calls() -> None:
     configure_mock(
         {

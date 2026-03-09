@@ -4,6 +4,7 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from decimal import Decimal
+from time import monotonic
 from typing import Any
 
 import pytest
@@ -156,13 +157,16 @@ def test_api_trigger_server_async_mode_returns_202_and_result_query() -> None:
         run_id = response.json()["run_id"]
 
         for _ in range(20):
-            result = client.get(f"/runs/{run_id}/result")
+            result = client.get(f"/runs/{run_id}/result", headers={"X-API-Key": "k1"})
             if result.json().get("status") == "completed":
                 break
             time.sleep(0.01)
 
         assert result.status_code == 200
         assert result.json()["status"] == "completed"
+        assert result.json()["query_audit"]["query_identity"].startswith("api_key:")
+        assert result.json()["query_audit"]["query_tenant"] == "default"
+        assert result.json()["query_audit"]["query_count"] >= 1
 
 
 def test_api_trigger_server_runs_cache_bounded_by_maxsize() -> None:
@@ -183,7 +187,7 @@ def test_api_trigger_server_runs_cache_bounded_by_maxsize() -> None:
             run_ids.append(resp.json()["run_id"])
         for run_id in run_ids:
             for _ in range(50):
-                result = client.get(f"/runs/{run_id}/result")
+                result = client.get(f"/runs/{run_id}/result", headers={"X-API-Key": "k1"})
                 if result.json().get("status") in ("completed", "failed"):
                     break
                 time.sleep(0.02)
@@ -348,7 +352,7 @@ def test_api_trigger_server_register_signal_admin_success() -> None:
     with TestClient(server.app) as client:
         response = client.post(
             "/admin/signal",
-            headers={"Authorization": "Bearer token-1"},
+            headers={"Authorization": "Bearer token-1", "x-owlclaw-tenant": "default"},
             json={"type": "pause", "agent_id": "a1", "tenant_id": "default"},
         )
     assert response.status_code == 200
@@ -377,14 +381,98 @@ def test_api_trigger_server_signal_admin_payload_validation() -> None:
     with TestClient(server.app) as client:
         bad_instruct = client.post(
             "/admin/signal",
-            headers={"Authorization": "Bearer token-1"},
+            headers={"Authorization": "Bearer token-1", "x-owlclaw-tenant": "default"},
             json={"type": "instruct", "agent_id": "a1", "message": "   "},
         )
         bad_payload = client.post(
             "/admin/signal",
-            headers={"Authorization": "Bearer token-1"},
+            headers={"Authorization": "Bearer token-1", "x-owlclaw-tenant": "default"},
             json={"type": "pause"},
         )
 
     assert bad_instruct.status_code == 400
     assert bad_payload.status_code == 400
+
+
+def test_api_trigger_server_async_run_result_requires_same_identity() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1", "k2"}), agent_runtime=runtime)
+    server.register(APITriggerConfig(path="/api/v1/async-secure", method="POST", event_name="async_secure", response_mode="async"))
+
+    with TestClient(server.app) as client:
+        accepted = client.post("/api/v1/async-secure", headers={"X-API-Key": "k1"}, json={"a": 1})
+        assert accepted.status_code == 202
+        run_id = accepted.json()["run_id"]
+
+        unauthorized = client.get(f"/runs/{run_id}/result")
+        assert unauthorized.status_code == 401
+
+        cross_identity = client.get(f"/runs/{run_id}/result", headers={"X-API-Key": "k2"})
+        assert cross_identity.status_code == 404
+
+
+def test_api_trigger_server_run_result_includes_query_audit_tenant_header() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)
+    server.register(APITriggerConfig(path="/api/v1/async-audit", method="POST", event_name="async_audit", response_mode="async"))
+
+    with TestClient(server.app) as client:
+        accepted = client.post("/api/v1/async-audit", headers={"X-API-Key": "k1"}, json={"a": 1})
+        assert accepted.status_code == 202
+        run_id = accepted.json()["run_id"]
+
+        result = client.get(
+            f"/runs/{run_id}/result",
+            headers={"X-API-Key": "k1", "x-owlclaw-tenant": "tenant-observe"},
+        )
+        assert result.status_code == 200
+        assert result.json()["query_audit"]["query_tenant"] == "tenant-observe"
+
+
+def test_api_trigger_server_signal_admin_requires_tenant_binding_when_authenticated() -> None:
+    runtime = _Runtime()
+    state = AgentStateManager(max_pending_instructions=4)
+    router = SignalRouter(handlers=default_handlers(state=state, runtime=runtime))
+    server = APITriggerServer(auth_provider=BearerTokenAuthProvider({"token-1"}), agent_runtime=runtime)
+    server.register_signal_admin(signal_router=router, require_auth=True)
+
+    with TestClient(server.app) as client:
+        missing_header = client.post(
+            "/admin/signal",
+            headers={"Authorization": "Bearer token-1"},
+            json={"type": "pause", "agent_id": "a1", "tenant_id": "default"},
+        )
+        mismatch = client.post(
+            "/admin/signal",
+            headers={"Authorization": "Bearer token-1", "x-owlclaw-tenant": "tenant-a"},
+            json={"type": "pause", "agent_id": "a1", "tenant_id": "tenant-b"},
+        )
+    assert missing_header.status_code == 403
+    assert missing_header.json()["reason"] == "tenant_binding_required"
+    assert mismatch.status_code == 403
+    assert mismatch.json()["reason"] == "tenant_mismatch"
+
+
+@pytest.mark.asyncio
+async def test_api_trigger_server_stop_cancels_background_async_tasks() -> None:
+    class _NeverReturnRuntime:
+        async def trigger_event(  # noqa: D401
+            self,
+            event_name: str,
+            payload: dict[str, Any],
+            focus: str | None = None,
+            tenant_id: str = "default",
+        ) -> dict[str, Any]:
+            _ = (event_name, payload, focus, tenant_id)
+            await asyncio.Future()
+            return {"ok": True}
+
+    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=_NeverReturnRuntime())
+    config = APITriggerConfig(path="/api/v1/async-cancel", method="POST", event_name="async_cancel", response_mode="async")
+
+    response = await server._handle_async(config, {"body": {"x": 1}}, None, monotonic(), "api_key:1234")  # noqa: SLF001
+    assert response.status_code == 202
+    assert len(server._background_tasks) == 1  # noqa: SLF001
+
+    await server.stop()
+    assert len(server._background_tasks) == 0  # noqa: SLF001

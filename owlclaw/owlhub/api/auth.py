@@ -11,6 +11,7 @@ import re
 import secrets
 import time
 import uuid
+from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any
 
@@ -53,15 +54,26 @@ class ApiKeyCreateResponse(BaseModel):
 class AuthManager:
     """Manage OAuth code exchange, JWT session, and API key validation."""
 
-    def __init__(self, *, secret: str | None = None, token_ttl_seconds: int = 3600) -> None:
+    def __init__(
+        self,
+        *,
+        secret: str | None = None,
+        token_ttl_seconds: int = 3600,
+        max_sessions: int = 5000,
+        max_api_keys: int = 5000,
+        max_rate_buckets: int = 10000,
+    ) -> None:
         raw_secret = secret if secret is not None else os.getenv("OWLHUB_AUTH_SECRET", "owlhub-dev-secret")
         self.secret = raw_secret if raw_secret else "owlhub-dev-secret"
         self.token_ttl_seconds = token_ttl_seconds
-        self.sessions: dict[str, float] = {}
-        self.api_keys: dict[str, tuple[str, str]] = {}
+        self.max_sessions = max(1, int(max_sessions))
+        self.max_api_keys = max(1, int(max_api_keys))
+        self.max_rate_buckets = max(1, int(max_rate_buckets))
+        self.sessions: OrderedDict[str, float] = OrderedDict()
+        self.api_keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self.rate_limit_window_seconds = 60
         self.rate_limit_per_window = 120
-        self.rate_bucket: dict[str, tuple[float, int]] = {}
+        self.rate_bucket: OrderedDict[str, tuple[float, int]] = OrderedDict()
 
     def exchange_github_code(self, *, github_code: str, role: str) -> TokenResponse:
         """Exchange pseudo GitHub OAuth2 code into signed JWT token."""
@@ -78,6 +90,7 @@ class AuthManager:
         payload = {"sub": user_id, "role": role, "iat": now, "exp": exp, "jti": jti}
         token = _encode_jwt(payload, self.secret)
         self.sessions[jti] = float(exp)
+        self._trim_sessions(now=time.time())
         return token
 
     def validate_jwt(self, token: str) -> Principal:
@@ -86,7 +99,9 @@ class AuthManager:
         if exp <= int(time.time()):
             raise HTTPException(status_code=401, detail="token expired")
         jti = str(payload.get("jti", ""))
-        if not jti or self.sessions.get(jti, 0) < time.time():
+        now = time.time()
+        self._trim_sessions(now=now)
+        if not jti or self.sessions.get(jti, 0) < now:
             raise HTTPException(status_code=401, detail="invalid session")
         return Principal(
             user_id=str(payload.get("sub", "")),
@@ -98,6 +113,7 @@ class AuthManager:
         raw = f"ok_{secrets.token_urlsafe(24)}"
         digest = _sha256(raw)
         self.api_keys[digest] = (user_id, role)
+        self._trim_api_keys()
         return raw
 
     def validate_api_key(self, api_key: str) -> Principal:
@@ -122,6 +138,7 @@ class AuthManager:
             start, count = now, 0
         count += 1
         self.rate_bucket[identity] = (start, count)
+        self._trim_rate_bucket(now=now)
         if count > self.rate_limit_per_window:
             raise HTTPException(status_code=429, detail="rate limit exceeded")
 
@@ -130,6 +147,25 @@ class AuthManager:
         if not client:
             client = request.client.host if request.client is not None else "unknown"
         self.check_rate_limit(f"ip:{client}")
+
+    def _trim_sessions(self, *, now: float) -> None:
+        expired = [session_id for session_id, expires_at in self.sessions.items() if expires_at < now]
+        for session_id in expired:
+            self.sessions.pop(session_id, None)
+        while len(self.sessions) > self.max_sessions:
+            self.sessions.popitem(last=False)
+
+    def _trim_api_keys(self) -> None:
+        while len(self.api_keys) > self.max_api_keys:
+            self.api_keys.popitem(last=False)
+
+    def _trim_rate_bucket(self, *, now: float) -> None:
+        stale_cutoff = now - self.rate_limit_window_seconds
+        stale = [identity for identity, (start, _count) in self.rate_bucket.items() if start < stale_cutoff]
+        for identity in stale:
+            self.rate_bucket.pop(identity, None)
+        while len(self.rate_bucket) > self.max_rate_buckets:
+            self.rate_bucket.popitem(last=False)
 
 
 def create_auth_router(auth: AuthManager) -> APIRouter:

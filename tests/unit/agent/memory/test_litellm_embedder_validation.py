@@ -56,6 +56,12 @@ async def test_embedder_uses_llm_integration_embedding_facade(monkeypatch: pytes
     assert out == [0.1, 0.2, 0.3, 0.4]
     assert captured["model"] == "text-embedding-3-small"
     assert captured["input"] == ["hello"]
+    assert captured["timeout"] == 30.0
+
+
+def test_embedder_rejects_non_positive_timeout() -> None:
+    with pytest.raises(ValueError, match="timeout_seconds must be positive"):
+        LiteLLMEmbedder(timeout_seconds=0)
 
 
 def test_memory_package_has_no_direct_litellm_imports() -> None:

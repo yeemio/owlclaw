@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from enum import Enum
@@ -183,7 +184,7 @@ class ReviewSystem:
 
     def list_appeals(self, *, review_id: str) -> list[AppealRecord]:
         """List appeals for one review id."""
-        path = self.storage_dir / f"{review_id}.appeals.json"
+        path = self._review_path(review_id, suffix=".appeals.json")
         if not path.exists():
             return []
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -212,6 +213,9 @@ class ReviewSystem:
         status: ReviewStatus,
         comments: str,
     ) -> ReviewRecord:
+        _validate_review_component("publisher", publisher)
+        _validate_review_component("skill_name", skill_name)
+        _validate_review_component("version", version)
         review_id = f"{publisher}-{skill_name}-{version}"
         return ReviewRecord(
             review_id=review_id,
@@ -224,14 +228,14 @@ class ReviewSystem:
         )
 
     def _read_record(self, review_id: str) -> ReviewRecord:
-        file_path = self.storage_dir / f"{review_id}.json"
+        file_path = self._review_path(review_id, suffix=".json")
         if not file_path.exists():
             raise FileNotFoundError(f"review not found: {review_id}")
         payload = json.loads(file_path.read_text(encoding="utf-8"))
         return _record_from_dict(payload)
 
     def _write_record(self, record: ReviewRecord) -> None:
-        file_path = self.storage_dir / f"{record.review_id}.json"
+        file_path = self._review_path(record.review_id, suffix=".json")
         file_path.write_text(json.dumps(asdict(record), ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _store_submission(
@@ -254,9 +258,19 @@ class ReviewSystem:
         return record
 
     def _write_appeals(self, *, review_id: str, appeals: list[AppealRecord]) -> None:
-        path = self.storage_dir / f"{review_id}.appeals.json"
+        path = self._review_path(review_id, suffix=".appeals.json")
         rows = [asdict(item) for item in appeals]
         path.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _review_path(self, review_id: str, *, suffix: str) -> Path:
+        normalized = _validate_review_id(review_id)
+        path = (self.storage_dir / f"{normalized}{suffix}").resolve()
+        storage_root = self.storage_dir.resolve()
+        try:
+            path.relative_to(storage_root)
+        except ValueError as exc:
+            raise ValueError("invalid review_id") from exc
+        return path
 
     def _notify(self, *, event_type: str, review_id: str, actor: str) -> None:
         self.notifications.append(
@@ -283,3 +297,21 @@ def _record_from_dict(payload: dict[str, str]) -> ReviewRecord:
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+_REVIEW_COMPONENT_PATTERN = re.compile(r"^[A-Za-z0-9._+-]{1,128}$")
+_REVIEW_ID_PATTERN = re.compile(r"^[A-Za-z0-9._+-]{1,128}-[A-Za-z0-9._+-]{1,128}-[A-Za-z0-9._+-]{1,128}$")
+
+
+def _validate_review_component(name: str, value: str) -> str:
+    normalized = str(value).strip()
+    if not _REVIEW_COMPONENT_PATTERN.fullmatch(normalized):
+        raise ValueError(f"invalid {name}")
+    return normalized
+
+
+def _validate_review_id(review_id: str) -> str:
+    normalized = str(review_id).strip()
+    if not _REVIEW_ID_PATTERN.fullmatch(normalized):
+        raise ValueError("invalid review_id")
+    return normalized

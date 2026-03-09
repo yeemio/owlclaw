@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import logging
+import os
 import time
 from dataclasses import dataclass
 from decimal import Decimal
@@ -267,10 +270,10 @@ class QueueTrigger:
                 detail=safe_error,
             )
 
-        status, agent_run_id = await self._process_envelope(raw_message, envelope, trace_id)
+        status, agent_run_id, tenant_id = await self._process_envelope(raw_message, envelope, trace_id)
         if status == "processed":
             duration_ms = (time.perf_counter() - started) * 1000
-            await self._record_success_execution(envelope, trace_id, duration_ms, agent_run_id)
+            await self._record_success_execution(envelope, tenant_id, trace_id, duration_ms, agent_run_id)
             self._processed_count += 1
             self._metrics.record_success(duration_ms)
             logger.info(
@@ -278,7 +281,7 @@ class QueueTrigger:
                 envelope.message_id,
                 trace_id,
                 self.config.queue_name,
-                envelope.tenant_id or "default",
+                tenant_id,
                 duration_ms,
             )
             return ProcessResult(
@@ -297,12 +300,13 @@ class QueueTrigger:
         raw_message: RawMessage,
         envelope: MessageEnvelope,
         trace_id: str,
-    ) -> tuple[str, str | None]:
+    ) -> tuple[str, str | None, str]:
         """Process a parsed envelope and apply ack policy behavior."""
-        governance_decision = await self._check_governance(envelope)
+        tenant_id = self._resolve_tenant_id(envelope)
+        governance_decision = await self._check_governance(envelope, tenant_id=tenant_id)
         if not governance_decision.allowed:
-            await self._handle_governance_rejection(raw_message, envelope, governance_decision, trace_id)
-            return ("governance_rejected", None)
+            await self._handle_governance_rejection(raw_message, envelope, tenant_id, governance_decision, trace_id)
+            return ("governance_rejected", None, tenant_id)
 
         if self.config.enable_dedup and self.idempotency_store is not None:
             dedup_key = envelope.dedup_key or envelope.message_id
@@ -315,16 +319,16 @@ class QueueTrigger:
                 self._dedup_hits += 1
                 self._metrics.record_dedup_hit()
                 await self.adapter.ack(raw_message)
-                return ("deduplicated", None)
+                return ("deduplicated", None, tenant_id)
 
         trigger_result: Any | None = None
         try:
-            trigger_result = await self._trigger_agent_with_retry(envelope, trace_id)
+            trigger_result = await self._trigger_agent_with_retry(envelope, trace_id, tenant_id)
         except Exception as exc:
             self._failed_count += 1
             self._metrics.record_failure()
             await self._handle_processing_error(raw_message, exc)
-            return ("processing_error", None)
+            return ("processing_error", None, tenant_id)
 
         if self.config.enable_dedup and self.idempotency_store is not None:
             dedup_key = envelope.dedup_key or envelope.message_id
@@ -338,9 +342,9 @@ class QueueTrigger:
                 logger.exception("Idempotency write failed for key %s", dedup_key)
 
         await self.adapter.ack(raw_message)
-        return ("processed", self._extract_agent_run_id(trigger_result))
+        return ("processed", self._extract_agent_run_id(trigger_result), tenant_id)
 
-    async def _check_governance(self, envelope: MessageEnvelope) -> GovernanceDecision:
+    async def _check_governance(self, envelope: MessageEnvelope, *, tenant_id: str) -> GovernanceDecision:
         """Run governance permission check when governance hook is provided."""
         if self.governance is None:
             return GovernanceDecision(allowed=True)
@@ -352,14 +356,17 @@ class QueueTrigger:
             "source": "queue",
             "queue": self.config.queue_name,
             "message_id": envelope.message_id,
-            "tenant_id": envelope.tenant_id or "default",
+            "tenant_id": tenant_id,
             "event_name": envelope.event_name or "queue_message",
         }
         try:
             result = await check_permission(context)
         except Exception:
             logger.exception("Governance check failed for message %s", envelope.message_id)
-            return GovernanceDecision(allowed=True)
+            return GovernanceDecision(
+                allowed=bool(self.config.governance_fail_open),
+                reason="governance_unavailable",
+            )
 
         if isinstance(result, bool):
             return GovernanceDecision(allowed=result)
@@ -380,13 +387,14 @@ class QueueTrigger:
         self,
         raw_message: RawMessage,
         envelope: MessageEnvelope,
+        tenant_id: str,
         decision: GovernanceDecision,
         trace_id: str,
     ) -> None:
         """Handle governance rejection with ledger audit and ack policy behavior."""
         self._failed_count += 1
         self._metrics.record_failure()
-        await self._record_governance_rejection(envelope, decision, trace_id)
+        await self._record_governance_rejection(envelope, tenant_id, decision, trace_id)
 
         reason = decision.reason or "governance_rejected"
         policy = self.config.ack_policy
@@ -404,6 +412,7 @@ class QueueTrigger:
     async def _record_governance_rejection(
         self,
         envelope: MessageEnvelope,
+        tenant_id: str,
         decision: GovernanceDecision,
         trace_id: str,
     ) -> None:
@@ -415,7 +424,7 @@ class QueueTrigger:
             return
         try:
             await record_execution(
-                tenant_id=envelope.tenant_id or "default",
+                tenant_id=tenant_id,
                 agent_id="queue-trigger",
                 run_id=trace_id,
                 capability_name="queue_trigger",
@@ -438,7 +447,7 @@ class QueueTrigger:
         except Exception:
             logger.exception("Failed to record governance rejection for message %s", envelope.message_id)
 
-    async def _trigger_agent_with_retry(self, envelope: MessageEnvelope, trace_id: str) -> Any | None:
+    async def _trigger_agent_with_retry(self, envelope: MessageEnvelope, trace_id: str, tenant_id: str) -> Any | None:
         """Trigger AgentRuntime with retry and exponential backoff."""
         if self.agent_runtime is None:
             return None
@@ -461,7 +470,7 @@ class QueueTrigger:
                     event_name=envelope.event_name or "queue_message",
                     payload=payload,
                     focus=self.config.focus,
-                    tenant_id=envelope.tenant_id or "default",
+                    tenant_id=tenant_id,
                 )
             except Exception as exc:
                 last_error = exc
@@ -519,6 +528,7 @@ class QueueTrigger:
     async def _record_success_execution(
         self,
         envelope: MessageEnvelope,
+        tenant_id: str,
         trace_id: str,
         duration_ms: float,
         agent_run_id: str | None,
@@ -529,7 +539,6 @@ class QueueTrigger:
         record_execution = getattr(self.ledger, "record_execution", None)
         if not callable(record_execution):
             return
-        tenant_id = envelope.tenant_id or "default"
         try:
             await record_execution(
                 tenant_id=tenant_id,
@@ -560,3 +569,69 @@ class QueueTrigger:
             )
         except Exception:
             logger.exception("Failed to record successful execution for message %s", envelope.message_id)
+
+    def _resolve_tenant_id(self, envelope: MessageEnvelope) -> str:
+        """Resolve effective tenant id using secure default behavior."""
+        default_tenant = self.config.default_tenant_id.strip() or "default"
+        if not self.config.trust_tenant_header:
+            return default_tenant
+        trusted_producers = self.config.trusted_producers
+        producer_header = self.config.trusted_producer_header.strip().lower() or "x-producer-id"
+        producer_id = envelope.headers.get(producer_header, "")
+        producer_id = producer_id.strip() if isinstance(producer_id, str) else ""
+        if trusted_producers:
+            if producer_id not in trusted_producers:
+                logger.warning(
+                    "Queue tenant header ignored because producer is not trusted message_id=%s producer_id=%s",
+                    envelope.message_id,
+                    producer_id or "<missing>",
+                )
+                return default_tenant
+        header_name = self.config.tenant_header_name.strip().lower() or "x-tenant-id"
+        raw_tenant = envelope.headers.get(header_name, "")
+        if isinstance(raw_tenant, str) and raw_tenant.strip():
+            tenant_candidate = raw_tenant.strip()
+            if not self._is_valid_tenant_signature(envelope, tenant_candidate, producer_id):
+                return default_tenant
+            return tenant_candidate
+        return default_tenant
+
+    def _is_valid_tenant_signature(self, envelope: MessageEnvelope, tenant_id: str, producer_id: str) -> bool:
+        """Validate tenant header signature when configured."""
+        env_names = self._signature_secret_env_names()
+        if not env_names:
+            return True
+        signature_header = self.config.tenant_signature_header.strip().lower() or "x-tenant-signature"
+        signature = envelope.headers.get(signature_header, "")
+        signature = signature.strip() if isinstance(signature, str) else ""
+        if not signature:
+            logger.warning("Queue tenant signature missing message_id=%s", envelope.message_id)
+            return False
+        payload = f"{envelope.message_id}:{tenant_id}:{producer_id}"
+        for env_name in env_names:
+            secret = os.getenv(env_name, "").strip()
+            if not secret:
+                continue
+            expected = hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+            if hmac.compare_digest(signature, expected):
+                return True
+        logger.warning(
+            "Queue tenant signature invalid message_id=%s checked_secrets=%d",
+            envelope.message_id,
+            len(env_names),
+        )
+        return False
+
+    def _signature_secret_env_names(self) -> list[str]:
+        """Return normalized signature secret env names for key rotation windows."""
+        env_names: list[str] = []
+        if self.config.tenant_signature_secret_env is not None:
+            normalized = self.config.tenant_signature_secret_env.strip()
+            if normalized:
+                env_names.append(normalized)
+        if self.config.tenant_signature_secret_envs:
+            for item in self.config.tenant_signature_secret_envs:
+                normalized = item.strip()
+                if normalized and normalized not in env_names:
+                    env_names.append(normalized)
+        return env_names

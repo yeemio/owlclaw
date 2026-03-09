@@ -69,7 +69,7 @@ def test_api_trigger_integration_async_mode_and_result_query() -> None:
 
         found_completed = False
         for _ in range(10):
-            result = client.get(f"/runs/{run_id}/result")
+            result = client.get(f"/runs/{run_id}/result", headers={"X-API-Key": "k1"})
             if result.status_code == 200 and result.json().get("status") == "completed":
                 found_completed = True
                 break
