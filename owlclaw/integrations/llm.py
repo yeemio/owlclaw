@@ -152,6 +152,18 @@ def configure_mock(mock_responses: dict[str, Any] | None) -> None:
         return
     _mock_config = dict(mock_responses)
 
+
+def _coerce_timeout(timeout_value: Any) -> float | None:
+    if timeout_value is None or isinstance(timeout_value, bool):
+        return None
+    try:
+        timeout = float(timeout_value)
+    except (TypeError, ValueError):
+        return None
+    if timeout <= 0:
+        return None
+    return timeout
+
 # ---------------------------------------------------------------------------
 # Minimal facade (architecture rule)
 # ---------------------------------------------------------------------------
@@ -180,12 +192,17 @@ async def acompletion(**kwargs: Any) -> Any:
 
     import litellm
 
+    timeout_seconds = _coerce_timeout(kwargs.get("timeout"))
+
     trace_ctx = TraceContext.get_current()
     trace = trace_ctx.metadata.get("langfuse_trace") if trace_ctx and trace_ctx.metadata else None
     model_name = str(kwargs.get("model", ""))
     started = time.perf_counter()
     try:
-        response = await litellm.acompletion(**kwargs)
+        if timeout_seconds is not None:
+            response = await asyncio.wait_for(litellm.acompletion(**kwargs), timeout=timeout_seconds)
+        else:
+            response = await litellm.acompletion(**kwargs)
         if trace is not None and hasattr(trace, "generation"):
             prompt_tokens, completion_tokens, total_tokens = TokenCalculator.extract_tokens_from_response(response)
             cost = TokenCalculator.calculate_cost(model_name, prompt_tokens, completion_tokens)
@@ -229,7 +246,8 @@ async def acompletion(**kwargs: Any) -> Any:
                         "cost_usd": 0.0,
                         "latency_ms": round((time.perf_counter() - started) * 1000, 3),
                         "status": "error",
-                        "error_message": str(exc),
+                        "error_type": type(exc).__name__,
+                        "error_message": "internal_error",
                     },
                 )
         raise
@@ -239,6 +257,9 @@ async def aembedding(**kwargs: Any) -> Any:
     """Async embedding facade. All embedding callers must use this."""
     import litellm
 
+    timeout_seconds = _coerce_timeout(kwargs.get("timeout"))
+    if timeout_seconds is not None:
+        return await asyncio.wait_for(litellm.aembedding(**kwargs), timeout=timeout_seconds)
     return await litellm.aembedding(**kwargs)
 
 
@@ -379,6 +400,7 @@ class LLMConfig(BaseModel):
     task_type_routing: list[TaskTypeRouting] = Field(default_factory=list)
     max_retries: int = 3
     retry_delay_seconds: float = 1.0
+    timeout_seconds: float = 30.0
     langfuse_enabled: bool = False
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
@@ -548,6 +570,7 @@ class LLMClient:
             last_model = model
             mc = self.config.models.get(model)
             call_params = {**params, "model": model}
+            call_params.setdefault("timeout", self.config.timeout_seconds)
             if mc:
                 api_key = os.environ.get(mc.api_key_env, "").strip()
                 if api_key:
@@ -712,7 +735,10 @@ class LLMClient:
         except Exception as e:
             if trace:
                 with contextlib.suppress(Exception):
-                    trace.update(status="error", output=str(e))
+                    trace.update(
+                        status="error",
+                        output={"error_type": type(e).__name__, "error_message": "internal_error"},
+                    )
             raise
 
 

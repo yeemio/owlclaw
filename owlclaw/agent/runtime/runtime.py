@@ -351,6 +351,45 @@ class AgentRuntime:
             except Exception:
                 logger.debug("Langfuse observation %s() failed", method_name, exc_info=True)
 
+    @classmethod
+    def _is_sensitive_observation_key(cls, key: Any) -> bool:
+        if not isinstance(key, str):
+            return False
+        lowered = key.strip().lower()
+        if not lowered:
+            return False
+        sensitive_markers = (
+            "password",
+            "secret",
+            "token",
+            "api_key",
+            "authorization",
+            "cookie",
+            "credential",
+            "bearer",
+        )
+        return any(marker in lowered for marker in sensitive_markers)
+
+    @classmethod
+    def _redact_observation_payload(cls, payload: Any) -> Any:
+        if isinstance(payload, dict):
+            out: dict[Any, Any] = {}
+            for key, value in payload.items():
+                if cls._is_sensitive_observation_key(key):
+                    out[key] = "[REDACTED]"
+                else:
+                    out[key] = cls._redact_observation_payload(value)
+            return out
+        if isinstance(payload, list):
+            return [cls._redact_observation_payload(item) for item in payload]
+        if isinstance(payload, tuple):
+            return tuple(cls._redact_observation_payload(item) for item in payload)
+        return payload
+
+    @staticmethod
+    def _safe_internal_error(exc: Exception, *, prefix: str) -> str:
+        return f"{prefix}:{type(exc).__name__}"
+
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
@@ -821,14 +860,14 @@ class AgentRuntime:
                     estimated_cost=Decimal("0"),
                     execution_time_ms=0,
                     status="error",
-                    error_message=str(exc),
+                    error_message=self._safe_internal_error(exc, prefix="llm_call_failed"),
                 )
                 logger.error("LLM call failed agent_id=%s run_id=%s error=%s", context.agent_id, context.run_id, exc)
                 await self._notify_error(
                     context=context,
                     stage="llm_call",
                     category=self._classify_error(exc),
-                    message=str(exc),
+                    message=self._safe_internal_error(exc, prefix="llm_call_failed"),
                 )
                 messages.append(
                     {
@@ -914,9 +953,9 @@ class AgentRuntime:
                 )
             except Exception as exc:
                 logger.warning(
-                    "Final summarization failed after max iterations (max_iterations=%s): %s",
+                    "Final summarization failed after max iterations (max_iterations=%s, error_type=%s)",
                     max_iterations,
-                    exc,
+                    type(exc).__name__,
                     exc_info=True,
                 )
                 messages.append(
@@ -1218,7 +1257,9 @@ class AgentRuntime:
             observation = self._observe_tool(
                 trace,
                 "tool_execution",
-                {"tool": tool_name, "run_id": context.run_id, "arguments": builtin_arguments},
+                self._redact_observation_payload(
+                    {"tool": tool_name, "run_id": context.run_id, "arguments": builtin_arguments}
+                ),
             )
             try:
                 result = await self.builtin_tools.execute(tool_name, builtin_arguments, ctx)
@@ -1322,7 +1363,9 @@ class AgentRuntime:
         observation = self._observe_tool(
             trace,
             "tool_execution",
-            {"tool": tool_name, "run_id": context.run_id, "arguments": invoke_arguments},
+            self._redact_observation_payload(
+                {"tool": tool_name, "run_id": context.run_id, "arguments": invoke_arguments}
+            ),
         )
         start_ns = time.perf_counter_ns()
         try:

@@ -1257,6 +1257,62 @@ metadata:
         assert result["final_response"] != ""
 
     @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
+    async def test_final_summarization_error_is_sanitized(self, mock_llm, tmp_path) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        mock_llm.side_effect = [
+            _make_llm_response(tool_calls=[tc]),
+            RuntimeError("provider secret backend details"),
+        ]
+        registry = MagicMock()
+        registry.handlers = {"market_scan": MagicMock()}
+        registry.list_capabilities.return_value = [{"name": "market_scan", "description": "scan"}]
+        registry.invoke_handler = AsyncMock(return_value={"ok": True})
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+            config={"max_function_calls": 1},
+        )
+        await rt.setup()
+        result = await rt.run(AgentRunContext(agent_id="bot", trigger="cron"))
+        assert result["status"] == "completed"
+        assert result["final_response"] == "Reached max iterations and final summarization failed due to an internal error."
+
+    async def test_execute_tool_redacts_sensitive_observation_arguments(self, tmp_path) -> None:
+        tc = _make_tool_call(
+            "market_scan",
+            {
+                "symbol": "AAPL",
+                "api_key": "sk-live-secret",
+                "nested": {"authorization": "Bearer abc"},
+            },
+        )
+        registry = MagicMock()
+        registry.get_capability_metadata.return_value = {"name": "market_scan", "task_type": "analysis"}
+        registry.invoke_handler = AsyncMock(return_value={"ok": True})
+        rt = AgentRuntime(
+            agent_id="bot",
+            app_dir=_make_app_dir(tmp_path),
+            registry=registry,
+        )
+        captured: dict[str, object] = {}
+
+        def _capture_observation(_trace: object, _name: str, payload: dict[str, object]) -> None:
+            captured["payload"] = payload
+            return None
+
+        with patch.object(AgentRuntime, "_observe_tool", new=staticmethod(_capture_observation)):
+            await rt._execute_tool(tc, AgentRunContext(agent_id="bot", trigger="cron"), trace=object())
+
+        payload = captured["payload"]
+        assert isinstance(payload, dict)
+        arguments = payload["arguments"]
+        assert isinstance(arguments, dict)
+        assert arguments["api_key"] == "[REDACTED]"
+        assert arguments["nested"]["authorization"] == "[REDACTED]"
+        assert arguments["symbol"] == "AAPL"
+
+    @patch("owlclaw.agent.runtime.runtime.llm_integration.acompletion")
     async def test_invalid_max_function_calls_falls_back_to_default(
         self, mock_llm, tmp_path
     ) -> None:
