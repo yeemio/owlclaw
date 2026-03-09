@@ -2,7 +2,7 @@
 
 > **角色**: 多 Worktree 并行开发的任务分配唯一真源  
 > **更新者**: 人工（或 Cursor 辅助）  
-> **最后更新**: 2026-03-09（`main` 已吸收 Phase 16R 等价修复与 runtime/trigger 安全加固，`review-work` / `codex-work` / `codex-gpt-work` 已同步最新主线；下一步切换为 2026-03-07 独立审计新增 4 条 Low findings 的 triage 与重新分配）
+> **最后更新**: 2026-03-09（`main` 已吸收 Phase 16R 等价修复、runtime/trigger 安全加固，以及 2026-03-07 独立审计新增 4 条 Low findings 的收口；`review-work` / `codex-work` / `codex-gpt-work` 已同步最新主线；下一步回到 backlog `#56-#124` 的重新分配）
 
 ---
 
@@ -49,7 +49,7 @@
 - 需要人工参与决策的关键路径实现
 - 紧急 hotfix
 
-**当前编码任务**：`console-browser-real-e2e`、`audit-deep-remediation` 主线修复、Phase 16R 等价安全修复与本轮 runtime/trigger hardening 已进入 `main`；当前切换为独立审计新增 4 条 Low findings 的 triage，以及 backlog `#56-#124` 的重新排程。
+**当前编码任务**：`console-browser-real-e2e`、`audit-deep-remediation` 主线修复、Phase 16R 等价安全修复、本轮 runtime/trigger hardening，以及 2026-03-07 独立审计 4 条 Low findings 已进入 `main`；当前切换为 backlog `#56-#124` 的重新排程与下一批分配。
 
 ---
 
@@ -149,7 +149,7 @@ Spec 一致性：
 
 **权限**：全仓库读 + 轻量修正（文档、注释、类型注解、测试补全）。不做功能实现。可以在 review-work 分支上直接修复审校发现的轻量问题。
 
-**审校状态（2026-03-09 校准）**：Phase 16 follow-up 早期 `APPROVE` / 后续 `REJECT` / `FIX_NEEDED` 历史链路已不再作为当前派单依据；其等价修复与更高基线的 runtime/trigger 安全收口已进入 `main`（`5ee82dc8`），并已同步到 `review-work`（`0047fe55`）、`codex-work`（`e074081e`）、`codex-gpt-work`（`fe030544`）。当前不再维持 Phase 16R 冻结态；`review-work` 的下一职责是基于新主线 triage 2026-03-07 独立审计新增 4 条 Low findings，并输出新的非重叠分配。
+**审校状态（2026-03-09 校准）**：Phase 16 follow-up 早期 `APPROVE` / 后续 `REJECT` / `FIX_NEEDED` 历史链路已不再作为当前派单依据；其等价修复与更高基线的 runtime/trigger 安全收口已进入 `main`（`5ee82dc8`），并已同步到 `review-work`（`0047fe55`）、`codex-work`（`e074081e`）、`codex-gpt-work`（`fe030544`）。2026-03-07 独立审计新增 4 条 Low findings 已在主线直接收口：最终 summarization 异常分支已为固定文案，`_finish_observation()` 增加 `update()` fallback，API trigger ledger URL 改为 path-only，`run_id` 增加长度/字符集校验。`review-work` 的下一职责切回 backlog `#56-#124` 的 triage 与审校入口。
 
 **审校输出格式**（每次 Review 后 commit message 中记录）：
 
@@ -178,7 +178,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **config-propagation-fix** | ✅ 25/25 | 已完成并合并到 main |
 | **security-hardening** | ✅ 46/46 | 已完成并合并到 main |
 
-**当前任务**：无活跃编码任务。Phase 16R 对应修复已由主线收口并同步。下一批预留接收 2026-03-07 独立审计新增 4 条 Low findings 中与 runtime/tooling 路径更接近的非重叠子集，待 `review-work` 在新基线上完成 triage 后再开工。
+**当前任务**：无活跃编码任务。Phase 16R 与 2026-03-07 独立审计 4 条 Low findings 对应修复已由主线收口并同步。下一批预留接收 backlog `#56-#124` 中与 runtime/tooling 路径更接近的非重叠子集，待 `review-work` 完成 triage 后再开工。
 
 **共享文件修改范围约定**（避免冲突）：
 
@@ -220,7 +220,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **runtime-robustness** | ✅ 58/58 | 已完成并合并到 main |
 | **governance-hardening** | ✅ 33/33 | 已完成并合并到 main |
 
-**当前任务**：无活跃编码任务。Phase 16R 对应修复已由主线收口并同步。下一批预留接收 2026-03-07 独立审计新增 4 条 Low findings 中与 API trigger / web 入口更接近的非重叠子集，待 `review-work` 在新基线上完成 triage 后再开工。
+**当前任务**：无活跃编码任务。Phase 16R 与 2026-03-07 独立审计 4 条 Low findings 对应修复已由主线收口并同步。下一批预留接收 backlog `#56-#124` 中与 API trigger / web 入口更接近的非重叠子集，待 `review-work` 完成 triage 后再开工。
 
 **共享文件修改范围约定**（与编码 1 相同表格，见上方）
 
@@ -297,6 +297,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | 2026-03-07 | 统筹(main) | codex-work + codex-gpt-work + review-work | **triage 校准**：以 `0f29664c` / `6f867c7a` 为当前唯一有效 verdict；此前 Phase 16 `APPROVE` 与其后续衍生的 delivery 状态提交均不构成放行依据。2026-03-07 独立审计新增 4 条 Low findings（runtime/API trigger）记入 backlog，待双 REJECT 收口后再分配。 | 🟢 已同步 |
 | 2026-03-09 | 统筹(main) | main + review-work + codex-work + codex-gpt-work | **主线收口**：`main` 已提交并推送 `5ee82dc8 fix(agent): harden runtime and trigger safety flows`，吸收本轮 runtime/tooling/LLM/API trigger/web 安全与回归资产；随后三条辅分支已各自 `git merge main` 并推送同步提交 `0047fe55` / `e074081e` / `fe030544`。 | ✅ 已同步 |
 | 2026-03-09 | 统筹(main) | review-work | **下一轮改派**：停止继续围绕 Phase 16R 历史 verdict 空转；改为在最新主线基线上 triage 2026-03-07 独立审计新增 4 条 Low findings，输出新的非重叠派单与审校入口。 | 🟢 已重派 |
+| 2026-03-09 | 统筹(main) | main | **独立审计收口**：直接在主线完成 2026-03-07 独立审计 4 条 Low findings 的实修与补测，修复 `_finish_observation()` fallback、API trigger path-only URL ledger 记录、`run_id` 校验；最终 summarization 固定文案已在主线现状满足。后续不再为该 4 条 finding 单独派单。 | ✅ 已收口 |
 
 ### 已归档消息
 
@@ -376,7 +377,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 **Phase 12/13/14 已完成**（截至 2026-03-06）
 
-**Phase 15 主线、Phase 16R 等价修复与本轮 runtime/trigger hardening 已完成并进入 `main`；当前切换到独立审计 4 条 Low findings triage 与 backlog `#56-#124` 排程。**
+**Phase 15 主线、Phase 16R 等价修复、本轮 runtime/trigger hardening，以及独立审计 4 条 Low findings 已完成并进入 `main`；当前切换到 backlog `#56-#124` 排程。**
 
 ### 任务优先级说明
 
@@ -386,22 +387,22 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **P1** | 发布后尽快修复 | 重要问题，但不阻塞发布 |
 | **Low** | 后续迭代处理 | 改进项，可排期处理 |
 
-### codex-work 分配（待 triage 完成后下发）
+### codex-work 分配（待 backlog triage 完成后下发）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **待定** | 后续批次 | 待 review-work triage | 2026-03-07 独立审计 4 条 Low findings 之一部分（偏 runtime/tooling） | Low | ⏳ 待分配 |
+| **待定** | 后续批次 | 待 review-work triage | backlog `#56-#124` 中与 runtime/tooling 路径更接近的非重叠子集 | Low | ⏳ 待分配 |
 
 **codex-work 下一轮预期**：
 1. 等待 `review-work` 在新基线上给出精确 finding->文件映射
 2. 接收非重叠 low findings 子集
 3. 完成代码 + 测试 + 提交后回交审校
 
-### codex-gpt-work 分配（待 triage 完成后下发）
+### codex-gpt-work 分配（待 backlog triage 完成后下发）
 
 | Spec | Phase | Task | Finding | 优先级 | 状态 |
 |------|-------|------|---------|--------|------|
-| **待定** | 后续批次 | 待 review-work triage | 2026-03-07 独立审计 4 条 Low findings 之一部分（偏 API trigger / web entry） | Low | ⏳ 待分配 |
+| **待定** | 后续批次 | 待 review-work triage | backlog `#56-#124` 中与 API trigger / web 入口更接近的非重叠子集 | Low | ⏳ 待分配 |
 
 **codex-gpt-work 下一轮预期**：
 1. 等待 `review-work` 在新基线上给出精确 finding->文件映射
@@ -416,10 +417,10 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 
 ### 审校与放行
 
-- `review-work` 先负责 2026-03-07 独立审计新增 4 条 Low findings 的 triage、文件边界拆分与验收基线定义
+- `review-work` 先负责 backlog `#56-#124` 的 triage、文件边界拆分与验收基线定义
 - 后续继续承担 coding 分支提交的 `APPROVE / FIX_NEEDED / REJECT` 审校职责
 
-**下一轮待分配**：先完成 2026-03-07 独立审计新增 4 条 Low findings 的 triage 与分发，再回到 #56-#124 backlog 与外部阻塞项跟踪。
+**下一轮待分配**：直接回到 backlog `#56-#124` 的 triage 与分发，并继续跟踪外部阻塞项。
 
 ### audit-deep-remediation-followup 专项说明（已由主线等价修复收口）
 
@@ -430,7 +431,7 @@ review(<spec-name>): <APPROVE|FIX_NEEDED|REJECT> — <一句话结论>
 | **codex-work** | `e074081e` | 同步最新主线，等待下一批分配 | 已推送 |
 | **codex-gpt-work** | `fe030544` | 同步最新主线，等待下一批分配 | 已推送 |
 
-**后续动作**：不再围绕旧 Phase 16R verdict 做重复派单；从当前主线出发切独立审计 4 条 Low findings，然后回到 #56-#124 backlog 与外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
+**后续动作**：不再围绕旧 Phase 16R verdict 或独立审计 4 条 Low findings 做重复派单；从当前主线直接回到 #56-#124 backlog 与外部阻塞项跟踪（release-supply-chain/release/owlhub/openclaw-skill-pack/content-launch）。
 
 **Phase 8 外部阻塞项**（等外部条件就绪后由 main 收口）：
 

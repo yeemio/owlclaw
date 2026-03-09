@@ -5,12 +5,14 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import re
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from decimal import Decimal
 from time import monotonic
 from typing import Any, Protocol
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from starlette.applications import Starlette
@@ -31,6 +33,7 @@ from owlclaw.triggers.signal.api import register_signal_admin_route
 from owlclaw.triggers.signal.router import SignalRouter
 
 DEFAULT_RUNS_CACHE_MAXSIZE = 1000
+_RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 
 class AgentRuntimeProtocol(Protocol):
@@ -220,7 +223,7 @@ class APITriggerServer:
                 "query": parsed.query,
                 "path": parsed.path_params,
                 "method": request.method,
-                "url": str(request.url),
+                "url": self._safe_request_url(request),
                 "auth_identity": auth_identity,
             }
             if not await self._allow_request(config):
@@ -408,6 +411,8 @@ class APITriggerServer:
 
     async def _get_run_result(self, request: Request) -> JSONResponse:
         run_id = str(request.path_params.get("run_id", "")).strip()
+        if not self._is_valid_run_id(run_id):
+            return JSONResponse({"error": "invalid_run_id"}, status_code=400)
         run = self._runs.get(run_id)
         if run is None:
             return JSONResponse({"error": "not_found"}, status_code=404)
@@ -451,6 +456,18 @@ class APITriggerServer:
             return header_tenant
         run_tenant = run.get("_tenant_id", "default")
         return str(run_tenant).strip() or "default"
+
+    @staticmethod
+    def _safe_request_url(request: Request) -> str:
+        """Return path-only URL for audit payloads to avoid leaking query secrets."""
+        parts = urlsplit(str(request.url))
+        path = parts.path.strip() or "/"
+        return path
+
+    @staticmethod
+    def _is_valid_run_id(run_id: str) -> bool:
+        """Validate run id from URL path before using it in caches or logs."""
+        return bool(_RUN_ID_PATTERN.fullmatch(run_id))
 
     async def _record_execution(
         self,

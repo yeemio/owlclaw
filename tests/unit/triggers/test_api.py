@@ -148,11 +148,12 @@ def test_bearer_auth_provider() -> None:
 
 def test_api_trigger_server_async_mode_returns_202_and_result_query() -> None:
     runtime = _Runtime()
-    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)
+    ledger = _Ledger()
+    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime, ledger=ledger)
     server.register(APITriggerConfig(path="/api/v1/async", method="POST", event_name="async_request", response_mode="async"))
 
     with TestClient(server.app) as client:
-        response = client.post("/api/v1/async", headers={"X-API-Key": "k1"}, json={"foo": "bar"})
+        response = client.post("/api/v1/async?token=secret", headers={"X-API-Key": "k1"}, json={"foo": "bar"})
         assert response.status_code == 202
         run_id = response.json()["run_id"]
 
@@ -167,6 +168,9 @@ def test_api_trigger_server_async_mode_returns_202_and_result_query() -> None:
         assert result.json()["query_audit"]["query_identity"].startswith("api_key:")
         assert result.json()["query_audit"]["query_tenant"] == "default"
         assert result.json()["query_audit"]["query_count"] >= 1
+    assert ledger.records
+    assert ledger.records[-1]["status"] == "success"
+    assert "?" not in runtime.calls[0]["payload"]["url"]
 
 
 def test_api_trigger_server_runs_cache_bounded_by_maxsize() -> None:
@@ -427,6 +431,20 @@ def test_api_trigger_server_run_result_includes_query_audit_tenant_header() -> N
         )
         assert result.status_code == 200
         assert result.json()["query_audit"]["query_tenant"] == "tenant-observe"
+
+
+def test_api_trigger_server_invalid_run_id_returns_400() -> None:
+    runtime = _Runtime()
+    server = APITriggerServer(auth_provider=APIKeyAuthProvider({"k1"}), agent_runtime=runtime)
+    server.register(APITriggerConfig(path="/api/v1/async-invalid-id", method="POST", event_name="async_invalid_id", response_mode="async"))
+
+    with TestClient(server.app) as client:
+        response = client.get("/runs/../bad/result", headers={"X-API-Key": "k1"})
+    assert response.status_code == 404
+
+    assert server._is_valid_run_id("run-123") is True  # noqa: SLF001
+    assert server._is_valid_run_id("x" * 129) is False  # noqa: SLF001
+    assert server._is_valid_run_id("bad space") is False  # noqa: SLF001
 
 
 def test_api_trigger_server_signal_admin_requires_tenant_binding_when_authenticated() -> None:

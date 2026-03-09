@@ -118,8 +118,16 @@ class _FakeLangfuseObservation:
     def end(self, **kwargs: object) -> None:
         self.updates.append(dict(kwargs))
 
+
+class _BrokenEndObservation:
+    def __init__(self) -> None:
+        self.updated = False
+
+    def end(self, **kwargs: object) -> None:
+        raise RuntimeError("end failed")
+
     def update(self, **kwargs: object) -> None:
-        self.updates.append(dict(kwargs))
+        self.updated = True
 
 
 class _FakeLangfuseTrace:
@@ -1206,6 +1214,13 @@ metadata:
         result = await rt._execute_tool(tc, ctx)
 
         assert result["error"] == "Tool execution failed due to an internal error."
+
+    def test_finish_observation_falls_back_to_update_when_end_fails(self) -> None:
+        observation = _BrokenEndObservation()
+
+        AgentRuntime._finish_observation(observation, status="success")
+
+        assert observation.updated is True
     def test_build_tool_decision_reasoning_parses_string_confirmation_flag(self, tmp_path) -> None:
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
         ctx = AgentRunContext(agent_id="bot", trigger="cron")

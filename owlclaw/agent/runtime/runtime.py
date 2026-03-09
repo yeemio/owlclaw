@@ -355,8 +355,10 @@ class AgentRuntime:
                     return
                 except Exception:
                     logger.debug("Langfuse observation %s() failed", method_name, exc_info=True)
+                    continue
             except Exception:
                 logger.debug("Langfuse observation %s() failed", method_name, exc_info=True)
+                continue
 
     # ------------------------------------------------------------------
     # Lifecycle
