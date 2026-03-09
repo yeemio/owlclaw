@@ -20,7 +20,20 @@ def _load_module(name: str, relative_path: str):
 def test_write_runtime_files_creates_snapshot_and_instructions(tmp_path: Path) -> None:
     status_module = _load_module("workflow_status", "scripts/workflow_status.py")
     _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    objects_module = _load_module("workflow_objects", "scripts/workflow_objects.py")
     orchestrator_module = _load_module("workflow_orchestrator", "scripts/workflow_orchestrator.py")
+
+    objects_module.create_object(
+        tmp_path,
+        "blocker",
+        payload={
+            "status": "open",
+            "owner": "main",
+            "source_type": "runtime",
+            "source_id": "workflow-1",
+            "summary": "Example blocker for object statistics",
+        },
+    )
 
     snapshot = status_module.WorkflowSnapshot(
         repo_root=str(tmp_path),
@@ -77,12 +90,16 @@ def test_write_runtime_files_creates_snapshot_and_instructions(tmp_path: Path) -
     runtime_dir = tmp_path / ".kiro" / "runtime"
     snapshot_path = runtime_dir / "workflow_snapshot.json"
     actions_path = runtime_dir / "workflow_actions.md"
+    objects_path = runtime_dir / "workflow_objects.md"
+    blockers_path = runtime_dir / "workflow_blockers.md"
     main_instruction = runtime_dir / "worktrees" / "main.md"
     review_instruction = runtime_dir / "worktrees" / "review.md"
     codex_mailbox = runtime_dir / "mailboxes" / "codex.json"
 
     assert snapshot_path.exists()
     assert actions_path.exists()
+    assert objects_path.exists()
+    assert blockers_path.exists()
     assert main_instruction.exists()
     assert review_instruction.exists()
     assert codex_mailbox.exists()
@@ -97,6 +114,8 @@ def test_write_runtime_files_creates_snapshot_and_instructions(tmp_path: Path) -
         "main": None,
         "review": None,
     }
+    assert payload["objects"]["total_objects"] == 1
+    assert payload["objects"]["by_type"]["blocker"]["by_status"] == {"open": 1}
 
     actions_text = actions_path.read_text(encoding="utf-8")
     assert "Review `codex-work` pending commits" in actions_text
@@ -112,6 +131,10 @@ def test_write_runtime_files_creates_snapshot_and_instructions(tmp_path: Path) -
 
     review_mailbox = json.loads((runtime_dir / "mailboxes" / "review.json").read_text(encoding="utf-8"))
     assert review_mailbox["pending_commits"] == ["abc fix"]
+    assert (runtime_dir / "findings" / "open").exists()
+    assert (runtime_dir / "assignments" / "pending").exists()
+    assert "## blocker" in objects_path.read_text(encoding="utf-8")
+    assert "total_open: 1" in blockers_path.read_text(encoding="utf-8")
 
 
 def test_write_runtime_files_promotes_assignment_only_after_queues_clear(tmp_path: Path) -> None:
@@ -179,3 +202,67 @@ def test_write_runtime_files_promotes_assignment_only_after_queues_clear(tmp_pat
     assert main_mailbox["action"] == "assign_next_batch"
     assert main_mailbox["next_expected_transition"] == "assign_next_batch"
     assert main_mailbox["summary"] == "Coding and review queues are clear; assign the next batch before nudging agents."
+
+
+def test_write_runtime_files_creates_triage_for_new_findings_and_links_main_mailbox(tmp_path: Path) -> None:
+    status_module = _load_module("workflow_status", "scripts/workflow_status.py")
+    _load_module("workflow_mailbox", "scripts/workflow_mailbox.py")
+    objects_module = _load_module("workflow_objects", "scripts/workflow_objects.py")
+    orchestrator_module = _load_module("workflow_orchestrator", "scripts/workflow_orchestrator.py")
+
+    created_finding = objects_module.create_object(
+        tmp_path,
+        "finding",
+        payload={
+            "status": "new",
+            "owner": "main",
+            "source": "audit-a",
+            "source_type": "audit",
+            "title": "Audit finding",
+            "summary": "New audit issue waiting for triage",
+            "severity": "p1",
+            "refs": {"spec": "workflow-closed-loop", "task_ref": "2.2"},
+            "relations": {"parent_delivery_id": "", "parent_verdict_id": ""},
+            "proposed_assignment": {"target_agent": "codex", "target_branch": "codex-work"},
+            "audit_metadata": {
+                "profile": "deep_audit",
+                "files": ["owlclaw/agent/runtime/runtime.py"],
+                "dimensions": ["core_logic"],
+                "thinking_lenses": ["failure"],
+                "evidence": "Traced runtime path directly from code.",
+                "code_changes_allowed": False,
+            },
+        },
+    )
+
+    snapshot = status_module.WorkflowSnapshot(
+        repo_root=str(tmp_path),
+        audit=status_module.AuditSummary(
+            total_findings=1,
+            p1=1,
+            low=0,
+            spec_progress="0/11",
+            spec_status="进行中（0/11）",
+            spec_summary="workflow-closed-loop waiting for implementation",
+        ),
+        worktrees=[
+            status_module.WorktreeState("main", "main", str(tmp_path), "orchestrator", True, [], 0, 0, []),
+            status_module.WorktreeState("review", "review-work", str(tmp_path / "review"), "review", True, [], 0, 0, []),
+            status_module.WorktreeState("codex", "codex-work", str(tmp_path / "codex"), "coding", True, [], 0, 0, []),
+            status_module.WorktreeState("codex-gpt", "codex-gpt-work", str(tmp_path / "codex-gpt"), "coding", True, [], 0, 0, []),
+        ],
+        next_action="workflow stable: no pending review or merge action",
+        blockers=[],
+    )
+
+    orchestrator_module.write_runtime_files(tmp_path, snapshot)
+
+    triage_items = objects_module.list_objects(tmp_path, "triage_decision")
+    assert len(triage_items) == 1
+    assert triage_items[0]["finding_ids"] == [created_finding["id"]]
+    assert triage_items[0]["status"] == "pending"
+
+    main_mailbox = json.loads((tmp_path / ".kiro" / "runtime" / "mailboxes" / "main.json").read_text(encoding="utf-8"))
+    assert main_mailbox["object_type"] == "triage_decision"
+    assert main_mailbox["object_id"] == triage_items[0]["id"]
+    assert main_mailbox["summary"] == "Structured findings are waiting for triage and assignment."

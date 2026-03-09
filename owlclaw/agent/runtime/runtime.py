@@ -358,19 +358,19 @@ class AgentRuntime:
             return
         for method_name in ("end", "update"):
             method = getattr(observation, method_name, None)
-            if callable(method):
+            if not callable(method):
+                continue
+            try:
+                method(**kwargs)
+                return
+            except TypeError:
                 try:
-                    method(**kwargs)
+                    method()
                     return
-                except TypeError:
-                    try:
-                        method()
-                        return
-                    except Exception:
-                        logger.debug("Langfuse observation finish failed", exc_info=True)
                 except Exception:
-                    logger.debug("Langfuse observation finish failed", exc_info=True)
-                    return
+                    logger.debug("Langfuse observation %s() failed", method_name, exc_info=True)
+            except Exception:
+                logger.debug("Langfuse observation %s() failed", method_name, exc_info=True)
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -934,6 +934,11 @@ class AgentRuntime:
                     }
                 )
             except Exception:
+                logger.warning(
+                    "Final summarization failed after max iterations (max_iterations=%s).",
+                    max_iterations,
+                    exc_info=True,
+                )
                 messages.append(
                     {
                         "role": "assistant",

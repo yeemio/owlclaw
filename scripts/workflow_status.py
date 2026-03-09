@@ -12,6 +12,12 @@ from pathlib import Path
 
 
 AUDIT_SPEC_NAME = "audit-deep-remediation"
+OPERATIONAL_DIRTY_IGNORE_PATTERNS = (
+    ".kiro/reviews/",
+    ".kiro/specs/SPEC_TASKS_SCAN.md",
+    "docs/review/REVIEW_VERDICT_",
+    "docs/review/REVIEW_LOOP_",
+)
 
 
 @dataclass(frozen=True)
@@ -76,11 +82,26 @@ def _default_worktrees(repo_root: Path) -> list[WorktreeConfig]:
     ]
 
 
+def _normalize_status_path(line: str) -> str:
+    parts = line.split(maxsplit=1)
+    if len(parts) == 2:
+        return parts[1].strip()
+    return line.strip()
+
+
+def _is_ignored_operational_dirty(line: str) -> bool:
+    path = _normalize_status_path(line)
+    normalized = path.replace("\\", "/")
+    return any(pattern in normalized for pattern in OPERATIONAL_DIRTY_IGNORE_PATTERNS)
+
+
 def _parse_status_output(output: str) -> tuple[bool, list[str]]:
     lines = output.splitlines()
     dirty: list[str] = []
     for line in lines[1:]:
         if not line.strip():
+            continue
+        if _is_ignored_operational_dirty(line):
             continue
         dirty.append(line.strip())
     return len(dirty) == 0, dirty

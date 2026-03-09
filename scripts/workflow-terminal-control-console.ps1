@@ -1,6 +1,7 @@
 param(
     [int]$Interval = 20,
-    [int]$StaleSeconds = 180
+    [int]$StaleSeconds = 180,
+    [switch]$EnableSendKeys
 )
 
 $repoRoot = (Resolve-Path ".").Path
@@ -77,7 +78,8 @@ function Invoke-Control {
         [string[]]$Arguments
     )
 
-    & poetry run python $controlScript @Arguments
+    $transport = if ($EnableSendKeys) { "sendkeys" } else { "disabled" }
+    & poetry run python $controlScript "--transport" $transport @Arguments
 }
 
 function Show-ControlResult {
@@ -104,7 +106,12 @@ function Show-ControlResult {
         }
 
         if ($item.delivered -eq $true) {
-            Write-Host ("sent {0}: {1} ({2})" -f $item.agent, $item.message, $item.decision_reason)
+            if ($item.injected -eq $true) {
+                Write-Host ("sent {0}: {1} ({2})" -f $item.agent, $item.message, $item.decision_reason)
+            }
+            else {
+                Write-Host ("observe {0}: {1} ({2})" -f $item.agent, $item.message, $item.decision_reason)
+            }
             continue
         }
 
@@ -148,7 +155,15 @@ function Show-ControlStatus {
         }
 
         $agent = [string]$item.agent
-        $status = if ($item.delivered -eq $true) { "sent" } else { "idle" }
+        if ($item.delivered -eq $true -and $item.injected -eq $true) {
+            $status = "sent"
+        }
+        elseif ($item.delivered -eq $true) {
+            $status = "observe"
+        }
+        else {
+            $status = "idle"
+        }
         $reason = if ($item.decision_reason) { [string]$item.decision_reason } else { [string]$item.reason }
         $message = [string]$item.message
         Write-Host ("{0,-10} status={1,-6} reason={2,-20} message={3}" -f $agent, $status, $reason, $message)
@@ -171,7 +186,8 @@ workflow_terminal_control.set_paused(Path(r'$repoRoot'), $($Paused.ToString().To
 }
 
 Show-Help
-Write-Host ("Controller loop running every {0}s (stale threshold {1}s). Type a command and press Enter." -f $Interval, $StaleSeconds)
+$transportMode = if ($EnableSendKeys) { "sendkeys" } else { "observe-only" }
+Write-Host ("Controller loop running every {0}s (stale threshold {1}s, transport {2}). Type a command and press Enter." -f $Interval, $StaleSeconds, $transportMode)
 
 while ($true) {
     $raw = Invoke-Control @("--once", "--stale-seconds", "$StaleSeconds", "--json")

@@ -1,6 +1,6 @@
 param(
-    [Parameter(Mandatory = $true)]
-    [string[]]$WindowTitles
+    [string[]]$WindowTitles = @(),
+    [int]$ProcessId = 0
 )
 
 Add-Type @"
@@ -30,6 +30,11 @@ public static class WorkflowWindowFinder
 }
 "@
 
+if (($null -eq $WindowTitles -or $WindowTitles.Count -eq 0) -and $ProcessId -le 0) {
+    Write-Error "Either WindowTitles or ProcessId is required"
+    exit 1
+}
+
 $targets = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 foreach ($title in $WindowTitles) {
     if ($title) {
@@ -45,6 +50,20 @@ $match = $null
         return $true
     }
 
+    [uint32]$windowPid = 0
+    [void][WorkflowWindowFinder]::GetWindowThreadProcessId($hWnd, [ref]$windowPid)
+    if ($ProcessId -gt 0 -and [int]$windowPid -eq $ProcessId) {
+        $length = [WorkflowWindowFinder]::GetWindowTextLength($hWnd)
+        $builder = New-Object System.Text.StringBuilder ([Math]::Max($length + 1, 1))
+        [void][WorkflowWindowFinder]::GetWindowText($hWnd, $builder, $builder.Capacity)
+        $script:match = [pscustomobject]@{
+            title = $builder.ToString()
+            hwnd = [int64]$hWnd
+            pid = [int]$windowPid
+        }
+        return $false
+    }
+
     $length = [WorkflowWindowFinder]::GetWindowTextLength($hWnd)
     if ($length -le 0) {
         return $true
@@ -57,12 +76,10 @@ $match = $null
         return $true
     }
 
-    [uint32]$pid = 0
-    [void][WorkflowWindowFinder]::GetWindowThreadProcessId($hWnd, [ref]$pid)
     $script:match = [pscustomobject]@{
         title = $title
         hwnd = [int64]$hWnd
-        pid = [int]$pid
+        pid = [int]$windowPid
     }
     return $false
 }, [IntPtr]::Zero) | Out-Null
