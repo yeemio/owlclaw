@@ -36,6 +36,7 @@ class MemorySystem:
         *,
         memory_file: str | None = None,
         memory_file_size_limit_bytes: int = 10 * 1024 * 1024,
+        base_dir: str | None = None,
         memory_file_allowed_base: Path | str | None = None,
         vector_index: Any | None = None,
         embedder: Any | None = None,
@@ -46,28 +47,35 @@ class MemorySystem:
             raise ValueError("memory_file_size_limit_bytes must be an integer >= 1024")
         self.short_term_token_limit = short_term_token_limit
         self.memory_file_size_limit_bytes = memory_file_size_limit_bytes
-        if memory_file:
-            path = Path(memory_file).expanduser().resolve()
-            if memory_file_allowed_base is not None:
-                base = Path(memory_file_allowed_base).expanduser().resolve()
-                if not base.is_dir():
-                    raise ValueError(
-                        f"memory_file_allowed_base must be an existing directory: {base}"
-                    )
-                try:
-                    path.relative_to(base)
-                except ValueError:
-                    raise ValueError(
-                        f"memory_file must be under memory_file_allowed_base: {path} not under {base}"
-                    ) from None
-            self.memory_file = path
-        else:
-            self.memory_file = None
+        if base_dir is not None and memory_file_allowed_base is not None:
+            raise ValueError("base_dir and memory_file_allowed_base are mutually exclusive")
+        configured_base_dir = base_dir if base_dir is not None else memory_file_allowed_base
+        resolved_base_dir = Path(configured_base_dir).expanduser().resolve() if configured_base_dir else None
+        self.memory_file = (
+            self._validate_memory_file_path(memory_file, base_dir=resolved_base_dir) if memory_file else None
+        )
         self.vector_index = vector_index
         self.embedder = embedder
         self.vector_index_degraded = False
         self._short_term_entries: list[_ShortTermEntry] = []
         self._long_term_entries: list[_LongTermEntry] = []
+
+    @staticmethod
+    def _validate_memory_file_path(memory_file: str, *, base_dir: Path | None) -> Path:
+        candidate = Path(memory_file).expanduser()
+        if candidate.is_absolute():
+            normalized = candidate.resolve()
+            if base_dir is None:
+                return normalized
+        else:
+            resolved_base_dir = base_dir if base_dir is not None else Path.cwd().resolve()
+            normalized = (resolved_base_dir / candidate).resolve()
+            if not normalized.is_relative_to(resolved_base_dir):
+                raise ValueError("memory_file must stay under base_dir")
+            return normalized
+        if base_dir is not None and not normalized.is_relative_to(base_dir):
+            raise ValueError("memory_file must stay under base_dir")
+        return normalized
 
     def add_short_term(self, role: str, content: str) -> None:
         """Append a short-term memory entry for this run."""
@@ -272,7 +280,4 @@ class MemorySystem:
                 self.vector_index.add(payload)
         except Exception as exc:
             self.vector_index_degraded = True
-            logger.warning(
-                "Vector index degraded, falling back to MEMORY.md only: %s",
-                type(exc).__name__,
-            )
+            logger.warning("Vector index degraded, falling back to MEMORY.md only: %s", exc)

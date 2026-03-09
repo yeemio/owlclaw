@@ -471,17 +471,17 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-09（Phase 16R 持续停留 `FIX_NEEDED`；review-work 最新仍为 `ac8f6987`，仍未补充失败用例明细） |
-| 当前批次 | **Phase 16R（REJECT 回流修复）**：`codex-work` 处理 R1-R4；`codex-gpt-work` 处理 G1-G5（runtime/LLM 脱敏与 timeout）。Backlog 仍为 #30-#44、#56-#124 + 独立审计新增 4 条 Low findings。 |
-| 批次状态 | `review-work` 新 verdict：`review(Phase 16R): FIX_NEEDED`（`ac8f6987`）。`codex-gpt-work` 已执行 Phase16R 相关回归（registry + memory + runtime + llm 共 205 tests）全部通过，当前无法本地复现“测试失败”；仍需 review-work 提供失败用例与日志明细定位兼容性问题。 |
-| 已完成项 | 在既有 63 项基础上新增 64) `codex-gpt-work` 完成 G1-G5：runtime observation 参数脱敏、final summarization 错误脱敏、`aembedding` timeout、`LLMClient` timeout、LLM 错误元数据脱敏；65) 新增/更新单测并通过 `tests/unit/agent/test_runtime.py` + `tests/unit/integrations/test_llm.py`（146 passed）；66) `codex-work` 已提交 R1-R4 返工（`b40599c4`）；67) `codex-gpt-work` 追加执行 Phase16R 兼容性回归集合（6 文件）205/205 passed，未本地复现 FIX_NEEDED 测试失败。 |
-| 下一待执行 | 1) `review-work` 补充 `FIX_NEEDED` 的失败测试明细（测试名、报错栈、运行命令、是否仅在合并态复现）；2) `codex-gpt-work` 与 `codex-work` 按明细分别提交兼容性修复；3) 审校通过后再切入独立审计新增 4 条 Low findings。 |
-| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16R**：`codex-gpt-work` G1-G5 已完成并通过定向验收，待 `review-work` 最终放行。 |
-| 阻塞项 | 当前无编码阻塞；放行依赖 `review-work` 审校 verdict。 |
-| 健康状态 | 🟡 进行中：返工链路已恢复推进，`codex-gpt-work` 本轮实现+验收已完成，等待审校消费。 |
-| 连续无进展轮数 | 2 |
-| 分支量化进度 | `review-work` 3 commits ahead，另有 4 个未跟踪 verdict 文档；`codex-work` ahead 以返工前历史提交为主，但 worktree 已干净；`codex-gpt-work` ahead 以返工前历史提交为主，但 worktree 已干净；`main` 存在用户本地改动，故本轮未执行统筹 commit/merge。 |
-| 审校状态 | `audit-deep-remediation` 主线已审校完成；Phase 16R 已从双 `REJECT` 进入 `FIX_NEEDED`（`ac8f6987`），当前 gate 从“安全回滚修复”转为“测试兼容性修复”。 |
+| 最后更新 | 2026-03-09（Phase 16R 已更新为 `APPROVE`；`review-work` 最新 verdict 为 `682d0431`） |
+| 当前批次 | **Phase 16R（REJECT 回流修复）收口**：`codex-work` R1-R4 与 `codex-gpt-work` G1-G5 已在审校分支完成兼容性复核。Backlog 仍为 #30-#44、#56-#124 + 独立审计新增 4 条 Low findings。 |
+| 批次状态 | `review-work` 最新 verdict：`review(Phase 16R): APPROVE`（`682d0431`）。本地复核通过：`tests/unit/agent/test_runtime.py` + `tests/unit/integrations/test_llm.py` + memory/registry 相关集合，共 195 passed。 |
+| 已完成项 | 在既有 67 项基础上新增 68) `review-work` 合并并确认 Phase16R G1-G5 修复（`c9121784`）；69) 输出 `review(Phase 16R): APPROVE`（`682d0431`）；70) 修复 Memory 路径校验兼容性回归（`MemorySystem` 与 `MemoryService` 保持旧参数兼容）；71) 复核通过 `tests/unit/agent/test_runtime.py`、`tests/unit/integrations/test_llm.py`、`tests/unit/agent/test_runtime_memory.py`、`tests/unit/agent/memory/test_memory_advanced.py`、`tests/unit/test_registry.py`（195 passed）。 |
+| 下一待执行 | 1) 由主 worktree 在工作区清理后择机消费 `review-work` 最新 APPROVE 包并合入主线；2) 合入后切换至独立审计新增 4 条 Low findings 与 backlog #30-#44、#56-#124。 |
+| 验收快照 | **Phase 15**：audit-deep-remediation 主线 ✅；**Phase 16R**：R1-R4 + G1-G5 ✅（审校放行）。 |
+| 阻塞项 | 当前无阻塞。 |
+| 健康状态 | 🟢 正常：审校链路与回归验证已闭环。 |
+| 连续无进展轮数 | 0 |
+| 分支量化进度 | `review-work` ahead 以审校 gate 提交为主；`codex-work` 与 `codex-gpt-work` 继续等待主线消费后下一轮分配。 |
+| 审校状态 | `audit-deep-remediation` 主线已审校完成；Phase 16R 当前为 `APPROVE`（`682d0431`），安全回滚修复与兼容性问题已完成 gate 收口。 |
 | 持续轮次目标 | 主 worktree spec 循环目标 999 轮；每轮 1～3 项，每回复「继续」执行下一批；累计轮数在「已完成项」中递增；说「停」即止。 |
 
 ---
