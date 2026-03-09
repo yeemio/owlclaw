@@ -60,6 +60,20 @@ def test_approve_and_reject_status_transitions(tmp_path: Path) -> None:
         pass
 
 
+def test_review_system_rejects_path_traversal_review_id(tmp_path: Path) -> None:
+    skill = tmp_path / "acme" / "entry"
+    _create_valid_skill(skill, name="entry", version="1.0.0")
+    system = ReviewSystem(storage_dir=tmp_path / "reviews")
+    record = system.submit_for_review(skill_path=skill, skill_name="entry", version="1.0.0", publisher="acme")
+    assert record.review_id == "acme-entry-1.0.0"
+
+    try:
+        system.approve(review_id="../escape", reviewer="alice")
+        raise AssertionError("expected invalid review_id failure")
+    except ValueError:
+        pass
+
+
 @settings(max_examples=10, deadline=None)
 @given(
     should_approve=st.booleans(),

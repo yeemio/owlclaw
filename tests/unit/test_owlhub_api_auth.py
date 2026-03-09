@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from owlclaw.owlhub.api.auth import AuthManager
 from owlclaw.owlhub.api import create_app
 
 
@@ -62,4 +63,25 @@ def test_property_14_authentication_protection(payload: dict[str, object]) -> No
     client = TestClient(create_app())
     response = client.post("/api/v1/skills/publish-probe", json=payload)
     assert response.status_code == 401
+
+
+def test_auth_manager_limits_sessions_api_keys_and_rate_buckets() -> None:
+    auth = AuthManager(max_sessions=2, max_api_keys=2, max_rate_buckets=2)
+    auth.rate_limit_window_seconds = 3600
+    auth.rate_limit_per_window = 1000
+
+    auth.issue_jwt(user_id="u1", role="publisher")
+    auth.issue_jwt(user_id="u2", role="publisher")
+    auth.issue_jwt(user_id="u3", role="publisher")
+    assert len(auth.sessions) == 2
+
+    auth.create_api_key(user_id="u1", role="publisher")
+    auth.create_api_key(user_id="u2", role="publisher")
+    auth.create_api_key(user_id="u3", role="publisher")
+    assert len(auth.api_keys) == 2
+
+    auth.check_rate_limit("ip:1")
+    auth.check_rate_limit("ip:2")
+    auth.check_rate_limit("ip:3")
+    assert len(auth.rate_bucket) == 2
 

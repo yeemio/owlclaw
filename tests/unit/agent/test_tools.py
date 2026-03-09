@@ -173,7 +173,16 @@ class TestQueryState:
         ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
         result = await tools.execute("query_state", {"state_name": "foo"}, ctx)
         assert "error" in result
-        assert "unknown state" in result["error"]
+        assert result["error"] == "Tool execution failed due to an internal error."
+
+    @pytest.mark.asyncio
+    async def test_query_state_value_error_keeps_detail_when_raise_errors_enabled(self) -> None:
+        reg = AsyncMock()
+        reg.get_state.side_effect = ValueError("unknown state 'foo'")
+        tools = BuiltInTools(capability_registry=reg, raise_errors=True)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+        with pytest.raises(RuntimeError, match="query_state failed: unknown state 'foo'"):
+            await tools.execute("query_state", {"state_name": "foo"}, ctx)
 
     @pytest.mark.asyncio
     async def test_query_state_rejects_invalid_state_name_characters(self) -> None:
@@ -769,3 +778,35 @@ class TestMemoryTools:
         assert elapsed_ms < 30.0
         await asyncio.sleep(0.06)
         memory.write.assert_awaited_once_with(content="lesson", tags=["ops"])
+
+    @pytest.mark.asyncio
+    async def test_remember_timeout_returns_error(self) -> None:
+        async def _slow_write(*, content: str, tags: list[str]) -> dict[str, str]:
+            _ = (content, tags)
+            await asyncio.sleep(0.05)
+            return {"memory_id": "m-slow", "created_at": "2026-01-01T00:00:00Z"}
+
+        memory = AsyncMock()
+        memory.write.side_effect = _slow_write
+        tools = BuiltInTools(memory_system=memory, timeout_seconds=0.01)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        result = await tools.execute("remember", {"content": "lesson"}, ctx)
+        assert "error" in result
+        assert "timed out" in result["error"]
+
+    @pytest.mark.asyncio
+    async def test_recall_timeout_returns_error(self) -> None:
+        async def _slow_search(*, query: str, limit: int, tags: list[str]) -> list[dict[str, str]]:
+            _ = (query, limit, tags)
+            await asyncio.sleep(0.05)
+            return [{"content": "late"}]
+
+        memory = AsyncMock()
+        memory.search.side_effect = _slow_search
+        tools = BuiltInTools(memory_system=memory, timeout_seconds=0.01)
+        ctx = BuiltInToolsContext(agent_id="bot", run_id="r1")
+
+        result = await tools.execute("recall", {"query": "lesson"}, ctx)
+        assert "error" in result
+        assert "timed out" in result["error"]

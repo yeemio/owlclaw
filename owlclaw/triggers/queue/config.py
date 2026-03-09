@@ -33,6 +33,15 @@ class QueueTriggerConfig:
     enable_dedup: bool = True
     parser_type: ParserType = "json"
     event_name_header: str = "x-event-name"
+    default_tenant_id: str = "default"
+    trust_tenant_header: bool = False
+    tenant_header_name: str = "x-tenant-id"
+    trusted_producer_header: str = "x-producer-id"
+    trusted_producers: list[str] | None = None
+    tenant_signature_header: str = "x-tenant-signature"
+    tenant_signature_secret_env: str | None = None
+    tenant_signature_secret_envs: list[str] | None = None
+    governance_fail_open: bool = False
     focus: str | None = None
     adapter_config: dict[str, Any] | None = None
 
@@ -52,6 +61,15 @@ class QueueTriggerConfig:
             f"enable_dedup={self.enable_dedup!r}, "
             f"parser_type={self.parser_type!r}, "
             f"event_name_header={self.event_name_header!r}, "
+            f"default_tenant_id={self.default_tenant_id!r}, "
+            f"trust_tenant_header={self.trust_tenant_header!r}, "
+            f"tenant_header_name={self.tenant_header_name!r}, "
+            f"trusted_producer_header={self.trusted_producer_header!r}, "
+            f"trusted_producers={self.trusted_producers!r}, "
+            f"tenant_signature_header={self.tenant_signature_header!r}, "
+            f"tenant_signature_secret_env={self.tenant_signature_secret_env!r}, "
+            f"tenant_signature_secret_envs={self.tenant_signature_secret_envs!r}, "
+            f"governance_fail_open={self.governance_fail_open!r}, "
             f"focus={self.focus!r}, "
             f"adapter_config={safe_adapter!r}"
             ")"
@@ -80,6 +98,20 @@ def validate_config(config: QueueTriggerConfig) -> list[str]:
         errors.append(f"ack_policy must be one of {sorted(VALID_ACK_POLICIES)}")
     if config.parser_type not in VALID_PARSER_TYPES:
         errors.append(f"parser_type must be one of {sorted(VALID_PARSER_TYPES)}")
+    if not config.default_tenant_id.strip():
+        errors.append("default_tenant_id is required")
+    if not config.tenant_header_name.strip():
+        errors.append("tenant_header_name is required")
+    if not config.trusted_producer_header.strip():
+        errors.append("trusted_producer_header is required")
+    if not config.tenant_signature_header.strip():
+        errors.append("tenant_signature_header is required")
+    if config.trusted_producers is not None and any(not producer.strip() for producer in config.trusted_producers):
+        errors.append("trusted_producers entries must be non-empty strings")
+    if config.tenant_signature_secret_env is not None and not config.tenant_signature_secret_env.strip():
+        errors.append("tenant_signature_secret_env must be non-empty when provided")
+    if config.tenant_signature_secret_envs is not None and any(not item.strip() for item in config.tenant_signature_secret_envs):
+        errors.append("tenant_signature_secret_envs entries must be non-empty strings")
 
     return errors
 
@@ -141,6 +173,24 @@ def _coerce_bool(config_map: dict[str, Any], key: str, default: bool) -> bool:
     raise ValueError(f"{key} must be a boolean")
 
 
+def _coerce_str_list(config_map: dict[str, Any], key: str, default: list[str] | None = None) -> list[str] | None:
+    value = config_map.get(key, default)
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    if isinstance(value, list):
+        normalized: list[str] = []
+        for item in value:
+            if not isinstance(item, str):
+                raise ValueError(f"{key} must be a list of strings")
+            stripped = item.strip()
+            if stripped:
+                normalized.append(stripped)
+        return normalized
+    raise ValueError(f"{key} must be a list of strings or comma-separated string")
+
+
 def load_queue_trigger_config(config_path: str) -> QueueTriggerConfig:
     """Load queue trigger config from YAML file and validate it."""
     path = Path(config_path)
@@ -173,6 +223,19 @@ def load_queue_trigger_config(config_path: str) -> QueueTriggerConfig:
         enable_dedup=_coerce_bool(config_dict, "enable_dedup", True),
         parser_type=cast(ParserType, _require_str(config_dict, "parser_type", "json")),
         event_name_header=_require_str(config_dict, "event_name_header", "x-event-name"),
+        default_tenant_id=_require_str(config_dict, "default_tenant_id", "default"),
+        trust_tenant_header=_coerce_bool(config_dict, "trust_tenant_header", False),
+        tenant_header_name=_require_str(config_dict, "tenant_header_name", "x-tenant-id"),
+        trusted_producer_header=_require_str(config_dict, "trusted_producer_header", "x-producer-id"),
+        trusted_producers=_coerce_str_list(config_dict, "trusted_producers", None),
+        tenant_signature_header=_require_str(config_dict, "tenant_signature_header", "x-tenant-signature"),
+        tenant_signature_secret_env=(
+            None
+            if config_dict.get("tenant_signature_secret_env") is None
+            else _require_str(config_dict, "tenant_signature_secret_env", "")
+        ),
+        tenant_signature_secret_envs=_coerce_str_list(config_dict, "tenant_signature_secret_envs", None),
+        governance_fail_open=_coerce_bool(config_dict, "governance_fail_open", False),
         focus=(None if config_dict.get("focus") is None else str(config_dict.get("focus"))),
         adapter_config=cast(dict[str, Any] | None, adapter_config),
     )

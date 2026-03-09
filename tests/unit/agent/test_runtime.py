@@ -1194,6 +1194,18 @@ metadata:
         assert "unexpected" in result["error"]
         assert "not allowed" in result["error"]
         handler.assert_not_called()
+
+    async def test_execute_tool_handler_exception_returns_sanitized_error(self, tmp_path) -> None:
+        tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
+        registry = MagicMock()
+        registry.get_capability_metadata.return_value = {"name": "market_scan", "task_type": "analysis"}
+        registry.invoke_handler = AsyncMock(side_effect=RuntimeError("provider secret leaked"))
+        rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path), registry=registry)
+        ctx = AgentRunContext(agent_id="bot", trigger="cron")
+
+        result = await rt._execute_tool(tc, ctx)
+
+        assert result["error"] == "Tool execution failed due to an internal error."
     def test_build_tool_decision_reasoning_parses_string_confirmation_flag(self, tmp_path) -> None:
         rt = AgentRuntime(agent_id="bot", app_dir=_make_app_dir(tmp_path))
         ctx = AgentRunContext(agent_id="bot", trigger="cron")

@@ -338,6 +338,16 @@ class BuiltInTools:
         normalized = normalized.strip("_")
         return normalized or "agent"
 
+    def _format_internal_error(self, exc: Exception) -> str:
+        """Return safe error payload for runtime failures.
+
+        In strict mode we keep details for typed exception conversion in callers.
+        In default mode we avoid exposing internal exception text.
+        """
+        if self._raise_errors:
+            return str(exc)
+        return "Tool execution failed due to an internal error."
+
     async def execute(
         self,
         tool_name: str,
@@ -526,7 +536,7 @@ class BuiltInTools:
             raise RuntimeError(f"memory system does not support '{method_name}'")
         result = method(**kwargs)
         if inspect.isawaitable(result):
-            return await result
+            return await asyncio.wait_for(result, timeout=self._timeout)
         return result
 
     async def _query_state(
@@ -599,6 +609,7 @@ class BuiltInTools:
             )
             return {"error": error}
         except ValueError as e:
+            safe_error = self._format_internal_error(e)
             await self._record_tool_execution(
                 tool_name="query_state",
                 context=context,
@@ -606,11 +617,12 @@ class BuiltInTools:
                 output_result=None,
                 start_ns=start_ns,
                 status="error",
-                error_message=str(e),
+                error_message=e.__class__.__name__,
             )
-            return {"error": str(e)}
+            return {"error": safe_error}
         except Exception as e:
             logger.exception("query_state failed for %s", state_name)
+            safe_error = self._format_internal_error(e)
             await self._record_tool_execution(
                 tool_name="query_state",
                 context=context,
@@ -618,9 +630,9 @@ class BuiltInTools:
                 output_result=None,
                 start_ns=start_ns,
                 status="error",
-                error_message=str(e),
+                error_message=e.__class__.__name__,
             )
-            return {"error": str(e)}
+            return {"error": safe_error}
 
     async def _log_decision(
         self,
@@ -675,7 +687,7 @@ class BuiltInTools:
             return {"decision_id": decision_id, "logged": True}
         except Exception as e:
             logger.exception("log_decision failed")
-            return {"error": str(e), "logged": False}
+            return {"error": self._format_internal_error(e), "logged": False}
 
     async def _schedule_once(
         self,
@@ -763,6 +775,7 @@ class BuiltInTools:
             return {"error": error}
         except Exception as e:
             logger.exception("schedule_once failed")
+            safe_error = self._format_internal_error(e)
             await self._record_tool_execution(
                 tool_name="schedule_once",
                 context=context,
@@ -770,9 +783,9 @@ class BuiltInTools:
                 output_result=None,
                 start_ns=start_ns,
                 status="error",
-                error_message=str(e),
+                error_message=e.__class__.__name__,
             )
-            return {"error": str(e)}
+            return {"error": safe_error}
 
     def _validate_cron_expression(self, expr: str) -> bool:
         """Validate cron expression (5 fields)."""
@@ -880,6 +893,7 @@ class BuiltInTools:
             return {"error": error}
         except Exception as e:
             logger.exception("schedule_cron failed")
+            safe_error = self._format_internal_error(e)
             await self._record_tool_execution(
                 tool_name="schedule_cron",
                 context=context,
@@ -887,9 +901,9 @@ class BuiltInTools:
                 output_result=None,
                 start_ns=start_ns,
                 status="error",
-                error_message=str(e),
+                error_message=e.__class__.__name__,
             )
-            return {"error": str(e)}
+            return {"error": safe_error}
 
     async def _cancel_schedule(
         self,
@@ -974,6 +988,7 @@ class BuiltInTools:
             return {"error": error}
         except Exception as e:
             logger.exception("cancel_schedule failed")
+            safe_error = self._format_internal_error(e)
             await self._record_tool_execution(
                 tool_name="cancel_schedule",
                 context=context,
@@ -981,9 +996,9 @@ class BuiltInTools:
                 output_result=None,
                 start_ns=start_ns,
                 status="error",
-                error_message=str(e),
+                error_message=e.__class__.__name__,
             )
-            return {"error": str(e)}
+            return {"error": safe_error}
 
     async def _remember(
         self,
@@ -1108,6 +1123,7 @@ class BuiltInTools:
             return {"error": error}
         except Exception as e:
             logger.exception("remember failed")
+            safe_error = self._format_internal_error(e)
             await self._record_tool_execution(
                 tool_name="remember",
                 context=context,
@@ -1115,9 +1131,9 @@ class BuiltInTools:
                 output_result=None,
                 start_ns=start_ns,
                 status="error",
-                error_message=str(e),
+                error_message=e.__class__.__name__,
             )
-            return {"error": str(e)}
+            return {"error": safe_error}
 
     async def _recall(
         self,
@@ -1193,6 +1209,7 @@ class BuiltInTools:
             return {"error": error}
         except Exception as e:
             logger.exception("recall failed")
+            safe_error = self._format_internal_error(e)
             await self._record_tool_execution(
                 tool_name="recall",
                 context=context,
@@ -1200,9 +1217,9 @@ class BuiltInTools:
                 output_result=None,
                 start_ns=start_ns,
                 status="error",
-                error_message=str(e),
+                error_message=e.__class__.__name__,
             )
-            return {"error": str(e)}
+            return {"error": safe_error}
 
     async def _record_tool_execution(
         self,

@@ -36,6 +36,7 @@ class LiteLLMEmbedder(EmbeddingProvider):
         model: str = "text-embedding-3-small",
         dimensions: int = 1536,
         cache_size: int = 1000,
+        timeout_seconds: float = 30.0,
         langfuse_span_callback: Callable[[str, int], AbstractContextManager[Any] | None] | None = None,
     ) -> None:
         """Create embedder.
@@ -49,6 +50,10 @@ class LiteLLMEmbedder(EmbeddingProvider):
         self._model = model
         self._dimensions = dimensions
         self._cache_size = cache_size
+        timeout = float(timeout_seconds)
+        if timeout <= 0:
+            raise ValueError("timeout_seconds must be positive")
+        self._timeout_seconds = timeout
         self._langfuse_span_callback = langfuse_span_callback
         self._cache: OrderedDict[str, list[float]] = OrderedDict()
 
@@ -64,6 +69,7 @@ class LiteLLMEmbedder(EmbeddingProvider):
                     kwargs: dict[str, Any] = {
                         "model": self._model,
                         "input": input_texts,
+                        "timeout": self._timeout_seconds,
                     }
                     if self._dimensions and "embedding-3" in self._model:
                         kwargs["dimensions"] = self._dimensions

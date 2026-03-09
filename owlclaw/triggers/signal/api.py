@@ -68,12 +68,20 @@ def register_signal_admin_route(
         operator = (payload.operator or "").strip() or (auth_identity or "api")
         if payload.type == "instruct" and not payload.message.strip():
             return JSONResponse({"error": "bad_request", "reason": "message_required_for_instruct"}, status_code=400)
+        tenant_id = payload.tenant_id
+        if require_auth:
+            tenant_header = request.headers.get("x-owlclaw-tenant", "").strip()
+            if not tenant_header:
+                return JSONResponse({"error": "unauthorized", "reason": "tenant_binding_required"}, status_code=403)
+            if tenant_header != payload.tenant_id:
+                return JSONResponse({"error": "unauthorized", "reason": "tenant_mismatch"}, status_code=403)
+            tenant_id = tenant_header
 
         signal = Signal(
             type=SignalType(payload.type),
             source=SignalSource.API,
             agent_id=payload.agent_id,
-            tenant_id=payload.tenant_id,
+            tenant_id=tenant_id,
             operator=operator,
             message=payload.message,
             focus=payload.focus,

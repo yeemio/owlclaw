@@ -22,6 +22,14 @@ _SAFE_TEXT = st.text(alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW
     idempotency_window=st.integers(min_value=1, max_value=86400),
     enable_dedup=st.booleans(),
     parser_type=st.sampled_from(["json", "text", "binary"]),
+    default_tenant_id=_SAFE_TEXT,
+    trust_tenant_header=st.booleans(),
+    tenant_header_name=_SAFE_TEXT,
+    trusted_producer_header=_SAFE_TEXT,
+    trusted_producers=st.lists(_SAFE_TEXT, min_size=0, max_size=4),
+    tenant_signature_header=_SAFE_TEXT,
+    tenant_signature_secret_env=st.one_of(st.none(), _SAFE_TEXT),
+    tenant_signature_secret_envs=st.one_of(st.none(), st.lists(_SAFE_TEXT, min_size=0, max_size=4)),
 )
 @settings(max_examples=30, deadline=None)
 def test_property_queue_config_application(
@@ -35,6 +43,14 @@ def test_property_queue_config_application(
     idempotency_window: int,
     enable_dedup: bool,
     parser_type: str,
+    default_tenant_id: str,
+    trust_tenant_header: bool,
+    tenant_header_name: str,
+    trusted_producer_header: str,
+    trusted_producers: list[str],
+    tenant_signature_header: str,
+    tenant_signature_secret_env: str | None,
+    tenant_signature_secret_envs: list[str] | None,
 ) -> None:
     """Feature: triggers-queue, Property 5: 配置正确应用."""
     with TemporaryDirectory() as temp_dir:
@@ -53,6 +69,22 @@ def test_property_queue_config_application(
                 f"  enable_dedup: {str(enable_dedup).lower()}\n"
                 f"  parser_type: {parser_type}\n"
                 "  event_name_header: x-event-name\n"
+                f"  default_tenant_id: '{default_tenant_id}'\n"
+                f"  trust_tenant_header: {str(trust_tenant_header).lower()}\n"
+                f"  tenant_header_name: '{tenant_header_name}'\n"
+                f"  trusted_producer_header: '{trusted_producer_header}'\n"
+                f"  trusted_producers: [{', '.join(repr(item) for item in trusted_producers)}]\n"
+                f"  tenant_signature_header: '{tenant_signature_header}'\n"
+                + (
+                    ""
+                    if tenant_signature_secret_env is None
+                    else f"  tenant_signature_secret_env: '{tenant_signature_secret_env}'\n"
+                )
+                + (
+                    ""
+                    if tenant_signature_secret_envs is None
+                    else f"  tenant_signature_secret_envs: [{', '.join(repr(item) for item in tenant_signature_secret_envs)}]\n"
+                )
             ),
             encoding="utf-8",
         )
@@ -69,3 +101,11 @@ def test_property_queue_config_application(
         assert config.idempotency_window == idempotency_window
         assert config.enable_dedup == enable_dedup
         assert config.parser_type == parser_type
+        assert config.default_tenant_id == default_tenant_id
+        assert config.trust_tenant_header == trust_tenant_header
+        assert config.tenant_header_name == tenant_header_name
+        assert config.trusted_producer_header == trusted_producer_header
+        assert config.trusted_producers == trusted_producers
+        assert config.tenant_signature_header == tenant_signature_header
+        assert config.tenant_signature_secret_env == tenant_signature_secret_env
+        assert config.tenant_signature_secret_envs == tenant_signature_secret_envs

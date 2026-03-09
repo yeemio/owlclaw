@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import logging
 from datetime import datetime, timezone
 
@@ -132,7 +134,7 @@ async def test_queue_trigger_process_and_dedup() -> None:
     runtime = _FakeRuntime()
     store = MockIdempotencyStore()
     trigger = QueueTrigger(
-        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1", focus="ops"),
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1", focus="ops", trust_tenant_header=True),
         adapter=adapter,
         agent_runtime=runtime,
         idempotency_store=store,
@@ -431,7 +433,7 @@ async def test_queue_trigger_governance_reject_routes_to_dlq_and_records_ledger(
 
 
 @pytest.mark.asyncio
-async def test_queue_trigger_governance_unavailable_fails_open() -> None:
+async def test_queue_trigger_governance_unavailable_fails_closed_by_default() -> None:
     adapter = MockQueueAdapter()
     runtime = _FakeRuntime()
     governance = _FakeGovernance({"allowed": True})
@@ -449,8 +451,31 @@ async def test_queue_trigger_governance_unavailable_fails_open() -> None:
     await _flush_queue(adapter)
     await trigger.stop()
 
-    assert len(runtime.calls) == 1
+    assert len(runtime.calls) == 0
     assert adapter.get_acked() == ["g-open"]
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_governance_unavailable_supports_fail_open_when_configured() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    governance = _FakeGovernance({"allowed": True})
+    governance.raise_error = True
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1", governance_fail_open=True),
+        adapter=adapter,
+        agent_runtime=runtime,
+        governance=governance,
+    )
+    msg = _raw_message(message_id="g-open-configured", body=b'{"id":"1"}')
+
+    adapter.enqueue(msg)
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 1
+    assert adapter.get_acked() == ["g-open-configured"]
 
 
 @pytest.mark.asyncio
@@ -459,7 +484,7 @@ async def test_queue_trigger_records_success_ledger_fields() -> None:
     runtime = _FakeRuntime()
     ledger = _FakeLedger()
     trigger = QueueTrigger(
-        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1", trust_tenant_header=True),
         adapter=adapter,
         agent_runtime=runtime,
         ledger=ledger,
@@ -526,7 +551,7 @@ async def test_queue_trigger_multi_tenant_propagation() -> None:
     governance = _FakeGovernance({"allowed": True})
     ledger = _FakeLedger()
     trigger = QueueTrigger(
-        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1", trust_tenant_header=True),
         adapter=adapter,
         agent_runtime=runtime,
         governance=governance,
@@ -558,3 +583,177 @@ async def test_queue_trigger_multi_tenant_propagation() -> None:
     assert runtime_tenants == {"tenant-1", "tenant-2"}
     assert governance_tenants == {"tenant-1", "tenant-2"}
     assert ledger_tenants == {"tenant-1", "tenant-2"}
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_ignores_tenant_header_by_default() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(queue_name="orders", consumer_group="g1"),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+
+    adapter.enqueue(_raw_message(message_id="mt-default", body=b'{"id":"1"}', headers={"x-tenant-id": "tenant-x"}))
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 1
+    assert runtime.calls[0]["tenant_id"] == "default"
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_ignores_tenant_header_for_untrusted_producer() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            trust_tenant_header=True,
+            trusted_producers=["producer-a"],
+        ),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+
+    adapter.enqueue(
+        _raw_message(
+            message_id="mt-untrusted",
+            body=b'{"id":"1"}',
+            headers={"x-tenant-id": "tenant-x", "x-producer-id": "producer-b"},
+        )
+    )
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 1
+    assert runtime.calls[0]["tenant_id"] == "default"
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_accepts_tenant_header_for_trusted_producer() -> None:
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            trust_tenant_header=True,
+            trusted_producers=["producer-a"],
+        ),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+
+    adapter.enqueue(
+        _raw_message(
+            message_id="mt-trusted",
+            body=b'{"id":"1"}',
+            headers={"x-tenant-id": "tenant-x", "x-producer-id": "producer-a"},
+        )
+    )
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 1
+    assert runtime.calls[0]["tenant_id"] == "tenant-x"
+
+
+def _tenant_signature(message_id: str, tenant_id: str, producer_id: str, secret: str) -> str:
+    payload = f"{message_id}:{tenant_id}:{producer_id}"
+    return hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_requires_valid_tenant_signature_when_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    secret = "tenant-signing-secret"
+    monkeypatch.setenv("OWLCLAW_TENANT_SIG_SECRET", secret)
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            trust_tenant_header=True,
+            trusted_producers=["producer-a"],
+            tenant_signature_secret_env="OWLCLAW_TENANT_SIG_SECRET",
+        ),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+
+    signed = _tenant_signature("mt-signed", "tenant-x", "producer-a", secret)
+    adapter.enqueue(
+        _raw_message(
+            message_id="mt-signed",
+            body=b'{"id":"1"}',
+            headers={
+                "x-tenant-id": "tenant-x",
+                "x-producer-id": "producer-a",
+                "x-tenant-signature": signed,
+            },
+        )
+    )
+    adapter.enqueue(
+        _raw_message(
+            message_id="mt-bad-sig",
+            body=b'{"id":"1"}',
+            headers={
+                "x-tenant-id": "tenant-y",
+                "x-producer-id": "producer-a",
+                "x-tenant-signature": "bad-signature",
+            },
+        )
+    )
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 2
+    assert runtime.calls[0]["tenant_id"] == "tenant-x"
+    assert runtime.calls[1]["tenant_id"] == "default"
+
+
+@pytest.mark.asyncio
+async def test_queue_trigger_accepts_signature_from_rotated_secret_envs(monkeypatch: pytest.MonkeyPatch) -> None:
+    old_secret = "tenant-signing-secret-old"
+    next_secret = "tenant-signing-secret-next"
+    monkeypatch.setenv("OWLCLAW_TENANT_SIG_SECRET_OLD", old_secret)
+    monkeypatch.setenv("OWLCLAW_TENANT_SIG_SECRET_NEXT", next_secret)
+    adapter = MockQueueAdapter()
+    runtime = _FakeRuntime()
+    trigger = QueueTrigger(
+        config=QueueTriggerConfig(
+            queue_name="orders",
+            consumer_group="g1",
+            trust_tenant_header=True,
+            trusted_producers=["producer-a"],
+            tenant_signature_secret_envs=["OWLCLAW_TENANT_SIG_SECRET_NEXT", "OWLCLAW_TENANT_SIG_SECRET_OLD"],
+        ),
+        adapter=adapter,
+        agent_runtime=runtime,
+    )
+
+    signed_with_old = _tenant_signature("mt-rotated", "tenant-z", "producer-a", old_secret)
+    adapter.enqueue(
+        _raw_message(
+            message_id="mt-rotated",
+            body=b'{"id":"1"}',
+            headers={
+                "x-tenant-id": "tenant-z",
+                "x-producer-id": "producer-a",
+                "x-tenant-signature": signed_with_old,
+            },
+        )
+    )
+    await trigger.start()
+    await _flush_queue(adapter)
+    await trigger.stop()
+
+    assert len(runtime.calls) == 1
+    assert runtime.calls[0]["tenant_id"] == "tenant-z"
