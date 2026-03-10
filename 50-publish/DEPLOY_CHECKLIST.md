@@ -4,6 +4,7 @@
 
 - 运行数据构建脚本：
   - `python 50-publish/build_repo_data.py --source "20-normalized/repo_master_latest.csv"`
+  - CSV 若不在本仓库（如来自兄弟目录），可传绝对或相对路径给 `--source`。
 - `50-publish/site/repo-data.json` 存在且可被 JSON 解析
 - `repo-data.json` 中关键字段完整：`repo` `url` `topic` `relevance` `risk` `adoption_priority`
 - 数据来源映射已确认：`20-normalized/repo_master_latest.csv -> repo-data.json`

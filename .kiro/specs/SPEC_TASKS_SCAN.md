@@ -471,7 +471,7 @@
 
 | 字段 | 值 |
 |------|---|
-| 最后更新 | 2026-03-09（Phase 16R 返工推进：codex-gpt-work 已完成 G1-G5〔runtime observation 参数脱敏、final summarization 错误脱敏、aembedding/LLMClient timeout 与 LLM 错误信息脱敏〕并补齐回归测试，等待 review-work 新 verdict） |
+| 最后更新 | 2026-03-09（codex-gpt-work 已推送 G1-G5 返工 + 50-publish 数据查看与发布清单，待 review-work 复审） |
 | 当前批次 | **Phase 16R（双 REJECT 回流返工）**：`codex-gpt-work` 已完成 G1-G5 并形成送审提交；`codex-work` 继续 R1-R4。 |
 | 批次状态 | Phase 16 follow-up 早期 `APPROVE` 仍由 rollback 审查覆盖；当前进入 REJECT 回流执行态：`codex-gpt-work` 的 G1-G5 已完成并通过本地定向回归，待 review-work 复审；`codex-work` 按 R1-R4 持续返工。`review-work` 旧 REJECT 包仍仅作为 gate 与回流依据，不进入 `main`。 |
 | 已完成项 | 23) D25 Kafka connect timeout；24) D15-D29 全部修复并合入 main；25) 深度审计主审 27 轮完成；26) 加审补充 #55；27) #45-#55 已完成统筹分配；28) Phase 16 工作状态完成校准；29) `codex-gpt-work` 已提交首批 #45/#46 修复，进入待审；30) 深度审计第 28–31 轮 #56-#82；31) 第 32 轮 #83-#87；32) 第 33 轮 #88-#94；33) 审计复核 Order 45–94；34) 第 34 轮 #95-#103；35) 审计复核 Order 95–103；36) 第 35 轮（scripts 非 workflow）#104-#113；37) 审计复核第四轮 113 条；38) 第 36 轮（tests 关键路径）#114-#116；39) 审计复核第五轮 116 条；40) 第 37 轮（tests 扩展）#117-#119；41) 审计复核第六轮 119 条；42) 第 38 轮（tests web + CWD）#120-#121；43) 审计复核第七轮 121 条；44) 第 39 轮（生产代码补审）#122-#123 入报告；45) 审计复核第八轮：SPEC_TASKS_SCAN 与报告对齐至 124 条、Backlog #56-#124；46) 主 worktree spec 循环：audit-deep-remediation 可选 Task 8（skill_env_allowlist）实现+验收；47) test-infra backlog：pytest-html 测试报告 HTML 输出（dev 依赖 + docs/TESTING.md）；48) test-infra backlog：pytest-xdist 并行测试说明（docs/TESTING.md）；49) ruff F841/F811 修复（server.py exc、capabilities.py 重复 import）；50) docs/TESTING.md 补充覆盖率 HTML 报告命令；51) test-infra tasks.md 最后更新日期校准；52) local-devenv tasks.md 最后更新 2026-03-07；53) test-infra design 补充 Backlog「测试数据工厂」选型说明（factory_boy vs polyfactory）；54) docs/TESTING.md 常用命令补充 unit / not integration marker 示例；55) test-infra design 补充 Backlog「Kafka 本地 mock」实现要点；56) declarative-binding tasks.md 最后更新 2026-03-07；57) docs/TESTING.md 补充 -m \"not slow\" 示例；58) repo-hygiene / contract-testing tasks.md 最后更新 2026-03-07；59) docs/TESTING.md 补充 -x 首次失败即停；60) gateway-runtime-ops / cross-lang-golden-path / protocol-governance / examples tasks.md 最后更新 2026-03-07；61) cli-migrate tasks.md 最后更新 2026-03-07；62) docs/TESTING.md 补充 -v 详细输出示例；63) release / release-supply-chain / console-integration / console-frontend / protocol-first-api-mcp / mcp-server / security / skill-templates / governance tasks.md 最后更新 2026-03-07；64) `codex-gpt-work` 完成 Phase 16R G1-G5（runtime observation 脱敏、final summarization 脱敏、`aembedding`/`LLMClient` timeout、LLM 错误信息脱敏）并通过定向回归 154 tests。 |
@@ -480,7 +480,7 @@
 | 阻塞项 | 内部阻塞 2 项：1) `review-work` 存在未归档 verdict 文档，当前不适合递送主线；2) `main` 本地未提交改动阻止主线 merge。两个 coding worktree 已校准为干净，但 verdict 尚未消化。 |
 | 健康状态 | 🟡 返工推进中：本轮 merge conflicts 0，`codex-gpt-work` 回归通过（154 passed）并待复审，`codex-work` 继续返工；`review-work` 与 `main` 仍非干净。 |
 | 连续无进展轮数 | 0 |
-| 分支量化进度 | `review-work` 3 commits ahead，另有 4 个未跟踪 verdict 文档；`codex-work` ahead 以返工前历史提交为主，但 worktree 已干净；`codex-gpt-work` ahead 以返工前历史提交为主，但 worktree 已干净；`main` 存在用户本地改动，故本轮未执行统筹 commit/merge。 |
+| 分支量化进度 | `review-work` 3 commits ahead；`codex-gpt-work` 已 push（G1-G5 + feat(web) 50-publish），ahead 2，待审；`codex-work` worktree 已干净；`main` 存在用户本地改动。 |
 | 审校状态 | `audit-deep-remediation` 主线已审校完成；Phase 16 follow-up 当前有效状态为 2 个 `REJECT` verdict：`review(codex-work): REJECT`（`0f29664c`）与 `review(codex-gpt-work): REJECT`（`6f867c7a`）。当前无可合入 `main` 的新审校包。 |
 | 持续轮次目标 | 主 worktree spec 循环目标 999 轮；每轮 1～3 项，每回复「继续」执行下一批；累计轮数在「已完成项」中递增；说「停」即止。 |
 
