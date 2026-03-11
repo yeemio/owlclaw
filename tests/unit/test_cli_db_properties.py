@@ -57,7 +57,13 @@ def test_property_config_priority_explicit_url_over_env(
         database_url=explicit_url,
         verbose=False,
     )
-    assert captured["conn"] == explicit_url
+    # _connection_string_for_pg_dump strips password from URL (security best
+    # practice: password is passed via PGPASSWORD env var), so compare against
+    # the sanitized form — not the raw explicit_url.
+    from owlclaw.cli.db_backup import _connection_string_for_pg_dump
+
+    expected_conn = _connection_string_for_pg_dump(explicit_url)
+    assert captured["conn"] == expected_conn
 
 
 @given(st.sampled_from(["backup_missing_url", "restore_missing_url", "check_missing_url"]))
