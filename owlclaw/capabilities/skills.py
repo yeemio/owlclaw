@@ -62,6 +62,13 @@ def _has_valid_raw_skill_name(frontmatter_raw: str) -> bool:
     raw_name = match.group(1)
     if raw_name != raw_name.strip() or _contains_control_chars(raw_name):
         return False
+    # YAML may quote values (e.g. name: '0' or name: "my-skill").
+    # Strip matching outer quotes before validation.
+    if len(raw_name) >= 2 and (
+        (raw_name[0] == "'" and raw_name[-1] == "'")
+        or (raw_name[0] == '"' and raw_name[-1] == '"')
+    ):
+        raw_name = raw_name[1:-1]
     return _SKILL_NAME_PATTERN.match(raw_name) is not None
 
 
