@@ -93,7 +93,13 @@ async def test_property_visible_tools_normalizes_confirmed_capabilities(raw: obj
 @given(error_message=st.text(min_size=1, max_size=80))
 @settings(deadline=None)
 async def test_property_tool_error_propagation(error_message: str) -> None:
-    """Property 21: tool execution failures are returned to LLM as error payloads."""
+    """Property 21: tool execution failures are returned to LLM as generic error payloads.
+
+    The runtime intentionally does NOT leak internal exception messages to
+    the LLM (security hardening). All capability-handler exceptions are
+    surfaced as the generic ``_INTERNAL_ERROR_MESSAGE`` to prevent prompt-
+    injection or information-leakage attacks via crafted error messages.
+    """
     with TemporaryDirectory() as tmp:
         registry = MagicMock()
         registry.handlers = {"market_scan": MagicMock()}
@@ -103,7 +109,8 @@ async def test_property_tool_error_propagation(error_message: str) -> None:
         tc = _make_tool_call("market_scan", {"symbol": "AAPL"})
         result = await rt._execute_tool(tc, AgentRunContext(agent_id="bot", trigger="cron"))
         assert "error" in result
-        assert error_message in result["error"]
+        # Runtime returns a generic message — internal details are NOT leaked to the LLM.
+        assert result["error"] == "Tool execution failed due to an internal error."
 
 
 @pytest.mark.asyncio
