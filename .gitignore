@@ -66,3 +66,10 @@ logs/
 docs/protocol/reports/
 docs/protocol/cross_lang_validation_latest.md
 docs/ops/reports/
+
+# Local temp and kiro backups (do not push)
+.tmp/
+.kiro/runtime-cleanup-backups/
+
+# Local Claude/Codex permissions (machine-specific)
+.claude/settings.local.json
